@@ -1,0 +1,107 @@
+.MainContainer {
+  margin: 5px;
+  width: 536px;
+  height: 151px;
+  min-width: 536px;
+  min-height: 151px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  padding: 10px;
+  border-radius: 10px;
+  background-color: #b6b6b6;
+}
+.FirstLine {
+  height: 100%;
+  width: 35%;
+}
+.FloorText {
+  background-color: gray;
+  height: 25px;
+  width: 100px;
+  font-size: 20px;
+  margin: 0px;
+  padding-left: 5px;
+  display: flex;
+  justify-content: left;
+  border-radius: 10px 10px 0px 0px;
+  align-items: center;
+  border-bottom: 1px solid black;
+}
+.RoomText {
+  background-color: gray;
+  height: 35px;
+  font-size: 30px;
+
+  margin: 0px;
+  padding-left: 5px;
+  display: flex;
+  justify-content: left;
+  border-radius: 0px 10px 10px 10px;
+  align-items: center;
+}
+.StatusContainer {
+  background-color: gray;
+  height: 81px;
+  font-size: 18px;
+
+  margin: 0px;
+  margin-top: 10px;
+  padding-left: 5px;
+  display: flex;
+  justify-content: center;
+  border-radius: 10px 10px 10px 10px;
+  align-items: top;
+  text-align: center;
+
+
+}
+.StatusText {
+  margin: 0px;
+  margin-top: 5px;
+}
+.SecondLine {
+  width: 35%;
+}
+.ThirdLine {
+  width: 30%;
+
+}
+.RoomTypeContainer {
+  background-color: gray;
+  height: 120px;
+  font-size: 20px;
+  margin: 0px;
+  padding-top: 5px;
+  display: flex;
+  justify-content: flex-start;
+  border-radius: 10px 10px 0px 0px;
+  align-items: top;
+  text-align: center;
+  flex-direction: column;
+  border-bottom: 1px dashed black;
+}
+.RoomTypeContainerBottom {
+  background-color: gray;
+  height: 20px;
+  font-size: 20px;
+  margin: 0px;
+  padding-top: 5px;
+  display: flex;
+  justify-content: flex-start;
+  border-radius: 0px 0px 10px 10px;
+  align-items: top;
+  text-align: center;
+  flex-direction: column;
+}
+.RoomTypeContainertext {
+  font-size: 15px;
+  margin: 0px;
+  text-align: left;
+  padding-left: 5px;
+
+}
+
+
+
+/*/*/
