@@ -1,7 +1,7 @@
 import { MemoryRouter as Router, Routes, Route } from 'react-router-dom';
 import icon from '../../assets/icon.svg';
 import './App.css';
-import RoomArea from './Project/TSX/RoomArea';
+import RoomArea from './RoomArea';
 import { useState } from 'react';
 import NavBar from './Project/TSX/NavBar';
 import LogoImage from './assets/Insert Image Pic.png';
@@ -13,6 +13,7 @@ declare global {
     roomIndex: number;
     status: 'Empty' | 'Taken';
     price: number;
+    squareMeters: number;
     Person?: Person;
   };
   type Person = {
@@ -36,16 +37,80 @@ function Hello() {
         email: 'd',
       },
       price: 23000,
+      squareMeters: 50,
     },
-    { id: '2', roomIndex: 2, floor: 1, status: 'Empty', price: 12000 },
-    { id: '3', roomIndex: 3, floor: 1, status: 'Empty', price: 20000 },
-    { id: '4', roomIndex: 1, floor: 2, status: 'Empty', price: 11000 },
-    { id: '5', roomIndex: 2, floor: 2, status: 'Empty', price: 18000 },
-    { id: '6', roomIndex: 3, floor: 2, status: 'Empty', price: 29000 },
-    { id: '7', roomIndex: 3, floor: 1, status: 'Empty', price: 20000 },
-    { id: '8', roomIndex: 1, floor: 2, status: 'Empty', price: 11000 },
-    { id: '9', roomIndex: 2, floor: 2, status: 'Empty', price: 18000 },
-    { id: '10', roomIndex: 3, floor: 2, status: 'Empty', price: 29000 },
+    {
+      id: '2',
+      roomIndex: 2,
+      floor: 1,
+      status: 'Empty',
+      price: 12000,
+      squareMeters: 50,
+    },
+    {
+      id: '3',
+      roomIndex: 3,
+      floor: 1,
+      status: 'Empty',
+      price: 20000,
+      squareMeters: 50,
+    },
+    {
+      id: '4',
+      roomIndex: 1,
+      floor: 2,
+      status: 'Empty',
+      price: 11000,
+      squareMeters: 50,
+    },
+    {
+      id: '5',
+      roomIndex: 2,
+      floor: 2,
+      status: 'Empty',
+      price: 18000,
+      squareMeters: 50,
+    },
+    {
+      id: '6',
+      roomIndex: 3,
+      floor: 2,
+      status: 'Empty',
+      price: 29000,
+      squareMeters: 50,
+    },
+    {
+      id: '7',
+      roomIndex: 3,
+      floor: 1,
+      status: 'Empty',
+      price: 20000,
+      squareMeters: 50,
+    },
+    {
+      id: '8',
+      roomIndex: 1,
+      floor: 2,
+      status: 'Empty',
+      price: 11000,
+      squareMeters: 50,
+    },
+    {
+      id: '9',
+      roomIndex: 2,
+      floor: 2,
+      status: 'Empty',
+      price: 18000,
+      squareMeters: 50,
+    },
+    {
+      id: '10',
+      roomIndex: 3,
+      floor: 2,
+      status: 'Empty',
+      price: 29000,
+      squareMeters: 50,
+    },
   ]);
   const [ComponyLogo, setComponyLogo] = useState(LogoImage);
   const [ComponyName, setComponyName] = useState('');
@@ -64,7 +129,7 @@ function Hello() {
         ShopName={ComponyName}
         setShopName={setComponyName}
       ></NavBar>
-      <RoomArea RoomList={RoomList} />
+      <RoomArea RoomList={RoomList} setRoomList={setRoomList} />
     </>
   );
 }

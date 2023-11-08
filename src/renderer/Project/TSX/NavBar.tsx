@@ -106,6 +106,8 @@ Props) => {
       throw new Error('Invalid format. Use "dd mm yy" or "mm dd yy".');
     }
   }
+
+  
   return (
     <div className="navigation">
       <div className="LeftSide">

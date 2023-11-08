@@ -74,7 +74,7 @@ const Room = ({ roomType, updateRoomProperty, id }: prop) => {
               className="RoomTypeContainertext"
               style={{ textAlign: 'center', paddingLeft: 0, fontSize: '17px' }}
             >
-              50 square feet
+              {roomType.squareMeters} square meters
             </p>
           </div>
         </div>

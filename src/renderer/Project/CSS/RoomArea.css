@@ -7,12 +7,11 @@
 }
 .RoomContainerContainer {
   overflow-y: auto;
-
 }
 .SideBarContainer {
   width: 315px;
   border-radius: 10px;
-  background-color: #191919;
+  background-color: #333333;
   color: white;
 }
 .MAINCONTAINER {
@@ -22,7 +21,7 @@
 }
 .SecondNavBarContainer {
   position: absolute;
-  background-color: #191919;
+  background-color: #333333;
   left: 558px;
   border-radius: 10px;
   height: 45px;
@@ -38,7 +37,7 @@
   justify-content: center;
   height: 100%;
   color: white;
-  width: 200px;
+  width: 250px;
 }
 .FloorSearchBar {
   width: 50px;
@@ -52,6 +51,63 @@
   height: 30px;
   border-radius: 10px;
   font-size: 15px;
+}
+.sort-button-img {
+  width: 35px;
+  transition: all 0.2s;
+}
 
+.sort-button-img-Flip {
+  width: 35px;
+  transform: scaleY(-1);
+  transition: all 0.2s;
+}
+.sort-drop {
+  margin: 0;
+  width: 20px;
+  height: 20px;
+
+  left: -10px;
+  position: relative;
+  padding-right: 0px;
+  border-radius: 5px;
+  background: lightgrey;
+  padding-left: 1px;
+  background-color: #00000000;
+  border: none;
+
+  border-left: none;
+}
+.sort-button {
+  margin-left: 10px;
+  width: 50px;
+  height: 50px;
+
+  border-radius: 10px;
+  background-color: #008ab800;
+  font-weight: bolder;
+
+  border-right: none;
+}
+.AdvanceRoomFinding {
+  width: 450px;
+  height: 40px;
+  color: white;
+  display: flex;
+}
+.AdvanceRoomFindingInput {
+  width: 70px;
+}
+.AdvanceRoomFindingINPUTCONTAINER {
+}
+.FilterOptions {
+  display: flex;
+  position: absolute;
+  top: 45px;
+  width: 1300px;
+  align-items: center;
+  color: #000a8582;
+  font-size: 14px;
+  justify-content: center;
 }
 /**/
