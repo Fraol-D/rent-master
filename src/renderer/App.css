@@ -12,9 +12,11 @@ body {
     #dd5789 51.77%,
     #7a2c9e 129.35%
   );*/
+  background-color: #00000083;
   font-family: sans-serif;
   overflow-y: hidden;
-  
+  padding: 0px;
+  margin: 0px;
 }
 
 button {
@@ -57,4 +59,10 @@ a:hover {
   justify-content: center;
   align-items: center;
   margin: 20px 0;
+}
+html {
+  height: 100%;
+}
+#root {
+  height: 100%;
 }
