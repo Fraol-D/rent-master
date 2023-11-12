@@ -6,23 +6,7 @@ import { useState } from 'react';
 import NavBar from './Project/TSX/NavBar';
 import LogoImage from './assets/Insert Image Pic.png';
 
-declare global {
-  type RoomType = {
-    id: string;
-    floor: number;
-    roomIndex: number;
-    status: 'Empty' | 'Taken';
-    price: number;
-    squareMeters: number;
-    Person?: Person;
-  };
-  type Person = {
-    name: string;
-    phoneNumber: string;
-    phoneNumber2?: string;
-    email?: string;
-  };
-}
+
 function Hello() {
   const [RoomList, setRoomList] = useState<RoomType[]>([
     {

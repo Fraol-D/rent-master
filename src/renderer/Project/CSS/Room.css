@@ -9,7 +9,8 @@
   align-items: center;
   padding: 10px;
   border-radius: 10px;
-  background-color: #b6b6b6;
+  background-color: #dadada;
+  transition: all 0.2s;
 }
 .FirstLine {
   height: 100%;
@@ -57,13 +58,16 @@
 .StatusText {
   margin: 0px;
   margin-top: 5px;
+  display: flex;
+  flex-direction: column;
+  font-size: 15px;
 }
 .SecondLine {
   width: 35%;
   display: flex;
   justify-content: center;
   height: 100%;
-  align-items: flex-end;
+  align-items: flex-start;
 }
 .ThirdLine {
   width: 30%;
@@ -145,5 +149,37 @@
   margin-right: 10px;
   margin-left: 10px;
 }
-
+.AddPersonContainer {
+  width: 0;
+  position: relative;
+  top: 180px;
+  left: -536px;
+}
+.AddPersonContainerinner {
+  width: 280px;
+  height: 260px;
+  background: rgb(99, 99, 99);
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  justify-content: center;
+  border-radius: 10px;
+  padding-top: 10px;
+  color: white;
+  align-content: space-between;
+  transition: all 0.3s;
+}
+.AddPersonContainerinnerInput {
+  width: 140px;
+}
+.AddPersonContainerinnerElement {
+  margin-bottom: 5px;
+}
+.AddPersonButton {
+  width: 80px;
+  height: 30px;
+  margin-bottom: 10px;
+  margin-left: 20px;
+  margin-right: 20px;
+}
 /*/*/

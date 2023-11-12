@@ -31,6 +31,41 @@ type FilterOption = {
   key: string;
   value: any;
 };
+interface RoomCategory {
+  id: string;
+  name: string;
+  floors?: RoomCategory[];
+  rooms?: string[];
+}
+declare global {
+  type RoomType = {
+    id: string;
+    floor: number;
+    roomIndex: number;
+    status: 'Empty' | 'Taken';
+    price: number;
+    squareMeters: number;
+    Person?: Person;
+    AddPersonState: boolean;
+  };
+  type Person = {
+    name: string;
+    phoneNumber: string;
+    phoneNumber2?: string;
+    email?: string;
+    SelectedAgreement: string;
+    startTime: string;
+    endTime?: string;
+    agreedPrice: string;
+  };
+
+  /*type CategoryType = {
+    id: string;
+    type: 'floor' | 'rooms' | 'branch';
+    name: string;
+    floorIndex?: number;
+  };*/
+}
 interface RoomAreaProps {
   RoomList: RoomType[];
   setRoomList: (newRoomList: RoomType[]) => void;
@@ -417,7 +452,12 @@ const RoomArea = ({ RoomList, setRoomList }: RoomAreaProps) => {
               <Room
                 roomType={room}
                 updateRoomProperty={updateRoomProperty}
-                id={room.id}
+                turnOffAddPersonStateForAll={() => {
+                  for (let i = 0; i < RoomList.length; i++) {
+                    const element = RoomList[i];
+                    updateRoomProperty(element.id, 'AddPersonState', false);
+                  }
+                }}
                 key={room.id}
               />
             ))}
