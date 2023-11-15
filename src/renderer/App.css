@@ -12,11 +12,12 @@ body {
     #dd5789 51.77%,
     #7a2c9e 129.35%
   );*/
-  background-color: #00000083;
+
   font-family: sans-serif;
   overflow-y: hidden;
   padding: 0px;
   margin: 0px;
+  background: #5a5a5a;
 }
 button {
   opacity: 0.9;
@@ -41,7 +42,9 @@ a {
   width: fit-content;
   margin: 10px;
 }
-
+p {
+  margin: 0px;
+}
 a:hover {
   opacity: 1;
   text-decoration: none;

@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import '../CSS/Room.css';
 interface prop {
   roomType: RoomType;
-  
 
   turnOffAddPersonStateForAll: () => void;
+  turnOffViewStateForAll: () => void;
   updateRoomProperty: (
     productId: string,
     propertyName: string,
@@ -15,6 +15,7 @@ const Room = ({
   roomType,
   updateRoomProperty,
   turnOffAddPersonStateForAll,
+  turnOffViewStateForAll,
 }: prop) => {
   const handleAddPerson = () => {
     turnOffAddPersonStateForAll();
@@ -29,6 +30,7 @@ const Room = ({
   const [startTime, setStartTime] = useState('');
   const [endTime, setEndTime] = useState('');
   const [agreedPrice, setAgreedPrice] = useState('');
+
   function calculateDaysDifference(startDate: Date, endDate: Date): number {
     const timeDifference =
       new Date(endDate).getTime() - new Date(startDate).getTime();
@@ -46,19 +48,20 @@ const Room = ({
         SelectedAgreement: selectedAgreement,
         startTime: startTime,
         endTime: endTime,
-        agreedPrice: agreedPrice,
+        agreedPrice: agreedPrice.length === 0 ? roomType.price : agreedPrice,
       });
 
       updateRoomProperty(roomType.id, 'AddPersonState', false);
     }
   };
+
   return (
     <>
       <div
         className="MainContainer"
         style={{
           backgroundColor: roomType.AddPersonState
-            ? '#dadada'
+            ? 'rgb(46 44 44)'
             : roomType.status === 'Empty'
             ? '#8f8f8f'
             : '#b3b3b3',
@@ -126,18 +129,69 @@ const Room = ({
                   </>
                 )}
               </strong>
-              {roomType.status === 'Taken' && (
-                <em
-                  style={{
-                    fontSize: '16px',
-                    borderBottom: '1px solid black',
-                    marginTop: '5px',
-                    width: '120px',
-                    marginLeft: '25px',
-                  }}
-                >
-                  View Agreement
-                </em>
+              {roomType.status === 'Taken' ? (
+                roomType.ViewAgreement ? (
+                  <>
+                    <strong
+                      style={{
+                        fontWeight: '600',
+                        fontSize: '17px',
+                        display: 'flex',
+                        justifyContent: 'center',
+                        marginTop: '5px',
+                      }}
+                      onClick={() => {
+                        turnOffViewStateForAll();
+                        updateRoomProperty(
+                          roomType.id,
+                          'ViewAgreement',
+                          !roomType.ViewAgreement
+                        );
+                      }}
+                    >
+                      <p
+                        style={{
+                          borderBottom: '1px solid black',
+                          width: '140px',
+                        }}
+                      >
+                        View Agreement
+                      </p>
+                    </strong>
+                  </>
+                ) : (
+                  <>
+                    <em
+                      style={{
+                        fontSize: '16px',
+                        display: 'flex',
+                        justifyContent: 'center',
+                        marginTop: '5px',
+
+                        fontWeight: '400',
+                      }}
+                      onClick={() => {
+                        turnOffViewStateForAll();
+                        updateRoomProperty(
+                          roomType.id,
+                          'ViewAgreement',
+                          !roomType.ViewAgreement
+                        );
+                      }}
+                    >
+                      <p
+                        style={{
+                          borderBottom: '1px solid black',
+                          width: '120px',
+                        }}
+                      >
+                        View Agreement
+                      </p>
+                    </em>
+                  </>
+                )
+              ) : (
+                <></>
               )}
             </p>
           </div>
@@ -153,6 +207,13 @@ const Room = ({
               <button className="ChangePriceButton">a</button>
             </div> */}
           </div>
+          {roomType.status === 'Taken' && (
+            <div className="PayAndDueShowerContainer">
+              <p>will pay in {2} days</p>
+              <p>will pay in {2} days</p>
+              <button className="PayButton">Pay</button>
+            </div>
+          )}
         </div>
         <div className="ThirdLine">
           <div className="RoomTypeContainer">
@@ -178,6 +239,8 @@ const Room = ({
               width: roomType.AddPersonState ? '280px' : '0px',
               height: roomType.AddPersonState ? '260px' : '0px',
               opacity: roomType.AddPersonState ? '1' : '0',
+
+              fontSize: '17px',
             }}
           >
             <div className="InnerAddpersonTop">
@@ -303,6 +366,83 @@ const Room = ({
                 }}
               >
                 Add
+              </button>
+            </div>
+          </div>
+        </div>
+        <div className="AddPersonContainer" style={{ top: '205px' }}>
+          <div
+            className="AddPersonContainerinner"
+            style={{
+              width: roomType.ViewAgreement ? '280px' : '0px',
+              height: roomType.ViewAgreement ? '260px' : '0px',
+              opacity: roomType.ViewAgreement ? '1' : '0',
+            }}
+          >
+            <div className="InnerAddpersonTop" style={{ width: '95%' }}>
+              <div className="AddPersonContainerinnerElement">
+                Name:{' '}
+                <em style={{ fontWeight: '600' }}>{roomType.Person?.name}</em>
+              </div>
+              <div className="AddPersonContainerinnerElement">
+                Tel 1:{' '}
+                <em style={{ fontWeight: '600' }}>
+                  {roomType.Person?.phoneNumber}
+                </em>
+              </div>
+              <div className="AddPersonContainerinnerElement">
+                Tel 2:{' '}
+                <em style={{ fontWeight: '600' }}>
+                  {roomType.Person?.phoneNumber2}
+                </em>
+              </div>
+              <div className="AddPersonContainerinnerElement">
+                {' '}
+                Email:{' '}
+                <em style={{ fontWeight: '600' }}>{roomType.Person?.email}</em>
+              </div>
+              <div className="AddPersonContainerinnerElement">
+                Agreement type:{' '}
+                <em style={{ fontWeight: '600' }}>
+                  {roomType.Person?.SelectedAgreement}
+                </em>
+              </div>
+              <div className="AddPersonContainerinnerElement" style={{}}>
+                <div>
+                  Start time:
+                  <em style={{ fontWeight: '600' }}>
+                    {roomType.Person?.startTime}
+                  </em>
+                </div>
+              </div>
+              {selectedAgreement === 'Fixed-Term' && (
+                <div className="AddPersonContainerinnerElement">
+                  End time :
+                  <em style={{ fontWeight: '600' }}>
+                    {roomType.Person?.endTime}
+                  </em>{' '}
+                  {calculateDaysDifference(
+                    new Date(startTime),
+                    new Date(endTime)
+                  )}{' '}
+                  Days
+                </div>
+              )}
+              <div className="AddPersonContainerinnerElement">
+                Agreed Price:{' '}
+                <em style={{ fontWeight: '600' }}>
+                  {roomType.Person?.agreedPrice}
+                </em>
+              </div>
+            </div>
+            <div className="BottomAddPersonContainer">
+              <button
+                className="AddPersonButton"
+                onClick={() =>
+                  updateRoomProperty(roomType.id, 'ViewAgreement', false)
+                }
+              >
+                Close
               </button>
             </div>
           </div>

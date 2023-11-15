@@ -47,6 +47,7 @@ declare global {
     squareMeters: number;
     Person?: Person;
     AddPersonState: boolean;
+    ViewAgreement: boolean;
   };
   type Person = {
     name: string;
@@ -293,7 +294,6 @@ const RoomArea = ({ RoomList, setRoomList }: RoomAreaProps) => {
               }}
               className="sort-drop"
             >
-              <option value="name">Sort by Name</option>
               <option value="price">Sort by Price</option>
               <option value="floor">Sort by Floor</option>
               <option value="room">Sort by Room</option>
@@ -342,7 +342,6 @@ const RoomArea = ({ RoomList, setRoomList }: RoomAreaProps) => {
                 }}
                 className="filter-drop"
               >
-                <option value="all">All Status</option>
                 <option value="Taken">Taken</option>
                 <option value="Empty">Empty</option>
               </select>
@@ -453,6 +452,20 @@ const RoomArea = ({ RoomList, setRoomList }: RoomAreaProps) => {
                 roomType={room}
                 updateRoomProperty={updateRoomProperty}
                 turnOffAddPersonStateForAll={() => {
+                  for (let i = 0; i < RoomList.length; i++) {
+                    const element = RoomList[i];
+                    updateRoomProperty(element.id, 'AddPersonState', false);
+                  }
+                  for (let i = 0; i < RoomList.length; i++) {
+                    const element = RoomList[i];
+                    updateRoomProperty(element.id, 'ViewAgreement', false);
+                  }
+                }}
+                turnOffViewStateForAll={() => {
+                  for (let i = 0; i < RoomList.length; i++) {
+                    const element = RoomList[i];
+                    updateRoomProperty(element.id, 'ViewAgreement', false);
+                  }
                   for (let i = 0; i < RoomList.length; i++) {
                     const element = RoomList[i];
                     updateRoomProperty(element.id, 'AddPersonState', false);
