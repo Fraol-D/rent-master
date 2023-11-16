@@ -201,5 +201,34 @@
   align-content: center;
   margin-top: 10px;
 }
+.PaymentCardContianer {
+  height: 80%;
+  display: flex;
+  flex-wrap: wrap;
+  flex-direction: row;
+  justify-content: flex-start;
+  align-items: flex-start;
+}
+.PaymentCard {
+  background-color: #1e1f28;
+  border-radius: 10px;
+  box-shadow: 2px 2px 3px black;
+  color: white;
+  font-size: 16px;
+  margin-left: 5px;
+  margin-right: 5px;
+}
+.PaymentTimeline {
+  width: 100%;
+  border-collapse: collapse;
+}
 
+.PaymentTimeline td {
+  padding: 10px;
+  border: 1px solid #ddd;
+}
+
+.TimelineLine {
+  border-top: 2px solid black;
+}
 /*/*/

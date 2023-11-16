@@ -37,6 +37,7 @@ interface RoomCategory {
   floors?: RoomCategory[];
   rooms?: string[];
 }
+
 declare global {
   type RoomType = {
     id: string;
@@ -46,8 +47,9 @@ declare global {
     price: number;
     squareMeters: number;
     Person?: Person;
-    AddPersonState: boolean;
-    ViewAgreement: boolean;
+    AddPersonState?: boolean;
+    ViewAgreement?: boolean;
+    AllRoomPayInfo: AllRoomPayInfo;
   };
   type Person = {
     name: string;
@@ -59,7 +61,13 @@ declare global {
     endTime?: string;
     agreedPrice: string;
   };
-
+  type AllRoomPayInfo = {
+    RoomPayInfo: RoomPayInfo[];
+  };
+  type RoomPayInfo = {
+    Day: number;
+    Paid: boolean;
+  };
   /*type CategoryType = {
     id: string;
     type: 'floor' | 'rooms' | 'branch';

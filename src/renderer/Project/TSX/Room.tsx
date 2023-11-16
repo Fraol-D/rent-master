@@ -11,6 +11,16 @@ interface prop {
     newValue: any
   ) => void;
 }
+const PaymentCard = ({ payment, onPay }: any) => (
+  <div className="PaymentCard">
+    <p>{new Date(payment.Day).toLocaleDateString()}</p>
+    {!payment.Paid && (
+      <button className="PayButton" onClick={onPay}>
+        Pay
+      </button>
+    )}
+  </div>
+);
 const Room = ({
   roomType,
   updateRoomProperty,
@@ -52,9 +62,68 @@ const Room = ({
       });
 
       updateRoomProperty(roomType.id, 'AddPersonState', false);
+
+      if (!roomType.AllRoomPayInfo) {
+        roomType.AllRoomPayInfo = {
+          RoomPayInfo: [],
+        };
+      }
+
+      for (let i = 0; i < 100; i++) {
+        const dayDifference = i * 30;
+        const paymentDay = new Date(startTime);
+        paymentDay.setDate(paymentDay.getDate() + dayDifference);
+
+        roomType.AllRoomPayInfo.RoomPayInfo.push({
+          Day: paymentDay.getTime(),
+          Paid: false,
+        });
+      }
+
+      console.log(roomType.AllRoomPayInfo.RoomPayInfo);
+    }
+  };
+  const checkPaymentStatus = (allRoomPayInfo: AllRoomPayInfo): string => {
+    const currentDate = new Date().getTime();
+
+    const unpaidPayments = allRoomPayInfo.RoomPayInfo.filter(
+      (payment) => !payment.Paid
+    );
+
+    if (unpaidPayments.length === 0) {
+      return 'All payments have been made.';
+    }
+
+    const nearestPaymentDate = unpaidPayments.reduce((nearest, payment) => {
+      return Math.abs(payment.Day - currentDate) <
+        Math.abs(nearest.Day - currentDate)
+        ? payment
+        : nearest;
+    });
+
+    const daysUntilPayment = Math.ceil(
+      (nearestPaymentDate.Day - currentDate) / (24 * 60 * 60 * 1000)
+    );
+
+    if (daysUntilPayment > 0) {
+      return `Will pay in ${daysUntilPayment} days.`;
+    } else {
+      return `Payment day past by ${Math.abs(daysUntilPayment)} days.`;
     }
   };
 
+  const pay = (payment: RoomPayInfo) => {
+    // Perform the necessary logic to update the payment
+    // You can use onUpdateRoomProperty to update the RoomPayInfo array
+    // based on the logic you have in your application
+    updateRoomProperty(roomType.id, 'AllRoomPayInfo', {
+      ...roomType.AllRoomPayInfo,
+      RoomPayInfo: roomType.AllRoomPayInfo.RoomPayInfo.map((p) =>
+        p.Day === payment.Day ? { ...p, Paid: true } : p
+      ),
+    });
+  };
+  const paymentStatus = checkPaymentStatus(roomType.AllRoomPayInfo);
   return (
     <>
       <div
@@ -209,9 +278,23 @@ const Room = ({
           </div>
           {roomType.status === 'Taken' && (
             <div className="PayAndDueShowerContainer">
-              <p>will pay in {2} days</p>
-              <p>will pay in {2} days</p>
-              <button className="PayButton">Pay</button>
+              <p>{paymentStatus}</p>
+              {/*<button className="PayButton" onClick={pay}>
+                Pay
+              </button> */}
+              <div className="PaymentCardContianer">
+                {roomType.AllRoomPayInfo.RoomPayInfo.slice(0, 8).map(
+                  (payment) => (
+
+                      <PaymentCard
+                        key={payment.Day}
+                        payment={payment}
+                        onPay={() => pay(payment)}
+                      />
+
+                  )
+                )}
+              </div>
             </div>
           )}
         </div>

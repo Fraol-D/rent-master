@@ -6,22 +6,17 @@ import { useState } from 'react';
 import NavBar from './Project/TSX/NavBar';
 import LogoImage from './assets/Insert Image Pic.png';
 
-
 function Hello() {
   const [RoomList, setRoomList] = useState<RoomType[]>([
     {
       id: '1',
       roomIndex: 44000,
       floor: 9999,
-      status: 'Taken',
-      Person: {
-        name: 'Eren Yegre',
-        phoneNumber: '09090',
-        phoneNumber2: '09090',
-        email: 'd',
-      },
+      status: 'Empty',
+
       price: 23000,
       squareMeters: 50,
+      AllRoomPayInfo: { RoomPayInfo: [] },
     },
     {
       id: '2',
@@ -30,6 +25,7 @@ function Hello() {
       status: 'Empty',
       price: 12000,
       squareMeters: 50,
+      AllRoomPayInfo: { RoomPayInfo: [] },
     },
     {
       id: '3',
@@ -37,6 +33,7 @@ function Hello() {
       floor: 1,
       status: 'Empty',
       price: 20000,
+      AllRoomPayInfo: { RoomPayInfo: [] },
       squareMeters: 50,
     },
     {
@@ -45,6 +42,7 @@ function Hello() {
       floor: 2,
       status: 'Empty',
       price: 11000,
+      AllRoomPayInfo: { RoomPayInfo: [] },
       squareMeters: 50,
     },
     {
@@ -53,6 +51,7 @@ function Hello() {
       floor: 2,
       status: 'Empty',
       price: 18000,
+      AllRoomPayInfo: { RoomPayInfo: [] },
       squareMeters: 50,
     },
     {
@@ -61,6 +60,7 @@ function Hello() {
       floor: 2,
       status: 'Empty',
       price: 29000,
+      AllRoomPayInfo: { RoomPayInfo: [] },
       squareMeters: 50,
     },
     {
@@ -69,6 +69,7 @@ function Hello() {
       floor: 1,
       status: 'Empty',
       price: 20000,
+      AllRoomPayInfo: { RoomPayInfo: [] },
       squareMeters: 50,
     },
     {
@@ -77,6 +78,7 @@ function Hello() {
       floor: 2,
       status: 'Empty',
       price: 11000,
+      AllRoomPayInfo: { RoomPayInfo: [] },
       squareMeters: 50,
     },
     {
@@ -85,6 +87,7 @@ function Hello() {
       floor: 2,
       status: 'Empty',
       price: 18000,
+      AllRoomPayInfo: { RoomPayInfo: [] },
       squareMeters: 50,
     },
     {
@@ -93,6 +96,7 @@ function Hello() {
       floor: 2,
       status: 'Empty',
       price: 29000,
+      AllRoomPayInfo: { RoomPayInfo: [] },
       squareMeters: 50,
     },
   ]);
