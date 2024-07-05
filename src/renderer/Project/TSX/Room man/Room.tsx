@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import '../CSS/Room.css';
+import '../../CSS/Room.css';
 interface prop {
   roomType: RoomType;
 
@@ -40,7 +40,8 @@ const Room = ({
   const [startTime, setStartTime] = useState('');
   const [endTime, setEndTime] = useState('');
   const [agreedPrice, setAgreedPrice] = useState('');
-
+  const [paymentCycle, setPaymentCycle] = useState('');
+  const [customDays, setCustomDays] = useState('');
   function calculateDaysDifference(startDate: Date, endDate: Date): number {
     const timeDifference =
       new Date(endDate).getTime() - new Date(startDate).getTime();
@@ -106,16 +107,18 @@ const Room = ({
     );
 
     if (daysUntilPayment > 0) {
-      return `Will pay in ${daysUntilPayment} days.`;
+      return `Payment due in ${daysUntilPayment} days.`;
     } else {
       return `Payment day past by ${Math.abs(daysUntilPayment)} days.`;
     }
   };
 
-  const pay = (payment: RoomPayInfo) => {
-    // Perform the necessary logic to update the payment
-    // You can use onUpdateRoomProperty to update the RoomPayInfo array
-    // based on the logic you have in your application
+  const paymentStatus = checkPaymentStatus(roomType.AllRoomPayInfo);
+
+  const payments = roomType.AllRoomPayInfo.RoomPayInfo;
+  const visiblePayments = payments.slice(-5).concat(payments.slice(0, 5));
+
+  const pay = (payment: any) => {
     updateRoomProperty(roomType.id, 'AllRoomPayInfo', {
       ...roomType.AllRoomPayInfo,
       RoomPayInfo: roomType.AllRoomPayInfo.RoomPayInfo.map((p) =>
@@ -123,17 +126,18 @@ const Room = ({
       ),
     });
   };
-  const paymentStatus = checkPaymentStatus(roomType.AllRoomPayInfo);
+
   return (
     <>
       <div
         className="MainContainer"
         style={{
           backgroundColor: roomType.AddPersonState
-            ? 'rgb(46 44 44)'
+            ? '#2C2C30'
             : roomType.status === 'Empty'
-            ? '#8f8f8f'
-            : '#b3b3b3',
+            ? '#2e2f30'
+            : '#546C83',
+          border: roomType.AddPersonState ? '1px solid #00e1f1' : '',
         }}
       >
         <div className="FirstLine">
@@ -171,13 +175,13 @@ const Room = ({
                           style={{
                             fontWeight: '600',
                             fontSize: '17px',
-                            borderBottom: '1px solid black',
+                            borderBottom: '1px solid white',
                           }}
                           onClick={() => {
                             /* TO DO */ handleAddPerson();
                           }}
                         >
-                          Add person
+                          Add tenant
                         </strong>
                       </>
                     ) : (
@@ -185,13 +189,13 @@ const Room = ({
                         <em
                           style={{
                             fontWeight: '400',
-                            borderBottom: '1px solid black',
+                            borderBottom: '1px solid white',
                           }}
                           onClick={() => {
                             /* TO DO */ handleAddPerson();
                           }}
                         >
-                          Add person
+                          Add tenant
                         </em>
                       </>
                     )}
@@ -220,7 +224,7 @@ const Room = ({
                     >
                       <p
                         style={{
-                          borderBottom: '1px solid black',
+                          borderBottom: '1px solid white',
                           width: '140px',
                         }}
                       >
@@ -250,7 +254,7 @@ const Room = ({
                     >
                       <p
                         style={{
-                          borderBottom: '1px solid black',
+                          borderBottom: '1px solid white',
                           width: '120px',
                         }}
                       >
@@ -277,24 +281,23 @@ const Room = ({
             </div> */}
           </div>
           {roomType.status === 'Taken' && (
-            <div className="PayAndDueShowerContainer">
+            <div
+              className="PayAndDueShowerContainer"
+              style={{ border: '1px solid white' }}
+            >
               <p>{paymentStatus}</p>
-              {/*<button className="PayButton" onClick={pay}>
-                Pay
-              </button> */}
-              <div className="PaymentCardContianer">
-                {roomType.AllRoomPayInfo.RoomPayInfo.slice(0, 8).map(
-                  (payment) => (
-
-                      <PaymentCard
-                        key={payment.Day}
-                        payment={payment}
-                        onPay={() => pay(payment)}
-                      />
-
-                  )
-                )}
-              </div>
+              <button
+                className="Show-button-Pay"
+                onClick={() => {
+                  updateRoomProperty(
+                    roomType.id,
+                    'ShowPayTimeLine',
+                    !roomType.ShowPayTimeLine
+                  );
+                }}
+              >
+                {roomType.ShowPayTimeLine ? 'Hide' : 'Show'}
+              </button>
             </div>
           )}
         </div>
@@ -315,7 +318,7 @@ const Room = ({
           </div>
         </div>
 
-        <div className="AddPersonContainer">
+        <div className="PopOutContainer">
           <div
             className="AddPersonContainerinner"
             style={{
@@ -331,7 +334,7 @@ const Room = ({
                 Name:{' '}
                 <input
                   className="AddPersonContainerinnerInput"
-                  placeholder="Enter name of client"
+                  placeholder="Enter name of tenant"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                 />
@@ -340,7 +343,7 @@ const Room = ({
                 Tel 1:{' '}
                 <input
                   className="AddPersonContainerinnerInput"
-                  placeholder="Enter Tel of client"
+                  placeholder="Enter Tel of tenant"
                   value={tel1}
                   onChange={(e) => setTel1(e.target.value)}
                 />
@@ -424,6 +427,33 @@ const Room = ({
                   Same
                 </button>
               </div>
+              <div className="AddPersonContainerinnerElement">
+      Payment cycle every:{' '}
+      <select
+        className="AddPersonContainerinnerInput"
+        style={{ width: '150px' }}
+        value={paymentCycle}
+        onChange={(e) => setPaymentCycle(e.target.value)}
+      >
+        <option value="30">30 days</option>
+        <option value="15">15 days</option>
+        <option value="7">7 days</option>
+        <option value="monthly">monthly</option>
+        <option value="weekly">weekly</option>
+        <option value="daily">daily</option>
+        <option value="custom">custom days</option>
+      </select>
+      {paymentCycle === 'custom' && (
+        <input
+          type="number"
+          className="AddPersonContainerinnerInput"
+          style={{ width: '100px', marginLeft: '10px' }}
+          placeholder="Enter days"
+          value={customDays}
+          onChange={(e) => setCustomDays(e.target.value)}
+        />
+      )}
+    </div>
             </div>
             <div className="BottomAddPersonContainer">
               <button
@@ -453,7 +483,7 @@ const Room = ({
             </div>
           </div>
         </div>
-        <div className="AddPersonContainer" style={{ top: '205px' }}>
+        <div className="PopOutContainer" style={{ top: '205px' }}>
           <div
             className="AddPersonContainerinner"
             style={{
@@ -528,6 +558,120 @@ const Room = ({
                 Close
               </button>
             </div>
+          </div>
+        </div>
+        <div
+          className="PopOutContainer"
+          style={{ top: '125px', left: '-545px' }}
+        >
+          <div
+            className="TimeLineMainContaner"
+            style={{
+              width: roomType.ShowPayTimeLine ? '850px' : '0px',
+              height: roomType.ShowPayTimeLine ? '150px' : '0px',
+              opacity: roomType.ShowPayTimeLine ? '1' : '0',
+            }}
+          >
+            <table
+              className="PaymentTimeline"
+              style={{
+                transform: 'scaleY(.5)',
+                position: 'relative',
+                bottom: '64px',
+              }}
+            >
+              <tr className="PastTimeline" style={{ transform: 'scaleY(2)' }}>
+                {visiblePayments.map((payment) => (
+                  <td key={payment.Day}>
+                    {new Date(payment.Day).toLocaleDateString()}
+                  </td>
+                ))}
+              </tr>
+              <tr className="FutureTimeline">
+                {visiblePayments.map((payment) => (
+                  <td
+                    key={payment.Day}
+                    style={{
+                      padding: '0px',
+                      height: '20px',
+                    }}
+                  ></td>
+                ))}
+              </tr>
+              <tr className="FutureTimeline">
+                {visiblePayments.map((payment) => (
+                  <td
+                    key={payment.Day}
+                    style={{
+                      padding: '0px',
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: '5px',
+                        background: 'black',
+                        height: '37px',
+                        marginLeft: 'calc(50% - 4px)',
+                      }}
+                    ></div>
+                  </td>
+                ))}
+              </tr>
+              <tr className="FutureTimeline" style={{ background: 'black' }}>
+                {visiblePayments.map((payment) => (
+                  <td key={payment.Day}></td>
+                ))}
+              </tr>
+              <tr className="FutureTimeline">
+                {visiblePayments.map((payment) => (
+                  <td
+                    key={payment.Day}
+                    style={{
+                      padding: '0px',
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: '5px',
+                        background: 'black',
+                        height: '37px',
+                        marginLeft: 'calc(50% - 4px)',
+                      }}
+                    ></div>
+                  </td>
+                ))}
+              </tr>
+              <tr className="FutureTimeline">
+                {visiblePayments.map((payment) => (
+                  <td
+                    key={payment.Day}
+                    style={{
+                      padding: '0px',
+                      height: '20px',
+                    }}
+                  ></td>
+                ))}
+              </tr>
+              <tr style={{ transform: 'scaleY(2)' }}>
+                {visiblePayments.map((payment) => (
+                  <td
+                    key={payment.Day}
+                    className={payment.Paid ? 'Paid' : 'Due'}
+                  >
+                    {payment.Paid ? (
+                      <p style={{ color: 'green' }}>Paid ✅</p>
+                    ) : (
+                      <button
+                        className="PayButton"
+                        onClick={() => pay(payment)}
+                      >
+                        Pay
+                      </button>
+                    )}
+                  </td>
+                ))}
+              </tr>
+            </table>
           </div>
         </div>
       </div>

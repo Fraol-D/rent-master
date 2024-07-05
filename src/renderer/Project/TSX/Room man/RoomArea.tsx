@@ -1,32 +1,32 @@
 import React, { useState } from 'react';
-import Room from './Project/TSX/Room';
-import './Project/CSS/RoomArea.css';
-import AddIcon from './assets/icons8-add-100.png';
-import saveIcon from './assets/icons8-save-100(3).png';
-import deleteIcon from './assets/icons8-delete-100(1).png';
-import editIcon from './assets/icons8-edit-100.png';
-import OnStateIcon from './assets/On.png';
-import OFFStateIcon from './assets/OFF.png';
-import Xicon from './assets/X.png';
-import InsertImageIcon from './assets/Insert Image Pic.png';
-import dropDownImg from './assets/icons8-drop-down-100.png';
-import SortIcon from './assets/icons8-sort-100.png';
-import SelectIcon from './assets/icons8-select-100(2).png';
-import SelectIconfill from './assets/icons8-select-100(1).png';
-import SettingIcon from './assets/icons8-settings-480.png';
-import ProductsIcon from './assets/icons8-products-100.png';
-import WarningRed from './assets/icons8-general-warning-sign-100.png';
-import WarningYellow from './assets/icons8-general-warning-sign-100(1).png';
-import ShowPasswordIcon from './assets/Account Managment/icons8-show-password-100.png';
-import HidePasswordIcon from './assets/Account Managment/icons8-hide-password-100.png';
-import PasswordIcon from './assets/Account Managment/icons8-password-100.png';
-import UsernameIcon from './assets/Account Managment/icons8-name-100.png';
-import PasswordGearIcon from './assets/Account Managment/icons8-password-100-gear.png';
-import UsernameGearIcon from './assets/Account Managment/icons8-name-100-Gear.png';
-import AccountImage from './assets/Account Managment/Administrator Male.png';
-import AccountImageAdmin from './assets/Account Managment/Admin Settings Male.png';
-import StastistcsIcon from './assets/icons8-statistic-100(2).png';
-import ArrowIcon2 from './assets/icons8-forward-100.png';
+import Room from './Room';
+import '../../CSS/RoomArea.css';
+import AddIcon from '../../../assets/icons8-add-100.png';
+import saveIcon from '../../../assets/icons8-save-100(3).png';
+import deleteIcon from '../../../assets/icons8-delete-100(1).png';
+import editIcon from '../../../assets/icons8-edit-100.png';
+import OnStateIcon from '../../../assets/On.png';
+import OFFStateIcon from '../../../assets/OFF.png';
+import Xicon from '../../../assets/X.png';
+import InsertImageIcon from '../../../assets/Insert Image Pic.png';
+import dropDownImg from '../../../assets/icons8-drop-down-100.png';
+import SortIcon from '../../../assets/icons8-sort-100.png';
+import SelectIcon from '../../../assets/icons8-select-100(2).png';
+import SelectIconfill from '../../../assets/icons8-select-100(1).png';
+import SettingIcon from '../../../assets/icons8-settings-480.png';
+import ProductsIcon from '../../../assets/icons8-products-100.png';
+import WarningRed from '../../../assets/icons8-general-warning-sign-100.png';
+import WarningYellow from '../../../assets/icons8-general-warning-sign-100(1).png';
+import ShowPasswordIcon from '../../../assets/Account Managment/icons8-show-password-100.png';
+import HidePasswordIcon from '../../../assets/Account Managment/icons8-hide-password-100.png';
+import PasswordIcon from '../../../assets/Account Managment/icons8-password-100.png';
+import UsernameIcon from '../../../assets/Account Managment/icons8-name-100.png';
+import PasswordGearIcon from '../../../assets/Account Managment/icons8-password-100-gear.png';
+import UsernameGearIcon from '../../../assets/Account Managment/icons8-name-100-Gear.png';
+import AccountImage from '../../../assets/Account Managment/Administrator Male.png';
+import AccountImageAdmin from '../../../assets/Account Managment/Admin Settings Male.png';
+import StastistcsIcon from '../../../assets/icons8-statistic-100(2).png';
+import ArrowIcon2 from '../../../assets/icons8-forward-100.png';
 type FilterOption = {
   key: string;
   value: any;
@@ -45,10 +45,15 @@ declare global {
     roomIndex: number;
     status: 'Empty' | 'Taken';
     price: number;
+    AgreedPrice: number;
+    PaymentCycleType: number;
+    PaymentCycleCustomeDays: number;
     squareMeters: number;
     Person?: Person;
+
     AddPersonState?: boolean;
     ViewAgreement?: boolean;
+    ShowPayTimeLine?: boolean;
     AllRoomPayInfo: AllRoomPayInfo;
   };
   type Person = {
@@ -105,7 +110,7 @@ const RoomArea = ({ RoomList, setRoomList }: RoomAreaProps) => {
     propertyName: string,
     newValue: any
   ) => {
-    setRoomList((prevRoomList: RoomType[]) => {
+    setRoomList((prevRoomList: any) => {
       const updatedRoomList = prevRoomList.map((room: RoomType) => {
         if (room.id === roomId) {
           return {

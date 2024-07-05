@@ -1,9 +1,9 @@
 import { MemoryRouter as Router, Routes, Route } from 'react-router-dom';
 import icon from '../../assets/icon.svg';
 import './App.css';
-import RoomArea from './RoomArea';
+import RoomArea from './Project/TSX/Room man/RoomArea';
 import { useState } from 'react';
-import NavBar from './Project/TSX/NavBar';
+import NavBar from './Project/TSX/Navbar/NavBar';
 import LogoImage from './assets/Insert Image Pic.png';
 
 function Hello() {
@@ -72,33 +72,6 @@ function Hello() {
       AllRoomPayInfo: { RoomPayInfo: [] },
       squareMeters: 50,
     },
-    {
-      id: '8',
-      roomIndex: 1,
-      floor: 2,
-      status: 'Empty',
-      price: 11000,
-      AllRoomPayInfo: { RoomPayInfo: [] },
-      squareMeters: 50,
-    },
-    {
-      id: '9',
-      roomIndex: 2,
-      floor: 2,
-      status: 'Empty',
-      price: 18000,
-      AllRoomPayInfo: { RoomPayInfo: [] },
-      squareMeters: 50,
-    },
-    {
-      id: '10',
-      roomIndex: 3,
-      floor: 2,
-      status: 'Empty',
-      price: 29000,
-      AllRoomPayInfo: { RoomPayInfo: [] },
-      squareMeters: 50,
-    },
   ]);
   const [ComponyLogo, setComponyLogo] = useState(LogoImage);
   const [ComponyName, setComponyName] = useState('');
@@ -109,14 +82,14 @@ function Hello() {
   };
   return (
     <>
-      <NavBar
+      {/** <NavBar
         ProfileState={ProfileEditState}
         SetEditButtonState={setProfileEditState}
         UpdateImageForLogo={handleUpdateImage}
         Image={ComponyLogo}
         ShopName={ComponyName}
         setShopName={setComponyName}
-      ></NavBar>
+      ></NavBar> */}
       <RoomArea RoomList={RoomList} setRoomList={setRoomList} />
     </>
   );

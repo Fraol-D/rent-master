@@ -9,8 +9,8 @@
 }
 .SideBarContainer {
   width: 315px;
-  border-radius: 10px;
-  background-color: #333333;
+  border-radius: 5px;
+  background-color: #2e2f30;
   color: white;
 }
 .MAINCONTAINER {
@@ -20,9 +20,9 @@
 }
 .SecondNavBarContainer {
   position: absolute;
-  background-color: #333333;
+  background-color: #2e2f30;
   left: 558px;
-  border-radius: 10px;
+  border-radius: 5px;
   height: 45px;
   margin-top: 5px;
   display: flex;
