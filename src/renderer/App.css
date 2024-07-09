@@ -20,16 +20,20 @@ body {
   background: #222324;
 }
 button {
-  opacity: 0.9;
-  border: none;
+
   border-radius: 5px;
-  padding: 0px;
+  padding: 5px;
+  background-color: #454959;
+color: white;
+  border: .5px solid white;
   margin: 0px;
+  transition: all .2s;
 }
 
 button:hover {
   transform: scale(1.05);
-  opacity: 1;
+  border: .5px solid black;
+  
 }
 
 li {
@@ -58,7 +62,40 @@ a:hover {
 }
 html {
   height: 100%;
+  overflow: hidden;
 }
+body {
+  overflow: hidden;
+}
+
 #root {
   height: 100%;
+}
+::-webkit-scrollbar {
+  background-color: var(--scrollbar-background);
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar-thumb);
+  border-radius: 5px;
+  transition: all 1s;
+  border: 1px solid #00e1ff;
+}
+
+::-webkit-scrollbar-corner {
+  background-color: var(--scrollbar-corner);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--scrollbar-thumb-hover);
+  border-radius: 5px;
+  transition: all 1s;
+}
+::-webkit-scrollbar-thumb:active {
+  background-color: var(--scrollbar-thumb-active);
+  border-radius: 5px;
+  transition: all 1s;
+  border: 1px solid #00e1ff;
 }

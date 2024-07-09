@@ -8,10 +8,13 @@
   overflow-y: auto;
 }
 .SideBarContainer {
-  width: 315px;
+  width: 290px;
   border-radius: 5px;
   background-color: #2e2f30;
   color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 .MAINCONTAINER {
   width: 100%;
@@ -19,43 +22,68 @@
   height: 100%;
 }
 .SecondNavBarContainer {
-  position: absolute;
   background-color: #2e2f30;
-  left: 558px;
+
   border-radius: 5px;
   height: 45px;
-  margin-top: 5px;
+
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1;
+}
+.TenantSearchBarContainer {
+  width: 100%;
 }
 .SearchBarContainer {
   margin-left: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 100%;
+  height: 80px;
   color: white;
-  width: 250px;
+  width: 100%;
+  flex-direction: column;
+}
+.RoomAndFloorContainer {
+  display: flex;
+  flex-direction: row;
+  margin-top: 10px;
+  width: 100%;
+  justify-content: center;
 }
 .FloorSearchBar {
   width: 50px;
-  height: 30px;
-  border-radius: 10px;
-  margin-right: 5px;
+  height: 25px;
+  margin-right: 20px;
+  border-radius: 5px;
+  background-color: #454959;
   font-size: 15px;
+  color: white;
+  border: 1px solid grey;
+}
+.TenantSearchBar {
+  width: 140px;
+  height: 25px;
+  background-color: #454959;
+  font-size: 15px;
+  border-radius: 5px;
+  border: 1px solid grey;
+  color: white;
 }
 .RoomSearchBar {
   width: 50px;
-  height: 30px;
-  border-radius: 10px;
+  height: 25px;
+  border-radius: 5px;
+  background-color: #454959;
   font-size: 15px;
+  color: white;
+  border: 1px solid grey;
 }
 .sort-button-img {
   width: 35px;
   transition: all 0.2s;
-  background-color: black;
+
   border-radius: 10px;
 }
 
@@ -69,39 +97,53 @@
 .sort-drop {
   margin: 0;
   width: 107px;
-  height: 20px;
+  height: 35px;
   left: -10px;
   position: relative;
   padding-right: 0px;
   border-radius: 5px;
   background: lightgrey;
   padding-left: 1px;
-  background-color: rgb(0 0 0);
+  background-color: #454959;
   border: none;
   border-left: none;
-  color: white;
+  color: lab(100 0 -0.03);
 }
 .sort-button {
   margin-left: 10px;
   width: 50px;
   height: 50px;
 
-  border-radius: 10px;
-  background-color: #008ab800;
+  border-radius: 5px;
+  background-color: #45495900;
   font-weight: bolder;
 
   border-right: none;
 }
+.filter-drop {
+  background-color: #454959;
+  border: 1px solid grey;
+  color: white;
+  border-radius: 5px;
+}
 .AdvanceRoomFinding {
-  width: 450px;
-  height: 40px;
+  width: 100%;
   color: white;
   display: flex;
+  flex-direction: column;
 }
 .AdvanceRoomFindingInput {
   width: 70px;
+  height: 30px;
+  background-color: #454959;
+  border: 1px solid grey;
+  border-radius: 5px;
+  color: white;
 }
 .AdvanceRoomFindingINPUTCONTAINER {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 .FilterOptions {
   display: flex;
@@ -109,8 +151,107 @@
   top: 45px;
   width: 1300px;
   align-items: center;
-  color: #000a8582;
+  color: white;
   font-size: 14px;
   justify-content: center;
+}
+.BottomNavBarMain {
+  width: 100%;
+
+  height: 1px;
+  display: flex;
+  justify-content: center;
+}
+.BottomNavBar {
+  height: 45px;
+  position: relative;
+  bottom: 60px;
+  border-radius: 5px;
+  box-shadow: 3px 3px 0px 0px #00000073;
+  width: 320px;
+  background-color: #454959;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-evenly;
+  align-items: center;
+}
+.SideBarRoomPageTopPart {
+  width: 100%;
+  overflow: hidden auto;
+}
+.SideBarRoomPageBottomPartAddRoom {
+  background-color: #2e2f30;
+  box-shadow: 3px 3px 0px 0px #00000073;
+  border-top: 1px solid white;
+  width: 100%;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  justify-content: flex-start;
+  overflow-y: auto;
+}
+.AddANewRoomInputsSmall {
+  width: 60px;
+  background-color: #454959;
+  border: 1px solid grey;
+  color: white;
+  border-radius: 5px;
+}
+.AddANewRoomSelectMid {
+  width: 70px;
+  background-color: #454959;
+  border: 1px solid grey;
+  color: white;
+  border-radius: 5px;
+}
+.AddANewRoomInputsMid {
+  width: 120px;
+  background-color: #454959;
+  border: 1px solid grey;
+  color: white;
+  border-radius: 5px;
+}
+.AddANewRoomSpecObjectMainContainer {
+  background-color: #454959;
+  padding: 5px;
+  border: 1px solid grey;
+  border-radius: 5px;
+  margin-bottom: 5px;
+}
+.RoomSpecficationsMainContainer {
+  background-color: #191919;
+  padding: 10px;
+  padding-top: 5px;
+  border-radius: 5px;
+}
+.HorizontalButton {
+  border-radius: 5px;
+  padding: 5px;
+  background-color: #454959;
+  color: white;
+  border: 0.5px solid white;
+  margin-bottom: 5px;
+  transition: all 0.2s;
+  width: 90%;
+  height: 25px;
+  display: flex;
+  justify-content: center;
+}
+.AddaNewRoomBottomContianer {
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: center;
+  border-top: 1px solid white;
+  border-radius: 5px;
+  padding-top: 5px;
+  width: 100%;
+  height: 100px;
+  margin-top: 30px;
+}
+.AddaNewRoomRowObject {
+  margin-bottom: 10px;
+  display: flex;
+
 }
 /**/

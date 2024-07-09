@@ -1,19 +1,10 @@
-/* eslint global-require: off, no-console: off, promise/always-return: off */
-
-/**
- * This module executes inside of electron's main process. You can start
- * electron renderer process from here and communicate with the other processes
- * through IPC.
- *
- * When running `npm run build` or `npm run build:main`, this file is compiled to
- * `./src/main.js` using webpack. This gives us some performance wins.
- */
 import path from 'path';
 import { app, BrowserWindow, shell, ipcMain } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
+//const nodemailer = require('nodemailer');
 
 class AppUpdater {
   constructor() {
@@ -101,24 +92,15 @@ const createWindow = async () => {
   const menuBuilder = new MenuBuilder(mainWindow);
   menuBuilder.buildMenu();
 
-  // Open urls in the user's browser
   mainWindow.webContents.setWindowOpenHandler((edata) => {
     shell.openExternal(edata.url);
     return { action: 'deny' };
   });
 
-  // Remove this if your app does not use auto updates
-  // eslint-disable-next-line
   new AppUpdater();
 };
 
-/**
- * Add event listeners...
- */
-
 app.on('window-all-closed', () => {
-  // Respect the OSX convention of having the application in memory even
-  // after all windows have been closed
   if (process.platform !== 'darwin') {
     app.quit();
   }
@@ -129,9 +111,519 @@ app
   .then(() => {
     createWindow();
     app.on('activate', () => {
-      // On macOS it's common to re-create a window in the app when the
-      // dock icon is clicked and there are no other windows open.
       if (mainWindow === null) createWindow();
     });
+    ipcMain.on('renderer-to-main', (event, message) => {
+      console.log('Message from renderer process:', message);
+    });
+   /* ipcMain.on('SendVerificationCode', (event, message) => {
+      console.log('Send verfication code:', message.to, message.code);
+      async function sendVerificationEmail(to: any, code: any) {
+        let transporter = nodemailer.createTransport({
+          host: 'mail.markethubet.com',
+          port: 465,
+          secure: true, // true for 465, false for other ports
+          auth: {
+            user: 'verify@markethubet.com',
+            pass: 'Plp5H9:Li(UO#6[y+26E',
+          },
+        });
+
+        let mailOptions = {
+          from: 'verify@markethubet.com',
+          to: to,
+          subject: 'Email Verification',
+          html: `
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>Email Verification</title>
+              <style>
+             
+              body,
+              h1,
+              p {
+                margin: 0;
+                padding: 0;
+              }
+          
+              body {
+                font-family: Arial, sans-serif;
+                line-height: 1.6;
+                background-color: #f5f5f5;
+              }
+          
+              .container {
+                max-width: 600px;
+                margin: 20px auto;
+                padding: 20px;
+                background-color: #ffffff;
+                border-radius: 8px;
+                box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+              }
+          
+              h1 {
+                font-size: 24px;
+                color: #333333;
+                margin-bottom: 10px;
+              }
+          
+              p {
+                font-size: 16px;
+                color: #666666;
+                margin-bottom: 20px;
+              }
+          
+              .verification-code {
+                margin-bottom: 30px;
+              }
+          
+              .btn {
+                display: inline-block;
+                padding: 10px 20px;
+                background-color: #007bff;
+                color: #ffffff;
+                text-decoration: none;
+                border-radius: 4px;
+              }
+          
+              .footer {
+                margin-top: 20px;
+                border-top: 1px solid #cccccc;
+                padding-top: 20px;
+              }
+          
+              .footer p {
+                margin-bottom: 10px;
+              }
+          
+              .footer a {
+                color: #007bff;
+                text-decoration: none;
+                margin-right: 10px;
+              }
+            </style>
+            </head>
+            <body>
+              <div class="container">
+                <h1>Email Verification</h1>
+                <p>Thank you for signing up with MarketHub. Please verify your email address to complete your registration.</p>
+                <p class="verification-code"><strong>Your Verification Code:</strong> <span style="font-weight: bold; font-size: 18px;">${code}</span></p>
+                <a href="#" class="btn">Verify Email</a>
+                <div class="footer">
+                  <p>Contact us at <a href="mailto:support@markethubet.com">support@markethubet.com</a> for assistance.</p>
+                  <p>Visit our website: <a href="https://www.markethubet.com">www.markethubet.com</a></p>
+                </div>
+              </div>
+            </body>
+            </html>
+          `,
+        };
+
+        try {
+          let info = await transporter.sendMail(mailOptions);
+          console.log('Email sent: ' + info.response);
+        } catch (error) {
+          console.error('Error while sending email:', error);
+        }
+      }
+      sendVerificationEmail(message.to, message.code);
+    });*/
   })
   .catch(console.log);
+
+// Sending verification codes
+
+// Server
+const express = require('express');
+const bodyParser = require('body-parser');
+const cors = require('cors');
+const sqlite3 = require('sqlite3').verbose();
+
+const fs = require('fs');
+
+const appDB = express();
+const port = 8100;
+const appname = 'BMS';
+
+appDB.use(cors({ origin: '*' }));
+appDB.use(bodyParser.urlencoded({ extended: false }));
+appDB.use(bodyParser.json());
+
+const apiKey = 'HH(CzZuQoW@tB$By)e';
+
+
+// Function to validate table names
+const validateTableName = (tableName: string) => {
+  const validTables = [
+    'users',
+    'rooms',
+    'room_specifications',
+    'tenants',
+    'room_pay_info'
+  ];
+  return validTables.includes(tableName);
+};
+
+// Table structures based on the provided types
+const tableStructures = [
+  {
+    name: 'users',
+    columns: [
+      'id TEXT PRIMARY KEY',
+      'Allowed INTEGER NOT NULL',
+      'email TEXT NOT NULL',
+      'phoneNumber TEXT NOT NULL',
+      'fullName TEXT NOT NULL',
+      'password TEXT NOT NULL',
+      'companyName TEXT NOT NULL',
+      'maxNumberOfBranches INTEGER NOT NULL DEFAULT 3',
+      'packageType TEXT NOT NULL DEFAULT "Free"',
+      'TrailEndDate INTEGER NOT NULL DEFAULT 1',
+    ],
+  },
+  {
+    name: 'rooms',
+    columns: [
+      'id TEXT PRIMARY KEY',
+      'floor INTEGER NOT NULL',
+      'roomIndex INTEGER NOT NULL',
+      'status TEXT NOT NULL',
+      'price REAL NOT NULL',
+      'AgreedPrice REAL NOT NULL',
+      'PaymentCycleType TEXT NOT NULL',
+      'PaymentCycleCustomeDays INTEGER',
+      'squareMeters REAL NOT NULL',
+      'tenantId TEXT',
+      'AddTenantState BOOLEAN',
+      'ViewAgreement BOOLEAN',
+      'ShowPayTimeLine BOOLEAN'
+    ],
+  },
+  {
+    name: 'room_specifications',
+    columns: [
+      'id TEXT PRIMARY KEY',
+      'roomId TEXT NOT NULL',
+      'Detail TEXT NOT NULL',
+      'Number REAL',
+      'type TEXT NOT NULL',
+      'Boolean BOOLEAN',
+      'FOREIGN KEY(roomId) REFERENCES rooms(id)'
+    ],
+  },
+  {
+    name: 'tenants',
+    columns: [
+      'id TEXT PRIMARY KEY',
+      'name TEXT NOT NULL',
+      'phoneNumber TEXT NOT NULL',
+      'phoneNumber2 TEXT',
+      'email TEXT',
+      'SelectedAgreement TEXT NOT NULL',
+      'RentingOrOut BOOLEAN NOT NULL',
+      'startTime INTEGER NOT NULL', // Assuming storing as UNIX timestamp
+      'endTime INTEGER',
+      'agreedPrice REAL NOT NULL'
+    ],
+  },
+  {
+    name: 'room_pay_info',
+    columns: [
+      'id TEXT PRIMARY KEY',
+      'roomId TEXT NOT NULL',
+      'Day INTEGER NOT NULL', // Assuming storing as UNIX timestamp
+      'Paid BOOLEAN NOT NULL',
+      'FOREIGN KEY(roomId) REFERENCES rooms(id)'
+    ],
+  },
+  // Add more tables here as needed
+];
+
+
+// Function to initialize tables
+const initializeTables = (db: any) => {
+  tableStructures.forEach((table: { name: any; columns: any }) => {
+    const { name, columns } = table;
+    db.get(
+      `SELECT name FROM sqlite_master WHERE type='table' AND name=?`,
+      [name],
+      (err: any, row: any) => {
+        if (err) {
+          console.error(`Error checking if table ${name} exists:`, err);
+        } else if (row) {
+          console.log(
+            `Table ${name} already exists. Checking table structure.`
+          );
+          checkAndUpdateTableStructure(db, table);
+        } else {
+          const createTableQuery = `CREATE TABLE ${name} (${columns.join(
+            ', '
+          )})`;
+          db.run(createTableQuery, (err: any) => {
+            if (err) {
+              console.error(`Failed to create table ${name}`, err);
+            } else {
+              console.log(`Table ${name} initialized.`);
+            }
+          });
+        }
+      }
+    );
+  });
+};
+
+// Function to check and update table structure
+const checkAndUpdateTableStructure = (
+  db: any,
+  table: any,
+) => {
+  db.all(`PRAGMA table_info(${table.name})`, (error: any, rows: any[]) => {
+    if (error) {
+      console.error('Error checking table structure:', error);
+    } else {
+      const existingColumns = rows.map((row: { name: any }) => row.name);
+      const requiredColumns = table.columns.map(
+        (column: string) => column.split(' ')[0]
+      );
+      const missingColumns = requiredColumns.filter(
+        (column: any) => !existingColumns.includes(column)
+      );
+
+      if (missingColumns.length > 0) {
+        console.log(
+          `Table ${table.name} structure needs updating. Missing columns:`,
+          missingColumns
+        );
+        updateTableStructure(db, table, missingColumns);
+      } else {
+        console.log(`Table ${table.name} structure is up to date.`);
+      }
+    }
+  });
+};
+
+// Function to update table structure
+const updateTableStructure = (
+  db:any,
+  table: { columns: any[]; name: any },
+  missingColumns: any[]
+) => {
+  db.serialize(() => {
+    db.run(`BEGIN TRANSACTION`);
+    missingColumns.forEach((column: any) => {
+      const columnDefinition = table.columns.find((col: string) =>
+        col.startsWith(column)
+      );
+      db.run(
+        `ALTER TABLE ${table.name} ADD COLUMN ${columnDefinition}`,
+        (error: any) => {
+          if (error) {
+            console.error(
+              `Error adding column ${column} to table ${table.name}:`,
+              error
+            );
+          } else {
+            console.log(`Added column ${column} to table ${table.name}`);
+          }
+        }
+      );
+    });
+    db.run(`COMMIT`);
+    console.log(`Table ${table.name} structure updated successfully.`);
+  });
+};
+appDB.get(
+  '/:tableName/:sqlCode',
+  (
+    req: { params: { tableName: any; sqlCode: any } },
+    res: {
+      status: (arg0: number) => {
+        (): any;
+        new (): any;
+        send: { (arg0: string): any; new (): any };
+      };
+      send: (arg0: any) => void;
+      sendStatus: (arg0: number) => void;
+    }
+  ) => {
+    const { tableName, sqlCode } = req.params;
+    if (!validateTableName(tableName)) {
+      return res.status(400).send('Invalid table name.');
+    }
+    const query = `SELECT * FROM ${tableName} ${sqlCode}`;
+    db.all(query, (error: any, rows: any) => {
+      if (!error) {
+        res.send(rows);
+      } else {
+        console.error(error);
+        res.sendStatus(500);
+      }
+    });
+  }
+);
+
+appDB.get(
+  '/:tableName/:id',
+  (
+    req: { params: { tableName: any; id: any } },
+    res: {
+      status: (arg0: number) => {
+        (): any;
+        new (): any;
+        send: { (arg0: string): any; new (): any };
+      };
+      send: (arg0: any) => void;
+      sendStatus: (arg0: number) => void;
+    }
+  ) => {
+    const { tableName, id } = req.params;
+    if (!validateTableName(tableName)) {
+      return res.status(400).send('Invalid table name.');
+    }
+    db.get(
+      `SELECT * FROM ${tableName} WHERE id = ?`,
+      [id],
+      (error: any, row: any) => {
+        if (!error) {
+          res.send(row);
+        } else {
+          console.error(error);
+          res.sendStatus(500);
+        }
+      }
+    );
+  }
+);
+appDB.delete(
+  '/:tableName/:id',
+  (
+    req: { params: { tableName: any; id: any } },
+    res: {
+      status: (arg0: number) => {
+        (): any;
+        new (): any;
+        send: { (arg0: string): any; new (): any };
+      };
+      json: (arg0: { message: string }) => void;
+      sendStatus: (arg0: number) => void;
+    }
+  ) => {
+    const { tableName, id } = req.params;
+    if (!validateTableName(tableName)) {
+      return res.status(400).send('Invalid table name.');
+    }
+    db.run(
+      `DELETE FROM ${tableName} WHERE id = ?`,
+      [id],
+      function (error: any) {
+        if (!error) {
+          res.json({
+            message: `Record with id ${id} from table ${tableName} has been deleted.`,
+          });
+        } else {
+          console.error(error);
+          res.sendStatus(500);
+        }
+      }
+    );
+  }
+);
+
+appDB.post(
+  '/:tableName',
+  (
+    req: { params: { tableName: any }; body: any },
+    res: {
+      status: (arg0: number) => {
+        (): any;
+        new (): any;
+        send: { (arg0: string): any; new (): any };
+      };
+      json: (arg0: { message: string }) => void;
+      sendStatus: (arg0: number) => void;
+    }
+  ) => {
+    const { tableName } = req.params;
+    if (!validateTableName(tableName)) {
+      return res.status(400).send('Invalid table name.');
+    }
+    const params = req.body;
+    const placeholders = Object.keys(params)
+      .map(() => '?')
+      .join(',');
+    const columns = Object.keys(params).join(',');
+
+    db.run(
+      `INSERT INTO ${tableName} (${columns}) VALUES (${placeholders})`,
+      Object.values(params),
+      function (error: any) {
+        if (!error) {
+          res.json({ message: `New record added to ${tableName}.` });
+        } else {
+          console.error(error);
+          res.sendStatus(500);
+        }
+      }
+    );
+  }
+);
+
+appDB.put(
+  '/:tableName/:id/:columnName',
+  (
+    req: {
+      params: { tableName: any; id: any; columnName: any };
+      body: { [x: string]: any };
+    },
+    res: {
+      status: (arg0: number) => {
+        (): any;
+        new (): any;
+        send: { (arg0: string): any; new (): any };
+      };
+      json: (arg0: { message: string }) => void;
+      sendStatus: (arg0: number) => void;
+    }
+  ) => {
+    const { tableName, id, columnName } = req.params;
+    if (!validateTableName(tableName)) {
+      return res.status(400).send('Invalid table name.');
+    }
+    const newValue = req.body[columnName];
+
+    db.run(
+      `UPDATE ${tableName} SET ${columnName} = ? WHERE id = ?`,
+      [newValue, id],
+      function (error: any) {
+        if (!error) {
+          res.json({
+            message: `Record with id ${id} in table ${tableName} has been updated.`,
+          });
+        } else {
+          console.error(error);
+          res.sendStatus(500);
+        }
+      }
+    );
+  }
+);
+
+const dbPath = path.join(process.env.APPDATA, appname, 'database.db');
+if (!fs.existsSync(path.dirname(dbPath))) {
+  fs.mkdirSync(path.dirname(dbPath), { recursive: true });
+}
+const db = new sqlite3.Database(dbPath, (err: { message: any }) => {
+  if (err) {
+    console.error('Database connection error:', err.message);
+  } else {
+    console.log('Connected to the SQLite database.');
+    initializeTables(db);
+  }
+});
+
+appDB.listen(port, () => {
+  console.log(`Express app listening on port ${port}`);
+});
