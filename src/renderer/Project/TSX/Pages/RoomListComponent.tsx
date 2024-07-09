@@ -14,7 +14,7 @@ export function RoomListComponent({
   updateRoomPropertyWithOutRefresh,
   roomPaymentInfoApi,
   isUpdatingTenantList,
-  setIsUpdatingTenantList,
+  setIsUpdatingTenantList,setSelectedEditRoomId
 }: any) {
   return (
     <>
@@ -75,7 +75,7 @@ export function RoomListComponent({
             <Room
             isUpdatingTenantList={isUpdatingTenantList}
             setIsUpdatingTenantList={setIsUpdatingTenantList}
-
+            setSelectedEditRoomId={setSelectedEditRoomId}
               roomPaymentInfoApi={roomPaymentInfoApi}
               roomType={room}
               updateRoomPropertyWithOutRefresh={

@@ -123,6 +123,7 @@ function Hello() {
     DeleteRoom = async (roomId: string) => {
       try {
         await deleteValue('rooms', roomId);
+        this.getRoomFromApi();
         /* Delete All room specifications */
       } catch (error: any) {
         console.log(error.message);

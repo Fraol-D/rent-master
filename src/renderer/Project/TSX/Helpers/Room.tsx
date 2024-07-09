@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import '../../CSS/Room.css';
 const { v4: uuidv4 } = require('uuid');
 import PaymentProgressBar from './PaymentProgressBar';
-
+import EditIcon from "../../../assets/assets/Dark mode/Editicon.png"
 const Room = ({
   roomType,
   updateRoomProperty,
@@ -14,7 +14,7 @@ const Room = ({
   updateRoomPropertyWithOutRefresh,
   roomPaymentInfoApi,
   isUpdatingTenantList,
-  setIsUpdatingTenantList,
+  setIsUpdatingTenantList,setSelectedEditRoomId
 }: any) => {
   const handleAddTenant = () => {
     turnOffAddTenantStateForAll();
@@ -499,7 +499,7 @@ const Room = ({
         }}
       >
         <div className="FirstLine">
-          <p className="FloorText">Floor {roomType.floor}</p>
+          <div style={{display:"flex", }}><p className="FloorText">Floor {roomType.floor}</p> <img onClick={()=>{setSelectedEditRoomId(roomType.id)}} src={EditIcon} style={{width:"23px",height:"23px",marginLeft:"10px"}} alt="" /></div>
           <p className="RoomText">Room {roomType.roomIndex}</p>
 
           <div className="StatusContainer">

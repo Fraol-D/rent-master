@@ -524,8 +524,7 @@ const MainPage = ({
     );
   };
 
-  const handleAddRoom = async () => {
-    console.log(AddRoomFormRoomSpecifications);
+  const handleAddRoom = async (continueAdding: boolean) => {
     const newRoom: RoomType = {
       id: '',
       floor: AddRoomFormFloor,
@@ -549,7 +548,7 @@ const MainPage = ({
       AllRoomPayInfo: { RoomPayInfo: [] },
     };
     console.log(newRoom);
-    setAddARoomState(false);
+
     //Add to sqlite database
     roomAPI.AddRoomApi(
       uuidv4(),
@@ -561,8 +560,37 @@ const MainPage = ({
       AddRoomFormSquareMeters,
       AddRoomFormRoomSpecifications
     );
-  };
 
+    //Reset the variables
+    ResetAddRoomForumVariables();
+
+    if (!continueAdding) setAddARoomState(false);
+  };
+  const handleCancelAddRoom = () => {
+    ResetAddRoomForumVariables();
+  };
+  const ResetAddRoomForumVariables = () => {
+    setAddARoomState(false);
+    setAddRoomFormFloor(0);
+    setAddRoomFormRoomIndex(0);
+    setAddRoomFormPrice(0);
+    setAddRoomFormPaymentCycleType('monthly');
+    setAddRoomFormPaymentCycleCustomDays(0);
+    setAddRoomFormSquareMeters(0);
+    setAddRoomFormRoomSpecifications([
+      { type: 'bool', Detail: '', Boolean: false, Number: 0, id: 'avx' },
+    ]);
+  };
+  const [SelectedEditRoomId, setSelectedEditRoomId] = useState('');
+  const [DeleteConfimation, setDeleteConfimation] = useState(false);
+  const handleDeleteFirst = () => {
+    if (!DeleteConfimation) setDeleteConfimation(true);
+    if (DeleteConfimation) {
+      roomAPI.DeleteRoom(SelectedEditRoomId);
+      setSelectedEditRoomId('');
+      setDeleteConfimation(false);
+    }
+  };
   return (
     <>
       <div className="MAINCONTAINER">
@@ -979,14 +1007,28 @@ const MainPage = ({
               </div>
             </div>
             <div className="AddaNewRoomBottomContianer">
-              <button className="HorizontalButton">Cancel</button>{' '}
-              <button className="HorizontalButton">
+              <button
+                className="HorizontalButton"
+                onClick={() => {
+                  handleCancelAddRoom();
+                }}
+              >
+                Cancel
+              </button>{' '}
+              <button
+                className="HorizontalButton"
+                onClick={() => {
+                  handleAddRoom(true);
+                  ResetAddRoomForumVariables();
+                  setAddARoomState(true);
+                }}
+              >
                 Add Room and continue adding
               </button>
               <button
                 className="HorizontalButton"
                 onClick={() => {
-                  handleAddRoom();
+                  handleAddRoom(false);
                 }}
               >
                 Add Room
@@ -994,7 +1036,26 @@ const MainPage = ({
             </div>
           </div>
         </div>
-
+        {SelectedEditRoomId && (
+          <>
+            <div
+              className="EditRoomScreenMainContainerOpacity"
+              onClick={() => {
+                setSelectedEditRoomId('');
+                setDeleteConfimation(false);
+              }}
+            ></div>{' '}
+            <div className="EditRoomScreenMainContainer">
+              <button
+                onClick={() => {
+                  handleDeleteFirst();
+                }}
+              >
+                {DeleteConfimation ? 'Confirm Delete' : 'Delete this room'}
+              </button>
+            </div>
+          </>
+        )}
         <div style={{ width: 'calc(100% - 290px)' }}>
           {SelectedPage === 'Rooms' && (
             <RoomListComponent
@@ -1014,6 +1075,7 @@ const MainPage = ({
               roomPaymentInfoApi={roomPaymentInfoApi}
               isUpdatingTenantList={isUpdatingTenantList}
               setIsUpdatingTenantList={setIsUpdatingTenantList}
+              setSelectedEditRoomId={setSelectedEditRoomId}
             />
           )}
           {SelectedPage === 'People' && (
