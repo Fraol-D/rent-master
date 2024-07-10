@@ -129,6 +129,15 @@ function Hello() {
         console.log(error.message);
       }
     };
+    RemoveTenant = async (roomId: string) => {
+      try {
+        await deleteValue('rooms', roomId);
+        this.getRoomFromApi();
+        /* Delete All room specifications */
+      } catch (error: any) {
+        console.log(error.message);
+      }
+    };
   }
   class RoomSpecificationApi {
     getRoomSpecificationApi = async (roomID: string) => {

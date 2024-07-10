@@ -3,6 +3,7 @@ import '../../CSS/Room.css';
 const { v4: uuidv4 } = require('uuid');
 import PaymentProgressBar from './PaymentProgressBar';
 import EditIcon from "../../../assets/assets/Dark mode/Editicon.png"
+import { getValuesWithSql } from 'Backend/localServerApis';
 const Room = ({
   roomType,
   updateRoomProperty,
@@ -484,7 +485,42 @@ const Room = ({
   >('New');
   const [SelectTenantSearch, setSelectTenantSearch] = useState('');
   const [SelectedTenantIdOnAdding, setSelectedTenantIdOnAdding] = useState('');
-
+  const handleTenantLeft = async () => {
+    // Find the tenant in the TenantList
+    const tenantIndex = TenantList.findIndex(
+      (tenant: any) => tenant.id === roomType.tenantId
+    );
+  
+    if (tenantIndex !== -1) {
+      // Update the tenant's RentingOrOut status to false
+      tenantAPI.EditTenantApi(roomType.tenantId, 'RentingOrOut', false);
+  
+      // Update the room's status to 'Empty'
+      updateRoomPropertyWithOutRefresh(roomType.id, 'status', 'Empty');
+  
+      // Clear the room's tenantId
+      updateRoomPropertyWithOutRefresh(roomType.id, 'tenantId', '');
+  
+      // Clear the room's AgreedPrice
+      updateRoomPropertyWithOutRefresh(roomType.id, 'AgreedPrice', 0);
+  
+      // Clear the room's PaymentCycleType
+      updateRoomPropertyWithOutRefresh(roomType.id, 'PaymentCycleType', '');
+  
+      // Clear the room's PaymentCycleCustomeDays
+      updateRoomPropertyWithOutRefresh(roomType.id, 'PaymentCycleCustomeDays', 0);
+  
+      const listOfPayments = await getValuesWithSql("room_pay_info", `WHERE roomId = '${roomType.id}'`);
+      for (let i = 0; i < listOfPayments.length; i++) {
+        const element = listOfPayments[i];
+        
+      }
+  
+      // Reset the room's AddTenantState
+      updateRoomProperty(roomType.id, 'AddTenantState', 0);
+      updateRoomProperty(roomType.id, 'ViewAgreement', 0);
+    }
+  };
   return (
     <>
       <div
@@ -722,7 +758,7 @@ const Room = ({
               width: roomType.AddTenantState ? '280px' : '0px',
               height: roomType.AddTenantState ? '280px' : '0px',
               opacity: roomType.AddTenantState ? '1' : '0',
-
+              userSelect: "text",
               fontSize: '17px',
             }}
           >
@@ -1116,6 +1152,7 @@ const Room = ({
               width: roomType.ViewAgreement ? '280px' : '0px',
               height: roomType.ViewAgreement ? '260px' : '0px',
               opacity: roomType.ViewAgreement ? '1' : '0',
+              userSelect: "text",
             }}
           >
             <div className="InnerAddtenantTop" style={{ width: '95%' }}>
@@ -1214,6 +1251,7 @@ const Room = ({
                   {roomType.PaymentCycleType}
                 </em>
               </div>
+              <button onClick={()=>{handleTenantLeft()}}>Leave</button>
             </div>
             <div className="BottomAddTenantContainer">
               <button
