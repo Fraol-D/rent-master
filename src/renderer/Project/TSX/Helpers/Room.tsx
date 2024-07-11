@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import '../../CSS/Room.css';
 const { v4: uuidv4 } = require('uuid');
 import PaymentProgressBar from './PaymentProgressBar';
-import EditIcon from "../../../assets/assets/Dark mode/Editicon.png"
+import EditIcon from '../../../assets/assets/Dark mode/Editicon.png';
 import { getValuesWithSql } from 'Backend/localServerApis';
 const Room = ({
   roomType,
@@ -15,7 +15,8 @@ const Room = ({
   updateRoomPropertyWithOutRefresh,
   roomPaymentInfoApi,
   isUpdatingTenantList,
-  setIsUpdatingTenantList,setSelectedEditRoomId
+  setIsUpdatingTenantList,
+  setSelectedEditRoomId,
 }: any) => {
   const handleAddTenant = () => {
     turnOffAddTenantStateForAll();
@@ -286,10 +287,10 @@ const Room = ({
         );
         interval = 30; // Default to 30 days if the payment cycle is invalid
       }
-      console.log("reached1")
+      console.log('reached1');
 
       for (let i = 0; i < 40; i++) {
-      console.log("reached")
+        console.log('reached');
 
         const paymentDay = getPaymentDay(
           interval,
@@ -297,7 +298,7 @@ const Room = ({
           i,
           paymentCycle
         );
-          
+
         roomPaymentInfoApi.addRoomPaymentApiWithOutRefresh(
           uuidv4(),
           roomType.id,
@@ -490,32 +491,38 @@ const Room = ({
     const tenantIndex = TenantList.findIndex(
       (tenant: any) => tenant.id === roomType.tenantId
     );
-  
+
     if (tenantIndex !== -1) {
       // Update the tenant's RentingOrOut status to false
       tenantAPI.EditTenantApi(roomType.tenantId, 'RentingOrOut', false);
-  
+
       // Update the room's status to 'Empty'
       updateRoomPropertyWithOutRefresh(roomType.id, 'status', 'Empty');
-  
+
       // Clear the room's tenantId
       updateRoomPropertyWithOutRefresh(roomType.id, 'tenantId', '');
-  
+
       // Clear the room's AgreedPrice
       updateRoomPropertyWithOutRefresh(roomType.id, 'AgreedPrice', 0);
-  
+
       // Clear the room's PaymentCycleType
       updateRoomPropertyWithOutRefresh(roomType.id, 'PaymentCycleType', '');
-  
+
       // Clear the room's PaymentCycleCustomeDays
-      updateRoomPropertyWithOutRefresh(roomType.id, 'PaymentCycleCustomeDays', 0);
-  
-      const listOfPayments = await getValuesWithSql("room_pay_info", `WHERE roomId = '${roomType.id}'`);
+      updateRoomPropertyWithOutRefresh(
+        roomType.id,
+        'PaymentCycleCustomeDays',
+        0
+      );
+
+      const listOfPayments = await getValuesWithSql(
+        'room_pay_info',
+        `WHERE roomId = '${roomType.id}'`
+      );
       for (let i = 0; i < listOfPayments.length; i++) {
         const element = listOfPayments[i];
-        
       }
-  
+
       // Reset the room's AddTenantState
       updateRoomProperty(roomType.id, 'AddTenantState', 0);
       updateRoomProperty(roomType.id, 'ViewAgreement', 0);
@@ -535,7 +542,17 @@ const Room = ({
         }}
       >
         <div className="FirstLine">
-          <div style={{display:"flex", }}><p className="FloorText">Floor {roomType.floor}</p> <img onClick={()=>{setSelectedEditRoomId(roomType.id)}} src={EditIcon} style={{width:"23px",height:"23px",marginLeft:"10px"}} alt="" /></div>
+          <div style={{ display: 'flex' }}>
+            <p className="FloorText">Floor {roomType.floor}</p>{' '}
+            <img
+              onClick={() => {
+                setSelectedEditRoomId(roomType.id);
+              }}
+              src={EditIcon}
+              style={{ width: '23px', height: '23px', marginLeft: '10px' }}
+              alt=""
+            />
+          </div>
           <p className="RoomText">Room {roomType.roomIndex}</p>
 
           <div className="StatusContainer">
@@ -758,7 +775,7 @@ const Room = ({
               width: roomType.AddTenantState ? '280px' : '0px',
               height: roomType.AddTenantState ? '280px' : '0px',
               opacity: roomType.AddTenantState ? '1' : '0',
-              userSelect: "text",
+              userSelect: 'text',
               fontSize: '17px',
             }}
           >
@@ -1152,7 +1169,7 @@ const Room = ({
               width: roomType.ViewAgreement ? '280px' : '0px',
               height: roomType.ViewAgreement ? '260px' : '0px',
               opacity: roomType.ViewAgreement ? '1' : '0',
-              userSelect: "text",
+              userSelect: 'text',
             }}
           >
             <div className="InnerAddtenantTop" style={{ width: '95%' }}>
@@ -1251,7 +1268,13 @@ const Room = ({
                   {roomType.PaymentCycleType}
                 </em>
               </div>
-              <button onClick={()=>{handleTenantLeft()}}>Leave</button>
+              <button
+                onClick={() => {
+                  handleTenantLeft();
+                }}
+              >
+                Leave
+              </button>
             </div>
             <div className="BottomAddTenantContainer">
               <button
@@ -1284,17 +1307,8 @@ const Room = ({
           >
             <PaymentProgressBar
               paymentData={roomType.AllRoomPayInfo.RoomPayInfo || []}
-              setPaymentData={(
-                newPaymentData: import('c:/Users/chris/Documents/Projects APPS ---------/Building managment/BMS/src/renderer/Project/TSX/Helpers/PaymentProgressBar').RoomPayInfo[]
-              ) =>
-                updateRoomProperty(roomType.id, 'AllRoomPayInfo', {
-                  RoomPayInfo: newPaymentData.map((payInfo: any) => ({
-                    id: payInfo.id,
-                    roomId: payInfo.roomId,
-                    ...payInfo,
-                  })),
-                })
-              }
+              roomPaymentInfoApi={roomPaymentInfoApi}
+              roomType={roomType}
               agreedPrice={roomType.AgreedPrice}
             ></PaymentProgressBar>
           </div>

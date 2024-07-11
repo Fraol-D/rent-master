@@ -8,13 +8,19 @@ export type RoomPayInfo = {
 };
 
 interface Props {
-    paymentData: RoomPayInfo[];
-    setPaymentData: (newPaymentData: RoomPayInfo[]) => void;
-  agreedPrice:number;
+  paymentData: RoomPayInfo[];
+
+  agreedPrice: number;
+  roomType: RoomType;
+  roomPaymentInfoApi: any;
 }
 
-const PaymentProgressBar: React.FC<Props> = ({ paymentData, setPaymentData,agreedPrice }) => {
-
+const PaymentProgressBar: React.FC<Props> = ({
+  paymentData,
+  roomPaymentInfoApi,
+  agreedPrice,
+  roomType,
+}) => {
   const today = new Date().getTime();
   const svgRef = useRef<SVGSVGElement | null>(null);
   const paragraphRef = useRef<HTMLParagraphElement | null>(null);
@@ -199,16 +205,16 @@ const PaymentProgressBar: React.FC<Props> = ({ paymentData, setPaymentData,agree
         .style('font-size', '14')
         .style('cursor', 'pointer')
         .text((d: { Paid: boolean }) => (d.Paid ? 'Paid' : 'Pay'))
-        .on('click', (event: any, d: { Day: number }) => {
+        .on('click', (event: any, d: any) => {
           const updatedData = paymentData.map((item) => {
             if (item.Day === d.Day) {
               return { ...item, Paid: true };
             }
             return item;
           });
-          setPaymentData(updatedData);
+          roomPaymentInfoApi.editRoomPaymentApi(d.id, 'Paid', true);
         });
-        const payButtons2 = svg
+      const payButtons2 = svg
         .selectAll('text2.pay-button')
         .data(paymentData)
         .enter()
@@ -233,32 +239,35 @@ const PaymentProgressBar: React.FC<Props> = ({ paymentData, setPaymentData,agree
         })
         .style('font-size', '12')
         .style('cursor', 'pointer')
-        .text(agreedPrice+"$ X")
-        .on('click', (event: any, d: { Day: number }) => {
+        .text(agreedPrice.toLocaleString() + '$ X')
+        .on('click', (event: any, d: any) => {
           const updatedData = paymentData.map((item) => {
             if (item.Day === d.Day) {
-              if(item.Paid){
+              if (item.Paid) {
                 return { ...item, Paid: false };
-              }
-              else{
+              } else {
                 return { ...item, Paid: true };
               }
-             
             }
             return item;
           });
-          setPaymentData(updatedData);
+
+          if (d.Paid) {
+            roomPaymentInfoApi.editRoomPaymentApi(d.id, 'Paid', false);
+          } else {
+            roomPaymentInfoApi.editRoomPaymentApi(d.id, 'Paid', true);
+          }
         });
 
       // Update payment status on click
-      paymentCircles.on('click', (event: any, d: { Day: number }) => {
+      paymentCircles.on('click', (event: any, d: any) => {
         const updatedData = paymentData.map((item) => {
           if (item.Day === d.Day) {
             return { ...item, Paid: true };
           }
           return item;
         });
-        setPaymentData(updatedData);
+        roomPaymentInfoApi.editRoomPaymentApi(d.id, 'Paid', true);
       });
     }
   }, [paymentData, today, paymentData]);
@@ -271,14 +280,23 @@ const PaymentProgressBar: React.FC<Props> = ({ paymentData, setPaymentData,agree
   const message =
     daysDifference !== undefined
       ? daysDifference > 0
-      ?`Due in ${daysDifference + 1} day${daysDifference + 1 !== 1 ? 's' : ''}. Earnings: $${agreedPrice * paymentData.filter(payment => payment.Paid).length}. ${paymentData.filter(payment => payment.Paid).length} payments.`
+        ? `Due in ${daysDifference + 1} day${
+            daysDifference + 1 !== 1 ? 's' : ''
+          }. Earnings: $${
+            (agreedPrice * paymentData.filter((payment) => payment.Paid).length).toLocaleString()
+          }. ${paymentData.filter((payment) => payment.Paid).length} payments.`
         : `Payment is past due by ${Math.abs(daysDifference)} days.`
       : 'No payment information available.';
 
   return (
     <div>
-      <div style={{display:"flex", flexDirection:"row",justifyContent:"space-around" }}>
-      
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'row',
+          justifyContent: 'space-around',
+        }}
+      >
         <p
           ref={paragraphRef}
           style={{

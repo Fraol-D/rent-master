@@ -5,8 +5,7 @@ import MainPage from './Project/TSX/MainPage';
 import { useEffect, useState } from 'react';
 import NavBar from './Project/TSX/Navbar/NavBar';
 import LogoImage from './assets/Insert Image Pic.png';
-import { v4 as uuidv4 } from 'uuid';
-
+const { v4: uuidv4 } = require('uuid');
 import {
   addValue,
   deleteValue,
@@ -330,6 +329,7 @@ function Hello() {
     ) => {
       try {
         await updateValue('room_pay_info', roomPaymentId, propertyName, newValue);
+        roomAPI.getRoomFromApi();
       } catch (error: any) {
         console.log(error.message);
       }

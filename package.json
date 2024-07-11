@@ -161,8 +161,8 @@
     "webpack-merge": "^5.9.0"
   },
   "build": {
-    "productName": "ElectronReact",
-    "appId": "org.erb.ElectronReact",
+    "productName": "Rental Managment System",
+    "appId": "org.erb.Rental-Managment-System",
     "asar": true,
     "asarUnpack": "**\\*.{node,dll}",
     "files": [
