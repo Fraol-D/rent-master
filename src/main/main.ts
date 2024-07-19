@@ -254,7 +254,6 @@ appDB.use(bodyParser.json());
 
 const apiKey = 'HH(CzZuQoW@tB$By)e';
 
-
 // Function to validate table names
 const validateTableName = (tableName: string) => {
   const validTables = [
@@ -262,40 +261,40 @@ const validateTableName = (tableName: string) => {
     'rooms',
     'room_specifications',
     'tenants',
-    'room_pay_info'
+    'room_pay_info',
+    'PastTenantReview','brokers',"brokersRecommendationList"
   ];
   return validTables.includes(tableName);
 };
-
 // Table structures based on the provided types
 const tableStructures = [
   {
     name: 'users',
     columns: [
       'id TEXT PRIMARY KEY',
-      'Allowed INTEGER NOT NULL',
-      'email TEXT NOT NULL',
-      'phoneNumber TEXT NOT NULL',
-      'fullName TEXT NOT NULL',
-      'password TEXT NOT NULL',
-      'companyName TEXT NOT NULL',
-      'maxNumberOfBranches INTEGER NOT NULL DEFAULT 3',
-      'packageType TEXT NOT NULL DEFAULT "Free"',
-      'TrailEndDate INTEGER NOT NULL DEFAULT 1',
+      'Allowed INTEGER ',
+      'email TEXT ',
+      'phoneNumber TEXT ',
+      'fullName TEXT ',
+      'password TEXT ',
+      'companyName TEXT ',
+      'maxNumberOfBranches INTEGER  DEFAULT 3',
+      'packageType TEXT  DEFAULT "Free"',
+      'TrailEndDate INTEGER  DEFAULT 1',
     ],
   },
   {
     name: 'rooms',
     columns: [
       'id TEXT PRIMARY KEY',
-      'floor INTEGER NOT NULL',
-      'roomIndex INTEGER NOT NULL',
-      'status TEXT NOT NULL',
-      'price REAL NOT NULL',
-      'AgreedPrice REAL NOT NULL',
-      'PaymentCycleType TEXT NOT NULL',
+      'floor INTEGER ',
+      'roomIndex INTEGER ',
+      'status TEXT ',
+      'price REAL ',
+      'AgreedPrice REAL ',
+      'PaymentCycleType TEXT ',
       'PaymentCycleCustomeDays INTEGER',
-      'squareMeters REAL NOT NULL',
+      'squareMeters REAL ',
       'tenantId TEXT',
       'AddTenantState BOOLEAN',
       'ViewAgreement BOOLEAN',
@@ -306,46 +305,85 @@ const tableStructures = [
     name: 'room_specifications',
     columns: [
       'id TEXT PRIMARY KEY',
-      'roomId TEXT NOT NULL',
-      'Detail TEXT NOT NULL',
+      'roomId TEXT ',
+      'Detail TEXT ',
       'Number REAL',
-      'type TEXT NOT NULL',
+      'type TEXT ',
       'Boolean BOOLEAN',
-      'FOREIGN KEY(roomId) REFERENCES rooms(id)'
     ],
   },
   {
     name: 'tenants',
     columns: [
       'id TEXT PRIMARY KEY',
-      'name TEXT NOT NULL',
-      'phoneNumber TEXT NOT NULL',
+      'name TEXT ',
+      'phoneNumber TEXT ',
       'phoneNumber2 TEXT',
       'email TEXT',
-      'SelectedAgreement TEXT NOT NULL',
-      'RentingOrOut BOOLEAN NOT NULL',
-      'startTime INTEGER NOT NULL', // Assuming storing as UNIX timestamp
+      'SelectedAgreement TEXT ',
+      'RentingOrOut BOOLEAN ',
+      'startTime INTEGER ', // Assuming storing as UNIX timestamp
       'endTime INTEGER',
-      'agreedPrice REAL NOT NULL'
+      'agreedPrice REAL '
     ],
   },
   {
     name: 'room_pay_info',
     columns: [
       'id TEXT PRIMARY KEY',
-      'roomId TEXT NOT NULL',
-      'Day INTEGER NOT NULL', // Assuming storing as UNIX timestamp
-      'Paid BOOLEAN NOT NULL',
-      'FOREIGN KEY(roomId) REFERENCES rooms(id)'
+      'roomId TEXT ',
+      'Day INTEGER ', // Assuming storing as UNIX timestamp
+      'Paid BOOLEAN ',
     ],
+  },
+  {
+    name: 'PastTenantReview',
+    columns: [
+      'id TEXT PRIMARY KEY',
+      'tenantId TEXT ',
+      'roomId TEXT ',
+      'Stars INTEGER ',
+      'description TEXT ',
+      'endReason TEXT ',
+      'LeftDate TEXT ',
+    ],
+  },
+  {
+    name: 'brokers',
+    columns: [
+      'id TEXT PRIMARY KEY',
+      'name TEXT ',
+      'phoneNumber TEXT ',
+      'phoneNumber2 TEXT',
+      'email TEXT',
+      'RecommendedTenantsIdList TEXT ',
+      'AddedTime INTEGER ',
+      'AgreedCommission TEXT ',
+      'rating REAL ',
+      'notes TEXT'
+    ],
+    
+  },  {
+    name: 'brokersRecommendationList',
+    columns: [
+      'id TEXT PRIMARY KEY',
+      'brokerId TEXT ',
+      'recommendedTenantId TEXT ',
+      'AddedTime INTEGER ',
+      'AgreedCommission INTEGER ',
+      'rating REAL ',
+      'notes TEXT'
+    ],
+    
   },
   // Add more tables here as needed
 ];
 
 
+
 // Function to initialize tables
 const initializeTables = (db: any) => {
-  tableStructures.forEach((table: { name: any; columns: any }) => {
+  tableStructures.forEach((table) => {
     const { name, columns } = table;
     db.get(
       `SELECT name FROM sqlite_master WHERE type='table' AND name=?`,
@@ -355,12 +393,12 @@ const initializeTables = (db: any) => {
           console.error(`Error checking if table ${name} exists:`, err);
         } else if (row) {
           console.log(
-            `Table ${name} already exists. Checking table structure.`
+            `Table ${name} already exists. Checking table structure.`,
           );
           checkAndUpdateTableStructure(db, table);
         } else {
           const createTableQuery = `CREATE TABLE ${name} (${columns.join(
-            ', '
+            ', ',
           )})`;
           db.run(createTableQuery, (err: any) => {
             if (err) {
@@ -370,32 +408,29 @@ const initializeTables = (db: any) => {
             }
           });
         }
-      }
+      },
     );
   });
 };
 
 // Function to check and update table structure
-const checkAndUpdateTableStructure = (
-  db: any,
-  table: any,
-) => {
+const checkAndUpdateTableStructure = (db: { all: (arg0: string, arg1: (error: any, rows: any) => void) => void; }, table: { name: any; columns: any; }) => {
   db.all(`PRAGMA table_info(${table.name})`, (error: any, rows: any[]) => {
     if (error) {
       console.error('Error checking table structure:', error);
     } else {
-      const existingColumns = rows.map((row: { name: any }) => row.name);
+      const existingColumns = rows.map((row: { name: any; }) => row.name);
       const requiredColumns = table.columns.map(
-        (column: string) => column.split(' ')[0]
+        (column: string) => column.split(' ')[0],
       );
       const missingColumns = requiredColumns.filter(
-        (column: any) => !existingColumns.includes(column)
+        (column: any) => !existingColumns.includes(column),
       );
 
       if (missingColumns.length > 0) {
         console.log(
           `Table ${table.name} structure needs updating. Missing columns:`,
-          missingColumns
+          missingColumns,
         );
         updateTableStructure(db, table, missingColumns);
       } else {
@@ -406,16 +441,12 @@ const checkAndUpdateTableStructure = (
 };
 
 // Function to update table structure
-const updateTableStructure = (
-  db:any,
-  table: { columns: any[]; name: any },
-  missingColumns: any[]
-) => {
+const updateTableStructure = (db: any, table: { columns: any[]; name: any; }, missingColumns: any[]) => {
   db.serialize(() => {
     db.run(`BEGIN TRANSACTION`);
     missingColumns.forEach((column: any) => {
       const columnDefinition = table.columns.find((col: string) =>
-        col.startsWith(column)
+        col.startsWith(column),
       );
       db.run(
         `ALTER TABLE ${table.name} ADD COLUMN ${columnDefinition}`,
@@ -423,12 +454,12 @@ const updateTableStructure = (
           if (error) {
             console.error(
               `Error adding column ${column} to table ${table.name}:`,
-              error
+              error,
             );
           } else {
             console.log(`Added column ${column} to table ${table.name}`);
           }
-        }
+        },
       );
     });
     db.run(`COMMIT`);

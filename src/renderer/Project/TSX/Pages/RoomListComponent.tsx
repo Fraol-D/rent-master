@@ -14,7 +14,12 @@ export function RoomListComponent({
   updateRoomPropertyWithOutRefresh,
   roomPaymentInfoApi,
   isUpdatingTenantList,
-  setIsUpdatingTenantList,setSelectedEditRoomId
+  brokerApi,
+  setBrokerList,
+  BrokerList,
+  setIsUpdatingTenantList,
+  setSelectedEditRoomId,
+  pastTenantReviewApi,brokersRecommendationListApi
 }: any) {
   return (
     <>
@@ -73,9 +78,13 @@ export function RoomListComponent({
         <div className="RoomContainer">
           {sortedAndFilteredRooms.map((room: any, index: any) => (
             <Room
-            isUpdatingTenantList={isUpdatingTenantList}
-            setIsUpdatingTenantList={setIsUpdatingTenantList}
-            setSelectedEditRoomId={setSelectedEditRoomId}
+            brokerApi={brokerApi}
+            brokersRecommendationListApi={brokersRecommendationListApi}
+            BrokerList={BrokerList}
+            setBrokerList={setBrokerList}
+              isUpdatingTenantList={isUpdatingTenantList}
+              setIsUpdatingTenantList={setIsUpdatingTenantList}
+              setSelectedEditRoomId={setSelectedEditRoomId}
               roomPaymentInfoApi={roomPaymentInfoApi}
               roomType={room}
               updateRoomPropertyWithOutRefresh={
@@ -108,6 +117,7 @@ export function RoomListComponent({
               setTenantList={setTenantList}
               TenantList={TenantList}
               tenantAPI={tenantAPI}
+              pastTenantReviewApi={pastTenantReviewApi}
             />
           ))}
         </div>

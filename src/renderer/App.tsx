@@ -16,9 +16,9 @@ import {
 function Hello() {
   const [RoomList, setRoomList] = useState<RoomType[]>([]);
   const [TenantList, setTenantList] = useState<tenant[]>([]);
+  const [BrokerList, setBrokerList] = useState<BrokerType[]>([]);
   const [isUpdatingTenantList, setIsUpdatingTenantList] = useState(false);
 
-  
   class RoomApi {
     getRoomFromApi = async () => {
       const roomsRaw = await getValuesWithSql('rooms', 'WHERE 1');
@@ -233,9 +233,9 @@ function Hello() {
           endTime: endTime,
           agreedPrice: agreedPrice,
         });
-         // Update the TenantList and set the state to indicate that the update is complete
-    await this.getTenantsApi();
-    setIsUpdatingTenantList(false);
+        // Update the TenantList and set the state to indicate that the update is complete
+        await this.getTenantsApi();
+        setIsUpdatingTenantList(false);
       } catch (error: any) {
         console.log(error.message);
       }
@@ -272,20 +272,16 @@ function Hello() {
         `WHERE roomId = '${roomId}'`
       );
       if (roomPaymentsRaw) {
-        return roomPaymentsRaw.map(
-          (roomPayment: RoomPayInfo) => {
-            return {
-              id: roomPayment.id,
-              roomId: roomPayment.roomId,
-              Day: roomPayment.Day,
-              Paid: roomPayment.Paid,
-      
-            };
-          }
-        );
+        return roomPaymentsRaw.map((roomPayment: RoomPayInfo) => {
+          return {
+            id: roomPayment.id,
+            roomId: roomPayment.roomId,
+            Day: roomPayment.Day,
+            Paid: roomPayment.Paid,
+          };
+        });
       }
-      
-    }
+    };
     addRoomPaymentApi = async (
       id: string,
       roomId: string,
@@ -303,7 +299,7 @@ function Hello() {
       } catch (error: any) {
         console.log(error.message);
       }
-    }
+    };
     addRoomPaymentApiWithOutRefresh = async (
       id: string,
       roomId: string,
@@ -317,39 +313,146 @@ function Hello() {
           Day: Day,
           Paid: Paid,
         });
-       
       } catch (error: any) {
         console.log(error.message);
       }
-    }
+    };
     editRoomPaymentApi = async (
       roomPaymentId: string,
       propertyName: string,
       newValue: any
     ) => {
       try {
-        await updateValue('room_pay_info', roomPaymentId, propertyName, newValue);
+        await updateValue(
+          'room_pay_info',
+          roomPaymentId,
+          propertyName,
+          newValue
+        );
         roomAPI.getRoomFromApi();
       } catch (error: any) {
         console.log(error.message);
       }
-    }
+    };
     deleteRoomPaymentApi = async (roomPaymentId: string) => {
       try {
         await deleteValue('room_pay_info', roomPaymentId);
       } catch (error: any) {
         console.log(error.message);
       }
-    }
+    };
   }
-
+  class PastTenantReviewApi {
+    getPastTenantReviewLatestApi = async (tenantId: string) => {
+      const pastTenantReviewRaw = await getValuesWithSql(
+        'PastTenantReview',
+        `WHERE tenantId = '${tenantId}'`
+      );
+      if (pastTenantReviewRaw) {
+        return pastTenantReviewRaw.map((pastTenantReview: any) => {
+          return {
+            id: pastTenantReview.id,
+            roomId: pastTenantReview.roomId,
+            tenantId: pastTenantReview.tenantId,
+            Stars: pastTenantReview.Stars,
+            description: pastTenantReview.description,
+            endReason: pastTenantReview.endReason,
+            LeftDate: pastTenantReview.LeftDate,
+          };
+        });
+      }
+    };
+  }
+  class BrokerApi {
+    getBrokersApi = async () => {
+      try {
+        const brokersRaw = await getValuesWithSql('brokers', 'WHERE 1');
+        if (brokersRaw) {
+          const brokers = brokersRaw.map((broker: BrokerType) => {
+            return {
+              id: broker.id,
+              name: broker.name,
+              phoneNumber: broker.phoneNumber,
+              phoneNumber2: broker.phoneNumber2 || '',
+              email: broker.email || '',
+              RecommendedTenantsIdList: broker.RecommendedTenantsIdList,
+              AddedTime: broker.AddedTime,
+              AgreedCommission: broker.AgreedCommission,
+              rating: broker.rating,
+              notes: broker.notes,
+            };
+          });
+          setBrokerList(brokers);
+        }
+      } catch (error: any) {
+        console.log(error.message);
+      }
+    };
+    addBrokerApi = async (broker: BrokerType) => {
+      try {
+        await addValue('brokers', broker);
+        await this.getBrokersApi();
+      } catch (error: any) {
+        console.log(error.message);
+      }
+    };
+    editBrokerApi = async (
+      brokerId: string,
+      propertyName: string,
+      newValue: any
+    ) => {
+      try {
+        await updateValue('brokers', brokerId, propertyName, newValue);
+        await this.getBrokersApi();
+      } catch (error: any) {
+        console.log(error.message);
+      }
+    };
+    deleteBrokerApi = async (brokerId: string) => {
+      try {
+        await deleteValue('brokers', brokerId);
+        await this.getBrokersApi();
+      } catch (error: any) {
+        console.log(error.message);
+      }
+    };
+  }
+  class BrokersRecommendationListApi {
+    AddBrokerRecommendation = async(
+      id: string,
+      brokerId: string,
+      recommendedTenantId: string,
+      AddedTime: number,
+      AgreedCommission: number,
+      rating: number,
+      notes: string
+    ) => {
+      try {
+        await addValue("brokersRecommendationList", {
+          id,
+          brokerId,
+          recommendedTenantId,
+          AddedTime,
+          AgreedCommission,
+          rating,
+          notes
+        })
+      } catch (error:any) {
+        console.error(error.message);
+      }
+    }
+  } 
   const roomAPI = new RoomApi();
+  const brokerApi = new BrokerApi();
   const tenantAPI = new TenantApi();
+  const pastTenantReviewApi = new PastTenantReviewApi();
   const roomSpecificationAPI = new RoomSpecificationApi();
   const roomPaymentInfoApi = new RoomPaymentInfoApi();
+  const brokersRecommendationListApi = new BrokersRecommendationListApi();
   // On start
   useEffect(() => {
     roomAPI.getRoomFromApi();
+    brokerApi.getBrokersApi();
     tenantAPI.getTenantsApi();
   }, []);
   return (
@@ -372,6 +475,11 @@ function Hello() {
         roomPaymentInfoApi={roomPaymentInfoApi}
         isUpdatingTenantList={isUpdatingTenantList}
         setIsUpdatingTenantList={setIsUpdatingTenantList}
+        pastTenantReviewApi={pastTenantReviewApi}
+        brokerApi={brokerApi}
+        BrokerList={BrokerList}
+        setBrokerList={setBrokerList}
+        brokersRecommendationListApi={brokersRecommendationListApi}
       />
     </>
   );

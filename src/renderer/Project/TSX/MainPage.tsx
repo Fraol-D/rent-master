@@ -90,6 +90,18 @@ declare global {
     endTime?: string;
     agreedPrice: string;
   };
+  type BrokerType = {
+    id: string;
+    name: string;
+    phoneNumber: string;
+    phoneNumber2?: string;
+    email?: string;
+    RecommendedTenantsIdList: string[];
+    AddedTime: number;
+    AgreedCommission: string;
+    rating: number;
+    notes: string;
+  };
   type AllRoomPayInfo = {
     RoomPayInfo: RoomPayInfo[];
   };
@@ -117,6 +129,9 @@ const MainPage = ({
   roomPaymentInfoApi,
   isUpdatingTenantList,
   setIsUpdatingTenantList,
+  pastTenantReviewApi,
+  brokerApi,
+  setBrokerList,BrokerList,brokersRecommendationListApi
 }: any) => {
   const [floorFilter, setFloorFilter] = useState<string>('');
   const [TenantNameFilter, setTenantNameFilter] = useState<string>('');
@@ -591,6 +606,7 @@ const MainPage = ({
       setDeleteConfimation(false);
     }
   };
+
   return (
     <>
       <div className="MAINCONTAINER">
@@ -1062,7 +1078,10 @@ const MainPage = ({
               updateRoomProperty={updateRoomProperty}
               updateRoomPropertyWithOutRefresh={
                 updateRoomPropertyWithOutRefresh
-              }
+              } brokerApi={brokerApi}
+              BrokerList={BrokerList}
+              setBrokerList={setBrokerList}
+              pastTenantReviewApi={pastTenantReviewApi}
               RoomList={RoomList}
               sortedAndFilteredRooms={sortedAndFilteredRooms}
               removeFilterOption={removeFilterOption}
@@ -1076,6 +1095,7 @@ const MainPage = ({
               isUpdatingTenantList={isUpdatingTenantList}
               setIsUpdatingTenantList={setIsUpdatingTenantList}
               setSelectedEditRoomId={setSelectedEditRoomId}
+              brokersRecommendationListApi={brokersRecommendationListApi}
             />
           )}
           {SelectedPage === 'People' && (

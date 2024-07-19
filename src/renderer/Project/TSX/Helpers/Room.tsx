@@ -3,7 +3,12 @@ import '../../CSS/Room.css';
 const { v4: uuidv4 } = require('uuid');
 import PaymentProgressBar from './PaymentProgressBar';
 import EditIcon from '../../../assets/assets/Dark mode/Editicon.png';
-import { getValuesWithSql } from 'Backend/localServerApis';
+import {
+  addValue,
+  deleteValue,
+  getValuesWithSql,
+} from 'Backend/localServerApis';
+import LeavePanel from './LeavePanel';
 const Room = ({
   roomType,
   updateRoomProperty,
@@ -17,6 +22,11 @@ const Room = ({
   isUpdatingTenantList,
   setIsUpdatingTenantList,
   setSelectedEditRoomId,
+  pastTenantReviewApi,
+  brokerApi,
+  BrokerList,
+  setBrokerList,
+  brokersRecommendationListApi,
 }: any) => {
   const handleAddTenant = () => {
     turnOffAddTenantStateForAll();
@@ -182,8 +192,10 @@ const Room = ({
       );
       interval = 30; // Default to 30 days if the payment cycle is invalid
     }
+    console.log('reached1');
+    for (let i = 0; i < 20; i++) {
+      console.log('reached');
 
-    for (let i = 0; i < 40; i++) {
       const paymentDay = getPaymentDay(
         interval,
         new Date(startTime),
@@ -191,9 +203,14 @@ const Room = ({
         paymentCycle
       );
 
+      const paymentInfo = {
+        Day: paymentDay.getTime(),
+        Paid: false,
+      };
+
       roomPaymentInfoApi.addRoomPaymentApiWithOutRefresh(
         uuidv4(),
-        SelectedTenantIdOnAdding,
+        roomType.id,
         paymentDay.getTime(),
         false
       );
@@ -206,6 +223,7 @@ const Room = ({
       handleTenantSelectWhenNew();
       return;
     }
+    if(AddTenantUseBrokerState && AddTenantSelectedBrokerId == "") return
     if (name.length >= 3 && tel1.length >= 6 && startTime.length >= 1) {
       setIsUpdatingTenantList(true);
       const tenantId = uuidv4();
@@ -289,7 +307,7 @@ const Room = ({
       }
       console.log('reached1');
 
-      for (let i = 0; i < 40; i++) {
+      for (let i = 0; i < 20; i++) {
         console.log('reached');
 
         const paymentDay = getPaymentDay(
@@ -304,6 +322,27 @@ const Room = ({
           roomType.id,
           paymentDay.getTime(),
           false
+        );
+      }
+      /* AddBrokerRecommendation = async(
+      id: string,
+      brokerId: string,
+      recommendedTenantId: string,
+      AddedTime: number,
+      AgreedCommission: number,
+      rating: number,
+      notes: string
+    ) => { */
+      if (AddTenantUseBrokerState) {
+        brokersRecommendationListApi.AddBrokerRecommendation(
+          uuidv4(),
+          AddTenantSelectedBrokerId,
+          tenant.id,
+          Date.now(),
+          isPercentCommission
+            ? (commissionValue / 100) * agreedPrice
+            : commissionValue,
+          4.5,''
         );
       }
 
@@ -491,7 +530,15 @@ const Room = ({
     const tenantIndex = TenantList.findIndex(
       (tenant: any) => tenant.id === roomType.tenantId
     );
-
+    addValue('PastTenantReview', {
+      id: uuidv4(),
+      tenantId: roomType.tenantId,
+      roomId: roomType.id,
+      Stars: tenantRating,
+      description: tenantDescription,
+      endReason: endReason,
+      LeftDate: new Date().getTime(),
+    });
     if (tenantIndex !== -1) {
       // Update the tenant's RentingOrOut status to false
       tenantAPI.EditTenantApi(roomType.tenantId, 'RentingOrOut', false);
@@ -519,15 +566,94 @@ const Room = ({
         'room_pay_info',
         `WHERE roomId = '${roomType.id}'`
       );
-      for (let i = 0; i < listOfPayments.length; i++) {
-        const element = listOfPayments[i];
-      }
+      if (listOfPayments)
+        for (let i = 0; i < listOfPayments.length; i++) {
+          const element = listOfPayments[i];
+          deleteValue('room_pay_info', element.id);
+        }
 
       // Reset the room's AddTenantState
       updateRoomProperty(roomType.id, 'AddTenantState', 0);
       updateRoomProperty(roomType.id, 'ViewAgreement', 0);
+      setTenantLeavePannelState(false);
     }
   };
+
+  const [TenantLeavePannelState, setTenantLeavePannelState] = useState(false);
+  const [extraPayments, setExtraPayments] = useState('');
+  const [tenantRating, setTenantRating] = useState(0);
+  const [tenantDescription, setTenantDescription] = useState('');
+  const [endReason, setEndReason] = useState('');
+
+  const [TenantReviews, setTenantReviews] = useState([]);
+
+  const [AddTenantUseBrokerState, setAddTenantUseBrokerState] = useState(false);
+  const [AddTenantAddBrokerState, setAddTenantAddBrokerState] = useState(false);
+  const [AddTenantSelectedBrokerId, setAddTenantSelectedBrokerId] =
+    useState('');
+
+  const [AddTenantAddBrokerFormName, setAddTenantAddBrokerFormName] =
+    useState('');
+  const [
+    AddTenantAddBrokerFormPhoneNumber,
+    setAddTenantAddBrokerFormPhoneNumber,
+  ] = useState('');
+  const [
+    AddTenantAddBrokerFormPhoneNumber2,
+    setAddTenantAddBrokerFormPhoneNumber2,
+  ] = useState('');
+  const [AddTenantAddBrokerFormEmail, setAddTenantAddBrokerFormEmail] =
+    useState('');
+  const [
+    AddTenantAddBrokerFormAgreedCommission,
+    setAddTenantAddBrokerFormAgreedCommission,
+  ] = useState('');
+  const [AddTenantAddBrokerFormRating, setAddTenantAddBrokerFormRating] =
+    useState(0);
+  const [AddTenantAddBrokerFormNotes, setAddTenantAddBrokerFormNotes] =
+    useState('');
+  const handleAddBroker = () => {
+    if (
+      AddTenantAddBrokerFormName.length >= 2 &&
+      AddTenantAddBrokerFormPhoneNumber.length >= 2
+    ) {
+      const broker: BrokerType = {
+        id: uuidv4(),
+        name: AddTenantAddBrokerFormName,
+        phoneNumber: AddTenantAddBrokerFormPhoneNumber,
+        phoneNumber2: AddTenantAddBrokerFormPhoneNumber2 || '',
+        email: AddTenantAddBrokerFormEmail || '',
+        RecommendedTenantsIdList: [],
+        AddedTime: Date.now(),
+        AgreedCommission: AddTenantAddBrokerFormAgreedCommission,
+        rating: AddTenantAddBrokerFormRating,
+        notes: AddTenantAddBrokerFormNotes,
+      };
+      brokerApi.addBrokerApi(broker);
+      setAddTenantAddBrokerFormName('');
+      setAddTenantAddBrokerFormPhoneNumber('');
+      setAddTenantAddBrokerFormPhoneNumber2('');
+      setAddTenantAddBrokerFormEmail('');
+      setAddTenantAddBrokerFormAgreedCommission('');
+      setAddTenantAddBrokerFormRating(0);
+      setAddTenantAddBrokerFormNotes('');
+
+      setAddTenantSelectedBrokerId(broker.id);
+      setAddTenantAddBrokerState(false);
+    }
+  };
+  const [searchBroker, setSearchBroker] = useState('');
+  const filteredBrokerList = BrokerList.filter((broker: any) =>
+    broker.name.toLowerCase().includes(searchBroker.toLowerCase())
+  );
+
+  const handleSearchBroker = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchBroker(event.target.value);
+  };
+
+  const [isPercentCommission, setIsPercentCommission] = useState(true);
+  const [commissionValue, setCommissionValue] = useState<number>(0);
+
   return (
     <>
       <div
@@ -556,15 +682,15 @@ const Room = ({
           <p className="RoomText">Room {roomType.roomIndex}</p>
 
           <div className="StatusContainer">
-            <p className="StatusText">
-              <div>
+            <div className="StatusText">
+              <p>
                 Current Status:{' '}
                 {roomType.status === 'Taken' ? (
                   <strong>Taken by </strong>
                 ) : (
                   <>Empty</>
                 )}
-              </div>
+              </p>
               <strong style={{ fontSize: '15px', fontWeight: '600' }}>
                 {roomType.status === 'Taken' ? (
                   <p
@@ -683,7 +809,7 @@ const Room = ({
               ) : (
                 <></>
               )}
-            </p>
+            </div>
           </div>
         </div>
         <div className="SecondLine">
@@ -767,16 +893,18 @@ const Room = ({
         <div
           className="PopOutContainer"
           ref={addTenantRef}
-          style={{ zIndex: roomType.AddTenantState ? '1' : '-1' }}
+          style={{ zIndex: roomType.AddTenantState ? '1' : '-1', top: '216px' }}
         >
           <div
             className="AddTenantContainerinner"
             style={{
               width: roomType.AddTenantState ? '280px' : '0px',
-              height: roomType.AddTenantState ? '280px' : '0px',
+              height: roomType.AddTenantState ? '345px' : '0px',
               opacity: roomType.AddTenantState ? '1' : '0',
               userSelect: 'text',
+              overflowY: 'auto',
               fontSize: '17px',
+              paddingBottom: '15px',
             }}
           >
             <div className="InnerAddtenantTop">
@@ -862,17 +990,19 @@ const Room = ({
                   />
                   {SelectedTenantIdOnAdding === '' ? (
                     filteredTenants.map((tenant: any) => (
-                      <div className="TenantRow" key={tenant.key}>
-                        <button
-                          onClick={() => {
-                            setSelectedTenantIdOnAdding(tenant.id);
-                          }}
-                        >
-                          <p>{tenant.name}</p>
-                          <p style={{ fontSize: '10px' }}>
-                            {tenant.phoneNumber}
-                          </p>
-                        </button>
+                      <div className="TenantRow" key={tenant.id}>
+                        <div>
+                          <button
+                            onClick={() => {
+                              setSelectedTenantIdOnAdding(tenant.id);
+                            }}
+                          >
+                            <p>{tenant.name}</p>
+                            <p style={{ fontSize: '10px' }}>
+                              {tenant.phoneNumber}
+                            </p>
+                          </button>
+                        </div>
                         <button
                           onClick={() => {
                             setSelectedTenantIdOnAdding('');
@@ -931,6 +1061,7 @@ const Room = ({
                   )}
                 </>
               )}
+              <hr />
               {TenantPageSelected === 'New' ? (
                 <>
                   <div>
@@ -1021,6 +1152,283 @@ const Room = ({
                       Same
                     </button>
                   </div>
+                  <hr />
+                  <div
+                    className="AddTenantContainerinnerElement"
+                    style={{ display: 'flex', alignItems: 'center' }}
+                  >
+                    Track broker:{' '}
+                    <input
+                      type="checkbox"
+                      style={{ width: '20px' }}
+                      checked={AddTenantUseBrokerState}
+                      onChange={(e) => {
+                        setAddTenantUseBrokerState(e.target.checked);
+                      }}
+                    />
+                    {AddTenantUseBrokerState &&
+                      AddTenantSelectedBrokerId == '' && (
+                        <button
+                          onClick={() => {
+                            setAddTenantAddBrokerState(
+                              !AddTenantAddBrokerState
+                            );
+                          }}
+                        >
+                          {AddTenantAddBrokerState
+                            ? 'Cancel add'
+                            : 'Add new broker'}
+                        </button>
+                      )}
+                  </div>
+                  {AddTenantUseBrokerState && (
+                    <>
+                      {AddTenantAddBrokerState ? (
+                        <>
+                          <input
+                            type="text"
+                            placeholder="Name"
+                            value={AddTenantAddBrokerFormName}
+                            onChange={(e) =>
+                              setAddTenantAddBrokerFormName(e.target.value)
+                            }
+                          />
+                          <input
+                            type="text"
+                            placeholder="Phone Number"
+                            value={AddTenantAddBrokerFormPhoneNumber}
+                            onChange={(e) =>
+                              setAddTenantAddBrokerFormPhoneNumber(
+                                e.target.value
+                              )
+                            }
+                          />
+                          <input
+                            type="text"
+                            placeholder="Phone Number 2"
+                            value={AddTenantAddBrokerFormPhoneNumber2}
+                            onChange={(e) =>
+                              setAddTenantAddBrokerFormPhoneNumber2(
+                                e.target.value
+                              )
+                            }
+                          />
+                          <input
+                            type="email"
+                            placeholder="Email"
+                            value={AddTenantAddBrokerFormEmail}
+                            onChange={(e) =>
+                              setAddTenantAddBrokerFormEmail(e.target.value)
+                            }
+                          />
+                          <input
+                            type="text"
+                            placeholder="Agreed Commission"
+                            value={AddTenantAddBrokerFormAgreedCommission}
+                            onChange={(e) =>
+                              setAddTenantAddBrokerFormAgreedCommission(
+                                e.target.value
+                              )
+                            }
+                          />
+                          <div>
+                            Stars:
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <span
+                                key={star}
+                                style={{
+                                  cursor: 'pointer',
+                                  color:
+                                    AddTenantAddBrokerFormRating >= star
+                                      ? 'gold'
+                                      : 'grey',
+                                }}
+                                onClick={() =>
+                                  setAddTenantAddBrokerFormRating(star)
+                                }
+                              >
+                                ★
+                              </span>
+                            ))}
+                          </div>
+                          <textarea
+                            placeholder="Notes"
+                            value={AddTenantAddBrokerFormNotes}
+                            onChange={(e) =>
+                              setAddTenantAddBrokerFormNotes(e.target.value)
+                            }
+                          ></textarea>
+                          <button
+                            onClick={() => {
+                              handleAddBroker();
+                            }}
+                          >
+                            Add
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          {AddTenantSelectedBrokerId !== '' ? (
+                            <>
+                              {BrokerList.find(
+                                (broker: BrokerType) =>
+                                  broker.id === AddTenantSelectedBrokerId
+                              ) && (
+                                <div
+                                  className="TenantRow"
+                                  key={
+                                    BrokerList.find(
+                                      (broker: BrokerType) =>
+                                        broker.id === AddTenantSelectedBrokerId
+                                    )?.id
+                                  }
+                                >
+                                  <div>
+                                    <button
+                                      onClick={() => {
+                                        setAddTenantSelectedBrokerId(
+                                          BrokerList.find(
+                                            (broker: BrokerType) =>
+                                              broker.id ===
+                                              AddTenantSelectedBrokerId
+                                          )?.id || ''
+                                        );
+                                      }}
+                                    >
+                                      <p>
+                                        {
+                                          BrokerList.find(
+                                            (broker: BrokerType) =>
+                                              broker.id ===
+                                              AddTenantSelectedBrokerId
+                                          )?.name
+                                        }
+                                      </p>
+                                      <p style={{ fontSize: '10px' }}>
+                                        {
+                                          BrokerList.find(
+                                            (broker: BrokerType) =>
+                                              broker.id ===
+                                              AddTenantSelectedBrokerId
+                                          )?.phoneNumber
+                                        }
+                                      </p>
+                                    </button>
+                                  </div>
+                                  {AddTenantSelectedBrokerId !== '' && (
+                                    <button
+                                      onClick={() => {
+                                        setAddTenantSelectedBrokerId('');
+                                      }}
+                                      style={{ width: '35px', height: '35px' }}
+                                    >
+                                      X
+                                    </button>
+                                  )}
+                                </div>
+                              )}
+                              {/* Commission Section */}
+
+                              <div>
+                                Commission:{' '}
+                                <input
+                                  type="number"
+                                  style={{
+                                    width: !isPercentCommission
+                                      ? '80px'
+                                      : '40px',
+                                  }}
+                                  value={commissionValue}
+                                  onChange={(e) =>
+                                    setCommissionValue(
+                                      parseFloat(e.target.value)
+                                    )
+                                  }
+                                  className="AddTenantContainerinnerInput"
+                                  placeholder={
+                                    isPercentCommission
+                                      ? 'Enter percent'
+                                      : 'Enter number'
+                                  }
+                                />
+                                {isPercentCommission && (
+                                  <>
+                                    %{' '}
+                                    <em style={{ color: 'grey' }}>
+                                      {commissionValue != '' &&
+                                        (commissionValue / 100) * agreedPrice}
+                                    </em>
+                                  </>
+                                )}
+                                {!isPercentCommission && '$'}
+                                <br />{' '}
+                                <label>
+                                  <input
+                                    type="checkbox"
+                                    checked={isPercentCommission}
+                                    onChange={() =>
+                                      setIsPercentCommission(true)
+                                    }
+                                  />
+                                  Percentage
+                                </label>
+                                <label>
+                                  <input
+                                    type="checkbox"
+                                    checked={!isPercentCommission}
+                                    onChange={() =>
+                                      setIsPercentCommission(false)
+                                    }
+                                  />
+                                  Number
+                                </label>
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <input
+                                type="text"
+                                placeholder="Search broker"
+                                value={searchBroker}
+                                onChange={handleSearchBroker}
+                              />{' '}
+                              {filteredBrokerList.map((broker: BrokerType) => (
+                                <div className="TenantRow" key={broker.id}>
+                                  <div>
+                                    <button
+                                      onClick={() => {
+                                        setAddTenantSelectedBrokerId(broker.id);
+                                      }}
+                                    >
+                                      <p>{broker.name}</p>
+                                      <p style={{ fontSize: '10px' }}>
+                                        {broker.phoneNumber}
+                                      </p>
+                                    </button>
+                                  </div>
+                                  <div>
+                                    {[1, 2, 3, 4, 5].map((star) => (
+                                      <span
+                                        key={star}
+                                        style={{
+                                          color:
+                                            broker.rating >= star
+                                              ? 'gold'
+                                              : 'grey',
+                                        }}
+                                      >
+                                        ★
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                              ))}
+                            </>
+                          )}
+                        </>
+                      )}
+                    </>
+                  )}
                 </>
               ) : (
                 <>
@@ -1113,10 +1521,7 @@ const Room = ({
                           $
                           <button
                             style={{
-                              width: '40px',
-                              height: '20px',
                               marginLeft: '10px',
-                              background: 'white',
                             }}
                             onClick={() => {
                               setAgreedPrice(roomType.price);
@@ -1125,6 +1530,245 @@ const Room = ({
                             Same
                           </button>
                         </div>
+                        <hr />
+                        <div
+                          className="AddTenantContainerinnerElement"
+                          style={{ display: 'flex', alignItems: 'center' }}
+                        >
+                          Track broker:{' '}
+                          <input
+                            type="checkbox"
+                            style={{ width: '20px' }}
+                            checked={AddTenantUseBrokerState}
+                            onChange={(e) => {
+                              setAddTenantUseBrokerState(e.target.checked);
+                            }}
+                          />
+                          {AddTenantUseBrokerState &&
+                            AddTenantSelectedBrokerId == '' && (
+                              <button
+                                onClick={() => {
+                                  setAddTenantAddBrokerState(
+                                    !AddTenantAddBrokerState
+                                  );
+                                }}
+                              >
+                                {AddTenantAddBrokerState
+                                  ? 'Cancel add'
+                                  : 'Add new broker'}
+                              </button>
+                            )}
+                        </div>
+                        {AddTenantUseBrokerState && (
+                          <>
+                            {AddTenantAddBrokerState ? (
+                              <>
+                                <input
+                                  type="text"
+                                  placeholder="Name"
+                                  value={AddTenantAddBrokerFormName}
+                                  onChange={(e) =>
+                                    setAddTenantAddBrokerFormName(
+                                      e.target.value
+                                    )
+                                  }
+                                />
+                                <input
+                                  type="text"
+                                  placeholder="Phone Number"
+                                  value={AddTenantAddBrokerFormPhoneNumber}
+                                  onChange={(e) =>
+                                    setAddTenantAddBrokerFormPhoneNumber(
+                                      e.target.value
+                                    )
+                                  }
+                                />
+                                <input
+                                  type="text"
+                                  placeholder="Phone Number 2"
+                                  value={AddTenantAddBrokerFormPhoneNumber2}
+                                  onChange={(e) =>
+                                    setAddTenantAddBrokerFormPhoneNumber2(
+                                      e.target.value
+                                    )
+                                  }
+                                />
+                                <input
+                                  type="email"
+                                  placeholder="Email"
+                                  value={AddTenantAddBrokerFormEmail}
+                                  onChange={(e) =>
+                                    setAddTenantAddBrokerFormEmail(
+                                      e.target.value
+                                    )
+                                  }
+                                />
+                                <input
+                                  type="text"
+                                  placeholder="Agreed Commission"
+                                  value={AddTenantAddBrokerFormAgreedCommission}
+                                  onChange={(e) =>
+                                    setAddTenantAddBrokerFormAgreedCommission(
+                                      e.target.value
+                                    )
+                                  }
+                                />
+                                <div>
+                                  Stars:
+                                  {[1, 2, 3, 4, 5].map((star) => (
+                                    <span
+                                      key={star}
+                                      style={{
+                                        cursor: 'pointer',
+                                        color:
+                                          AddTenantAddBrokerFormRating >= star
+                                            ? 'gold'
+                                            : 'grey',
+                                      }}
+                                      onClick={() =>
+                                        setAddTenantAddBrokerFormRating(star)
+                                      }
+                                    >
+                                      ★
+                                    </span>
+                                  ))}
+                                </div>
+                                <textarea
+                                  placeholder="Notes"
+                                  value={AddTenantAddBrokerFormNotes}
+                                  onChange={(e) =>
+                                    setAddTenantAddBrokerFormNotes(
+                                      e.target.value
+                                    )
+                                  }
+                                ></textarea>
+                                <button
+                                  onClick={() => {
+                                    handleAddBroker();
+                                  }}
+                                >
+                                  Add
+                                </button>
+                              </>
+                            ) : (
+                              <>
+                                {AddTenantSelectedBrokerId !== '' ? (
+                                  <>
+                                    {BrokerList.find(
+                                      (broker: BrokerType) =>
+                                        broker.id === AddTenantSelectedBrokerId
+                                    ) && (
+                                      <div
+                                        className="TenantRow"
+                                        key={
+                                          BrokerList.find(
+                                            (broker: BrokerType) =>
+                                              broker.id ===
+                                              AddTenantSelectedBrokerId
+                                          )?.id
+                                        }
+                                      >
+                                        <div>
+                                          <button
+                                            onClick={() => {
+                                              setAddTenantSelectedBrokerId(
+                                                BrokerList.find(
+                                                  (broker: BrokerType) =>
+                                                    broker.id ===
+                                                    AddTenantSelectedBrokerId
+                                                )?.id || ''
+                                              );
+                                            }}
+                                          >
+                                            <p>
+                                              {
+                                                BrokerList.find(
+                                                  (broker: BrokerType) =>
+                                                    broker.id ===
+                                                    AddTenantSelectedBrokerId
+                                                )?.name
+                                              }
+                                            </p>
+                                            <p style={{ fontSize: '10px' }}>
+                                              {
+                                                BrokerList.find(
+                                                  (broker: BrokerType) =>
+                                                    broker.id ===
+                                                    AddTenantSelectedBrokerId
+                                                )?.phoneNumber
+                                              }
+                                            </p>
+                                          </button>
+                                        </div>
+                                        {AddTenantSelectedBrokerId !== '' && (
+                                          <button
+                                            onClick={() => {
+                                              setAddTenantSelectedBrokerId('');
+                                            }}
+                                            style={{
+                                              width: '35px',
+                                              height: '35px',
+                                            }}
+                                          >
+                                            X
+                                          </button>
+                                        )}
+                                      </div>
+                                    )}
+                                    hi
+                                  </>
+                                ) : (
+                                  <>
+                                    <input
+                                      type="text"
+                                      placeholder="Search broker"
+                                      value={searchBroker}
+                                      onChange={handleSearchBroker}
+                                    />{' '}
+                                    {filteredBrokerList.map(
+                                      (broker: BrokerType) => (
+                                        <div
+                                          className="TenantRow"
+                                          key={broker.id}
+                                        >
+                                          <div>
+                                            <button
+                                              onClick={() => {
+                                                setAddTenantSelectedBrokerId(
+                                                  broker.id
+                                                );
+                                              }}
+                                            >
+                                              <p>{broker.name}</p>
+                                              <p style={{ fontSize: '10px' }}>
+                                                {broker.phoneNumber}
+                                              </p>
+                                            </button>
+                                          </div>
+                                          <div>
+                                            {[1, 2, 3, 4, 5].map((star) => (
+                                              <span
+                                                key={star}
+                                                style={{
+                                                  color:
+                                                    broker.rating >= star
+                                                      ? 'gold'
+                                                      : 'grey',
+                                                }}
+                                              >
+                                                ★
+                                              </span>
+                                            ))}
+                                          </div>
+                                        </div>
+                                      )
+                                    )}
+                                  </>
+                                )}
+                              </>
+                            )}
+                          </>
+                        )}
                       </>
                     )}
                 </>
@@ -1166,10 +1810,13 @@ const Room = ({
           <div
             className="AddTenantContainerinner"
             style={{
-              width: roomType.ViewAgreement ? '280px' : '0px',
-              height: roomType.ViewAgreement ? '260px' : '0px',
+              width: roomType.ViewAgreement ? '325px' : '0px',
+              height: roomType.ViewAgreement ? '263px' : '0px',
               opacity: roomType.ViewAgreement ? '1' : '0',
               userSelect: 'text',
+              marginTop: "10px",
+              paddingTop: "10px",
+    paddingBottom: "10px",
             }}
           >
             <div className="InnerAddtenantTop" style={{ width: '95%' }}>
@@ -1270,18 +1917,19 @@ const Room = ({
               </div>
               <button
                 onClick={() => {
-                  handleTenantLeft();
+                  setTenantLeavePannelState(true);
                 }}
               >
                 Leave
               </button>
             </div>
-            <div className="BottomAddTenantContainer">
+            <div className="BottomAddTenantContainer" style={{height:"53px"}}>
               <button
                 className="AddTenantButton"
                 onClick={() =>
                   updateRoomProperty(roomType.id, 'ViewAgreement', false)
                 }
+                style={{margin:0}}
               >
                 Close
               </button>
@@ -1310,9 +1958,65 @@ const Room = ({
               roomPaymentInfoApi={roomPaymentInfoApi}
               roomType={roomType}
               agreedPrice={roomType.AgreedPrice}
+              extendPaymentSchedule={extendPaymentSchedule}
             ></PaymentProgressBar>
           </div>
         </div>
+        {TenantLeavePannelState && (
+          <>
+            <div
+              className="TenantLeavePannelOpacity"
+              onClick={() => {
+                setTenantLeavePannelState(false);
+              }}
+            ></div>
+            <div className="TenantLeavePannelScreen">
+              <LeavePanel
+                tenant={
+                  TenantList.find(
+                    (tenant: any) => tenant.id === roomType.tenantId
+                  ) &&
+                  TenantList.find(
+                    (tenant: any) => tenant.id === roomType.tenantId
+                  )
+                }
+                room={roomType}
+                totalIncome={
+                  roomType.AllRoomPayInfo.RoomPayInfo.filter(
+                    (payInfo: RoomPayInfo) => payInfo.Paid
+                  ).length * roomType.AgreedPrice
+                }
+                paymentNumbers={
+                  roomType.AllRoomPayInfo.RoomPayInfo.filter(
+                    (payInfo: RoomPayInfo) => payInfo.Paid
+                  ).length
+                }
+                incompletePastPayments={
+                  roomType.AllRoomPayInfo.RoomPayInfo.filter(
+                    (payInfo: RoomPayInfo) =>
+                      !payInfo.Paid && new Date(payInfo.Day) < new Date()
+                  ).length
+                }
+                extraPayments={extraPayments}
+                setExtraPayments={setExtraPayments}
+                tenantRating={tenantRating}
+                setTenantRating={setTenantRating}
+                tenantDescription={tenantDescription}
+                setTenantDescription={setTenantDescription}
+                endReason={endReason}
+                setEndReason={setEndReason}
+              />
+              <button
+                onClick={() => {
+                  handleTenantLeft();
+                }}
+                style={{ marginLeft: '20px' }}
+              >
+                Tenant done
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </>
   );

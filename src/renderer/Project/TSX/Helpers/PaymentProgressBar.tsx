@@ -19,7 +19,7 @@ const PaymentProgressBar: React.FC<Props> = ({
   paymentData,
   roomPaymentInfoApi,
   agreedPrice,
-  roomType,
+  roomType,extendPaymentSchedule
 }) => {
   const today = new Date().getTime();
   const svgRef = useRef<SVGSVGElement | null>(null);
@@ -305,7 +305,7 @@ const PaymentProgressBar: React.FC<Props> = ({
             marginBottom: '10px',
           }}
         >
-          {message}
+          {message}<button onClick={()=>{extendPaymentSchedule()}} style={{height:"20px"}}>Extend?</button>
         </p>
       </div>
       <div style={{ overflowX: 'auto', maxWidth: '100%' }}>
