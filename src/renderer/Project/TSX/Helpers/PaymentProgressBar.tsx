@@ -303,9 +303,10 @@ const PaymentProgressBar: React.FC<Props> = ({
             textAlign: 'center',
             fontWeight: 'bold',
             marginBottom: '10px',
+            display:"flex",
           }}
         >
-          {message}<button onClick={()=>{extendPaymentSchedule()}} style={{height:"20px"}}>Extend?</button>
+          {message}<button onClick={()=>{extendPaymentSchedule()}} style={{height:"20px", display:"flex", alignItems:"center"}}>Extend?</button>
         </p>
       </div>
       <div style={{ overflowX: 'auto', maxWidth: '100%' }}>

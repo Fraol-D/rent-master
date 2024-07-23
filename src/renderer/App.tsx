@@ -17,6 +17,7 @@ function Hello() {
   const [RoomList, setRoomList] = useState<RoomType[]>([]);
   const [TenantList, setTenantList] = useState<tenant[]>([]);
   const [BrokerList, setBrokerList] = useState<BrokerType[]>([]);
+  const [PastTenantReviews, setPastTenantReviews] = useState<PastTenantReviewType[]>([]);
   const [isUpdatingTenantList, setIsUpdatingTenantList] = useState(false);
 
   class RoomApi {
@@ -343,23 +344,38 @@ function Hello() {
     };
   }
   class PastTenantReviewApi {
-    getPastTenantReviewLatestApi = async (tenantId: string) => {
-      const pastTenantReviewRaw = await getValuesWithSql(
-        'PastTenantReview',
-        `WHERE tenantId = '${tenantId}'`
-      );
-      if (pastTenantReviewRaw) {
-        return pastTenantReviewRaw.map((pastTenantReview: any) => {
-          return {
-            id: pastTenantReview.id,
-            roomId: pastTenantReview.roomId,
-            tenantId: pastTenantReview.tenantId,
-            Stars: pastTenantReview.Stars,
-            description: pastTenantReview.description,
-            endReason: pastTenantReview.endReason,
-            LeftDate: pastTenantReview.LeftDate,
-          };
-        });
+    getPastTenantReviewLatestApi = async () => {
+      try {
+        const pastTenantReviewRaw = await getValuesWithSql(
+          'PastTenantsForRoom',
+          `WHERE 1`
+        );
+        console.log("PAST", pastTenantReviewRaw)
+        if (pastTenantReviewRaw) {
+          const pastTenantReviews = pastTenantReviewRaw.map((pastTenantReview: PastTenantReviewType) => {
+            return {
+              id: pastTenantReview.id,
+              roomId: pastTenantReview.roomId,
+              brokerId: pastTenantReview.brokerId,
+              tenantId: pastTenantReview.tenantId,
+              enterDate: pastTenantReview.enterDate,
+              exitDate: pastTenantReview.exitDate,
+              totalEarnings: pastTenantReview.totalEarnings,
+              paymentCycleType: pastTenantReview.paymentCycleType,
+              AgreedCommission: pastTenantReview.AgreedCommission,
+              AgreedPrice: pastTenantReview.AgreedPrice,
+              Stars: pastTenantReview.Stars,
+              description: pastTenantReview.description,
+              endReason: pastTenantReview.endReason,
+            };
+          });
+          setPastTenantReviews(pastTenantReviews);
+        } else {
+          setPastTenantReviews([]);
+        }
+      } catch (error: any) {
+        console.error('Error fetching past tenant reviews:', error.message);
+        setPastTenantReviews([]);
       }
     };
   }
@@ -421,6 +437,7 @@ function Hello() {
     AddBrokerRecommendation = async(
       id: string,
       brokerId: string,
+      roomId: string,
       recommendedTenantId: string,
       AddedTime: number,
       AgreedCommission: number,
@@ -430,7 +447,7 @@ function Hello() {
       try {
         await addValue("brokersRecommendationList", {
           id,
-          brokerId,
+          brokerId,roomId,
           recommendedTenantId,
           AddedTime,
           AgreedCommission,
@@ -451,10 +468,15 @@ function Hello() {
   const brokersRecommendationListApi = new BrokersRecommendationListApi();
   // On start
   useEffect(() => {
+    RefreshDataFromSqlite()
+  }, []);
+  const RefreshDataFromSqlite = () => {
     roomAPI.getRoomFromApi();
     brokerApi.getBrokersApi();
     tenantAPI.getTenantsApi();
-  }, []);
+    pastTenantReviewApi.getPastTenantReviewLatestApi();
+ 
+  }
   return (
     <>
       {/** <NavBar
@@ -479,7 +501,9 @@ function Hello() {
         brokerApi={brokerApi}
         BrokerList={BrokerList}
         setBrokerList={setBrokerList}
+        PastTenantReviews={PastTenantReviews}
         brokersRecommendationListApi={brokersRecommendationListApi}
+        RefreshDataFromSqlite={RefreshDataFromSqlite}
       />
     </>
   );

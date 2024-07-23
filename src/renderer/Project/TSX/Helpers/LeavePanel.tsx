@@ -90,6 +90,7 @@ const LeavePanel = ({
           <input
             type="text"
             value={extraPayments}
+            className='AddANewRoomInputsMid'
             onChange={(e) => setExtraPayments(e.target.value)}
           />
         </label>
@@ -118,7 +119,7 @@ const LeavePanel = ({
             <textarea
               value={tenantDescription}
               onChange={(e) => setTenantDescription(e.target.value)}
-              style={{ width: '100%', height: '80px' }}
+              style={{ width: '100%', height: '80px', borderRadius:"10px",backgroundColor: "#454959",color:"white" }}
             />
           </label>
         </div>
@@ -130,6 +131,8 @@ const LeavePanel = ({
               value={endReason}
               onChange={(e) => setEndReason(e.target.value)}
               style={{ width: '100%' }}
+            className='AddANewRoomInputsMid'
+
             />
           </label>
         </div>

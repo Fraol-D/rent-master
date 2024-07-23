@@ -116,7 +116,7 @@ app
     ipcMain.on('renderer-to-main', (event, message) => {
       console.log('Message from renderer process:', message);
     });
-   /* ipcMain.on('SendVerificationCode', (event, message) => {
+    /* ipcMain.on('SendVerificationCode', (event, message) => {
       console.log('Send verfication code:', message.to, message.code);
       async function sendVerificationEmail(to: any, code: any) {
         let transporter = nodemailer.createTransport({
@@ -262,7 +262,10 @@ const validateTableName = (tableName: string) => {
     'room_specifications',
     'tenants',
     'room_pay_info',
-    'PastTenantReview','brokers',"brokersRecommendationList"
+    'PastTenantReview',
+    'brokers',
+    'brokersRecommendationList',
+    'PastTenantsForRoom',
   ];
   return validTables.includes(tableName);
 };
@@ -298,7 +301,7 @@ const tableStructures = [
       'tenantId TEXT',
       'AddTenantState BOOLEAN',
       'ViewAgreement BOOLEAN',
-      'ShowPayTimeLine BOOLEAN'
+      'ShowPayTimeLine BOOLEAN',
     ],
   },
   {
@@ -324,7 +327,7 @@ const tableStructures = [
       'RentingOrOut BOOLEAN ',
       'startTime INTEGER ', // Assuming storing as UNIX timestamp
       'endTime INTEGER',
-      'agreedPrice REAL '
+      'agreedPrice REAL ',
     ],
   },
   {
@@ -334,18 +337,6 @@ const tableStructures = [
       'roomId TEXT ',
       'Day INTEGER ', // Assuming storing as UNIX timestamp
       'Paid BOOLEAN ',
-    ],
-  },
-  {
-    name: 'PastTenantReview',
-    columns: [
-      'id TEXT PRIMARY KEY',
-      'tenantId TEXT ',
-      'roomId TEXT ',
-      'Stars INTEGER ',
-      'description TEXT ',
-      'endReason TEXT ',
-      'LeftDate TEXT ',
     ],
   },
   {
@@ -360,26 +351,41 @@ const tableStructures = [
       'AddedTime INTEGER ',
       'AgreedCommission TEXT ',
       'rating REAL ',
-      'notes TEXT'
+      'notes TEXT',
     ],
-    
-  },  {
+  },
+  {
     name: 'brokersRecommendationList',
     columns: [
       'id TEXT PRIMARY KEY',
+      'roomId TEXT',
       'brokerId TEXT ',
       'recommendedTenantId TEXT ',
       'AddedTime INTEGER ',
       'AgreedCommission INTEGER ',
-      'rating REAL ',
-      'notes TEXT'
     ],
-    
+  },
+  {
+    name: 'PastTenantsForRoom',
+    columns: [
+      'id TEXT PRIMARY KEY',
+      'roomId TEXT',
+      'brokerId TEXT',
+      'tenantId TEXT',
+      'enterDate INTEGER',
+      'exitDate INTEGER',
+      'totalEarnings INTEGER',
+      'paymentCycleType TEXT',
+      'AgreedPrice INTEGER',
+
+      'AgreedCommission INTEGER ',
+      'Stars INTEGER ',
+      'description TEXT ',
+      'endReason TEXT ',
+    ],
   },
   // Add more tables here as needed
 ];
-
-
 
 // Function to initialize tables
 const initializeTables = (db: any) => {
@@ -393,12 +399,12 @@ const initializeTables = (db: any) => {
           console.error(`Error checking if table ${name} exists:`, err);
         } else if (row) {
           console.log(
-            `Table ${name} already exists. Checking table structure.`,
+            `Table ${name} already exists. Checking table structure.`
           );
           checkAndUpdateTableStructure(db, table);
         } else {
           const createTableQuery = `CREATE TABLE ${name} (${columns.join(
-            ', ',
+            ', '
           )})`;
           db.run(createTableQuery, (err: any) => {
             if (err) {
@@ -408,29 +414,32 @@ const initializeTables = (db: any) => {
             }
           });
         }
-      },
+      }
     );
   });
 };
 
 // Function to check and update table structure
-const checkAndUpdateTableStructure = (db: { all: (arg0: string, arg1: (error: any, rows: any) => void) => void; }, table: { name: any; columns: any; }) => {
+const checkAndUpdateTableStructure = (
+  db: { all: (arg0: string, arg1: (error: any, rows: any) => void) => void },
+  table: { name: any; columns: any }
+) => {
   db.all(`PRAGMA table_info(${table.name})`, (error: any, rows: any[]) => {
     if (error) {
       console.error('Error checking table structure:', error);
     } else {
-      const existingColumns = rows.map((row: { name: any; }) => row.name);
+      const existingColumns = rows.map((row: { name: any }) => row.name);
       const requiredColumns = table.columns.map(
-        (column: string) => column.split(' ')[0],
+        (column: string) => column.split(' ')[0]
       );
       const missingColumns = requiredColumns.filter(
-        (column: any) => !existingColumns.includes(column),
+        (column: any) => !existingColumns.includes(column)
       );
 
       if (missingColumns.length > 0) {
         console.log(
           `Table ${table.name} structure needs updating. Missing columns:`,
-          missingColumns,
+          missingColumns
         );
         updateTableStructure(db, table, missingColumns);
       } else {
@@ -441,12 +450,16 @@ const checkAndUpdateTableStructure = (db: { all: (arg0: string, arg1: (error: an
 };
 
 // Function to update table structure
-const updateTableStructure = (db: any, table: { columns: any[]; name: any; }, missingColumns: any[]) => {
+const updateTableStructure = (
+  db: any,
+  table: { columns: any[]; name: any },
+  missingColumns: any[]
+) => {
   db.serialize(() => {
     db.run(`BEGIN TRANSACTION`);
     missingColumns.forEach((column: any) => {
       const columnDefinition = table.columns.find((col: string) =>
-        col.startsWith(column),
+        col.startsWith(column)
       );
       db.run(
         `ALTER TABLE ${table.name} ADD COLUMN ${columnDefinition}`,
@@ -454,12 +467,12 @@ const updateTableStructure = (db: any, table: { columns: any[]; name: any; }, mi
           if (error) {
             console.error(
               `Error adding column ${column} to table ${table.name}:`,
-              error,
+              error
             );
           } else {
             console.log(`Added column ${column} to table ${table.name}`);
           }
-        },
+        }
       );
     });
     db.run(`COMMIT`);

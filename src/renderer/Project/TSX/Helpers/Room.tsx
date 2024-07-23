@@ -27,7 +27,25 @@ const Room = ({
   BrokerList,
   setBrokerList,
   brokersRecommendationListApi,
-}: any) => {
+}: {
+  roomType: RoomType;
+  updateRoomProperty: any;
+  turnOffAddTenantStateForAll: any;
+  turnOffViewStateForAll: any;
+  TenantList: any;
+  setTenantList: any;
+  tenantAPI: any;
+  updateRoomPropertyWithOutRefresh: any;
+  roomPaymentInfoApi: any;
+  isUpdatingTenantList: any;
+  setIsUpdatingTenantList: any;
+  setSelectedEditRoomId: any;
+  pastTenantReviewApi: any;
+  brokerApi: any;
+  BrokerList: any;
+  setBrokerList: any;
+  brokersRecommendationListApi: any;
+}) => {
   const handleAddTenant = () => {
     turnOffAddTenantStateForAll();
     updateRoomProperty(roomType.id, 'AddTenantState', !roomType.AddTenantState);
@@ -223,7 +241,7 @@ const Room = ({
       handleTenantSelectWhenNew();
       return;
     }
-    if(AddTenantUseBrokerState && AddTenantSelectedBrokerId == "") return
+    if (AddTenantUseBrokerState && AddTenantSelectedBrokerId == '') return;
     if (name.length >= 3 && tel1.length >= 6 && startTime.length >= 1) {
       setIsUpdatingTenantList(true);
       const tenantId = uuidv4();
@@ -337,12 +355,12 @@ const Room = ({
         brokersRecommendationListApi.AddBrokerRecommendation(
           uuidv4(),
           AddTenantSelectedBrokerId,
+          roomType.id,
           tenant.id,
           Date.now(),
           isPercentCommission
             ? (commissionValue / 100) * agreedPrice
-            : commissionValue,
-          4.5,''
+            : commissionValue
         );
       }
 
@@ -530,15 +548,49 @@ const Room = ({
     const tenantIndex = TenantList.findIndex(
       (tenant: any) => tenant.id === roomType.tenantId
     );
-    addValue('PastTenantReview', {
+    const allPayInfos = await getValuesWithSql(
+      'room_pay_info',
+      `WHERE roomId = '${roomType.id}'`
+    );
+    let totalEarningsFromTenant = 0;
+    if (allPayInfos) {
+      for (let i = 0; i < allPayInfos.length; i++) {
+        const element = allPayInfos[i];
+        if (element.Paid) {
+          totalEarningsFromTenant += roomType.AgreedPrice;
+        }
+      }
+    }
+    const agreedCommissionForBroker = (
+      await getValuesWithSql(
+        'brokersRecommendationList',
+        `WHERE roomId = '${roomType.id}'`
+      )
+    ).sort((a:any, b:any) => b.AddedTime - a.AddedTime);
+    console.log(agreedCommissionForBroker);
+    addValue('PastTenantsForRoom', {
       id: uuidv4(),
-      tenantId: roomType.tenantId,
       roomId: roomType.id,
+      brokerId: agreedCommissionForBroker[0].brokerId,
+      tenantId: roomType.tenantId,
+      enterDate: new Date(
+        TenantList.find((t: tenant) => t.id === roomType.tenantId).startTime
+      ).getTime(),
+      exitDate: Date.now(),
+      totalEarnings: totalEarningsFromTenant,
+      paymentCycleType:
+        roomType.PaymentCycleType === 'custom'
+          ? ('-' + roomType.PaymentCycleCustomeDays).toString()
+          : roomType.PaymentCycleType,
+        AgreedPrice:200,
+      AgreedCommission: agreedCommissionForBroker[0].AgreedCommission || 0,
       Stars: tenantRating,
       description: tenantDescription,
       endReason: endReason,
-      LeftDate: new Date().getTime(),
     });
+    setEndReason('')
+    setTenantDescription('');
+    setTenantRating(0);
     if (tenantIndex !== -1) {
       // Update the tenant's RentingOrOut status to false
       tenantAPI.EditTenantApi(roomType.tenantId, 'RentingOrOut', false);
@@ -575,6 +627,8 @@ const Room = ({
       // Reset the room's AddTenantState
       updateRoomProperty(roomType.id, 'AddTenantState', 0);
       updateRoomProperty(roomType.id, 'ViewAgreement', 0);
+
+      
       setTenantLeavePannelState(false);
     }
   };
@@ -1814,9 +1868,9 @@ const Room = ({
               height: roomType.ViewAgreement ? '263px' : '0px',
               opacity: roomType.ViewAgreement ? '1' : '0',
               userSelect: 'text',
-              marginTop: "10px",
-              paddingTop: "10px",
-    paddingBottom: "10px",
+              marginTop: '10px',
+              paddingTop: '10px',
+              paddingBottom: '10px',
             }}
           >
             <div className="InnerAddtenantTop" style={{ width: '95%' }}>
@@ -1923,13 +1977,16 @@ const Room = ({
                 Leave
               </button>
             </div>
-            <div className="BottomAddTenantContainer" style={{height:"53px"}}>
+            <div
+              className="BottomAddTenantContainer"
+              style={{ height: '53px' }}
+            >
               <button
                 className="AddTenantButton"
                 onClick={() =>
                   updateRoomProperty(roomType.id, 'ViewAgreement', false)
                 }
-                style={{margin:0}}
+                style={{ margin: 0 }}
               >
                 Close
               </button>

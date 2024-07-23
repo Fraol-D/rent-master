@@ -33,7 +33,7 @@ import StastistcsIcon from '../../assets/icons8-statistic-100(2).png';
 import ArrowIcon2 from '../../assets/icons8-forward-100.png';
 import BottomNavBar from './Bottom navbar/BottomNavBar';
 import { CalanderPage } from './Pages/CalanderPage';
-import { addValue, updateValue } from 'Backend/localServerApis';
+import { addValue, deleteValue, getValuesWithSql, updateValue } from 'Backend/localServerApis';
 type FilterOption = {
   key: string;
   value: any;
@@ -117,7 +117,22 @@ declare global {
     name: string;
     floorIndex?: number;
   };*/
-}
+  type PastTenantReviewType = {
+    id: string
+    roomId: string
+    brokerId: string
+    tenantId: string
+    enterDate: number
+    exitDate: number
+    totalEarnings: number
+    paymentCycleType: string
+    paymentCycleTypeCustom: string
+    AgreedCommission: number
+    AgreedPrice:number
+    Stars: number
+    description: string
+    endReason: string
+  }}
 
 const MainPage = ({
   RoomList,
@@ -131,7 +146,9 @@ const MainPage = ({
   setIsUpdatingTenantList,
   pastTenantReviewApi,
   brokerApi,
-  setBrokerList,BrokerList,brokersRecommendationListApi
+  setBrokerList,
+  BrokerList,
+  brokersRecommendationListApi,PastTenantReviews,RefreshDataFromSqlite
 }: any) => {
   const [floorFilter, setFloorFilter] = useState<string>('');
   const [TenantNameFilter, setTenantNameFilter] = useState<string>('');
@@ -497,10 +514,12 @@ const MainPage = ({
   const [SelectedPage, setSelectedPage] = useState<
     'Dashboard' | 'People' | 'Rooms' | 'Calander' | 'Settings'
   >('Rooms');
-
+  const [PeopleSelectedPage, setPeopleSelectedPage] = useState<
+    'TenantsList' | 'BrokersList' | 'TenantReviews'
+  >('TenantsList');
   const [AddARoomState, setAddARoomState] = useState(false);
-  const [AddRoomFormFloor, setAddRoomFormFloor] = useState(0);
-  const [AddRoomFormRoomIndex, setAddRoomFormRoomIndex] = useState(0);
+  const [AddRoomFormFloor, setAddRoomFormFloor] = useState(1);
+  const [AddRoomFormRoomIndex, setAddRoomFormRoomIndex] = useState(1);
   const [AddRoomFormPrice, setAddRoomFormPrice] = useState(0);
   const [AddRoomFormPaymentCycleType, setAddRoomFormPaymentCycleType] =
     useState('monthly');
@@ -586,8 +605,8 @@ const MainPage = ({
   };
   const ResetAddRoomForumVariables = () => {
     setAddARoomState(false);
-    setAddRoomFormFloor(0);
-    setAddRoomFormRoomIndex(0);
+    setAddRoomFormFloor(1);
+    setAddRoomFormRoomIndex(1);
     setAddRoomFormPrice(0);
     setAddRoomFormPaymentCycleType('monthly');
     setAddRoomFormPaymentCycleCustomDays(0);
@@ -598,459 +617,540 @@ const MainPage = ({
   };
   const [SelectedEditRoomId, setSelectedEditRoomId] = useState('');
   const [DeleteConfimation, setDeleteConfimation] = useState(false);
-  const handleDeleteFirst = () => {
+  const handleDeleteFirst = async () => {
     if (!DeleteConfimation) setDeleteConfimation(true);
     if (DeleteConfimation) {
+      const listOfPayments = await getValuesWithSql(
+        'room_pay_info',
+        `WHERE roomId = '${SelectedEditRoomId}'`
+      );
+      if (listOfPayments)
+        for (let i = 0; i < listOfPayments.length; i++) {
+          const element = listOfPayments[i];
+          deleteValue('room_pay_info', element.id);
+        }
       roomAPI.DeleteRoom(SelectedEditRoomId);
       setSelectedEditRoomId('');
       setDeleteConfimation(false);
+      
+     
     }
   };
-
+  useEffect(()=>{if(SelectedPage === "People") {
+    RefreshDataFromSqlite();;
+  }},[SelectedPage])
   return (
     <>
       <div className="MAINCONTAINER">
         <div className="SideBarContainer">
-          <div
-            className="SideBarRoomPageTopPart"
-            style={{ height: AddARoomState ? '40%' : '100%' }}
-          >
-            <h1
-              onClick={() => {
-                console.log(TenantList);
-              }}
-            >
-              Search options
-            </h1>
-            <div className="SearchBarContainer">
-              <div className="TenantSearchBarContainer">
-                {' '}
-                Tenant name:
-                <input
-                  type="text1"
-                  className="TenantSearchBar"
-                  value={TenantNameFilter}
-                  onChange={(e) => {
-                    setTenantNameFilter(e.target.value);
-                    addFilterOption('tenantName', e.target.value);
-                  }}
-                />
-              </div>
-              <div className="RoomAndFloorContainer">
-                <div>
-                  Floor:
-                  <input
-                    type="number"
-                    className="FloorSearchBar"
-                    value={floorFilter}
-                    onChange={(e) => {
-                      setFloorFilter(e.target.value);
-                      addFilterOption('floor', e.target.value);
-                    }}
-                  />
-                </div>
-                <div>
-                  {' '}
-                  Room:
-                  <input
-                    type="number"
-                    className="RoomSearchBar"
-                    value={roomFilter}
-                    onChange={(e) => {
-                      setRoomFilter(e.target.value);
-                      addFilterOption('room', e.target.value);
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
-            <div className="AdvanceRoomFinding">
+          {SelectedPage === 'Rooms' ? (
+            <>
               <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  marginRight: '10px',
-                  flexDirection: 'row',
-                  justifyContent: 'center',
-                }}
+                className="SideBarRoomPageTopPart"
+                style={{ height: AddARoomState ? '40%' : '100%' }}
               >
-                Room status:
-                <select
-                  value={filterStatus}
-                  onChange={(e) => {
-                    setFilterStatus(
-                      e.target.value as 'all' | 'Taken' | 'Empty'
-                    );
-                    addFilterOption(
-                      'filterstatus',
-                      e.target.value as 'all' | 'Taken' | 'Empty'
-                    );
-                  }}
-                  className="filter-drop"
-                  style={{ width: '90px', height: '30px' }}
-                >
-                  <option value="Taken">Taken</option>
-                  <option value="Empty">Empty</option>
-                </select>
-              </div>
-              <div
-                className="AdvanceRoomFindingINPUTCONTAINER"
-                style={{ width: '100%' }}
-              >
-                <div style={{ marginBottom: '10px', marginTop: '10px' }}>
-                  <div>
-                    Filter Price:
-                    <select
-                      value={filterPriceOperator}
-                      onChange={(e) => {
-                        setFilterPriceOperator(
-                          e.target.value as '=' | '<' | '>'
-                        );
-                        addFilterOption(
-                          'filterPriceOperator',
-                          e.target.value as '=' | '<' | '>'
-                        );
-                      }}
-                      style={{ width: '30px', height: '30px' }}
-                      className="filter-drop"
-                    >
-                      <option value="=">{'='}</option>
-                      <option value="<">{'<'}</option>
-                      <option value=">">{'>'}</option>
-                      <option value="none">none</option>
-                    </select>
-                    <input
-                      type="number"
-                      className="AdvanceRoomFindingInput"
-                      value={filterPriceValue}
-                      onChange={(e) => {
-                        setFilterPriceValue(e.target.value);
-                        addFilterOption('filterPriceValue', e.target.value);
-                      }}
-                    />
-                  </div>
-                </div>
-                <div style={{ marginBottom: '10px', marginTop: '10px' }}>
-                  <div>
-                    Filter due dates:
-                    <select
-                      value={FilterDueDateOperator}
-                      onChange={(e) => {
-                        setFilterDueDateOperator(
-                          e.target.value as '=' | '<' | '>'
-                        );
-                        addFilterOption(
-                          'filterDueDateOperator',
-                          e.target.value as '=' | '<' | '>'
-                        );
-                      }}
-                      style={{ width: '30px', height: '30px' }}
-                      className="filter-drop"
-                    >
-                      <option value="=">{'='}</option>
-                      <option value="<">{'<'}</option>
-                      <option value=">">{'>'}</option>
-                      <option value="none">none</option>
-                    </select>
-                    <input
-                      type="number"
-                      className="AdvanceRoomFindingInput"
-                      value={FilterDueDateValue}
-                      onChange={(e) => {
-                        setFilterDueDateValue(e.target.value);
-                        setFilterStatus('Taken');
-                        addFilterOption('filterstatus', 'Taken');
-                        addFilterOption('filterDueDateValue', e.target.value);
-                      }}
-                    />
-                  </div>
-                </div>
-                <div>
-                  <div>
-                    Filter SMeters:
-                    <select
-                      value={filterSquareFeetOperator}
-                      onChange={(e) => {
-                        setFilterSquareFeetOperator(
-                          e.target.value as '=' | '<' | '>'
-                        );
-                        addFilterOption(
-                          'filterSquareFeetOperator',
-                          e.target.value as '=' | '<' | '>'
-                        );
-                      }}
-                      style={{ width: '30px', height: '30px' }}
-                      className="filter-drop"
-                    >
-                      <option value="=">{'='}</option>
-                      <option value="<">{'<'}</option>
-                      <option value=">">{'>'}</option>
-                      <option value="none">none</option>
-                    </select>
-                    <input
-                      type="number"
-                      className="AdvanceRoomFindingInput"
-                      value={filterSquareFeetValue}
-                      onChange={(e) => {
-                        setFilterSquareFeetValue(e.target.value);
-                        addFilterOption(
-                          'filterSquareFeetValue',
-                          e.target.value
-                        );
-                      }}
-                    />
-                  </div>
-                </div>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center' }}>
-                <button
-                  className="sort-button"
+                <h1
                   onClick={() => {
-                    if (sortDirection === 'asc') {
-                      setSortDirection('desc');
-                    } else {
-                      setSortDirection('asc');
-                    }
+                    console.log(TenantList);
                   }}
                 >
-                  <img
-                    src={SortIcon}
-                    className={
-                      sortDirection === 'asc'
-                        ? 'sort-button-img'
-                        : 'sort-button-img-Flip'
-                    }
-                  ></img>
-                </button>
-                <select
-                  value={sortType}
-                  onChange={(e) => {
-                    setSortType(e.target.value);
-                    addFilterOption('sort', e.target.value);
-                  }}
-                  className="sort-drop"
-                >
-                  <option value="price">Sort by Price</option>
-                  <option value="floor">Sort by Floor</option>
-                  <option value="room">Sort by Room</option>
-                </select>
-              </div>
-            </div>
-          </div>
-          <div
-            className="SideBarRoomPageBottomPartAddRoom"
-            style={{ height: AddARoomState ? '60%' : '0%' }}
-          >
-            <div>
-              <h1 style={{ display: 'flex', justifyContent: 'center' }}>
-                Add a room
-              </h1>
-              <div>
-                <div className="AddaNewRoomRowObject">
-                  <input
-                    className="AddANewRoomInputsSmall"
-                    type="number"
-                    placeholder="Floor"
-                    value={AddRoomFormFloor}
-                    onChange={(e) =>
-                      setAddRoomFormFloor(parseInt(e.target.value))
-                    }
-                  />
-                  :Floor number
-                </div>
-                <div className="AddaNewRoomRowObject">
-                  <input
-                    className="AddANewRoomInputsSmall"
-                    type="number"
-                    placeholder="Room Index"
-                    value={AddRoomFormRoomIndex}
-                    onChange={(e) =>
-                      setAddRoomFormRoomIndex(parseInt(e.target.value))
-                    }
-                  />
-                  :Room number
-                </div>
-                <div className="AddaNewRoomRowObject">
-                  Price (per month):
-                  <input
-                    className="AddANewRoomInputsSmall"
-                    type="number"
-                    placeholder="Price"
-                    value={AddRoomFormPrice}
-                    onChange={(e) =>
-                      setAddRoomFormPrice(parseInt(e.target.value))
-                    }
-                  />
-                  $
-                </div>
-                <div className="AddaNewRoomRowObject">
-                  Payment cycle:{' '}
-                  <select
-                    value={AddRoomFormPaymentCycleType}
-                    onChange={(e) =>
-                      setAddRoomFormPaymentCycleType(e.target.value)
-                    }
-                    className="AddANewRoomSelectMid"
-                  >
-                    <option value="Every 30 days">30 days</option>
-                    <option value="Every 15 days">15 days</option>
-                    <option value="Every 7 days">7 days</option>
-                    <option value="daily">daily</option>
-
-                    <option value="monthly">monthly</option>
-                    <option value="custom">custom days</option>
-                  </select>
-                </div>
-                {AddRoomFormPaymentCycleType === 'custom' && (
-                  <div style={{ marginLeft: '10px' }}>
-                    Custom Days:
+                  Search options
+                </h1>
+                <div className="SearchBarContainer">
+                  <div className="TenantSearchBarContainer">
+                    {' '}
+                    Tenant name:
                     <input
-                      className="AddANewRoomInputsSmall"
-                      type="number"
-                      placeholder="Custom Days"
-                      value={AddRoomFormPaymentCycleCustomDays}
-                      onChange={(e) =>
-                        setAddRoomFormPaymentCycleCustomDays(
-                          parseInt(e.target.value)
-                        )
-                      }
+                      type="text1"
+                      className="TenantSearchBar"
+                      value={TenantNameFilter}
+                      onChange={(e) => {
+                        setTenantNameFilter(e.target.value);
+                        addFilterOption('tenantName', e.target.value);
+                      }}
                     />
                   </div>
-                )}
-                <div className="AddaNewRoomRowObject">
-                  <input
-                    className="AddANewRoomInputsSmall"
-                    type="number"
-                    placeholder="Square Meters"
-                    value={AddRoomFormSquareMeters}
-                    onChange={(e) =>
-                      setAddRoomFormSquareMeters(parseInt(e.target.value))
-                    }
-                  />
-                  : Square Meters
+                  <div className="RoomAndFloorContainer">
+                    <div>
+                      Floor:
+                      <input
+                        type="number"
+                        className="FloorSearchBar"
+                        value={floorFilter}
+                        onChange={(e) => {
+                          setFloorFilter(e.target.value);
+                          addFilterOption('floor', e.target.value);
+                        }}
+                      />
+                    </div>
+                    <div>
+                      {' '}
+                      Room:
+                      <input
+                        type="number"
+                        className="RoomSearchBar"
+                        value={roomFilter}
+                        onChange={(e) => {
+                          setRoomFilter(e.target.value);
+                          addFilterOption('room', e.target.value);
+                        }}
+                      />
+                    </div>
+                  </div>
                 </div>
-                <div className="RoomSpecficationsMainContainer">
-                  <h3>
-                    Room Specifications{' - '}
-                    <button onClick={addAddRoomFormSpecification}>Add</button>
-                  </h3>
-                  {AddRoomFormRoomSpecifications.map((spec, index) => (
-                    <div
-                      key={index}
-                      className="AddANewRoomSpecObjectMainContainer"
+                <div className="AdvanceRoomFinding">
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      marginRight: '10px',
+                      flexDirection: 'row',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    Room status:
+                    <select
+                      value={filterStatus}
+                      onChange={(e) => {
+                        setFilterStatus(
+                          e.target.value as 'all' | 'Taken' | 'Empty'
+                        );
+                        addFilterOption(
+                          'filterstatus',
+                          e.target.value as 'all' | 'Taken' | 'Empty'
+                        );
+                      }}
+                      className="filter-drop"
+                      style={{ width: '90px', height: '30px' }}
                     >
+                      <option value="Taken">Taken</option>
+                      <option value="Empty">Empty</option>
+                    </select>
+                  </div>
+                  <div
+                    className="AdvanceRoomFindingINPUTCONTAINER"
+                    style={{ width: '100%' }}
+                  >
+                    <div style={{ marginBottom: '10px', marginTop: '10px' }}>
                       <div>
-                        Name:
+                        Filter Price:
+                        <select
+                          value={filterPriceOperator}
+                          onChange={(e) => {
+                            setFilterPriceOperator(
+                              e.target.value as '=' | '<' | '>'
+                            );
+                            addFilterOption(
+                              'filterPriceOperator',
+                              e.target.value as '=' | '<' | '>'
+                            );
+                          }}
+                          style={{ width: '30px', height: '30px' }}
+                          className="filter-drop"
+                        >
+                          <option value="=">{'='}</option>
+                          <option value="<">{'<'}</option>
+                          <option value=">">{'>'}</option>
+                          <option value="none">none</option>
+                        </select>
                         <input
-                          className="AddANewRoomInputsMid"
-                          value={spec.Detail}
-                          onChange={(e) =>
-                            handleAddRoomFormSpecificationChange(
-                              index,
-                              'Detail',
+                          type="number"
+                          className="AdvanceRoomFindingInput"
+                          value={filterPriceValue}
+                          onChange={(e) => {
+                            setFilterPriceValue(e.target.value);
+                            addFilterOption('filterPriceValue', e.target.value);
+                          }}
+                        />
+                      </div>
+                    </div>
+                    <div style={{ marginBottom: '10px', marginTop: '10px' }}>
+                      <div>
+                        Filter due dates:
+                        <select
+                          value={FilterDueDateOperator}
+                          onChange={(e) => {
+                            setFilterDueDateOperator(
+                              e.target.value as '=' | '<' | '>'
+                            );
+                            addFilterOption(
+                              'filterDueDateOperator',
+                              e.target.value as '=' | '<' | '>'
+                            );
+                          }}
+                          style={{ width: '30px', height: '30px' }}
+                          className="filter-drop"
+                        >
+                          <option value="=">{'='}</option>
+                          <option value="<">{'<'}</option>
+                          <option value=">">{'>'}</option>
+                          <option value="none">none</option>
+                        </select>
+                        <input
+                          type="number"
+                          className="AdvanceRoomFindingInput"
+                          value={FilterDueDateValue}
+                          onChange={(e) => {
+                            setFilterDueDateValue(e.target.value);
+                            setFilterStatus('Taken');
+                            addFilterOption('filterstatus', 'Taken');
+                            addFilterOption(
+                              'filterDueDateValue',
                               e.target.value
+                            );
+                          }}
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <div>
+                        Filter SMeters:
+                        <select
+                          value={filterSquareFeetOperator}
+                          onChange={(e) => {
+                            setFilterSquareFeetOperator(
+                              e.target.value as '=' | '<' | '>'
+                            );
+                            addFilterOption(
+                              'filterSquareFeetOperator',
+                              e.target.value as '=' | '<' | '>'
+                            );
+                          }}
+                          style={{ width: '30px', height: '30px' }}
+                          className="filter-drop"
+                        >
+                          <option value="=">{'='}</option>
+                          <option value="<">{'<'}</option>
+                          <option value=">">{'>'}</option>
+                          <option value="none">none</option>
+                        </select>
+                        <input
+                          type="number"
+                          className="AdvanceRoomFindingInput"
+                          value={filterSquareFeetValue}
+                          onChange={(e) => {
+                            setFilterSquareFeetValue(e.target.value);
+                            addFilterOption(
+                              'filterSquareFeetValue',
+                              e.target.value
+                            );
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <button
+                      className="sort-button"
+                      onClick={() => {
+                        if (sortDirection === 'asc') {
+                          setSortDirection('desc');
+                        } else {
+                          setSortDirection('asc');
+                        }
+                      }}
+                    >
+                      <img
+                        src={SortIcon}
+                        className={
+                          sortDirection === 'asc'
+                            ? 'sort-button-img'
+                            : 'sort-button-img-Flip'
+                        }
+                      ></img>
+                    </button>
+                    <select
+                      value={sortType}
+                      onChange={(e) => {
+                        setSortType(e.target.value);
+                        addFilterOption('sort', e.target.value);
+                      }}
+                      className="sort-drop"
+                    >
+                      <option value="price">Sort by Price</option>
+                      <option value="floor">Sort by Floor</option>
+                      <option value="room">Sort by Room</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              <div
+                className="SideBarRoomPageBottomPartAddRoom"
+                style={{ height: AddARoomState ? '60%' : '0%' }}
+              >
+                <div>
+                  <h1 style={{ display: 'flex', justifyContent: 'center' }}>
+                    Add a room
+                  </h1>
+                  <div>
+                    <div className="AddaNewRoomRowObject">
+                      <input
+                        className="AddANewRoomInputsSmall"
+                        type="number"
+                        placeholder="Floor"
+                        value={AddRoomFormFloor}
+                        onChange={(e) =>
+                          setAddRoomFormFloor(parseInt(e.target.value))
+                        }
+                      />
+                      :Floor number
+                    </div>
+                    <div className="AddaNewRoomRowObject">
+                      <input
+                        className="AddANewRoomInputsSmall"
+                        type="number"
+                        placeholder="Room Index"
+                        value={AddRoomFormRoomIndex}
+                        onChange={(e) =>
+                          setAddRoomFormRoomIndex(parseInt(e.target.value))
+                        }
+                      />
+                      :Room number
+                    </div>
+                    <div className="AddaNewRoomRowObject">
+                      Price (per month):
+                      <input
+                        className="AddANewRoomInputsSmall"
+                        type="number"
+                        placeholder="Price"
+                        value={AddRoomFormPrice}
+                        onChange={(e) =>
+                          setAddRoomFormPrice(parseInt(e.target.value))
+                        }
+                      />
+                      $
+                    </div>
+                    <div className="AddaNewRoomRowObject">
+                      Payment cycle:{' '}
+                      <select
+                        value={AddRoomFormPaymentCycleType}
+                        onChange={(e) =>
+                          setAddRoomFormPaymentCycleType(e.target.value)
+                        }
+                        className="AddANewRoomSelectMid"
+                      >
+                        <option value="Every 30 days">30 days</option>
+                        <option value="Every 15 days">15 days</option>
+                        <option value="Every 7 days">7 days</option>
+                        <option value="daily">daily</option>
+
+                        <option value="monthly">monthly</option>
+                        <option value="custom">custom days</option>
+                      </select>
+                    </div>
+                    {AddRoomFormPaymentCycleType === 'custom' && (
+                      <div style={{ marginLeft: '10px' }}>
+                        Custom Days:
+                        <input
+                          className="AddANewRoomInputsSmall"
+                          type="number"
+                          placeholder="Custom Days"
+                          value={AddRoomFormPaymentCycleCustomDays}
+                          onChange={(e) =>
+                            setAddRoomFormPaymentCycleCustomDays(
+                              parseInt(e.target.value)
                             )
                           }
                         />
-                        {spec.type === 'bool' ? (
-                          <>
+                      </div>
+                    )}
+                    <div className="AddaNewRoomRowObject">
+                      <input
+                        className="AddANewRoomInputsSmall"
+                        type="number"
+                        placeholder="Square Meters"
+                        value={AddRoomFormSquareMeters}
+                        onChange={(e) =>
+                          setAddRoomFormSquareMeters(parseInt(e.target.value))
+                        }
+                      />
+                      : Square Meters
+                    </div>
+                    <div className="RoomSpecficationsMainContainer">
+                      <h3>
+                        Room Specifications{' - '}
+                        <button onClick={addAddRoomFormSpecification}>
+                          Add
+                        </button>
+                      </h3>
+                      {AddRoomFormRoomSpecifications.map((spec, index) => (
+                        <div
+                          key={index}
+                          className="AddANewRoomSpecObjectMainContainer"
+                        >
+                          <div>
+                            Name:
                             <input
-                              type="checkbox"
-                              checked={spec.Boolean}
+                              className="AddANewRoomInputsMid"
+                              value={spec.Detail}
                               onChange={(e) =>
                                 handleAddRoomFormSpecificationChange(
                                   index,
-                                  'Boolean',
-                                  e.target.checked
+                                  'Detail',
+                                  e.target.value
+                                )
+                              }
+                            />
+                            {spec.type === 'bool' ? (
+                              <>
+                                <input
+                                  type="checkbox"
+                                  checked={spec.Boolean}
+                                  onChange={(e) =>
+                                    handleAddRoomFormSpecificationChange(
+                                      index,
+                                      'Boolean',
+                                      e.target.checked
+                                    )
+                                  }
+                                />{' '}
+                                {spec.Boolean ? 'Yes' : 'No'}
+                              </>
+                            ) : (
+                              <input
+                                type="number"
+                                className="AddANewRoomInputsSmall"
+                                value={spec.Number}
+                                onChange={(e) =>
+                                  handleAddRoomFormSpecificationChange(
+                                    index,
+                                    'Number',
+                                    e.target.value
+                                  )
+                                }
+                              />
+                            )}
+                          </div>
+                          <div>
+                            <input
+                              type="radio"
+                              name={`spec-${index}`}
+                              value="bool"
+                              checked={spec.type === 'bool'}
+                              onChange={(e) =>
+                                handleAddRoomFormSpecificationChange(
+                                  index,
+                                  'type',
+                                  'bool'
                                 )
                               }
                             />{' '}
-                            {spec.Boolean ? 'Yes' : 'No'}
-                          </>
-                        ) : (
-                          <input
-                            type="number"
-                            className="AddANewRoomInputsSmall"
-                            value={spec.Number}
-                            onChange={(e) =>
-                              handleAddRoomFormSpecificationChange(
-                                index,
-                                'Number',
-                                e.target.value
-                              )
-                            }
-                          />
-                        )}
-                      </div>
-                      <div>
-                        <input
-                          type="radio"
-                          name={`spec-${index}`}
-                          value="bool"
-                          checked={spec.type === 'bool'}
-                          onChange={(e) =>
-                            handleAddRoomFormSpecificationChange(
-                              index,
-                              'type',
-                              'bool'
-                            )
-                          }
-                        />{' '}
-                        Yes/No
-                        <input
-                          type="radio"
-                          name={`spec-${index}`}
-                          value="number"
-                          checked={spec.type === 'number'}
-                          onChange={(e) =>
-                            handleAddRoomFormSpecificationChange(
-                              index,
-                              'type',
-                              'number'
-                            )
-                          }
-                        />{' '}
-                        Number{' - - '}
-                        <button
-                          onClick={() => removeAddRoomFormSpecification(index)}
-                        >
-                          Delete
-                        </button>
-                      </div>
+                            Yes/No
+                            <input
+                              type="radio"
+                              name={`spec-${index}`}
+                              value="number"
+                              checked={spec.type === 'number'}
+                              onChange={(e) =>
+                                handleAddRoomFormSpecificationChange(
+                                  index,
+                                  'type',
+                                  'number'
+                                )
+                              }
+                            />{' '}
+                            Number{' - - '}
+                            <button
+                              onClick={() =>
+                                removeAddRoomFormSpecification(index)
+                              }
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  </div>
+                </div>
+                <div className="AddaNewRoomBottomContianer">
+                  <button
+                    className="HorizontalButton"
+                    onClick={() => {
+                      handleCancelAddRoom();
+                    }}
+                  >
+                    Cancel
+                  </button>{' '}
+                  <button
+                    className="HorizontalButton"
+                    onClick={() => {
+                      handleAddRoom(true);
+                      ResetAddRoomForumVariables();
+                      setAddARoomState(true);
+                    }}
+                  >
+                    Add Room and continue adding
+                  </button>
+                  <button
+                    className="HorizontalButton"
+                    onClick={() => {
+                      handleAddRoom(false);
+                    }}
+                  >
+                    Add Room
+                  </button>
                 </div>
               </div>
-            </div>
-            <div className="AddaNewRoomBottomContianer">
-              <button
-                className="HorizontalButton"
+            </>
+          ) : SelectedPage === 'People' ? (
+            <>
+              <h1>Peoples page <button onClick={RefreshDataFromSqlite}>Refresh</button></h1>
+              <div
                 onClick={() => {
-                  handleCancelAddRoom();
+                  setPeopleSelectedPage('TenantsList');
                 }}
+                className={
+                  PeopleSelectedPage === 'TenantsList'
+                    ? 'sideBarItemComponentMainSelected'
+                    : 'sideBarItemComponentMain'
+                }
               >
-                Cancel
-              </button>{' '}
-              <button
-                className="HorizontalButton"
+                <div>Tenant list</div>
+                {PeopleSelectedPage !== 'TenantsList' ? (
+                  <div>{'-→'}</div>
+                ) : (
+                  <></>
+                )}
+              </div>
+              <div
                 onClick={() => {
-                  handleAddRoom(true);
-                  ResetAddRoomForumVariables();
-                  setAddARoomState(true);
+                  setPeopleSelectedPage('BrokersList');
                 }}
+                className={
+                  PeopleSelectedPage === 'BrokersList'
+                    ? 'sideBarItemComponentMainSelected'
+                    : 'sideBarItemComponentMain'
+                }
               >
-                Add Room and continue adding
-              </button>
-              <button
-                className="HorizontalButton"
+                <div>Broker list</div>
+                {PeopleSelectedPage !== 'BrokersList' ? (
+                  <div>{'-→'}</div>
+                ) : (
+                  <></>
+                )}
+              </div>
+              <div
                 onClick={() => {
-                  handleAddRoom(false);
+                  setPeopleSelectedPage('TenantReviews');
                 }}
+                className={
+                  PeopleSelectedPage === 'TenantReviews'
+                    ? 'sideBarItemComponentMainSelected'
+                    : 'sideBarItemComponentMain'
+                }
               >
-                Add Room
-              </button>
-            </div>
-          </div>
+                <div>Tenant Reviews</div>
+                {PeopleSelectedPage !== 'TenantReviews' ? (
+                  <div>{'-→'}</div>
+                ) : (
+                  <></>
+                )}
+              </div>
+            </>
+          ) : (
+            <></>
+          )}
         </div>
         {SelectedEditRoomId && (
           <>
@@ -1078,7 +1178,8 @@ const MainPage = ({
               updateRoomProperty={updateRoomProperty}
               updateRoomPropertyWithOutRefresh={
                 updateRoomPropertyWithOutRefresh
-              } brokerApi={brokerApi}
+              }
+              brokerApi={brokerApi}
               BrokerList={BrokerList}
               setBrokerList={setBrokerList}
               pastTenantReviewApi={pastTenantReviewApi}
@@ -1099,7 +1200,14 @@ const MainPage = ({
             />
           )}
           {SelectedPage === 'People' && (
-            <PeopleComponentPage TenantList={TenantList} />
+            <PeopleComponentPage
+              TenantList={TenantList}
+              PeopleSelectedPage={PeopleSelectedPage}
+              PastTenantReviews={PastTenantReviews}
+              RoomList={RoomList}
+              BrokerList={BrokerList}
+              RefreshDataFromSqlite={RefreshDataFromSqlite}
+            />
           )}
           {SelectedPage === 'Calander' && (
             <CalanderPage
