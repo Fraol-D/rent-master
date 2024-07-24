@@ -582,7 +582,7 @@ const Room = ({
         roomType.PaymentCycleType === 'custom'
           ? ('-' + roomType.PaymentCycleCustomeDays).toString()
           : roomType.PaymentCycleType,
-        AgreedPrice:200,
+        AgreedPrice:roomType.AgreedPrice,
       AgreedCommission: agreedCommissionForBroker[0].AgreedCommission || 0,
       Stars: tenantRating,
       description: tenantDescription,
@@ -1275,43 +1275,7 @@ const Room = ({
                               setAddTenantAddBrokerFormEmail(e.target.value)
                             }
                           />
-                          <input
-                            type="text"
-                            placeholder="Agreed Commission"
-                            value={AddTenantAddBrokerFormAgreedCommission}
-                            onChange={(e) =>
-                              setAddTenantAddBrokerFormAgreedCommission(
-                                e.target.value
-                              )
-                            }
-                          />
-                          <div>
-                            Stars:
-                            {[1, 2, 3, 4, 5].map((star) => (
-                              <span
-                                key={star}
-                                style={{
-                                  cursor: 'pointer',
-                                  color:
-                                    AddTenantAddBrokerFormRating >= star
-                                      ? 'gold'
-                                      : 'grey',
-                                }}
-                                onClick={() =>
-                                  setAddTenantAddBrokerFormRating(star)
-                                }
-                              >
-                                ★
-                              </span>
-                            ))}
-                          </div>
-                          <textarea
-                            placeholder="Notes"
-                            value={AddTenantAddBrokerFormNotes}
-                            onChange={(e) =>
-                              setAddTenantAddBrokerFormNotes(e.target.value)
-                            }
-                          ></textarea>
+                        
                           <button
                             onClick={() => {
                               handleAddBroker();
@@ -1657,45 +1621,7 @@ const Room = ({
                                     )
                                   }
                                 />
-                                <input
-                                  type="text"
-                                  placeholder="Agreed Commission"
-                                  value={AddTenantAddBrokerFormAgreedCommission}
-                                  onChange={(e) =>
-                                    setAddTenantAddBrokerFormAgreedCommission(
-                                      e.target.value
-                                    )
-                                  }
-                                />
-                                <div>
-                                  Stars:
-                                  {[1, 2, 3, 4, 5].map((star) => (
-                                    <span
-                                      key={star}
-                                      style={{
-                                        cursor: 'pointer',
-                                        color:
-                                          AddTenantAddBrokerFormRating >= star
-                                            ? 'gold'
-                                            : 'grey',
-                                      }}
-                                      onClick={() =>
-                                        setAddTenantAddBrokerFormRating(star)
-                                      }
-                                    >
-                                      ★
-                                    </span>
-                                  ))}
-                                </div>
-                                <textarea
-                                  placeholder="Notes"
-                                  value={AddTenantAddBrokerFormNotes}
-                                  onChange={(e) =>
-                                    setAddTenantAddBrokerFormNotes(
-                                      e.target.value
-                                    )
-                                  }
-                                ></textarea>
+                                
                                 <button
                                   onClick={() => {
                                     handleAddBroker();
@@ -1769,7 +1695,60 @@ const Room = ({
                                         )}
                                       </div>
                                     )}
-                                    hi
+                                     <div>
+                                Commission:{' '}
+                                <input
+                                  type="number"
+                                  style={{
+                                    width: !isPercentCommission
+                                      ? '80px'
+                                      : '40px',
+                                  }}
+                                  value={commissionValue}
+                                  onChange={(e) =>
+                                    setCommissionValue(
+                                      parseFloat(e.target.value)
+                                    )
+                                  }
+                                  className="AddTenantContainerinnerInput"
+                                  placeholder={
+                                    isPercentCommission
+                                      ? 'Enter percent'
+                                      : 'Enter number'
+                                  }
+                                />
+                                {isPercentCommission && (
+                                  <>
+                                    %{' '}
+                                    <em style={{ color: 'grey' }}>
+                                      {commissionValue != '' &&
+                                        (commissionValue / 100) * agreedPrice}
+                                    </em>
+                                  </>
+                                )}
+                                {!isPercentCommission && '$'}
+                                <br />{' '}
+                                <label>
+                                  <input
+                                    type="checkbox"
+                                    checked={isPercentCommission}
+                                    onChange={() =>
+                                      setIsPercentCommission(true)
+                                    }
+                                  />
+                                  Percentage
+                                </label>
+                                <label>
+                                  <input
+                                    type="checkbox"
+                                    checked={!isPercentCommission}
+                                    onChange={() =>
+                                      setIsPercentCommission(false)
+                                    }
+                                  />
+                                  Number
+                                </label>
+                              </div>
                                   </>
                                 ) : (
                                   <>

@@ -23,7 +23,27 @@ export function PeopleComponentPage({ TenantList, PeopleSelectedPage, PastTenant
   const handleRefresh = () => {
     RefreshDataFromSqlite();
   };
-
+const getCorrectPaymentStatment = (text:string) => {
+  switch (text) {
+    case '30':
+      return '30 days';
+    case '15':
+      return '15 days';
+    case '7':
+      return '7 days';
+    case 'monthly':
+      return 'month';
+    case 'weekly':
+      return 'week';
+    case 'daily':
+      return 'day';
+    default:
+      if(text[0] === "-") {
+        return text.substring(1,text.length) + " days"
+      }
+      break;
+  }
+}
   return (
     <>
       <div className="SecondNavBarContainer" style={{ width: '100%' }}>
@@ -173,7 +193,7 @@ export function PeopleComponentPage({ TenantList, PeopleSelectedPage, PastTenant
         <table className="InfoTable">
           <thead className="InfoTableThead">
             <tr className="InfoTableHeadTR">
-              {['#', 'Tenant', 'Room',"Broker" , "Payment","Total earnings",'Stars','Tenant description', 'End Reason', 'Left Date'].map((col, index) => (
+              {['#', 'Tenant', 'Room',"Broker" , "Payment","Total earnings",'Stars','Tenant description', 'End Reason', 'Dates'].map((col, index) => (
                 <th
                   key={index}
                   className="InfoTableHeadTh"
@@ -212,8 +232,10 @@ export function PeopleComponentPage({ TenantList, PeopleSelectedPage, PastTenant
                     </td>
                     <td className="InfoTableBodyTD">F. {RoomList.find((r: RoomType) => r.id == review.roomId).floor} <br />R. {RoomList.find((r: RoomType) => r.id == review.roomId).roomIndex}</td>
                     <td className="InfoTableBodyTD">{BrokerList.find((b:BrokerType)=>b.id === review.brokerId).name} <div></div>c: <em style={{color:"grey", fontSize:"12px"}}>{review.AgreedCommission}$</em></td>
-                    <td className="InfoTableBodyTD">{review.AgreedPrice} per {review.paymentCycleType}</td>
-                    
+                    <td className="InfoTableBodyTD">{review.AgreedPrice}$ per {getCorrectPaymentStatment(review.paymentCycleType)}</td>
+                    <td className="InfoTableBodyTD">
+                      {review.totalEarnings}$
+                    </td>
                     <td className="InfoTableBodyTD">
                       {[...Array(5)].map((_, index) => (
                         <span key={index} style={{ color: index < review.Stars ? 'gold' : 'gray' }}>
@@ -221,8 +243,8 @@ export function PeopleComponentPage({ TenantList, PeopleSelectedPage, PastTenant
                         </span>
                       ))}
                     </td>
-                    <td className="InfoTableBodyTD">{review.description}</td>
-                    <td className="InfoTableBodyTD">{review.endReason}</td>
+                    <td className="InfoTableBodyTD">{review.description || "---"}</td>
+                    <td className="InfoTableBodyTD">{review.endReason  || "---"}</td>
                     <td className="InfoTableBodyTD">
                       <div>
                         In {new Date(review.enterDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}

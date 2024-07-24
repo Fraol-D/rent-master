@@ -530,7 +530,7 @@ const MainPage = ({
   const [AddRoomFormSquareMeters, setAddRoomFormSquareMeters] = useState(0);
   const [AddRoomFormRoomSpecifications, setAddRoomFormRoomSpecifications] =
     useState<RoomSpecificationType[]>([
-      { type: 'bool', Detail: '', Boolean: false, Number: 0, id: 'avx' },
+     
     ]);
 
   const handleAddRoomFormSpecificationChange = (
@@ -548,7 +548,7 @@ const MainPage = ({
   const addAddRoomFormSpecification = () => {
     setAddRoomFormRoomSpecifications((prevSpecs) => [
       ...prevSpecs,
-      { type: 'bool', Detail: '', Boolean: false, Number: 0, id: 'avx' },
+      { type: 'bool', Detail: '', Boolean: false, Number: 0, id: uuidv4() },
     ]);
   };
 
@@ -639,6 +639,21 @@ const MainPage = ({
   useEffect(()=>{if(SelectedPage === "People") {
     RefreshDataFromSqlite();;
   }},[SelectedPage])
+
+  const handleAddRoomButtonInitial = (state:boolean) => {
+    setAddARoomState(state);
+    let roomIndex = 1;
+    let lists : Array<number> =[3,4,8,5,3,1,2]
+   const a = RoomList.sort((a:RoomType, b:RoomType) => a.roomIndex-b.roomIndex).reverse()[0].roomIndex+1;
+
+    
+   // let roomIndexes = RoomList.every((Number:number) => Number >=0);
+   // for (let i = 0; i < roomIndexes.length; i++) {
+   //   const element = roomIndexes[i];
+   //   
+      //}
+        setAddRoomFormRoomIndex(a);
+  }
   return (
     <>
       <div className="MAINCONTAINER">
@@ -1179,6 +1194,7 @@ const MainPage = ({
               updateRoomPropertyWithOutRefresh={
                 updateRoomPropertyWithOutRefresh
               }
+              handleAddRoomButtonInitial={handleAddRoomButtonInitial}
               brokerApi={brokerApi}
               BrokerList={BrokerList}
               setBrokerList={setBrokerList}

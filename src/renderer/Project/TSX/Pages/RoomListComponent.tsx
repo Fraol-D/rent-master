@@ -19,14 +19,15 @@ export function RoomListComponent({
   BrokerList,
   setIsUpdatingTenantList,
   setSelectedEditRoomId,
-  pastTenantReviewApi,brokersRecommendationListApi
+  pastTenantReviewApi,brokersRecommendationListApi,handleAddRoomButtonInitial
 }: any) {
   return (
     <>
       <div className="SecondNavBarContainer" style={{ width: '100%' }}>
         <button
           onClick={() => {
-            setAddARoomState(!AddARoomState);
+           
+            handleAddRoomButtonInitial(!AddARoomState);
           }}
         >
           Add a room

@@ -1,4 +1,7 @@
 import React from 'react';
+import DashboardDarkIcon from "../../../assets/assets/Dark mode/Dashboard.png";
+import PeoplesDarkIcon from "../../../assets/assets/Dark mode/Peoples.png";
+import SettingsDarkIcon from "../../../assets/assets/Dark mode/SettingsIcon.png";
 
 const BottomNavBar = ({ SelectedPage, setSelectedPage }: any) => {
   return (
@@ -8,17 +11,21 @@ const BottomNavBar = ({ SelectedPage, setSelectedPage }: any) => {
           onClick={() => {
             setSelectedPage('Dashboard');
           }}
+          style={{padding:"1px"}}
         >
-          Dashboard
+          <img src={DashboardDarkIcon} style={{width:"35px"}}alt="" />
         </button>
         <button
           onClick={() => {
             setSelectedPage('People');
           }}
         >
-          People
+                    <img src={PeoplesDarkIcon}style={{width:"35px"}} alt="" />
+
         </button>
         <button
+                   style={{padding:"1px"}}
+
           onClick={() => {
             setSelectedPage('Rooms');
           }}
@@ -26,6 +33,8 @@ const BottomNavBar = ({ SelectedPage, setSelectedPage }: any) => {
           Rooms
         </button>
         <button
+                style={{padding:"1px"}}
+
           onClick={() => {
             setSelectedPage('Calander');
           }}
@@ -33,11 +42,14 @@ const BottomNavBar = ({ SelectedPage, setSelectedPage }: any) => {
           Calander
         </button>
         <button
+                    style={{padding:"1px"}}
+
           onClick={() => {
             setSelectedPage('Settings');
           }}
         >
-          Settings
+                 <img src={SettingsDarkIcon}style={{width:"35px"}} alt="" />
+
         </button>
       </div>
     </div>
