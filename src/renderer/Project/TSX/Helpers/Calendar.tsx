@@ -6,7 +6,7 @@ interface CalendarProps {
   numberOfMonths: number;
 }
 
-const Calendar: React.FC<CalendarProps> = ({ rooms, numberOfMonths }) => {
+const Calendar: React.FC<CalendarProps> = ({ rooms, numberOfMonths,tenantList }) => {
   const ref = useRef<SVGSVGElement | null>(null);
 
   useEffect(() => {
@@ -16,7 +16,7 @@ const Calendar: React.FC<CalendarProps> = ({ rooms, numberOfMonths }) => {
       const width = 1500;
       const height = rooms.length * 50;
       const cellSize = 20;
-      const margin = { top: 50, right: 30, bottom: 30, left: 100 };
+      const margin = { top: 70, right: 30, bottom: 30, left: 100 };
   
       const svg = d3
         .select(ref.current)
@@ -37,11 +37,11 @@ const Calendar: React.FC<CalendarProps> = ({ rooms, numberOfMonths }) => {
       const yScale = d3
         .scaleBand()
         .domain(rooms.map((room) => room.id))
-        .range([0, height])
+        .range([0, height-60])
         .padding(0.1);
   
       const xAxis = d3
-        .axisBottom(xScale)
+        .axisTop(xScale)
         .ticks(d3.timeDay.every(1))
         .tickFormat(d3.timeFormat('%d'))
         .tickSizeOuter(0);
@@ -49,55 +49,101 @@ const Calendar: React.FC<CalendarProps> = ({ rooms, numberOfMonths }) => {
       const monthAxis = d3
         .axisTop(xScale)
         .ticks(d3.timeMonth.every(1))
-        .tickFormat(d3.timeFormat('%B'))
+        .tickFormat((d: Date) => {
+          const monthStart = d3.timeMonth(d);
+          const monthEnd = d3.timeMonth.offset(monthStart, 1);
+          const monthCenter = new Date((monthStart.getTime() + monthEnd.getTime()) / 2);
+          if (monthCenter >= startDate && monthCenter <= endDate) {
+            return d3.timeFormat('%B')(d);
+          }
+          return '';
+        })
         .tickSize(0);
   
-      svg.append('g').call(monthAxis).attr('transform', `translate(0, -20)`);
-      svg.append('g').attr('transform', `translate(0, ${height})`).call(xAxis);
+      svg.append('g').call(monthAxis).attr('transform', `translate(0, -40)`);
+      svg.append('g').call(xAxis).attr('transform', `translate(0, -20)`);
   
       const yAxis = d3.axisLeft(yScale).tickFormat((d) => {
         const room = rooms.find((room) => room.id === d);
-        return room ? `Room ${room.roomIndex}` : '';
+        return room ? `F. ${room.floor} R. ${room.roomIndex}` : '';
       });
   
       svg.append('g').call(yAxis);
   
-      // Add x-axis grid lines
+      // Add x-axis grid lines aligned with room text
       svg
         .selectAll('.x-grid')
-        .data(xScale.ticks())
-        .enter()
-        .append('line')
-        .attr('class', 'x-grid')
-        .attr('x1', (d) => xScale(d))
-        .attr('x2', (d) => xScale(d))
-        .attr('y1', 0)
-        .attr('y2', height)
-        .attr('stroke', '#ddd');
-  
-      // Add y-axis grid lines
-      svg
-        .selectAll('.y-grid')
         .data(yScale.domain())
         .enter()
         .append('line')
-        .attr('class', 'y-grid')
+        .attr('class', 'x-grid')
         .attr('x1', 0)
         .attr('x2', width)
-        .attr('y1', (d) => yScale(d) + yScale.bandwidth() / 2)
-        .attr('y2', (d) => yScale(d) + yScale.bandwidth() / 2)
-        .attr('stroke', '#ddd');
+        .attr('y1', (d) => yScale(d)-4 || 0)
+        .attr('y2', (d) => yScale(d)-4 || 0)
+        .attr('stroke', '#DDDDDD80');
+  
+      svg
+        .selectAll('.x-grid-bottom')
+        .data(yScale.domain())
+        .enter()
+        .append('line')
+        .attr('class', 'x-grid-bottom')
+        .attr('x1', 0)
+        .attr('x2', width)
+        .attr('y1', (d) => (yScale(d) || 0) + yScale.bandwidth())
+        .attr('y2', (d) => (yScale(d) || 0) + yScale.bandwidth())
+        .attr('stroke', '#DDDDDD70');
+  
+      // Add y-axis grid lines on every x axis day tick
+      svg
+        .selectAll('.y-grid')
+        .data(xScale.ticks(d3.timeDay))
+        .enter()
+        .append('line')
+        .attr('class', 'y-grid')
+        .attr('x1', (d) => xScale(d))
+        .attr('x2', (d) => xScale(d))
+        .attr('y1', 0-20)
+        .attr('y2', height-65)
+        .attr('stroke', '#DDDDDD7F');
   
       // Highlight the current date
       const currentDateRect = svg
         .append('rect')
         .attr('x', xScale(today))
-        .attr('y', 0)
+        .attr('y', 0-20)
         .attr('width', cellSize)
-        .attr('height', height)
+        .attr('height', height-45)
         .attr('fill', 'yellow')
-        .attr('opacity', 0.2);
+        .attr('opacity', 0.1);
   
+      // Add month start and end indicators
+      const monthStarts = d3.timeMonths(startDate, endDate);
+      svg
+        .selectAll('.month-indicator')
+        .data(monthStarts)
+        .enter()
+        .append('line')
+        .attr('class', 'month-indicator')
+        .attr('x1', (d) => xScale(d))
+        .attr('x2', (d) => xScale(d))
+        .attr('y1', -20)
+        .attr('y2', height)
+        .attr('stroke', 'lab(29.57 68.3 -112.05 / 0.32)')
+        .attr('stroke-width', 2);
+  
+      // Create a tooltip
+      const tooltip = d3.select("body").append("div")
+        .attr("class", "tooltip")
+        .style("opacity", 0)
+        .style("position", "absolute")
+        .style("background-color", "white")
+        .style("border", "solid")
+        .style("border-width", "1px")
+        .style("border-radius", "5px")
+        .style("padding", "10px");
+
       rooms.forEach((room) => {
         room.AllRoomPayInfo.RoomPayInfo.forEach((payment) => {
           const paymentDate = new Date(payment.Day); // Assuming payment.Day is in milliseconds
@@ -105,12 +151,30 @@ const Calendar: React.FC<CalendarProps> = ({ rooms, numberOfMonths }) => {
           if (paymentDate >= startDate && paymentDate <= endDate) {
             svg
               .append('rect')
-              .attr('x', xScale(paymentDate))
-              .attr('y', yScale(room.id))
+              .attr('x', xScale(paymentDate)-2)
+              .attr('y', yScale(room.id)-4)
               .attr('width', cellSize)
-              .attr('height', yScale.bandwidth())
+              .attr('height', yScale.bandwidth()+4)
               .attr('fill', payment.Paid ? 'green' : 'red')
-              .attr('opacity', 0.5);
+              .attr('opacity', 0.5)
+              .on("mouseover", function(event, d) {
+                tooltip.transition()
+                  .duration(200)
+                  .style("opacity", .9);
+                tooltip.html(`Agreed Price: ${room.AgreedPrice}<br/>Tenant ID: ${tenantList.find((t:tenant) => t.id == room.tenantId).name}<br/>Payment Cycle: ${room.PaymentCycleType}`)
+                  .style("left", (event.pageX) + "px")
+                  .style("top", (event.pageY - 28) + "px");
+              })
+              .on("mouseout", function() {
+                tooltip.transition()
+                  .duration(500)
+                  .style("opacity", 0);
+              })
+              .on("mouseout", function(d) {
+                tooltip.transition()
+                  .duration(500)
+                  .style("opacity", 1);
+              });
           }
         });
       });

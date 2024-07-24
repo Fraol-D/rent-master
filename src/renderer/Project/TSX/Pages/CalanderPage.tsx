@@ -7,7 +7,7 @@ export function CalanderPage({
     RoomList,
     filterOptions,
     removeFilterOption,
-    
+    tenantList
   }: any) {
     useEffect(()=> {console.log(sortedAndFilteredRooms)},[])
   return (
@@ -53,7 +53,7 @@ export function CalanderPage({
           color: 'white',
         }}
       >
-       <Calendar rooms={RoomList} monthsToShow={3}></Calendar>
+       <Calendar rooms={RoomList} monthsToShow={3} tenantList={tenantList}></Calendar>
       </div>
     </>
   );

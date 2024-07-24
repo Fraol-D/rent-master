@@ -1232,6 +1232,7 @@ const MainPage = ({
               sortedAndFilteredRooms={sortedAndFilteredRooms}
               removeFilterOption={removeFilterOption}
               filterOptions={filterOptions}
+              tenantList={TenantList}
             />
           )}
           {SelectedPage === 'Settings' && (
