@@ -65,7 +65,7 @@ const Calendar: React.FC<CalendarProps> = ({ rooms, numberOfMonths,tenantList })
   
       const yAxis = d3.axisLeft(yScale).tickFormat((d) => {
         const room = rooms.find((room) => room.id === d);
-        return room ? `F. ${room.floor} R. ${room.roomIndex}` : '';
+        return room ? `Flr. ${room.floor} Rm. ${room.roomIndex}` : '';
       });
   
       svg.append('g').call(yAxis);
@@ -111,7 +111,7 @@ const Calendar: React.FC<CalendarProps> = ({ rooms, numberOfMonths,tenantList })
       // Highlight the current date
       const currentDateRect = svg
         .append('rect')
-        .attr('x', xScale(today))
+        .attr('x', xScale(today)-7)
         .attr('y', 0-20)
         .attr('width', cellSize)
         .attr('height', height-45)
@@ -129,20 +129,23 @@ const Calendar: React.FC<CalendarProps> = ({ rooms, numberOfMonths,tenantList })
         .attr('x1', (d) => xScale(d))
         .attr('x2', (d) => xScale(d))
         .attr('y1', -20)
-        .attr('y2', height)
+        .attr('y2', height-65)
         .attr('stroke', 'lab(29.57 68.3 -112.05 / 0.32)')
         .attr('stroke-width', 2);
-  
+       
+        const lineStrokeWidth = 2.5;
+        const tooltipBackgroundColor = 'rgba(0,0,0,0.6)';
+        const tooltipTextColor = '#fff';
       // Create a tooltip
-      const tooltip = d3.select("body").append("div")
-        .attr("class", "tooltip")
-        .style("opacity", 0)
-        .style("position", "absolute")
-        .style("background-color", "white")
-        .style("border", "solid")
-        .style("border-width", "1px")
-        .style("border-radius", "5px")
-        .style("padding", "10px");
+      const tooltip = d3.select("body").append('div')
+      .style('position', 'absolute')
+      .style('visibility', 'hidden')
+      .style('background-color', tooltipBackgroundColor)
+      .style('color', tooltipTextColor)
+      .style('padding', '8px').style("z-index", 5)
+      .style('border-radius', '4px')
+      .style('font-size', "14px");
+
 
       rooms.forEach((room) => {
         room.AllRoomPayInfo.RoomPayInfo.forEach((payment) => {
@@ -157,24 +160,26 @@ const Calendar: React.FC<CalendarProps> = ({ rooms, numberOfMonths,tenantList })
               .attr('height', yScale.bandwidth()+4)
               .attr('fill', payment.Paid ? 'green' : 'red')
               .attr('opacity', 0.5)
-              .on("mouseover", function(event, d) {
-                tooltip.transition()
-                  .duration(200)
-                  .style("opacity", .9);
-                tooltip.html(`Agreed Price: ${room.AgreedPrice}<br/>Tenant ID: ${tenantList.find((t:tenant) => t.id == room.tenantId).name}<br/>Payment Cycle: ${room.PaymentCycleType}`)
+              .on('mouseover', (event, d) => {
+              console.log("Over");
+              tooltip.style('visibility', 'hidden');
+      
+                  tooltip.html(`Agreed Price: ${room.AgreedPrice}<br/>Tenant ID: ${tenantList.find((t:tenant) => t.id == room.tenantId).name}<br/>Payment Cycle: ${room.PaymentCycleType}`)
                   .style("left", (event.pageX) + "px")
                   .style("top", (event.pageY - 28) + "px");
               })
-              .on("mouseout", function() {
-                tooltip.transition()
-                  .duration(500)
-                  .style("opacity", 0);
+              .on('mousemove', (event) => {
+              console.log("move");
+
+                tooltip
+                  .style('top', `${event.pageY + 10}px`)
+                  .style('left', `${event.pageX + 10}px`);
               })
-              .on("mouseout", function(d) {
-                tooltip.transition()
-                  .duration(500)
-                  .style("opacity", 1);
-              });
+              .on('mouseout', () => {
+              console.log("out");
+
+                tooltip.style('visibility', 'hidden');
+              })
           }
         });
       });
