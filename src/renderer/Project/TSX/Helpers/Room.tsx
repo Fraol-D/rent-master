@@ -26,7 +26,7 @@ const Room = ({
   brokerApi,
   BrokerList,
   setBrokerList,
-  brokersRecommendationListApi,
+  brokersRecommendationListApi,updateRoomPropertyLocal
 }: {
   roomType: RoomType;
   updateRoomProperty: any;
@@ -45,6 +45,7 @@ const Room = ({
   BrokerList: any;
   setBrokerList: any;
   brokersRecommendationListApi: any;
+  updateRoomPropertyLocal:any;
 }) => {
   const handleAddTenant = () => {
     turnOffAddTenantStateForAll();
@@ -708,6 +709,26 @@ const Room = ({
   const [isPercentCommission, setIsPercentCommission] = useState(true);
   const [commissionValue, setCommissionValue] = useState<number>(0);
 
+  const handlePaymentRefresh = async () => {
+    const listOfPayments = await getValuesWithSql(
+      'room_pay_info',
+      `WHERE roomId = '${roomType.id}'`
+    );
+
+    const updatedRoomPayInfo: RoomPayInfo[] = listOfPayments.map((payment: any) => ({
+      id: payment.id,
+      roomId: payment.roomId,
+      Day: payment.Day,
+      Paid: payment.Paid
+    }));
+
+    const updatedAllRoomPayInfo: AllRoomPayInfo = {
+      RoomPayInfo: updatedRoomPayInfo
+    };
+
+    updateRoomPropertyLocal(roomType.id, 'AllRoomPayInfo', updatedAllRoomPayInfo);
+    console.log(updatedAllRoomPayInfo, roomType.AllRoomPayInfo)
+  }
   return (
     <>
       <div
@@ -1995,6 +2016,7 @@ const Room = ({
               roomType={roomType}
               agreedPrice={roomType.AgreedPrice}
               extendPaymentSchedule={extendPaymentSchedule}
+              refresh={handlePaymentRefresh}
             ></PaymentProgressBar>
           </div>
         </div>

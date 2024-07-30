@@ -111,12 +111,12 @@ const Calendar: React.FC<CalendarProps> = ({ rooms, numberOfMonths,tenantList })
       // Highlight the current date
       const currentDateRect = svg
         .append('rect')
-        .attr('x', xScale(today)-7)
+        .attr('x', xScale(today))
         .attr('y', 0-20)
-        .attr('width', cellSize)
+        .attr('width', 1)
         .attr('height', height-45)
         .attr('fill', 'yellow')
-        .attr('opacity', 0.1);
+        .attr('opacity',1);
   
       // Add month start and end indicators
       const monthStarts = d3.timeMonths(startDate, endDate);
@@ -130,7 +130,7 @@ const Calendar: React.FC<CalendarProps> = ({ rooms, numberOfMonths,tenantList })
         .attr('x2', (d) => xScale(d))
         .attr('y1', -20)
         .attr('y2', height-65)
-        .attr('stroke', 'lab(29.57 68.3 -112.05 / 0.32)')
+        .attr('stroke', 'lab(4.39 26.27 -47.05 / 0.32)')
         .attr('stroke-width', 2);
        
         const lineStrokeWidth = 2.5;

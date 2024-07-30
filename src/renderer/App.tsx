@@ -12,13 +12,17 @@ import {
   getValuesWithSql,
   updateValue,
 } from 'Backend/localServerApis';
-
+declare global {}
 function Hello() {
   const [RoomList, setRoomList] = useState<RoomType[]>([]);
   const [TenantList, setTenantList] = useState<tenant[]>([]);
   const [BrokerList, setBrokerList] = useState<BrokerType[]>([]);
   const [PastTenantReviews, setPastTenantReviews] = useState<PastTenantReviewType[]>([]);
   const [isUpdatingTenantList, setIsUpdatingTenantList] = useState(false);
+  const [BrokerRecommendationList, setBrokerRecommendationList] = useState<BrokerRecommendationType[]>([])
+
+ 
+  
 
   class RoomApi {
     getRoomFromApi = async () => {
@@ -441,8 +445,7 @@ function Hello() {
       recommendedTenantId: string,
       AddedTime: number,
       AgreedCommission: number,
-      rating: number,
-      notes: string
+    
     ) => {
       try {
         await addValue("brokersRecommendationList", {
@@ -451,13 +454,31 @@ function Hello() {
           recommendedTenantId,
           AddedTime,
           AgreedCommission,
-          rating,
-          notes
+        
         })
       } catch (error:any) {
         console.error(error.message);
       }
     }
+      getBrokerRecommendationsFromApi = async () => {
+       try {
+         const brokerRecommendationsRaw = await getValuesWithSql('brokersRecommendationList', 'WHERE 1')
+         if (brokerRecommendationsRaw) {
+           const brokerRecommendations = brokerRecommendationsRaw.map((recommendation: BrokerRecommendationType) => ({
+             id: recommendation.id,
+             roomId: recommendation.roomId,
+             brokerId: recommendation.brokerId,
+             recommendedTenantId: recommendation.recommendedTenantId,
+             AddedTime: recommendation.AddedTime,
+             AgreedCommission: recommendation.AgreedCommission,
+           }))
+           setBrokerRecommendationList(brokerRecommendations)
+         }
+       } catch (error) {
+         console.error('Error fetching broker recommendations:', error)
+       }
+     }
+   
   } 
   const roomAPI = new RoomApi();
   const brokerApi = new BrokerApi();
@@ -475,7 +496,7 @@ function Hello() {
     brokerApi.getBrokersApi();
     tenantAPI.getTenantsApi();
     pastTenantReviewApi.getPastTenantReviewLatestApi();
- 
+    brokersRecommendationListApi.getBrokerRecommendationsFromApi();
   }
   return (
     <>
@@ -504,6 +525,7 @@ function Hello() {
         PastTenantReviews={PastTenantReviews}
         brokersRecommendationListApi={brokersRecommendationListApi}
         RefreshDataFromSqlite={RefreshDataFromSqlite}
+        BrokerRecommendationList={BrokerRecommendationList}
       />
     </>
   );

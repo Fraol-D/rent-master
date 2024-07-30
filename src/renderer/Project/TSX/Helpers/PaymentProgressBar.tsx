@@ -9,61 +9,62 @@ export type RoomPayInfo = {
 
 interface Props {
   paymentData: RoomPayInfo[];
-
   agreedPrice: number;
   roomType: RoomType;
   roomPaymentInfoApi: any;
+  refresh: () => void;
+  extendPaymentSchedule: () => void;
 }
 
 const PaymentProgressBar: React.FC<Props> = ({
   paymentData,
   roomPaymentInfoApi,
   agreedPrice,
-  roomType,extendPaymentSchedule
+  roomType,
+  extendPaymentSchedule,
+  refresh,
 }) => {
   const today = new Date().getTime();
   const svgRef = useRef<SVGSVGElement | null>(null);
   const paragraphRef = useRef<HTMLParagraphElement | null>(null);
 
   useEffect(() => {
+    console.log(paymentData.length);
     if (paymentData.length > 0 && svgRef.current) {
+       const sortedPaymentData = [...paymentData].sort((a, b) => a.Day - b.Day);
       const svg = d3.select(svgRef.current);
-
-      const paymentWidth = 75; // Width of each payment section
-      const width = paymentData.length * paymentWidth; // Total width based on number of payments
-      const height = 120; // Increased height to accommodate dates
-      const padding = 30;
 
       // Clear existing SVG content
       svg.selectAll('*').remove();
 
+      // Calculate the width and height based on the number of payments
+      const paymentWidth = 75; // Width of each payment section
+      const width = sortedPaymentData.length * paymentWidth; // Total width based on number of payments
+      const height = 120; // Increased height to accommodate dates
+      const padding = 30;
+
       // Set SVG dimensions
-      svg.attr('width', width);
+      svg.attr('width', width + 2 * padding).attr('height', height + 2 * padding);
+
       // Draw payment lines
       const paymentLines = svg
         .selectAll('line.payment-line')
-        .data(paymentData)
+        .data(sortedPaymentData)
         .enter()
         .append('line')
         .attr('class', 'payment-line')
         .attr(
           'x1',
-          (d: { Day: number }) =>
-            ((d.Day - paymentData[0].Day) /
-              (paymentData[paymentData.length - 1].Day - paymentData[0].Day)) *
-              (width - 2 * padding) +
-            padding
+          (d: { Day: number }, i: number) =>
+            padding + i * paymentWidth + paymentWidth / 2
         )
-        .attr('y1', height / 2 - 25) // Moved line start position up
+        .attr('y1', padding + height / 2 - 55) // Moved line start position up
         .attr(
           'x2',
-          (d: { Day: number }) =>
-            ((d.Day - paymentData[0].Day) /
-              (paymentData[paymentData.length - 1].Day - paymentData[0].Day)) *
-              (width - 2 * padding) +
-            padding
+          (d: { Day: number }, i: number) =>
+            padding + i * paymentWidth + paymentWidth / 2
         )
-        .attr('y2', height / 2 + 54) // Moved line end position down
+        .attr('y2', padding + height / 2 + 24) // Moved line end position down
         .attr('stroke-width', 1)
         .attr('stroke-dasharray', '5, 5')
         .attr('stroke', (d: { Day: number; Paid: boolean }) => {
@@ -73,12 +74,13 @@ const PaymentProgressBar: React.FC<Props> = ({
             return '#00e1ff';
           return 'blue';
         });
+
       // Draw progress bar background
       svg
         .append('rect')
         .attr('x', padding)
-        .attr('y', height / 2 + 15)
-        .attr('width', width - 2 * padding)
+        .attr('y', padding + height / 2 - 35)
+        .attr('width', width)
         .attr('height', 10)
         .attr('fill', '#f0f0f0')
         .attr('stroke', '#aaa')
@@ -86,30 +88,30 @@ const PaymentProgressBar: React.FC<Props> = ({
 
       // Draw current date indicator
       const currentDateX =
-        ((today - paymentData[0].Day) /
-          (paymentData[paymentData.length - 1].Day - paymentData[0].Day)) *
-          (width - 2 * padding) +
-        padding;
+        padding +
+        ((today - sortedPaymentData[0].Day) /
+          (sortedPaymentData[sortedPaymentData.length - 1].Day - sortedPaymentData[0].Day)) *
+          width;
       svg
         .append('line')
         .attr('x1', 0)
-        .attr('y1', height / 2 + 20)
+        .attr('y1', padding + height / 2 - 30)
         .attr('x2', currentDateX)
-        .attr('y2', height / 2 + 20)
+        .attr('y2', padding + height / 2 -30)
         .attr('stroke', '#454959')
         .attr('stroke-width', '15');
       svg
         .append('line')
         .attr('x1', currentDateX)
-        .attr('y1', height / 2 + 5)
+        .attr('y1', padding + height / 2 - 40)
         .attr('x2', currentDateX)
-        .attr('y2', height / 2 + 35)
+        .attr('y2', padding + height / 2 - 18)
         .attr('stroke', '#00e1f1')
         .attr('stroke-width', '5');
       svg
         .append('text')
         .attr('x', currentDateX)
-        .attr('y', height / 2 + 48)
+        .attr('y', padding + height / 2 - 3)
         .attr('text-anchor', 'middle')
         .style('fill', 'white')
         .style('font-size', '14')
@@ -118,25 +120,23 @@ const PaymentProgressBar: React.FC<Props> = ({
       // Draw payment dates
       const paymentDates = svg
         .selectAll('text.payment-date')
-        .data(paymentData)
+        .data(sortedPaymentData)
         .enter()
         .append('text')
         .attr('class', 'payment-date')
         .style('fill', 'white')
         .attr(
           'x',
-          (d: { Day: number }) =>
-            ((d.Day - paymentData[0].Day) /
-              (paymentData[paymentData.length - 1].Day - paymentData[0].Day)) *
-              (width - 2 * padding) +
-            padding
+          (d: { Day: number }, i: number) =>
+            padding + i * paymentWidth + paymentWidth / 2
         )
-        .attr('y', height / 2 - 45) // Moved dates above the progress bar
+        .attr('y', padding + height / 2 - 75) // Moved dates above the progress bar
         .attr('text-anchor', 'middle')
         .text((d: { Day: number }) => format(d.Day, 'MMM d'));
+
       const paymentDates1 = svg
         .selectAll('text.payment-date1')
-        .data(paymentData)
+        .data(sortedPaymentData)
         .enter()
         .append('text')
         .attr('class', 'payment-date')
@@ -144,31 +144,26 @@ const PaymentProgressBar: React.FC<Props> = ({
         .style('font-size', '10')
         .attr(
           'x',
-          (d: { Day: number }) =>
-            ((d.Day - paymentData[0].Day) /
-              (paymentData[paymentData.length - 1].Day - paymentData[0].Day)) *
-              (width - 2 * padding) +
-            padding
+          (d: { Day: number }, i: number) =>
+            padding + i * paymentWidth + paymentWidth / 2
         )
-        .attr('y', height / 2 - 30) // Moved dates above the progress bar
+        .attr('y', padding + height / 2 - 62) // Moved dates above the progress bar
         .attr('text-anchor', 'middle')
         .text((d: { Day: number }) => format(d.Day, 'yyyy'));
+
       // Draw payment circles
       const paymentCircles = svg
         .selectAll('circle.payment-circle')
-        .data(paymentData)
+        .data(sortedPaymentData)
         .enter()
         .append('circle')
         .attr('class', 'payment-circle')
         .attr(
           'cx',
-          (d: { Day: number }) =>
-            ((d.Day - paymentData[0].Day) /
-              (paymentData[paymentData.length - 1].Day - paymentData[0].Day)) *
-              (width - 2 * padding) +
-            padding
+          (d: { Day: number }, i: number) =>
+            padding + i * paymentWidth + paymentWidth / 2
         )
-        .attr('cy', height / 2 + 20) // Moved circles below the progress bar
+        .attr('cy', padding + height / 2 - 30) // Moved circles below the progress bar
         .attr('r', 3)
         .attr('fill', (d: { Day: number; Paid: boolean }) => {
           if (isBefore(d.Day, today) && !d.Paid) return 'red';
@@ -181,19 +176,16 @@ const PaymentProgressBar: React.FC<Props> = ({
       // Draw pay buttons using D3 elements aligned under each payment section
       const payButtons = svg
         .selectAll('text.pay-button')
-        .data(paymentData)
+        .data(sortedPaymentData)
         .enter()
         .append('text')
         .attr('class', 'pay-button')
         .attr(
           'x',
-          (d: { Day: number }) =>
-            ((d.Day - paymentData[0].Day) /
-              (paymentData[paymentData.length - 1].Day - paymentData[0].Day)) *
-              (width - 2 * padding) +
-            padding
+          (d: { Day: number }, i: number) =>
+            padding + i * paymentWidth + paymentWidth / 2
         )
-        .attr('y', height / 2 + 65) // Adjusted position below payment circles
+        .attr('y', padding + height / 2 + 29) // Adjusted position below payment circles
         .attr('text-anchor', 'middle')
         .attr('fill', (d: { Day: number; Paid: boolean }) => {
           if (isBefore(d.Day, today) && !d.Paid) return 'red';
@@ -206,7 +198,7 @@ const PaymentProgressBar: React.FC<Props> = ({
         .style('cursor', 'pointer')
         .text((d: { Paid: boolean }) => (d.Paid ? 'Paid' : 'Pay'))
         .on('click', (event: any, d: any) => {
-          const updatedData = paymentData.map((item) => {
+          const updatedData = sortedPaymentData.map((item) => {
             if (item.Day === d.Day) {
               return { ...item, Paid: true };
             }
@@ -214,21 +206,19 @@ const PaymentProgressBar: React.FC<Props> = ({
           });
           roomPaymentInfoApi.editRoomPaymentApi(d.id, 'Paid', true);
         });
+
       const payButtons2 = svg
         .selectAll('text2.pay-button')
-        .data(paymentData)
+        .data(sortedPaymentData)
         .enter()
         .append('text')
         .attr('class', 'pay-button')
         .attr(
           'x',
-          (d: { Day: number }) =>
-            ((d.Day - paymentData[0].Day) /
-              (paymentData[paymentData.length - 1].Day - paymentData[0].Day)) *
-              (width - 2 * padding) +
-            padding
+          (d: { Day: number }, i: number) =>
+            padding + i * paymentWidth + paymentWidth / 2
         )
-        .attr('y', height / 2 + 78) // Adjusted position below payment circles
+        .attr('y', padding + height / 2 + 45) // Adjusted position below payment circles
         .attr('text-anchor', 'middle')
         .attr('fill', (d: { Day: number; Paid: boolean }) => {
           if (isBefore(d.Day, today) && !d.Paid) return 'red';
@@ -241,7 +231,7 @@ const PaymentProgressBar: React.FC<Props> = ({
         .style('cursor', 'pointer')
         .text(agreedPrice.toLocaleString() + '$ X')
         .on('click', (event: any, d: any) => {
-          const updatedData = paymentData.map((item) => {
+          const updatedData = sortedPaymentData.map((item) => {
             if (item.Day === d.Day) {
               if (item.Paid) {
                 return { ...item, Paid: false };
@@ -261,7 +251,7 @@ const PaymentProgressBar: React.FC<Props> = ({
 
       // Update payment status on click
       paymentCircles.on('click', (event: any, d: any) => {
-        const updatedData = paymentData.map((item) => {
+        const updatedData = sortedPaymentData.map((item) => {
           if (item.Day === d.Day) {
             return { ...item, Paid: true };
           }
@@ -282,9 +272,11 @@ const PaymentProgressBar: React.FC<Props> = ({
       ? daysDifference > 0
         ? `Due in ${daysDifference + 1} day${
             daysDifference + 1 !== 1 ? 's' : ''
-          }. Earnings: $${
-            (agreedPrice * paymentData.filter((payment) => payment.Paid).length).toLocaleString()
-          }. ${paymentData.filter((payment) => payment.Paid).length} payments.`
+          }. Earnings: $${(
+            agreedPrice * paymentData.filter((payment) => payment.Paid).length
+          ).toLocaleString()}. ${
+            paymentData.filter((payment) => payment.Paid).length
+          } payments.`
         : `Payment is past due by ${Math.abs(daysDifference)} days.`
       : 'No payment information available.';
 
@@ -303,17 +295,33 @@ const PaymentProgressBar: React.FC<Props> = ({
             textAlign: 'center',
             fontWeight: 'bold',
             marginBottom: '10px',
-            display:"flex",
+            display: 'flex',
           }}
         >
-          {message}<button onClick={()=>{extendPaymentSchedule()}} style={{height:"20px", display:"flex", alignItems:"center"}}>Extend?</button>
+          {message}
+          <button
+            onClick={() => {
+              extendPaymentSchedule();
+            }}
+            style={{ height: '20px', display: 'flex', alignItems: 'center' }}
+          >
+            Extend?
+          </button>
+          <button
+            onClick={() => {
+              refresh();
+            }}
+            style={{ height: '20px', display: 'flex', alignItems: 'center' }}
+          >
+            Refresh
+          </button>
         </p>
       </div>
       <div style={{ overflowX: 'auto', maxWidth: '100%' }}>
-        <svg ref={svgRef} width="100%" height="142" />
+        <svg ref={svgRef} width="100%" height="126" />
       </div>
     </div>
   );
 };
 
-export default PaymentProgressBar;
+export default React.memo(PaymentProgressBar);

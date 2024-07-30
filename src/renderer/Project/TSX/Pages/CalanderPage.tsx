@@ -53,7 +53,7 @@ export function CalanderPage({
           color: 'white',
         }}
       >
-       <Calendar rooms={RoomList} monthsToShow={3} tenantList={tenantList}></Calendar>
+       <Calendar rooms={sortedAndFilteredRooms} monthsToShow={3} tenantList={tenantList}></Calendar>
       </div>
     </>
   );

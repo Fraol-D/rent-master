@@ -71,6 +71,14 @@ declare global {
     ShowPayTimeLine?: boolean;
     AllRoomPayInfo: AllRoomPayInfo;
   };
+  type BrokerRecommendationType = {
+    id: string
+    roomId: string
+    brokerId: string
+    recommendedTenantId: string
+    AddedTime: number
+    AgreedCommission: number
+  }
   type RoomSpecificationType = {
     id: string;
     Detail: string;
@@ -148,7 +156,7 @@ const MainPage = ({
   brokerApi,
   setBrokerList,
   BrokerList,
-  brokersRecommendationListApi,PastTenantReviews,RefreshDataFromSqlite
+  brokersRecommendationListApi,PastTenantReviews,RefreshDataFromSqlite,BrokerRecommendationList
 }: any) => {
   const [floorFilter, setFloorFilter] = useState<string>('');
   const [TenantNameFilter, setTenantNameFilter] = useState<string>('');
@@ -193,6 +201,25 @@ const MainPage = ({
       });
       return updatedRoomList;
     });*/
+  };
+  const updateRoomPropertyLocal = async (
+    roomId: string,
+    propertyName: string,
+    newValue: any
+  ) => {
+  
+    setRoomList((prevRoomList: RoomType[]) => {
+      const updatedRoomList = prevRoomList.map((room: RoomType) => {
+        if (room.id === roomId) {
+          return {
+            ...room,
+            [propertyName]: newValue,
+          };
+        }
+        return room;
+      });
+      return updatedRoomList;
+    });
   };
   const updateRoomPropertyWithOutRefresh = async (
     roomId: string,
@@ -658,7 +685,7 @@ const MainPage = ({
     <>
       <div className="MAINCONTAINER">
         <div className="SideBarContainer">
-          {SelectedPage === 'Rooms' ? (
+          {SelectedPage === 'Rooms' || SelectedPage === 'Calander' ? (
             <>
               <div
                 className="SideBarRoomPageTopPart"
@@ -1194,6 +1221,7 @@ const MainPage = ({
               updateRoomPropertyWithOutRefresh={
                 updateRoomPropertyWithOutRefresh
               }
+              updateRoomPropertyLocal={updateRoomPropertyLocal}
               handleAddRoomButtonInitial={handleAddRoomButtonInitial}
               brokerApi={brokerApi}
               BrokerList={BrokerList}
@@ -1223,6 +1251,7 @@ const MainPage = ({
               RoomList={RoomList}
               BrokerList={BrokerList}
               RefreshDataFromSqlite={RefreshDataFromSqlite}
+              BrokerRecommendationList={BrokerRecommendationList}
             />
           )}
           {SelectedPage === 'Calander' && (

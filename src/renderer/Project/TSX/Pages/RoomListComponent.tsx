@@ -19,14 +19,16 @@ export function RoomListComponent({
   BrokerList,
   setIsUpdatingTenantList,
   setSelectedEditRoomId,
-  pastTenantReviewApi,brokersRecommendationListApi,handleAddRoomButtonInitial
+  pastTenantReviewApi,
+  brokersRecommendationListApi,
+  handleAddRoomButtonInitial,
+  updateRoomPropertyLocal,
 }: any) {
   return (
     <>
       <div className="SecondNavBarContainer" style={{ width: '100%' }}>
         <button
           onClick={() => {
-           
             handleAddRoomButtonInitial(!AddARoomState);
           }}
         >
@@ -79,10 +81,11 @@ export function RoomListComponent({
         <div className="RoomContainer">
           {sortedAndFilteredRooms.map((room: any, index: any) => (
             <Room
-            brokerApi={brokerApi}
-            brokersRecommendationListApi={brokersRecommendationListApi}
-            BrokerList={BrokerList}
-            setBrokerList={setBrokerList}
+              brokerApi={brokerApi}
+              brokersRecommendationListApi={brokersRecommendationListApi}
+              BrokerList={BrokerList}
+              updateRoomPropertyLocal={updateRoomPropertyLocal}
+              setBrokerList={setBrokerList}
               isUpdatingTenantList={isUpdatingTenantList}
               setIsUpdatingTenantList={setIsUpdatingTenantList}
               setSelectedEditRoomId={setSelectedEditRoomId}
