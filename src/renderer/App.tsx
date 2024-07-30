@@ -500,14 +500,14 @@ function Hello() {
   }
   return (
     <>
-      {/** <NavBar
-        ProfileState={ProfileEditState}
-        SetEditButtonState={setProfileEditState}
-        UpdateImageForLogo={handleUpdateImage}
-        Image={ComponyLogo}
-        ShopName={ComponyName}
-        setShopName={setComponyName}
-      ></NavBar> */}
+      <NavBar
+        ProfileState={false}
+        
+        
+        Image={""}
+        ShopName={"The company"}
+        
+      ></NavBar> 
       <MainPage
         RoomList={RoomList}
         setRoomList={setRoomList}

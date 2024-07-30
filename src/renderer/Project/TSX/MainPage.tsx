@@ -33,7 +33,12 @@ import StastistcsIcon from '../../assets/icons8-statistic-100(2).png';
 import ArrowIcon2 from '../../assets/icons8-forward-100.png';
 import BottomNavBar from './Bottom navbar/BottomNavBar';
 import { CalanderPage } from './Pages/CalanderPage';
-import { addValue, deleteValue, getValuesWithSql, updateValue } from 'Backend/localServerApis';
+import {
+  addValue,
+  deleteValue,
+  getValuesWithSql,
+  updateValue,
+} from 'Backend/localServerApis';
 type FilterOption = {
   key: string;
   value: any;
@@ -72,13 +77,13 @@ declare global {
     AllRoomPayInfo: AllRoomPayInfo;
   };
   type BrokerRecommendationType = {
-    id: string
-    roomId: string
-    brokerId: string
-    recommendedTenantId: string
-    AddedTime: number
-    AgreedCommission: number
-  }
+    id: string;
+    roomId: string;
+    brokerId: string;
+    recommendedTenantId: string;
+    AddedTime: number;
+    AgreedCommission: number;
+  };
   type RoomSpecificationType = {
     id: string;
     Detail: string;
@@ -126,21 +131,22 @@ declare global {
     floorIndex?: number;
   };*/
   type PastTenantReviewType = {
-    id: string
-    roomId: string
-    brokerId: string
-    tenantId: string
-    enterDate: number
-    exitDate: number
-    totalEarnings: number
-    paymentCycleType: string
-    paymentCycleTypeCustom: string
-    AgreedCommission: number
-    AgreedPrice:number
-    Stars: number
-    description: string
-    endReason: string
-  }}
+    id: string;
+    roomId: string;
+    brokerId: string;
+    tenantId: string;
+    enterDate: number;
+    exitDate: number;
+    totalEarnings: number;
+    paymentCycleType: string;
+    paymentCycleTypeCustom: string;
+    AgreedCommission: number;
+    AgreedPrice: number;
+    Stars: number;
+    description: string;
+    endReason: string;
+  };
+}
 
 const MainPage = ({
   RoomList,
@@ -156,7 +162,10 @@ const MainPage = ({
   brokerApi,
   setBrokerList,
   BrokerList,
-  brokersRecommendationListApi,PastTenantReviews,RefreshDataFromSqlite,BrokerRecommendationList
+  brokersRecommendationListApi,
+  PastTenantReviews,
+  RefreshDataFromSqlite,
+  BrokerRecommendationList,
 }: any) => {
   const [floorFilter, setFloorFilter] = useState<string>('');
   const [TenantNameFilter, setTenantNameFilter] = useState<string>('');
@@ -207,7 +216,6 @@ const MainPage = ({
     propertyName: string,
     newValue: any
   ) => {
-  
     setRoomList((prevRoomList: RoomType[]) => {
       const updatedRoomList = prevRoomList.map((room: RoomType) => {
         if (room.id === roomId) {
@@ -556,9 +564,7 @@ const MainPage = ({
   ] = useState(0);
   const [AddRoomFormSquareMeters, setAddRoomFormSquareMeters] = useState(0);
   const [AddRoomFormRoomSpecifications, setAddRoomFormRoomSpecifications] =
-    useState<RoomSpecificationType[]>([
-     
-    ]);
+    useState<RoomSpecificationType[]>([]);
 
   const handleAddRoomFormSpecificationChange = (
     index: number,
@@ -659,45 +665,43 @@ const MainPage = ({
       roomAPI.DeleteRoom(SelectedEditRoomId);
       setSelectedEditRoomId('');
       setDeleteConfimation(false);
-      
-     
     }
   };
-  useEffect(()=>{if(SelectedPage === "People") {
-    RefreshDataFromSqlite();;
-  }},[SelectedPage])
+  useEffect(() => {
+    if (SelectedPage === 'People') {
+      RefreshDataFromSqlite();
+    }
+  }, [SelectedPage]);
 
-  const handleAddRoomButtonInitial = (state:boolean) => {
+  const handleAddRoomButtonInitial = (state: boolean) => {
     setAddARoomState(state);
-    let roomIndex = 1;
-    let lists : Array<number> =[3,4,8,5,3,1,2]
-   const a = RoomList.sort((a:RoomType, b:RoomType) => a.roomIndex-b.roomIndex).reverse()[0].roomIndex+1;
-
-    
-   // let roomIndexes = RoomList.every((Number:number) => Number >=0);
-   // for (let i = 0; i < roomIndexes.length; i++) {
-   //   const element = roomIndexes[i];
-   //   
-      //}
-        setAddRoomFormRoomIndex(a);
-  }
+    if (RoomList.length > 0 && RoomList) {
+      const a =
+        RoomList.sort(
+          (a: RoomType, b: RoomType) => a.roomIndex - b.roomIndex
+        ).reverse()[0].roomIndex + 1;
+      setAddRoomFormRoomIndex(a);
+    }
+  };
   return (
     <>
       <div className="MAINCONTAINER">
         <div className="SideBarContainer">
-          {SelectedPage === 'Rooms' || SelectedPage === 'Calander' ? (
+          {SelectedPage === 'Rooms' ? (
             <>
               <div
                 className="SideBarRoomPageTopPart"
                 style={{ height: AddARoomState ? '40%' : '100%' }}
               >
-                <h1
-                  onClick={() => {
-                    console.log(TenantList);
-                  }}
-                >
-                  Search options
-                </h1>
+                <div style={{ display: 'flex', justifyContent: 'center' }}>
+                  <h1
+                    onClick={() => {
+                      console.log(TenantList);
+                    }}
+                  >
+                    Room page
+                  </h1>
+                </div>
                 <div className="SearchBarContainer">
                   <div className="TenantSearchBarContainer">
                     {' '}
@@ -1137,7 +1141,10 @@ const MainPage = ({
             </>
           ) : SelectedPage === 'People' ? (
             <>
-              <h1>Peoples page <button onClick={RefreshDataFromSqlite}>Refresh</button></h1>
+              <h1>
+                Peoples page{' '}
+                <button onClick={RefreshDataFromSqlite}>Refresh</button>
+              </h1>
               <div
                 onClick={() => {
                   setPeopleSelectedPage('TenantsList');
