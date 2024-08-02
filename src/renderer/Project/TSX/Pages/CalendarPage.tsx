@@ -1,18 +1,20 @@
 import React, { useEffect } from 'react';
 import Room from '../Helpers/Room';
 import CalendarGUI from '../Helpers/CalendarGUI';
-export function CalanderPage({
-    updateRoomProperty,
-    sortedAndFilteredRooms,
-    RoomList,
-    filterOptions,
-    removeFilterOption,
-    tenantList
-  }: any) {
-    useEffect(()=> {console.log(sortedAndFilteredRooms)},[])
+export function CalendarPage({
+  updateRoomProperty,
+  sortedAndFilteredRooms,
+  RoomList,
+  filterOptions,
+  removeFilterOption,
+  tenantList,
+}: any) {
+  useEffect(() => {
+    console.log(sortedAndFilteredRooms);
+  }, []);
   return (
     <>
-       <div className="SecondNavBarContainer" style={{ width: '100%' }}>
+      <div className="SecondNavBarContainer" style={{ width: '100%' }}>
         <div className="FilterOptions">
           <strong style={{ marginRight: '10px' }}>
             Showing {sortedAndFilteredRooms.length} room
@@ -53,7 +55,12 @@ export function CalanderPage({
           color: 'white',
         }}
       >
-       <CalendarGUI rooms={sortedAndFilteredRooms.filter((r:RoomType) => r.status ==="Taken")} tenantList={tenantList}></CalendarGUI>
+        <CalendarGUI
+          rooms={sortedAndFilteredRooms.filter(
+            (r: RoomType) => r.status === 'Taken'
+          )}
+          tenantList={tenantList}
+        ></CalendarGUI>
       </div>
     </>
   );

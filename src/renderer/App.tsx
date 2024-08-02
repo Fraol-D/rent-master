@@ -17,12 +17,13 @@ function Hello() {
   const [RoomList, setRoomList] = useState<RoomType[]>([]);
   const [TenantList, setTenantList] = useState<tenant[]>([]);
   const [BrokerList, setBrokerList] = useState<BrokerType[]>([]);
-  const [PastTenantReviews, setPastTenantReviews] = useState<PastTenantReviewType[]>([]);
+  const [PastTenantReviews, setPastTenantReviews] = useState<
+    PastTenantReviewType[]
+  >([]);
   const [isUpdatingTenantList, setIsUpdatingTenantList] = useState(false);
-  const [BrokerRecommendationList, setBrokerRecommendationList] = useState<BrokerRecommendationType[]>([])
-
- 
-  
+  const [BrokerRecommendationList, setBrokerRecommendationList] = useState<
+    BrokerRecommendationType[]
+  >([]);
 
   class RoomApi {
     getRoomFromApi = async () => {
@@ -354,25 +355,27 @@ function Hello() {
           'PastTenantsForRoom',
           `WHERE 1`
         );
-        console.log("PAST", pastTenantReviewRaw)
+        console.log('PAST', pastTenantReviewRaw);
         if (pastTenantReviewRaw) {
-          const pastTenantReviews = pastTenantReviewRaw.map((pastTenantReview: PastTenantReviewType) => {
-            return {
-              id: pastTenantReview.id,
-              roomId: pastTenantReview.roomId,
-              brokerId: pastTenantReview.brokerId,
-              tenantId: pastTenantReview.tenantId,
-              enterDate: pastTenantReview.enterDate,
-              exitDate: pastTenantReview.exitDate,
-              totalEarnings: pastTenantReview.totalEarnings,
-              paymentCycleType: pastTenantReview.paymentCycleType,
-              AgreedCommission: pastTenantReview.AgreedCommission,
-              AgreedPrice: pastTenantReview.AgreedPrice,
-              Stars: pastTenantReview.Stars,
-              description: pastTenantReview.description,
-              endReason: pastTenantReview.endReason,
-            };
-          });
+          const pastTenantReviews = pastTenantReviewRaw.map(
+            (pastTenantReview: PastTenantReviewType) => {
+              return {
+                id: pastTenantReview.id,
+                roomId: pastTenantReview.roomId,
+                brokerId: pastTenantReview.brokerId,
+                tenantId: pastTenantReview.tenantId,
+                enterDate: pastTenantReview.enterDate,
+                exitDate: pastTenantReview.exitDate,
+                totalEarnings: pastTenantReview.totalEarnings,
+                paymentCycleType: pastTenantReview.paymentCycleType,
+                AgreedCommission: pastTenantReview.AgreedCommission,
+                AgreedPrice: pastTenantReview.AgreedPrice,
+                Stars: pastTenantReview.Stars,
+                description: pastTenantReview.description,
+                endReason: pastTenantReview.endReason,
+              };
+            }
+          );
           setPastTenantReviews(pastTenantReviews);
         } else {
           setPastTenantReviews([]);
@@ -438,48 +441,51 @@ function Hello() {
     };
   }
   class BrokersRecommendationListApi {
-    AddBrokerRecommendation = async(
+    AddBrokerRecommendation = async (
       id: string,
       brokerId: string,
       roomId: string,
       recommendedTenantId: string,
       AddedTime: number,
-      AgreedCommission: number,
-    
+      AgreedCommission: number
     ) => {
       try {
-        await addValue("brokersRecommendationList", {
+        await addValue('brokersRecommendationList', {
           id,
-          brokerId,roomId,
+          brokerId,
+          roomId,
           recommendedTenantId,
           AddedTime,
           AgreedCommission,
-        
-        })
-      } catch (error:any) {
+        });
+      } catch (error: any) {
         console.error(error.message);
       }
-    }
-      getBrokerRecommendationsFromApi = async () => {
-       try {
-         const brokerRecommendationsRaw = await getValuesWithSql('brokersRecommendationList', 'WHERE 1')
-         if (brokerRecommendationsRaw) {
-           const brokerRecommendations = brokerRecommendationsRaw.map((recommendation: BrokerRecommendationType) => ({
-             id: recommendation.id,
-             roomId: recommendation.roomId,
-             brokerId: recommendation.brokerId,
-             recommendedTenantId: recommendation.recommendedTenantId,
-             AddedTime: recommendation.AddedTime,
-             AgreedCommission: recommendation.AgreedCommission,
-           }))
-           setBrokerRecommendationList(brokerRecommendations)
-         }
-       } catch (error) {
-         console.error('Error fetching broker recommendations:', error)
-       }
-     }
-   
-  } 
+    };
+    getBrokerRecommendationsFromApi = async () => {
+      try {
+        const brokerRecommendationsRaw = await getValuesWithSql(
+          'brokersRecommendationList',
+          'WHERE 1'
+        );
+        if (brokerRecommendationsRaw) {
+          const brokerRecommendations = brokerRecommendationsRaw.map(
+            (recommendation: BrokerRecommendationType) => ({
+              id: recommendation.id,
+              roomId: recommendation.roomId,
+              brokerId: recommendation.brokerId,
+              recommendedTenantId: recommendation.recommendedTenantId,
+              AddedTime: recommendation.AddedTime,
+              AgreedCommission: recommendation.AgreedCommission,
+            })
+          );
+          setBrokerRecommendationList(brokerRecommendations);
+        }
+      } catch (error) {
+        console.error('Error fetching broker recommendations:', error);
+      }
+    };
+  }
   const roomAPI = new RoomApi();
   const brokerApi = new BrokerApi();
   const tenantAPI = new TenantApi();
@@ -489,7 +495,7 @@ function Hello() {
   const brokersRecommendationListApi = new BrokersRecommendationListApi();
   // On start
   useEffect(() => {
-    RefreshDataFromSqlite()
+    RefreshDataFromSqlite();
   }, []);
   const RefreshDataFromSqlite = () => {
     roomAPI.getRoomFromApi();
@@ -497,18 +503,22 @@ function Hello() {
     tenantAPI.getTenantsApi();
     pastTenantReviewApi.getPastTenantReviewLatestApi();
     brokersRecommendationListApi.getBrokerRecommendationsFromApi();
-  }
+  };
+  const [SelectedPage, setSelectedPage] = useState<
+    'Dashboard' | 'People' | 'Rooms' | 'Calendar' | 'Settings'
+  >('Rooms');
   return (
     <>
       <NavBar
         ProfileState={false}
-        
-        
-        Image={""}
-        ShopName={"The company"}
-        
-      ></NavBar> 
+        SelectedPage={SelectedPage}
+        setSelectedPage={setSelectedPage}
+        Image={''}
+        ShopName={'The company'}
+      ></NavBar>
       <MainPage
+        SelectedPage={SelectedPage}
+        setSelectedPage={setSelectedPage}
         RoomList={RoomList}
         setRoomList={setRoomList}
         setTenantList={setTenantList}

@@ -8,7 +8,7 @@ import '../CSS/RoomArea.css';
 import SortIcon from '../../assets/icons8-sort-100.png';
 import DoubleArrowIconDark from '../../assets/assets/Dark mode/Left2Arrow.png';
 import BottomNavBar from './Bottom navbar/BottomNavBar';
-import { CalanderPage } from './Pages/CalanderPage';
+import { CalendarPage } from './Pages/CalendarPage';
 import {
   addValue,
   deleteValue,
@@ -142,6 +142,8 @@ const MainPage = ({
   PastTenantReviews,
   RefreshDataFromSqlite,
   BrokerRecommendationList,
+  setSelectedPage,
+  SelectedPage,
 }: any) => {
   const [floorFilter, setFloorFilter] = useState<string>('');
   const [TenantNameFilter, setTenantNameFilter] = useState<string>('');
@@ -520,9 +522,6 @@ const MainPage = ({
 
   const sortedAndFilteredRooms = filterAndSortRooms();
 
-  const [SelectedPage, setSelectedPage] = useState<
-    'Dashboard' | 'People' | 'Rooms' | 'Calander' | 'Settings'
-  >('Rooms');
   const [PeopleSelectedPage, setPeopleSelectedPage] = useState<
     'TenantsList' | 'BrokersList' | 'TenantReviews'
   >('TenantsList');
@@ -641,17 +640,16 @@ const MainPage = ({
       setDeleteConfimation(false);
     }
   };
-  
 
-  const [HideSideBarForCalander, setHideSideBarForCalander] = useState(false);
+  const [HideSideBarForCalendar, setHideSideBarForCalendar] = useState(false);
   useEffect(() => {
     if (SelectedPage === 'People') {
       RefreshDataFromSqlite();
     }
-    if(SelectedPage==="Calander") {
-      setHideSideBarForCalander(true);
-    }else {
-      setHideSideBarForCalander(false)
+    if (SelectedPage === 'Calendar') {
+      setHideSideBarForCalendar(true);
+    } else {
+      setHideSideBarForCalendar(false);
     }
   }, [SelectedPage]);
 
@@ -672,8 +670,7 @@ const MainPage = ({
     if (SideBarShowState) {
       setSideBarWidth(0);
       setSideBarShowState(false);
-    setAddARoomState(false)
-
+      setAddARoomState(false);
     } else {
       setSideBarWidth(290);
       setSideBarShowState(true);
@@ -694,14 +691,30 @@ const MainPage = ({
     setSortType('name');
     setSortDirection('asc');
   }
-  useEffect(()=>{},[])
-   return (
+  useEffect(() => {}, []);
+  return (
     <>
       <div className="MainContainerMain">
-        <button className='SideBarShowButton' onClick={handleCloseSideBar} style={{visibility:SideBarShowState ? "hidden": HideSideBarForCalander ?"hidden" :"visible"}}>Show Sidebar</button>
+        <button
+          className="SideBarShowButton"
+          onClick={handleCloseSideBar}
+          style={{
+            visibility: SideBarShowState
+              ? 'hidden'
+              : HideSideBarForCalendar
+              ? 'hidden'
+              : 'visible',
+          }}
+        >
+          Show Sidebar
+        </button>
         <div
           className="SideBarContainer"
-          style={{ width: HideSideBarForCalander ? "0px" :`${SideBarWidth}px`, transition:"all .2s", visibility:HideSideBarForCalander ? "hidden":"visible"}}
+          style={{
+            width: HideSideBarForCalendar ? '0px' : `${SideBarWidth}px`,
+            transition: 'all .2s',
+            visibility: HideSideBarForCalendar ? 'hidden' : 'visible',
+          }}
         >
           {SelectedPage === 'Rooms' ? (
             <>
@@ -710,7 +723,10 @@ const MainPage = ({
                 style={{ height: AddARoomState ? '40%' : '100%' }}
               >
                 <div className="SideBarTopContainer">
-                  <button className="SideBarTopButton"onClick={handleCloseSideBar}>
+                  <button
+                    className="SideBarTopButton"
+                    onClick={handleCloseSideBar}
+                  >
                     <img src={DoubleArrowIconDark} alt="" />
                   </button>
                   <button
@@ -721,7 +737,12 @@ const MainPage = ({
                   >
                     Add room
                   </button>
-                  <button className="SideBarTopButton" onClick={handleClearFilters}>Clear Filters</button>
+                  <button
+                    className="SideBarTopButton"
+                    onClick={handleClearFilters}
+                  >
+                    Clear Filters
+                  </button>
                   <button className="SideBarTopButton">d</button>{' '}
                 </div>
                 <div className="SearchBarContainer">
@@ -1163,10 +1184,10 @@ const MainPage = ({
             </>
           ) : SelectedPage === 'People' ? (
             <>
-              <h1>
+              <p>
                 Peoples page{' '}
                 <button onClick={RefreshDataFromSqlite}>Refresh</button>
-              </h1>
+              </p>
               <div
                 onClick={() => {
                   setPeopleSelectedPage('TenantsList');
@@ -1243,7 +1264,13 @@ const MainPage = ({
             </div>
           </>
         )}
-        <div style={{ width: HideSideBarForCalander ?"100%":`calc(100% - ${SideBarWidth}px)` }}>
+        <div
+          style={{
+            width: HideSideBarForCalendar
+              ? '100%'
+              : `calc(100% - ${SideBarWidth}px)`,
+          }}
+        >
           {SelectedPage === 'Rooms' && (
             <RoomListComponent
               updateRoomProperty={updateRoomProperty}
@@ -1283,8 +1310,8 @@ const MainPage = ({
               BrokerRecommendationList={BrokerRecommendationList}
             />
           )}
-          {SelectedPage === 'Calander' && (
-            <CalanderPage
+          {SelectedPage === 'Calendar' && (
+            <CalendarPage
               updateRoomProperty={updateRoomProperty}
               RoomList={RoomList}
               sortedAndFilteredRooms={sortedAndFilteredRooms}
@@ -1313,11 +1340,6 @@ const MainPage = ({
               filterOptions={filterOptions}
             />
           )}
-          <BottomNavBar
-            setSelectedPage={setSelectedPage}
-            SelectedPage={SelectedPage}
-            
-          ></BottomNavBar>
         </div>
       </div>
     </>

@@ -7,17 +7,17 @@ interface Props {
   Image: string;
   ProfileState: boolean;
   ShopName: string;
-
+  setSelectedPage:(newval:string)=>void;
+  SelectedPage: string;
 }
 
 const NavBar = ({
-  
   Image,
   ProfileState,
   ShopName,
-  
-}: 
-Props) => {
+  setSelectedPage,
+  SelectedPage,
+}: Props) => {
   const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
@@ -41,8 +41,6 @@ Props) => {
       document.getElementById('image-input')?.click();
     }
   };
-
-  
 
   function calculateDaysDifference(
     startDate: Date | number,
@@ -72,7 +70,6 @@ Props) => {
     }
   }
 
-  
   return (
     <div className="navigation">
       <div className="LeftSide">
@@ -85,18 +82,25 @@ Props) => {
           />
 
           {ProfileState ? (
-            <input
-              type="text"
-              className="Name-ofShop-input"
-              value={ShopName}
-
-            />
+            <input type="text" className="Name-ofShop-input" value={ShopName} />
           ) : (
             <p className="Name-ofShop">{ShopName}</p>
           )}
         </div>
-
       </div>
+      <div className="TopPageNavigatorContainer">
+        {['Dashboard', 'People', 'Rooms', 'Calendar', 'Settings'].map((page) => (
+          <button
+            key={page}
+              className={SelectedPage === page? "PageNavigatorButtonSelected":"PageNavigatorButton"}
+              
+            onClick={() => setSelectedPage(page)}
+          >
+            {page}
+          </button>
+        ))}
+      </div>
+
       <div className="RightSide">
         <div className="CurrentTimeContainer">
           <p className="CurrentTime">
@@ -111,7 +115,6 @@ Props) => {
           type="file"
           accept=".png,.jpg,.jpeg"
           style={{ display: 'none' }}
-
         />
       </div>
     </div>
