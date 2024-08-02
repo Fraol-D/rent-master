@@ -16,7 +16,7 @@ interface Props {
   extendPaymentSchedule: () => void;
 }
 
-const PaymentProgressBar: React.FC<Props> = ({
+const PaymentProgressBarGUI: React.FC<Props> = ({
   paymentData,
   roomPaymentInfoApi,
   agreedPrice,
@@ -324,4 +324,4 @@ const PaymentProgressBar: React.FC<Props> = ({
   );
 };
 
-export default React.memo(PaymentProgressBar);
+export default React.memo(PaymentProgressBarGUI);

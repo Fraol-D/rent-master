@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import Room from '../Helpers/Room';
-import Calendar from '../Helpers/Calendar';
+import CalendarGUI from '../Helpers/CalendarGUI';
 export function CalanderPage({
     updateRoomProperty,
     sortedAndFilteredRooms,
@@ -49,11 +49,11 @@ export function CalanderPage({
         className="RoomContainerContainer"
         style={{
           width: '100%',
-          height: 'calc(100% - 45px)',
+          height: '100%',
           color: 'white',
         }}
       >
-       <Calendar rooms={sortedAndFilteredRooms} monthsToShow={3} tenantList={tenantList}></Calendar>
+       <CalendarGUI rooms={sortedAndFilteredRooms.filter((r:RoomType) => r.status ==="Taken")} tenantList={tenantList}></CalendarGUI>
       </div>
     </>
   );

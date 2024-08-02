@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import '../../CSS/Room.css';
 const { v4: uuidv4 } = require('uuid');
-import PaymentProgressBar from './PaymentProgressBar';
+import PaymentProgressBarGUI from './PaymentProgressBarGUI';
 import EditIcon from '../../../assets/assets/Dark mode/Editicon.png';
 import {
   addValue,
@@ -2010,14 +2010,14 @@ const Room = ({
               opacity: roomType.ShowPayTimeLine ? '1' : '0',
             }}
           >
-            <PaymentProgressBar
+            <PaymentProgressBarGUI
               paymentData={roomType.AllRoomPayInfo.RoomPayInfo || []}
               roomPaymentInfoApi={roomPaymentInfoApi}
               roomType={roomType}
               agreedPrice={roomType.AgreedPrice}
               extendPaymentSchedule={extendPaymentSchedule}
               refresh={handlePaymentRefresh}
-            ></PaymentProgressBar>
+            ></PaymentProgressBarGUI>
           </div>
         </div>
         {TenantLeavePannelState && (

@@ -27,13 +27,7 @@ export function RoomListComponent({
   return (
     <>
       <div className="SecondNavBarContainer" style={{ width: '100%' }}>
-        <button
-          onClick={() => {
-            handleAddRoomButtonInitial(!AddARoomState);
-          }}
-        >
-          Add a room
-        </button>
+        
         <div className="FilterOptions">
           <strong style={{ marginRight: '10px' }}>
             Showing {sortedAndFilteredRooms.length} room
@@ -70,7 +64,7 @@ export function RoomListComponent({
         className="RoomContainerContainer"
         style={{
           width: '100%',
-          height: 'calc(100% - 45px)',
+          height: 'calc(100% - 0px)',
         }}
       >
         <div

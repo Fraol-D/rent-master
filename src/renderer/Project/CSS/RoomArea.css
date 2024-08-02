@@ -9,14 +9,14 @@
 }
 .SideBarContainer {
   width: 290px;
-  border-radius: 5px;
+  border-top: 1px solid grey;
   background-color: #2e2f30;
   color: white;
   display: flex;
   flex-direction: column;
   align-items: center;
 }
-.MAINCONTAINER {
+.MainContainerMain {
   width: 100%;
   display: flex;
   height: 100%;
@@ -25,7 +25,7 @@
   background-color: #2e2f30;
 
   border-radius: 5px;
-  height: 45px;
+  height: 0px;
 
   display: flex;
   align-items: center;
@@ -148,7 +148,7 @@
 .FilterOptions {
   display: flex;
   position: absolute;
-  top: 45px;
+  top: 67px;
   width: 1300px;
   align-items: center;
   color: white;
@@ -165,7 +165,7 @@
 .BottomNavBar {
   height: 45px;
   position: relative;
-  bottom: 60px;
+  bottom: 125px;
   border-radius: 5px;
   box-shadow: 3px 3px 0px 0px #00000073;
   width: 320px;
@@ -181,14 +181,14 @@
 }
 .SideBarRoomPageBottomPartAddRoom {
   background-color: #2e2f30;
-  box-shadow: 3px 3px 0px 0px #00000073;
+  box-shadow: 3px 3px 0px 0px rgba(0, 0, 0, 0.4509803922);
   border-top: 1px solid white;
   width: 100%;
   border-radius: 5px;
   display: flex;
   align-items: center;
   flex-direction: column;
-  justify-content: flex-start;
+  justify-content: space-between;
   overflow-y: auto;
 }
 .AddANewRoomInputsSmall {
@@ -246,8 +246,10 @@
   border-radius: 5px;
   padding-top: 5px;
   width: 100%;
-  height: 100px;
+  height: 152px;
+  padding-top: 15px;
   margin-top: 30px;
+  justify-content: flex-end;
 }
 .AddaNewRoomRowObject {
   margin-bottom: 10px;
@@ -266,7 +268,7 @@
   transform: translate(-50%, -50%);
 }
 .EditRoomScreenMainContainerOpacity {
-  background-color: #000000A9;
+  background-color: #000000a9;
 
   width: 100%;
   height: 100%;
@@ -280,13 +282,13 @@
   width: 90%;
   height: 30px;
   background-color: #454959;
-  margin:5px;
-  display:flex;
+  margin: 5px;
+  display: flex;
 
   justify-content: space-between;
   align-items: center;
   padding: 5px;
-  transition: all .2s;
+  transition: all 0.2s;
   border-radius: 5px;
   border: 1px solid grey;
 }
@@ -294,8 +296,8 @@
   width: 90%;
   height: 30px;
   background-color: #454959;
-  margin:5px;
-  display:flex;
+  margin: 5px;
+  display: flex;
 
   justify-content: space-between;
   align-items: center;
@@ -303,23 +305,23 @@
   border-radius: 5px;
   border: 1px solid #00e1ff;
 }
- .sideBarItemComponentMain:hover {
+.sideBarItemComponentMain:hover {
   border: 1px solid white;
 }
 .NotificationButton {
   height: 35px;
-    position: relative;
-    bottom: 60px;
-    border-radius: 5px;
-    box-shadow: 3px 3px 0px 0px rgba(0, 0, 0, 0.4509803922);
-    margin-top: 5px;
-    margin-left: 5px;
-    width: 35px;
-    background-color: #454959;
-    display: flex;
-    flex-direction: row;
-    justify-content: space-evenly;
-    align-items: center;
+  position: relative;
+  bottom: 125px;
+  border-radius: 5px;
+  box-shadow: 3px 3px 0px 0px rgba(0, 0, 0, 0.4509803922);
+  margin-top: 5px;
+  margin-left: 5px;
+  width: 35px;
+  background-color: #454959;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-evenly;
+  align-items: center;
 }
 .notification-panel {
   height: 555px;
@@ -337,4 +339,22 @@
   border: 1px solid grey;
   border-bottom: 1px dashed grey;
   justify-content: flex-start;
+}
+.SideBarTopContainer {
+  display: flex;
+  flex-direction: row;
+  border-bottom: 1px solid grey;
+}
+.SideBarTopButton {
+  width: 52px;
+  height: 52px;
+  margin: 10px;
+}
+.SideBarShowButton {
+    height: 25px;
+    position: absolute;
+    margin-top: 3px;
+    margin-left: 3px;
+    transition: all .2s;
+    visibility: visible;
 }

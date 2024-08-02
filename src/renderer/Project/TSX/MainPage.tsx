@@ -5,32 +5,8 @@ const { v4: uuidv4 } = require('uuid');
 
 import Room from './Helpers/Room';
 import '../CSS/RoomArea.css';
-import AddIcon from '../../assets/icons8-add-100.png';
-import saveIcon from '../../assets/icons8-save-100(3).png';
-import deleteIcon from '../../assets/icons8-delete-100(1).png';
-import editIcon from '../../assets/icons8-edit-100.png';
-import OnStateIcon from '../../assets/On.png';
-import OFFStateIcon from '../../assets/OFF.png';
-import Xicon from '../../../assets/X.png';
-import InsertImageIcon from '../../assets/Insert Image Pic.png';
-import dropDownImg from '../../assets/icons8-drop-down-100.png';
 import SortIcon from '../../assets/icons8-sort-100.png';
-import SelectIcon from '../../assets/icons8-select-100(2).png';
-import SelectIconfill from '../../assets/icons8-select-100(1).png';
-import SettingIcon from '../../assets/icons8-settings-480.png';
-import ProductsIcon from '../../assets/icons8-products-100.png';
-import WarningRed from '../../assets/icons8-general-warning-sign-100.png';
-import WarningYellow from '../../assets/icons8-general-warning-sign-100(1).png';
-import ShowPasswordIcon from '../../assets/Account Managment/icons8-show-password-100.png';
-import HidePasswordIcon from '../../assets/Account Managment/icons8-hide-password-100.png';
-import PasswordIcon from '../../assets/Account Managment/icons8-password-100.png';
-import UsernameIcon from '../../assets/Account Managment/icons8-name-100.png';
-import PasswordGearIcon from '../../assets/Account Managment/icons8-password-100-gear.png';
-import UsernameGearIcon from '../../assets/Account Managment/icons8-name-100-Gear.png';
-import AccountImage from '../../assets/Account Managment/Administrator Male.png';
-import AccountImageAdmin from '../../assets/Account Managment/Admin Settings Male.png';
-import StastistcsIcon from '../../assets/icons8-statistic-100(2).png';
-import ArrowIcon2 from '../../assets/icons8-forward-100.png';
+import DoubleArrowIconDark from '../../assets/assets/Dark mode/Left2Arrow.png';
 import BottomNavBar from './Bottom navbar/BottomNavBar';
 import { CalanderPage } from './Pages/CalanderPage';
 import {
@@ -258,39 +234,37 @@ const MainPage = ({
     });
   };
 
-  const removeFilterOption = (index: number) => {
+  const removeFilterOption = (indexaggg: number) => {
     setFilterOptions((options) => {
-      const removedOption = options[index];
-      switch (removedOption.key) {
-        case 'floor':
-          setFloorFilter(''); // Reset the floor filter
-          break;
-        case 'tenantName':
-          setFloorFilter(''); // Reset the floor filter
-          break;
-        case 'room':
-          setRoomFilter(''); // Reset the room filter
-          break;
-        case 'sort':
-          setSortType('name'); // Reset the sort type to the default
-          break;
-        case 'filterstatus':
-          setFilterStatus('all'); // Reset the filter status to 'all'
-          break;
-        case 'filterPriceValue':
-          setFilterPriceValue(''); // Reset the filter price value
-          break;
-        case 'filterDueDateValue':
-          setFilterDueDateValue(''); // Reset the filter price value
-          break;
-        case 'filterSquareFeetValue':
-          setFilterSquareFeetValue(''); // Reset the filter square feet value
-          break;
-        default:
-          // Handle unknown key
-          break;
+      const removedOption = options[indexaggg];
+      console.log(removedOption.key);
+
+      if (removedOption.key === 'floor') {
+        setFloorFilter(''); // Reset the floor filter
+      } else if (removedOption.key === 'tenantName') {
+        setFloorFilter(''); // Reset the floor filter
+      } else if (removedOption.key === 'room') {
+        setRoomFilter(''); // Reset the room filter
+      } else if (removedOption.key === 'sort') {
+        setSortType('name'); // Reset the sort type to the default
+      } else if (removedOption.key === 'filterstatus') {
+        setFilterStatus('all'); // Reset the filter status to 'all'
+      } else if (removedOption.key === 'filterPriceValue') {
+        setFilterPriceValue(''); // Reset the filter price value
+      } else if (removedOption.key === 'filterDueDateValue') {
+        setFilterDueDateValue(''); // Reset the filter price value
+      } else if (removedOption.key === 'filterSquareFeetValue') {
+        setFilterSquareFeetValue(''); // Reset the filter square feet value
       }
-      return options.filter((_, i) => i !== index);
+      // If none of the above conditions are met, it will handle unknown keys by doing nothing
+
+      const newOptions = [];
+      for (let i = 0; i < options.length; i++) {
+        if (i !== indexaggg) {
+          newOptions.push(options[i]);
+        }
+      }
+      return newOptions;
     });
   };
   const getDaysUntilPayment = (allRoomPayInfo: {
@@ -667,40 +641,88 @@ const MainPage = ({
       setDeleteConfimation(false);
     }
   };
+  
+
+  const [HideSideBarForCalander, setHideSideBarForCalander] = useState(false);
   useEffect(() => {
     if (SelectedPage === 'People') {
       RefreshDataFromSqlite();
+    }
+    if(SelectedPage==="Calander") {
+      setHideSideBarForCalander(true);
+    }else {
+      setHideSideBarForCalander(false)
     }
   }, [SelectedPage]);
 
   const handleAddRoomButtonInitial = (state: boolean) => {
     setAddARoomState(state);
     if (RoomList.length > 0 && RoomList) {
-      const a =
-        RoomList.sort(
-          (a: RoomType, b: RoomType) => a.roomIndex - b.roomIndex
-        ).reverse()[0].roomIndex + 1;
+      const sortedRoomList = [...RoomList].sort(
+        (a: RoomType, b: RoomType) => a.roomIndex - b.roomIndex
+      );
+      const a = sortedRoomList.reverse()[0].roomIndex + 1;
       setAddRoomFormRoomIndex(a);
     }
   };
-  return (
+  const [SideBarWidth, setSideBarWidth] = useState<number>(290);
+  const [SideBarShowState, setSideBarShowState] = useState<boolean>(true);
+
+  const handleCloseSideBar = () => {
+    if (SideBarShowState) {
+      setSideBarWidth(0);
+      setSideBarShowState(false);
+    setAddARoomState(false)
+
+    } else {
+      setSideBarWidth(290);
+      setSideBarShowState(true);
+    }
+  };
+  function handleClearFilters() {
+    setFilterOptions([]);
+    setFloorFilter('');
+    setTenantNameFilter('');
+    setRoomFilter('');
+    setFilterStatus('all');
+    setFilterPriceOperator('None');
+    setFilterPriceValue('');
+    setFilterDueDateOperator('None');
+    setFilterDueDateValue('');
+    setFilterSquareFeetOperator('None');
+    setFilterSquareFeetValue('');
+    setSortType('name');
+    setSortDirection('asc');
+  }
+  useEffect(()=>{},[])
+   return (
     <>
-      <div className="MAINCONTAINER">
-        <div className="SideBarContainer">
+      <div className="MainContainerMain">
+        <button className='SideBarShowButton' onClick={handleCloseSideBar} style={{visibility:SideBarShowState ? "hidden": HideSideBarForCalander ?"hidden" :"visible"}}>Show Sidebar</button>
+        <div
+          className="SideBarContainer"
+          style={{ width: HideSideBarForCalander ? "0px" :`${SideBarWidth}px`, transition:"all .2s", visibility:HideSideBarForCalander ? "hidden":"visible"}}
+        >
           {SelectedPage === 'Rooms' ? (
             <>
               <div
                 className="SideBarRoomPageTopPart"
                 style={{ height: AddARoomState ? '40%' : '100%' }}
               >
-                <div style={{ display: 'flex', justifyContent: 'center' }}>
-                  <h1
+                <div className="SideBarTopContainer">
+                  <button className="SideBarTopButton"onClick={handleCloseSideBar}>
+                    <img src={DoubleArrowIconDark} alt="" />
+                  </button>
+                  <button
+                    className="SideBarTopButton"
                     onClick={() => {
-                      console.log(TenantList);
+                      handleAddRoomButtonInitial(!AddARoomState);
                     }}
                   >
-                    Room page
-                  </h1>
+                    Add room
+                  </button>
+                  <button className="SideBarTopButton" onClick={handleClearFilters}>Clear Filters</button>
+                  <button className="SideBarTopButton">d</button>{' '}
                 </div>
                 <div className="SearchBarContainer">
                   <div className="TenantSearchBarContainer">
@@ -1221,7 +1243,7 @@ const MainPage = ({
             </div>
           </>
         )}
-        <div style={{ width: 'calc(100% - 290px)' }}>
+        <div style={{ width: HideSideBarForCalander ?"100%":`calc(100% - ${SideBarWidth}px)` }}>
           {SelectedPage === 'Rooms' && (
             <RoomListComponent
               updateRoomProperty={updateRoomProperty}
@@ -1294,6 +1316,7 @@ const MainPage = ({
           <BottomNavBar
             setSelectedPage={setSelectedPage}
             SelectedPage={SelectedPage}
+            
           ></BottomNavBar>
         </div>
       </div>

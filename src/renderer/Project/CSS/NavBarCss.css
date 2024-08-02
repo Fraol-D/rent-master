@@ -1,14 +1,13 @@
 .navigation {
-  background-color: #333333;
+  background-color: #2e2f30;
   height: 60px;
   box-sizing: border-box;
   align-items: center;
   margin: 0px;
   display: flex;
   width: 100%;
-  border-radius: 10px;
-  border: 1px solid #000;
-  box-shadow: 0px 10px 10px 0px rgba(0, 0, 0, 0.25);
+  border-bottom: 1px solid grey;
+  
   justify-content: space-between;
   flex-direction: row;
 }
@@ -19,9 +18,8 @@
   height: 50px;
   margin-left: 5px;
   margin-right: 5px;
-  border: 1px solid #000;
+  
   border-radius: 7px;
-  background: #1e1f28;
 }
 .LogoImageEdit {
   width: 50px;
@@ -41,14 +39,14 @@
   min-width: 560;
   font-size: 30px;
   color: white;
-  border: 1px solid #000;
-  background: #1e1f28;
+
+
   border-radius: 5px;
   padding-left: 5px;
   font-weight: bolder;
   border-radius: 7px;
   font-style: normal;
-  font-weight: 600;
+  font-weight: 300;
   line-height: normal;
   display: flex;
   align-items: center;
@@ -65,7 +63,7 @@
 
   font-size: 24px;
   font-style: normal;
-  font-weight: 800;
+  font-weight: 300;
   line-height: normal;margin: 0px;
 }
 .CurrentTimeSmall {
@@ -79,11 +77,11 @@
 
   font-size: 14px;
   font-style: normal;
-  font-weight: 800;
+  font-weight: 200;
   line-height: normal;margin: 0px;
 }
 .CurrentTimeContainer {
-  background-color: #1e1f28;
+  
   width: 80px;
   height: 50px;
   border-radius: 13px;
@@ -92,9 +90,8 @@
   justify-content: center;
   align-items: center;
   margin-right: 15px;
-  border-radius: 7px;
-  border: 1px solid #000;
-  background: #1e1f28;display: flex;
+
+display: flex;
   flex-direction: column;
 }
 .RightSide {
