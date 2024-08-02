@@ -39,7 +39,7 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
 
       // Calculate the width and height based on the number of payments
       const paymentWidth = 75; // Width of each payment section
-      const width = sortedPaymentData.length * paymentWidth; // Total width based on number of payments
+      const width = sortedPaymentData.length * paymentWidth +40; // Total width based on number of payments
       const height = 120; // Increased height to accommodate dates
       const padding = 30;
 
@@ -80,7 +80,7 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
         .append('rect')
         .attr('x', padding)
         .attr('y', padding + height / 2 - 35)
-        .attr('width', width)
+        .attr('width', width-40)
         .attr('height', 10)
         .attr('fill', '#f0f0f0')
         .attr('stroke', '#aaa')
@@ -259,6 +259,31 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
         });
         roomPaymentInfoApi.editRoomPaymentApi(d.id, 'Paid', true);
       });
+
+      // Add extend button at the end of the progress bar
+      svg
+        .append('rect')
+        .attr('x', width + padding-30)
+        .attr('y', padding + height / 2 - 44)
+        .attr('width', 60)
+        .attr('height', 30)
+        .attr('rx', 5)
+        .attr('ry', 5)
+        .attr('fill', '#454959')
+        .style('cursor', 'pointer')
+        .on('click', ()=>{extendPaymentSchedule(); refresh();});
+
+      svg
+        .append('text')
+        .attr('x', width + padding)
+        .attr('y', padding + height / 2 - 29)
+        .attr('text-anchor', 'middle')
+        .attr('dominant-baseline', 'middle')
+        .attr('fill', 'lab(100 0 -0.03)')
+        .style('font-size', '14')
+        .style('cursor', 'pointer')
+        .text('Extend?')
+        .on('click', ()=>{extendPaymentSchedule(); refresh();});
     }
   }, [paymentData, today, paymentData]);
 
@@ -272,7 +297,7 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
       ? daysDifference > 0
         ? `Due in ${daysDifference + 1} day${
             daysDifference + 1 !== 1 ? 's' : ''
-          }. Earnings: $${(
+          }. Earnings: ${(
             agreedPrice * paymentData.filter((payment) => payment.Paid).length
           ).toLocaleString()}. ${
             paymentData.filter((payment) => payment.Paid).length
@@ -299,26 +324,10 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
           }}
         >
           {message}
-          <button
-            onClick={() => {
-              extendPaymentSchedule();
-            }}
-            style={{ height: '20px', display: 'flex', alignItems: 'center' }}
-          >
-            Extend?
-          </button>
-          <button
-            onClick={() => {
-              refresh();
-            }}
-            style={{ height: '20px', display: 'flex', alignItems: 'center' }}
-          >
-            Refresh
-          </button>
+          
         </p>
       </div>
-      <div style={{ overflowX: 'auto', maxWidth: '100%' }}>
-        <svg ref={svgRef} width="100%" height="126" />
+      <div style={{ overflowX: 'auto', maxWidth: '100%', overflowY: 'hidden', height: '160px' }}>        <svg ref={svgRef} width="100%" height="126" />
       </div>
     </div>
   );

@@ -51,7 +51,7 @@ export function CalendarPage({
         className="RoomContainerContainer"
         style={{
           width: '100%',
-          height: '100%',
+          height: 'calc(100% - 60px)',
           color: 'white',
         }}
       >
@@ -59,6 +59,7 @@ export function CalendarPage({
           rooms={sortedAndFilteredRooms.filter(
             (r: RoomType) => r.status === 'Taken'
           )}
+          numberOfMonths={10}
           tenantList={tenantList}
         ></CalendarGUI>
       </div>

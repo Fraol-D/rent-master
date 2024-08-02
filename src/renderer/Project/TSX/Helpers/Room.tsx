@@ -368,9 +368,21 @@ const Room = ({
       console.log(roomType.AllRoomPayInfo.RoomPayInfo);
     }
   };
+  // Thoughts:
+  // 1. We need to check for existing payment dates before adding new ones
+  // 2. We should use a Set to keep track of unique payment dates
+  // 3. We'll modify the loop to continue until we have 10 new unique payments
+  // 4. We'll convert all dates to midnight UTC to ensure consistent comparison
+
   const extendPaymentSchedule = async () => {
     if (!roomType.AllRoomPayInfo || !roomType.AllRoomPayInfo.RoomPayInfo)
       return;
+
+    const existingPayments = new Set(
+      roomType.AllRoomPayInfo.RoomPayInfo.map(payment => 
+        new Date(payment.Day).setUTCHours(0, 0, 0, 0)
+      )
+    );
 
     const lastPayment =
       roomType.AllRoomPayInfo.RoomPayInfo[
@@ -412,22 +424,30 @@ const Room = ({
       interval = 30; // Default to 30 days if the payment cycle is invalid
     }
 
-    const newPayments: { Day: number; Paid: boolean }[] = [];
-    for (let i = 1; i <= 10; i++) {
+    let i = 1;
+    let newPaymentsAdded = 0;
+    while (newPaymentsAdded < 10) {
       const paymentDay = getPaymentDay(
         interval,
         lastPaymentDate,
         i,
         paymentCycle
       );
+      const paymentDayUTC = paymentDay.setUTCHours(0, 0, 0, 0);
 
-      await roomPaymentInfoApi.addRoomPaymentApiWithOutRefresh(
-        uuidv4(),
-        roomType.id,
-        paymentDay.getTime(),
-        false
-      );
+      if (!existingPayments.has(paymentDayUTC)) {
+        await roomPaymentInfoApi.addRoomPaymentApiWithOutRefresh(
+          uuidv4(),
+          roomType.id,
+          paymentDay.getTime(),
+          false
+        );
+        existingPayments.add(paymentDayUTC);
+        newPaymentsAdded++;
+      }
+      i++;
     }
+    handlePaymentRefresh();
   };
   const checkPaymentStatus = (allRoomPayInfo?: {
     RoomPayInfo?: { Day: number; Paid: boolean }[];

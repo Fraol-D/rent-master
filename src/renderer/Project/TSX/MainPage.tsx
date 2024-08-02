@@ -8,7 +8,7 @@ import '../CSS/RoomArea.css';
 import SortIcon from '../../assets/icons8-sort-100.png';
 import DoubleArrowIconDark from '../../assets/assets/Dark mode/Left2Arrow.png';
 import BottomNavBar from './Bottom navbar/BottomNavBar';
-import { CalendarPage } from './Pages/CalendarPage';
+import { CalendarPage } from './Pages/CalenderPage';
 import {
   addValue,
   deleteValue,

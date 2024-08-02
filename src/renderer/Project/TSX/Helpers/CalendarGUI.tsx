@@ -19,9 +19,9 @@ const CalendarGUI: React.FC<CalendarProps> = ({
       d3.select(ref.current).selectAll('*').remove(); // Clear the SVG before re-rendering
 
       const width = 1500;
-      const height = rooms.length * 60;
+      const height = rooms.length * 70;
       const cellSize = 20;
-      const margin = { top: 70, right: 30, bottom: 30, left: 100 };
+      const margin = { top: 70, right: 30, bottom: 30, left: 200 };
 
       const svg = d3
         .select(ref.current)
@@ -70,15 +70,60 @@ const CalendarGUI: React.FC<CalendarProps> = ({
       svg.append('g').call(monthAxis).attr('transform', `translate(0, -40)`);
       svg.append('g').call(xAxis).attr('transform', `translate(0, -20)`);
 
-      const yAxis = d3.axisLeft(yScale).tickFormat((d: string) => {
-        const room = rooms.find((room) => room.id === d);
-        return room
-          ? `${
-              tenantList.find((t: tenant) => t.id === room.tenantId).name
-            }\nFlr. ${room.floor} Rm. ${room.roomIndex}`
-          : '';
-      });
-      svg.append('g').call(yAxis);
+      const yAxis = d3
+        .axisLeft(yScale)
+        .tickFormat((d: string) => {
+          const room = rooms.find((room) => room.id === d);
+          return room
+            ? `${tenantList.find((t: tenant) => t.id === room.tenantId).name}\n` +
+              `Floor. ${room.floor} Room. ${room.roomIndex}`
+            : '';
+        })
+        .tickSize(10)
+        .tickPadding(5);
+
+      svg.append('g')
+        .call(yAxis)
+        .raise()
+        .selectAll('.tick text')
+        .call(function(text) {
+          text.each(function() {
+            var text = d3.select(this);
+            var words = text.text().split('\n');
+            text.text('');
+            text.append('tspan')
+              .attr('x', -10)
+              .attr('dy', '-0.5em')
+              .style('font-size', '14px')
+              .text(words[0]);
+            text.append('tspan')
+              .attr('x', -15)
+              .attr('dy', '1.2em')
+              .style('font-size', '11.3px')
+              .text(words[1]);
+            
+            // Add horizontal line under the text
+            var parentNode = this.parentNode;
+            d3.select(parentNode)
+              .append('line')
+              .attr('x1', -0)
+              .attr('x2', -100)
+              .attr('y1', 15)
+              .attr('y2', 15)
+              .attr('stroke', '#DDDDDD')
+              .attr('stroke-width', 1);
+          });
+        });
+
+
+
+
+
+
+
+
+
+
 
       // Add x-axis grid lines aligned with room text
       svg
