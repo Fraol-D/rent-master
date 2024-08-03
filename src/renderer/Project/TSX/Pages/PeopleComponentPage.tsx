@@ -98,7 +98,7 @@ export function PeopleComponentPage({
       </div>
       <div
         className="RoomContainerContainer"
-        style={{ width: '100%', height: 'calc(100% - 45px)', color: 'white' }}
+        style={{ width: '100%', height: 'calc(100% - 60px)', color: 'white' }}
       >
         {PeopleSelectedPage === 'TenantsList' ? (
           <>

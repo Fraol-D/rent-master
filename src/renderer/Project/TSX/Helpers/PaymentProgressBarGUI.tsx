@@ -29,7 +29,6 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
   const paragraphRef = useRef<HTMLParagraphElement | null>(null);
 
   useEffect(() => {
-    console.log(paymentData.length);
     if (paymentData.length > 0 && svgRef.current) {
        const sortedPaymentData = [...paymentData].sort((a, b) => a.Day - b.Day);
       const svg = d3.select(svgRef.current);

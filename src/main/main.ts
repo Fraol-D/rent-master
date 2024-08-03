@@ -4,6 +4,7 @@ import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
+import { Console } from 'console';
 //const nodemailer = require('nodemailer');
 
 class AppUpdater {
@@ -248,6 +249,9 @@ const appDB = express();
 const port = 8100;
 const appname = 'BMS';
 
+appDB.use(bodyParser.json({ limit: '50mb' }));
+appDB.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
+
 appDB.use(cors({ origin: '*' }));
 appDB.use(bodyParser.urlencoded({ extended: false }));
 appDB.use(bodyParser.json());
@@ -479,6 +483,86 @@ const updateTableStructure = (
     console.log(`Table ${table.name} structure updated successfully.`);
   });
 };
+appDB.delete('/room-image/:roomId/:fileName', (req, res) => {
+  const { roomId, fileName } = req.params;
+  const roomPicturesPath = path.join(process.env.APPDATA, appname, 'Room Pictures');
+
+  fs.readdir(roomPicturesPath, (err, folders) => {
+    if (err) {
+      return res.status(500).json({ error: 'Failed to read room pictures directory' });
+    }
+
+    const roomFolder = folders.find(folder => folder.includes(roomId));
+    if (!roomFolder) {
+      return res.status(404).json({ error: 'Room folder not found' });
+    }
+
+    const filePath = path.join(roomPicturesPath, roomFolder, fileName);
+    fs.unlink(filePath, (err) => {
+      if (err) {
+        return res.status(500).json({ error: 'Failed to delete image' });
+      }
+      res.json({ message: 'Image deleted successfully' });
+    });
+  });
+});
+appDB.get('/room-images/:roomId', (req, res) => {
+  const roomId = req.params.roomId;
+  const roomPicturesPath = path.join(process.env.APPDATA, appname, 'Room Pictures');
+
+  fs.readdir(roomPicturesPath, (err, folders) => {
+    if (err) {
+      return res.status(500).json({ error: 'Failed to read room pictures directory' });
+    }
+
+    const roomFolder = folders.find(folder => folder.includes(roomId));
+    if (!roomFolder) {
+      return res.status(404).json({ error: 'Room folder not found' });
+    }
+
+    const roomFolderPath = path.join(roomPicturesPath, roomFolder);
+    fs.readdir(roomFolderPath, (err, files) => {
+      if (err) {
+        return res.status(500).json({ error: 'Failed to read room folder' });
+      }
+      const imageFiles = files
+      .filter(file => /\.(jpg|jpeg|png|gif)$/i.test(file))
+      .map(file => `local-resource://${path.join(roomFolderPath, file)}`);
+  
+      res.json({ images: imageFiles, roomFolder: roomFolder });
+    });
+  });
+});
+
+appDB.post('/upload-room-image', (req: any, res: any) => {
+  try {
+    const { base64Image, fileName, FolderText, FileId } = req.body;
+
+    // Remove the data:image/jpeg;base64, part
+    const base64Data = base64Image.replace(/^data:image\/\w+;base64,/, '');
+
+    // Create a buffer from the base64 string
+    const buffer = Buffer.from(base64Data, 'base64');
+
+    // Create the directory path
+    const dirPath = path.join(process.env.APPDATA, appname, 'Room Pictures', FolderText);
+
+    // Create the directory if it doesn't exist
+    fs.mkdirSync(dirPath, { recursive: true });
+
+    // Create the file path
+    const filePath = path.join(dirPath, `${FileId}-${fileName}`);
+
+    // Write the file
+    fs.writeFileSync(filePath, buffer);
+
+    res.json({ message: 'Image uploaded successfully', fileName: fileName, FolderText: FolderText, FileId: FileId });
+  } catch (error) {
+    console.error('Error uploading image:', error);
+    res.status(500).json({ error: 'Failed to upload image' });
+  }
+});
+
 appDB.get(
   '/:tableName/:sqlCode',
   (
@@ -655,7 +739,7 @@ appDB.put(
   }
 );
 
-const dbPath = path.join(process.env.APPDATA, appname, 'database.db');
+const dbPath = path.join(process.env.APPDATA || '', appname, 'database.db');
 if (!fs.existsSync(path.dirname(dbPath))) {
   fs.mkdirSync(path.dirname(dbPath), { recursive: true });
 }
@@ -670,4 +754,20 @@ const db = new sqlite3.Database(dbPath, (err: { message: any }) => {
 
 appDB.listen(port, () => {
   console.log(`Express app listening on port ${port}`);
+});
+const { protocol } = require('electron');
+
+
+app.whenReady().then(() => {
+  protocol.registerFileProtocol('local-resource', (request, callback) => {
+    const url = request.url.replace('local-resource://', '');
+    const decodedUrl = decodeURI(url);
+    callback({ path: path.normalize(`${decodedUrl}`) });
+  });
+});
+
+
+ipcMain.on('show-item-in-folder', (event, path) => {
+  const filePath = path.replace('local-resource://', '');
+  shell.showItemInFolder(filePath);
 });

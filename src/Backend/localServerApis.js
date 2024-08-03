@@ -23,7 +23,7 @@ export const getValueById = async (tableName, id) => {
     return null;
   }
 };
-export const addValue = async (tableName, value ) => {
+export const addValue = async (tableName, value) => {
   try {
     const response = await fetch(`${baseUrl}/${tableName}`, {
       method: 'POST',
@@ -45,12 +45,7 @@ export const addValue = async (tableName, value ) => {
     return null;
   }
 };
-export const updateValue = async (
-  tableName,
-  id,
-  columnName,
-  columnValue,
-) => {
+export const updateValue = async (tableName, id, columnName, columnValue) => {
   try {
     const response = await fetch(
       `${baseUrl}/${tableName}/${id}/${columnName}`,
@@ -69,7 +64,7 @@ export const updateValue = async (
     return null;
   }
 };
-export const deleteValue = async (tableName, id ) => {
+export const deleteValue = async (tableName, id) => {
   try {
     const response = await fetch(`${baseUrl}/${tableName}/${id}`, {
       method: 'DELETE',
@@ -79,6 +74,64 @@ export const deleteValue = async (tableName, id ) => {
     return data;
   } catch (error) {
     console.error('Error deleting value:', error);
+    return null;
+  }
+};
+export const AddRoomImageToFiles = async (files, FolderText) => {
+  try {
+    const uploadPromises = Array.from(files).map(async (file) => {
+      const base64Image = await fileToBase64(file);
+      const FileId = uuidv4();
+      const response = await fetch(`${baseUrl}/upload-room-image`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          base64Image,
+          fileName: file.name,
+          FolderText,
+          FileId,
+        }),
+      });
+      return response.json();
+    });
+
+    const results = await Promise.all(uploadPromises);
+    return results;
+  } catch (error) {
+    console.error('Error uploading room images:', error);
+    return null;
+  }
+};
+export const getRoomImages = async (roomId) => {
+  try {
+    const response = await fetch(`${baseUrl}/room-images/${roomId}`);
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error fetching room images:', error);
+    return null;
+  }
+};
+const fileToBase64 = (file) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = (error) => reject(error);
+  });
+};
+export const deleteRoomImage = async (roomId, fullPath) => {
+  const fileName = fullPath.split('\\').pop(); // Use backslash for Windows paths
+  try {
+    const response = await fetch(`${baseUrl}/room-image/${roomId}/${encodeURIComponent(fileName)}`, {
+      method: 'DELETE',
+    });
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error deleting room image:', error);
     return null;
   }
 };

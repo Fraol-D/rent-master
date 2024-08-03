@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import '../../CSS/Room.css';
 const { v4: uuidv4 } = require('uuid');
+import ImageInteractor2 from './ImageInteractor2';
 import PaymentProgressBarGUI from './PaymentProgressBarGUI';
 import EditIcon from '../../../assets/assets/Dark mode/Editicon.png';
 import {
@@ -26,7 +27,8 @@ const Room = ({
   brokerApi,
   BrokerList,
   setBrokerList,
-  brokersRecommendationListApi,updateRoomPropertyLocal
+  brokersRecommendationListApi,
+  updateRoomPropertyLocal,
 }: {
   roomType: RoomType;
   updateRoomProperty: any;
@@ -45,7 +47,7 @@ const Room = ({
   BrokerList: any;
   setBrokerList: any;
   brokersRecommendationListApi: any;
-  updateRoomPropertyLocal:any;
+  updateRoomPropertyLocal: any;
 }) => {
   const handleAddTenant = () => {
     turnOffAddTenantStateForAll();
@@ -379,7 +381,7 @@ const Room = ({
       return;
 
     const existingPayments = new Set(
-      roomType.AllRoomPayInfo.RoomPayInfo.map(payment => 
+      roomType.AllRoomPayInfo.RoomPayInfo.map((payment) =>
         new Date(payment.Day).setUTCHours(0, 0, 0, 0)
       )
     );
@@ -587,7 +589,7 @@ const Room = ({
         'brokersRecommendationList',
         `WHERE roomId = '${roomType.id}'`
       )
-    ).sort((a:any, b:any) => b.AddedTime - a.AddedTime);
+    ).sort((a: any, b: any) => b.AddedTime - a.AddedTime);
     console.log(agreedCommissionForBroker);
     addValue('PastTenantsForRoom', {
       id: uuidv4(),
@@ -603,13 +605,13 @@ const Room = ({
         roomType.PaymentCycleType === 'custom'
           ? ('-' + roomType.PaymentCycleCustomeDays).toString()
           : roomType.PaymentCycleType,
-        AgreedPrice:roomType.AgreedPrice,
+      AgreedPrice: roomType.AgreedPrice,
       AgreedCommission: agreedCommissionForBroker[0].AgreedCommission || 0,
       Stars: tenantRating,
       description: tenantDescription,
       endReason: endReason,
     });
-    setEndReason('')
+    setEndReason('');
     setTenantDescription('');
     setTenantRating(0);
     if (tenantIndex !== -1) {
@@ -649,7 +651,6 @@ const Room = ({
       updateRoomProperty(roomType.id, 'AddTenantState', 0);
       updateRoomProperty(roomType.id, 'ViewAgreement', 0);
 
-      
       setTenantLeavePannelState(false);
     }
   };
@@ -735,20 +736,27 @@ const Room = ({
       `WHERE roomId = '${roomType.id}'`
     );
 
-    const updatedRoomPayInfo: RoomPayInfo[] = listOfPayments.map((payment: any) => ({
-      id: payment.id,
-      roomId: payment.roomId,
-      Day: payment.Day,
-      Paid: payment.Paid
-    }));
+    const updatedRoomPayInfo: RoomPayInfo[] = listOfPayments.map(
+      (payment: any) => ({
+        id: payment.id,
+        roomId: payment.roomId,
+        Day: payment.Day,
+        Paid: payment.Paid,
+      })
+    );
 
     const updatedAllRoomPayInfo: AllRoomPayInfo = {
-      RoomPayInfo: updatedRoomPayInfo
+      RoomPayInfo: updatedRoomPayInfo,
     };
 
-    updateRoomPropertyLocal(roomType.id, 'AllRoomPayInfo', updatedAllRoomPayInfo);
-    console.log(updatedAllRoomPayInfo, roomType.AllRoomPayInfo)
-  }
+    updateRoomPropertyLocal(
+      roomType.id,
+      'AllRoomPayInfo',
+      updatedAllRoomPayInfo
+    );
+    console.log(updatedAllRoomPayInfo, roomType.AllRoomPayInfo);
+  };
+  const [TypeOfRoomState, setTypeOfRoomState] = useState(true);
   return (
     <>
       <div
@@ -957,32 +965,78 @@ const Room = ({
           )}
         </div>
         <div className="ThirdLine">
-          <div className="RoomTypeContainer">
-            Type of Room <br />
-            <div style={{ overflowY: 'auto' }}>
-              {roomType.RoomSpecifications.map((roomSpec: any) => (
-                <p key={roomSpec.id} className="RoomTypeContainertext">
-                  {roomSpec.type === 'number' ? (
-                    <>
-                      {roomSpec.Number} - {roomSpec.Detail}
-                    </>
-                  ) : (
-                    <>
-                      {roomSpec.Boolean ? 'Yes' : 'No'} {roomSpec.Detail}
-                    </>
-                  )}
+          {TypeOfRoomState ? (
+            <>
+              {' '}
+              <div className="RoomTypeContainer">
+                <div
+                  style={{ display: 'flex', justifyContent: 'space-around' }}
+                >
+                  {' '}
+                  Type of Room{' '}
+                  <div
+                    onClick={() => {
+                      setTypeOfRoomState(false);
+                    }}
+                  >
+                    {'▶'}
+                  </div>
+                </div>
+                
+                <div style={{ overflowY: 'auto' }}>
+                  {roomType.RoomSpecifications.map((roomSpec: any) => (
+                    <p key={roomSpec.id} className="RoomTypeContainertext">
+                      {roomSpec.type === 'number' ? (
+                        <>
+                          {roomSpec.Number} - {roomSpec.Detail}
+                        </>
+                      ) : (
+                        <>
+                          {roomSpec.Boolean ? 'Yes' : 'No'} {roomSpec.Detail}
+                        </>
+                      )}
+                    </p>
+                  ))}
+                </div>
+              </div>
+              <div className="RoomTypeContainerBottom">
+                <p
+                  className="RoomTypeContainertext"
+                  style={{
+                    textAlign: 'center',
+                    paddingLeft: 0,
+                    fontSize: '17px',
+                  }}
+                >
+                  {roomType.squareMeters} square meters
                 </p>
-              ))}
-            </div>
-          </div>
-          <div className="RoomTypeContainerBottom">
-            <p
-              className="RoomTypeContainertext"
-              style={{ textAlign: 'center', paddingLeft: 0, fontSize: '17px' }}
-            >
-              {roomType.squareMeters} square meters
-            </p>
-          </div>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="RoomImageContainer">
+                <div
+                  style={{ display: 'flex', justifyContent: 'space-around',    width: "100%" }}
+                >
+                  <div
+                    onClick={() => {
+                      setTypeOfRoomState(true);
+                    }}
+                    
+                  >
+                    {'◀'}
+                  </div>
+                  Images{' '}
+                </div>
+                <div
+                  style={{ width: '95%', height: '81%', borderRadius: '5px' }}
+                >
+                  {' '}
+                  <ImageInteractor2 room={roomType} />
+                </div>
+              </div>
+            </>
+          )}
         </div>
 
         <div
@@ -1316,7 +1370,7 @@ const Room = ({
                               setAddTenantAddBrokerFormEmail(e.target.value)
                             }
                           />
-                        
+
                           <button
                             onClick={() => {
                               handleAddBroker();
@@ -1662,7 +1716,7 @@ const Room = ({
                                     )
                                   }
                                 />
-                                
+
                                 <button
                                   onClick={() => {
                                     handleAddBroker();
@@ -1736,60 +1790,61 @@ const Room = ({
                                         )}
                                       </div>
                                     )}
-                                     <div>
-                                Commission:{' '}
-                                <input
-                                  type="number"
-                                  style={{
-                                    width: !isPercentCommission
-                                      ? '80px'
-                                      : '40px',
-                                  }}
-                                  value={commissionValue}
-                                  onChange={(e) =>
-                                    setCommissionValue(
-                                      parseFloat(e.target.value)
-                                    )
-                                  }
-                                  className="AddTenantContainerinnerInput"
-                                  placeholder={
-                                    isPercentCommission
-                                      ? 'Enter percent'
-                                      : 'Enter number'
-                                  }
-                                />
-                                {isPercentCommission && (
-                                  <>
-                                    %{' '}
-                                    <em style={{ color: 'grey' }}>
-                                      {commissionValue != '' &&
-                                        (commissionValue / 100) * agreedPrice}
-                                    </em>
-                                  </>
-                                )}
-                                {!isPercentCommission && '$'}
-                                <br />{' '}
-                                <label>
-                                  <input
-                                    type="checkbox"
-                                    checked={isPercentCommission}
-                                    onChange={() =>
-                                      setIsPercentCommission(true)
-                                    }
-                                  />
-                                  Percentage
-                                </label>
-                                <label>
-                                  <input
-                                    type="checkbox"
-                                    checked={!isPercentCommission}
-                                    onChange={() =>
-                                      setIsPercentCommission(false)
-                                    }
-                                  />
-                                  Number
-                                </label>
-                              </div>
+                                    <div>
+                                      Commission:{' '}
+                                      <input
+                                        type="number"
+                                        style={{
+                                          width: !isPercentCommission
+                                            ? '80px'
+                                            : '40px',
+                                        }}
+                                        value={commissionValue}
+                                        onChange={(e) =>
+                                          setCommissionValue(
+                                            parseFloat(e.target.value)
+                                          )
+                                        }
+                                        className="AddTenantContainerinnerInput"
+                                        placeholder={
+                                          isPercentCommission
+                                            ? 'Enter percent'
+                                            : 'Enter number'
+                                        }
+                                      />
+                                      {isPercentCommission && (
+                                        <>
+                                          %{' '}
+                                          <em style={{ color: 'grey' }}>
+                                            {commissionValue != '' &&
+                                              (commissionValue / 100) *
+                                                agreedPrice}
+                                          </em>
+                                        </>
+                                      )}
+                                      {!isPercentCommission && '$'}
+                                      <br />{' '}
+                                      <label>
+                                        <input
+                                          type="checkbox"
+                                          checked={isPercentCommission}
+                                          onChange={() =>
+                                            setIsPercentCommission(true)
+                                          }
+                                        />
+                                        Percentage
+                                      </label>
+                                      <label>
+                                        <input
+                                          type="checkbox"
+                                          checked={!isPercentCommission}
+                                          onChange={() =>
+                                            setIsPercentCommission(false)
+                                          }
+                                        />
+                                        Number
+                                      </label>
+                                    </div>
                                   </>
                                 ) : (
                                   <>

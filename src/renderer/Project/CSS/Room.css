@@ -1,6 +1,6 @@
 .MainContainer {
   margin: 5px;
-  width: 536px;
+  width: 557px;
   height: 151px;
   min-width: 536px;
   min-height: 151px;
@@ -89,6 +89,22 @@
   text-align: center;
   flex-direction: column;
   border-bottom: 1px dashed white;
+}
+.RoomImageContainer {
+  background-color: #454959;
+  height: 145px;
+  font-size: 20px;
+  color: white;
+  margin: 0px;
+  padding-top: 5px;
+  display: flex;
+  justify-content: flex-start;
+  border-radius: 10px;
+  align-items: center;
+  text-align: center;
+  flex-direction: column;
+  
+
 }
 .RoomTypeContainerBottom {
   background-color: #454959;

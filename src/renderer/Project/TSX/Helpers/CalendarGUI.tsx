@@ -76,7 +76,7 @@ const CalendarGUI: React.FC<CalendarProps> = ({
           const room = rooms.find((room) => room.id === d);
           return room
             ? `${tenantList.find((t: tenant) => t.id === room.tenantId).name}\n` +
-              `Floor. ${room.floor} Room. ${room.roomIndex}`
+              `${room.AgreedPrice.toLocaleString()}$ - Floor. ${room.floor} Room. ${room.roomIndex}`
             : '';
         })
         .tickSize(10)

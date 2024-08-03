@@ -2,11 +2,15 @@ import { RoomListComponent } from './Pages/RoomListComponent';
 import { PeopleComponentPage } from './Pages/PeopleComponentPage';
 import React, { useEffect, useState } from 'react';
 const { v4: uuidv4 } = require('uuid');
-
+import ImageInteractor from './Helpers/ImageIntractorGUI';
+import LONGIMAGE from "./Helpers/WIN_20240802_19_41_23_Pro.jpg";
 import Room from './Helpers/Room';
 import '../CSS/RoomArea.css';
 import SortIcon from '../../assets/icons8-sort-100.png';
 import DoubleArrowIconDark from '../../assets/assets/Dark mode/Left2Arrow.png';
+import DoubleArrowIconDarkb from '../../assets/assets/Dark mode/Admin Settings Male.png';
+import DoubleArrowIconDarka from '../../assets/assets/Dark mode/Cloud.png';
+import DoubleArrowIconDarkc from '../../assets/assets/Dark mode/Customer.png';
 import BottomNavBar from './Bottom navbar/BottomNavBar';
 import { CalendarPage } from './Pages/CalenderPage';
 import {
@@ -692,6 +696,20 @@ const MainPage = ({
     setSortDirection('asc');
   }
   useEffect(() => {}, []);
+  const handleAddImage = (roomId: string) => {
+    // This function will be implemented later
+    console.log('Add image for room', roomId);
+  };
+  
+  const handleDeleteImage = (roomId: string, index: number) => {
+    // This function will be implemented later
+    console.log('Delete image', index, 'for room', roomId);
+  };
+  
+  const handleShowInExplorer = (path: string) => {
+    // This function will be implemented later
+    console.log('Show in explorer', path);
+  };
   return (
     <>
       <div className="MainContainerMain">
@@ -1254,6 +1272,13 @@ const MainPage = ({
               }}
             ></div>{' '}
             <div className="EditRoomScreenMainContainer">
+            <ImageInteractor
+      images={[DoubleArrowIconDark,SortIcon,DoubleArrowIconDarkb,DoubleArrowIconDarka,DoubleArrowIconDarkc,LONGIMAGE]}
+      onAddImage={() => handleAddImage(SelectedEditRoomId)}
+      onDeleteImage={(index) => handleDeleteImage(SelectedEditRoomId, index)}
+      onShowInExplorer={handleShowInExplorer}
+      room={RoomList.find((r:RoomType)=>r.id===SelectedEditRoomId)}
+    />
               <button
                 onClick={() => {
                   handleDeleteFirst();

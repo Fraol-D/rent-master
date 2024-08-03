@@ -72,37 +72,45 @@ body {
   height: 100%;
 }
 ::-webkit-scrollbar {
-  background-color: var(--scrollbar-background);
-  width: 10px;
-  height: 10px;
+  background-color: #4549592D;
+  width: 15px;
+  height: 15px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: var(--scrollbar-thumb);
+  background-color: #353844;
   border-radius: 5px;
   transition: all 1s;
   border: 1px solid #00e1ff;
 }
 
 ::-webkit-scrollbar-corner {
-  background-color: var(--scrollbar-corner);
+  background-color: blue;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background-color: var(--scrollbar-thumb-hover);
-  border-radius: 5px;
-  transition: all 1s;
-}
+
 ::-webkit-scrollbar-thumb:active {
-  background-color: var(--scrollbar-thumb-active);
+  background-color: #454959;
   border-radius: 5px;
   transition: all 1s;
   border: 1px solid #00e1ff;
 }
-.InfoTableContainer {
 
- 
+::-webkit-scrollbar-button {
+  background-color: #00E1FF79;
+  width: 15px;
+  border-radius: 5px;
+  height: 15px;
 }
+
+::-webkit-scrollbar-button:vertical:start:decrement,
+::-webkit-scrollbar-button:vertical:end:increment,
+::-webkit-scrollbar-button:horizontal:start:decrement,
+::-webkit-scrollbar-button:horizontal:end:increment {
+  display: block;
+}
+
+
 .InfoTable {
  border-radius: 10px;
  border: 1px solid grey;

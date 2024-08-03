@@ -1,0 +1,126 @@
+.image-interactor {
+  position: relative;
+  width: 480px;
+  margin: 0 auto;
+}
+
+.image-container {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.DeleteImageOnImageIntercator {
+  position: absolute;
+  margin-left:350px;
+  margin-bottom:370px;
+
+}
+.ExplorerImageOnImageIntercator {
+    position: absolute;
+    margin-right:350px;
+    margin-top:440px;
+}
+.FullScreenImageOnImageIntercator {
+    position: absolute;
+    margin-left:305px;
+    margin-top:440px; 
+}
+.AddImageOnImageIntercator {
+    position: absolute;
+
+    margin-top:440px; 
+}
+.CounterImageOnImageIntercator {
+    position: absolute;
+
+    margin-top:390px; 
+}
+.image-wrapper {
+  width: 400px;
+  height: 400px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(128 128 128 / 0.12);
+  border-radius: 10px;
+  overflow: hidden;
+  padding: 5px;
+  padding-bottom: 40px;
+}
+
+.main-image {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+    border-radius: 5px;
+}
+
+.arrow-button {
+  background: rgba(0 0 0 / 0);
+  border: none;
+  cursor: pointer;
+  padding: 10px;
+  transition: background 0.3s ease;
+}
+
+.arrow-button:hover {
+  background: rgba(0 0 0 / 0);
+  border: none;
+}
+
+.arrow-button img {
+  width: 20px;
+  height: 20px;
+}
+
+.controls {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+}
+
+.image-counter {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  
+  }
+  
+  .counter-bar {
+    width: 20px;
+    height: 4px;
+    background-color: grey;
+    margin: 0 2px;
+    transition: background-color 0.3s ease;
+  }
+  
+  .counter-bar.active {
+    background-color: white;
+  }
+
+.no-images {
+  text-align: center;
+  padding: 20px;
+}
+
+.fullscreen {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.9);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 3;
+  transform: translate(-50%, -50%);
+}
+
+.fullscreen .image-wrapper {
+  width: 80vw;
+  height: 80vh;
+}

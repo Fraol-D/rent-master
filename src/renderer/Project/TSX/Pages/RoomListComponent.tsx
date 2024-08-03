@@ -64,7 +64,7 @@ export function RoomListComponent({
         className="RoomContainerContainer"
         style={{
           width: '100%',
-          height: 'calc(100% - 0px)',
+          height: 'calc(100% - 60px)',
         }}
       >
         <div
