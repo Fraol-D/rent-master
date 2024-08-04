@@ -4,6 +4,7 @@ const { v4: uuidv4 } = require('uuid');
 import ImageInteractor2 from './ImageInteractor2';
 import PaymentProgressBarGUI from './PaymentProgressBarGUI';
 import EditIcon from '../../../assets/assets/Dark mode/Editicon.png';
+import DocumentInteractor from "./GUIs/DocumentInteractor";
 import {
   addValue,
   deleteValue,
@@ -982,7 +983,7 @@ const Room = ({
                     {'▶'}
                   </div>
                 </div>
-                
+
                 <div style={{ overflowY: 'auto' }}>
                   {roomType.RoomSpecifications.map((roomSpec: any) => (
                     <p key={roomSpec.id} className="RoomTypeContainertext">
@@ -1016,13 +1017,16 @@ const Room = ({
             <>
               <div className="RoomImageContainer">
                 <div
-                  style={{ display: 'flex', justifyContent: 'space-around',    width: "100%" }}
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-around',
+                    width: '100%',
+                  }}
                 >
                   <div
                     onClick={() => {
                       setTypeOfRoomState(true);
                     }}
-                    
                   >
                     {'◀'}
                   </div>
@@ -1056,7 +1060,7 @@ const Room = ({
               paddingBottom: '15px',
             }}
           >
-            <div className="InnerAddtenantTop">
+            <div className="InnerAddtenantTop" style={{ height: '100%' }}>
               <div className="TabsContainerForTenantAdding">
                 <button
                   className="ButtonTabsContainerForTenantAdding"
@@ -1542,6 +1546,13 @@ const Room = ({
                       )}
                     </>
                   )}
+                   <hr />
+                  <DocumentInteractor
+                    room={roomType}
+                    TenantsList={TenantList}
+                    AddTenant={true}
+                    isAddRoomDocument={true}
+                  />
                 </>
               ) : (
                 <>
@@ -1901,9 +1912,7 @@ const Room = ({
                       </>
                     )}
                 </>
-              )}
-            </div>
-            <div className="BottomAddTenantContainer">
+              )}<div className="BottomAddTenantContainer">
               <button
                 className="AddTenantButton"
                 onClick={() => {
@@ -1929,6 +1938,8 @@ const Room = ({
                 Add
               </button>
             </div>
+            </div>
+            
           </div>
         </div>
         <div
@@ -1939,7 +1950,7 @@ const Room = ({
           <div
             className="AddTenantContainerinner"
             style={{
-              width: roomType.ViewAgreement ? '325px' : '0px',
+              width: roomType.ViewAgreement ? '540px' : '0px',
               height: roomType.ViewAgreement ? '263px' : '0px',
               opacity: roomType.ViewAgreement ? '1' : '0',
               userSelect: 'text',
@@ -1948,114 +1959,116 @@ const Room = ({
               paddingBottom: '10px',
             }}
           >
-            <div className="InnerAddtenantTop" style={{ width: '95%' }}>
-              <div className="AddTenantContainerinnerElement">
-                Name:{' '}
-                <em style={{ fontWeight: '600' }}>
-                  {
-                    TenantList.find(
-                      (tenant: any) => tenant.id === roomType.tenantId
-                    )?.name
-                  }
-                </em>
-              </div>
-              <div className="AddTenantContainerinnerElement">
-                Tel 1:{' '}
-                <em style={{ fontWeight: '600' }}>
-                  {
-                    TenantList.find(
-                      (tenant: any) => tenant.id === roomType.tenantId
-                    )?.phoneNumber
-                  }
-                </em>
-              </div>
-              <div className="AddTenantContainerinnerElement">
-                Tel 2:{' '}
-                <em style={{ fontWeight: '600' }}>
-                  {
-                    TenantList.find(
-                      (tenant: any) => tenant.id === roomType.tenantId
-                    )?.phoneNumber2
-                  }
-                </em>
-              </div>
-              <div className="AddTenantContainerinnerElement">
-                {' '}
-                Email:{' '}
-                <em style={{ fontWeight: '600' }}>
-                  {
-                    TenantList.find(
-                      (tenant: any) => tenant.id === roomType.tenantId
-                    )?.email
-                  }
-                </em>
-              </div>
-              <div className="AddTenantContainerinnerElement">
-                Agreement type:{' '}
-                <em style={{ fontWeight: '600' }}>
-                  {
-                    TenantList.find(
-                      (tenant: any) => tenant.id === roomType.tenantId
-                    )?.SelectedAgreement
-                  }
-                </em>
-              </div>
-              <div className="AddTenantContainerinnerElement" style={{}}>
-                <div>
-                  Start time:
+            <div style={{display:"flex", flexDirection:"row"}}>
+              <div className="InnerAddtenantTop" style={{ width: '50%', }}>
+                <div className="AddTenantContainerinnerElement">
+                  Name:{' '}
                   <em style={{ fontWeight: '600' }}>
                     {
                       TenantList.find(
                         (tenant: any) => tenant.id === roomType.tenantId
-                      )?.startTime
+                      )?.name
                     }
                   </em>
                 </div>
-              </div>
-              {selectedAgreement === 'Fixed-Term' && (
                 <div className="AddTenantContainerinnerElement">
-                  End time :
+                  Tel 1:{' '}
                   <em style={{ fontWeight: '600' }}>
                     {
                       TenantList.find(
                         (tenant: any) => tenant.id === roomType.tenantId
-                      )?.endTime
+                      )?.phoneNumber
                     }
-                  </em>{' '}
-                  {calculateDaysDifference(
-                    new Date(startTime),
-                    new Date(endTime)
-                  )}{' '}
-                  Days
+                  </em>
                 </div>
-              )}
-              <div className="AddTenantContainerinnerElement">
-                Agreed Price:{' '}
-                <em style={{ fontWeight: '600' }}>{roomType.AgreedPrice}</em>$
-                per{' '}
-                <em style={{ fontWeight: '600' }}>
-                  {roomType.PaymentCycleType}
-                </em>{' '}
-                days
+                <div className="AddTenantContainerinnerElement">
+                  Tel 2:{' '}
+                  <em style={{ fontWeight: '600' }}>
+                    {
+                      TenantList.find(
+                        (tenant: any) => tenant.id === roomType.tenantId
+                      )?.phoneNumber2
+                    }
+                  </em>
+                </div>
+                <div className="AddTenantContainerinnerElement">
+                  {' '}
+                  Email:{' '}
+                  <em style={{ fontWeight: '600' }}>
+                    {
+                      TenantList.find(
+                        (tenant: any) => tenant.id === roomType.tenantId
+                      )?.email
+                    }
+                  </em>
+                </div>
+                <div className="AddTenantContainerinnerElement">
+                  Agreement type:{' '}
+                  <em style={{ fontWeight: '600' }}>
+                    {
+                      TenantList.find(
+                        (tenant: any) => tenant.id === roomType.tenantId
+                      )?.SelectedAgreement
+                    }
+                  </em>
+                </div>
+                <div className="AddTenantContainerinnerElement" style={{}}>
+                  <div>
+                    Start time:
+                    <em style={{ fontWeight: '600' }}>
+                      {
+                        TenantList.find(
+                          (tenant: any) => tenant.id === roomType.tenantId
+                        )?.startTime
+                      }
+                    </em>
+                  </div>
+                </div>
+                {selectedAgreement === 'Fixed-Term' && (
+                  <div className="AddTenantContainerinnerElement">
+                    End time :
+                    <em style={{ fontWeight: '600' }}>
+                      {
+                        TenantList.find(
+                          (tenant: any) => tenant.id === roomType.tenantId
+                        )?.endTime
+                      }
+                    </em>{' '}
+                    {calculateDaysDifference(
+                      new Date(startTime),
+                      new Date(endTime)
+                    )}{' '}
+                    Days
+                  </div>
+                )}
+                <div className="AddTenantContainerinnerElement">
+                  Agreed Price:{' '}
+                  <em style={{ fontWeight: '600' }}>{roomType.AgreedPrice}</em>$
+                  per{' '}
+                  <em style={{ fontWeight: '600' }}>
+                    {roomType.PaymentCycleType}
+                  </em>{' '}
+                  days
+                </div>
+                <div className="AddTenantContainerinnerElement">
+                  Payment cycle:{' '}
+                  <em style={{ fontWeight: '600' }}>
+                    {roomType.PaymentCycleType}
+                  </em>
+                </div>
+                <button
+                  onClick={() => {
+                    setTenantLeavePannelState(true);
+                  }}
+                >
+                  Leave
+                </button>
               </div>
-              <div className="AddTenantContainerinnerElement">
-                Payment cycle:{' '}
-                <em style={{ fontWeight: '600' }}>
-                  {roomType.PaymentCycleType}
-                </em>
-              </div>
-              <button
-                onClick={() => {
-                  setTenantLeavePannelState(true);
-                }}
-              >
-                Leave
-              </button>
+              <div style={{width:"50%"}}><DocumentInteractor room={roomType} TenantsList={TenantList}/></div>
             </div>
             <div
               className="BottomAddTenantContainer"
-              style={{ height: '53px' }}
-            >
+              style={{ height: '55px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}            >
               <button
                 className="AddTenantButton"
                 onClick={() =>

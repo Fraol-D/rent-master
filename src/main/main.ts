@@ -482,23 +482,101 @@ const updateTableStructure = (
     db.run(`COMMIT`);
     console.log(`Table ${table.name} structure updated successfully.`);
   });
-};
-appDB.delete('/room-image/:roomId/:fileName', (req, res) => {
+};appDB.delete('/room-document/:roomId/:fileName', (req, res) => {
+  const { roomId, fileName } = req.params;
+  const roomDocumentsPath = path.join(process.env.APPDATA || '', appname, 'Room Documents', roomId);
+
+  fs.readdir(roomDocumentsPath, (err, tenantFolders) => {
+    if (err) {
+      return res.status(500).json({ error: 'Failed to read room documents directory' });
+    }
+
+    let fileDeleted = false;
+    for (const tenantFolder of tenantFolders) {
+      const filePath = path.join(roomDocumentsPath, tenantFolder, fileName);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+        fileDeleted = true;
+        break;
+      }
+    }
+
+    if (fileDeleted) {
+      res.json({ message: 'Document deleted successfully' });
+    } else {
+      res.status(404).json({ error: 'Document not found' });
+    }
+  });
+});
+
+appDB.post('/upload-room-document', (req, res) => {
+  try {
+    const { base64Document, fileName, roomId, tenantName, tenantId,AddedTimeText } = req.body;
+    if (!base64Document || !fileName || !roomId || !tenantName || !tenantId) {
+      return res.status(400).json({ error: 'Missing required parameters' });
+    }
+    const base64Data = base64Document.replace(/^data:.*?;base64,/, '');
+    const buffer = Buffer.from(base64Data, 'base64');
+    const addedTime = new Date().toISOString().replace(/:/g, '_').replace(/\./g, '-');
+    const safeTenantName = tenantName.replace(/[^a-z0-9]/gi, ' ');
+    const dirPath = path.join(process.env.APPDATA || '', appname || '', 'Room Documents', roomId, `${safeTenantName}, ${AddedTimeText}, ${tenantId}`);
+        fs.mkdirSync(dirPath, { recursive: true });
+    const filePath = path.join(dirPath, fileName);
+    fs.writeFileSync(filePath, buffer);
+    res.json({ message: 'Document uploaded successfully', fileName, roomId, tenantName, tenantId });
+  } catch (error) {
+    console.error('Error uploading document:', error);
+    res.status(500).json({ error: 'Failed to upload document' });
+  }
+});
+
+appDB.get('/room-documents/:roomId', (req, res) => {
+  const roomId = req.params.roomId;
+  const roomDocumentsPath = path.join(process.env.APPDATA, appname, 'Room Documents');
+  fs.readdir(roomDocumentsPath, (err, folders) => {
+    if (err) {
+      return res.status(500).json({ error: 'Failed to read room documents directory' });
+    }
+    const roomFolder = folders.find(folder => folder.includes(roomId));
+    if (!roomFolder) {
+      return res.status(404).json({ error: 'Room folder not found' });
+    }
+    const roomFolderPath = path.join(roomDocumentsPath, roomFolder);
+    fs.readdir(roomFolderPath, (err, tenantFolders) => {
+      if (err) {
+        return res.status(500).json({ error: 'Failed to read room folder' });
+      }
+      const documents = [];
+      tenantFolders.forEach(tenantFolder => {
+        const tenantFolderPath = path.join(roomFolderPath, tenantFolder);
+        const files = fs.readdirSync(tenantFolderPath);
+        files.forEach(file => {
+          documents.push(`local-resource://${path.join(tenantFolderPath, file)}`);
+        });
+      });
+      res.json({ documents, roomFolder });
+    });
+  });
+});
+
+
+
+appDB.delete('/room-image/:roomId/:fileName', (req: { params: { roomId: any; fileName: any; }; }, res: { status: (arg0: number) => { (): any; new(): any; json: { (arg0: { error: string; }): any; new(): any; }; }; json: (arg0: { message: string; }) => void; }) => {
   const { roomId, fileName } = req.params;
   const roomPicturesPath = path.join(process.env.APPDATA, appname, 'Room Pictures');
 
-  fs.readdir(roomPicturesPath, (err, folders) => {
+  fs.readdir(roomPicturesPath, (err: any, folders: any[]) => {
     if (err) {
       return res.status(500).json({ error: 'Failed to read room pictures directory' });
     }
 
-    const roomFolder = folders.find(folder => folder.includes(roomId));
+    const roomFolder = folders.find((folder: string | any[]) => folder.includes(roomId));
     if (!roomFolder) {
       return res.status(404).json({ error: 'Room folder not found' });
     }
 
     const filePath = path.join(roomPicturesPath, roomFolder, fileName);
-    fs.unlink(filePath, (err) => {
+    fs.unlink(filePath, (err: any) => {
       if (err) {
         return res.status(500).json({ error: 'Failed to delete image' });
       }
@@ -506,31 +584,61 @@ appDB.delete('/room-image/:roomId/:fileName', (req, res) => {
     });
   });
 });
-appDB.get('/room-images/:roomId', (req, res) => {
+appDB.get('/room-images/:roomId', (req: { params: { roomId: any; }; }, res: { status: (arg0: number) => { (): any; new(): any; json: { (arg0: { error: string; }): any; new(): any; }; }; json: (arg0: { images: any; roomFolder: any; }) => void; }) => {
   const roomId = req.params.roomId;
   const roomPicturesPath = path.join(process.env.APPDATA, appname, 'Room Pictures');
 
-  fs.readdir(roomPicturesPath, (err, folders) => {
+  fs.readdir(roomPicturesPath, (err: any, folders: any[]) => {
     if (err) {
       return res.status(500).json({ error: 'Failed to read room pictures directory' });
     }
 
-    const roomFolder = folders.find(folder => folder.includes(roomId));
+    const roomFolder = folders.find((folder: string | any[]) => folder.includes(roomId));
     if (!roomFolder) {
       return res.status(404).json({ error: 'Room folder not found' });
     }
 
     const roomFolderPath = path.join(roomPicturesPath, roomFolder);
-    fs.readdir(roomFolderPath, (err, files) => {
+    fs.readdir(roomFolderPath, (err: any, files: any[]) => {
       if (err) {
         return res.status(500).json({ error: 'Failed to read room folder' });
       }
       const imageFiles = files
-      .filter(file => /\.(jpg|jpeg|png|gif)$/i.test(file))
-      .map(file => `local-resource://${path.join(roomFolderPath, file)}`);
+      .filter((file: string) => /\.(jpg|jpeg|png|gif)$/i.test(file))
+      .map((file: string) => `local-resource://${path.join(roomFolderPath, file)}`);
   
       res.json({ images: imageFiles, roomFolder: roomFolder });
     });
+  });
+});
+appDB.put('/rename-folder', (req, res) => {
+  const { oldName, newName } = req.body;
+  const oldPath = path.join(process.env.APPDATA, 'BMS', 'Room Pictures', oldName);
+  const newPath = path.join(process.env.APPDATA, 'BMS', 'Room Pictures', newName);
+
+  fs.rename(oldPath, newPath, (err) => {
+    if (err) {
+      return res.status(500).json({ error: 'Failed to rename folder' });
+    }
+    res.json({ message: 'Folder renamed successfully' });
+  });
+});
+appDB.delete('/delete-folder-images/:folderName', (req, res) => {
+  const folderName = req.params.folderName;
+  const folderPath = path.join(process.env.APPDATA, 'BMS', 'Room Pictures', folderName);
+
+  fs.readdir(folderPath, (err, files) => {
+    if (err) {
+      return res.status(500).json({ error: 'Failed to read folder' });
+    }
+
+    const deletePromises = files.map(file => 
+      fs.promises.unlink(path.join(folderPath, file))
+    );
+
+    Promise.all(deletePromises)
+      .then(() => res.json({ message: 'All images deleted successfully' }))
+      .catch(error => res.status(500).json({ error: 'Failed to delete images' }));
   });
 });
 
@@ -770,4 +878,9 @@ app.whenReady().then(() => {
 ipcMain.on('show-item-in-folder', (event, path) => {
   const filePath = path.replace('local-resource://', '');
   shell.showItemInFolder(filePath);
+});
+
+ipcMain.on('open-document', (event, filePath) => {
+  const decodedPath = filePath.replace('local-resource://', '');
+  shell.openPath(decodedPath);
 });

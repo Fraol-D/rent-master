@@ -355,7 +355,7 @@ function Hello() {
           'PastTenantsForRoom',
           `WHERE 1`
         );
-        console.log('PAST', pastTenantReviewRaw);
+      
         if (pastTenantReviewRaw) {
           const pastTenantReviews = pastTenantReviewRaw.map(
             (pastTenantReview: PastTenantReviewType) => {

@@ -224,6 +224,14 @@
   padding: 10px;
   padding-top: 5px;
   border-radius: 5px;
+ 
+}
+.AddARoomImageMainContainer {
+  background-color: #191919;
+  padding: 10px;
+  padding-top: 5px;
+  border-radius: 5px; margin-top: 10px;
+  height: 200px;
 }
 .HorizontalButton {
   border-radius: 5px;

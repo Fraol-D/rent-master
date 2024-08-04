@@ -95,21 +95,21 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
         .append('line')
         .attr('x1', 0)
         .attr('y1', padding + height / 2 - 30)
-        .attr('x2', currentDateX)
+        .attr('x2', currentDateX+36.5)
         .attr('y2', padding + height / 2 -30)
         .attr('stroke', '#454959')
         .attr('stroke-width', '15');
       svg
         .append('line')
-        .attr('x1', currentDateX)
+        .attr('x1', currentDateX+36.3)
         .attr('y1', padding + height / 2 - 40)
-        .attr('x2', currentDateX)
+        .attr('x2', currentDateX+36.3)
         .attr('y2', padding + height / 2 - 18)
         .attr('stroke', '#00e1f1')
         .attr('stroke-width', '5');
       svg
         .append('text')
-        .attr('x', currentDateX)
+        .attr('x', currentDateX+36.5)
         .attr('y', padding + height / 2 - 3)
         .attr('text-anchor', 'middle')
         .style('fill', 'white')
