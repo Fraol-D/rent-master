@@ -205,14 +205,14 @@ export function PeopleComponentPage({
                               {highlightText(
                                 RoomList.find(
                                   (room: any) => room.tenantId === tenant.id
-                                ).roomIndex || '0',
+                                )?.roomIndex || 'D',
                                 mainSearch
                               )}{' '}
                               Flr.{' '}
                               {highlightText(
                                 RoomList.find(
                                   (room: any) => room.tenantId === tenant.id
-                                ).floor || '0',
+                                )?.floor || 'D',
                                 mainSearch
                               )}
                             </>
@@ -448,24 +448,24 @@ export function PeopleComponentPage({
                       Flr.{' '}
                       {
                         RoomList.find((r: RoomType) => r.id == review.roomId)
-                          .floor
+                          ?.floor || 'D'
                       }{' '}
                       <br />
                       Rm.{' '}
                       {
                         RoomList.find((r: RoomType) => r.id == review.roomId)
-                          .roomIndex
+                          ?.roomIndex|| 'D'
                       }
                     </td>
                     <td className="InfoTableBodyTD">
                       {
                         BrokerList.find(
                           (b: BrokerType) => b.id === review.brokerId
-                        ).name
+                        )?.name|| "none"
                       }{' '}
                       <div></div>c:{' '}
                       <em style={{ color: 'grey', fontSize: '12px' }}>
-                        {review.AgreedCommission.toLocaleString()}$
+                        {review.AgreedCommission.toLocaleString()|| ""}$
                       </em>
                     </td>
                     <td className="InfoTableBodyTD">

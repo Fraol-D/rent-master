@@ -5,6 +5,7 @@ const { v4: uuidv4 } = require('uuid');
 import {
   AddRoomDocuments,
   deleteRoomDocument,
+  deleteTenantDocument,
   getRoomDocuments,
   uploadTenantDocument,
 } from 'Backend/localServerApis';
@@ -74,19 +75,21 @@ const DocumentInteractor: React.FC<DocumentInteractorProps> = ({
       if (files && files.length > 0) {
         try {
           if (isAddRoomDocument) {
-            // Use the new method for adding tenant documents
             const roomId = 'Add a tenant documents';
-            const results = await uploadTenantDocument(files[0], roomId);
-            if (results) {
-              console.log('Tenant document uploaded successfully:', results);
+            const uploadPromises = Array.from(files).map(file => 
+              uploadTenantDocument(file, roomId)
+            );
+            const results = await Promise.all(uploadPromises);
+            if (results.every(result => result)) {
+              console.log('Tenant documents uploaded successfully:', results);
               fetchRoomDocuments2();
             } else {
-              console.error('Failed to upload tenant document');
+              console.error('Failed to upload some tenant documents');
             }
           } else {
-            // Use the original method for adding room documents
+            // Existing code for non-isAddRoomDocument case
             const roomId = room?.id || 'default-room-id';
-            const tenantId = room.tenantId || '';
+            const tenantId = room?.tenantId || '';
             const tenantName = TenantsList.find((t:tenant) => t.id === tenantId)?.name || '';
             const AddedTimeReal = new Date(TenantsList.find((t:tenant) => t.id === tenantId)?.startTime || 0).toDateString();
   
@@ -112,15 +115,23 @@ const DocumentInteractor: React.FC<DocumentInteractorProps> = ({
     input.click();
   };
   
-
   const handleDeleteDocument = async () => {
     if (selectedDocument) {
       const fileName = selectedDocument.split('/').pop();
-      const roomId = room ? room.id : 'Add a room documents';
-      const result = await deleteRoomDocument(roomId, fileName);
-      if (result && result.message === 'Document deleted successfully') {
-        setDocuments((prevDocs) => prevDocs.filter((doc) => doc !== selectedDocument));
-        setSelectedDocument(null);
+ 
+      if (isAddRoomDocument) {
+        const fileName2 = selectedDocument.split('\\').pop();        const result = await deleteTenantDocument(fileName2);
+        if (result && result.message === 'Tenant document deleted successfully') {
+          setDocuments((prevDocs) => prevDocs.filter((doc) => doc !== selectedDocument));
+          setSelectedDocument(null);
+        }
+      } else {
+        const roomId = room ? room.id : 'Add a room documents';
+        const result = await deleteRoomDocument(roomId, fileName);
+        if (result && result.message === 'Document deleted successfully') {
+          setDocuments((prevDocs) => prevDocs.filter((doc) => doc !== selectedDocument));
+          setSelectedDocument(null);
+        }
       }
     }
   };

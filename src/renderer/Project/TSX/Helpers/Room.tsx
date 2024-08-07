@@ -4,11 +4,17 @@ const { v4: uuidv4 } = require('uuid');
 import ImageInteractor2 from './ImageInteractor2';
 import PaymentProgressBarGUI from './PaymentProgressBarGUI';
 import EditIcon from '../../../assets/assets/Dark mode/Editicon.png';
-import DocumentInteractor from "./GUIs/DocumentInteractor";
+import DocumentInteractor from './GUIs/DocumentInteractor';
 import {
+  AddRoomDocuments,
   addValue,
+  deleteFolderImages,
+  deleteTenantDocumentFolder,
   deleteValue,
+  getRoomDocuments,
   getValuesWithSql,
+  uploadTenantDocument,
+  uploadTenantDocumentsV2,
 } from 'Backend/localServerApis';
 import LeavePanel from './LeavePanel';
 const Room = ({
@@ -240,7 +246,7 @@ const Room = ({
 
     console.log(roomType.AllRoomPayInfo.RoomPayInfo);
   };
-  const handleAddTenantButton = () => {
+  const handleAddTenantButton = async () => {
     if (TenantPageSelected === 'Select') {
       handleTenantSelectWhenNew();
       return;
@@ -322,9 +328,7 @@ const Room = ({
       let interval: number =
         paymentIntervals[paymentCycle as keyof typeof paymentIntervals];
       if (!interval || isNaN(interval)) {
-        console.error(
-          `Invalid payment cycle: ${paymentCycle}. Defaulting to 30 days.`
-        );
+    
         interval = 30; // Default to 30 days if the payment cycle is invalid
       }
       console.log('reached1');
@@ -346,15 +350,7 @@ const Room = ({
           false
         );
       }
-      /* AddBrokerRecommendation = async(
-      id: string,
-      brokerId: string,
-      recommendedTenantId: string,
-      AddedTime: number,
-      AgreedCommission: number,
-      rating: number,
-      notes: string
-    ) => { */
+
       if (AddTenantUseBrokerState) {
         brokersRecommendationListApi.AddBrokerRecommendation(
           uuidv4(),
@@ -367,16 +363,37 @@ const Room = ({
             : commissionValue
         );
       }
+      let DocumentFiles = [];
+      const roomDocs = await getRoomDocuments('Add a tenant documents');
+      if (roomDocs && roomDocs.documents) {
+        DocumentFiles = roomDocs.documents;
+        for (let i = 0; i < DocumentFiles.length; i++) {
+          const element = DocumentFiles[i];
+          const fileName = element.split('\\').pop().split('/').pop();
+          const fileContent = await window.electron.ipcRenderer.invoke('read-file', element);
+          const blob = new Blob([fileContent]);
+          const file = new File([blob], fileName, { type: 'application/octet-stream' });
+                   console.log(file);
+          await uploadTenantDocumentsV2(
+            [file],
+            roomType.id,
+            tenant.name,
+            tenant.id,
+           new Date(tenant.startTime).toDateString()
+          );
+        }
+        await deleteTenantDocumentFolder();
+      } else {
+        DocumentFiles = [];
+      }
+      SetRefreshState(true);
+      
+      
 
       console.log(roomType.AllRoomPayInfo.RoomPayInfo);
     }
   };
-  // Thoughts:
-  // 1. We need to check for existing payment dates before adding new ones
-  // 2. We should use a Set to keep track of unique payment dates
-  // 3. We'll modify the loop to continue until we have 10 new unique payments
-  // 4. We'll convert all dates to midnight UTC to ensure consistent comparison
-
+  const [refreshState, SetRefreshState] = useState(false)
   const extendPaymentSchedule = async () => {
     if (!roomType.AllRoomPayInfo || !roomType.AllRoomPayInfo.RoomPayInfo)
       return;
@@ -402,7 +419,7 @@ const Room = ({
       daily: 1,
       custom: parseInt(customDays, 10),
     };
-
+    console.log(paymentIntervals, roomType.PaymentCycleType, " new ", roomType.PaymentCycleType)
     const getPaymentDay = (
       interval: number,
       start: Date,
@@ -419,10 +436,10 @@ const Room = ({
     };
 
     let interval: number =
-      paymentIntervals[paymentCycle as keyof typeof paymentIntervals];
+      paymentIntervals[roomType.PaymentCycleType as keyof typeof paymentIntervals];
     if (!interval || isNaN(interval)) {
       console.error(
-        `Invalid payment cycle: ${paymentCycle}. Defaulting to 30 days.`
+        `Invalid payment cycle: ${roomType.PaymentCycleType}. Defaulting to 30 days.`
       );
       interval = 30; // Default to 30 days if the payment cycle is invalid
     }
@@ -434,7 +451,7 @@ const Room = ({
         interval,
         lastPaymentDate,
         i,
-        paymentCycle
+        roomType.PaymentCycleType
       );
       const paymentDayUTC = paymentDay.setUTCHours(0, 0, 0, 0);
 
@@ -585,17 +602,19 @@ const Room = ({
         }
       }
     }
-    const agreedCommissionForBroker = (
+    let agreedCommissionForBroker = (
       await getValuesWithSql(
         'brokersRecommendationList',
         `WHERE roomId = '${roomType.id}'`
       )
     ).sort((a: any, b: any) => b.AddedTime - a.AddedTime);
-    console.log(agreedCommissionForBroker);
+ if(agreedCommissionForBroker.length > 0) {
+
+ } else {}
     addValue('PastTenantsForRoom', {
       id: uuidv4(),
       roomId: roomType.id,
-      brokerId: agreedCommissionForBroker[0].brokerId,
+      brokerId: agreedCommissionForBroker.length > 0 ?agreedCommissionForBroker[0].brokerId : '',
       tenantId: roomType.tenantId,
       enterDate: new Date(
         TenantList.find((t: tenant) => t.id === roomType.tenantId).startTime
@@ -607,7 +626,7 @@ const Room = ({
           ? ('-' + roomType.PaymentCycleCustomeDays).toString()
           : roomType.PaymentCycleType,
       AgreedPrice: roomType.AgreedPrice,
-      AgreedCommission: agreedCommissionForBroker[0].AgreedCommission || 0,
+      AgreedCommission: agreedCommissionForBroker.length > 0 ?agreedCommissionForBroker[0].AgreedCommission : 0,
       Stars: tenantRating,
       description: tenantDescription,
       endReason: endReason,
@@ -1051,7 +1070,7 @@ const Room = ({
           <div
             className="AddTenantContainerinner"
             style={{
-              width: roomType.AddTenantState ? '280px' : '0px',
+              width: roomType.AddTenantState ? '325px' : '0px',
               height: roomType.AddTenantState ? '345px' : '0px',
               opacity: roomType.AddTenantState ? '1' : '0',
               userSelect: 'text',
@@ -1546,12 +1565,14 @@ const Room = ({
                       )}
                     </>
                   )}
-                   <hr />
+                  <hr />
                   <DocumentInteractor
                     room={roomType}
                     TenantsList={TenantList}
                     AddTenant={true}
                     isAddRoomDocument={true}
+                    SetRefreshState={SetRefreshState}
+                    refreshState={refreshState}
                   />
                 </>
               ) : (
@@ -1912,34 +1933,34 @@ const Room = ({
                       </>
                     )}
                 </>
-              )}<div className="BottomAddTenantContainer">
-              <button
-                className="AddTenantButton"
-                onClick={() => {
-                  setName('');
-                  setTel1('');
-                  setTel2('');
-                  setEmail('');
-                  setSelectedAgreement('Open-Ended');
-                  setStartTime('');
-                  setEndTime('');
-                  setAgreedPrice(0);
-                  updateRoomProperty(roomType.id, 'AddTenantState', false);
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                className="AddTenantButton"
-                onClick={() => {
-                  handleAddTenantButton();
-                }}
-              >
-                Add
-              </button>
+              )}
+              <div className="BottomAddTenantContainer">
+                <button
+                  className="AddTenantButton"
+                  onClick={() => {
+                    setName('');
+                    setTel1('');
+                    setTel2('');
+                    setEmail('');
+                    setSelectedAgreement('Open-Ended');
+                    setStartTime('');
+                    setEndTime('');
+                    setAgreedPrice(0);
+                    updateRoomProperty(roomType.id, 'AddTenantState', false);
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="AddTenantButton"
+                  onClick={() => {
+                    handleAddTenantButton();
+                  }}
+                >
+                  Add
+                </button>
+              </div>
             </div>
-            </div>
-            
           </div>
         </div>
         <div
@@ -1959,8 +1980,8 @@ const Room = ({
               paddingBottom: '10px',
             }}
           >
-            <div style={{display:"flex", flexDirection:"row"}}>
-              <div className="InnerAddtenantTop" style={{ width: '50%', }}>
+            <div style={{ display: 'flex', flexDirection: 'row' }}>
+              <div className="InnerAddtenantTop" style={{ width: '50%' }}>
                 <div className="AddTenantContainerinnerElement">
                   Name:{' '}
                   <em style={{ fontWeight: '600' }}>
@@ -2064,11 +2085,19 @@ const Room = ({
                   Leave
                 </button>
               </div>
-              <div style={{width:"50%"}}><DocumentInteractor room={roomType} TenantsList={TenantList}/></div>
+              <div style={{ width: '50%' }}>
+                <DocumentInteractor room={roomType} TenantsList={TenantList} />
+              </div>
             </div>
             <div
               className="BottomAddTenantContainer"
-              style={{ height: '55px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}            >
+              style={{
+                height: '55px',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+              }}
+            >
               <button
                 className="AddTenantButton"
                 onClick={() =>

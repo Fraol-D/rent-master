@@ -482,7 +482,94 @@ const updateTableStructure = (
     db.run(`COMMIT`);
     console.log(`Table ${table.name} structure updated successfully.`);
   });
-};appDB.delete('/room-document/:roomId/:fileName', (req, res) => {
+
+};
+
+appDB.post('/upload-tenant-documentV2', (req, res) => {
+  try {
+    const { base64Document, fileName, roomId, tenantName, tenantId, AddedTimeText } = req.body;
+    
+
+
+    const sanitizedRoomId = (roomId);
+    const sanitizedTenantName = (tenantName);
+    const sanitizedTenantId = (tenantId);
+    const sanitizedAddedTimeText = (AddedTimeText);
+
+    const dirPath = path.join(
+      process.env.APPDATA || '',
+      appname || '',
+      'Room Documents',
+      sanitizedRoomId,
+      `${sanitizedTenantName}, ${sanitizedAddedTimeText}, ${sanitizedTenantId}`
+    );
+
+    fs.mkdirSync(dirPath, { recursive: true });
+    const filePath = path.join(dirPath, fileName);
+
+const base64Data = base64Document.replace(/^data:.*?;base64,/, '');
+    fs.writeFileSync(filePath, Buffer.from(base64Data, 'base64'));
+
+    res.json({ message: 'Tenant document uploaded successfully', fileName, filePath });
+  } catch (error) {
+    console.error('Error uploading tenant document:', error);
+    res.status(500).json({ error: 'Failed to upload tenant document' });
+  }
+});
+appDB.delete('/delete-tenant-document-folder', (req, res) => {
+  try {
+    const folderPath = path.join(process.env.APPDATA || '', appname || '', 'Room Documents', 'Add a tenant documents', 'Add a tenant document');
+    
+    if (fs.existsSync(folderPath)) {
+      fs.rmdirSync(folderPath, { recursive: true });
+      res.json({ message: 'Tenant document folder deleted successfully' });
+    } else {
+      res.status(404).json({ error: 'Tenant document folder not found' });
+    }
+  } catch (error) {
+    console.error('Error deleting tenant document folder:', error);
+    res.status(500).json({ error: 'Failed to delete tenant document folder' });
+  }
+});
+
+appDB.delete('/room-document/delete-tenant-document/:fileName', (req, res) => {
+  try {
+    const { fileName } = req.params;
+    const filePath = path.join(process.env.APPDATA || '', appname || '', 'Room Documents', 'Add a tenant documents', 'Add a tenant document', fileName);
+    
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+      res.json({ message: 'Tenant document deleted successfully' });
+    } else {
+      res.status(404).json({ error: 'Tenant document not found' });
+    }
+  } catch (error) {
+    console.error('Error deleting tenant document:', error);
+    res.status(500).json({ error: 'Failed to delete tenant document' });
+  }
+});
+appDB.post('/room-document/upload-tenant-document', (req, res) => {
+  try {
+    const { base64Document, fileName, roomId } = req.body;
+    if (!base64Document || !fileName || !roomId) {
+      return res.status(400).json({ error: 'Missing required parameters' });
+    }
+
+    const base64Data = base64Document.replace(/^data:.*?;base64,/, '');
+    const buffer = Buffer.from(base64Data, 'base64');
+    const dirPath = path.join(process.env.APPDATA || '', appname || '', 'Room Documents', roomId, 'Add a tenant document');
+    
+    fs.mkdirSync(dirPath, { recursive: true });
+    const filePath = path.join(dirPath, fileName);
+    fs.writeFileSync(filePath, buffer);
+
+    res.json({ message: 'Tenant document uploaded successfully', fileName, roomId });
+  } catch (error) {
+    console.error('Error uploading tenant document:', error);
+    res.status(500).json({ error: 'Failed to upload tenant document', details: error.message });
+  }
+});
+appDB.delete('/room-document/:roomId/:fileName', (req, res) => {
   const { roomId, fileName } = req.params;
   const roomDocumentsPath = path.join(process.env.APPDATA || '', appname, 'Room Documents', roomId);
 
@@ -539,7 +626,7 @@ appDB.get('/room-documents/:roomId', (req, res) => {
     }
     const roomFolder = folders.find(folder => folder.includes(roomId));
     if (!roomFolder) {
-      return res.status(404).json({ error: 'Room folder not found' });
+      return res.json({ documents: [], roomFolder: null });
     }
     const roomFolderPath = path.join(roomDocumentsPath, roomFolder);
     fs.readdir(roomFolderPath, (err, tenantFolders) => {
@@ -549,10 +636,12 @@ appDB.get('/room-documents/:roomId', (req, res) => {
       const documents = [];
       tenantFolders.forEach(tenantFolder => {
         const tenantFolderPath = path.join(roomFolderPath, tenantFolder);
-        const files = fs.readdirSync(tenantFolderPath);
-        files.forEach(file => {
-          documents.push(`local-resource://${path.join(tenantFolderPath, file)}`);
-        });
+        if (fs.existsSync(tenantFolderPath)) {
+          const files = fs.readdirSync(tenantFolderPath);
+          files.forEach(file => {
+            documents.push(`local-resource://${path.join(tenantFolderPath, file)}`);
+          });
+        }
       });
       res.json({ documents, roomFolder });
     });
@@ -604,8 +693,10 @@ appDB.get('/room-images/:roomId', (req: { params: { roomId: any; }; }, res: { st
         return res.status(500).json({ error: 'Failed to read room folder' });
       }
       const imageFiles = files
-      .filter((file: string) => /\.(jpg|jpeg|png|gif)$/i.test(file))
-      .map((file: string) => `local-resource://${path.join(roomFolderPath, file)}`);
+        ? files
+            .filter((file: string) => /\.(jpg|jpeg|png|gif)$/i.test(file))
+            .map((file: string) => `local-resource://${path.join(roomFolderPath, file)}`)
+        : [];
   
       res.json({ images: imageFiles, roomFolder: roomFolder });
     });
@@ -883,4 +974,8 @@ ipcMain.on('show-item-in-folder', (event, path) => {
 ipcMain.on('open-document', (event, filePath) => {
   const decodedPath = filePath.replace('local-resource://', '');
   shell.openPath(decodedPath);
+});
+ipcMain.handle('read-file', async (event, filePath) => {
+  const cleanPath = filePath.replace('local-resource://', '');
+  return fs.readFileSync(cleanPath);
 });

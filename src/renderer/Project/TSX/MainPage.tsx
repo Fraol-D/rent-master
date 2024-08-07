@@ -570,19 +570,23 @@ const MainPage = ({
       prevSpecs.filter((_, i) => i !== index)
     );
   };
-  const [RoomExistsWarning, setRoomExistsWarning] = useState(false)
+  const [RoomExistsWarning, setRoomExistsWarning] = useState(false);
 
   const handleAddRoom = async (continueAdding: boolean) => {
     // Check if the room already exists
     const roomExists = sortedAndFilteredRooms.some(
-      (room) => room.floor === AddRoomFormFloor && room.roomIndex === AddRoomFormRoomIndex
-    )
+      (room: any) =>
+        room.floor === AddRoomFormFloor &&
+        room.roomIndex === AddRoomFormRoomIndex
+    );
 
     if (roomExists) {
       // Room already exists, show an error message or handle as needed
-      console.error(`Room ${AddRoomFormRoomIndex} on floor ${AddRoomFormFloor} already exists.`)
+      console.error(
+        `Room ${AddRoomFormRoomIndex} on floor ${AddRoomFormFloor} already exists.`
+      );
       setRoomExistsWarning(true);
-      return
+      return;
     }
 
     // If the room doesn't exist, proceed with adding the new room
@@ -605,8 +609,7 @@ const MainPage = ({
       status: 'Empty',
       AgreedPrice: AddRoomFormPrice,
       AllRoomPayInfo: { RoomPayInfo: [] },
-    }
-    console.log(newRoom)
+    };
 
     // Add to sqlite database
     await roomAPI.AddRoomApi(
@@ -618,19 +621,21 @@ const MainPage = ({
       AddRoomFormPaymentCycleCustomDays,
       AddRoomFormSquareMeters,
       AddRoomFormRoomSpecifications
-    )
-
-    handleRenameFolder(
-      'Add a room images',
-      `Room ${AddRoomFormFloor}, Floor ${AddRoomFormRoomIndex} - ${newRoom.id}`
-    )
+    );
+    if (isMoreThanOneImage) {
+      handleRenameFolder(
+        'Add a room images',
+        `Room ${AddRoomFormFloor}, Floor ${AddRoomFormRoomIndex} - ${newRoom.id}`
+      );
+    }
 
     // Reset the variables
-    ResetAddRoomForumVariables()
-    setRefreshInspectorForAddRoom(true)
-    if (!continueAdding) setAddARoomState(false)
+    ResetAddRoomForumVariables();
+    setRefreshInspectorForAddRoom(true);
+    if (!continueAdding) setAddARoomState(false);
 
-      setRoomExistsWarning(false);
+    setRoomExistsWarning(false);
+    setIsMoreThanOneImage(false);
   };
   const handleCancelAddRoom = () => {
     ResetAddRoomForumVariables();
@@ -649,8 +654,6 @@ const MainPage = ({
     setAddRoomFormRoomSpecifications([
       { type: 'bool', Detail: '', Boolean: false, Number: 0, id: 'avx' },
     ]);
-
-   
   };
   const handleRenameFolder = async (oldName: string, newName: string) => {
     const result = await renameFolder(oldName, newName);
@@ -661,12 +664,12 @@ const MainPage = ({
       console.error('Failed to rename folder');
     }
   };
-  
+
   const handleDeleteFolderImages = async (folderName: string) => {
     const result = await deleteFolderImages(folderName);
     if (result && result.message === 'All images deleted successfully') {
       console.log('All images in folder deleted successfully');
-      setRefreshInspectorForAddRoom(true)
+      setRefreshInspectorForAddRoom(true);
     } else {
       console.error('Failed to delete folder images');
     }
@@ -677,6 +680,13 @@ const MainPage = ({
   const handleDeleteFirst = async () => {
     if (!DeleteConfimation) setDeleteConfimation(true);
     if (DeleteConfimation) {
+      if (
+        RoomList.find((r: RoomType) => r.id === SelectedEditRoomId).status ===
+        'Taken'
+      ) {
+        alert('You can not delete a room that is taken');
+        return;
+      }
       const listOfPayments = await getValuesWithSql(
         'room_pay_info',
         `WHERE roomId = '${SelectedEditRoomId}'`
@@ -687,6 +697,7 @@ const MainPage = ({
           deleteValue('room_pay_info', element.id);
         }
       roomAPI.DeleteRoom(SelectedEditRoomId);
+
       setSelectedEditRoomId('');
       setDeleteConfimation(false);
     }
@@ -704,13 +715,15 @@ const MainPage = ({
     }
   }, [SelectedPage]);
 
-  const handleAddRoomButtonInitial = (state: boolean, plusOne?:boolean) => {
+  const handleAddRoomButtonInitial = (state: boolean, plusOne?: boolean) => {
     setAddARoomState(state);
     if (RoomList.length > 0 && RoomList) {
       const sortedRoomList = [...RoomList].sort(
         (a: RoomType, b: RoomType) => a.roomIndex - b.roomIndex
       );
-      const a = plusOne ? sortedRoomList.reverse()[0].roomIndex + 2: sortedRoomList.reverse()[0].roomIndex + 1;
+      const a = plusOne
+        ? sortedRoomList.reverse()[0].roomIndex + 2
+        : sortedRoomList.reverse()[0].roomIndex + 1;
       setAddRoomFormRoomIndex(a);
     }
   };
@@ -744,22 +757,23 @@ const MainPage = ({
   }
   const [RefreshInspectorForAddRoom, setRefreshInspectorForAddRoom] =
     useState(false);
-    useEffect(() => {}, []);
-    const handleAddImage = (roomId: string) => {
-      // This function will be implemented later
-      console.log('Add image for room', roomId);
-    };
-    
-    const handleDeleteImage = (roomId: string, index: number) => {
-      // This function will be implemented later
-      console.log('Delete image', index, 'for room', roomId);
-    };
-    
-    const handleShowInExplorer = (path: string) => {
-      // This function will be implemented later
-      console.log('Show in explorer', path);
-    };
-  
+  useEffect(() => {}, []);
+  const handleAddImage = (roomId: string) => {
+    // This function will be implemented later
+    console.log('Add image for room', roomId);
+  };
+
+  const handleDeleteImage = (roomId: string, index: number) => {
+    // This function will be implemented later
+    console.log('Delete image', index, 'for room', roomId);
+  };
+
+  const handleShowInExplorer = (path: string) => {
+    // This function will be implemented later
+    console.log('Show in explorer', path);
+  };
+  const [isMoreThanOneImage, setIsMoreThanOneImage] = useState<boolean>(false);
+
   return (
     <>
       <div className="MainContainerMain">
@@ -1062,7 +1076,11 @@ const MainPage = ({
                           setAddRoomFormRoomIndex(parseInt(e.target.value))
                         }
                       />
-                      :Room number {RoomExistsWarning && <em style={{ color: 'red' }}>Already exist</em>}                    </div>
+                      :Room number{' '}
+                      {RoomExistsWarning && (
+                        <em style={{ color: 'red' }}>Already exist</em>
+                      )}{' '}
+                    </div>
                     <div className="AddaNewRoomRowObject">
                       Price (per month):
                       <input
@@ -1223,6 +1241,7 @@ const MainPage = ({
                         refreshState={RefreshInspectorForAddRoom}
                         SetRefreshState={setRefreshInspectorForAddRoom}
                         AddRoomState={true}
+                        setIsMoreThanOneImage={setIsMoreThanOneImage}
                       />
                     </div>
                   </div>
@@ -1331,14 +1350,6 @@ const MainPage = ({
             ></div>{' '}
             <div className="EditRoomScreenMainContainer">
               <ImageInteractor
-                images={[
-                  DoubleArrowIconDark,
-                  SortIcon,
-                  DoubleArrowIconDarkb,
-                  DoubleArrowIconDarka,
-                  DoubleArrowIconDarkc,
-                  LONGIMAGE,
-                ]}
                 onAddImage={() => handleAddImage(SelectedEditRoomId)}
                 onDeleteImage={(index) =>
                   handleDeleteImage(SelectedEditRoomId, index)

@@ -110,8 +110,7 @@ export const getRoomImages = async (roomId) => {
     const data = await response.json();
     return data;
   } catch (error) {
-    console.error('Error fetching room images:', error);
-    return null;
+    return []; // Return an empty array in case of any error
   }
 };
 const fileToBase64 = (file) => {
@@ -198,18 +197,15 @@ export const AddRoomDocuments = async (files, roomId, tenantName, tenantId,Added
 };
 
 
-
-export const getRoomDocuments = async (roomId) => {
-  try {
-    const response = await fetch(`${baseUrl}/room-documents/${roomId}`);
-    const data = await response.json();
+  export const getRoomDocuments = async (roomId) => {
+    try {
+      const response = await fetch(`${baseUrl}/room-documents/${roomId}`);
+      const data = await response.json();
     return data;
   } catch (error) {
-    console.error('Error fetching room documents:', error);
-    return null;
-  }
-};
-
+      return [];
+    }
+  };
 export const deleteRoomDocument = async (roomId, filePath) => {
   try {
     const fileName = filePath.split('\\').pop();
@@ -251,3 +247,55 @@ export const uploadTenantDocument = async (file, roomId) => {
   }
 };
 
+export const deleteTenantDocument = async (fileName) => {
+  try {
+    const response = await fetch(`${baseUrl}/room-document/delete-tenant-document/${encodeURIComponent(fileName)}`, {
+      method: 'DELETE',
+      
+    });
+    return response.json();
+  } catch (error) {
+    console.error('Error deleting tenant document:', error);
+    return null;
+  }
+};export const uploadTenantDocumentsV2 = async (files, roomId, tenantName, tenantId, AddedTimeText) => {
+  if (!files || !roomId || !tenantName || !tenantId) {
+    console.error('Missing required parameters for uploadTenantDocuments');
+    return null;
+  }
+  try {
+    const uploadPromises = Array.from(files).map(async (file) => {
+      const base64Document = await fileToBase64(file);
+      const response = await fetch(`${baseUrl}/upload-tenant-documentV2`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          base64Document,
+          fileName: file.name,
+          roomId,
+          tenantName,
+          tenantId,
+          AddedTimeText
+        }),
+      });
+      return response.json();
+    });
+    const results = await Promise.all(uploadPromises);
+    return results;
+  } catch (error) {
+    console.error('Error uploading tenant documents:', error);
+    return null;
+  }
+};export const deleteTenantDocumentFolder = async () => {
+  try {
+    const response = await fetch(`${baseUrl}/delete-tenant-document-folder`, {
+      method: 'DELETE',
+    });
+    return response.json();
+  } catch (error) {
+    console.error('Error deleting tenant document folder:', error);
+    return null;
+  }
+};

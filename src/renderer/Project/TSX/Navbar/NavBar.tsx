@@ -7,7 +7,7 @@ interface Props {
   Image: string;
   ProfileState: boolean;
   ShopName: string;
-  setSelectedPage:(newval:string)=>void;
+  setSelectedPage:(newval:any)=>void;
   SelectedPage: string;
 }
 

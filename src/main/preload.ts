@@ -10,7 +10,7 @@ const electronHandler = {
       ipcRenderer.send(channel, ...args);
     },
     send: (channel, data) => ipcRenderer.send(channel, data),
-
+    invoke: (channel, ...args) => ipcRenderer.invoke(channel, ...args),
     on(channel: Channels, func: (...args: unknown[]) => void) {
       const subscription = (_event: IpcRendererEvent, ...args: unknown[]) =>
         func(...args);

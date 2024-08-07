@@ -13,13 +13,15 @@ interface ImageInteractorProps {
   refreshState?: boolean;
   SetRefreshState?: (newval: boolean) => void;
   AddRoomState?: boolean;
+  setIsMoreThanOneImage?:any;
+  
 }
 
 const ImageInteractor2: React.FC<ImageInteractorProps> = ({
   room,
   isAddRoomImage = false,
   refreshState,
-  SetRefreshState,AddRoomState
+  SetRefreshState,AddRoomState,setIsMoreThanOneImage
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [images, setImages] = useState<string[]>([]);
@@ -43,8 +45,16 @@ const ImageInteractor2: React.FC<ImageInteractorProps> = ({
       fetchRoomImages2();
     }
   }, []);
-
-  useEffect(() => {
+useEffect(() => {
+  if (AddRoomState) {
+    if (images.length > 1) {
+      setIsMoreThanOneImage(true)
+    } else {
+      setIsMoreThanOneImage(false)
+    }
+  }
+}, [AddRoomState, images])  
+useEffect(() => {
     let interval: NodeJS.Timeout;
     if (images.length > 1) {
       interval = setInterval(() => {
@@ -59,12 +69,15 @@ const ImageInteractor2: React.FC<ImageInteractorProps> = ({
       const roomImages = await getRoomImages(room.id);
       if (roomImages && roomImages.images) {
         setImages(roomImages.images);
+      } else {
+        setImages([]);
       }
     }
   };
   const fetchRoomImages2 = async () => {
-    if(AddRoomState){const roomImages = await getRoomImages('Add a room images');
-    console.log(roomImages);
+    if(AddRoomState){
+      const roomImages = await getRoomImages('Add a room images');
+ 
     if (roomImages && roomImages.images) {
       setImages(roomImages.images);
     } else {
@@ -98,7 +111,6 @@ const ImageInteractor2: React.FC<ImageInteractorProps> = ({
             : '';
           const results = await AddRoomImageToFiles(files, folderText);
           if (results) {
-            console.log('Images uploaded successfully:', results);
             if (!isAddRoomImage && room) {
               fetchRoomImages();
             } else {
