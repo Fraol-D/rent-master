@@ -21,6 +21,7 @@ const Room = ({
   roomType,
   updateRoomProperty,
   turnOffAddTenantStateForAll,
+  turnOffAddTenantStateForAllEXCEPT,
   turnOffViewStateForAll,
   TenantList,
   setTenantList,
@@ -64,6 +65,7 @@ const Room = ({
   const [tel1, setTel1] = useState('');
   const [tel2, setTel2] = useState('');
   const [email, setEmail] = useState('');
+  const [TIN, setTIN] = useState('');
   const [selectedAgreement, setSelectedAgreement] = useState('Open-Ended');
   const [startTime, setStartTime] = useState('');
   const [endTime, setEndTime] = useState('');
@@ -134,7 +136,7 @@ const Room = ({
     const daysDifference = Math.floor(timeDifference / (1000 * 3600 * 24));
     return daysDifference;
   }
-  const handleTenantSelectWhenNew = () => {
+  const handleTenantSelectWhenNew = async () => {
     // Find the tenant in the TenantList
     const tenantIndex = TenantList.findIndex(
       (tenant: any) => tenant.id === SelectedTenantIdOnAdding
@@ -243,8 +245,39 @@ const Room = ({
         false
       );
     }
-
-    console.log(roomType.AllRoomPayInfo.RoomPayInfo);
+    const tenant = TenantList.find(
+      (tenant: any) => tenant.id === SelectedTenantIdOnAdding
+    );
+    let DocumentFiles = [];
+    const roomDocs = await getRoomDocuments('Add a tenant documents');
+    if (roomDocs && roomDocs.documents) {
+      DocumentFiles = roomDocs.documents;
+      for (let i = 0; i < DocumentFiles.length; i++) {
+        const element = DocumentFiles[i];
+        const fileName = element.split('\\').pop().split('/').pop();
+        const fileContent = await window.electron.ipcRenderer.invoke(
+          'read-file',
+          element
+        );
+        const blob = new Blob([fileContent]);
+        const file = new File([blob], fileName, {
+          type: 'application/octet-stream',
+        });
+        console.log(file);
+        await uploadTenantDocumentsV2(
+          [file],
+          roomType.id,
+          tenant.name,
+          tenant.id,
+          new Date(tenant.startTime).toDateString()
+        );
+      }
+      await deleteTenantDocumentFolder();
+    } else {
+      DocumentFiles = [];
+    }
+    SetRefreshState(true);
+    
   };
   const handleAddTenantButton = async () => {
     if (TenantPageSelected === 'Select') {
@@ -266,6 +299,7 @@ const Room = ({
         endTime,
         agreedPrice: agreedPrice ? roomType.price : agreedPrice,
         RentingOrOut: true,
+        TIN: TIN,
       };
 
       updateRoomPropertyWithOutRefresh(roomType.id, 'status', 'Taken');
@@ -293,7 +327,8 @@ const Room = ({
         tenant.RentingOrOut,
         tenant.startTime,
         tenant.endTime,
-        tenant.agreedPrice
+        tenant.agreedPrice,
+        tenant.TIN
       );
       if (!roomType.AllRoomPayInfo) {
         roomType.AllRoomPayInfo = {
@@ -328,7 +363,6 @@ const Room = ({
       let interval: number =
         paymentIntervals[paymentCycle as keyof typeof paymentIntervals];
       if (!interval || isNaN(interval)) {
-    
         interval = 30; // Default to 30 days if the payment cycle is invalid
       }
       console.log('reached1');
@@ -370,16 +404,21 @@ const Room = ({
         for (let i = 0; i < DocumentFiles.length; i++) {
           const element = DocumentFiles[i];
           const fileName = element.split('\\').pop().split('/').pop();
-          const fileContent = await window.electron.ipcRenderer.invoke('read-file', element);
+          const fileContent = await window.electron.ipcRenderer.invoke(
+            'read-file',
+            element
+          );
           const blob = new Blob([fileContent]);
-          const file = new File([blob], fileName, { type: 'application/octet-stream' });
-                   console.log(file);
+          const file = new File([blob], fileName, {
+            type: 'application/octet-stream',
+          });
+          console.log(file);
           await uploadTenantDocumentsV2(
             [file],
             roomType.id,
             tenant.name,
             tenant.id,
-           new Date(tenant.startTime).toDateString()
+            new Date(tenant.startTime).toDateString()
           );
         }
         await deleteTenantDocumentFolder();
@@ -387,13 +426,11 @@ const Room = ({
         DocumentFiles = [];
       }
       SetRefreshState(true);
-      
-      
 
-      console.log(roomType.AllRoomPayInfo.RoomPayInfo);
+
     }
   };
-  const [refreshState, SetRefreshState] = useState(false)
+  const [refreshState, SetRefreshState] = useState(false);
   const extendPaymentSchedule = async () => {
     if (!roomType.AllRoomPayInfo || !roomType.AllRoomPayInfo.RoomPayInfo)
       return;
@@ -419,7 +456,12 @@ const Room = ({
       daily: 1,
       custom: parseInt(customDays, 10),
     };
-    console.log(paymentIntervals, roomType.PaymentCycleType, " new ", roomType.PaymentCycleType)
+    console.log(
+      paymentIntervals,
+      roomType.PaymentCycleType,
+      ' new ',
+      roomType.PaymentCycleType
+    );
     const getPaymentDay = (
       interval: number,
       start: Date,
@@ -436,7 +478,9 @@ const Room = ({
     };
 
     let interval: number =
-      paymentIntervals[roomType.PaymentCycleType as keyof typeof paymentIntervals];
+      paymentIntervals[
+        roomType.PaymentCycleType as keyof typeof paymentIntervals
+      ];
     if (!interval || isNaN(interval)) {
       console.error(
         `Invalid payment cycle: ${roomType.PaymentCycleType}. Defaulting to 30 days.`
@@ -608,13 +652,16 @@ const Room = ({
         `WHERE roomId = '${roomType.id}'`
       )
     ).sort((a: any, b: any) => b.AddedTime - a.AddedTime);
- if(agreedCommissionForBroker.length > 0) {
-
- } else {}
+    if (agreedCommissionForBroker.length > 0) {
+    } else {
+    }
     addValue('PastTenantsForRoom', {
       id: uuidv4(),
       roomId: roomType.id,
-      brokerId: agreedCommissionForBroker.length > 0 ?agreedCommissionForBroker[0].brokerId : '',
+      brokerId:
+        agreedCommissionForBroker.length > 0
+          ? agreedCommissionForBroker[0].brokerId
+          : '',
       tenantId: roomType.tenantId,
       enterDate: new Date(
         TenantList.find((t: tenant) => t.id === roomType.tenantId).startTime
@@ -626,7 +673,10 @@ const Room = ({
           ? ('-' + roomType.PaymentCycleCustomeDays).toString()
           : roomType.PaymentCycleType,
       AgreedPrice: roomType.AgreedPrice,
-      AgreedCommission: agreedCommissionForBroker.length > 0 ?agreedCommissionForBroker[0].AgreedCommission : 0,
+      AgreedCommission:
+        agreedCommissionForBroker.length > 0
+          ? agreedCommissionForBroker[0].AgreedCommission
+          : 0,
       Stars: tenantRating,
       description: tenantDescription,
       endReason: endReason,
@@ -977,6 +1027,11 @@ const Room = ({
                     'ShowPayTimeLine',
                     !roomType.ShowPayTimeLine
                   );
+                  if (
+                    !roomType.ShowPayTimeLine &&
+                    roomType.AllRoomPayInfo.RoomPayInfo.length === 0
+                  ) {
+                  }
                 }}
               >
                 {roomType.ShowPayTimeLine ? 'Hide' : 'Show'}
@@ -1148,6 +1203,15 @@ const Room = ({
                       placeholder="Optional"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
+                    />
+                  </div>
+                  <div className="AddTenantContainerinnerElement">
+                    TIN:{' '}
+                    <input
+                      className="AddTenantContainerinnerInput"
+                      placeholder="Optional"
+                      value={TIN}
+                      onChange={(e) => setTIN(e.target.value)}
                     />
                   </div>
                 </>
@@ -1930,6 +1994,15 @@ const Room = ({
                             )}
                           </>
                         )}
+                        <hr />
+                        <DocumentInteractor
+                          room={roomType}
+                          TenantsList={TenantList}
+                          AddTenant={true}
+                          isAddRoomDocument={true}
+                          SetRefreshState={SetRefreshState}
+                          refreshState={refreshState}
+                        />
                       </>
                     )}
                 </>

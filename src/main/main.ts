@@ -117,6 +117,12 @@ app
     ipcMain.on('renderer-to-main', (event, message) => {
       console.log('Message from renderer process:', message);
     });
+    // Check for backup on app start
+    checkAndCreateBackup();
+
+    // Set up daily check for backup
+    setInterval(checkAndCreateBackup, 24 * 60 * 60 * 1000);
+
     /* ipcMain.on('SendVerificationCode', (event, message) => {
       console.log('Send verfication code:', message.to, message.code);
       async function sendVerificationEmail(to: any, code: any) {
@@ -331,7 +337,8 @@ const tableStructures = [
       'RentingOrOut BOOLEAN ',
       'startTime INTEGER ', // Assuming storing as UNIX timestamp
       'endTime INTEGER',
-      'agreedPrice REAL ',
+      'agreedPrice REAL',
+      'TIN TEXT',
     ],
   },
   {
@@ -482,19 +489,23 @@ const updateTableStructure = (
     db.run(`COMMIT`);
     console.log(`Table ${table.name} structure updated successfully.`);
   });
-
 };
 
 appDB.post('/upload-tenant-documentV2', (req, res) => {
   try {
-    const { base64Document, fileName, roomId, tenantName, tenantId, AddedTimeText } = req.body;
-    
+    const {
+      base64Document,
+      fileName,
+      roomId,
+      tenantName,
+      tenantId,
+      AddedTimeText,
+    } = req.body;
 
-
-    const sanitizedRoomId = (roomId);
-    const sanitizedTenantName = (tenantName);
-    const sanitizedTenantId = (tenantId);
-    const sanitizedAddedTimeText = (AddedTimeText);
+    const sanitizedRoomId = roomId;
+    const sanitizedTenantName = tenantName;
+    const sanitizedTenantId = tenantId;
+    const sanitizedAddedTimeText = AddedTimeText;
 
     const dirPath = path.join(
       process.env.APPDATA || '',
@@ -507,10 +518,14 @@ appDB.post('/upload-tenant-documentV2', (req, res) => {
     fs.mkdirSync(dirPath, { recursive: true });
     const filePath = path.join(dirPath, fileName);
 
-const base64Data = base64Document.replace(/^data:.*?;base64,/, '');
+    const base64Data = base64Document.replace(/^data:.*?;base64,/, '');
     fs.writeFileSync(filePath, Buffer.from(base64Data, 'base64'));
 
-    res.json({ message: 'Tenant document uploaded successfully', fileName, filePath });
+    res.json({
+      message: 'Tenant document uploaded successfully',
+      fileName,
+      filePath,
+    });
   } catch (error) {
     console.error('Error uploading tenant document:', error);
     res.status(500).json({ error: 'Failed to upload tenant document' });
@@ -518,8 +533,14 @@ const base64Data = base64Document.replace(/^data:.*?;base64,/, '');
 });
 appDB.delete('/delete-tenant-document-folder', (req, res) => {
   try {
-    const folderPath = path.join(process.env.APPDATA || '', appname || '', 'Room Documents', 'Add a tenant documents', 'Add a tenant document');
-    
+    const folderPath = path.join(
+      process.env.APPDATA || '',
+      appname || '',
+      'Room Documents',
+      'Add a tenant documents',
+      'Add a tenant document'
+    );
+
     if (fs.existsSync(folderPath)) {
       fs.rmdirSync(folderPath, { recursive: true });
       res.json({ message: 'Tenant document folder deleted successfully' });
@@ -535,8 +556,15 @@ appDB.delete('/delete-tenant-document-folder', (req, res) => {
 appDB.delete('/room-document/delete-tenant-document/:fileName', (req, res) => {
   try {
     const { fileName } = req.params;
-    const filePath = path.join(process.env.APPDATA || '', appname || '', 'Room Documents', 'Add a tenant documents', 'Add a tenant document', fileName);
-    
+    const filePath = path.join(
+      process.env.APPDATA || '',
+      appname || '',
+      'Room Documents',
+      'Add a tenant documents',
+      'Add a tenant document',
+      fileName
+    );
+
     if (fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
       res.json({ message: 'Tenant document deleted successfully' });
@@ -557,25 +585,45 @@ appDB.post('/room-document/upload-tenant-document', (req, res) => {
 
     const base64Data = base64Document.replace(/^data:.*?;base64,/, '');
     const buffer = Buffer.from(base64Data, 'base64');
-    const dirPath = path.join(process.env.APPDATA || '', appname || '', 'Room Documents', roomId, 'Add a tenant document');
-    
+    const dirPath = path.join(
+      process.env.APPDATA || '',
+      appname || '',
+      'Room Documents',
+      roomId,
+      'Add a tenant document'
+    );
+
     fs.mkdirSync(dirPath, { recursive: true });
     const filePath = path.join(dirPath, fileName);
     fs.writeFileSync(filePath, buffer);
 
-    res.json({ message: 'Tenant document uploaded successfully', fileName, roomId });
+    res.json({
+      message: 'Tenant document uploaded successfully',
+      fileName,
+      roomId,
+    });
   } catch (error) {
     console.error('Error uploading tenant document:', error);
-    res.status(500).json({ error: 'Failed to upload tenant document', details: error.message });
+    res.status(500).json({
+      error: 'Failed to upload tenant document',
+      details: error.message,
+    });
   }
 });
 appDB.delete('/room-document/:roomId/:fileName', (req, res) => {
   const { roomId, fileName } = req.params;
-  const roomDocumentsPath = path.join(process.env.APPDATA || '', appname, 'Room Documents', roomId);
+  const roomDocumentsPath = path.join(
+    process.env.APPDATA || '',
+    appname,
+    'Room Documents',
+    roomId
+  );
 
   fs.readdir(roomDocumentsPath, (err, tenantFolders) => {
     if (err) {
-      return res.status(500).json({ error: 'Failed to read room documents directory' });
+      return res
+        .status(500)
+        .json({ error: 'Failed to read room documents directory' });
     }
 
     let fileDeleted = false;
@@ -598,19 +646,41 @@ appDB.delete('/room-document/:roomId/:fileName', (req, res) => {
 
 appDB.post('/upload-room-document', (req, res) => {
   try {
-    const { base64Document, fileName, roomId, tenantName, tenantId,AddedTimeText } = req.body;
+    const {
+      base64Document,
+      fileName,
+      roomId,
+      tenantName,
+      tenantId,
+      AddedTimeText,
+    } = req.body;
     if (!base64Document || !fileName || !roomId || !tenantName || !tenantId) {
       return res.status(400).json({ error: 'Missing required parameters' });
     }
     const base64Data = base64Document.replace(/^data:.*?;base64,/, '');
     const buffer = Buffer.from(base64Data, 'base64');
-    const addedTime = new Date().toISOString().replace(/:/g, '_').replace(/\./g, '-');
+    const addedTime = new Date()
+      .toISOString()
+      .replace(/:/g, '_')
+      .replace(/\./g, '-');
     const safeTenantName = tenantName.replace(/[^a-z0-9]/gi, ' ');
-    const dirPath = path.join(process.env.APPDATA || '', appname || '', 'Room Documents', roomId, `${safeTenantName}, ${AddedTimeText}, ${tenantId}`);
-        fs.mkdirSync(dirPath, { recursive: true });
+    const dirPath = path.join(
+      process.env.APPDATA || '',
+      appname || '',
+      'Room Documents',
+      roomId,
+      `${safeTenantName}, ${AddedTimeText}, ${tenantId}`
+    );
+    fs.mkdirSync(dirPath, { recursive: true });
     const filePath = path.join(dirPath, fileName);
     fs.writeFileSync(filePath, buffer);
-    res.json({ message: 'Document uploaded successfully', fileName, roomId, tenantName, tenantId });
+    res.json({
+      message: 'Document uploaded successfully',
+      fileName,
+      roomId,
+      tenantName,
+      tenantId,
+    });
   } catch (error) {
     console.error('Error uploading document:', error);
     res.status(500).json({ error: 'Failed to upload document' });
@@ -619,12 +689,18 @@ appDB.post('/upload-room-document', (req, res) => {
 
 appDB.get('/room-documents/:roomId', (req, res) => {
   const roomId = req.params.roomId;
-  const roomDocumentsPath = path.join(process.env.APPDATA, appname, 'Room Documents');
+  const roomDocumentsPath = path.join(
+    process.env.APPDATA,
+    appname,
+    'Room Documents'
+  );
   fs.readdir(roomDocumentsPath, (err, folders) => {
     if (err) {
-      return res.status(500).json({ error: 'Failed to read room documents directory' });
+      return res
+        .status(500)
+        .json({ error: 'Failed to read room documents directory' });
     }
-    const roomFolder = folders.find(folder => folder.includes(roomId));
+    const roomFolder = folders.find((folder) => folder.includes(roomId));
     if (!roomFolder) {
       return res.json({ documents: [], roomFolder: null });
     }
@@ -634,12 +710,14 @@ appDB.get('/room-documents/:roomId', (req, res) => {
         return res.status(500).json({ error: 'Failed to read room folder' });
       }
       const documents = [];
-      tenantFolders.forEach(tenantFolder => {
+      tenantFolders.forEach((tenantFolder) => {
         const tenantFolderPath = path.join(roomFolderPath, tenantFolder);
         if (fs.existsSync(tenantFolderPath)) {
           const files = fs.readdirSync(tenantFolderPath);
-          files.forEach(file => {
-            documents.push(`local-resource://${path.join(tenantFolderPath, file)}`);
+          files.forEach((file) => {
+            documents.push(
+              `local-resource://${path.join(tenantFolderPath, file)}`
+            );
           });
         }
       });
@@ -648,64 +726,117 @@ appDB.get('/room-documents/:roomId', (req, res) => {
   });
 });
 
-
-
-appDB.delete('/room-image/:roomId/:fileName', (req: { params: { roomId: any; fileName: any; }; }, res: { status: (arg0: number) => { (): any; new(): any; json: { (arg0: { error: string; }): any; new(): any; }; }; json: (arg0: { message: string; }) => void; }) => {
-  const { roomId, fileName } = req.params;
-  const roomPicturesPath = path.join(process.env.APPDATA, appname, 'Room Pictures');
-
-  fs.readdir(roomPicturesPath, (err: any, folders: any[]) => {
-    if (err) {
-      return res.status(500).json({ error: 'Failed to read room pictures directory' });
+appDB.delete(
+  '/room-image/:roomId/:fileName',
+  (
+    req: { params: { roomId: any; fileName: any } },
+    res: {
+      status: (arg0: number) => {
+        (): any;
+        new (): any;
+        json: { (arg0: { error: string }): any; new (): any };
+      };
+      json: (arg0: { message: string }) => void;
     }
+  ) => {
+    const { roomId, fileName } = req.params;
+    const roomPicturesPath = path.join(
+      process.env.APPDATA,
+      appname,
+      'Room Pictures'
+    );
 
-    const roomFolder = folders.find((folder: string | any[]) => folder.includes(roomId));
-    if (!roomFolder) {
-      return res.status(404).json({ error: 'Room folder not found' });
-    }
-
-    const filePath = path.join(roomPicturesPath, roomFolder, fileName);
-    fs.unlink(filePath, (err: any) => {
+    fs.readdir(roomPicturesPath, (err: any, folders: any[]) => {
       if (err) {
-        return res.status(500).json({ error: 'Failed to delete image' });
+        return res
+          .status(500)
+          .json({ error: 'Failed to read room pictures directory' });
       }
-      res.json({ message: 'Image deleted successfully' });
+
+      const roomFolder = folders.find((folder: string | any[]) =>
+        folder.includes(roomId)
+      );
+      if (!roomFolder) {
+        return res.status(404).json({ error: 'Room folder not found' });
+      }
+
+      const filePath = path.join(roomPicturesPath, roomFolder, fileName);
+      fs.unlink(filePath, (err: any) => {
+        if (err) {
+          return res.status(500).json({ error: 'Failed to delete image' });
+        }
+        res.json({ message: 'Image deleted successfully' });
+      });
     });
-  });
-});
-appDB.get('/room-images/:roomId', (req: { params: { roomId: any; }; }, res: { status: (arg0: number) => { (): any; new(): any; json: { (arg0: { error: string; }): any; new(): any; }; }; json: (arg0: { images: any; roomFolder: any; }) => void; }) => {
-  const roomId = req.params.roomId;
-  const roomPicturesPath = path.join(process.env.APPDATA, appname, 'Room Pictures');
-
-  fs.readdir(roomPicturesPath, (err: any, folders: any[]) => {
-    if (err) {
-      return res.status(500).json({ error: 'Failed to read room pictures directory' });
+  }
+);
+appDB.get(
+  '/room-images/:roomId',
+  (
+    req: { params: { roomId: any } },
+    res: {
+      status: (arg0: number) => {
+        (): any;
+        new (): any;
+        json: { (arg0: { error: string }): any; new (): any };
+      };
+      json: (arg0: { images: any; roomFolder: any }) => void;
     }
+  ) => {
+    const roomId = req.params.roomId;
+    const roomPicturesPath = path.join(
+      process.env.APPDATA,
+      appname,
+      'Room Pictures'
+    );
 
-    const roomFolder = folders.find((folder: string | any[]) => folder.includes(roomId));
-    if (!roomFolder) {
-      return res.status(404).json({ error: 'Room folder not found' });
-    }
-
-    const roomFolderPath = path.join(roomPicturesPath, roomFolder);
-    fs.readdir(roomFolderPath, (err: any, files: any[]) => {
+    fs.readdir(roomPicturesPath, (err: any, folders: any[]) => {
       if (err) {
-        return res.status(500).json({ error: 'Failed to read room folder' });
+        return res
+          .status(500)
+          .json({ error: 'Failed to read room pictures directory' });
       }
-      const imageFiles = files
-        ? files
-            .filter((file: string) => /\.(jpg|jpeg|png|gif)$/i.test(file))
-            .map((file: string) => `local-resource://${path.join(roomFolderPath, file)}`)
-        : [];
-  
-      res.json({ images: imageFiles, roomFolder: roomFolder });
+
+      const roomFolder = folders.find((folder: string | any[]) =>
+        folder.includes(roomId)
+      );
+      if (!roomFolder) {
+        return res.status(404).json({ error: 'Room folder not found' });
+      }
+
+      const roomFolderPath = path.join(roomPicturesPath, roomFolder);
+      fs.readdir(roomFolderPath, (err: any, files: any[]) => {
+        if (err) {
+          return res.status(500).json({ error: 'Failed to read room folder' });
+        }
+        const imageFiles = files
+          ? files
+              .filter((file: string) => /\.(jpg|jpeg|png|gif)$/i.test(file))
+              .map(
+                (file: string) =>
+                  `local-resource://${path.join(roomFolderPath, file)}`
+              )
+          : [];
+
+        res.json({ images: imageFiles, roomFolder: roomFolder });
+      });
     });
-  });
-});
+  }
+);
 appDB.put('/rename-folder', (req, res) => {
   const { oldName, newName } = req.body;
-  const oldPath = path.join(process.env.APPDATA, 'BMS', 'Room Pictures', oldName);
-  const newPath = path.join(process.env.APPDATA, 'BMS', 'Room Pictures', newName);
+  const oldPath = path.join(
+    process.env.APPDATA,
+    'BMS',
+    'Room Pictures',
+    oldName
+  );
+  const newPath = path.join(
+    process.env.APPDATA,
+    'BMS',
+    'Room Pictures',
+    newName
+  );
 
   fs.rename(oldPath, newPath, (err) => {
     if (err) {
@@ -716,20 +847,27 @@ appDB.put('/rename-folder', (req, res) => {
 });
 appDB.delete('/delete-folder-images/:folderName', (req, res) => {
   const folderName = req.params.folderName;
-  const folderPath = path.join(process.env.APPDATA, 'BMS', 'Room Pictures', folderName);
+  const folderPath = path.join(
+    process.env.APPDATA,
+    'BMS',
+    'Room Pictures',
+    folderName
+  );
 
   fs.readdir(folderPath, (err, files) => {
     if (err) {
       return res.status(500).json({ error: 'Failed to read folder' });
     }
 
-    const deletePromises = files.map(file => 
+    const deletePromises = files.map((file) =>
       fs.promises.unlink(path.join(folderPath, file))
     );
 
     Promise.all(deletePromises)
       .then(() => res.json({ message: 'All images deleted successfully' }))
-      .catch(error => res.status(500).json({ error: 'Failed to delete images' }));
+      .catch((error) =>
+        res.status(500).json({ error: 'Failed to delete images' })
+      );
   });
 });
 
@@ -744,7 +882,12 @@ appDB.post('/upload-room-image', (req: any, res: any) => {
     const buffer = Buffer.from(base64Data, 'base64');
 
     // Create the directory path
-    const dirPath = path.join(process.env.APPDATA, appname, 'Room Pictures', FolderText);
+    const dirPath = path.join(
+      process.env.APPDATA,
+      appname,
+      'Room Pictures',
+      FolderText
+    );
 
     // Create the directory if it doesn't exist
     fs.mkdirSync(dirPath, { recursive: true });
@@ -755,7 +898,12 @@ appDB.post('/upload-room-image', (req: any, res: any) => {
     // Write the file
     fs.writeFileSync(filePath, buffer);
 
-    res.json({ message: 'Image uploaded successfully', fileName: fileName, FolderText: FolderText, FileId: FileId });
+    res.json({
+      message: 'Image uploaded successfully',
+      fileName: fileName,
+      FolderText: FolderText,
+      FileId: FileId,
+    });
   } catch (error) {
     console.error('Error uploading image:', error);
     res.status(500).json({ error: 'Failed to upload image' });
@@ -956,7 +1104,6 @@ appDB.listen(port, () => {
 });
 const { protocol } = require('electron');
 
-
 app.whenReady().then(() => {
   protocol.registerFileProtocol('local-resource', (request, callback) => {
     const url = request.url.replace('local-resource://', '');
@@ -964,7 +1111,6 @@ app.whenReady().then(() => {
     callback({ path: path.normalize(`${decodedUrl}`) });
   });
 });
-
 
 ipcMain.on('show-item-in-folder', (event, path) => {
   const filePath = path.replace('local-resource://', '');
@@ -979,3 +1125,130 @@ ipcMain.handle('read-file', async (event, filePath) => {
   const cleanPath = filePath.replace('local-resource://', '');
   return fs.readFileSync(cleanPath);
 });
+
+import AdmZip from 'adm-zip';
+import { dialog } from 'electron';
+
+export async function createBackup(Another?:boolean) {
+  const backupPath = path.join(app.getPath('documents'), 'BMS_Backups');
+  if (!fs.existsSync(backupPath)) {
+    fs.mkdirSync(backupPath, { recursive: true });
+  }
+
+  const zip = new AdmZip();
+  const timestamp = new Date().toISOString().replace(/:/g, '-');
+  let backupFileName = `BMS_Backup_${timestamp}.zip`;
+  if(Another) {
+    backupFileName = `BMS_Backup_ToLoadAnother_${timestamp}.zip`;
+  }
+  const appDataPath = process.env.APPDATA || '';
+  const bmsPath = path.join(appDataPath, appname);
+
+  const roomPicturesPath = path.join(bmsPath, 'Room Pictures');
+  const roomDocumentsPath = path.join(bmsPath, 'Room Documents');
+  const databasePath = path.join(bmsPath, 'database.db');
+
+  if (fs.existsSync(roomPicturesPath)) {
+    zip.addLocalFolder(roomPicturesPath, 'Room Pictures');
+  }
+  if (fs.existsSync(roomDocumentsPath)) {
+    zip.addLocalFolder(roomDocumentsPath, 'Room Documents');
+  }
+  if (fs.existsSync(databasePath)) {
+    zip.addLocalFile(databasePath, '');
+  }
+
+  zip.writeZip(path.join(backupPath, backupFileName));
+
+  fs.writeFileSync(path.join(backupPath, 'last_backup.txt'), Date.now().toString());
+
+  dialog.showMessageBox({
+    type: 'info',
+    title: Another ? 'Backup Created To Load Another' : 'Backup Created',
+    message: `Backup created successfully at ${path.join(backupPath, backupFileName)}`
+  });
+}
+
+
+function checkAndCreateBackup() {
+  const backupPath = path.join(app.getPath('documents'), 'BMS_Backups');
+  const lastBackupFile = path.join(backupPath, 'last_backup.txt');
+
+  if (fs.existsSync(lastBackupFile)) {
+    const lastBackupTime = parseInt(fs.readFileSync(lastBackupFile, 'utf8'));
+    const sevenDaysInMs = 7 * 24 * 60 * 60 * 1000;
+
+    if (Date.now() - lastBackupTime > sevenDaysInMs) {
+      createBackup();
+    }
+  } else {
+    createBackup();
+  }
+}
+export async function loadBackup() {
+  console.log('Starting backup load process');
+
+  const result = await dialog.showOpenDialog({
+    properties: ['openFile'],
+    filters: [{ name: 'Zip Files', extensions: ['zip'] }],
+    title: 'Select BMS Backup File'
+  });
+
+  console.log('File dialog result:', result);
+
+  if (result.canceled || result.filePaths.length === 0) {
+    console.log('Backup selection canceled or no file selected');
+    return;
+  }
+
+  const backupPath = result.filePaths[0];
+  console.log('Selected backup file:', backupPath);
+
+  const zip = new AdmZip(backupPath);
+  const zipEntries = zip.getEntries();
+  console.log('Zip entries:', zipEntries.map(entry => entry.entryName));
+
+  // ... [rest of the validation code] ...
+
+  const bmsPath = path.join(process.env.APPDATA || '', appname);
+  console.log('BMS path:', bmsPath);
+
+  console.log('Clearing existing data...');
+  try {
+    fs.rmdirSync(path.join(bmsPath, 'Room Pictures'), { recursive: true, force: true });
+    fs.rmdirSync(path.join(bmsPath, 'Room Documents'), { recursive: true, force: true });
+    fs.unlinkSync(path.join(bmsPath, 'database.db'));
+    console.log('Existing data cleared successfully');
+  } catch (error) {
+    console.error('Error clearing existing data:', error);
+  }
+
+  console.log('Extracting new data...');
+  zip.extractAllTo(bmsPath, true);
+  console.log('Extraction complete');
+
+  console.log('Verifying extracted files...');
+  fs.readdirSync(bmsPath).forEach(file => {
+    console.log('Extracted file/folder:', file);
+  });
+
+  if (fs.existsSync(path.join(bmsPath, 'database.db'))) {
+    console.log('Database file extracted successfully');
+  } else {
+    console.log('Failed to extract database file');
+  }
+
+  console.log('Closing database and restarting application...');
+  db.close(() => {
+    dialog.showMessageBox({
+      type: 'info',
+      title: 'Backup Loaded',
+      message: 'Backup has been successfully loaded. The application will now restart.'
+    });
+
+    app.relaunch();
+    app.exit();
+  });
+}
+
+

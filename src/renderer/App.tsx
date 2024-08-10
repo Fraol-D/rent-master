@@ -26,6 +26,11 @@ function Hello() {
   >([]);
 
   class RoomApi {
+    getPaymentTimelineInfo = async (roomId: string) => {
+      const AllRoomPayInfo = await roomPaymentInfoApi.getRoomPaymentsApi(roomId) || [];
+      return AllRoomPayInfo;
+    };
+    
     getRoomFromApi = async () => {
       const roomsRaw = await getValuesWithSql('rooms', 'WHERE 1');
       if (roomsRaw) {
@@ -35,12 +40,8 @@ function Hello() {
               return roomSpecificationAPI.getRoomSpecificationApi(room.id);
             };
 
-            const getRoomPayInfo = async () => {
-              return roomPaymentInfoApi.getRoomPaymentsApi(room.id);
-            };
-
             const roomSpecifications = (await getRoomSpecifications()) || [];
-            const AllRoomPayInfo = (await getRoomPayInfo()) || [];
+            const AllRoomPayInfo = await this.getPaymentTimelineInfo(room.id);
 
             return {
               id: room.id,
@@ -65,6 +66,15 @@ function Hello() {
         setRoomList(rooms);
       }
     };
+    getSpecificValueFromRoomAPI = async (
+      roomId: string,
+      propertyName: string
+
+    ) => {
+      const room = await getValuesWithSql('rooms', `WHERE id = '${roomId}'`);
+      return room[0][propertyName];
+    }
+    
     editRoomApi = async (
       roomId: string,
       propertyName: string,
@@ -205,6 +215,7 @@ function Hello() {
                 startTime: tenant.startTime,
                 endTime: tenant.endTime || 0,
                 agreedPrice: tenant.agreedPrice,
+                TIN: tenant.TIN || '',
               };
             })
           );
@@ -224,7 +235,8 @@ function Hello() {
       RentingOrOut: string,
       startTime: string,
       endTime: string,
-      agreedPrice: string
+      agreedPrice: string,
+      TIN:string,
     ) => {
       try {
         await addValue('tenants', {
@@ -238,6 +250,7 @@ function Hello() {
           startTime: startTime,
           endTime: endTime,
           agreedPrice: agreedPrice,
+          TIN: TIN,
         });
         // Update the TenantList and set the state to indicate that the update is complete
         await this.getTenantsApi();
@@ -326,7 +339,9 @@ function Hello() {
     editRoomPaymentApi = async (
       roomPaymentId: string,
       propertyName: string,
-      newValue: any
+      newValue: any,
+      roomId:any,
+      lastList:any,
     ) => {
       try {
         await updateValue(
@@ -335,7 +350,22 @@ function Hello() {
           propertyName,
           newValue
         );
-        roomAPI.getRoomFromApi();
+        setRoomList(prevRoomList => {
+          return prevRoomList.map(room => {
+            if (room.id === roomId) {
+              const updatedPayInfo = lastList.find((item) => item.id === roomPaymentId);
+              console.log({ ...room, 'AllRoomPayInfo': { RoomPayInfo: lastList.map(item => item.id === roomPaymentId ? { ...item, Paid: !item.Paid } : item) } });
+              if (updatedPayInfo) {
+                return { ...room, 'AllRoomPayInfo': { RoomPayInfo: lastList.map(item => item.id === roomPaymentId ? { ...item, Paid: !item.Paid } : item) } };
+              }
+              return room;
+            }
+            return room;
+          });
+        });
+      
+        //roomAPI.getPaymentTimelineInfoAndSet(roomId);
+        //roomAPI.getRoomFromApi();
       } catch (error: any) {
         console.log(error.message);
       }

@@ -22,6 +22,7 @@ import {
   updateValue,
 } from 'Backend/localServerApis';
 import ImageInteractor2 from './Helpers/ImageInteractor2';
+import { set } from 'date-fns';
 type FilterOption = {
   key: string;
   value: any;
@@ -85,6 +86,7 @@ declare global {
     startTime: string;
     endTime?: string;
     agreedPrice: string;
+    TIN:string;
   };
   type BrokerType = {
     id: string;
@@ -182,7 +184,18 @@ const MainPage = ({
     newValue: any
   ) => {
     await updateValue('rooms', roomId, propertyName, newValue);
-    await roomAPI.getRoomFromApi();
+    //Load the updated room data from the API With THE specific ROOM ID and only get the value insted of the  whole object
+      setRoomList(prevRoomList => {
+        return prevRoomList.map(room => {
+          if (room.id === roomId) {
+            return { ...room, [propertyName]: newValue };
+          }
+          return room;
+        });
+      });
+    
+    
+    //await roomAPI.getRoomFromApi();
     /*setRoomList((prevRoomList: RoomType[]) => {
       const updatedRoomList = prevRoomList.map((room: RoomType) => {
         if (room.id === roomId) {
@@ -213,6 +226,7 @@ const MainPage = ({
       });
       return updatedRoomList;
     });
+
   };
   const updateRoomPropertyWithOutRefresh = async (
     roomId: string,
@@ -220,7 +234,17 @@ const MainPage = ({
     newValue: any
   ) => {
     await updateValue('rooms', roomId, propertyName, newValue);
-    await roomAPI.getRoomFromApi();
+    setRoomList(prevRoomList => {
+      return prevRoomList.map(room => {
+        if (room.id === roomId) {
+          return { ...room, [propertyName]: newValue };
+        }
+        return room;
+      });
+    });
+  
+    
+    //await roomAPI.getRoomFromApi();
     /*setRoomList((prevRoomList: RoomType[]) => {
       const updatedRoomList = prevRoomList.map((room: RoomType) => {
         if (room.id === roomId) {
@@ -1082,7 +1106,7 @@ const MainPage = ({
                       )}{' '}
                     </div>
                     <div className="AddaNewRoomRowObject">
-                      Price (per month):
+                      Price (month, inc VAT):
                       <input
                         className="AddANewRoomInputsSmall"
                         type="number"

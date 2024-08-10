@@ -92,23 +92,32 @@ export function RoomListComponent({
               turnOffAddTenantStateForAll={() => {
                 for (let i = 0; i < RoomList.length; i++) {
                   const element = RoomList[i];
-                  updateRoomProperty(element.id, 'AddTenantState', 0);
+                  if (element.AddTenantState) {
+                    updateRoomProperty(element.id, 'AddTenantState', 0);
+                  }
                 }
 
                 for (let i = 0; i < RoomList.length; i++) {
                   const element = RoomList[i];
-                  updateRoomProperty(element.id, 'ViewAgreement', 0);
+                  if (element.ViewAgreement) {
+                    updateRoomProperty(element.id, 'ViewAgreement', 0);
+                  }
                 }
               }}
+             
               turnOffViewStateForAll={() => {
                 for (let i = 0; i < RoomList.length; i++) {
                   const element = RoomList[i];
-                  updateRoomProperty(element.id, 'ViewAgreement', 0);
+                  if (element.AddTenantState) {
+                    updateRoomProperty(element.id, 'AddTenantState', 0);
+                  }
                 }
 
                 for (let i = 0; i < RoomList.length; i++) {
                   const element = RoomList[i];
-                  updateRoomProperty(element.id, 'AddTenantState', 0);
+                  if (element.ViewAgreement) {
+                    updateRoomProperty(element.id, 'ViewAgreement', 0);
+                  }
                 }
               }}
               key={room.id}

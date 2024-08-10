@@ -125,10 +125,12 @@ export function PeopleComponentPage({
                       '#',
                       'Name',
                       'Tel',
+                      'TIN',
                       'Agreement',
                       'Occupancy',
                       'Times',
                       'Price',
+
                     ].map((col, index) => (
                       <th
                         key={index}
@@ -183,6 +185,10 @@ export function PeopleComponentPage({
                         <em>
                           {highlightText(tenant.phoneNumber2, mainSearch)}
                         </em>
+                      </td>
+
+                      <td className="InfoTableBodyTD">
+                        {highlightText(tenant.TIN|| "N/A", mainSearch) }
                       </td>
                       <td className="InfoTableBodyTD">
                         {highlightText(tenant.SelectedAgreement, mainSearch)}

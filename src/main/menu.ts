@@ -5,6 +5,7 @@ import {
   BrowserWindow,
   MenuItemConstructorOptions,
 } from 'electron';
+import { createBackup,loadBackup} from './main';
 
 interface DarwinMenuItemConstructorOptions extends MenuItemConstructorOptions {
   selector?: string;
@@ -197,6 +198,18 @@ export default class MenuBuilder {
       {
         label: '&File',
         submenu: [
+          {
+      label: 'Create Backup',
+      click: () => {
+        createBackup();
+      }
+    },
+    {
+      label: 'Load Backup',
+      click: () => {
+        loadBackup();
+      }
+    },
           {
             label: '&Open',
             accelerator: 'Ctrl+O',

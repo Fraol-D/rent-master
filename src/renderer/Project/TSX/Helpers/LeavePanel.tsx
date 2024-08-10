@@ -84,7 +84,7 @@ const LeavePanel = ({
         <h3>Payments</h3>
         <p>Total payments till now: {paymentNumbers}</p>
         <p>Total Income till now: ${totalIncome}</p>
-        <p>Past Payments: {incompletePastPayments}</p>
+        <p>Unpaid payments : {incompletePastPayments}</p>
         <label>
           Extra Payments (damages?):
           <input

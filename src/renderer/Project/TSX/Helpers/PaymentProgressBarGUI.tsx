@@ -203,7 +203,7 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
             }
             return item;
           });
-          roomPaymentInfoApi.editRoomPaymentApi(d.id, 'Paid', true);
+          roomPaymentInfoApi.editRoomPaymentApi(d.id, 'Paid', true, roomType.id, roomType.AllRoomPayInfo.RoomPayInfo);
         });
 
       const payButtons2 = svg
@@ -242,9 +242,9 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
           });
 
           if (d.Paid) {
-            roomPaymentInfoApi.editRoomPaymentApi(d.id, 'Paid', false);
+            roomPaymentInfoApi.editRoomPaymentApi(d.id, 'Paid', false, roomType.id, roomType.AllRoomPayInfo.RoomPayInfo);
           } else {
-            roomPaymentInfoApi.editRoomPaymentApi(d.id, 'Paid', true);
+            roomPaymentInfoApi.editRoomPaymentApi(d.id, 'Paid', true, roomType.id, roomType.AllRoomPayInfo.RoomPayInfo);
           }
         });
 
@@ -256,7 +256,7 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
           }
           return item;
         });
-        roomPaymentInfoApi.editRoomPaymentApi(d.id, 'Paid', true);
+        roomPaymentInfoApi.editRoomPaymentApi(d.id, 'Paid', true, roomType.id, roomType.AllRoomPayInfo.RoomPayInfo);
       });
 
       // Add extend button at the end of the progress bar
