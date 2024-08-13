@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import '../../CSS/ImageInteractor.css';
-import RightArrow from '../../../assets/assets/Dark mode/Right arrow.png';
+import '../../../CSS/ImageInteractor.css';
+import RightArrow from '../../../../assets/assets/Dark mode/Right arrow.png';
 import {
   AddRoomImageToFiles,
   deleteRoomImage,

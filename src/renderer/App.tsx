@@ -216,6 +216,7 @@ function Hello() {
                 endTime: tenant.endTime || 0,
                 agreedPrice: tenant.agreedPrice,
                 TIN: tenant.TIN || '',
+                RentReason: tenant.RentReason || '',
               };
             })
           );
@@ -237,6 +238,7 @@ function Hello() {
       endTime: string,
       agreedPrice: string,
       TIN:string,
+      RentReason:string,
     ) => {
       try {
         await addValue('tenants', {
@@ -251,6 +253,7 @@ function Hello() {
           endTime: endTime,
           agreedPrice: agreedPrice,
           TIN: TIN,
+          RentReason:RentReason,
         });
         // Update the TenantList and set the state to indicate that the update is complete
         await this.getTenantsApi();

@@ -33,14 +33,13 @@
   z-index: 1;
 }
 .TenantSearchBarContainer {
-  width: 100%;
+  
 }
 .SearchBarContainer {
-  margin-left: 10px;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  height: 80px;
+  height: 136px;
   color: white;
   width: 100%;
   flex-direction: column;

@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import '../../CSS/Room.css';
 const { v4: uuidv4 } = require('uuid');
-import ImageInteractor2 from './ImageInteractor2';
-import PaymentProgressBarGUI from './PaymentProgressBarGUI';
+import ImageInteractor2 from './GUIs/ImageInteractor2';
+import PaymentProgressBarGUI from './GUIs/PaymentProgressBarGUI';
 import EditIcon from '../../../assets/assets/Dark mode/Editicon.png';
 import DocumentInteractor from './GUIs/DocumentInteractor';
 import {
@@ -66,6 +66,7 @@ const Room = ({
   const [tel2, setTel2] = useState('');
   const [email, setEmail] = useState('');
   const [TIN, setTIN] = useState('');
+  const [RentReason, setRentReason] = useState('');
   const [selectedAgreement, setSelectedAgreement] = useState('Open-Ended');
   const [startTime, setStartTime] = useState('');
   const [endTime, setEndTime] = useState('');
@@ -277,14 +278,15 @@ const Room = ({
       DocumentFiles = [];
     }
     SetRefreshState(true);
-    
   };
   const handleAddTenantButton = async () => {
+    if (AddTenantUseBrokerState && AddTenantSelectedBrokerId == '') return;
+    if (isNaN(new Date(startTime).getTime())) return;
     if (TenantPageSelected === 'Select') {
       handleTenantSelectWhenNew();
       return;
     }
-    if (AddTenantUseBrokerState && AddTenantSelectedBrokerId == '') return;
+
     if (name.length >= 3 && tel1.length >= 6 && startTime.length >= 1) {
       setIsUpdatingTenantList(true);
       const tenantId = uuidv4();
@@ -300,6 +302,7 @@ const Room = ({
         agreedPrice: agreedPrice ? roomType.price : agreedPrice,
         RentingOrOut: true,
         TIN: TIN,
+        RentReason: RentReason,
       };
 
       updateRoomPropertyWithOutRefresh(roomType.id, 'status', 'Taken');
@@ -328,7 +331,8 @@ const Room = ({
         tenant.startTime,
         tenant.endTime,
         tenant.agreedPrice,
-        tenant.TIN
+        tenant.TIN,
+        tenant.RentReason
       );
       if (!roomType.AllRoomPayInfo) {
         roomType.AllRoomPayInfo = {
@@ -426,8 +430,6 @@ const Room = ({
         DocumentFiles = [];
       }
       SetRefreshState(true);
-
-
     }
   };
   const [refreshState, SetRefreshState] = useState(false);
@@ -836,7 +838,7 @@ const Room = ({
             ? '#2C2C30'
             : roomType.status === 'Empty'
             ? '#2e2f30'
-            : '#546C83',
+            : '#63809d',
           border: roomType.AddTenantState ? '1px solid #00e1f1' : '',
         }}
       >
@@ -1212,6 +1214,16 @@ const Room = ({
                       placeholder="Optional"
                       value={TIN}
                       onChange={(e) => setTIN(e.target.value)}
+                    />
+                  </div>
+                  <div className="AddTenantContainerinnerElement">
+                    Rent Reason:{' '}
+                    <input
+                      className="AddTenantContainerinnerInput"
+                      placeholder="Optional"
+                      style={{ width: '60%' }}
+                      value={RentReason}
+                      onChange={(e) => setRentReason(e.target.value)}
                     />
                   </div>
                 </>
@@ -2007,7 +2019,14 @@ const Room = ({
                     )}
                 </>
               )}
-              <div className="BottomAddTenantContainer">
+              <div
+                className="BottomAddTenantContainer"
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-evenly',
+                  alignItems: 'center',
+                }}
+              >
                 <button
                   className="AddTenantButton"
                   onClick={() => {
@@ -2085,6 +2104,7 @@ const Room = ({
                     }
                   </em>
                 </div>
+
                 <div className="AddTenantContainerinnerElement">
                   {' '}
                   Email:{' '}
@@ -2093,6 +2113,28 @@ const Room = ({
                       TenantList.find(
                         (tenant: any) => tenant.id === roomType.tenantId
                       )?.email
+                    }
+                  </em>
+                </div>
+                <div className="AddTenantContainerinnerElement">
+                  {' '}
+                  TIN:{' '}
+                  <em style={{ fontWeight: '600' }}>
+                    {
+                      TenantList.find(
+                        (tenant: any) => tenant.id === roomType.tenantId
+                      )?.TIN
+                    }
+                  </em>
+                </div>
+                <div className="AddTenantContainerinnerElement">
+                  {' '}
+                  Rent Reason:{' '}
+                  <em style={{ fontWeight: '600' }}>
+                    {
+                      TenantList.find(
+                        (tenant: any) => tenant.id === roomType.tenantId
+                      )?.RentReason
                     }
                   </em>
                 </div>

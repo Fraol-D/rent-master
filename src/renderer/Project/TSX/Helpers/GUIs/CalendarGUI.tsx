@@ -4,22 +4,30 @@ import * as d3 from 'd3';
 interface CalendarProps {
   rooms: RoomType[];
   initialMonths: number;
+  initialMonthsPast: number;
   tenantList: tenant[];
 }
 
 const CalendarGUI: React.FC<CalendarProps> = ({
   rooms,
   initialMonths,
+  initialMonthsPast,
   tenantList,
 }: CalendarProps) => {
-  const [numberOfMonths, setNumberOfMonths] = useState(initialMonths);
+  const [numberOfMonthsFuture, setNumberOfMonthsFuture] =
+    useState(initialMonths);
+  const [numberOfMonthsPast, setNumberOfMonthsPast] =
+    useState(initialMonthsPast);
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredRooms, setFilteredRooms] = useState(rooms);
   const ref = useRef<SVGSVGElement | null>(null);
 
   useEffect(() => {
-    const filtered = rooms.filter(room => 
-      tenantList.find(tenant => tenant.id === room.tenantId)?.name.toLowerCase().includes(searchTerm.toLowerCase())
+    const filtered = rooms.filter((room) =>
+      tenantList
+        .find((tenant) => tenant.id === room.tenantId)
+        ?.name.toLowerCase()
+        .includes(searchTerm.toLowerCase())
     );
     setFilteredRooms(filtered);
   }, [searchTerm, rooms, tenantList]);
@@ -30,7 +38,9 @@ const CalendarGUI: React.FC<CalendarProps> = ({
 
       const baseWidth = 1500;
       const additionalMonthWidth = 750;
-      const width = baseWidth + (numberOfMonths - 2) * additionalMonthWidth;
+      const width =
+        baseWidth +
+        (numberOfMonthsFuture + numberOfMonthsPast - 2) * additionalMonthWidth;
       const height = filteredRooms.length * 70;
       const cellSize = 20;
       const margin = { top: 70, right: 30, bottom: 30, left: 200 };
@@ -43,8 +53,8 @@ const CalendarGUI: React.FC<CalendarProps> = ({
         .attr('transform', `translate(${margin.left},${margin.top})`);
 
       const today = new Date();
-      const startDate = d3.timeDay.offset(today, -7);
-      const endDate = d3.timeMonth.offset(today, numberOfMonths);
+      const startDate = d3.timeMonth.offset(today, -numberOfMonthsPast);
+      const endDate = d3.timeMonth.offset(today, numberOfMonthsFuture);
 
       const xScale = d3
         .scaleTime()
@@ -73,7 +83,7 @@ const CalendarGUI: React.FC<CalendarProps> = ({
             (monthStart.getTime() + monthEnd.getTime()) / 2
           );
           if (monthCenter >= startDate && monthCenter <= endDate) {
-            return d3.timeFormat('%B')(d);
+            return d3.timeFormat(`%B ${monthCenter.getFullYear()}`)(d);
           }
           return '';
         })
@@ -182,6 +192,14 @@ const CalendarGUI: React.FC<CalendarProps> = ({
         .attr('fill', 'yellow')
         .attr('opacity', 1);
 
+      svg
+        .append('text')
+        .attr('x', xScale(today))
+        .attr('y', -45)
+        .attr('text-anchor', 'middle')
+        .attr('fill', 'yellow')
+        .text(today.toDateString());
+
       const monthStarts = d3.timeMonths(startDate, endDate);
       svg
         .selectAll('.month-indicator')
@@ -246,7 +264,7 @@ const CalendarGUI: React.FC<CalendarProps> = ({
                           ? '<span style="color: green; font-weight: bold;">Paid</span>'
                           : '<span style="color: red; font-weight: bold;">Unpaid</span>'
                       }</p>
-                      <p><em style="font-style: italic;">Agreed Price:</em> <span style="font-weight: bold; color: #e67e22;">$${room.AgreedPrice.toLocaleString()}</span></p>
+                      <p><em style="font-style: italic;">Agreed Price:</em> <span style="font-weight: bold; color: #e67e22;">${room.AgreedPrice.toLocaleString()}</span></p>
                       <p>Payment Cycle: <span style="background-color: #f1c40f; padding: 2px 5px; border-radius: 3px;">${
                         room.PaymentCycleType
                       }</span></p>
@@ -269,19 +287,42 @@ const CalendarGUI: React.FC<CalendarProps> = ({
         });
       });
     }
-  }, [filteredRooms, numberOfMonths, tenantList]);
+  }, [filteredRooms, numberOfMonthsFuture, numberOfMonthsPast, tenantList]);
 
-  const handleMonthsChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleMonthsFutureChange = (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const value = parseInt(event.target.value, 10);
-    setNumberOfMonths(isNaN(value) ? initialMonths : Math.max(1, value));
+    setNumberOfMonthsFuture(isNaN(value) ? initialMonths : Math.max(1, value));
+  };
+
+  const handleMonthsPastChange = (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const value = parseInt(event.target.value, 10);
+    setNumberOfMonthsPast(
+      isNaN(value) ? initialMonthsPast : Math.max(1, value)
+    );
   };
 
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(event.target.value);
   };
-
+    const scrollToCurrentDate = () => {
+      if (ref.current) {
+        const svg = d3.select(ref.current);
+        const currentDateRect = svg.select('rect[fill="yellow"]');
+        if (!currentDateRect.empty()) {
+          const x = parseFloat(currentDateRect.attr('x'));
+          const scrollContainer = ref.current.parentElement;
+          if (scrollContainer) {
+            scrollContainer.scrollLeft = x;
+          }
+        }
+      }
+    };
   return (
-    <div>
+    <div style={{height:"100%"}}>
       <div>
         <input
           type="text"
@@ -289,16 +330,27 @@ const CalendarGUI: React.FC<CalendarProps> = ({
           value={searchTerm}
           onChange={handleSearchChange}
         />
-        <label htmlFor="monthsInput">Months to show: </label>
+        <label htmlFor="monthsFutureInput">Months to show in future: </label>
         <input
-          id="monthsInput"
+          id="monthsFutureInput"
           type="number"
           min="1"
-          value={numberOfMonths}
-          onChange={handleMonthsChange}
+          value={numberOfMonthsFuture}
+          onChange={handleMonthsFutureChange}
         />
+        <label htmlFor="monthsPastInput">Months to show in past: </label>
+        <input
+          id="monthsPastInput"
+          type="number"
+          min="1"
+          value={numberOfMonthsPast}
+          onChange={handleMonthsPastChange}
+        />
+        <button onClick={scrollToCurrentDate}>Go to Current Date</button>
       </div>
-      <svg ref={ref}></svg>
+      <div style={{ overflowX: 'auto', height: 'calc(100% - 30px)' }}>
+        <svg ref={ref}></svg>
+      </div>
     </div>
   );
 };

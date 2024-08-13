@@ -125,9 +125,10 @@ export function PeopleComponentPage({
                       '#',
                       'Name',
                       'Tel',
-                      'TIN',
+                      'TIN','Occupancy',
+                      'Rent Reason',
                       'Agreement',
-                      'Occupancy',
+                      
                       'Times',
                       'Price',
 
@@ -191,9 +192,6 @@ export function PeopleComponentPage({
                         {highlightText(tenant.TIN|| "N/A", mainSearch) }
                       </td>
                       <td className="InfoTableBodyTD">
-                        {highlightText(tenant.SelectedAgreement, mainSearch)}
-                      </td>
-                      <td className="InfoTableBodyTD">
                         <p
                           style={{
                             color: tenant.RentingOrOut ? 'green' : 'red',
@@ -227,6 +225,13 @@ export function PeopleComponentPage({
                           )}
                         </p>
                       </td>
+                      <td className="InfoTableBodyTD">
+                        {highlightText(tenant.RentReason|| "N/A", mainSearch) }
+                      </td>
+                      <td className="InfoTableBodyTD">
+                        {highlightText(tenant.SelectedAgreement, mainSearch)}
+                      </td>
+                    
                       <td className="InfoTableBodyTD">
                         <div>
                           In{' '}

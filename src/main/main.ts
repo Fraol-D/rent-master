@@ -339,6 +339,7 @@ const tableStructures = [
       'endTime INTEGER',
       'agreedPrice REAL',
       'TIN TEXT',
+      'RentReason TEXT',
     ],
   },
   {

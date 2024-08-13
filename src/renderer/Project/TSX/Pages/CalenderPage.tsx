@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import Room from '../Helpers/Room';
-import CalendarGUI from '../Helpers/CalendarGUI';
+import CalendarGUI from '../Helpers/GUIs/CalendarGUI';
 export function CalendarPage({
   updateRoomProperty,
   sortedAndFilteredRooms,
@@ -29,7 +29,8 @@ export function CalendarPage({
           rooms={sortedAndFilteredRooms.filter(
             (r: RoomType) => r.status === 'Taken'
           )}
-          initialMonths={2}
+          initialMonths={1}
+          initialMonthsPast={1}
           tenantList={tenantList}
         ></CalendarGUI>
       </div>

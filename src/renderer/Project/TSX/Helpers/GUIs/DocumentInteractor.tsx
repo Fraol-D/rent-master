@@ -157,7 +157,14 @@ const DocumentInteractor: React.FC<DocumentInteractorProps> = ({
       return match ? match[1] + fullFileName.substring(match[1].length) : fullFileName;
     }
   return (
-    <div className="document-interactor" style={{ width: '100%', height: AddTenant ? "160px":'100%',maxHeight: AddTenant ? "230px":"" ,display: 'flex', flexDirection: 'column' }}>
+    <div className="document-interactor" style={AddTenant ? {width: '100%',
+      height: '160px',
+      maxHeight: '230px',
+      display: 'flex',
+      background: '#191919',
+      flexDirection: 'column',
+      borderRadius: '10px',
+      marginBottom: '20px'}:{ width: '100%', height: AddTenant ? "160px":'100%',maxHeight: AddTenant ? "230px":"" ,display: 'flex', flexDirection: 'column' }}>
       <div className="document-list" style={{ flex: 1, overflowY: 'auto',maxHeight: "183px" }}>
         {documents.length > 0 ? (
           documents.map((doc) => (
