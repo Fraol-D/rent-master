@@ -1,0 +1,46 @@
+.AgreementMainContianer {
+  background-color: #454959;
+  padding: 5px;
+  border-radius: 5px;
+  margin: 5px;    overflow-y: auto;
+}
+.AgreementNavigationButtons {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+}
+.AgreementPopUpContainer {
+  width: 450px;
+  height: 500px;
+  border-radius: 5px;
+  background-color: #2e2f30;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 3;
+  border: 1px solid grey;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  padding: 5px;
+  justify-content: space-between;
+}
+.AgreementPopUpContainerOpacity {
+  background-color: #000000a9;
+  width: 100%;
+  height: 100%;
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 2;
+}
+.PopOutContainerAgreement {
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  left: 0;
+  top: 0;
+  z-index: 2;
+}

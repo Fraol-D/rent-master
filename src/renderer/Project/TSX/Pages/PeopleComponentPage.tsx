@@ -1,4 +1,6 @@
+import { builtinModules } from 'module';
 import React, { useState } from 'react';
+import { toEthiopianDateString } from 'renderer/Project/JS/Calendar Converter';
 
 export function PeopleComponentPage({
   TenantList,
@@ -8,6 +10,7 @@ export function PeopleComponentPage({
   BrokerList,
   RefreshDataFromSqlite,
   BrokerRecommendationList,
+  agreementApi,
 }: any) {
   const [searchConfig, setSearchConfig] = useState({ key: '', query: '' });
   const [mainSearch, setMainSearch] = useState('');
@@ -91,6 +94,37 @@ export function PeopleComponentPage({
       </span>
     );
   };
+  const [Agreements, setAgreements] = useState<agreements[]>([]);
+
+  const HandleOpenClicked = (tenantId: string) => {
+    const roomType = RoomList.find((r: RoomType) => r.tenantId === tenantId);
+    getAgreements(roomType);
+  };
+  const getAgreements = async (roomType: any) => {
+    const agreements = await agreementApi.getAgreementsByRoomIdApi(roomType.id);
+    console.log('lol');
+
+    // Sort agreements by signTime, oldest first
+    const sortedAgreements = agreements.sort(
+      (a: agreements, b: agreements) =>
+        new Date(a.signTime).getTime() - new Date(b.signTime).getTime()
+    );
+
+    // Find the index of the selected agreement
+    const selectedIndex = sortedAgreements.findIndex(
+      (agreement: agreements) => agreement.id === roomType.selectedAgreementId
+    );
+
+    // If found, move it to the end
+    if (selectedIndex !== -1) {
+      const selectedAgreement = sortedAgreements.splice(selectedIndex, 1)[0];
+      sortedAgreements.push(selectedAgreement);
+    }
+    console.log(sortedAgreements);
+
+    setAgreements(sortedAgreements);
+  };
+  
   return (
     <>
       <div className="SecondNavBarContainer" style={{ width: '100%' }}>
@@ -125,13 +159,13 @@ export function PeopleComponentPage({
                       '#',
                       'Name',
                       'Tel',
-                      'TIN','Occupancy',
+                      'TIN',
+                      'Occupancy',
                       'Rent Reason',
                       'Agreement',
-                      
+
                       'Times',
                       'Price',
-
                     ].map((col, index) => (
                       <th
                         key={index}
@@ -189,7 +223,7 @@ export function PeopleComponentPage({
                       </td>
 
                       <td className="InfoTableBodyTD">
-                        {highlightText(tenant.TIN|| "N/A", mainSearch) }
+                        {highlightText(tenant.TIN || 'N/A', mainSearch)}
                       </td>
                       <td className="InfoTableBodyTD">
                         <p
@@ -226,12 +260,21 @@ export function PeopleComponentPage({
                         </p>
                       </td>
                       <td className="InfoTableBodyTD">
-                        {highlightText(tenant.RentReason|| "N/A", mainSearch) }
+                        {highlightText(tenant.RentReason || 'N/A', mainSearch)}
                       </td>
                       <td className="InfoTableBodyTD">
                         {highlightText(tenant.SelectedAgreement, mainSearch)}
+                        {tenant.SelectedAgreement === 'Fixed-Term' && (
+                          <button
+                            onClick={() => {
+                              HandleOpenClicked(tenant.id);
+                            }}
+                          >
+                            {' open'}
+                          </button>
+                        )}
                       </td>
-                    
+
                       <td className="InfoTableBodyTD">
                         <div>
                           In{' '}
@@ -276,6 +319,160 @@ export function PeopleComponentPage({
                   ))}
                 </tbody>
               </table>
+              {Agreements.length >= 1 && (
+                <div
+                  className="InfoTableContainer"
+                  style={{ marginTop: '40px' }}
+                >
+                  Tenant Name:{' '}
+                  {
+                    TenantList.find(
+                      (t: tenant) => t.id === Agreements[0].tenantId
+                    ).name
+                  }
+                  {' --- '}
+                  Occupancy: Floor:{' '}
+                  {
+                    RoomList.find(
+                      (r: RoomType) => r.id === Agreements[0].roomId
+                    ).floor
+                  }
+                  {' - '}
+                  Room:{' '}
+                  {
+                    RoomList.find(
+                      (r: RoomType) => r.id === Agreements[0].roomId
+                    ).roomIndex
+                  }
+                  
+                  <table className="InfoTable" style={{ width: '1100px' }}>
+                    <thead className="InfoTableThead">
+                      <tr className="InfoTableHeadTR">
+                        {[
+                          '#',
+                          'Start Time',
+                          'End Time',
+                          'Sign Time',
+                          'Agreed Price',
+                          'Payment Cycle',
+                          'Memo',
+                          'Rent Reserved',
+                          'Representative',
+                          'Status',
+                        ].map((col, index) => (
+                          <th key={index} className="InfoTableHeadTh">
+                            {col}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {Agreements.map(
+                        (agreement: agreements, index: number) => (
+                          <tr
+                            key={agreement.id}
+                            className="InfoTableBodyTr"
+                            style={{
+                              backgroundColor:
+                                index % 2 === 0
+                                  ? '#FFFFFF1C'
+                                  : 'rgba(224 224 224 / 0.06)',
+                            }}
+                          >
+                            <td className="InfoTableBodyTD">
+                              {highlightText(index, mainSearch)}
+                            </td>
+
+                            <td
+                              className="InfoTableBodyTD"
+                              title={toEthiopianDateString(
+                                new Date(
+                                  agreement.startTime
+                                )
+                              )}
+                            >
+                              {highlightText(
+                                new Date(
+                                  agreement.startTime
+                                ).toLocaleDateString('en-US', {
+                                  month: 'short',
+                                  day: 'numeric',
+                                  year: 'numeric',
+                                }),
+                                mainSearch
+                              )}
+                            </td>
+                            <td className="InfoTableBodyTD" title={toEthiopianDateString(
+                                new Date(
+                                  agreement.endTime
+                                )
+                              )}>
+                              {highlightText(
+                                new Date(agreement.endTime).toLocaleDateString(
+                                  'en-US',
+                                  {
+                                    month: 'short',
+                                    day: 'numeric',
+                                    year: 'numeric',
+                                  }
+                                ),
+                                mainSearch
+                              )}
+                            </td>
+                            <td className="InfoTableBodyTD" title={toEthiopianDateString(
+                                new Date(
+                                  agreement.signTime
+                                )
+                              )}>
+                              {highlightText(
+                                new Date(agreement.signTime).toLocaleDateString(
+                                  'en-US',
+                                  {
+                                    month: 'short',
+                                    day: 'numeric',
+                                    year: 'numeric',
+                                  }
+                                ),
+                                mainSearch
+                              )}
+                            </td>
+                            <td className="InfoTableBodyTD">
+                              {highlightText(
+                                agreement.agreedPrice.toLocaleString() + '$',
+                                mainSearch
+                              )}
+                            </td>
+                            <td className="InfoTableBodyTD">
+                              {highlightText(
+                                agreement.paymentCycleType,
+                                mainSearch
+                              )}
+                            </td>
+                            <td className="InfoTableBodyTD">
+                              {highlightText(agreement.Memo, mainSearch)}
+                            </td>
+                            <td className="InfoTableBodyTD">
+                              {highlightText(
+                                agreement.RentReserved.toLocaleString() + '$',
+                                mainSearch
+                              )}
+                            </td>
+                            <td className="InfoTableBodyTD">
+                              {highlightText(
+                                agreement.representative,
+                                mainSearch
+                              )}
+                            </td>
+                            <td className="InfoTableBodyTD">
+                              {RoomList.find((r:RoomType)=>r.id===agreement.roomId).selectedAgreementId === agreement.id ? "Current":"Expired"}
+                            </td>
+                          </tr>
+                        )
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           </>
         ) : PeopleSelectedPage === 'BrokersList' ? (
@@ -356,25 +553,76 @@ export function PeopleComponentPage({
                         </em>
                       )}
                     </td>
-                    <td className="InfoTableBodyTD" style={{height:"50px"}}>
-                      <div style={{ maxHeight: '65px', overflowY: 'auto', padding: '5px', border: '1px solid #ccc', borderRadius: '4px' }}>
+                    <td className="InfoTableBodyTD" style={{ height: '50px' }}>
+                      <div
+                        style={{
+                          maxHeight: '65px',
+                          overflowY: 'auto',
+                          padding: '5px',
+                          border: '1px solid #ccc',
+                          borderRadius: '4px',
+                        }}
+                      >
                         {BrokerRecommendationList.filter(
                           (broker: any) => broker.id === broker.id
-                        ).map((recommendation: BrokerRecommendationType, index: number) => (
-                          <div key={index} style={{ marginBottom: '5px', fontSize: '12px', lineHeight: '1.4' }}>
-                            <span style={{ fontWeight: 'bold' }}>
-                              {TenantList.find((t: tenant) => t.id === recommendation.recommendedTenantId)?.name}
-                            </span>
-                            <span style={{ color: '#A1A1A1' }}> ({new Date(recommendation.AddedTime).toDateString()})</span>
-                            <br />
-                            <span style={{ color: '#BDDDFF' }}>Commission: ${recommendation.AgreedCommission.toLocaleString()}</span>
-                            <span style={{ marginLeft: '10px', color: '#90FFAA' }}>
-                              Floor: {RoomList.find((r: RoomType) => r.id === recommendation.roomId)?.roomIndex},
-                              Room: {RoomList.find((r: RoomType) => r.id === recommendation.roomId)?.roomIndex}
-                            </span>
-                          </div>
-                        ))}
-                      </div>                    </td>
+                        ).map(
+                          (
+                            recommendation: BrokerRecommendationType,
+                            index: number
+                          ) => (
+                            <div
+                              key={index}
+                              style={{
+                                marginBottom: '5px',
+                                fontSize: '12px',
+                                lineHeight: '1.4',
+                              }}
+                            >
+                              <span style={{ fontWeight: 'bold' }}>
+                                {
+                                  TenantList.find(
+                                    (t: tenant) =>
+                                      t.id ===
+                                      recommendation.recommendedTenantId
+                                  )?.name
+                                }
+                              </span>
+                              <span style={{ color: '#A1A1A1' }}>
+                                {' '}
+                                (
+                                {new Date(
+                                  recommendation.AddedTime
+                                ).toDateString()}
+                                )
+                              </span>
+                              <br />
+                              <span style={{ color: '#BDDDFF' }}>
+                                Commission: $
+                                {recommendation.AgreedCommission.toLocaleString()}
+                              </span>
+                              <span
+                                style={{ marginLeft: '10px', color: '#90FFAA' }}
+                              >
+                                Floor:{' '}
+                                {
+                                  RoomList.find(
+                                    (r: RoomType) =>
+                                      r.id === recommendation.roomId
+                                  )?.roomIndex
+                                }
+                                , Room:{' '}
+                                {
+                                  RoomList.find(
+                                    (r: RoomType) =>
+                                      r.id === recommendation.roomId
+                                  )?.roomIndex
+                                }
+                              </span>
+                            </div>
+                          )
+                        )}
+                      </div>{' '}
+                    </td>
                     <td className="InfoTableBodyTD">
                       {new Date(broker.AddedTime).toLocaleDateString('en-US', {
                         month: 'short',
@@ -457,26 +705,20 @@ export function PeopleComponentPage({
                     </td>
                     <td className="InfoTableBodyTD">
                       Flr.{' '}
-                      {
-                        RoomList.find((r: RoomType) => r.id == review.roomId)
-                          ?.floor || 'D'
-                      }{' '}
+                      {RoomList.find((r: RoomType) => r.id == review.roomId)
+                        ?.floor || 'D'}{' '}
                       <br />
                       Rm.{' '}
-                      {
-                        RoomList.find((r: RoomType) => r.id == review.roomId)
-                          ?.roomIndex|| 'D'
-                      }
+                      {RoomList.find((r: RoomType) => r.id == review.roomId)
+                        ?.roomIndex || 'D'}
                     </td>
                     <td className="InfoTableBodyTD">
-                      {
-                        BrokerList.find(
-                          (b: BrokerType) => b.id === review.brokerId
-                        )?.name|| "none"
-                      }{' '}
+                      {BrokerList.find(
+                        (b: BrokerType) => b.id === review.brokerId
+                      )?.name || 'none'}{' '}
                       <div></div>c:{' '}
                       <em style={{ color: 'grey', fontSize: '12px' }}>
-                        {review.AgreedCommission.toLocaleString()|| ""}$
+                        {review.AgreedCommission.toLocaleString() || ''}$
                       </em>
                     </td>
                     <td className="InfoTableBodyTD">

@@ -60,6 +60,7 @@ function Hello() {
               ViewAgreement: room.ViewAgreement || false,
               ShowPayTimeLine: room.ShowPayTimeLine || false,
               AllRoomPayInfo: { RoomPayInfo: AllRoomPayInfo },
+              selectedAgreementId: room.selectedAgreementId || '',
             };
           })
         );
@@ -116,6 +117,7 @@ function Hello() {
           AddTenantState: false,
           ViewAgreement: false,
           ShowPayTimeLine: false,
+          selectedAgreementId: '',
         });
 
         //Add roomspecfications
@@ -356,10 +358,10 @@ function Hello() {
         setRoomList(prevRoomList => {
           return prevRoomList.map(room => {
             if (room.id === roomId) {
-              const updatedPayInfo = lastList.find((item) => item.id === roomPaymentId);
-              console.log({ ...room, 'AllRoomPayInfo': { RoomPayInfo: lastList.map(item => item.id === roomPaymentId ? { ...item, Paid: !item.Paid } : item) } });
+              const updatedPayInfo = lastList.find((item:any) => item.id === roomPaymentId);
+              console.log({ ...room, 'AllRoomPayInfo': { RoomPayInfo: lastList.map((item: { id: string; Paid: any; }) => item.id === roomPaymentId ? { ...item, Paid: !item.Paid } : item) } });
               if (updatedPayInfo) {
-                return { ...room, 'AllRoomPayInfo': { RoomPayInfo: lastList.map(item => item.id === roomPaymentId ? { ...item, Paid: !item.Paid } : item) } };
+                return { ...room, 'AllRoomPayInfo': { RoomPayInfo: lastList.map((item: { id: string; Paid: any; }) => item.id === roomPaymentId ? { ...item, Paid: !item.Paid } : item) } };
               }
               return room;
             }
@@ -519,6 +521,124 @@ function Hello() {
       }
     };
   }
+  class AgreementApi {
+    getAgreementsApi = async () => {
+      try {
+        const agreementsRaw = await getValuesWithSql('agreements', 'WHERE 1');
+        if (agreementsRaw) {
+          return agreementsRaw.map((agreement:agreements) => ({
+            id: agreement.id,
+            roomId: agreement.roomId,
+            tenantId: agreement.tenantId,
+            startTime: agreement.startTime,
+            endTime: agreement.endTime,
+            signTime: agreement.signTime,
+            agreedPrice: agreement.agreedPrice,
+            paymentCycleType: agreement.paymentCycleType,
+            Memo: agreement.Memo,
+            RentReserved: agreement.RentReserved,
+            representative:agreement.representative,
+          }));
+        }
+      } catch (error: any) {
+        console.log(error.message);
+      }
+    };
+
+    getAgreementByIdApi = async (agreementId: string) => {
+      try {
+        const agreement = await getValuesWithSql('agreements', `WHERE id = '${agreementId}'`);
+        if (agreement && agreement.length > 0) {
+          return {
+            id: agreement[0].id,
+            roomId: agreement[0].roomId,
+            tenantId: agreement[0].tenantId,
+            startTime: agreement[0].startTime,
+            endTime: agreement[0].endTime,
+            signTime: agreement[0].signTime,
+            agreedPrice: agreement[0].agreedPrice,
+            paymentCycleType: agreement[0].paymentCycleType,
+            Memo: agreement[0].Memo,
+            RentReserved: agreement[0].RentReserved,
+            representative: agreement[0].representative,
+          };
+        }
+      } catch (error: any) {
+        console.log(error.message);
+      }
+    };
+
+    getAgreementsByRoomIdApi = async (roomId: string) => {
+      try {
+        const agreements = await getValuesWithSql('agreements', `WHERE roomId = '${roomId}'`);
+        if (agreements && agreements.length > 0) {
+          return agreements.map((agreement:agreements) => ({
+            id: agreement.id,
+            roomId: agreement.roomId,
+            tenantId: agreement.tenantId,
+            startTime: agreement.startTime,
+            endTime: agreement.endTime,
+            signTime: agreement.signTime,
+            agreedPrice: agreement.agreedPrice,
+            paymentCycleType: agreement.paymentCycleType,
+            Memo: agreement.Memo,
+            RentReserved: agreement.RentReserved,
+            representative: agreement.representative,
+          }));
+        }
+        return [];
+      } catch (error: any) {
+        console.log(error.message);
+        return [];
+      }
+    };
+    editAgreementApi = async (agreementId: string, propertyName: string, newValue: any) => {
+      try {
+        await updateValue('agreements', agreementId, propertyName, newValue);
+      } catch (error: any) {
+        console.log(error.message);
+      }
+    };
+
+    deleteAgreementApi = async (agreementId: string) => {
+      try {
+        await deleteValue('agreements', agreementId);
+      } catch (error: any) {
+        console.log(error.message);
+      }
+    };
+
+    addAgreementApi = async (
+      id: string,
+      roomId: string,
+      tenantId: string,
+      startTime: number,
+      endTime: number,
+      signTime: number,
+      agreedPrice: number,
+      paymentCycleType: string,
+      Memo: string,
+      RentReserved: number,
+      representative:string,
+    ) => {
+      try {
+        await addValue('agreements', {
+          id,
+          roomId,
+          tenantId,
+          startTime,
+          endTime,
+          signTime,
+          agreedPrice,
+          paymentCycleType,
+          Memo,
+          RentReserved,representative
+        });
+      } catch (error: any) {
+        console.log(error.message);
+      }
+    };
+  }
   const roomAPI = new RoomApi();
   const brokerApi = new BrokerApi();
   const tenantAPI = new TenantApi();
@@ -526,6 +646,7 @@ function Hello() {
   const roomSpecificationAPI = new RoomSpecificationApi();
   const roomPaymentInfoApi = new RoomPaymentInfoApi();
   const brokersRecommendationListApi = new BrokersRecommendationListApi();
+  const agreementApi = new AgreementApi();
   // On start
   useEffect(() => {
     RefreshDataFromSqlite();
@@ -536,6 +657,7 @@ function Hello() {
     tenantAPI.getTenantsApi();
     pastTenantReviewApi.getPastTenantReviewLatestApi();
     brokersRecommendationListApi.getBrokerRecommendationsFromApi();
+
   };
   const [SelectedPage, setSelectedPage] = useState<
     'Dashboard' | 'People' | 'Rooms' | 'Calendar' | 'Settings'
@@ -569,6 +691,7 @@ function Hello() {
         brokersRecommendationListApi={brokersRecommendationListApi}
         RefreshDataFromSqlite={RefreshDataFromSqlite}
         BrokerRecommendationList={BrokerRecommendationList}
+        agreementApi={agreementApi}
       />
     </>
   );

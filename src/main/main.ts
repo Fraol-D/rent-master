@@ -232,7 +232,7 @@ app
         try {
           let info = await transporter.sendMail(mailOptions);
           console.log('Email sent: ' + info.response);
-        } catch (error) {
+        } catch (error:any) {
           console.error('Error while sending email:', error);
         }
       }
@@ -275,7 +275,7 @@ const validateTableName = (tableName: string) => {
     'PastTenantReview',
     'brokers',
     'brokersRecommendationList',
-    'PastTenantsForRoom',
+    'PastTenantsForRoom',"agreements"
   ];
   return validTables.includes(tableName);
 };
@@ -312,6 +312,7 @@ const tableStructures = [
       'AddTenantState BOOLEAN',
       'ViewAgreement BOOLEAN',
       'ShowPayTimeLine BOOLEAN',
+      'selectedAgreementId TEXT',
     ],
   },
   {
@@ -389,14 +390,28 @@ const tableStructures = [
       'totalEarnings INTEGER',
       'paymentCycleType TEXT',
       'AgreedPrice INTEGER',
-
       'AgreedCommission INTEGER ',
       'Stars INTEGER ',
       'description TEXT ',
       'endReason TEXT ',
     ],
   },
-  // Add more tables here as needed
+  {
+    name: 'agreements',
+    columns: [
+      'id TEXT PRIMARY KEY',
+      'roomId TEXT',
+      'tenantId TEXT',
+      'startTime INTEGER',
+      'endTime INTEGER',
+      'signTime INTEGER',
+      'agreedPrice REAL',
+      'paymentCycleType TEXT',
+      'Memo TEXT',
+      'RentReserved REAL',
+      'representative TEXT'
+    ],
+  },
 ];
 
 // Function to initialize tables
@@ -492,7 +507,7 @@ const updateTableStructure = (
   });
 };
 
-appDB.post('/upload-tenant-documentV2', (req, res) => {
+appDB.post('/upload-tenant-documentV2', (req: { body: { base64Document: any; fileName: any; roomId: any; tenantName: any; tenantId: any; AddedTimeText: any; }; }, res: { json: (arg0: { message: string; fileName: any; filePath: string; }) => void; status: (arg0: number) => { (): any; new(): any; json: { (arg0: { error: string; }): void; new(): any; }; }; }) => {
   try {
     const {
       base64Document,
@@ -527,12 +542,12 @@ appDB.post('/upload-tenant-documentV2', (req, res) => {
       fileName,
       filePath,
     });
-  } catch (error) {
+  } catch (error:any) {
     console.error('Error uploading tenant document:', error);
     res.status(500).json({ error: 'Failed to upload tenant document' });
   }
 });
-appDB.delete('/delete-tenant-document-folder', (req, res) => {
+appDB.delete('/delete-tenant-document-folder', (req: any, res: { json: (arg0: { message: string; }) => void; status: (arg0: number) => { (): any; new(): any; json: { (arg0: { error: string; }): void; new(): any; }; }; }) => {
   try {
     const folderPath = path.join(
       process.env.APPDATA || '',
@@ -548,13 +563,13 @@ appDB.delete('/delete-tenant-document-folder', (req, res) => {
     } else {
       res.status(404).json({ error: 'Tenant document folder not found' });
     }
-  } catch (error) {
+  } catch (error:any) {
     console.error('Error deleting tenant document folder:', error);
     res.status(500).json({ error: 'Failed to delete tenant document folder' });
   }
 });
 
-appDB.delete('/room-document/delete-tenant-document/:fileName', (req, res) => {
+appDB.delete('/room-document/delete-tenant-document/:fileName', (req: { params: { fileName: any; }; }, res: { json: (arg0: { message: string; }) => void; status: (arg0: number) => { (): any; new(): any; json: { (arg0: { error: string; }): void; new(): any; }; }; }) => {
   try {
     const { fileName } = req.params;
     const filePath = path.join(
@@ -572,12 +587,12 @@ appDB.delete('/room-document/delete-tenant-document/:fileName', (req, res) => {
     } else {
       res.status(404).json({ error: 'Tenant document not found' });
     }
-  } catch (error) {
+  } catch (error:any) {
     console.error('Error deleting tenant document:', error);
     res.status(500).json({ error: 'Failed to delete tenant document' });
   }
 });
-appDB.post('/room-document/upload-tenant-document', (req, res) => {
+appDB.post('/room-document/upload-tenant-document', (req: { body: { base64Document: any; fileName: any; roomId: any; }; }, res: { status: (arg0: number) => { (): any; new(): any; json: { (arg0: { error: string; details?: any; }): void; new(): any; }; }; json: (arg0: { message: string; fileName: any; roomId: any; }) => void; }) => {
   try {
     const { base64Document, fileName, roomId } = req.body;
     if (!base64Document || !fileName || !roomId) {
@@ -603,7 +618,7 @@ appDB.post('/room-document/upload-tenant-document', (req, res) => {
       fileName,
       roomId,
     });
-  } catch (error) {
+  } catch (error:any) {
     console.error('Error uploading tenant document:', error);
     res.status(500).json({
       error: 'Failed to upload tenant document',
@@ -611,7 +626,7 @@ appDB.post('/room-document/upload-tenant-document', (req, res) => {
     });
   }
 });
-appDB.delete('/room-document/:roomId/:fileName', (req, res) => {
+appDB.delete('/room-document/:roomId/:fileName', (req: { params: { roomId: any; fileName: any; }; }, res: { status: (arg0: number) => { (): any; new(): any; json: { (arg0: { error: string; }): void; new(): any; }; }; json: (arg0: { message: string; }) => void; }) => {
   const { roomId, fileName } = req.params;
   const roomDocumentsPath = path.join(
     process.env.APPDATA || '',
@@ -620,7 +635,7 @@ appDB.delete('/room-document/:roomId/:fileName', (req, res) => {
     roomId
   );
 
-  fs.readdir(roomDocumentsPath, (err, tenantFolders) => {
+  fs.readdir(roomDocumentsPath, (err: any, tenantFolders: any) => {
     if (err) {
       return res
         .status(500)
@@ -645,7 +660,7 @@ appDB.delete('/room-document/:roomId/:fileName', (req, res) => {
   });
 });
 
-appDB.post('/upload-room-document', (req, res) => {
+appDB.post('/upload-room-document', (req: { body: { base64Document: any; fileName: any; roomId: any; tenantName: any; tenantId: any; AddedTimeText: any; }; }, res: { status: (arg0: number) => { (): any; new(): any; json: { (arg0: { error: string; }): void; new(): any; }; }; json: (arg0: { message: string; fileName: any; roomId: any; tenantName: any; tenantId: any; }) => void; }) => {
   try {
     const {
       base64Document,
@@ -682,40 +697,40 @@ appDB.post('/upload-room-document', (req, res) => {
       tenantName,
       tenantId,
     });
-  } catch (error) {
+  } catch (error:any) {
     console.error('Error uploading document:', error);
     res.status(500).json({ error: 'Failed to upload document' });
   }
 });
 
-appDB.get('/room-documents/:roomId', (req, res) => {
+appDB.get('/room-documents/:roomId', (req: { params: { roomId: any; }; }, res: { status: (arg0: number) => { (): any; new(): any; json: { (arg0: { error: string; }): any; new(): any; }; }; json: (arg0: { documents: any[] | never[]; roomFolder: any; }) => void; }) => {
   const roomId = req.params.roomId;
   const roomDocumentsPath = path.join(
     process.env.APPDATA,
     appname,
     'Room Documents'
   );
-  fs.readdir(roomDocumentsPath, (err, folders) => {
+  fs.readdir(roomDocumentsPath, (err: any, folders: any[]) => {
     if (err) {
       return res
         .status(500)
         .json({ error: 'Failed to read room documents directory' });
     }
-    const roomFolder = folders.find((folder) => folder.includes(roomId));
+    const roomFolder = folders.find((folder: string | any[]) => folder.includes(roomId));
     if (!roomFolder) {
       return res.json({ documents: [], roomFolder: null });
     }
     const roomFolderPath = path.join(roomDocumentsPath, roomFolder);
-    fs.readdir(roomFolderPath, (err, tenantFolders) => {
+    fs.readdir(roomFolderPath, (err: any, tenantFolders: any[]) => {
       if (err) {
         return res.status(500).json({ error: 'Failed to read room folder' });
       }
-      const documents = [];
-      tenantFolders.forEach((tenantFolder) => {
+      const documents: string[] = [];
+      tenantFolders.forEach((tenantFolder: string) => {
         const tenantFolderPath = path.join(roomFolderPath, tenantFolder);
         if (fs.existsSync(tenantFolderPath)) {
           const files = fs.readdirSync(tenantFolderPath);
-          files.forEach((file) => {
+          files.forEach((file: string) => {
             documents.push(
               `local-resource://${path.join(tenantFolderPath, file)}`
             );
@@ -824,7 +839,7 @@ appDB.get(
     });
   }
 );
-appDB.put('/rename-folder', (req, res) => {
+appDB.put('/rename-folder', (req: { body: { oldName: any; newName: any; }; }, res: { status: (arg0: number) => { (): any; new(): any; json: { (arg0: { error: string; }): any; new(): any; }; }; json: (arg0: { message: string; }) => void; }) => {
   const { oldName, newName } = req.body;
   const oldPath = path.join(
     process.env.APPDATA,
@@ -839,14 +854,14 @@ appDB.put('/rename-folder', (req, res) => {
     newName
   );
 
-  fs.rename(oldPath, newPath, (err) => {
+  fs.rename(oldPath, newPath, (err: any) => {
     if (err) {
       return res.status(500).json({ error: 'Failed to rename folder' });
     }
     res.json({ message: 'Folder renamed successfully' });
   });
 });
-appDB.delete('/delete-folder-images/:folderName', (req, res) => {
+appDB.delete('/delete-folder-images/:folderName', (req: { params: { folderName: any; }; }, res: { status: (arg0: number) => { (): any; new(): any; json: { (arg0: { error: string; }): any; new(): any; }; }; json: (arg0: { message: string; }) => any; }) => {
   const folderName = req.params.folderName;
   const folderPath = path.join(
     process.env.APPDATA,
@@ -855,12 +870,12 @@ appDB.delete('/delete-folder-images/:folderName', (req, res) => {
     folderName
   );
 
-  fs.readdir(folderPath, (err, files) => {
+  fs.readdir(folderPath, (err: any, files: any[]) => {
     if (err) {
       return res.status(500).json({ error: 'Failed to read folder' });
     }
 
-    const deletePromises = files.map((file) =>
+    const deletePromises = files.map((file: string) =>
       fs.promises.unlink(path.join(folderPath, file))
     );
 
@@ -905,7 +920,7 @@ appDB.post('/upload-room-image', (req: any, res: any) => {
       FolderText: FolderText,
       FileId: FileId,
     });
-  } catch (error) {
+  } catch (error:any) {
     console.error('Error uploading image:', error);
     res.status(500).json({ error: 'Failed to upload image' });
   }
@@ -1207,7 +1222,7 @@ export async function loadBackup() {
 
   const zip = new AdmZip(backupPath);
   const zipEntries = zip.getEntries();
-  console.log('Zip entries:', zipEntries.map(entry => entry.entryName));
+  console.log('Zip entries:', zipEntries.map((entry: { entryName: any; }) => entry.entryName));
 
   // ... [rest of the validation code] ...
 
@@ -1220,7 +1235,7 @@ export async function loadBackup() {
     fs.rmdirSync(path.join(bmsPath, 'Room Documents'), { recursive: true, force: true });
     fs.unlinkSync(path.join(bmsPath, 'database.db'));
     console.log('Existing data cleared successfully');
-  } catch (error) {
+  } catch (error:any) {
     console.error('Error clearing existing data:', error);
   }
 
@@ -1229,7 +1244,7 @@ export async function loadBackup() {
   console.log('Extraction complete');
 
   console.log('Verifying extracted files...');
-  fs.readdirSync(bmsPath).forEach(file => {
+  fs.readdirSync(bmsPath).forEach((file: any) => {
     console.log('Extracted file/folder:', file);
   });
 

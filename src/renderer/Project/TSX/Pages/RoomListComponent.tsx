@@ -22,7 +22,7 @@ export function RoomListComponent({
   pastTenantReviewApi,
   brokersRecommendationListApi,
   handleAddRoomButtonInitial,
-  updateRoomPropertyLocal,
+  updateRoomPropertyLocal,agreementApi
 }: any) {
   return (
     <>
@@ -75,6 +75,7 @@ export function RoomListComponent({
         <div className="RoomContainer">
           {sortedAndFilteredRooms.map((room: any, index: any) => (
             <Room
+            agreementApi={agreementApi}
               brokerApi={brokerApi}
               brokersRecommendationListApi={brokersRecommendationListApi}
               BrokerList={BrokerList}

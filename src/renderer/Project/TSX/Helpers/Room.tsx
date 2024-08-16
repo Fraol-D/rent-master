@@ -17,11 +17,13 @@ import {
   uploadTenantDocumentsV2,
 } from 'Backend/localServerApis';
 import LeavePanel from './LeavePanel';
+import EthiopianCalanderConverterMenu from './GUIs/EthiopianCalanderConverterMenu';
+import AgreementViewerForRoom from './GUIs/AgreementViewerForRoom';
 const Room = ({
   roomType,
   updateRoomProperty,
   turnOffAddTenantStateForAll,
-  turnOffAddTenantStateForAllEXCEPT,
+
   turnOffViewStateForAll,
   TenantList,
   setTenantList,
@@ -37,6 +39,7 @@ const Room = ({
   setBrokerList,
   brokersRecommendationListApi,
   updateRoomPropertyLocal,
+  agreementApi,
 }: {
   roomType: RoomType;
   updateRoomProperty: any;
@@ -56,6 +59,7 @@ const Room = ({
   setBrokerList: any;
   brokersRecommendationListApi: any;
   updateRoomPropertyLocal: any;
+  agreementApi: any;
 }) => {
   const handleAddTenant = () => {
     turnOffAddTenantStateForAll();
@@ -67,9 +71,13 @@ const Room = ({
   const [email, setEmail] = useState('');
   const [TIN, setTIN] = useState('');
   const [RentReason, setRentReason] = useState('');
-  const [selectedAgreement, setSelectedAgreement] = useState('Open-Ended');
+  const [selectedAgreement, setSelectedAgreement] = useState<
+    'Open-Ended' | 'Fixed-Term'
+  >('Open-Ended');
   const [startTime, setStartTime] = useState('');
   const [endTime, setEndTime] = useState('');
+  const [signDate, setSignDate] = useState('');
+  const [Representative, setRepresentative] = useState('');
   const [agreedPrice, setAgreedPrice] = useState(roomType.price);
   const [paymentCycle, setPaymentCycle] = useState('30');
   const [customDays, setCustomDays] = useState('');
@@ -279,6 +287,27 @@ const Room = ({
     }
     SetRefreshState(true);
   };
+  const getCorrectPaymentStatment = (text: string, custom: string) => {
+    switch (text) {
+      case '30':
+      case 'Every 30 days':
+        return '30 days';
+      case '15':
+      case 'Every 15 days':
+        return '15 days';
+      case '7':
+      case 'Every 7 days':
+        return '7 days';
+      case 'monthly':
+        return 'month';
+      case 'weekly':
+        return 'week';
+      case 'daily':
+        return 'day';
+      default:
+        return custom + ' days';
+    }handlePaymentRefresh
+  };
   const handleAddTenantButton = async () => {
     if (AddTenantUseBrokerState && AddTenantSelectedBrokerId == '') return;
     if (isNaN(new Date(startTime).getTime())) return;
@@ -319,6 +348,11 @@ const Room = ({
       updateRoomPropertyWithOutRefresh(roomType.id, 'AgreedPrice', agreedPrice);
       updateRoomPropertyWithOutRefresh(roomType.id, 'tenantId', tenantId);
       updateRoomProperty(roomType.id, 'AddTenantState', 0);
+      updateRoomProperty(
+        roomType.id,
+        'Price',
+        agreedPrice ? roomType.price : agreedPrice
+      );
       //add a tenant to the tenant list
       tenantAPI.addTenantApi(
         tenant.id,
@@ -371,22 +405,43 @@ const Room = ({
       }
       console.log('reached1');
 
-      for (let i = 0; i < 20; i++) {
-        console.log('reached');
+      if (selectedAgreement === 'Fixed-Term') {
+        const startDate = new Date(startTime);
+        const endDate = new Date(endTime);
+        let currentDate = new Date(startDate);
 
-        const paymentDay = getPaymentDay(
-          interval,
-          new Date(startTime),
-          i,
-          paymentCycle
-        );
+        while (currentDate <= endDate) {
+          roomPaymentInfoApi.addRoomPaymentApiWithOutRefresh(
+            uuidv4(),
+            roomType.id,
+            currentDate.getTime(),
+            false
+          );
 
-        roomPaymentInfoApi.addRoomPaymentApiWithOutRefresh(
-          uuidv4(),
-          roomType.id,
-          paymentDay.getTime(),
-          false
-        );
+          if (paymentCycle === 'monthly') {
+            currentDate.setMonth(currentDate.getMonth() + 1);
+          } else {
+            currentDate.setDate(currentDate.getDate() + interval);
+          }
+        }
+      } else {
+        for (let i = 0; i < 20; i++) {
+          console.log('reached');
+
+          const paymentDay = getPaymentDay(
+            interval,
+            new Date(startTime),
+            i,
+            paymentCycle
+          );
+
+          roomPaymentInfoApi.addRoomPaymentApiWithOutRefresh(
+            uuidv4(),
+            roomType.id,
+            paymentDay.getTime(),
+            false
+          );
+        }
       }
 
       if (AddTenantUseBrokerState) {
@@ -430,7 +485,30 @@ const Room = ({
         DocumentFiles = [];
       }
       SetRefreshState(true);
+      const paymentCycleType2 =
+        paymentCycle === 'custom'
+          ? ('-' + customDays).toString()
+          : roomType.PaymentCycleType;
+      //fixed term lease
+      if (selectedAgreement === 'Fixed-Term') {
+        const AgreementId = uuidv4();
+        agreementApi.addAgreementApi(
+          AgreementId,
+          roomType.id,
+          tenant.id,
+          new Date(startTime).getTime(),
+          new Date(endTime).getTime(),
+          new Date(signDate).getTime(),
+          agreedPrice,
+          paymentCycleType2,
+          '',
+          '',
+          Representative
+        );
+        updateRoomProperty(roomType.id, 'selectedAgreementId', AgreementId);
+      }
     }
+    await handlePaymentRefresh();
   };
   const [refreshState, SetRefreshState] = useState(false);
   const extendPaymentSchedule = async () => {
@@ -829,6 +907,10 @@ const Room = ({
     console.log(updatedAllRoomPayInfo, roomType.AllRoomPayInfo);
   };
   const [TypeOfRoomState, setTypeOfRoomState] = useState(true);
+  const [ShowConverter, setShowConverter] = useState(false);
+  const [ShowConverterEndDate, setShowConverterEndDate] = useState(false);
+  const [ShowConverterSignDate, setShowConverterSignDate] = useState(false);
+
   return (
     <>
       <div
@@ -990,8 +1072,42 @@ const Room = ({
         <div className="SecondLine">
           <div className="PriceMainContainer">
             <div className="PriceContainer">
-              <div>
-                Price: <strong>{roomType.price.toLocaleString()}$</strong>
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+
+                  justifyContent: 'center',
+                }}
+              >
+                {roomType.status === 'Empty' ? (
+                  <>
+                    <div>
+                      Price: <strong>{roomType.price.toLocaleString()}$</strong>
+                    </div>{' '}
+                    <p style={{ fontSize: '12px' }}>
+                      Every{' '}
+                      {getCorrectPaymentStatment(
+                        roomType.PaymentCycleType,
+                        roomType.PaymentCycleCustomeDays.toString()
+                      )}
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <div>
+                      Price:{' '}
+                      <strong>{roomType.AgreedPrice.toLocaleString()}$</strong>
+                    </div>{' '}
+                    <p style={{ fontSize: '12px' }}>
+                      Every{' '}
+                      {getCorrectPaymentStatment(
+                        roomType.PaymentCycleType,
+                        roomType.PaymentCycleCustomeDays.toString()
+                      )}
+                    </p>
+                  </>
+                )}
               </div>{' '}
             </div>
             {/*<div className="ChangePriceButtonContianer">
@@ -1316,7 +1432,11 @@ const Room = ({
                     Agreement type:{' '}
                     <select
                       value={selectedAgreement}
-                      onChange={(e) => setSelectedAgreement(e.target.value)}
+                      onChange={(e) =>
+                        setSelectedAgreement(
+                          e.target.value as 'Open-Ended' | 'Fixed-Term'
+                        )
+                      }
                       className="Agreementtype"
                     >
                       <option value="Open-Ended">Open-Ended</option>
@@ -1333,22 +1453,109 @@ const Room = ({
                         className="StartTime"
                         onChange={(e) => setStartTime(e.target.value)}
                       />
-                    </div>
+                      <button
+                        onClick={() => {
+                          setShowConverter(true);
+                        }}
+                      >
+                        ET date
+                      </button>
+                      {ShowConverter && (
+                        <EthiopianCalanderConverterMenu
+                          onConvert={(s) => {
+                            console.log(s);
+                          }}
+                          Cancel={() => {
+                            setShowConverter(false);
+                          }}
+                          handleUse={(num: number) => {
+                            const date = new Date(num);
+                            date.setDate(date.getDate() + 1);
+                            setStartTime(date.toISOString().split('T')[0]);
+                            setShowConverter(false);
+                          }}
+                        ></EthiopianCalanderConverterMenu>
+                      )}{' '}
+                    </div>{' '}
                     {selectedAgreement === 'Fixed-Term' && (
-                      <div>
-                        End time:
-                        <input
-                          type="date"
-                          value={endTime}
-                          style={{ fontWeight: '700' }}
-                          onChange={(e) => setEndTime(e.target.value)}
-                        />
-                        {calculateDaysDifference(
-                          new Date(startTime),
-                          new Date(endTime)
-                        )}{' '}
-                        Days
-                      </div>
+                      <>
+                        <div>
+                          End time:
+                          <input
+                            type="date"
+                            value={endTime}
+                            className="StartTime"
+                            style={{ fontWeight: '700' }}
+                            onChange={(e) => setEndTime(e.target.value)}
+                          />{' '}
+                          <button
+                            onClick={() => {
+                              setShowConverterEndDate(true);
+                            }}
+                          >
+                            ET date
+                          </button>
+                          {ShowConverterEndDate && (
+                            <EthiopianCalanderConverterMenu
+                              onConvert={(s) => {
+                                console.log(s);
+                              }}
+                              Cancel={() => {
+                                setShowConverterEndDate(false);
+                              }}
+                              handleUse={(num: number) => {
+                                const date = new Date(num);
+                                date.setDate(date.getDate() + 1);
+                                setEndTime(date.toISOString().split('T')[0]);
+                                setShowConverterEndDate(false);
+                              }}
+                            ></EthiopianCalanderConverterMenu>
+                          )}{' '}
+                        </div>
+                        <div>
+                          Sign date:
+                          <input
+                            type="date"
+                            value={signDate}
+                            className="StartTime"
+                            style={{ fontWeight: '700' }}
+                            onChange={(e) => setSignDate(e.target.value)}
+                          />{' '}
+                          <button
+                            onClick={() => {
+                              setShowConverterSignDate(true);
+                            }}
+                          >
+                            ET date
+                          </button>
+                          {ShowConverterSignDate && (
+                            <EthiopianCalanderConverterMenu
+                              onConvert={(s) => {
+                                console.log(s);
+                              }}
+                              Cancel={() => {
+                                setShowConverterSignDate(false);
+                              }}
+                              handleUse={(num: number) => {
+                                const date = new Date(num);
+                                date.setDate(date.getDate() + 1);
+                                setSignDate(date.toISOString().split('T')[0]);
+                                setShowConverterSignDate(false);
+                              }}
+                            ></EthiopianCalanderConverterMenu>
+                          )}{' '}
+                        </div>
+                        <div>
+                          Representative:
+                          <input
+                            type="text"
+                            value={Representative}
+                            className="StartTime"
+                            style={{ fontWeight: '700' }}
+                            onChange={(e) => setRepresentative(e.target.value)}
+                          />{' '}
+                        </div>
+                      </>
                     )}
                   </div>
                   <div className="AddTenantContainerinnerElement">
@@ -1661,7 +1868,9 @@ const Room = ({
                           <select
                             value={selectedAgreement}
                             onChange={(e) =>
-                              setSelectedAgreement(e.target.value)
+                              setSelectedAgreement(
+                                e.target.value as 'Open-Ended' | 'Fixed-Term'
+                              )
                             }
                             className="Agreementtype"
                           >
@@ -2058,13 +2267,16 @@ const Room = ({
         <div
           className="PopOutContainer"
           ref={viewAgreementRef}
-          style={{ top: '205px', zIndex: roomType.ViewAgreement ? '1' : '-1' }}
+          style={{
+            top: '258px',
+            zIndex: roomType.ViewAgreement ? '1' : '-1',
+          }}
         >
           <div
             className="AddTenantContainerinner"
             style={{
               width: roomType.ViewAgreement ? '540px' : '0px',
-              height: roomType.ViewAgreement ? '263px' : '0px',
+              height: roomType.ViewAgreement ? '470px' : '0px',
               opacity: roomType.ViewAgreement ? '1' : '0',
               userSelect: 'text',
               marginTop: '10px',
@@ -2148,50 +2360,56 @@ const Room = ({
                     }
                   </em>
                 </div>
-                <div className="AddTenantContainerinnerElement" style={{}}>
-                  <div>
-                    Start time:
-                    <em style={{ fontWeight: '600' }}>
-                      {
-                        TenantList.find(
-                          (tenant: any) => tenant.id === roomType.tenantId
-                        )?.startTime
-                      }
-                    </em>
-                  </div>
-                </div>
-                {selectedAgreement === 'Fixed-Term' && (
-                  <div className="AddTenantContainerinnerElement">
-                    End time :
-                    <em style={{ fontWeight: '600' }}>
-                      {
-                        TenantList.find(
-                          (tenant: any) => tenant.id === roomType.tenantId
-                        )?.endTime
-                      }
-                    </em>{' '}
-                    {calculateDaysDifference(
-                      new Date(startTime),
-                      new Date(endTime)
-                    )}{' '}
-                    Days
-                  </div>
+                {TenantList.find(
+                  (tenant: any) => tenant.id === roomType.tenantId
+                )?.SelectedAgreement !== 'Fixed-Term' ? (
+                  <>
+                    <div className="AddTenantContainerinnerElement" style={{}}>
+                      <div>
+                        Start time:
+                        <em style={{ fontWeight: '600' }}>
+                          {
+                            TenantList.find(
+                              (tenant: any) => tenant.id === roomType.tenantId
+                            )?.startTime
+                          }
+                        </em>
+                      </div>
+                    </div>
+                    <div className="AddTenantContainerinnerElement">
+                      Agreed Price:{' '}
+                      <em style={{ fontWeight: '600' }}>
+                        {roomType.AgreedPrice}
+                      </em>
+                      $ per{' '}
+                      <em style={{ fontWeight: '600' }}>
+                        {roomType.PaymentCycleType}
+                      </em>{' '}
+                      days
+                    </div>
+                    <div className="AddTenantContainerinnerElement">
+                      Payment cycle:{' '}
+                      <em style={{ fontWeight: '600' }}>
+                        {roomType.PaymentCycleType}
+                      </em>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <AgreementViewerForRoom
+                      updateRoomPropertyLocal={updateRoomPropertyLocal}
+                      getCorrectPaymentStatment={getCorrectPaymentStatment}
+                      TenantList={TenantList}
+                      roomType={roomType}
+                      agreementApi={agreementApi}
+                      ShowState={roomType.ViewAgreement}
+                      calculateDaysDifference={calculateDaysDifference}
+                      roomPaymentInfoApi={roomPaymentInfoApi}
+                      updateRoomProperty={updateRoomProperty}
+                      handlePaymentRefresh={handlePaymentRefresh}
+                    />
+                  </>
                 )}
-                <div className="AddTenantContainerinnerElement">
-                  Agreed Price:{' '}
-                  <em style={{ fontWeight: '600' }}>{roomType.AgreedPrice}</em>$
-                  per{' '}
-                  <em style={{ fontWeight: '600' }}>
-                    {roomType.PaymentCycleType}
-                  </em>{' '}
-                  days
-                </div>
-                <div className="AddTenantContainerinnerElement">
-                  Payment cycle:{' '}
-                  <em style={{ fontWeight: '600' }}>
-                    {roomType.PaymentCycleType}
-                  </em>
-                </div>
                 <button
                   onClick={() => {
                     setTenantLeavePannelState(true);

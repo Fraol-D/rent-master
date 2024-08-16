@@ -102,7 +102,7 @@ const CalendarGUI: React.FC<CalendarProps> = ({
           const room = filteredRooms.find((room) => room.id === d);
           return room
             ? `${
-                tenantList.find((t: tenant) => t.id === room.tenantId).name
+                tenantList.find((t: tenant) => t.id === room.tenantId)?.name
               }\n` +
                 `${room.AgreedPrice.toLocaleString()}$ - Floor. ${
                   room.floor
@@ -117,8 +117,8 @@ const CalendarGUI: React.FC<CalendarProps> = ({
         .call(yAxis)
         .raise()
         .selectAll('.tick text')
-        .call(function (text) {
-          text.each(function () {
+        .call(function (text:any) {
+          text.each(function(this: SVGTextElement) {
             var text = d3.select(this);
             var words = text.text().split('\n');
             text.text('');
@@ -136,14 +136,16 @@ const CalendarGUI: React.FC<CalendarProps> = ({
               .text(words[1]);
 
             var parentNode = this.parentNode;
-            d3.select(parentNode)
-              .append('line')
-              .attr('x1', -0)
-              .attr('x2', -100)
-              .attr('y1', 15)
-              .attr('y2', 15)
-              .attr('stroke', '#DDDDDD')
-              .attr('stroke-width', 1);
+            if (parentNode) {
+              d3.select(parentNode)
+                .append('line')
+                .attr('x1', -0)
+                .attr('x2', -100)
+                .attr('y1', 15)
+                .attr('y2', 15)
+                .attr('stroke', '#DDDDDD')
+                .attr('stroke-width', 1);
+            }
           });
         });
 
@@ -240,9 +242,9 @@ const CalendarGUI: React.FC<CalendarProps> = ({
               .attr('height', yScale.bandwidth() + 4)
               .attr('fill', payment.Paid ? 'green' : 'red')
               .attr('opacity', 0.5)
-              .on('mouseover', (event, d) => {
+              .on('mouseover', (event: MouseEvent, d: any) => {
                 const daysUntil = Math.ceil(
-                  (paymentDate - new Date()) / (1000 * 60 * 60 * 24)
+                  (paymentDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
                 );
                 tooltip
                   .style('visibility', 'visible')
@@ -275,7 +277,7 @@ const CalendarGUI: React.FC<CalendarProps> = ({
                   .style('left', event.pageX + 10 + 'px')
                   .style('top', event.pageY - 10 + 'px');
               })
-              .on('mousemove', (event) => {
+              .on('mousemove', (event: MouseEvent) => {
                 tooltip
                   .style('left', event.pageX + 10 + 'px')
                   .style('top', event.pageY - 10 + 'px');

@@ -23,6 +23,7 @@ import {
 } from 'Backend/localServerApis';
 import ImageInteractor2 from './Helpers/GUIs/ImageInteractor2';
 import { set } from 'date-fns';
+import DashboardPage from './Pages/DashboardPage';
 type FilterOption = {
   key: string;
   value: any;
@@ -33,7 +34,6 @@ interface RoomCategory {
   floors?: RoomCategory[];
   rooms?: string[];
 }
-
 declare global {
   type RoomType = {
     id: string;
@@ -59,6 +59,7 @@ declare global {
     ViewAgreement?: boolean;
     ShowPayTimeLine?: boolean;
     AllRoomPayInfo: AllRoomPayInfo;
+    selectedAgreementId: string;
   };
   type BrokerRecommendationType = {
     id: string;
@@ -110,12 +111,6 @@ declare global {
     Day: number;
     Paid: boolean;
   };
-  /*type CategoryType = {
-    id: string;
-    type: 'floor' | 'rooms' | 'branch';
-    name: string;
-    floorIndex?: number;
-  };*/
   type PastTenantReviewType = {
     id: string;
     roomId: string;
@@ -132,8 +127,20 @@ declare global {
     description: string;
     endReason: string;
   };
+  type agreements = {
+    id: string;
+    roomId: string;
+    tenantId: string;
+    startTime: number;
+    endTime: number;
+    signTime: number;
+    agreedPrice: number;
+    paymentCycleType: string;
+    Memo: string;
+    RentReserved: number;
+    representative: string;
+  };
 }
-
 const MainPage = ({
   RoomList,
   setRoomList,
@@ -154,6 +161,7 @@ const MainPage = ({
   BrokerRecommendationList,
   setSelectedPage,
   SelectedPage,
+  agreementApi,
 }: any) => {
   const [floorFilter, setFloorFilter] = useState<string>('');
   const [TenantNameFilter, setTenantNameFilter] = useState<string>('');
@@ -1455,6 +1463,7 @@ const MainPage = ({
               updateRoomPropertyWithOutRefresh={
                 updateRoomPropertyWithOutRefresh
               }
+              agreementApi={agreementApi}
               updateRoomPropertyLocal={updateRoomPropertyLocal}
               handleAddRoomButtonInitial={handleAddRoomButtonInitial}
               brokerApi={brokerApi}
@@ -1480,6 +1489,7 @@ const MainPage = ({
           {SelectedPage === 'People' && (
             <PeopleComponentPage
               TenantList={TenantList}
+              agreementApi={agreementApi}
               PeopleSelectedPage={PeopleSelectedPage}
               PastTenantReviews={PastTenantReviews}
               RoomList={RoomList}
@@ -1509,13 +1519,11 @@ const MainPage = ({
             />
           )}
           {SelectedPage === 'Dashboard' && (
-            <RoomListComponent
-              updateRoomProperty={updateRoomProperty}
-              roomPaymentInfoApi={roomPaymentInfoApi}
-              RoomList={RoomList}
-              sortedAndFilteredRooms={sortedAndFilteredRooms}
-              removeFilterOption={removeFilterOption}
-              filterOptions={filterOptions}
+            <DashboardPage
+            RoomList={RoomList}
+            tenantList={TenantList}
+          
+
             />
           )}
         </div>
