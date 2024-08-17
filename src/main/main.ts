@@ -350,6 +350,7 @@ const tableStructures = [
       'roomId TEXT ',
       'Day INTEGER ', // Assuming storing as UNIX timestamp
       'Paid BOOLEAN ',
+      'Value REAL',
     ],
   },
   {

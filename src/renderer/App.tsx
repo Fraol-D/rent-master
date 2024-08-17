@@ -198,6 +198,25 @@ function Hello() {
         console.log(error.message);
       }
     };
+    editRoomSpecificationApi = async (
+      specificationId: string,
+      propertyName: string,
+      newValue: any
+    ) => {
+      try {
+        await updateValue('room_specifications', specificationId, propertyName, newValue);
+       
+      } catch (error: any) {
+        console.error(error.message);
+      }
+    };
+    deleteRoomSpecificationApi = async (roomSpecId: string) => {
+      try {
+        await deleteValue('room_specifications', roomSpecId);
+      } catch (error: any) {
+        console.log(error.message);
+      }
+    };
   }
   class TenantApi {
     getTenantsApi = async () => {
@@ -302,6 +321,7 @@ function Hello() {
             roomId: roomPayment.roomId,
             Day: roomPayment.Day,
             Paid: roomPayment.Paid,
+            Value: roomPayment.Value,
           };
         });
       }
@@ -310,7 +330,8 @@ function Hello() {
       id: string,
       roomId: string,
       Day: string,
-      Paid: string
+      Paid: string,
+      Value:number
     ) => {
       try {
         await addValue('room_pay_info', {
@@ -318,6 +339,7 @@ function Hello() {
           roomId: roomId,
           Day: Day,
           Paid: Paid,
+          Value:Value,
         });
         await roomAPI.getRoomFromApi();
       } catch (error: any) {
@@ -328,7 +350,8 @@ function Hello() {
       id: string,
       roomId: string,
       Day: string,
-      Paid: boolean
+      Paid: boolean,
+      Value: number
     ) => {
       try {
         await addValue('room_pay_info', {
@@ -336,6 +359,7 @@ function Hello() {
           roomId: roomId,
           Day: Day,
           Paid: Paid,
+          Value: Value,
         });
       } catch (error: any) {
         console.log(error.message);
@@ -672,6 +696,7 @@ function Hello() {
         ShopName={'The company'}
       ></NavBar>
       <MainPage
+      roomSpecificationAPI={roomSpecificationAPI}
         SelectedPage={SelectedPage}
         setSelectedPage={setSelectedPage}
         RoomList={RoomList}

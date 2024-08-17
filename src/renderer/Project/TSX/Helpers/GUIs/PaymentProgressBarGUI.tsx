@@ -30,7 +30,7 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
 
   useEffect(() => {
     if (paymentData.length > 0 && svgRef.current) {
-       const sortedPaymentData = [...paymentData].sort((a, b) => a.Day - b.Day);
+      const sortedPaymentData = [...paymentData].sort((a, b) => a.Day - b.Day);
       const svg = d3.select(svgRef.current);
 
       // Clear existing SVG content
@@ -38,12 +38,14 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
 
       // Calculate the width and height based on the number of payments
       const paymentWidth = 75; // Width of each payment section
-      const width = sortedPaymentData.length * paymentWidth +40; // Total width based on number of payments
+      const width = sortedPaymentData.length * paymentWidth + 40; // Total width based on number of payments
       const height = 120; // Increased height to accommodate dates
       const padding = 30;
 
       // Set SVG dimensions
-      svg.attr('width', width + 2 * padding).attr('height', height + 2 * padding);
+      svg
+        .attr('width', width + 2 * padding)
+        .attr('height', height + 2 * padding);
 
       // Draw payment lines
       const paymentLines = svg
@@ -79,7 +81,7 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
         .append('rect')
         .attr('x', padding)
         .attr('y', padding + height / 2 - 35)
-        .attr('width', width-40)
+        .attr('width', width - 40)
         .attr('height', 10)
         .attr('fill', '#f0f0f0')
         .attr('stroke', '#aaa')
@@ -89,27 +91,28 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
       const currentDateX =
         padding +
         ((today - sortedPaymentData[0].Day) /
-          (sortedPaymentData[sortedPaymentData.length - 1].Day - sortedPaymentData[0].Day)) *
+          (sortedPaymentData[sortedPaymentData.length - 1].Day -
+            sortedPaymentData[0].Day)) *
           width;
       svg
         .append('line')
         .attr('x1', 0)
         .attr('y1', padding + height / 2 - 30)
-        .attr('x2', currentDateX+36.5)
-        .attr('y2', padding + height / 2 -30)
+        .attr('x2', currentDateX + 36.5)
+        .attr('y2', padding + height / 2 - 30)
         .attr('stroke', '#454959')
         .attr('stroke-width', '15');
       svg
         .append('line')
-        .attr('x1', currentDateX+36.3)
+        .attr('x1', currentDateX + 36.3)
         .attr('y1', padding + height / 2 - 40)
-        .attr('x2', currentDateX+36.3)
+        .attr('x2', currentDateX + 36.3)
         .attr('y2', padding + height / 2 - 18)
         .attr('stroke', '#00e1f1')
         .attr('stroke-width', '5');
       svg
         .append('text')
-        .attr('x', currentDateX+36.5)
+        .attr('x', currentDateX + 36.5)
         .attr('y', padding + height / 2 - 3)
         .attr('text-anchor', 'middle')
         .style('fill', 'white')
@@ -203,9 +206,14 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
             }
             return item;
           });
-          roomPaymentInfoApi.editRoomPaymentApi(d.id, 'Paid', true, roomType.id, roomType.AllRoomPayInfo.RoomPayInfo);
+          roomPaymentInfoApi.editRoomPaymentApi(
+            d.id,
+            'Paid',
+            1,
+            roomType.id,
+            roomType.AllRoomPayInfo.RoomPayInfo
+          );
         });
-
       const payButtons2 = svg
         .selectAll('text2.pay-button')
         .data(sortedPaymentData)
@@ -228,7 +236,10 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
         })
         .style('font-size', '12')
         .style('cursor', 'pointer')
-        .text(agreedPrice.toLocaleString() + '$ X')
+        .text((d: any) => {
+          console.log(d);
+          return d.Value === null ? agreedPrice + '$ X' : d.Value + '$ X';
+        })
         .on('click', (event: any, d: any) => {
           const updatedData = sortedPaymentData.map((item) => {
             if (item.Day === d.Day) {
@@ -242,9 +253,22 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
           });
 
           if (d.Paid) {
-            roomPaymentInfoApi.editRoomPaymentApi(d.id, 'Paid', false, roomType.id, roomType.AllRoomPayInfo.RoomPayInfo);
+            roomPaymentInfoApi.editRoomPaymentApi(
+              d.id,
+              'Paid',
+              0,
+              roomType.id,
+              roomType.AllRoomPayInfo.RoomPayInfo
+            );
+            console.log('0 it is');
           } else {
-            roomPaymentInfoApi.editRoomPaymentApi(d.id, 'Paid', true, roomType.id, roomType.AllRoomPayInfo.RoomPayInfo);
+            roomPaymentInfoApi.editRoomPaymentApi(
+              d.id,
+              'Paid',
+              1,
+              roomType.id,
+              roomType.AllRoomPayInfo.RoomPayInfo
+            );
           }
         });
 
@@ -256,13 +280,19 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
           }
           return item;
         });
-        roomPaymentInfoApi.editRoomPaymentApi(d.id, 'Paid', true, roomType.id, roomType.AllRoomPayInfo.RoomPayInfo);
+        roomPaymentInfoApi.editRoomPaymentApi(
+          d.id,
+          'Paid',
+          1,
+          roomType.id,
+          roomType.AllRoomPayInfo.RoomPayInfo
+        );
       });
 
       // Add extend button at the end of the progress bar
       svg
         .append('rect')
-        .attr('x', width + padding-30)
+        .attr('x', width + padding - 30)
         .attr('y', padding + height / 2 - 44)
         .attr('width', 60)
         .attr('height', 30)
@@ -270,7 +300,10 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
         .attr('ry', 5)
         .attr('fill', '#454959')
         .style('cursor', 'pointer')
-        .on('click', ()=>{extendPaymentSchedule(); refresh();});
+        .on('click', () => {
+          extendPaymentSchedule();
+          refresh();
+        });
 
       svg
         .append('text')
@@ -282,7 +315,10 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
         .style('font-size', '14')
         .style('cursor', 'pointer')
         .text('Extend?')
-        .on('click', ()=>{extendPaymentSchedule(); refresh();});
+        .on('click', () => {
+          extendPaymentSchedule();
+          refresh();
+        });
     }
   }, [paymentData, today, paymentData]);
 
@@ -323,10 +359,18 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
           }}
         >
           {message}
-          
-        </p>
+        </p><button onClick={()=>{refresh()}}>refresh</button>
       </div>
-      <div style={{ overflowX: 'auto', maxWidth: '100%', overflowY: 'hidden', height: '160px' }}>        <svg ref={svgRef} width="100%" height="126" />
+      <div
+        style={{
+          overflowX: 'auto',
+          maxWidth: '100%',
+          overflowY: 'hidden',
+          height: '160px',
+        }}
+      >
+        {' '}
+        <svg ref={svgRef} width="100%" height="126" />
       </div>
     </div>
   );

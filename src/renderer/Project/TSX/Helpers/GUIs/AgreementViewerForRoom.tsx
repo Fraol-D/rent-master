@@ -11,6 +11,7 @@ import {
   addValue,
   deleteValue,
   getValuesWithSql,
+  updateValue,
 } from 'Backend/localServerApis';
 const AgreementViewerForRoom = ({
   TenantList,
@@ -27,6 +28,8 @@ const AgreementViewerForRoom = ({
   const [Agreements, setAgreements] = useState<agreements[]>([]);
   const [CurrentAgreementIndex, setCurrentAgreementIndex] = useState(0);
   const [ShowAddAgreementPannal, setShowAddAgreementPannal] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+
   const getAgreements = async () => {
     const agreements = await agreementApi.getAgreementsByRoomIdApi(roomType.id);
     console.log('lol');
@@ -55,7 +58,7 @@ const AgreementViewerForRoom = ({
     //Get
 
     if (ShowState) getAgreements();
-  }, [ShowState]);
+  }, [ShowState,refreshKey]);
   useEffect(() => {
     if (Agreements[CurrentAgreementIndex]) {
       setMemoText(Agreements[CurrentAgreementIndex].Memo || "");
@@ -115,6 +118,21 @@ const AgreementViewerForRoom = ({
         }
       }
     } else if (paymentOption === 'keepUnpaid') {
+
+    } else if (paymentOption === 'makeAllPaid') {
+      const FutruePaymentsRaw = await getValuesWithSql(
+        'room_pay_info',
+        `WHERE roomId = '${
+          roomType.id
+        }' AND Day >= '${Date.now()}' AND Paid = '0'`
+      );
+      console.log(FutruePaymentsRaw.length, 'length');
+      if (FutruePaymentsRaw.length >= 1) {
+        for (let i = 0; i < FutruePaymentsRaw.length; i++) {
+          const element = FutruePaymentsRaw[i];
+          await updateValue('room_pay_info', element.id, "Paid", 1);
+        }
+      }
     }
     // Create new payment data from start time to endtime using payment cycle
     console.log(paymentCycle);
@@ -141,7 +159,7 @@ const AgreementViewerForRoom = ({
         uuidv4(),
         roomType.id,
         currentDate.getTime(),
-        false
+        false,agreedPrice
       );
 
       if (paymentCycle === 'monthly') {
@@ -168,8 +186,10 @@ const AgreementViewerForRoom = ({
     );
     // Set the roomType.SelectedAgreementId to the new agreement Id
     updateRoomProperty(roomType.id, 'selectedAgreementId', agreementId);
+   
     //Refresh component to render new data
-    getAgreements();
+    setRefreshKey(prevKey => prevKey + 1);
+
     handlePaymentRefresh();
     // Reset all the input fields
     setStartTime('');

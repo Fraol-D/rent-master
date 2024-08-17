@@ -7,10 +7,12 @@
     box-shadow: 2px 2px 6px 2px #68686833;
     border: 1px solid grey;
     padding: 5px;
+    margin: 10px;
+    color: white;
 }
 .DashboardWigetPieChartText {
     color: white;
-    font-size: 18px;
+    font-size: 16px;
     width: 100%;
     padding-left: 40px;
     padding-top: 0;
@@ -19,5 +21,13 @@
 }
 .DashboardWigetPieChartTextHeader {
     color: white;
-    font-size: 35px;
+    font-size: 24px;
+    width: 400px;
+    text-align: center;
+}
+.DashboardTotalCollectedTopPart {
+    display: flex;
+    flex-direction: row;
+    ;
+
 }

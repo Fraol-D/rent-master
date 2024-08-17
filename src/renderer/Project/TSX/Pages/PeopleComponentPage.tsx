@@ -264,15 +264,15 @@ export function PeopleComponentPage({
                       </td>
                       <td className="InfoTableBodyTD">
                         {highlightText(tenant.SelectedAgreement, mainSearch)}
-                        {tenant.SelectedAgreement === 'Fixed-Term' && (
-                          <button
+                        {tenant.SelectedAgreement === 'Fixed-Term' ? tenant.RentingOrOut ? <button
                             onClick={() => {
                               HandleOpenClicked(tenant.id);
                             }}
                           >
                             {' open'}
                           </button>
-                        )}
+                          
+                        :<></>:<></>}
                       </td>
 
                       <td className="InfoTableBodyTD">

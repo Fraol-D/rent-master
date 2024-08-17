@@ -16,7 +16,10 @@ const DashbRoomSummary = ({ RoomList }: { RoomList: RoomType[] }) => {
   ];
 
   return (
-    <div className="DashboardWigetMainContainer" style={{width:"400px"}}>
+    <div
+      className="DashboardWigetMainContainer"
+      style={{ width: '400px' }}
+    >
       <p className='DashboardWigetPieChartTextHeader'>Rooms Status</p>
       <PieChart
         series={[

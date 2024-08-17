@@ -219,7 +219,7 @@
   margin-bottom: 5px;
 }
 .RoomSpecficationsMainContainer {
-  background-color: #191919;
+  background-color: rgba(128, 128, 128, 0.12);
   padding: 10px;
   padding-top: 5px;
   border-radius: 5px;

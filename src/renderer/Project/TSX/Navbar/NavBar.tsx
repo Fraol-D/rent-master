@@ -89,7 +89,7 @@ const NavBar = ({
         </div>
       </div>
       <div className="TopPageNavigatorContainer">
-        {['Dashboard', 'People', 'Rooms', 'Calendar', 'Settings'].map((page) => (
+        {['Dashboard', 'People', 'Rooms', 'Calendar'].map((page) => (
           <button
             key={page}
               className={SelectedPage === page? "PageNavigatorButtonSelected":"PageNavigatorButton"}

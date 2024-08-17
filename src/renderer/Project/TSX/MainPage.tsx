@@ -110,6 +110,7 @@ declare global {
     roomId: string;
     Day: number;
     Paid: boolean;
+    Value: number;
   };
   type PastTenantReviewType = {
     id: string;
@@ -162,6 +163,7 @@ const MainPage = ({
   setSelectedPage,
   SelectedPage,
   agreementApi,
+  roomSpecificationAPI,
 }: any) => {
   const [floorFilter, setFloorFilter] = useState<string>('');
   const [TenantNameFilter, setTenantNameFilter] = useState<string>('');
@@ -734,11 +736,12 @@ const MainPage = ({
   };
 
   const [HideSideBarForCalendar, setHideSideBarForCalendar] = useState(false);
+  const [HideSideBarForDashboard, setHideSideBarForDashboard] = useState(false);
   useEffect(() => {
     if (SelectedPage === 'People') {
       RefreshDataFromSqlite();
     }
-    if (SelectedPage === 'Calendar') {
+    if (SelectedPage === 'Calendar' || SelectedPage === 'Dashboard') {
       setHideSideBarForCalendar(true);
     } else {
       setHideSideBarForCalendar(false);
@@ -811,7 +814,12 @@ const MainPage = ({
 
   return (
     <>
-      <div className="MainContainerMain">
+      <div
+        className="MainContainerMain"
+        style={{
+          height: SelectedPage === 'Dashboard' ? 'calc(100% - 60px)' : '100%',
+        }}
+      >
         <button
           className="SideBarShowButton"
           onClick={handleCloseSideBar}
@@ -819,6 +827,8 @@ const MainPage = ({
             visibility: SideBarShowState
               ? 'hidden'
               : HideSideBarForCalendar
+              ? 'hidden'
+              : HideSideBarForDashboard
               ? 'hidden'
               : 'visible',
           }}
@@ -1430,16 +1440,216 @@ const MainPage = ({
               }}
             ></div>{' '}
             <div className="EditRoomScreenMainContainer">
-              <ImageInteractor
-                onAddImage={() => handleAddImage(SelectedEditRoomId)}
-                onDeleteImage={(index) =>
-                  handleDeleteImage(SelectedEditRoomId, index)
-                }
-                onShowInExplorer={handleShowInExplorer}
-                room={RoomList.find(
-                  (r: RoomType) => r.id === SelectedEditRoomId
-                )}
-              />
+              <div style={{ display: 'flex' }}>
+                <div
+                  className="RoomSpecficationsMainContainer"
+                  style={{ color: 'white' }}
+                >
+                  <h3>
+                    Room Specifications{' - '}
+                    <button
+                      onClick={() => {
+                        const ids = uuidv4()
+                        roomSpecificationAPI.addRoomSpecification(
+                          ids,
+                          RoomList.find(
+                            (r: RoomType) => r.id === SelectedEditRoomId
+                          ).id,
+                          'something',
+                          1,
+                          'bool',
+                          '1'
+                        );
+                        let updatedSpecifications = RoomList.find(
+                          (r: RoomType) => r.id === SelectedEditRoomId
+                        ).RoomSpecifications;
+                        updatedSpecifications.push({id: ids,
+                          Detail: 'something',
+                          Number: 1,
+                          type: 'bool',
+                          Boolean: true})
+                        updateRoomPropertyLocal(
+                          SelectedEditRoomId,
+                          'RoomSpecifications',
+                          updatedSpecifications
+                        );
+                      }}
+                    >
+                      Add
+                    </button>
+                  </h3>
+                  {RoomList.find(
+                    (r: RoomType) => r.id === SelectedEditRoomId
+                  ).RoomSpecifications.map((spec, index) => (
+                    <div
+                      key={index}
+                      className="AddANewRoomSpecObjectMainContainer"
+                    >
+                      <div>
+                        Name:
+                        <input
+                          className="AddANewRoomInputsMid"
+                          value={spec.Detail}
+                          onChange={(e) => {
+                            roomSpecificationAPI.editRoomSpecificationApi(
+                              spec.id,
+                              'Detail',
+                              e.target.value
+                            );
+                            const updatedSpecifications = RoomList.find(
+                              (r: RoomType) => r.id === SelectedEditRoomId
+                            ).RoomSpecifications.map((s) =>
+                              s.id === spec.id
+                                ? { ...s, Detail: e.target.value }
+                                : s
+                            );
+                            updateRoomPropertyLocal(
+                              SelectedEditRoomId,
+                              'RoomSpecifications',
+                              updatedSpecifications
+                            );
+                          }}
+                        />
+                        {spec.type === 'bool' ? (
+                          <>
+                            <input
+                              type="checkbox"
+                              checked={spec.Boolean}
+                              onChange={(e) => {
+                                roomSpecificationAPI.editRoomSpecificationApi(
+                                  spec.id,
+                                  'Boolean',
+                                  e.target.checked
+                                );
+                                const updatedSpecifications = RoomList.find(
+                                  (r: RoomType) => r.id === SelectedEditRoomId
+                                ).RoomSpecifications.map((s) =>
+                                  s.id === spec.id
+                                    ? { ...s, Boolean: e.target.checked }
+                                    : s
+                                );
+                                updateRoomPropertyLocal(
+                                  SelectedEditRoomId,
+                                  'RoomSpecifications',
+                                  updatedSpecifications
+                                );
+                              }}
+                            />{' '}
+                            {spec.Boolean ? 'Yes' : 'No'}
+                            {}
+                          </>
+                        ) : (
+                          <input
+                            type="number"
+                            className="AddANewRoomInputsSmall"
+                            value={spec.Number}
+                            onChange={(e) => {
+                              roomSpecificationAPI.editRoomSpecificationApi(
+                                spec.id,
+                                'Number',
+                                e.target.value
+                              );
+                              const updatedSpecifications = RoomList.find(
+                                (r: RoomType) => r.id === SelectedEditRoomId
+                              ).RoomSpecifications.map((s) =>
+                                s.id === spec.id
+                                  ? { ...s, Number: e.target.value }
+                                  : s
+                              );
+                              updateRoomPropertyLocal(
+                                SelectedEditRoomId,
+                                'RoomSpecifications',
+                                updatedSpecifications
+                              );
+                            }}
+                          />
+                        )}
+                      </div>
+                      <div>
+                        <input
+                          type="radio"
+                          name={`spec-${index}`}
+                          value="bool"
+                          checked={spec.type === 'bool'}
+                          onChange={(e) => {
+                            roomSpecificationAPI.editRoomSpecificationApi(
+                              spec.id,
+                              'type',
+                              'bool'
+                            );
+
+                            const updatedSpecifications = RoomList.find(
+                              (r: RoomType) => r.id === SelectedEditRoomId
+                            ).RoomSpecifications.map((s) =>
+                              s.id === spec.id ? { ...s, type: 'bool' } : s
+                            );
+                            updateRoomPropertyLocal(
+                              SelectedEditRoomId,
+                              'RoomSpecifications',
+                              updatedSpecifications
+                            );
+                          }}
+                        />{' '}
+                        Yes/No
+                        <input
+                          type="radio"
+                          name={`spec-${index}`}
+                          value="number"
+                          checked={spec.type === 'number'}
+                          onChange={(e) => {
+                            roomSpecificationAPI.editRoomSpecificationApi(
+                              spec.id,
+                              'type',
+                              'number'
+                            );
+
+                            const updatedSpecifications = RoomList.find(
+                              (r: RoomType) => r.id === SelectedEditRoomId
+                            ).RoomSpecifications.map((s) =>
+                              s.id === spec.id ? { ...s, type: 'number' } : s
+                            );
+                            updateRoomPropertyLocal(
+                              SelectedEditRoomId,
+                              'RoomSpecifications',
+                              updatedSpecifications
+                            );
+                          }}
+                        />{' '}
+                        Number{' - - '}
+                        <button
+                          onClick={() => {
+                            roomSpecificationAPI.deleteRoomSpecificationApi(
+                              spec.id
+                            );
+                            const updatedSpecifications = RoomList.find(
+                              (r: RoomType) => r.id === SelectedEditRoomId
+                            ).RoomSpecifications.filter(
+                              (s) => s.id !== spec.id
+                            );
+                            updateRoomPropertyLocal(
+                              SelectedEditRoomId,
+                              'RoomSpecifications',
+                              updatedSpecifications
+                            );
+                          }}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <ImageInteractor
+                  onAddImage={() => handleAddImage(SelectedEditRoomId)}
+                  onDeleteImage={(index) =>
+                    handleDeleteImage(SelectedEditRoomId, index)
+                  }
+                  onShowInExplorer={handleShowInExplorer}
+                  room={RoomList.find(
+                    (r: RoomType) => r.id === SelectedEditRoomId
+                  )}
+                />
+              </div>
               <button
                 onClick={() => {
                   handleDeleteFirst();
@@ -1455,6 +1665,7 @@ const MainPage = ({
             width: HideSideBarForCalendar
               ? '100%'
               : `calc(100% - ${SideBarWidth}px)`,
+            overflowY: 'auto',
           }}
         >
           {SelectedPage === 'Rooms' && (
@@ -1520,10 +1731,9 @@ const MainPage = ({
           )}
           {SelectedPage === 'Dashboard' && (
             <DashboardPage
-            RoomList={RoomList}
-            tenantList={TenantList}
-          
-
+              roomPaymentInfoApi={roomPaymentInfoApi}
+              RoomList={RoomList}
+              tenantList={TenantList}
             />
           )}
         </div>

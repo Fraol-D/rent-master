@@ -266,7 +266,7 @@ const CalendarGUI: React.FC<CalendarProps> = ({
                           ? '<span style="color: green; font-weight: bold;">Paid</span>'
                           : '<span style="color: red; font-weight: bold;">Unpaid</span>'
                       }</p>
-                      <p><em style="font-style: italic;">Agreed Price:</em> <span style="font-weight: bold; color: #e67e22;">${room.AgreedPrice.toLocaleString()}</span></p>
+                      <p><em style="font-style: italic;">Agreed Price:</em> <span style="font-weight: bold; color: #e67e22;">${room.AgreedPrice.toLocaleString()}$</span></p>
                       <p>Payment Cycle: <span style="background-color: #f1c40f; padding: 2px 5px; border-radius: 3px;">${
                         room.PaymentCycleType
                       }</span></p>

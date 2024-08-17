@@ -150,6 +150,7 @@ const Room = ({
     const tenantIndex = TenantList.findIndex(
       (tenant: any) => tenant.id === SelectedTenantIdOnAdding
     );
+    const tenant = TenantList[tenantIndex];
     if (tenantIndex !== -1) {
       tenantAPI.EditTenantApiWithOutRefresh(
         SelectedTenantIdOnAdding,
@@ -232,31 +233,58 @@ const Room = ({
       interval = 30; // Default to 30 days if the payment cycle is invalid
     }
     console.log('reached1');
-    for (let i = 0; i < 20; i++) {
-      console.log('reached');
+    if (selectedAgreement === 'Fixed-Term') {
+      const startDate = new Date(startTime);
+      const endDate = new Date(endTime);
+      let currentDate = new Date(startDate);
 
-      const paymentDay = getPaymentDay(
-        interval,
-        new Date(startTime),
-        i,
-        paymentCycle
-      );
+      while (currentDate <= endDate) {
+        roomPaymentInfoApi.addRoomPaymentApiWithOutRefresh(
+          uuidv4(),
+          roomType.id,
+          currentDate.getTime(),
+          false,
+          agreedPrice
+        );
 
-      const paymentInfo = {
-        Day: paymentDay.getTime(),
-        Paid: false,
-      };
+        if (paymentCycle === 'monthly') {
+          currentDate.setMonth(currentDate.getMonth() + 1);
+        } else {
+          currentDate.setDate(currentDate.getDate() + interval);
+        }
+      }
+    } else {
+      for (let i = 0; i < 20; i++) {
+        console.log('reached');
 
-      roomPaymentInfoApi.addRoomPaymentApiWithOutRefresh(
+        const paymentDay = getPaymentDay(
+          interval,
+          new Date(startTime),
+          i,
+          paymentCycle
+        );
+
+        roomPaymentInfoApi.addRoomPaymentApiWithOutRefresh(
+          uuidv4(),
+          roomType.id,
+          paymentDay.getTime(),
+          false,agreedPrice
+        );
+      }
+    }
+
+    if (AddTenantUseBrokerState) {
+      brokersRecommendationListApi.AddBrokerRecommendation(
         uuidv4(),
+        AddTenantSelectedBrokerId,
         roomType.id,
-        paymentDay.getTime(),
-        false
+        tenant.id,
+        Date.now(),
+        isPercentCommission
+          ? (commissionValue / 100) * agreedPrice
+          : commissionValue
       );
     }
-    const tenant = TenantList.find(
-      (tenant: any) => tenant.id === SelectedTenantIdOnAdding
-    );
     let DocumentFiles = [];
     const roomDocs = await getRoomDocuments('Add a tenant documents');
     if (roomDocs && roomDocs.documents) {
@@ -286,6 +314,29 @@ const Room = ({
       DocumentFiles = [];
     }
     SetRefreshState(true);
+    const paymentCycleType2 =
+      paymentCycle === 'custom'
+        ? ('-' + customDays).toString()
+        : roomType.PaymentCycleType;
+    //fixed term lease
+    if (selectedAgreement === 'Fixed-Term') {
+      const AgreementId = uuidv4();
+      agreementApi.addAgreementApi(
+        AgreementId,
+        roomType.id,
+        tenant.id,
+        new Date(startTime).getTime(),
+        new Date(endTime).getTime(),
+        new Date(signDate).getTime(),
+        agreedPrice,
+        paymentCycleType2,
+        '',
+        '',
+        Representative
+      );
+      updateRoomProperty(roomType.id, 'selectedAgreementId', AgreementId);
+    }
+    await handlePaymentRefresh();
   };
   const getCorrectPaymentStatment = (text: string, custom: string) => {
     switch (text) {
@@ -306,7 +357,8 @@ const Room = ({
         return 'day';
       default:
         return custom + ' days';
-    }handlePaymentRefresh
+    }
+    handlePaymentRefresh;
   };
   const handleAddTenantButton = async () => {
     if (AddTenantUseBrokerState && AddTenantSelectedBrokerId == '') return;
@@ -415,7 +467,7 @@ const Room = ({
             uuidv4(),
             roomType.id,
             currentDate.getTime(),
-            false
+            false,agreedPrice
           );
 
           if (paymentCycle === 'monthly') {
@@ -439,7 +491,7 @@ const Room = ({
             uuidv4(),
             roomType.id,
             paymentDay.getTime(),
-            false
+            false,agreedPrice
           );
         }
       }
@@ -584,7 +636,8 @@ const Room = ({
           uuidv4(),
           roomType.id,
           paymentDay.getTime(),
-          false
+          false,
+          roomType.AgreedPrice
         );
         existingPayments.add(paymentDayUTC);
         newPaymentsAdded++;
@@ -892,6 +945,7 @@ const Room = ({
         roomId: payment.roomId,
         Day: payment.Day,
         Paid: payment.Paid,
+        Value:payment.Value
       })
     );
 
@@ -1055,7 +1109,7 @@ const Room = ({
                       <p
                         style={{
                           borderBottom: '1px solid white',
-                          width: '120px',
+                          width: '134px',
                         }}
                       >
                         View Agreement

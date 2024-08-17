@@ -26,14 +26,21 @@ button {
   color: white;
   border-right: 0.5px solid white;
   margin: 0px;
+  font-family: 'Inter';
   transition: all 0.2s;
   border-bottom: 0.5px solid white;
 }
-
+select,
+input {
+  background-color: #454959;
+  color: white;
+  border: 1px solid grey;
+  border-radius: 5px;
+  font-family: 'Inter';
+}
 button:hover {
   transform: scale(1.05);
-  border: .5px solid black;
-  
+  border: 0.5px solid black;
 }
 
 li {
@@ -48,6 +55,7 @@ a {
 }
 p {
   margin: 0px;
+  font-family: 'Inter';
 }
 a:hover {
   opacity: 1;
@@ -72,7 +80,7 @@ body {
   height: 100%;
 }
 ::-webkit-scrollbar {
-  background-color: #4549592D;
+  background-color: #4549592d;
   width: 15px;
   height: 15px;
 }
@@ -88,7 +96,6 @@ body {
   background-color: blue;
 }
 
-
 ::-webkit-scrollbar-thumb:active {
   background-color: #454959;
   border-radius: 5px;
@@ -97,7 +104,7 @@ body {
 }
 
 ::-webkit-scrollbar-button {
-  background-color: #00E1FF79;
+  background-color: #00e1ff79;
   width: 15px;
   border-radius: 5px;
   height: 15px;
@@ -110,16 +117,13 @@ body {
   display: block;
 }
 
-
 .InfoTable {
- border-radius: 10px;
- border: 1px solid grey;
- border-collapse: collapse;
-
+  border-radius: 10px;
+  border: 1px solid grey;
+  border-collapse: collapse;
 }
 .InfoTableThead {
   background-color: #454959;
-
 }
 
 .InfoTableHeadTR {
@@ -136,7 +140,6 @@ body {
   padding-bottom: 5px;
   font-size: 15px;
   height: 100%;
- 
 
   justify-content: center;
   align-items: center;
