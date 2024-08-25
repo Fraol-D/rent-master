@@ -9,7 +9,7 @@
   align-items: center;
   padding: 10px;
   border-radius: 10px;
-  background-color: #454959;
+  border: 1px solid grey;
   transition: all 0.2s;
   user-select: none;
 }
@@ -192,6 +192,27 @@
   border: 1px solid white;
   border-top: 1px dashed white;
   flex-direction: column;
+}
+.ViewAgreementContainer {
+  width: 280px;
+  height: 260px;
+  background: #2e2f30;
+  display: flex;
+  align-content: flex-start;
+  justify-content: space-between;
+  border-radius: 10px;
+  color: white;
+  align-content: space-between;
+  transition: all 0.3s;
+  border: 1px solid rgb(255, 255, 255);
+  flex-direction: column;
+  user-select: text;
+  margin-top: 10px;
+  padding-top: 10px;
+  padding-bottom: 10px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  box-shadow: 2px 2px 6px 2px #68686833;
 }
 .AddTenantContainerinnerInput {
   width: 140px;

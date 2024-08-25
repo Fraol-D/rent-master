@@ -23,6 +23,7 @@ export function CalendarPage({
           width: '100%',
           height: 'calc(100% - 60px)',
           color: 'white',
+          overflowY: "hidden"
         }}
       >
         <CalendarGUI

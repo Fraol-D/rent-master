@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import * as d3 from 'd3';
-
+import '../../../CSS/Calendar.css';
 interface CalendarProps {
   rooms: RoomType[];
   initialMonths: number;
@@ -35,14 +35,13 @@ const CalendarGUI: React.FC<CalendarProps> = ({
   useEffect(() => {
     if (ref.current) {
       d3.select(ref.current).selectAll('*').remove();
-
       const baseWidth = 1500;
       const additionalMonthWidth = 750;
       const width =
         baseWidth +
         (numberOfMonthsFuture + numberOfMonthsPast - 2) * additionalMonthWidth;
       const height = filteredRooms.length * 70;
-      const cellSize = 20;
+      const cellSize = 25;
       const margin = { top: 70, right: 30, bottom: 30, left: 200 };
 
       const svg = d3
@@ -70,7 +69,10 @@ const CalendarGUI: React.FC<CalendarProps> = ({
       const xAxis = d3
         .axisTop(xScale)
         .ticks(d3.timeDay.every(1))
-        .tickFormat(d3.timeFormat('%d'))
+        .tickFormat((d: Date) => {
+          const day = d3.timeFormat('%d')(d);
+          return day;
+        })
         .tickSizeOuter(0);
 
       const monthAxis = d3
@@ -92,9 +94,9 @@ const CalendarGUI: React.FC<CalendarProps> = ({
       svg
         .append('g')
         .call(monthAxis)
-        .attr('transform', `translate(0, -40)`)
+        .attr('transform', `translate(0, -20)`)
         .style('font-size', '18px');
-      svg.append('g').call(xAxis).attr('transform', `translate(0, -20)`);
+      svg.append('g').call(xAxis).attr('transform', `translate(0, -0)`);
 
       const yAxis = d3
         .axisLeft(yScale)
@@ -117,8 +119,8 @@ const CalendarGUI: React.FC<CalendarProps> = ({
         .call(yAxis)
         .raise()
         .selectAll('.tick text')
-        .call(function (text:any) {
-          text.each(function(this: SVGTextElement) {
+        .call(function (text: any) {
+          text.each(function (this: SVGTextElement) {
             var text = d3.select(this);
             var words = text.text().split('\n');
             text.text('');
@@ -157,8 +159,8 @@ const CalendarGUI: React.FC<CalendarProps> = ({
         .attr('class', 'x-grid')
         .attr('x1', 0)
         .attr('x2', width)
-        .attr('y1', (d: any) => yScale(d) - 4 || 0)
-        .attr('y2', (d: any) => yScale(d) - 4 || 0)
+        .attr('y1', (d: any) => yScale(d) - 5 || 0)
+        .attr('y2', (d: any) => yScale(d) - 5 || 0)
         .attr('stroke', '#DDDDDD80');
 
       svg
@@ -181,23 +183,23 @@ const CalendarGUI: React.FC<CalendarProps> = ({
         .attr('class', 'y-grid')
         .attr('x1', (d: any) => xScale(d))
         .attr('x2', (d: any) => xScale(d))
-        .attr('y1', 0 - 20)
+        .attr('y1', 0 - 0)
         .attr('y2', height - 65)
         .attr('stroke', '#DDDDDD7F');
 
       const currentDateRect = svg
         .append('rect')
         .attr('x', xScale(today))
-        .attr('y', 0 - 20)
+        .attr('y', 0 - 0)
         .attr('width', 2)
-        .attr('height', height - 45)
+        .attr('height', height - 65)
         .attr('fill', 'yellow')
         .attr('opacity', 1);
 
       svg
         .append('text')
         .attr('x', xScale(today))
-        .attr('y', -45)
+        .attr('y', -25)
         .attr('text-anchor', 'middle')
         .attr('fill', 'yellow')
         .text(today.toDateString());
@@ -211,9 +213,9 @@ const CalendarGUI: React.FC<CalendarProps> = ({
         .attr('class', 'month-indicator')
         .attr('x1', (d: any) => xScale(d))
         .attr('x2', (d: any) => xScale(d))
-        .attr('y1', -20)
+        .attr('y1', -0)
         .attr('y2', height - 65)
-        .attr('stroke', 'lab(4.39 26.27 -47.05 / 0.32)')
+        .attr('stroke', 'blue')
         .attr('stroke-width', 1);
 
       const tooltip = d3
@@ -228,6 +230,32 @@ const CalendarGUI: React.FC<CalendarProps> = ({
         .style('border-radius', '5px')
         .style('font-size', '12px')
         .style('pointer-events', 'none');
+
+      // Add empty squares for all dates and rooms
+      filteredRooms.forEach((room) => {
+        const allDates = d3.timeDays(startDate, endDate);
+        allDates.forEach((date) => {
+          svg
+            .append('rect')
+            .attr('x', xScale(date) - 2)
+            .attr('y', yScale(room.id) - 4)
+            .attr('width', cellSize)
+            .attr('height', yScale.bandwidth() + 4)
+            .attr('fill', 'transparent')
+            .attr('stroke', '#DDDDDD')
+            .attr('stroke-width', 0)
+            .on('mouseover', (event: MouseEvent) => {
+              d3.select(event.target as SVGRectElement)
+                .attr('fill', '#f0f0f0')
+                .attr('opacity', 0.5);
+            })
+            .on('mouseout', (event: MouseEvent) => {
+              d3.select(event.target as SVGRectElement)
+                .attr('fill', 'transparent')
+                .attr('opacity', 0);
+            });
+        });
+      });
 
       filteredRooms.forEach((room) => {
         room.AllRoomPayInfo.RoomPayInfo.forEach((payment) => {
@@ -244,7 +272,8 @@ const CalendarGUI: React.FC<CalendarProps> = ({
               .attr('opacity', 0.5)
               .on('mouseover', (event: MouseEvent, d: any) => {
                 const daysUntil = Math.ceil(
-                  (paymentDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
+                  (paymentDate.getTime() - new Date().getTime()) /
+                    (1000 * 60 * 60 * 24)
                 );
                 tooltip
                   .style('visibility', 'visible')
@@ -266,7 +295,7 @@ const CalendarGUI: React.FC<CalendarProps> = ({
                           ? '<span style="color: green; font-weight: bold;">Paid</span>'
                           : '<span style="color: red; font-weight: bold;">Unpaid</span>'
                       }</p>
-                      <p><em style="font-style: italic;">Agreed Price:</em> <span style="font-weight: bold; color: #e67e22;">${room.AgreedPrice.toLocaleString()}$</span></p>
+                      <p><em style="font-style: italic;">Agreed Price:</em> <span style="font-weight: bold; color: #e67e22;">${payment.Value.toLocaleString()}$</span></p>
                       <p>Payment Cycle: <span style="background-color: #f1c40f; padding: 2px 5px; border-radius: 3px;">${
                         room.PaymentCycleType
                       }</span></p>
@@ -276,14 +305,21 @@ const CalendarGUI: React.FC<CalendarProps> = ({
                   )
                   .style('left', event.pageX + 10 + 'px')
                   .style('top', event.pageY - 10 + 'px');
+                d3.select(event.target)
+                  .attr('fill', payment.Paid ? '#00FF00' : '#FF0000')
+                  .attr('opacity', 0.8);
               })
               .on('mousemove', (event: MouseEvent) => {
                 tooltip
                   .style('left', event.pageX + 10 + 'px')
                   .style('top', event.pageY - 10 + 'px');
               })
-              .on('mouseout', () => {
+
+              .on('mouseout', (event: MouseEvent) => {
                 tooltip.style('visibility', 'hidden');
+                d3.select(event.target)
+                  .attr('fill', payment.Paid ? 'green' : 'red')
+                  .attr('opacity', 0.5);
               });
           }
         });
@@ -310,48 +346,84 @@ const CalendarGUI: React.FC<CalendarProps> = ({
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(event.target.value);
   };
-    const scrollToCurrentDate = () => {
-      if (ref.current) {
-        const svg = d3.select(ref.current);
-        const currentDateRect = svg.select('rect[fill="yellow"]');
-        if (!currentDateRect.empty()) {
-          const x = parseFloat(currentDateRect.attr('x'));
-          const scrollContainer = ref.current.parentElement;
-          if (scrollContainer) {
-            scrollContainer.scrollLeft = x;
-          }
+  const scrollToCurrentDate = () => {
+    if (ref.current) {
+      const svg = d3.select(ref.current);
+      const currentDateRect = svg.select('rect[fill="yellow"]');
+      if (!currentDateRect.empty()) {
+        const x = parseFloat(currentDateRect.attr('x'));
+        const scrollContainer = ref.current.parentElement;
+        if (scrollContainer) {
+          scrollContainer.scrollLeft = x;
         }
       }
-    };
+    }
+  };
   return (
-    <div style={{height:"100%"}}>
-      <div>
-        <input
-          type="text"
-          placeholder="Search by tenant name"
-          value={searchTerm}
-          onChange={handleSearchChange}
-        />
-        <label htmlFor="monthsFutureInput">Months to show in future: </label>
-        <input
-          id="monthsFutureInput"
-          type="number"
-          min="1"
-          value={numberOfMonthsFuture}
-          onChange={handleMonthsFutureChange}
-        />
-        <label htmlFor="monthsPastInput">Months to show in past: </label>
-        <input
-          id="monthsPastInput"
-          type="number"
-          min="1"
-          value={numberOfMonthsPast}
-          onChange={handleMonthsPastChange}
-        />
-        <button onClick={scrollToCurrentDate}>Go to Current Date</button>
-      </div>
-      <div style={{ overflowX: 'auto', height: 'calc(100% - 30px)' }}>
-        <svg ref={ref}></svg>
+    <div className="CalenderContainer">
+      <div className="CalanderMainContainer">
+        <div className="CalenderOptionsMainContainer">
+          <input
+            type="text"
+            placeholder="Search by tenant name"
+            value={searchTerm}
+            onChange={handleSearchChange}
+            style={{
+              padding: '5px',
+              borderRadius: '3px',
+              border: '1px solid #ccc',
+            }}
+          />
+
+          <label htmlFor="monthsPastInput" style={{ fontWeight: 'bold' }}>
+            Months to show in past:{' '}
+          </label>
+          <input
+            id="monthsPastInput"
+            type="number"
+            min="1"
+            value={numberOfMonthsPast}
+            onChange={handleMonthsPastChange}
+            style={{
+              width: '50px',
+              padding: '5px',
+              borderRadius: '3px',
+              border: '1px solid #ccc',
+            }}
+          />
+          <label htmlFor="monthsFutureInput" style={{ fontWeight: 'bold' }}>
+            Months to show in future:{' '}
+          </label>
+          <input
+            id="monthsFutureInput"
+            type="number"
+            min="1"
+            value={numberOfMonthsFuture}
+            onChange={handleMonthsFutureChange}
+            style={{
+              width: '50px',
+              padding: '5px',
+              borderRadius: '3px',
+              border: '1px solid #ccc',
+            }}
+          />
+          <button
+            onClick={scrollToCurrentDate}
+            style={{
+              padding: '5px 10px',
+              backgroundColor: '#4CAF50',
+              color: 'white',
+              border: 'none',
+              borderRadius: '3px',
+              cursor: 'pointer',
+            }}
+          >
+            Go to Current Date
+          </button>
+        </div>
+        <div style={{ overflowX: 'auto', height: 'calc(100% - 44px)' }}>
+          <svg ref={ref}></svg>
+        </div>
       </div>
     </div>
   );

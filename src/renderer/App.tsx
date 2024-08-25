@@ -54,7 +54,7 @@ function Hello() {
               PaymentCycleCustomeDays: room.PaymentCycleCustomeDays,
               squareMeters: room.squareMeters,
               RoomSpecifications: roomSpecifications,
-
+              Archived:room.Archived,
               tenantId: room.tenantId || '',
               AddTenantState: room.AddTenantState || false,
               ViewAgreement: room.ViewAgreement || false,
@@ -238,6 +238,7 @@ function Hello() {
                 agreedPrice: tenant.agreedPrice,
                 TIN: tenant.TIN || '',
                 RentReason: tenant.RentReason || '',
+                AddedTime:tenant.AddedTime,
               };
             })
           );
@@ -260,6 +261,7 @@ function Hello() {
       agreedPrice: string,
       TIN:string,
       RentReason:string,
+      AddedTime:number,
     ) => {
       try {
         await addValue('tenants', {
@@ -275,6 +277,7 @@ function Hello() {
           agreedPrice: agreedPrice,
           TIN: TIN,
           RentReason:RentReason,
+          AddedTime:AddedTime,
         });
         // Update the TenantList and set the state to indicate that the update is complete
         await this.getTenantsApi();
@@ -684,7 +687,7 @@ function Hello() {
 
   };
   const [SelectedPage, setSelectedPage] = useState<
-    'Dashboard' | 'People' | 'Rooms' | 'Calendar' | 'Settings'
+    'Dashboard' | 'People' | 'Rooms' | 'Calendar' | 'Settings' | 'Database'
   >('Rooms');
   return (
     <>

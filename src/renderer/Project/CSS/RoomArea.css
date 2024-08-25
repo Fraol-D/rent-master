@@ -198,7 +198,7 @@
   border-radius: 5px;
 }
 .AddANewRoomSelectMid {
-  width: 70px;
+
   background-color: #454959;
   border: 1px solid grey;
   color: white;
@@ -265,12 +265,19 @@
 
 /**/
 .EditRoomScreenMainContainer {
-  width: 80%;
-  height: 80%;
+  width: 750px;
+  height: 540px;
   background-color: #2e2f30;
   position: absolute;
   left: 50%;
   top: 50%;
+  border: 1px solid white;
+  border-radius: 10px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+
+  justify-content: space-between;
   z-index: 2;
   transform: translate(-50%, -50%);
 }

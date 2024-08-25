@@ -1,0 +1,111 @@
+.CalanderMainContainer {
+  background-color: #2e2f30;
+  /* display: flex; */
+  align-items: center;
+  flex-direction: column;
+  border-radius: 10px;
+  box-shadow: 2px 2px 6px 2px rgba(104, 104, 104, 0.2);
+  border: 1px solid grey;
+  padding: 5px;
+  margin: 10px;
+  color: white;
+  height: calc(100% - 34px);
+}
+.CalenderOptionsMainContainer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  background-color: #434445;
+  border-radius: 5px;
+  justify-content: center;
+}
+.CalenderContainer {
+  height: 100%;
+}
+.DashboardWigetMainContainer {
+  width: 710px;
+  align-items: flex-start;
+  color: white;
+}
+
+.DashboardWigetPieChartTextHeader {
+  width: 710px;
+  color: white;
+}
+
+.DashboardTotalCollectedTopPart {
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px;
+  background-color: #434445;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.ShowByContainer {
+  margin-right: 20px;
+  color: white;
+  display: flex;
+  align-items: center;
+}
+
+.ShowByLabel {
+  margin-right: 10px;
+  font-weight: bold;
+}
+
+.ShowBySelect {
+  color: white;
+  background-color: #454959;
+  padding: 5px 10px;
+  border-radius: 4px;
+  margin-right: 20px;
+  border: 1px solid grey;
+  
+}
+
+.YearInputContainer {
+  display: flex;
+  align-items: center;
+  color: white;
+}
+
+.YearLabel {
+  margin-right: 10px;
+  font-weight: bold;
+}
+
+.YearInput {
+  color: white;
+  background-color: #454959;
+  padding: 5px 10px;
+  border-radius: 4px;
+  margin-right: 20px;
+  border: 1px solid grey;
+  width: 80px;
+}
+
+.TotalLabel {
+  font-weight: bold;
+  margin-right: 10px;
+}
+
+.TotalValue {
+  margin-right: 20px;
+}
+
+.DifferenceLabel {
+  font-weight: bold;
+  margin-right: 10px;
+}
+
+.DifferenceValue {
+  color: #4caf50;
+}
+
+.DifferenceValueNegative {
+  color: #f44336;
+}

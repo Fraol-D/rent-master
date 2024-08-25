@@ -94,28 +94,27 @@ export function PeopleComponentPage({
       </span>
     );
   };
+
   const [Agreements, setAgreements] = useState<agreements[]>([]);
 
   const HandleOpenClicked = (tenantId: string) => {
     const roomType = RoomList.find((r: RoomType) => r.tenantId === tenantId);
     getAgreements(roomType);
   };
+
   const getAgreements = async (roomType: any) => {
     const agreements = await agreementApi.getAgreementsByRoomIdApi(roomType.id);
     console.log('lol');
 
-    // Sort agreements by signTime, oldest first
     const sortedAgreements = agreements.sort(
       (a: agreements, b: agreements) =>
         new Date(a.signTime).getTime() - new Date(b.signTime).getTime()
     );
 
-    // Find the index of the selected agreement
     const selectedIndex = sortedAgreements.findIndex(
       (agreement: agreements) => agreement.id === roomType.selectedAgreementId
     );
 
-    // If found, move it to the end
     if (selectedIndex !== -1) {
       const selectedAgreement = sortedAgreements.splice(selectedIndex, 1)[0];
       sortedAgreements.push(selectedAgreement);
@@ -124,7 +123,7 @@ export function PeopleComponentPage({
 
     setAgreements(sortedAgreements);
   };
-  
+
   return (
     <>
       <div className="SecondNavBarContainer" style={{ width: '100%' }}>
@@ -134,27 +133,37 @@ export function PeopleComponentPage({
         className="RoomContainerContainer"
         style={{ width: '100%', height: 'calc(100% - 60px)', color: 'white' }}
       >
+        <div style={{ marginBottom: '20px' }}>
+          Search:
+          <input
+            type="text"
+            value={mainSearch}
+            onChange={handleMainSearch}
+            placeholder="Search all fields"
+            style={{
+              width: '200px',
+              padding: '5px',
+              fontSize: '16px',
+              borderRadius: '5px',
+              border: '1px solid #ccc',
+            }}
+          />
+        </div>
         {PeopleSelectedPage === 'TenantsList' ? (
           <>
+                       {' '}
             <div style={{ marginBottom: '20px' }}>
-              <input
-                type="text"
-                value={mainSearch}
-                onChange={handleMainSearch}
-                placeholder="Search all fields"
-                style={{
-                  width: '100%',
-                  padding: '10px',
-                  fontSize: '16px',
-                  borderRadius: '5px',
-                  border: '1px solid #ccc',
-                }}
-              />
+                                       {' '}
             </div>
+                       {' '}
             <div className="InfoTableContainer">
+                           {' '}
               <table className="InfoTable">
+                               {' '}
                 <thead className="InfoTableThead">
+                                   {' '}
                   <tr className="InfoTableHeadTR">
+                                       {' '}
                     {[
                       '#',
                       'Name',
@@ -166,12 +175,14 @@ export function PeopleComponentPage({
 
                       'Times',
                       'Price',
+                      'AddedTime',
                     ].map((col, index) => (
                       <th
                         key={index}
                         className="InfoTableHeadTh"
                         onClick={() => handleSearch(col.toLowerCase())}
                       >
+                                               {' '}
                         {searchConfig.key === col.toLowerCase() ? (
                           <input
                             type="text"
@@ -183,11 +194,16 @@ export function PeopleComponentPage({
                         ) : (
                           col
                         )}
+                                             {' '}
                       </th>
                     ))}
+                                     {' '}
                   </tr>
+                                 {' '}
                 </thead>
+                               {' '}
                 <tbody>
+                                   {' '}
                   {filteredData(
                     TenantList,
                     searchConfig.key,
@@ -203,79 +219,122 @@ export function PeopleComponentPage({
                             : 'rgba(224 224 224 / 0.06)',
                       }}
                     >
+                                           {' '}
                       <td className="InfoTableBodyTD" style={{ color: 'grey' }}>
-                        {highlightText(index.toString(), mainSearch)}
+                                               {' '}
+                        {highlightText(index.toString(), mainSearch)}           
+                                 {' '}
                       </td>
+                                           {' '}
                       <td className="InfoTableBodyTD">
-                        {highlightText(tenant.name, mainSearch)}
+                                               {' '}
+                        {highlightText(tenant.name, mainSearch)}               
+                               {' '}
                         <div className="EmailInfoTable">
+                                                   {' '}
                           {highlightText(
                             tenant.email.toLowerCase(),
                             mainSearch
                           )}
+                                                 {' '}
                         </div>
+                                             {' '}
                       </td>
+                                           {' '}
                       <td className="InfoTableBodyTD PhoneNumberInfoTableContainer">
+                                               {' '}
                         <em>{highlightText(tenant.phoneNumber, mainSearch)}</em>
+                                               {' '}
                         <em>
-                          {highlightText(tenant.phoneNumber2, mainSearch)}
+                                                   {' '}
+                          {highlightText(tenant.phoneNumber2, mainSearch)}     
+                                           {' '}
                         </em>
+                                             {' '}
                       </td>
-
+                                           {' '}
                       <td className="InfoTableBodyTD">
-                        {highlightText(tenant.TIN || 'N/A', mainSearch)}
+                                               {' '}
+                        {highlightText(tenant.TIN || 'N/A', mainSearch)}       
+                                     {' '}
                       </td>
+                                           {' '}
                       <td className="InfoTableBodyTD">
+                                               {' '}
                         <p
                           style={{
                             color: tenant.RentingOrOut ? 'green' : 'red',
                           }}
                         >
+                                                   {' '}
                           {highlightText(
                             tenant.RentingOrOut ? 'Renting' : 'Out',
                             mainSearch
                           )}
+                                                 {' '}
                         </p>
+                                               {' '}
                         <p>
+                                                   {' '}
                           {tenant.RentingOrOut ? (
                             <>
-                              Rm.{' '}
+                                                            Rm.                
+                                           {' '}
                               {highlightText(
                                 RoomList.find(
                                   (room: any) => room.tenantId === tenant.id
                                 )?.roomIndex || 'D',
                                 mainSearch
                               )}{' '}
-                              Flr.{' '}
+                                                            Flr.                
+                                           {' '}
                               {highlightText(
                                 RoomList.find(
                                   (room: any) => room.tenantId === tenant.id
                                 )?.floor || 'D',
                                 mainSearch
                               )}
+                                                         {' '}
                             </>
                           ) : (
                             ''
                           )}
+                                                 {' '}
                         </p>
+                                             {' '}
                       </td>
+                                           {' '}
                       <td className="InfoTableBodyTD">
-                        {highlightText(tenant.RentReason || 'N/A', mainSearch)}
+                                               {' '}
+                        {highlightText(tenant.RentReason || 'N/A', mainSearch)} 
+                                           {' '}
                       </td>
+                                           {' '}
                       <td className="InfoTableBodyTD">
-                        {highlightText(tenant.SelectedAgreement, mainSearch)}
-                        {tenant.SelectedAgreement === 'Fixed-Term' ? tenant.RentingOrOut ? <button
-                            onClick={() => {
-                              HandleOpenClicked(tenant.id);
-                            }}
-                          >
-                            {' open'}
-                          </button>
-                          
-                        :<></>:<></>}
+                                               {' '}
+                        {highlightText(tenant.SelectedAgreement, mainSearch)}   
+                                           {' '}
+                        {tenant.SelectedAgreement === 'Fixed-Term' ? (
+                          tenant.RentingOrOut ? (
+                            <button
+                              onClick={() => {
+                                HandleOpenClicked(tenant.id);
+                              }}
+                            >
+                                                          {' open'}             
+                                         {' '}
+                            </button>
+                          ) : (
+                            <></>
+                          )
+                        ) : (
+                          <></>
+                        )}
+                                             {' '}
                       </td>
-
+                                           {' '}
                       <td className="InfoTableBodyTD">
+                                               {' '}
                         <div>
                           In{' '}
                           {highlightText(
@@ -289,10 +348,12 @@ export function PeopleComponentPage({
                             ),
                             mainSearch
                           )}
+                                                 {' '}
                         </div>
+                                               {' '}
                         {!tenant.RentingOrOut && (
                           <div>
-                            Out{' '}
+                            Out {' '}
                             {highlightText(
                               new Date(tenant.endTime).toLocaleDateString(
                                 'en-US',
@@ -304,50 +365,73 @@ export function PeopleComponentPage({
                               ),
                               mainSearch
                             )}
+                                                     {' '}
                           </div>
                         )}
+                                             {' '}
                       </td>
+                                           {' '}
                       <td className="InfoTableBodyTD">
+                                               {' '}
                         <div>
+                                                   {' '}
                           {highlightText(
                             tenant.agreedPrice.toLocaleString() + '$',
                             mainSearch
                           )}
+                                                 {' '}
                         </div>
+                                             {' '}
                       </td>
+                          <td className="InfoTableBodyTD" title={toEthiopianDateString(new Date(tenant.AddedTime))}>
+                     
+                                                   {' '}
+                          {highlightText(
+                          new Date(tenant.AddedTime).toDateString(),
+                            mainSearch
+                          )}
+                                               
+                        
+                      </td>               
                     </tr>
                   ))}
+                                 {' '}
                 </tbody>
+                             {' '}
               </table>
+                           {' '}
               {Agreements.length >= 1 && (
                 <div
                   className="InfoTableContainer"
                   style={{ marginTop: '40px' }}
                 >
-                  Tenant Name:{' '}
+                                    Tenant Name:                  {' '}
                   {
                     TenantList.find(
                       (t: tenant) => t.id === Agreements[0].tenantId
                     ).name
                   }
-                  {' --- '}
-                  Occupancy: Floor:{' '}
+                                    {' --- '}                  Occupancy: Floor:{' '}
+                                   {' '}
                   {
                     RoomList.find(
                       (r: RoomType) => r.id === Agreements[0].roomId
                     ).floor
                   }
-                  {' - '}
-                  Room:{' '}
+                                    {' - '}                  Room:              
+                     {' '}
                   {
                     RoomList.find(
                       (r: RoomType) => r.id === Agreements[0].roomId
                     ).roomIndex
                   }
-                  
+                                                     {' '}
                   <table className="InfoTable" style={{ width: '1100px' }}>
+                                       {' '}
                     <thead className="InfoTableThead">
+                                           {' '}
                       <tr className="InfoTableHeadTR">
+                                               {' '}
                         {[
                           '#',
                           'Start Time',
@@ -361,12 +445,17 @@ export function PeopleComponentPage({
                           'Status',
                         ].map((col, index) => (
                           <th key={index} className="InfoTableHeadTh">
-                            {col}
+                                                        {col}                   
+                                 {' '}
                           </th>
                         ))}
+                                             {' '}
                       </tr>
+                                         {' '}
                     </thead>
+                                       {' '}
                     <tbody>
+                                           {' '}
                       {Agreements.map(
                         (agreement: agreements, index: number) => (
                           <tr
@@ -379,18 +468,20 @@ export function PeopleComponentPage({
                                   : 'rgba(224 224 224 / 0.06)',
                             }}
                           >
+                                                       {' '}
                             <td className="InfoTableBodyTD">
-                              {highlightText(index, mainSearch)}
+                                                           {' '}
+                              {highlightText(index, mainSearch)}               
+                                         {' '}
                             </td>
-
+                                                       {' '}
                             <td
                               className="InfoTableBodyTD"
                               title={toEthiopianDateString(
-                                new Date(
-                                  agreement.startTime
-                                )
+                                new Date(agreement.startTime)
                               )}
                             >
+                                                           {' '}
                               {highlightText(
                                 new Date(
                                   agreement.startTime
@@ -401,12 +492,16 @@ export function PeopleComponentPage({
                                 }),
                                 mainSearch
                               )}
+                                                         {' '}
                             </td>
-                            <td className="InfoTableBodyTD" title={toEthiopianDateString(
-                                new Date(
-                                  agreement.endTime
-                                )
-                              )}>
+                                                       {' '}
+                            <td
+                              className="InfoTableBodyTD"
+                              title={toEthiopianDateString(
+                                new Date(agreement.endTime)
+                              )}
+                            >
+                                                           {' '}
                               {highlightText(
                                 new Date(agreement.endTime).toLocaleDateString(
                                   'en-US',
@@ -418,12 +513,16 @@ export function PeopleComponentPage({
                                 ),
                                 mainSearch
                               )}
+                                                         {' '}
                             </td>
-                            <td className="InfoTableBodyTD" title={toEthiopianDateString(
-                                new Date(
-                                  agreement.signTime
-                                )
-                              )}>
+                                                       {' '}
+                            <td
+                              className="InfoTableBodyTD"
+                              title={toEthiopianDateString(
+                                new Date(agreement.signTime)
+                              )}
+                            >
+                                                           {' '}
                               {highlightText(
                                 new Date(agreement.signTime).toLocaleDateString(
                                   'en-US',
@@ -435,45 +534,74 @@ export function PeopleComponentPage({
                                 ),
                                 mainSearch
                               )}
+                                                         {' '}
                             </td>
+                                                       {' '}
                             <td className="InfoTableBodyTD">
+                                                           {' '}
                               {highlightText(
                                 agreement.agreedPrice.toLocaleString() + '$',
                                 mainSearch
                               )}
+                                                         {' '}
                             </td>
+                                                       {' '}
                             <td className="InfoTableBodyTD">
+                                                           {' '}
                               {highlightText(
                                 agreement.paymentCycleType,
                                 mainSearch
                               )}
+                                                         {' '}
                             </td>
+                                                       {' '}
                             <td className="InfoTableBodyTD">
-                              {highlightText(agreement.Memo, mainSearch)}
+                                                           {' '}
+                              {highlightText(agreement.Memo, mainSearch)}       
+                                                 {' '}
                             </td>
+                                                       {' '}
                             <td className="InfoTableBodyTD">
+                                                           {' '}
                               {highlightText(
                                 agreement.RentReserved.toLocaleString() + '$',
                                 mainSearch
                               )}
+                                                         {' '}
                             </td>
+                                                       {' '}
                             <td className="InfoTableBodyTD">
+                                                           {' '}
                               {highlightText(
                                 agreement.representative,
                                 mainSearch
                               )}
+                                                         {' '}
                             </td>
+                                                       {' '}
                             <td className="InfoTableBodyTD">
-                              {RoomList.find((r:RoomType)=>r.id===agreement.roomId).selectedAgreementId === agreement.id ? "Current":"Expired"}
+                                                           {' '}
+                              {RoomList.find(
+                                (r: RoomType) => r.id === agreement.roomId
+                              ).selectedAgreementId === agreement.id
+                                ? 'Current'
+                                : 'Expired'}
+                                                         {' '}
                             </td>
+                                                     {' '}
                           </tr>
                         )
                       )}
+                                         {' '}
                     </tbody>
+                                     {' '}
                   </table>
+                                 {' '}
                 </div>
               )}
+                         {' '}
             </div>
+                     {' '}
           </>
         ) : PeopleSelectedPage === 'BrokersList' ? (
           <div className="InfoTableContainer">
@@ -527,28 +655,37 @@ export function PeopleComponentPage({
                     }}
                   >
                     <td className="InfoTableBodyTD" style={{ color: 'grey' }}>
-                      {index + 1}
+                      {highlightText(index + 1, mainSearch)}
                     </td>
                     <td className="InfoTableBodyTD">
-                      {broker.name}
+                      {highlightText(broker.name, mainSearch)}
                       {broker.email && (
                         <div className="EmailInfoTable">
-                          {broker.email.toLowerCase()}
+                          {highlightText(
+                            broker.email.toLowerCase(),
+                            mainSearch
+                          )}
                         </div>
                       )}
                     </td>
                     <td className="InfoTableBodyTD PhoneNumberInfoTableContainer">
                       <em>
-                        {broker.phoneNumber.replace(
-                          /(\d{4})(\d{3})(\d{3})/,
-                          '$1 $2 $3'
+                        {highlightText(
+                          broker.phoneNumber.replace(
+                            /(\d{4})(\d{3})(\d{3})/,
+                            '$1 $2 $3'
+                          ),
+                          mainSearch
                         )}
                       </em>
                       {broker.phoneNumber2 && (
                         <em>
-                          {broker.phoneNumber2.replace(
-                            /(\d{4})(\d{3})(\d{3})/,
-                            '$1 $2 $3'
+                          {highlightText(
+                            broker.phoneNumber2.replace(
+                              /(\d{4})(\d{3})(\d{3})/,
+                              '$1 $2 $3'
+                            ),
+                            mainSearch
                           )}
                         </em>
                       )}
@@ -564,7 +701,8 @@ export function PeopleComponentPage({
                         }}
                       >
                         {BrokerRecommendationList.filter(
-                          (broker: any) => broker.id === broker.id
+                          (recommendation: BrokerRecommendationType) =>
+                            recommendation.brokerId === broker.id
                         ).map(
                           (
                             recommendation: BrokerRecommendationType,
@@ -579,44 +717,53 @@ export function PeopleComponentPage({
                               }}
                             >
                               <span style={{ fontWeight: 'bold' }}>
-                                {
+                                {highlightText(
                                   TenantList.find(
                                     (t: tenant) =>
                                       t.id ===
                                       recommendation.recommendedTenantId
-                                  )?.name
-                                }
+                                  )?.name || '',
+                                  mainSearch
+                                )}
                               </span>
                               <span style={{ color: '#A1A1A1' }}>
                                 {' '}
                                 (
-                                {new Date(
-                                  recommendation.AddedTime
-                                ).toDateString()}
+                                {highlightText(
+                                  new Date(
+                                    recommendation.AddedTime
+                                  ).toDateString(),
+                                  mainSearch
+                                )}
                                 )
                               </span>
                               <br />
                               <span style={{ color: '#BDDDFF' }}>
                                 Commission: $
-                                {recommendation.AgreedCommission.toLocaleString()}
+                                {highlightText(
+                                  recommendation.AgreedCommission.toLocaleString(),
+                                  mainSearch
+                                )}
                               </span>
                               <span
                                 style={{ marginLeft: '10px', color: '#90FFAA' }}
                               >
                                 Floor:{' '}
-                                {
+                                {highlightText(
                                   RoomList.find(
                                     (r: RoomType) =>
                                       r.id === recommendation.roomId
-                                  )?.roomIndex
-                                }
+                                  )?.floor || '',
+                                  mainSearch
+                                )}
                                 , Room:{' '}
-                                {
+                                {highlightText(
                                   RoomList.find(
                                     (r: RoomType) =>
                                       r.id === recommendation.roomId
-                                  )?.roomIndex
-                                }
+                                  )?.roomIndex || '',
+                                  mainSearch
+                                )}
                               </span>
                             </div>
                           )
@@ -624,11 +771,14 @@ export function PeopleComponentPage({
                       </div>{' '}
                     </td>
                     <td className="InfoTableBodyTD">
-                      {new Date(broker.AddedTime).toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric',
-                      })}
+                      {highlightText(
+                        new Date(broker.AddedTime).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                        }),
+                        mainSearch
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -692,41 +842,71 @@ export function PeopleComponentPage({
                     }}
                   >
                     <td className="InfoTableBodyTD" style={{ color: 'grey' }}>
-                      {index + 1}
+                      {highlightText(index + 1, mainSearch)}
                     </td>
                     <td className="InfoTableBodyTD">
-                      {TenantList.find((t: tenant) => t.id === review.tenantId)
-                        ?.name || 'Deleted'}
+                      {highlightText(
+                        TenantList.find((t: tenant) => t.id === review.tenantId)
+                          ?.name || 'Deleted',
+                        mainSearch
+                      )}
                       <div className="EmailInfoTable">
-                        {TenantList.find(
-                          (t: tenant) => t.id === review.tenantId
-                        )?.email.toLowerCase()}
+                        {highlightText(
+                          TenantList.find(
+                            (t: tenant) => t.id === review.tenantId
+                          )?.email.toLowerCase() || '',
+                          mainSearch
+                        )}
                       </div>
                     </td>
                     <td className="InfoTableBodyTD">
                       Flr.{' '}
-                      {RoomList.find((r: RoomType) => r.id == review.roomId)
-                        ?.floor || 'D'}{' '}
+                      {highlightText(
+                        RoomList.find((r: RoomType) => r.id == review.roomId)
+                          ?.floor || 'D',
+                        mainSearch
+                      )}{' '}
                       <br />
                       Rm.{' '}
-                      {RoomList.find((r: RoomType) => r.id == review.roomId)
-                        ?.roomIndex || 'D'}
+                      {highlightText(
+                        RoomList.find((r: RoomType) => r.id == review.roomId)
+                          ?.roomIndex || 'D',
+                        mainSearch
+                      )}
                     </td>
                     <td className="InfoTableBodyTD">
-                      {BrokerList.find(
-                        (b: BrokerType) => b.id === review.brokerId
-                      )?.name || 'none'}{' '}
+                      {highlightText(
+                        BrokerList.find(
+                          (b: BrokerType) => b.id === review.brokerId
+                        )?.name || 'none',
+                        mainSearch
+                      )}{' '}
                       <div></div>c:{' '}
                       <em style={{ color: 'grey', fontSize: '12px' }}>
-                        {review.AgreedCommission.toLocaleString() || ''}$
+                        {highlightText(
+                          review.AgreedCommission.toLocaleString() || '',
+                          mainSearch
+                        )}
+                        $
                       </em>
                     </td>
                     <td className="InfoTableBodyTD">
-                      {review.AgreedPrice.toLocaleString()}$ per{' '}
-                      {getCorrectPaymentStatment(review.paymentCycleType)}
+                      {highlightText(
+                        review.AgreedPrice.toLocaleString(),
+                        mainSearch
+                      )}
+                      $ per{' '}
+                      {highlightText(
+                        getCorrectPaymentStatment(review.paymentCycleType),
+                        mainSearch
+                      )}
                     </td>
                     <td className="InfoTableBodyTD">
-                      {review.totalEarnings.toLocaleString()}$
+                      {highlightText(
+                        review.totalEarnings.toLocaleString(),
+                        mainSearch
+                      )}
+                      ${' '}
                     </td>
                     <td className="InfoTableBodyTD">
                       {[...Array(5)].map((_, index) => (
@@ -741,26 +921,35 @@ export function PeopleComponentPage({
                       ))}
                     </td>
                     <td className="InfoTableBodyTD">
-                      {review.description || '---'}
+                      {highlightText(review.description || '---', mainSearch)}
                     </td>
                     <td className="InfoTableBodyTD">
-                      {review.endReason || '---'}
+                      {highlightText(review.endReason || '---', mainSearch)}
                     </td>
                     <td className="InfoTableBodyTD">
                       <div>
                         In{' '}
-                        {new Date(review.enterDate).toLocaleDateString(
-                          'en-US',
-                          { month: 'short', day: 'numeric', year: 'numeric' }
+                        {highlightText(
+                          new Date(review.enterDate).toLocaleDateString(
+                            'en-US',
+                            { month: 'short', day: 'numeric', year: 'numeric' }
+                          ),
+                          mainSearch
                         )}
                       </div>
                       <div>
                         Out{' '}
-                        {new Date(review.exitDate).toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          year: 'numeric',
-                        })}
+                        {highlightText(
+                          new Date(review.exitDate).toLocaleDateString(
+                            'en-US',
+                            {
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric',
+                            }
+                          ),
+                          mainSearch
+                        )}
                       </div>
                     </td>
                   </tr>

@@ -161,7 +161,7 @@ const DocumentInteractor: React.FC<DocumentInteractorProps> = ({
       height: '160px',
       maxHeight: '230px',
       display: 'flex',
-      background: '#191919',
+      background: '#434445',
       flexDirection: 'column',
       borderRadius: '10px',
       marginBottom: '20px'}:{ width: '100%', height: AddTenant ? "160px":'100%',maxHeight: AddTenant ? "230px":"" ,display: 'flex', flexDirection: 'column' }}>
@@ -183,10 +183,8 @@ const DocumentInteractor: React.FC<DocumentInteractorProps> = ({
       </div>
       <div className="document-controls" style={{ display: 'flex', justifyContent: 'space-around', padding: '10px' }}>
         <button onClick={handleOnAddDocument}>Add Document</button>
-        <button onClick={handleOpenDocument} disabled={!selectedDocument}>Open</button>
-        <button onClick={handleShowInExplorer} disabled={!selectedDocument}>Open in Files</button>
-        <button onClick={handleDeleteDocument} disabled={!selectedDocument}>Delete</button>
-      </div>
+        {selectedDocument && <><button onClick={handleOpenDocument} disabled={!selectedDocument}>Open</button><button onClick={handleShowInExplorer} disabled={!selectedDocument}>Open in Files</button><button onClick={handleDeleteDocument} disabled={!selectedDocument}>Delete</button></>
+  }    </div>
     </div>
   );
 };

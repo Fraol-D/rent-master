@@ -58,12 +58,12 @@ const AgreementViewerForRoom = ({
     //Get
 
     if (ShowState) getAgreements();
-  }, [ShowState,refreshKey]);
+  }, [ShowState, refreshKey]);
   useEffect(() => {
     if (Agreements[CurrentAgreementIndex]) {
-      setMemoText(Agreements[CurrentAgreementIndex].Memo || "");
+      setMemoText(Agreements[CurrentAgreementIndex].Memo || '');
       setRentReservedText(
-        Agreements[CurrentAgreementIndex].RentReserved.toString() || ""
+        Agreements[CurrentAgreementIndex].RentReserved.toString() || ''
       );
     }
   }, [CurrentAgreementIndex]);
@@ -118,7 +118,6 @@ const AgreementViewerForRoom = ({
         }
       }
     } else if (paymentOption === 'keepUnpaid') {
-
     } else if (paymentOption === 'makeAllPaid') {
       const FutruePaymentsRaw = await getValuesWithSql(
         'room_pay_info',
@@ -130,7 +129,7 @@ const AgreementViewerForRoom = ({
       if (FutruePaymentsRaw.length >= 1) {
         for (let i = 0; i < FutruePaymentsRaw.length; i++) {
           const element = FutruePaymentsRaw[i];
-          await updateValue('room_pay_info', element.id, "Paid", 1);
+          await updateValue('room_pay_info', element.id, 'Paid', 1);
         }
       }
     }
@@ -159,7 +158,8 @@ const AgreementViewerForRoom = ({
         uuidv4(),
         roomType.id,
         currentDate.getTime(),
-        false,agreedPrice
+        false,
+        agreedPrice
       );
 
       if (paymentCycle === 'monthly') {
@@ -186,9 +186,12 @@ const AgreementViewerForRoom = ({
     );
     // Set the roomType.SelectedAgreementId to the new agreement Id
     updateRoomProperty(roomType.id, 'selectedAgreementId', agreementId);
-   
+    updateRoomProperty(roomType.id, 'AgreedPrice', agreedPrice);
+    updateRoomProperty(roomType.id, 'PaymentCycleType', paymentCycle);
+    updateRoomProperty(roomType.id, 'PaymentCycleCustomeDays', customDays);
+
     //Refresh component to render new data
-    setRefreshKey(prevKey => prevKey + 1);
+    setRefreshKey((prevKey) => prevKey + 1);
 
     handlePaymentRefresh();
     // Reset all the input fields
@@ -227,11 +230,50 @@ const AgreementViewerForRoom = ({
       <>
         <div className="AgreementMainContianer">
           <div>
+            {Agreements.length >= 1 && (
+              <div className="AgreementNavigationButtons">
+                <button
+                  onClick={handlePrevAgreement}
+                  disabled={CurrentAgreementIndex === 0}
+                >
+                  ◀
+                </button>
+                <strong
+                  style={{
+                    color:
+                      Agreements[CurrentAgreementIndex].id ===
+                      roomType.selectedAgreementId
+                        ? 'green'
+                        : 'red',
+                  }}
+                >
+                  {Agreements[CurrentAgreementIndex].id ===
+                  roomType.selectedAgreementId
+                    ? 'Current'
+                    : 'Expired ' +
+                      (Agreements.indexOf(Agreements[CurrentAgreementIndex]) +
+                        1)}
+                </strong>{' '}
+                <button
+                  onClick={handleNextAgreement}
+                  disabled={CurrentAgreementIndex === Agreements.length - 1}
+                >
+                  ▶
+                </button>
+                <button
+                  onClick={() => {
+                    setShowAddAgreementPannal(true);
+                  }}
+                >
+                  Add an agreement
+                </button>
+              </div>
+            )}
             <div className="AddTenantContainerinnerElement" style={{}}>
               <div>
                 Representative:
                 <em style={{ fontWeight: '600' }}>
-                  {Agreements[CurrentAgreementIndex].representative}
+                  {Agreements[CurrentAgreementIndex].representative || '---'}
                 </em>
               </div>
             </div>
@@ -268,7 +310,6 @@ const AgreementViewerForRoom = ({
                   new Date(Agreements[CurrentAgreementIndex].startTime),
                   new Date(Agreements[CurrentAgreementIndex].endTime)
                 ).toLocaleString()}{' '}
-                
               </em>
             </div>
             <div
@@ -288,19 +329,22 @@ const AgreementViewerForRoom = ({
           <div className="AddTenantContainerinnerElement">
             Agreed Price:{' '}
             <em style={{ fontWeight: '600' }}>
-              {Agreements[CurrentAgreementIndex].agreedPrice}
+              {Agreements[CurrentAgreementIndex].agreedPrice.toLocaleString()}
             </em>
             $ Every{' '}
             {getCorrectPaymentStatment(
-              Agreements[CurrentAgreementIndex].paymentCycleType
+              Agreements[CurrentAgreementIndex].paymentCycleType,
+              Agreements[CurrentAgreementIndex].paymentCycleType.slice(1)
             )}
+            {console.log('payment cycle', Agreements[CurrentAgreementIndex])}
           </div>
           <div className="AddTenantContainerinnerElement">
             Payment cycle:{' '}
             <em style={{ fontWeight: '600' }}>
               Every{' '}
               {getCorrectPaymentStatment(
-                Agreements[CurrentAgreementIndex].paymentCycleType
+               Agreements[CurrentAgreementIndex].paymentCycleType,
+               Agreements[CurrentAgreementIndex].paymentCycleType.slice(1)
               )}
             </em>
           </div>
@@ -359,44 +403,6 @@ const AgreementViewerForRoom = ({
               }}
             />
           </div>
-          {Agreements.length >= 1 && (
-            <div className="AgreementNavigationButtons">
-              <button
-                onClick={handlePrevAgreement}
-                disabled={CurrentAgreementIndex === 0}
-              >
-                ◀
-              </button>
-              <strong
-                style={{
-                  color:
-                    Agreements[CurrentAgreementIndex].id ===
-                    roomType.selectedAgreementId
-                      ? 'green'
-                      : 'red',
-                }}
-              >
-                {Agreements[CurrentAgreementIndex].id ===
-                roomType.selectedAgreementId
-                  ? 'Current'
-                  : 'Expired ' +
-                    (Agreements.indexOf(Agreements[CurrentAgreementIndex]) + 1)}
-              </strong>{' '}
-              <button
-                onClick={handleNextAgreement}
-                disabled={CurrentAgreementIndex === Agreements.length - 1}
-              >
-                ▶
-              </button>
-              <button
-                onClick={() => {
-                  setShowAddAgreementPannal(true);
-                }}
-              >
-                Add an agreement
-              </button>
-            </div>
-          )}
         </div>
         {ShowAddAgreementPannal && (
           <div className="PopOutContainerAgreement">
@@ -530,6 +536,20 @@ const AgreementViewerForRoom = ({
                           }}
                         ></EthiopianCalanderConverterMenu>
                       )}{' '}
+                      {[30, 60, 90, 120, 150, 180, 365].map((days) => (
+                        <button
+                          key={days}
+                          onClick={() => {
+                            const startDate = new Date(startTime);
+                            const endDate = new Date(
+                              startDate.getTime() + days * 24 * 60 * 60 * 1000
+                            );
+                            setEndTime(endDate.toISOString().split('T')[0]);
+                          }}
+                        >
+                          +{days}
+                        </button>
+                      ))}
                     </div>
                     <div>
                       Sign date:

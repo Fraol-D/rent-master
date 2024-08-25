@@ -22,7 +22,7 @@ export function RoomListComponent({
   pastTenantReviewApi,
   brokersRecommendationListApi,
   handleAddRoomButtonInitial,
-  updateRoomPropertyLocal,agreementApi
+  updateRoomPropertyLocal,agreementApi,ShowArchived
 }: any) {
   return (
     <>
@@ -30,7 +30,7 @@ export function RoomListComponent({
         
         <div className="FilterOptions">
           <strong style={{ marginRight: '10px' }}>
-            Showing {sortedAndFilteredRooms.length} room
+            Showing {sortedAndFilteredRooms.length} {ShowArchived && "archived"} room
             {sortedAndFilteredRooms.length != 1 && 's'}
           </strong>
           {filterOptions.length > 0 && <strong>Filter options:</strong>}
@@ -73,7 +73,7 @@ export function RoomListComponent({
           }}
         ></div>
         <div className="RoomContainer">
-          {sortedAndFilteredRooms.map((room: any, index: any) => (
+          {sortedAndFilteredRooms.filter((r:RoomType)=>r.Archived == ShowArchived).map((room: any, index: any) => (
             <Room
             agreementApi={agreementApi}
               brokerApi={brokerApi}

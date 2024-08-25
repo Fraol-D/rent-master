@@ -74,7 +74,7 @@ const NavBar = ({
     <div className="navigation">
       <div className="LeftSide">
         <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
-          <img
+          {/* <img
             className={ProfileState ? 'LogoImageEdit' : 'LogoImage'}
             src={Image || InsertImageIcon}
             alt="Logo"
@@ -85,11 +85,11 @@ const NavBar = ({
             <input type="text" className="Name-ofShop-input" value={ShopName} />
           ) : (
             <p className="Name-ofShop">{ShopName}</p>
-          )}
+          )} */} <p className="Name-ofShop">Rent Master</p>
         </div>
       </div>
       <div className="TopPageNavigatorContainer">
-        {['Dashboard', 'People', 'Rooms', 'Calendar'].map((page) => (
+        {['Dashboard', 'People', 'Rooms', 'Calendar', "Database"].map((page) => (
           <button
             key={page}
               className={SelectedPage === page? "PageNavigatorButtonSelected":"PageNavigatorButton"}

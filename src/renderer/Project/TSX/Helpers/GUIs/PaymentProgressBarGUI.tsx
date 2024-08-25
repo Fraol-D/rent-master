@@ -238,7 +238,7 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
         .style('cursor', 'pointer')
         .text((d: any) => {
           console.log(d);
-          return d.Value === null ? agreedPrice + '$ X' : d.Value + '$ X';
+          return d.Value === null ? agreedPrice.toLocaleString() + '$ X' : d.Value.toLocaleString() + '$ X';
         })
         .on('click', (event: any, d: any) => {
           const updatedData = sortedPaymentData.map((item) => {

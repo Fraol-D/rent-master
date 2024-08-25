@@ -1,17 +1,16 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import * as d3 from 'd3';
-import { BarChart, barElementClasses } from '@mui/x-charts/BarChart';
+import { BarChart } from '@mui/x-charts/BarChart';
 import { axisClasses } from '@mui/x-charts/ChartsAxis';
 import { getValuesWithSql } from 'Backend/localServerApis';
-import { Console } from 'console';
 
-const DashbTotalCollected = ({ RoomList }: { RoomList: RoomType[] }) => {
+const DashbOverAllTax = ({ RoomList }: { RoomList: RoomType[] }) => {
   const [showBy, setShowBy] = useState<'Monthly' | 'Yearly'>('Monthly');
   const [selectedDate, setSelectedDate] = useState(
     new Date().getFullYear().toString()
   );
   const [DataRoomPayInfo, setDataRoomPayInfo] = useState<
-    { date: any; value: any; expectedValue: any }[]
+    { date: any; expectedValue: any }[]
   >([]);
 
   useEffect(() => {
@@ -19,41 +18,37 @@ const DashbTotalCollected = ({ RoomList }: { RoomList: RoomType[] }) => {
       const data = await getValuesWithSql('room_pay_info', 'WHERE 1');
       const CorretData = data.map((d: any) => ({
         date: d.Day,
-        value: d.Paid === 1 ? d.Value : 0,
-        expectedValue: d.Value,
+        expectedValue: RoomList.find((r: RoomType) => r.id === d.roomId)
+          ?.AgreedPrice,
       }));
-      console.log(CorretData);
       setDataRoomPayInfo(CorretData);
     };
     getDataRoomPayInfo();
   }, []);
+
+  const calculateTax = (value: number) => value * 0.15;
 
   const aggregateMonthlyData = useMemo(() => {
     const selectedYear = parseInt(selectedDate);
     const filteredData = DataRoomPayInfo.filter(
       (d) => new Date(d.date).getFullYear() === selectedYear
     );
-
     const monthlyData = d3.rollups(
       filteredData,
       (v: any) => ({
-        value: d3.sum(v, (d: any) => d.value),
         expectedValue: d3.sum(v, (d: any) => d.expectedValue),
       }),
       (d: any) => new Date(d.date).getMonth()
     );
-
     const allMonths = d3.range(0, 12).map((month: any) => ({
       month: d3.timeFormat('%b')(new Date(0, month)),
-      value: 0,
       expectedValue: 0,
+      tax: 0,
     }));
-
     monthlyData.forEach(([month, values]: any) => {
-      allMonths[month].value = values.value;
       allMonths[month].expectedValue = values.expectedValue;
+      allMonths[month].tax = calculateTax(values.expectedValue);
     });
-
     return allMonths;
   }, [selectedDate, DataRoomPayInfo]);
 
@@ -61,40 +56,28 @@ const DashbTotalCollected = ({ RoomList }: { RoomList: RoomType[] }) => {
     const yearlyData = d3.rollups(
       DataRoomPayInfo,
       (v: any) => ({
-        value: d3.sum(v, (d: any) => d.value),
         expectedValue: d3.sum(v, (d: any) => d.expectedValue),
       }),
       (d: any) => new Date(d.date).getFullYear()
     );
-
     const yearRange = d3
       .range(parseInt(selectedDate) - 2, parseInt(selectedDate) + 3)
       .map((year: any) => ({
         year: year,
-        value: 0,
         expectedValue: 0,
+        tax: 0,
       }));
-
     yearlyData.forEach(([year, values]: any) => {
       const index = yearRange.findIndex((y: any) => y.year === year);
       if (index !== -1) {
-        yearRange[index].value = values.value;
         yearRange[index].expectedValue = values.expectedValue;
+        yearRange[index].tax = calculateTax(values.expectedValue);
       }
     });
-
     return yearRange;
   }, [selectedDate, DataRoomPayInfo]);
 
-  const dataset =
-    showBy === 'Monthly' ? aggregateMonthlyData : aggregateYearlyData;
-
-  const totalCollected = useMemo(() => {
-    const selectedYear = parseInt(selectedDate);
-    return DataRoomPayInfo.filter(
-      (d) => new Date(d.date).getFullYear() === selectedYear
-    ).reduce((sum, item) => sum + item.value, 0);
-  }, [selectedDate, DataRoomPayInfo]);
+  const dataset = showBy === 'Monthly' ? aggregateMonthlyData : aggregateYearlyData;
 
   const totalExpected = useMemo(() => {
     const selectedYear = parseInt(selectedDate);
@@ -103,30 +86,14 @@ const DashbTotalCollected = ({ RoomList }: { RoomList: RoomType[] }) => {
     ).reduce((sum, item) => sum + item.expectedValue, 0);
   }, [selectedDate, DataRoomPayInfo]);
 
-  const lastYearTotalCollected = useMemo(() => {
-    const previousYear = parseInt(selectedDate) - 1;
-    return DataRoomPayInfo.filter(
-      (d) => new Date(d.date).getFullYear() === previousYear
-    ).reduce((sum, item) => sum + item.value, 0);
-  }, [selectedDate, DataRoomPayInfo]);
-
-  const difference = totalCollected - lastYearTotalCollected;
-  const percentageChange =
-    lastYearTotalCollected !== 0
-      ? ((difference / lastYearTotalCollected) * 100).toFixed(2)
-      : 'N/A';
+  const totalTax = calculateTax(totalExpected);
 
   return (
     <div className="DashboardWigetMainContainer">
-      <p className="DashboardWigetPieChartTextHeader">
-        Total Collected
-      </p>
-
+      <p className="DashboardWigetPieChartTextHeader">Overall Tax</p>
       <div className="DashboardTotalCollectedTopPart">
         <div className="ShowByContainer">
-          <span className="ShowByLabel">
-            Show by:
-          </span>
+          <span className="ShowByLabel">Show by:</span>
           <select
             className="ShowBySelect"
             value={showBy}
@@ -147,20 +114,8 @@ const DashbTotalCollected = ({ RoomList }: { RoomList: RoomType[] }) => {
             max="2100"
             step="1"
           />
-          <span className="TotalLabel">
-            Total:
-          </span>
-          <span className="TotalValue">
-            {totalCollected.toLocaleString()}$ /{' '}
-            {totalExpected.toLocaleString()}$
-          </span>
-          <span className="DifferenceLabel">
-            <span className={difference > 0 ? "DifferenceValue" : "DifferenceValueNegative"}>
-              {difference > 0 ? '+' : ''}
-              {difference.toLocaleString()}$ ({percentageChange}%)
-            </span>{' '}
-            in {parseInt(selectedDate) - 1}
-          </span>
+          <span className="TotalLabel">Total Tax:</span>
+          <span className="TotalValue">{totalTax.toLocaleString()}$</span>
         </div>
       </div>
       <BarChart
@@ -178,14 +133,9 @@ const DashbTotalCollected = ({ RoomList }: { RoomList: RoomType[] }) => {
         ]}
         series={[
           {
-            dataKey: 'value',
-            label: 'Collected',
-            color: '#02B2AF',
-          },
-          {
-            dataKey: 'expectedValue',
-            label: 'Expected',
-            color: '#0043426b',
+            dataKey: 'tax',
+            label: 'Tax (15%)',
+            color: '#FF6B6B',
           },
         ]}
         width={710}
@@ -197,7 +147,6 @@ const DashbTotalCollected = ({ RoomList }: { RoomList: RoomType[] }) => {
           bottom: 35,
         }}
         sx={(theme) => ({
-          
           [`.${axisClasses.root}`]: {
             [`.${axisClasses.tick}, .${axisClasses.line}`]: {
               stroke: 'white',
@@ -213,4 +162,4 @@ const DashbTotalCollected = ({ RoomList }: { RoomList: RoomType[] }) => {
   );
 };
 
-export default DashbTotalCollected;
+export default DashbOverAllTax;

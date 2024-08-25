@@ -1,7 +1,7 @@
 {
   "name": "rent-master",
   "version": "0.0.5",
-  "description": "Rental managemnt system",
+  "description": "Rent Master",
   "license": "MIT",
   "author": "Christian B. and Yabsira B.",
   "main": "./dist/main/main.js",
@@ -11,6 +11,6 @@
     "link-modules": "node -r ts-node/register ../../.erb/scripts/link-modules.ts"
   },
   "dependencies": {
-    "sqlite3": "^5.1.7"
+    "sqlite3": "^5.0.2"
   }
 }

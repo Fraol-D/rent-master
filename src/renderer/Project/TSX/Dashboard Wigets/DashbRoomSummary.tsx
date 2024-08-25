@@ -1,7 +1,10 @@
 import React from 'react';
 import { PieChart } from '@mui/x-charts/PieChart';
+import { axisClasses } from '@mui/x-charts/ChartsAxis';
+import { getValuesWithSql } from 'Backend/localServerApis';
+import { Console } from 'console';
+
 const DashbRoomSummary = ({ RoomList }: { RoomList: RoomType[] }) => {
-  // Step 1: Filter and count room statuses
   const takenRoomsCount = RoomList.filter(
     (room) => room.status === 'Taken'
   ).length;
@@ -9,7 +12,6 @@ const DashbRoomSummary = ({ RoomList }: { RoomList: RoomType[] }) => {
     (room) => room.status === 'Empty'
   ).length;
 
-  // Step 2: Create pie chart data
   const roomSummaryData = [
     { id: 0, value: takenRoomsCount, label: 'Taken Rooms' },
     { id: 1, value: emptyRoomsCount, label: 'Empty Rooms' },
@@ -30,20 +32,24 @@ const DashbRoomSummary = ({ RoomList }: { RoomList: RoomType[] }) => {
         ]}
         width={400}
         height={350}
-        sx={{
-          [`& .MuiPieArc-label`]: {
-            fill: 'white',
-            fontWeight: 'bold',
-            strokeWidth:0,
-            color:"white"
+        sx={(theme) => ({
+          
+          [`.${axisClasses.root}`]: {
+            [`.${axisClasses.tick}, .${axisClasses.line}`]: {
+              stroke: 'white',
+              strokeWidth: 1,
+            },
+            [`.${axisClasses.tickLabel}`]: {
+              fill: 'white',
+            },
           },
-        }}
+        })}
       />
-      <p className="DashboardWigetPieChartText">{RoomList.length} Total rooms</p>
-      <p className="DashboardWigetPieChartText">
+      <p className="DashboardWigetPieChartText" style={{ color: 'white' }}>{RoomList.length} Total rooms</p>
+      <p className="DashboardWigetPieChartText" style={{ color: 'white' }}>
         {roomSummaryData[0].value} Rooms are occupied
       </p>
-      <p className="DashboardWigetPieChartText">
+      <p className="DashboardWigetPieChartText" style={{ color: 'white' }}>
         {roomSummaryData[1].value} Rooms are Vacant(Empty)
       </p>
     </div>

@@ -13,12 +13,14 @@ import {
   deleteValue,
   getRoomDocuments,
   getValuesWithSql,
+  updateValue,
   uploadTenantDocument,
   uploadTenantDocumentsV2,
 } from 'Backend/localServerApis';
 import LeavePanel from './LeavePanel';
 import EthiopianCalanderConverterMenu from './GUIs/EthiopianCalanderConverterMenu';
 import AgreementViewerForRoom from './GUIs/AgreementViewerForRoom';
+import { toEthiopianDateString } from 'renderer/Project/JS/Calendar Converter';
 const Room = ({
   roomType,
   updateRoomProperty,
@@ -254,7 +256,7 @@ const Room = ({
         }
       }
     } else {
-      for (let i = 0; i < 20; i++) {
+      for (let i = 0; i < 10; i++) {
         console.log('reached');
 
         const paymentDay = getPaymentDay(
@@ -268,7 +270,8 @@ const Room = ({
           uuidv4(),
           roomType.id,
           paymentDay.getTime(),
-          false,agreedPrice
+          false,
+          agreedPrice
         );
       }
     }
@@ -283,6 +286,17 @@ const Room = ({
         isPercentCommission
           ? (commissionValue / 100) * agreedPrice
           : commissionValue
+      );
+      await updateValue(
+        'brokers',
+        AddTenantSelectedBrokerId,
+        'RecommendedTenantsIdList',
+        [
+          ...BrokerList.find(
+            (b: BrokerType) => b.id === AddTenantSelectedBrokerId
+          ).RecommendedTenantsIdList,
+          tenant.id,
+        ]
       );
     }
     let DocumentFiles = [];
@@ -384,6 +398,7 @@ const Room = ({
         RentingOrOut: true,
         TIN: TIN,
         RentReason: RentReason,
+        AddedTime: Date.now(),
       };
 
       updateRoomPropertyWithOutRefresh(roomType.id, 'status', 'Taken');
@@ -418,7 +433,8 @@ const Room = ({
         tenant.endTime,
         tenant.agreedPrice,
         tenant.TIN,
-        tenant.RentReason
+        tenant.RentReason,
+        tenant.AddedTime
       );
       if (!roomType.AllRoomPayInfo) {
         roomType.AllRoomPayInfo = {
@@ -467,7 +483,8 @@ const Room = ({
             uuidv4(),
             roomType.id,
             currentDate.getTime(),
-            false,agreedPrice
+            false,
+            agreedPrice
           );
 
           if (paymentCycle === 'monthly') {
@@ -477,7 +494,7 @@ const Room = ({
           }
         }
       } else {
-        for (let i = 0; i < 20; i++) {
+        for (let i = 0; i < 10; i++) {
           console.log('reached');
 
           const paymentDay = getPaymentDay(
@@ -491,7 +508,8 @@ const Room = ({
             uuidv4(),
             roomType.id,
             paymentDay.getTime(),
-            false,agreedPrice
+            false,
+            agreedPrice
           );
         }
       }
@@ -506,6 +524,17 @@ const Room = ({
           isPercentCommission
             ? (commissionValue / 100) * agreedPrice
             : commissionValue
+        );
+        await updateValue(
+          'brokers',
+          AddTenantSelectedBrokerId,
+          'RecommendedTenantsIdList',
+          [
+            ...BrokerList.find(
+              (b: BrokerType) => b.id === AddTenantSelectedBrokerId
+            ).RecommendedTenantsIdList,
+            tenant.id,
+          ]
         );
       }
       let DocumentFiles = [];
@@ -540,7 +569,7 @@ const Room = ({
       const paymentCycleType2 =
         paymentCycle === 'custom'
           ? ('-' + customDays).toString()
-          : roomType.PaymentCycleType;
+          : paymentCycle;
       //fixed term lease
       if (selectedAgreement === 'Fixed-Term') {
         const AgreementId = uuidv4();
@@ -945,7 +974,7 @@ const Room = ({
         roomId: payment.roomId,
         Day: payment.Day,
         Paid: payment.Paid,
-        Value:payment.Value
+        Value: payment.Value,
       })
     );
 
@@ -970,10 +999,10 @@ const Room = ({
       <div
         className="MainContainer"
         style={{
-          backgroundColor: roomType.AddTenantState
+          background: roomType.AddTenantState
             ? '#2C2C30'
             : roomType.status === 'Empty'
-            ? '#2e2f30'
+            ? '#14325'
             : '#63809d',
           border: roomType.AddTenantState ? '1px solid #00e1f1' : '',
         }}
@@ -989,6 +1018,19 @@ const Room = ({
               style={{ width: '23px', height: '23px', marginLeft: '10px' }}
               alt=""
             />
+            {roomType.status === 'Empty' && (
+              <button
+                onClick={() => {
+                  updateRoomProperty(
+                    roomType.id,
+                    'Archived',
+                    !roomType.Archived
+                  );
+                }}
+              >
+                {roomType.Archived ? 'Unarchive' : 'Archive'}
+              </button>
+            )}
           </div>
           <p className="RoomText">Room {roomType.roomIndex}</p>
 
@@ -2322,27 +2364,35 @@ const Room = ({
           className="PopOutContainer"
           ref={viewAgreementRef}
           style={{
-            top: '258px',
+            top: '310px',
             zIndex: roomType.ViewAgreement ? '1' : '-1',
           }}
         >
           <div
-            className="AddTenantContainerinner"
+            className="ViewAgreementContainer"
             style={{
-              width: roomType.ViewAgreement ? '540px' : '0px',
+              width: roomType.ViewAgreement ? '400px' : '0px',
               height: roomType.ViewAgreement ? '470px' : '0px',
               opacity: roomType.ViewAgreement ? '1' : '0',
-              userSelect: 'text',
-              marginTop: '10px',
-              paddingTop: '10px',
-              paddingBottom: '10px',
             }}
           >
-            <div style={{ display: 'flex', flexDirection: 'row' }}>
-              <div className="InnerAddtenantTop" style={{ width: '50%' }}>
-                <div className="AddTenantContainerinnerElement">
-                  Name:{' '}
-                  <em style={{ fontWeight: '600' }}>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <div className="InnerAddtenantTop" style={{ width: '100%' }}>
+                <p
+                  className="DashboardWigetPieChartTextHeader"
+                  style={{ width: '400px', fontSize: '20px' }}
+                >
+                  Tenant Information
+                </p>
+                <div
+                  style={{
+                    marginBottom: '10px',
+                    fontSize: '16px',
+                    color: 'GREY',
+                  }}
+                >
+                  <span style={{ fontWeight: 'bold' }}>Name:</span>{' '}
+                  <em style={{ fontWeight: '600', color: '#02b2af' }}>
                     {
                       TenantList.find(
                         (tenant: any) => tenant.id === roomType.tenantId
@@ -2350,9 +2400,15 @@ const Room = ({
                     }
                   </em>
                 </div>
-                <div className="AddTenantContainerinnerElement">
-                  Tel 1:{' '}
-                  <em style={{ fontWeight: '600' }}>
+                <div
+                  style={{
+                    marginBottom: '10px',
+                    fontSize: '16px',
+                    color: 'GREY',
+                  }}
+                >
+                  <span style={{ fontWeight: 'bold' }}>Tel 1:</span>{' '}
+                  <em style={{ fontWeight: '600', color: '#02b2af' }}>
                     {
                       TenantList.find(
                         (tenant: any) => tenant.id === roomType.tenantId
@@ -2360,9 +2416,15 @@ const Room = ({
                     }
                   </em>
                 </div>
-                <div className="AddTenantContainerinnerElement">
-                  Tel 2:{' '}
-                  <em style={{ fontWeight: '600' }}>
+                <div
+                  style={{
+                    marginBottom: '10px',
+                    fontSize: '16px',
+                    color: 'GREY',
+                  }}
+                >
+                  <span style={{ fontWeight: 'bold' }}>Tel 2:</span>{' '}
+                  <em style={{ fontWeight: '600', color: '#02b2af' }}>
                     {
                       TenantList.find(
                         (tenant: any) => tenant.id === roomType.tenantId
@@ -2370,11 +2432,15 @@ const Room = ({
                     }
                   </em>
                 </div>
-
-                <div className="AddTenantContainerinnerElement">
-                  {' '}
-                  Email:{' '}
-                  <em style={{ fontWeight: '600' }}>
+                <div
+                  style={{
+                    marginBottom: '10px',
+                    fontSize: '16px',
+                    color: 'GREY',
+                  }}
+                >
+                  <span style={{ fontWeight: 'bold' }}>Email:</span>{' '}
+                  <em style={{ fontWeight: '600', color: '#02b2af' }}>
                     {
                       TenantList.find(
                         (tenant: any) => tenant.id === roomType.tenantId
@@ -2382,10 +2448,15 @@ const Room = ({
                     }
                   </em>
                 </div>
-                <div className="AddTenantContainerinnerElement">
-                  {' '}
-                  TIN:{' '}
-                  <em style={{ fontWeight: '600' }}>
+                <div
+                  style={{
+                    marginBottom: '10px',
+                    fontSize: '16px',
+                    color: 'GREY',
+                  }}
+                >
+                  <span style={{ fontWeight: 'bold' }}>TIN:</span>{' '}
+                  <em style={{ fontWeight: '600', color: '#02b2af' }}>
                     {
                       TenantList.find(
                         (tenant: any) => tenant.id === roomType.tenantId
@@ -2393,10 +2464,15 @@ const Room = ({
                     }
                   </em>
                 </div>
-                <div className="AddTenantContainerinnerElement">
-                  {' '}
-                  Rent Reason:{' '}
-                  <em style={{ fontWeight: '600' }}>
+                <div
+                  style={{
+                    marginBottom: '10px',
+                    fontSize: '16px',
+                    color: 'GREY',
+                  }}
+                >
+                  <span style={{ fontWeight: 'bold' }}>Rent Reason:</span>{' '}
+                  <em style={{ fontWeight: '600', color: '#02b2af' }}>
                     {
                       TenantList.find(
                         (tenant: any) => tenant.id === roomType.tenantId
@@ -2404,6 +2480,13 @@ const Room = ({
                     }
                   </em>
                 </div>
+                <hr />
+                <p
+                  className="DashboardWigetPieChartTextHeader"
+                  style={{ width: '400px', fontSize: '20px' }}
+                >
+                  Agreement Info
+                </p>
                 <div className="AddTenantContainerinnerElement">
                   Agreement type:{' '}
                   <em style={{ fontWeight: '600' }}>
@@ -2421,12 +2504,21 @@ const Room = ({
                     <div className="AddTenantContainerinnerElement" style={{}}>
                       <div>
                         Start time:
-                        <em style={{ fontWeight: '600' }}>
-                          {
+                        <em
+                          style={{ fontWeight: '600' }}
+                          title={toEthiopianDateString(
+                            new Date(
+                              TenantList.find(
+                                (tenant: any) => tenant.id === roomType.tenantId
+                              )?.startTime
+                            )
+                          )}
+                        >
+                          {new Date(
                             TenantList.find(
                               (tenant: any) => tenant.id === roomType.tenantId
                             )?.startTime
-                          }
+                          ).toDateString()}
                         </em>
                       </div>
                     </div>
@@ -2464,15 +2556,24 @@ const Room = ({
                     />
                   </>
                 )}
-                <button
-                  onClick={() => {
-                    setTenantLeavePannelState(true);
-                  }}
+                <hr />
+                <p
+                  className="DashboardWigetPieChartTextHeader"
+                  style={{ width: '400px', fontSize: '20px' }}
                 >
-                  Leave
-                </button>
+                  Attachments
+                </p>
               </div>
-              <div style={{ width: '50%' }}>
+              <div
+                style={{
+                  width: '100%',
+                  background: '#434445',
+                  minHeight: '100px',
+                  paddingTop: '5px',
+                  paddingLeft: '5px',
+                  borderRadius: '10px',
+                }}
+              >
                 <DocumentInteractor room={roomType} TenantsList={TenantList} />
               </div>
             </div>
@@ -2483,14 +2584,22 @@ const Room = ({
                 display: 'flex',
                 justifyContent: 'center',
                 alignItems: 'center',
+                marginTop: '20px',
               }}
             >
+              <button
+                onClick={() => {
+                  setTenantLeavePannelState(true);
+                }}
+                style={{ marginRight: '20px' }}
+              >
+                End Stay
+              </button>
               <button
                 className="AddTenantButton"
                 onClick={() =>
                   updateRoomProperty(roomType.id, 'ViewAgreement', false)
                 }
-                style={{ margin: 0 }}
               >
                 Close
               </button>
