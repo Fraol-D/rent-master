@@ -173,19 +173,19 @@ const DashbTotalCollected = ({ RoomList }: { RoomList: RoomType[] }) => {
         ]}
         yAxis={[
           {
-            fill: 'white',
+            fill: 'var(--Text-Color)',
           },
         ]}
         series={[
           {
             dataKey: 'value',
             label: 'Collected',
-            color: '#02B2AF',
+            color: 'var(--Primary-Color)',
           },
           {
             dataKey: 'expectedValue',
             label: 'Expected',
-            color: '#0043426b',
+            color: 'var(--Accent-Color50)',
           },
         ]}
         width={710}
@@ -200,11 +200,11 @@ const DashbTotalCollected = ({ RoomList }: { RoomList: RoomType[] }) => {
           
           [`.${axisClasses.root}`]: {
             [`.${axisClasses.tick}, .${axisClasses.line}`]: {
-              stroke: 'white',
+              stroke: 'var(--Text-Color)',
               strokeWidth: 1,
             },
             [`.${axisClasses.tickLabel}`]: {
-              fill: 'white',
+              fill: 'var(--Text-Color)',
             },
           },
         })}

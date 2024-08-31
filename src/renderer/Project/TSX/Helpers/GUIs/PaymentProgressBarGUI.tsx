@@ -11,6 +11,7 @@ interface Props {
   paymentData: RoomPayInfo[];
   agreedPrice: number;
   roomType: RoomType;
+  tenantList:tenant[];
   roomPaymentInfoApi: any;
   refresh: () => void;
   extendPaymentSchedule: () => void;
@@ -22,7 +23,7 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
   agreedPrice,
   roomType,
   extendPaymentSchedule,
-  refresh,
+  refresh,tenantList
 }) => {
   const today = new Date().getTime();
   const svgRef = useRef<SVGSVGElement | null>(null);
@@ -70,9 +71,9 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
         .attr('stroke-dasharray', '5, 5')
         .attr('stroke', (d: { Day: number; Paid: boolean }) => {
           if (isBefore(d.Day, today) && !d.Paid) return 'red';
-          if (d.Paid) return 'green';
+          if (d.Paid) return 'var(--Accent-Color)';
           if (isAfter(d.Day, today) && subDays(d.Day, 10) <= today)
-            return '#00e1ff';
+            return 'var(--Primary-Color)';
           return 'blue';
         });
 
@@ -100,7 +101,7 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
         .attr('y1', padding + height / 2 - 30)
         .attr('x2', currentDateX + 36.5)
         .attr('y2', padding + height / 2 - 30)
-        .attr('stroke', '#454959')
+        .attr('stroke', 'var(--Secondary-Color)')
         .attr('stroke-width', '15');
       svg
         .append('line')
@@ -115,7 +116,7 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
         .attr('x', currentDateX + 36.5)
         .attr('y', padding + height / 2 - 3)
         .attr('text-anchor', 'middle')
-        .style('fill', 'white')
+        .style('fill', 'var(--Text-Color)')
         .style('font-size', '14')
         .text(format(today, 'MMMM d'));
 
@@ -126,7 +127,7 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
         .enter()
         .append('text')
         .attr('class', 'payment-date')
-        .style('fill', 'white')
+        .style('fill', 'var(--Text-Color)')
         .attr(
           'x',
           (d: { Day: number }, i: number) =>
@@ -142,7 +143,7 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
         .enter()
         .append('text')
         .attr('class', 'payment-date')
-        .style('fill', 'white')
+        .style('fill', 'var(--Text-Color)')
         .style('font-size', '10')
         .attr(
           'x',
@@ -169,9 +170,9 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
         .attr('r', 3)
         .attr('fill', (d: { Day: number; Paid: boolean }) => {
           if (isBefore(d.Day, today) && !d.Paid) return 'red';
-          if (d.Paid) return 'green';
+          if (d.Paid) return 'var(--Accent-Color)';
           if (isAfter(d.Day, today) && subDays(d.Day, 10) <= today)
-            return 'lightblue';
+            return 'var(--Secondary-Color)';
           return 'blue';
         });
 
@@ -191,10 +192,9 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
         .attr('text-anchor', 'middle')
         .attr('fill', (d: { Day: number; Paid: boolean }) => {
           if (isBefore(d.Day, today) && !d.Paid) return 'red';
-          if (d.Paid) return 'green';
-          if (isAfter(d.Day, today) && subDays(d.Day, 10) <= today)
-            return 'lightblue';
-          return 'white';
+          if (d.Paid) return 'var(--Accent-Color)';
+        
+          return 'var(--Text-Color)';
         })
         .style('font-size', '14')
         .style('cursor', 'pointer')
@@ -229,16 +229,17 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
         .attr('text-anchor', 'middle')
         .attr('fill', (d: { Day: number; Paid: boolean }) => {
           if (isBefore(d.Day, today) && !d.Paid) return 'red';
-          if (d.Paid) return 'green';
-          if (isAfter(d.Day, today) && subDays(d.Day, 10) <= today)
-            return 'lightblue';
-          return 'white';
+          if (d.Paid) return 'var(--Accent-Color)';
+        
+          return 'var(--Text-Color)';
         })
         .style('font-size', '12')
         .style('cursor', 'pointer')
         .text((d: any) => {
           console.log(d);
-          return d.Value === null ? agreedPrice.toLocaleString() + '$ X' : d.Value.toLocaleString() + '$ X';
+          return d.Value === null
+            ? agreedPrice.toLocaleString() + '$ X'
+            : d.Value.toLocaleString() + '$ X';
         })
         .on('click', (event: any, d: any) => {
           const updatedData = sortedPaymentData.map((item) => {
@@ -290,7 +291,8 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
       });
 
       // Add extend button at the end of the progress bar
-      svg
+      if(tenantList.find((t:tenant)=>t.id===roomType.tenantId)?.SelectedAgreement === "Open-Ended"){
+        svg
         .append('rect')
         .attr('x', width + padding - 30)
         .attr('y', padding + height / 2 - 44)
@@ -298,7 +300,7 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
         .attr('height', 30)
         .attr('rx', 5)
         .attr('ry', 5)
-        .attr('fill', '#454959')
+        .attr('fill', 'var(--Secondary-Color)')
         .style('cursor', 'pointer')
         .on('click', () => {
           extendPaymentSchedule();
@@ -319,6 +321,8 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
           extendPaymentSchedule();
           refresh();
         });
+      }
+      
     }
   }, [paymentData, today, paymentData]);
 
@@ -359,7 +363,14 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
           }}
         >
           {message}
-        </p><button onClick={()=>{refresh()}}>refresh</button>
+        </p>
+        <button
+          onClick={() => {
+            refresh();
+          }}
+        >
+          refresh
+        </button>
       </div>
       <div
         style={{

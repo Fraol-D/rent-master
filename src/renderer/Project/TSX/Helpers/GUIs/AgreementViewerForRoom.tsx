@@ -240,11 +240,13 @@ const AgreementViewerForRoom = ({
                 </button>
                 <strong
                   style={{
-                    color:
+                    background:
                       Agreements[CurrentAgreementIndex].id ===
                       roomType.selectedAgreementId
-                        ? 'green'
-                        : 'red',
+                        ? 'var(--Primary-Color)'
+                        : '',
+                    padding: '5px ',
+                    borderRadius: '5px',
                   }}
                 >
                   {Agreements[CurrentAgreementIndex].id ===
@@ -304,7 +306,7 @@ const AgreementViewerForRoom = ({
                   Agreements[CurrentAgreementIndex].endTime
                 ).toDateString()}
               </em>{' '}
-              <em style={{ color: 'grey' }}>
+              <em style={{ color: 'var(--Text-Color-Grey)' }}>
                 -
                 {calculateDaysDifference(
                   new Date(Agreements[CurrentAgreementIndex].startTime),
@@ -343,8 +345,8 @@ const AgreementViewerForRoom = ({
             <em style={{ fontWeight: '600' }}>
               Every{' '}
               {getCorrectPaymentStatment(
-               Agreements[CurrentAgreementIndex].paymentCycleType,
-               Agreements[CurrentAgreementIndex].paymentCycleType.slice(1)
+                Agreements[CurrentAgreementIndex].paymentCycleType,
+                Agreements[CurrentAgreementIndex].paymentCycleType.slice(1)
               )}
             </em>
           </div>
@@ -539,6 +541,7 @@ const AgreementViewerForRoom = ({
                       {[30, 60, 90, 120, 150, 180, 365].map((days) => (
                         <button
                           key={days}
+                          disabled={startTime !== undefined}
                           onClick={() => {
                             const startDate = new Date(startTime);
                             const endDate = new Date(

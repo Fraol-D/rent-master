@@ -13,29 +13,28 @@
 }
 .DeleteImageOnImageIntercator {
   position: absolute;
-  margin-left:350px;
-  margin-bottom:370px;
-
+  margin-left: 350px;
+  margin-bottom: 370px;
 }
 .ExplorerImageOnImageIntercator {
-    position: absolute;
-    margin-right:350px;
-    margin-top:440px;
+  position: absolute;
+  margin-right: 350px;
+  margin-top: 440px;
 }
 .FullScreenImageOnImageIntercator {
-    position: absolute;
-    margin-left:305px;
-    margin-top:440px; 
+  position: absolute;
+  margin-left: 305px;
+  margin-top: 440px;
 }
 .AddImageOnImageIntercator {
-    position: absolute;
+  position: absolute;
 
-    margin-top:440px; 
+  margin-top: 440px;
 }
 .CounterImageOnImageIntercator {
-    position: absolute;
+  position: absolute;
 
-    margin-top:390px; 
+  margin-top: 390px;
 }
 .image-wrapper {
   width: 400px;
@@ -54,7 +53,7 @@
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
-    border-radius: 5px;
+  border-radius: 5px;
 }
 
 .arrow-button {
@@ -82,23 +81,22 @@
 }
 
 .image-counter {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  
-  }
-  
-  .counter-bar {
-    width: 20px;
-    height: 4px;
-    background-color: grey;
-    margin: 0 2px;
-    transition: background-color 0.3s ease;
-  }
-  
-  .counter-bar.active {
-    background-color: white;
-  }
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.counter-bar {
+  width: 20px;
+  height: 4px;
+  background-color: grey;
+  margin: 0 2px;
+  transition: background-color 0.3s ease;
+}
+
+.counter-bar.active {
+  background-color: var(--Text-Color);
+}
 
 .no-images {
   text-align: center;

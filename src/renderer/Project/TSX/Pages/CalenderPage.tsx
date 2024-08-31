@@ -14,16 +14,14 @@ export function CalendarPage({
   }, []);
   return (
     <>
-      <div className="SecondNavBarContainer" style={{ width: '100%' }}>
-        
-      </div>
+      <div className="SecondNavBarContainer" style={{ width: '100%' }}></div>
       <div
         className="RoomContainerContainer"
         style={{
           width: '100%',
           height: 'calc(100% - 60px)',
-          color: 'white',
-          overflowY: "hidden"
+
+          overflowY: 'hidden',
         }}
       >
         <CalendarGUI

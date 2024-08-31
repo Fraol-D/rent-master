@@ -28,7 +28,7 @@
   }
   
   .extension {
-    font-weight: bold;
+    
   }
   
   .filename {
@@ -85,7 +85,7 @@
     left: 0;
     width: 100vw;
     height: 100vh;
-    background-color: white;
+    background-color: var(--Text-Color);
     z-index: 1000;
   }
   
@@ -102,10 +102,12 @@
     align-items: center;
     height: 100%;
   } */
-  .document-item {
-    padding: 3px;
-    color: rgb(255, 255, 255);
-  }
-  .document-itemSelected {
-    color: #00e1ff;
-  }
+.document-item {
+  padding: 3px;
+  color: rgb(255, 255, 255);
+}
+.document-itemSelected {
+  background: var(--Primary-Color);
+  border-radius: 5px;
+  color: black;
+}

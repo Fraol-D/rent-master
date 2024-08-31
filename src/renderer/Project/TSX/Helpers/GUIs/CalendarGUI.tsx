@@ -161,7 +161,7 @@ const CalendarGUI: React.FC<CalendarProps> = ({
         .attr('x2', width)
         .attr('y1', (d: any) => yScale(d) - 5 || 0)
         .attr('y2', (d: any) => yScale(d) - 5 || 0)
-        .attr('stroke', '#DDDDDD80');
+        .attr('stroke', 'grey');
 
       svg
         .selectAll('.x-grid-bottom')
@@ -173,7 +173,7 @@ const CalendarGUI: React.FC<CalendarProps> = ({
         .attr('x2', width)
         .attr('y1', (d: any) => (yScale(d) || 0) + yScale.bandwidth())
         .attr('y2', (d: any) => (yScale(d) || 0) + yScale.bandwidth())
-        .attr('stroke', '#DDDDDD70');
+        .attr('stroke', 'grey');
 
       svg
         .selectAll('.y-grid')
@@ -185,7 +185,7 @@ const CalendarGUI: React.FC<CalendarProps> = ({
         .attr('x2', (d: any) => xScale(d))
         .attr('y1', 0 - 0)
         .attr('y2', height - 65)
-        .attr('stroke', '#DDDDDD7F');
+        .attr('stroke', 'grey');
 
       const currentDateRect = svg
         .append('rect')
@@ -193,15 +193,16 @@ const CalendarGUI: React.FC<CalendarProps> = ({
         .attr('y', 0 - 0)
         .attr('width', 2)
         .attr('height', height - 65)
-        .attr('fill', 'yellow')
+        .attr('fill', '#db911a')
         .attr('opacity', 1);
 
+        const currentdatehight = today.getDate() >= 26 || today.getDate()<=6 ? 40 : 25
       svg
         .append('text')
         .attr('x', xScale(today))
-        .attr('y', -25)
+        .attr('y', -currentdatehight)
         .attr('text-anchor', 'middle')
-        .attr('fill', 'yellow')
+        .attr('fill', '#db911a')
         .text(today.toDateString());
 
       const monthStarts = d3.timeMonths(startDate, endDate);
@@ -268,7 +269,7 @@ const CalendarGUI: React.FC<CalendarProps> = ({
               .attr('y', yScale(room.id) - 4)
               .attr('width', cellSize)
               .attr('height', yScale.bandwidth() + 4)
-              .attr('fill', payment.Paid ? 'green' : 'red')
+              .attr('fill', payment.Paid ? '#00e1ff' : 'red')
               .attr('opacity', 0.5)
               .on('mouseover', (event: MouseEvent, d: any) => {
                 const daysUntil = Math.ceil(
@@ -292,7 +293,7 @@ const CalendarGUI: React.FC<CalendarProps> = ({
                       }</span></p>
                       <p><strong>Status:</strong> ${
                         payment.Paid
-                          ? '<span style="color: green; font-weight: bold;">Paid</span>'
+                          ? '<span style="color: #00e1ff; ">Paid</span>'
                           : '<span style="color: red; font-weight: bold;">Unpaid</span>'
                       }</p>
                       <p><em style="font-style: italic;">Agreed Price:</em> <span style="font-weight: bold; color: #e67e22;">${payment.Value.toLocaleString()}$</span></p>
@@ -306,7 +307,7 @@ const CalendarGUI: React.FC<CalendarProps> = ({
                   .style('left', event.pageX + 10 + 'px')
                   .style('top', event.pageY - 10 + 'px');
                 d3.select(event.target)
-                  .attr('fill', payment.Paid ? '#00FF00' : '#FF0000')
+                  .attr('fill', payment.Paid ? '#00e1ff' : '#FF0000')
                   .attr('opacity', 0.8);
               })
               .on('mousemove', (event: MouseEvent) => {
@@ -318,7 +319,7 @@ const CalendarGUI: React.FC<CalendarProps> = ({
               .on('mouseout', (event: MouseEvent) => {
                 tooltip.style('visibility', 'hidden');
                 d3.select(event.target)
-                  .attr('fill', payment.Paid ? 'green' : 'red')
+                  .attr('fill', payment.Paid ? '#00e1ff' : 'red')
                   .attr('opacity', 0.5);
               });
           }
@@ -349,7 +350,7 @@ const CalendarGUI: React.FC<CalendarProps> = ({
   const scrollToCurrentDate = () => {
     if (ref.current) {
       const svg = d3.select(ref.current);
-      const currentDateRect = svg.select('rect[fill="yellow"]');
+      const currentDateRect = svg.select('rect[fill="#db911a"]');
       if (!currentDateRect.empty()) {
         const x = parseFloat(currentDateRect.attr('x'));
         const scrollContainer = ref.current.parentElement;
@@ -375,9 +376,7 @@ const CalendarGUI: React.FC<CalendarProps> = ({
             }}
           />
 
-          <label htmlFor="monthsPastInput" style={{ fontWeight: 'bold' }}>
-            Months to show in past:{' '}
-          </label>
+          <label htmlFor="monthsPastInput">Months to show in past: </label>
           <input
             id="monthsPastInput"
             type="number"
@@ -391,9 +390,7 @@ const CalendarGUI: React.FC<CalendarProps> = ({
               border: '1px solid #ccc',
             }}
           />
-          <label htmlFor="monthsFutureInput" style={{ fontWeight: 'bold' }}>
-            Months to show in future:{' '}
-          </label>
+          <label htmlFor="monthsFutureInput">Months to show in future: </label>
           <input
             id="monthsFutureInput"
             type="number"
@@ -412,7 +409,7 @@ const CalendarGUI: React.FC<CalendarProps> = ({
             style={{
               padding: '5px 10px',
               backgroundColor: '#4CAF50',
-              color: 'white',
+
               border: 'none',
               borderRadius: '3px',
               cursor: 'pointer',

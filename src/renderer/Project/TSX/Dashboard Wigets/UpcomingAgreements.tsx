@@ -8,7 +8,9 @@ const UpcomingAgreements = ({
   RoomList: RoomType[];
   TenantList: tenant[];
 }) => {
-  const [upcomingAgreements, setUpcomingAgreements] = useState<agreements[]>([]);
+  const [upcomingAgreements, setUpcomingAgreements] = useState<agreements[]>(
+    []
+  );
   const [daysThreshold, setDaysThreshold] = useState(30);
 
   useEffect(() => {
@@ -33,13 +35,16 @@ const UpcomingAgreements = ({
       style={{
         width: '400px',
         alignItems: 'flex-start',
-        color: 'white',
+
         height: '500px',
         overflowY: 'auto',
         overflowX: 'hidden',
       }}
     >
-      <p className="DashboardWigetPieChartTextHeader" style={{ width: '400px' }}>
+      <p
+        className="DashboardWigetPieChartTextHeader"
+        style={{ width: '400px' }}
+      >
         Upcoming Agreement Expirations
       </p>
       <div style={{ marginBottom: '10px' }}>
@@ -63,7 +68,7 @@ const UpcomingAgreements = ({
         <thead className="InfoTableThead">
           <tr className="InfoTableHeadTR">
             <th className="InfoTableHeadTh">Tenants</th>
-            
+
             <th className="InfoTableHeadTh" style={{ width: '90px' }}>
               Days Left
             </th>
@@ -72,9 +77,14 @@ const UpcomingAgreements = ({
         <tbody>
           {upcomingAgreements.length > 0 ? (
             upcomingAgreements.map((agreement, index) => {
-              const tenant = TenantList.find((t) => t.id === agreement.tenantId);
+              const tenant = TenantList.find(
+                (t) => t.id === agreement.tenantId
+              );
               const room = RoomList.find((r) => r.id === agreement.roomId);
-              const daysLeft = Math.ceil((agreement.endTime - new Date().getTime()) / (1000 * 60 * 60 * 24));
+              const daysLeft = Math.ceil(
+                (agreement.endTime - new Date().getTime()) /
+                  (1000 * 60 * 60 * 24)
+              );
 
               return (
                 <tr
@@ -107,15 +117,13 @@ const UpcomingAgreements = ({
                     <span style={{ fontSize: '11px' }}>
                       {new Date(agreement.endTime).toDateString()}
                     </span>
-                  </td>                </tr>
+                  </td>{' '}
+                </tr>
               );
             })
           ) : (
             <tr>
-              <td
-                colSpan={3}
-                style={{ textAlign: 'center', padding: '10px' }}
-              >
+              <td colSpan={3} style={{ textAlign: 'center', padding: '10px' }}>
                 No upcoming agreement expirations within {daysThreshold} days
               </td>
             </tr>

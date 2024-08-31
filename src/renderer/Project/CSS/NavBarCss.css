@@ -1,5 +1,5 @@
 .navigation {
-  background-color: #2e2f30;
+  background-color: var(--Secondary-Color20);
   height: 60px;
   box-sizing: border-box;
   align-items: center;
@@ -38,7 +38,7 @@
 
   min-width: 560;
   font-size: 30px;
-  color: white;
+  color: var(--Text-Color);
 
   border-radius: 5px;
   padding-left: 5px;
@@ -57,7 +57,7 @@
 
   font-size: 25px;
   font-weight: bolder;
-  color: #fff;
+  color: var(--Text-Color);
   text-align: center;
 
   font-size: 24px;
@@ -72,7 +72,7 @@
 
   font-size: 25px;
   font-weight: bolder;
-  color: #fff;
+  color: var(--Text-Color);
   text-align: center;
 
   font-size: 14px;
@@ -106,7 +106,7 @@
 
   min-width: 560;
   font-size: 30px;
-  color: white;
+  color: var(--Text-Color);
   border: 1px solid #ffffff;
   background: #1d1d1d4d;
   border-radius: 5px;
@@ -149,7 +149,7 @@
   z-index: 1;
 }
 .TrialExpire {
-  color: white;
+  color: var(--Text-Color);
   background-color: rgb(0, 0, 0);
   border-radius: 7px;
   height: 45px;
@@ -200,21 +200,19 @@
   font-size: 14px;
   margin: 5px;
   transition: all 0.2s;
-  border-left: 0.5px solid white;
 }
 
 .PageNavigatorButton {
-  color: rgb(180 180 180);
+
 }
 
 .PageNavigatorButtonSelected {
-  color: rgb(255 255 255);
+  
   width: 120px;
   font-size: 16px;
-  border-top: 1px solid #00e1ff;
+  border-top: 2px solid var(--Primary-Color);
 }
 
 .PageNavigatorButtonSelected:hover {
-  border: 1px solid white;
-  border-top: 1px solid #00e1ff;
+  border-top: 2px solid var(--Primary-Color);
 }

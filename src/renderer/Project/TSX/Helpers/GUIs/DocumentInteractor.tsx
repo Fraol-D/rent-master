@@ -24,7 +24,8 @@ const DocumentInteractor: React.FC<DocumentInteractorProps> = ({
   isAddRoomDocument = false,
   refreshState,
   SetRefreshState,
-  TenantsList,AddTenant
+  TenantsList,
+  AddTenant,
 }) => {
   const [documents, setDocuments] = useState<string[]>([]);
   const [selectedDocument, setSelectedDocument] = useState<string | null>(null);
@@ -69,18 +70,18 @@ const DocumentInteractor: React.FC<DocumentInteractorProps> = ({
     const input = document.createElement('input');
     input.type = 'file';
     input.multiple = true;
-  
+
     input.onchange = async (event) => {
       const files = (event.target as HTMLInputElement).files;
       if (files && files.length > 0) {
         try {
           if (isAddRoomDocument) {
             const roomId = 'Add a tenant documents';
-            const uploadPromises = Array.from(files).map(file => 
+            const uploadPromises = Array.from(files).map((file) =>
               uploadTenantDocument(file, roomId)
             );
             const results = await Promise.all(uploadPromises);
-            if (results.every(result => result)) {
+            if (results.every((result) => result)) {
               console.log('Tenant documents uploaded successfully:', results);
               fetchRoomDocuments2();
             } else {
@@ -90,15 +91,24 @@ const DocumentInteractor: React.FC<DocumentInteractorProps> = ({
             // Existing code for non-isAddRoomDocument case
             const roomId = room?.id || 'default-room-id';
             const tenantId = room?.tenantId || '';
-            const tenantName = TenantsList.find((t:tenant) => t.id === tenantId)?.name || '';
-            const AddedTimeReal = new Date(TenantsList.find((t:tenant) => t.id === tenantId)?.startTime || 0).toDateString();
-  
+            const tenantName =
+              TenantsList.find((t: tenant) => t.id === tenantId)?.name || '';
+            const AddedTimeReal = new Date(
+              TenantsList.find((t: tenant) => t.id === tenantId)?.startTime || 0
+            ).toDateString();
+
             if (!roomId || !tenantName || !tenantId) {
               console.error('Missing required room or tenant information');
               return;
             }
-  
-            const results = await AddRoomDocuments(files, roomId, tenantName, tenantId, AddedTimeReal);
+
+            const results = await AddRoomDocuments(
+              files,
+              roomId,
+              tenantName,
+              tenantId,
+              AddedTimeReal
+            );
             if (results) {
               console.log('Documents uploaded successfully:', results);
               fetchRoomDocuments();
@@ -111,25 +121,33 @@ const DocumentInteractor: React.FC<DocumentInteractorProps> = ({
         }
       }
     };
-  
+
     input.click();
   };
-  
+
   const handleDeleteDocument = async () => {
     if (selectedDocument) {
       const fileName = selectedDocument.split('/').pop();
- 
+
       if (isAddRoomDocument) {
-        const fileName2 = selectedDocument.split('\\').pop();        const result = await deleteTenantDocument(fileName2);
-        if (result && result.message === 'Tenant document deleted successfully') {
-          setDocuments((prevDocs) => prevDocs.filter((doc) => doc !== selectedDocument));
+        const fileName2 = selectedDocument.split('\\').pop();
+        const result = await deleteTenantDocument(fileName2);
+        if (
+          result &&
+          result.message === 'Tenant document deleted successfully'
+        ) {
+          setDocuments((prevDocs) =>
+            prevDocs.filter((doc) => doc !== selectedDocument)
+          );
           setSelectedDocument(null);
         }
       } else {
         const roomId = room ? room.id : 'Add a room documents';
         const result = await deleteRoomDocument(roomId, fileName);
         if (result && result.message === 'Document deleted successfully') {
-          setDocuments((prevDocs) => prevDocs.filter((doc) => doc !== selectedDocument));
+          setDocuments((prevDocs) =>
+            prevDocs.filter((doc) => doc !== selectedDocument)
+          );
           setSelectedDocument(null);
         }
       }
@@ -147,32 +165,56 @@ const DocumentInteractor: React.FC<DocumentInteractorProps> = ({
       window.electron.ipcRenderer.send('open-document', selectedDocument);
     }
   };
-    const getFileName = (filePath: string) => {
-      const lastBackslashIndex = filePath.lastIndexOf('\\');
-      if (lastBackslashIndex === -1) {
-        return '';
-      }
-      const fullFileName = filePath.substring(lastBackslashIndex + 1);
-      const match = fullFileName.match(/^(WIN_\d{8}_\d{2}_\d{2}_\d{2})/);
-      return match ? match[1] + fullFileName.substring(match[1].length) : fullFileName;
+  const getFileName = (filePath: string) => {
+    const lastBackslashIndex = filePath.lastIndexOf('\\');
+    if (lastBackslashIndex === -1) {
+      return '';
     }
+    const fullFileName = filePath.substring(lastBackslashIndex + 1);
+    const match = fullFileName.match(/^(WIN_\d{8}_\d{2}_\d{2}_\d{2})/);
+    return match
+      ? match[1] + fullFileName.substring(match[1].length)
+      : fullFileName;
+  };
   return (
-    <div className="document-interactor" style={AddTenant ? {width: '100%',
-      height: '160px',
-      maxHeight: '230px',
-      display: 'flex',
-      background: '#434445',
-      flexDirection: 'column',
-      borderRadius: '10px',
-      marginBottom: '20px'}:{ width: '100%', height: AddTenant ? "160px":'100%',maxHeight: AddTenant ? "230px":"" ,display: 'flex', flexDirection: 'column' }}>
-      <div className="document-list" style={{ flex: 1, overflowY: 'auto',maxHeight: "183px" }}>
+    <div
+      className="document-interactor"
+      style={
+        AddTenant
+          ? {
+              width: '100%',
+              height: '160px',
+              maxHeight: '230px',
+              display: 'flex',
+              background: 'var(--Secondary-Color20)',
+              flexDirection: 'column',
+              borderRadius: '10px',
+              marginBottom: '20px',
+            }
+          : {
+              width: '100%',
+              height: AddTenant ? '160px' : '100%',
+              maxHeight: AddTenant ? '230px' : '',
+              display: 'flex',
+              flexDirection: 'column',
+            }
+      }
+    >
+      <div
+        className="document-list"
+        style={{ flex: 1, overflowY: 'auto', maxHeight: '183px' }}
+      >
         {documents.length > 0 ? (
           documents.map((doc) => (
             <div
               key={uuidv4()}
-              className={`${doc === selectedDocument ? 'document-itemSelected' : 'document-item`'}`}
+              className={`${
+                doc === selectedDocument
+                  ? 'document-itemSelected'
+                  : 'document-item`'
+              }`}
               onClick={() => setSelectedDocument(doc)}
-              style={{cursor: 'pointer' }}
+              style={{ cursor: 'pointer' }}
             >
               {getFileName(doc)}
             </div>
@@ -181,10 +223,29 @@ const DocumentInteractor: React.FC<DocumentInteractorProps> = ({
           <div>No documents added</div>
         )}
       </div>
-      <div className="document-controls" style={{ display: 'flex', justifyContent: 'space-around', padding: '10px' }}>
+      <div
+        className="document-controls"
+        style={{
+          display: 'flex',
+          justifyContent: 'space-around',
+          padding: '10px',
+        }}
+      >
         <button onClick={handleOnAddDocument}>Add Document</button>
-        {selectedDocument && <><button onClick={handleOpenDocument} disabled={!selectedDocument}>Open</button><button onClick={handleShowInExplorer} disabled={!selectedDocument}>Open in Files</button><button onClick={handleDeleteDocument} disabled={!selectedDocument}>Delete</button></>
-  }    </div>
+        {selectedDocument && (
+          <>
+            <button onClick={handleOpenDocument} disabled={!selectedDocument}>
+              Open
+            </button>
+            <button onClick={handleShowInExplorer} disabled={!selectedDocument}>
+              Open in Files
+            </button>
+            <button onClick={handleDeleteDocument} disabled={!selectedDocument}>
+              Delete
+            </button>
+          </>
+        )}{' '}
+      </div>
     </div>
   );
 };

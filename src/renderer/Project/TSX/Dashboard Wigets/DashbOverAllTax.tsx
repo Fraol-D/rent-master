@@ -128,14 +128,14 @@ const DashbOverAllTax = ({ RoomList }: { RoomList: RoomType[] }) => {
         ]}
         yAxis={[
           {
-            fill: 'white',
+            fill: 'var(--Text-Color)',
           },
         ]}
         series={[
           {
             dataKey: 'tax',
             label: 'Tax (15%)',
-            color: '#FF6B6B',
+            color: 'var(--Accent-Color50)',
           },
         ]}
         width={710}
@@ -149,11 +149,11 @@ const DashbOverAllTax = ({ RoomList }: { RoomList: RoomType[] }) => {
         sx={(theme) => ({
           [`.${axisClasses.root}`]: {
             [`.${axisClasses.tick}, .${axisClasses.line}`]: {
-              stroke: 'white',
+              stroke: 'var(--Text-Color)',
               strokeWidth: 1,
             },
             [`.${axisClasses.tickLabel}`]: {
-              fill: 'white',
+              fill: 'var(--Text-Color)',
             },
           },
         })}

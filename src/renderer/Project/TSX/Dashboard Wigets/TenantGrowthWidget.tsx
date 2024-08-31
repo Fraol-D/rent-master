@@ -64,7 +64,7 @@ const TenantGrowthWidget = ({ TenantList }: { TenantList: tenant[] }) => {
     } else {
       const currentYear = parseInt(selectedDate);
       const years = Array.from({ length: 5 }, (_, i) =>
-        (currentYear -3 + i).toString()
+        (currentYear - 3 + i).toString()
       );
       return years.map((year) => ({
         date: year,
@@ -80,29 +80,35 @@ const TenantGrowthWidget = ({ TenantList }: { TenantList: tenant[] }) => {
       className="DashboardWigetMainContainer"
       style={{ width: '400px', height: '165px' }}
     >
-      <div style={{display:"flex", alignItems:"center"}}><p className="DashboardWigetPieChartTextHeader" style={{width:"209px"}}>Tenant Growth</p>
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-        
-        }}
-      >
-        <select
-          value={viewBy}
-          onChange={(e) => setViewBy(e.target.value as 'month' | 'year')}
+      <div style={{ display: 'flex', alignItems: 'center' }}>
+        <p
+          className="DashboardWigetPieChartTextHeader"
+          style={{ width: '209px' }}
         >
-          <option value="month">Monthly</option>
-          <option value="year">Yearly</option>
-        </select>
-        <input
-          type="number"
-          value={selectedDate}
-          onChange={(e) => setSelectedDate(e.target.value)}
-          min="1900"
-          max={new Date().getFullYear().toString()}
-        />
-      </div></div>
+          Tenant Growth
+        </p>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+          }}
+        >
+          <select
+            value={viewBy}
+            onChange={(e) => setViewBy(e.target.value as 'month' | 'year')}
+          >
+            <option value="month">Monthly</option>
+            <option value="year">Yearly</option>
+          </select>
+          <input
+            type="number"
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+            min="1900"
+            max={new Date().getFullYear().toString()}
+          />
+        </div>
+      </div>
       {hasNewTenants ? (
         <LineChart
           xAxis={[
@@ -123,18 +129,18 @@ const TenantGrowthWidget = ({ TenantList }: { TenantList: tenant[] }) => {
                       'Nov',
                       'Dec',
                     ]
-                  : tenantGrowthData.map(item => item.date),
+                  : tenantGrowthData.map((item) => item.date),
               scaleType: 'point',
-              tickLabelStyle: { fill: 'white' },
-              axisLine: { stroke: 'white' },
-              tick: { stroke: 'white' },
+              tickLabelStyle: { fill: 'var(--Text-Color)' },
+              axisLine: { stroke: 'var(--Text-Color)' },
+              tick: { stroke: 'var(--Text-Color)' },
             },
           ]}
           yAxis={[
             {
-              tickLabelStyle: { fill: 'white' },
-              axisLine: { stroke: 'white' },
-              tick: { stroke: 'white' },
+              tickLabelStyle: { fill: 'var(--Text-Color)' },
+              axisLine: { stroke: 'var(--Text-Color)' },
+              tick: { stroke: 'var(--Text-Color)' },
             },
           ]}
           series={[{ data: tenantGrowthData.map((item) => item.count) }]}
@@ -142,27 +148,30 @@ const TenantGrowthWidget = ({ TenantList }: { TenantList: tenant[] }) => {
           height={160}
           sx={{
             '.MuiChartsAxis-tickLabel': {
-              fill: 'white',
+              fill: 'var(--Text-Color)',
             },
             '.MuiChartsAxis-label': {
-              fill: 'white',
+              fill: 'var(--Text-Color)',
             },
             '.MuiChartsAxis-line': {
-              stroke: 'white',
+              stroke: 'var(--Text-Color)',
             },
             '.MuiChartsAxis-tick': {
-              stroke: 'white',
+              stroke: 'var(--Text-Color)',
             },
             '.MuiLineElement-root': {
-              stroke: 'white',
+              stroke: 'var(--Text-Color)',
             },
             '.MuiChartsGrid-line': {
-              stroke: 'white',
+              stroke: 'var(--Text-Color)',
             },
+            '.css-xyaj9i-MuiMarkElement-root' : {
+              stroke: 'var(--Accent-Color)',
+            }
           }}
         />
       ) : (
-        <p style={{ color: 'white' }}>No new tenants</p>
+        <p>No new tenants</p>
       )}
     </div>
   );

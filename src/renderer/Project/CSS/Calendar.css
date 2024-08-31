@@ -1,5 +1,5 @@
 .CalanderMainContainer {
-  background-color: #2e2f30;
+  background-color: var(--Background-Color);
   /* display: flex; */
   align-items: center;
   flex-direction: column;
@@ -8,7 +8,7 @@
   border: 1px solid grey;
   padding: 5px;
   margin: 10px;
-  color: white;
+  color: var(--Text-Color);
   height: calc(100% - 34px);
 }
 .CalenderOptionsMainContainer {
@@ -16,7 +16,7 @@
   align-items: center;
   gap: 10px;
   padding: 10px;
-  background-color: #434445;
+  background-color: var(--Secondary-Color20);
   border-radius: 5px;
   justify-content: center;
 }
@@ -26,12 +26,12 @@
 .DashboardWigetMainContainer {
   width: 710px;
   align-items: flex-start;
-  color: white;
+  color: var(--Text-Color);
 }
 
 .DashboardWigetPieChartTextHeader {
   width: 710px;
-  color: white;
+  color: var(--Text-Color);
 }
 
 .DashboardTotalCollectedTopPart {
@@ -40,47 +40,44 @@
   align-items: center;
   justify-content: space-between;
   padding: 10px;
-  background-color: #434445;
+  background-color: var(--Secondary-Color20);
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .ShowByContainer {
   margin-right: 20px;
-  color: white;
+  color: var(--Text-Color);
   display: flex;
   align-items: center;
 }
 
 .ShowByLabel {
   margin-right: 10px;
-  font-weight: bold;
 }
 
 .ShowBySelect {
-  color: white;
-  background-color: #454959;
+  color: var(--Text-Color);
+  background-color: var(--Secondary-Color);
   padding: 5px 10px;
   border-radius: 4px;
   margin-right: 20px;
   border: 1px solid grey;
-  
 }
 
 .YearInputContainer {
   display: flex;
   align-items: center;
-  color: white;
+  color: var(--Text-Color);
 }
 
 .YearLabel {
   margin-right: 10px;
-  font-weight: bold;
 }
 
 .YearInput {
-  color: white;
-  background-color: #454959;
+  color: var(--Text-Color);
+  background-color: var(--Secondary-Color);
   padding: 5px 10px;
   border-radius: 4px;
   margin-right: 20px;
@@ -89,7 +86,6 @@
 }
 
 .TotalLabel {
-  font-weight: bold;
   margin-right: 10px;
 }
 
@@ -98,14 +94,14 @@
 }
 
 .DifferenceLabel {
-  font-weight: bold;
   margin-right: 10px;
 }
 
 .DifferenceValue {
-  color: #4caf50;
+  color: var(--Accent-Color);
+  font-weight: 600;
 }
 
 .DifferenceValueNegative {
-  color: #f44336;
+  color: var(--Text-Color-Grey);
 }

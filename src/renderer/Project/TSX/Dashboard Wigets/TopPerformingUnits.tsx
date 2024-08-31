@@ -115,7 +115,7 @@ const TopPerformingUnits = ({
           onClick={() => setShowAll(!showAll)}
           style={{
             padding: '5px',
-            backgroundColor: '#454959',
+            backgroundColor: 'var(--Secondary-Color)',
             cursor: 'pointer',
           }}
         >
@@ -129,7 +129,10 @@ const TopPerformingUnits = ({
             style={{
               padding: '5px',
               width: '100px',
-              backgroundColor: activeTab === 'rooms' ? '#454959' : '#2e2f30',
+              backgroundColor:
+                activeTab === 'rooms'
+                  ? 'var(--Secondary-Color)'
+                  : 'var(--Background-Color)',
               cursor: 'pointer',
             }}
           >
@@ -140,7 +143,10 @@ const TopPerformingUnits = ({
             style={{
               width: '100px',
               padding: '5px',
-              backgroundColor: activeTab === 'tenants' ? '#454959' : '#2e2f30',
+              backgroundColor:
+                activeTab === 'tenants'
+                  ? 'var(--Secondary-Color)'
+                  : 'var(--Background-Color)',
               cursor: 'pointer',
             }}
           >
@@ -151,7 +157,10 @@ const TopPerformingUnits = ({
             style={{
               width: '100px',
               padding: '5px',
-              backgroundColor: activeTab === 'brokers' ? '#454959' : '#2e2f30',
+              backgroundColor:
+                activeTab === 'brokers'
+                  ? 'var(--Secondary-Color)'
+                  : 'var(--Background-Color)',
               cursor: 'pointer',
             }}
           >
@@ -162,7 +171,10 @@ const TopPerformingUnits = ({
             style={{
               width: '100px',
               padding: '5px',
-              backgroundColor: activeTab === 'loyal' ? '#454959' : '#2e2f30',
+              backgroundColor:
+                activeTab === 'loyal'
+                  ? 'var(--Secondary-Color)'
+                  : 'var(--Background-Color)',
               cursor: 'pointer',
             }}
           >
@@ -173,7 +185,10 @@ const TopPerformingUnits = ({
             style={{
               width: '100px',
               padding: '5px',
-              backgroundColor: activeTab === 'lifetime' ? '#454959' : '#2e2f30',
+              backgroundColor:
+                activeTab === 'lifetime'
+                  ? 'var(--Secondary-Color)'
+                  : 'var(--Background-Color)',
               cursor: 'pointer',
             }}
           >

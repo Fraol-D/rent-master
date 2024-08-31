@@ -10,8 +10,8 @@
 .SideBarContainer {
   width: 290px;
   border-top: 1px solid grey;
-  background-color: #2e2f30;
-  color: white;
+  background-color: var(--Secondary-Color20);
+  color: var(--Text-Color);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -22,7 +22,7 @@
   height: 100%;
 }
 .SecondNavBarContainer {
-  background-color: #2e2f30;
+  background-color: var(--Background-Color);
 
   border-radius: 5px;
   height: 0px;
@@ -33,14 +33,13 @@
   z-index: 1;
 }
 .TenantSearchBarContainer {
-  
 }
 .SearchBarContainer {
   display: flex;
   align-items: flex-start;
   justify-content: center;
   height: 136px;
-  color: white;
+  color: var(--Text-Color);
   width: 100%;
   flex-direction: column;
 }
@@ -56,27 +55,27 @@
   height: 25px;
   margin-right: 20px;
   border-radius: 5px;
-  background-color: #454959;
+  background-color: var(--Secondary-Color);
   font-size: 15px;
-  color: white;
+  color: var(--Text-Color);
   border: 1px solid grey;
 }
 .TenantSearchBar {
   width: 140px;
   height: 25px;
-  background-color: #454959;
+  background-color: var(--Secondary-Color);
   font-size: 15px;
   border-radius: 5px;
   border: 1px solid grey;
-  color: white;
+  color: var(--Text-Color);
 }
 .RoomSearchBar {
   width: 50px;
   height: 25px;
   border-radius: 5px;
-  background-color: #454959;
+  background-color: var(--Secondary-Color);
   font-size: 15px;
-  color: white;
+  color: var(--Text-Color);
   border: 1px solid grey;
 }
 .sort-button-img {
@@ -103,7 +102,7 @@
   border-radius: 5px;
   background: lightgrey;
   padding-left: 1px;
-  background-color: #454959;
+  background-color: var(--Secondary-Color);
   border: none;
   border-left: none;
   color: lab(100 0 -0.03);
@@ -114,30 +113,30 @@
   height: 50px;
 
   border-radius: 5px;
-  background-color: #45495900;
+  background-color: var(--Secondary-Color) 00;
   font-weight: bolder;
 
   border-right: none;
 }
 .filter-drop {
-  background-color: #454959;
+  background-color: var(--Secondary-Color);
   border: 1px solid grey;
-  color: white;
+  color: var(--Text-Color);
   border-radius: 5px;
 }
 .AdvanceRoomFinding {
   width: 100%;
-  color: white;
+  color: var(--Text-Color);
   display: flex;
   flex-direction: column;
 }
 .AdvanceRoomFindingInput {
   width: 70px;
   height: 30px;
-  background-color: #454959;
+  background-color: var(--Secondary-Color);
   border: 1px solid grey;
   border-radius: 5px;
-  color: white;
+  color: var(--Text-Color);
 }
 .AdvanceRoomFindingINPUTCONTAINER {
   display: flex;
@@ -150,7 +149,7 @@
   top: 67px;
   width: 1300px;
   align-items: center;
-  color: white;
+  color: var(--Text-Color);
   font-size: 14px;
   justify-content: center;
 }
@@ -168,7 +167,7 @@
   border-radius: 5px;
   box-shadow: 3px 3px 0px 0px #00000073;
   width: 320px;
-  background-color: #454959;
+  background-color: var(--Secondary-Color);
   display: flex;
   flex-direction: row;
   justify-content: space-evenly;
@@ -179,9 +178,9 @@
   overflow: hidden auto;
 }
 .SideBarRoomPageBottomPartAddRoom {
-  background-color: #2e2f30;
+  background-color: var(--Background-Color);
   box-shadow: 3px 3px 0px 0px rgba(0, 0, 0, 0.4509803922);
-  border-top: 1px solid white;
+  
   width: 100%;
   border-radius: 5px;
   display: flex;
@@ -189,30 +188,30 @@
   flex-direction: column;
   justify-content: space-between;
   overflow-y: auto;
+  transition: all .2s;
 }
 .AddANewRoomInputsSmall {
   width: 60px;
-  background-color: #454959;
+  background-color: var(--Secondary-Color);
   border: 1px solid grey;
-  color: white;
+  color: var(--Text-Color);
   border-radius: 5px;
 }
 .AddANewRoomSelectMid {
-
-  background-color: #454959;
+  background-color: var(--Secondary-Color);
   border: 1px solid grey;
-  color: white;
+  color: var(--Text-Color);
   border-radius: 5px;
 }
 .AddANewRoomInputsMid {
   width: 120px;
-  background-color: #454959;
+  background-color: var(--Secondary-Color);
   border: 1px solid grey;
-  color: white;
+  color: var(--Text-Color);
   border-radius: 5px;
 }
 .AddANewRoomSpecObjectMainContainer {
-  background-color: #454959;
+  background-color: var(--Secondary-Color);
   padding: 5px;
   border: 1px solid grey;
   border-radius: 5px;
@@ -223,21 +222,21 @@
   padding: 10px;
   padding-top: 5px;
   border-radius: 5px;
- 
 }
 .AddARoomImageMainContainer {
-  background-color: #191919;
+  background-color: rgba(128, 128, 128, 0.12);
   padding: 10px;
   padding-top: 5px;
-  border-radius: 5px; margin-top: 10px;
+  border-radius: 5px;
+  margin-top: 10px;
   height: 200px;
 }
 .HorizontalButton {
   border-radius: 5px;
   padding: 5px;
-  background-color: #454959;
-  color: white;
-  border: 0.5px solid white;
+  background-color: var(--Secondary-Color);
+  color: var(--Text-Color);
+
   margin-bottom: 5px;
   transition: all 0.2s;
   width: 90%;
@@ -267,7 +266,7 @@
 .EditRoomScreenMainContainer {
   width: 750px;
   height: 540px;
-  background-color: #2e2f30;
+  background-color: var(--Background-Color);
   position: absolute;
   left: 50%;
   top: 50%;
@@ -295,7 +294,7 @@
 .sideBarItemComponentMain {
   width: 90%;
   height: 30px;
-  background-color: #454959;
+  background-color: var(--Secondary-Color);
   margin: 5px;
   display: flex;
 
@@ -309,7 +308,7 @@
 .sideBarItemComponentMainSelected {
   width: 90%;
   height: 30px;
-  background-color: #454959;
+  background-color: var(--Secondary-Color);
   margin: 5px;
   display: flex;
 
@@ -317,7 +316,7 @@
   align-items: center;
   padding: 5px;
   border-radius: 5px;
-  border: 1px solid #00e1ff;
+  border: 1px solid var(--Primary-Color);
 }
 .sideBarItemComponentMain:hover {
   border: 1px solid white;
@@ -331,7 +330,7 @@
   margin-top: 5px;
   margin-left: 5px;
   width: 35px;
-  background-color: #454959;
+  background-color: var(--Secondary-Color);
   display: flex;
   flex-direction: row;
   justify-content: space-evenly;
@@ -339,14 +338,14 @@
 }
 .notification-panel {
   height: 555px;
-  color: white;
+  color: var(--Text-Color);
   position: absolute;
   bottom: 60px;
   left: 472px;
   border-radius: 5px 5px 0px 0px;
   box-shadow: 3px 3px 0px 0px rgba(0, 0, 0, 0.4509803922);
   width: 320px;
-  background-color: #454959;
+  background-color: var(--Secondary-Color);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -365,10 +364,74 @@
   margin: 10px;
 }
 .SideBarShowButton {
-    height: 25px;
-    position: absolute;
-    margin-top: 3px;
-    margin-left: 3px;
-    transition: all .2s;
-    visibility: visible;
+  height: 25px;
+  position: absolute;
+  margin-top: 3px;
+  margin-left: 3px;
+  transition: all 0.2s;
+  visibility: visible;
 }
+
+.table-container {
+  width: 100%;
+  border-collapse: collapse;
+
+  color: var(--Text-Color);
+  font-family: Arial, sans-serif;
+  font-size: 14px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.table-header {
+  background-color: var(--Secondary-Color);
+  
+}
+
+.table-header th {
+  padding: 12px 15px;
+  text-align: left;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.table-header input {
+  background-color: #3c3c3c;
+  color: #e0e0e0;
+  border: none;
+  padding: 5px;
+  border-radius: 3px;
+  width: 100%;
+}
+
+.table-body tr:nth-child(even) {
+  background-color: rgba(255, 255, 255, 0.11);
+}
+
+.table-body tr:nth-child(odd) {
+  background-color: rgba(224, 224, 224, 0.06);
+}
+
+.table-body td {
+  padding: 10px 15px;
+  border-bottom: 1px solid #3c3c3c;
+}
+
+.table-body input {
+  background-color: #3c3c3c;
+  color: #e0e0e0;
+  border: none;
+  padding: 5px;
+  border-radius: 3px;
+  width: 100%;
+}
+
+.delete-button {
+  background-color: #d32f2f;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 3px;
+  cursor: pointer;
+  color: white;
+}
+

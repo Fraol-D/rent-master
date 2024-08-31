@@ -821,12 +821,11 @@ const MainPage = ({
     if (SelectedPage === 'Database') {
       setOnDataBase(true);
     } else {
-      if(OnDataBase) {
+      if (OnDataBase) {
         RefreshDataFromSqlite();
 
         setOnDataBase(false);
       } else {
-
       }
     }
   }, [SelectedPage]);
@@ -895,9 +894,32 @@ const MainPage = ({
                       justifyContent: 'center',
                       alignItems: 'center',
                     }}
-                    onClick={RefreshDataFromSqlite}
+                    onClick={() => {
+                      setShowArchived(!ShowArchived);
+                      
+                        const sendMessage = async (identifierId: string, senderName: string, recipient: string, message: string, callback: string) => {
+                          const url = `https://api.afromessage.com/api/send?from=${identifierId}&sender=${senderName}&to=${recipient}&message=${message}&callback=${callback}`;
+                          
+                          try {
+                            const response = await fetch(url, {
+                              method: 'GET',
+                            });
+                            
+                            if (!response.ok) {
+                              throw new Error(`HTTP error! status: ${response.status}`);
+                            }
+                            
+                            const data = await response.json();
+                            return data;
+                          } catch (error) {
+                            console.error('Error sending message:', error);
+                            throw error;
+                          }
+                        };
+                      sendMessage("Whale","","0944508888", "I am looking at you from christian yabsria", "");
+                    }}
                   >
-                    ...
+                    {ShowArchived ? 'Show unarchived' : 'Show archived'}
                   </button>{' '}
                 </div>
                 <div
@@ -910,6 +932,7 @@ const MainPage = ({
                       cursor: 'pointer',
                       fontSize: '22px',
                       marginLeft: '10px',
+                      color: 'var(--Accent-Color)',
                     }}
                   >
                     {isSearchOpen ? '▼' : '▶'} Search rooms
@@ -974,6 +997,7 @@ const MainPage = ({
                       cursor: 'pointer',
                       fontSize: '22px',
                       marginLeft: '10px',
+                      color: 'var(--Accent-Color)',
                     }}
                   >
                     {isFilterOpen ? '▼' : '▶'} Filter rooms
@@ -1169,14 +1193,6 @@ const MainPage = ({
                     </div>
                   )}
                 </div>
-
-                <button
-                  onClick={() => {
-                    setShowArchived(!ShowArchived);
-                  }}
-                >
-                  {ShowArchived ? 'Show unarchived' : 'Show archived'}
-                </button>
               </div>
               <div
                 className="SideBarRoomPageBottomPartAddRoom"
@@ -1483,7 +1499,14 @@ const MainPage = ({
             ></div>{' '}
             <div className="EditRoomScreenMainContainer">
               <div style={{ display: 'flex' }}>
-                <button>{'<'} Close</button>
+                <button
+                  onClick={() => {
+                    setSelectedEditRoomId('');
+                    setDeleteConfimation(false);
+                  }}
+                >
+                  {'<'} Close
+                </button>
                 <p className="DashboardWigetPieChartTextHeader">
                   Editing Floor:{' '}
                   {
@@ -1498,10 +1521,7 @@ const MainPage = ({
                 </p>
               </div>{' '}
               <div style={{ display: 'flex' }}>
-                <div
-                  className="RoomSpecficationsMainContainer"
-                  style={{ color: 'white' }}
-                >
+                <div className="RoomSpecficationsMainContainer">
                   <h3>
                     Room Specifications{' - '}
                     <button

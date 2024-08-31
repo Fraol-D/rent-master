@@ -96,10 +96,12 @@ export function PeopleComponentPage({
   };
 
   const [Agreements, setAgreements] = useState<agreements[]>([]);
-
+  const [AgreementsId, setAgreementsId] = useState<>('');
+  
   const HandleOpenClicked = (tenantId: string) => {
     const roomType = RoomList.find((r: RoomType) => r.tenantId === tenantId);
     getAgreements(roomType);
+    setAgreementsId(tenantId);
   };
 
   const getAgreements = async (roomType: any) => {
@@ -131,7 +133,7 @@ export function PeopleComponentPage({
       </div>
       <div
         className="RoomContainerContainer"
-        style={{ width: '100%', height: 'calc(100% - 60px)', color: 'white' }}
+        style={{ width: '100%', height: 'calc(100% - 60px)' }}
       >
         <div style={{ marginBottom: '20px' }}>
           Search:
@@ -220,7 +222,10 @@ export function PeopleComponentPage({
                       }}
                     >
                                            {' '}
-                      <td className="InfoTableBodyTD" style={{ color: 'grey' }}>
+                      <td
+                        className="InfoTableBodyTD"
+                        style={{ color: 'var(--Text-Color-Grey)' }}
+                      >
                                                {' '}
                         {highlightText(index.toString(), mainSearch)}           
                                  {' '}
@@ -353,7 +358,7 @@ export function PeopleComponentPage({
                                                {' '}
                         {!tenant.RentingOrOut && (
                           <div>
-                            Out {' '}
+                            Out{' '}
                             {highlightText(
                               new Date(tenant.endTime).toLocaleDateString(
                                 'en-US',
@@ -383,16 +388,21 @@ export function PeopleComponentPage({
                         </div>
                                              {' '}
                       </td>
-                          <td className="InfoTableBodyTD" title={toEthiopianDateString(new Date(tenant.AddedTime))}>
-                     
-                                                   {' '}
-                          {highlightText(
+                         {' '}
+                      <td
+                        className="InfoTableBodyTD"
+                        title={toEthiopianDateString(
+                          new Date(tenant.AddedTime)
+                        )}
+                      >
+                                                 {' '}
+                        {highlightText(
                           new Date(tenant.AddedTime).toDateString(),
-                            mainSearch
-                          )}
-                                               
-                        
-                      </td>               
+                          mainSearch
+                        )}
+                                             
+                      </td>
+                                     
                     </tr>
                   ))}
                                  {' '}
@@ -405,24 +415,24 @@ export function PeopleComponentPage({
                   className="InfoTableContainer"
                   style={{ marginTop: '40px' }}
                 >
-                                    Tenant Name:                  {' '}
+                 Tenant Name:{' '}
                   {
                     TenantList.find(
-                      (t: tenant) => t.id === Agreements[0].tenantId
-                    ).name
+                      (t: tenant) => t.id === Agreements[Agreements.length-1].tenantId
+                    )?.name || "Deleted"
                   }
-                                    {' --- '}                  Occupancy: Floor:{' '}
-                                   {' '}
+                  {' --- '}Occupancy: Floor:{' '}
+              {' '}
                   {
                     RoomList.find(
-                      (r: RoomType) => r.id === Agreements[0].roomId
+                      (r: RoomType) => r.id === Agreements[Agreements.length-1].roomId
                     ).floor
                   }
-                                    {' - '}                  Room:              
+            {' - '}Room:
                      {' '}
                   {
                     RoomList.find(
-                      (r: RoomType) => r.id === Agreements[0].roomId
+                      (r: RoomType) => r.id === Agreements[Agreements.length-1].roomId
                     ).roomIndex
                   }
                                                      {' '}
@@ -456,7 +466,7 @@ export function PeopleComponentPage({
                                        {' '}
                     <tbody>
                                            {' '}
-                      {Agreements.map(
+                      {Agreements.filter((agr:agreements)=>agr.tenantId === AgreementsId).map(
                         (agreement: agreements, index: number) => (
                           <tr
                             key={agreement.id}
@@ -654,7 +664,10 @@ export function PeopleComponentPage({
                           : 'rgba(224 224 224 / 0.06)',
                     }}
                   >
-                    <td className="InfoTableBodyTD" style={{ color: 'grey' }}>
+                    <td
+                      className="InfoTableBodyTD"
+                      style={{ color: 'var(--Text-Color-Grey)' }}
+                    >
                       {highlightText(index + 1, mainSearch)}
                     </td>
                     <td className="InfoTableBodyTD">
@@ -696,7 +709,7 @@ export function PeopleComponentPage({
                           maxHeight: '65px',
                           overflowY: 'auto',
                           padding: '5px',
-                          border: '1px solid #ccc',
+                          border: '1px solid grey',
                           borderRadius: '4px',
                         }}
                       >
@@ -738,7 +751,7 @@ export function PeopleComponentPage({
                                 )
                               </span>
                               <br />
-                              <span style={{ color: '#BDDDFF' }}>
+                              <span style={{ color: 'var(--Accent-Color)' }}>
                                 Commission: $
                                 {highlightText(
                                   recommendation.AgreedCommission.toLocaleString(),
@@ -746,7 +759,7 @@ export function PeopleComponentPage({
                                 )}
                               </span>
                               <span
-                                style={{ marginLeft: '10px', color: '#90FFAA' }}
+                                style={{ marginLeft: '10px', color: 'var(--Accent-Color)' }}
                               >
                                 Floor:{' '}
                                 {highlightText(
@@ -841,7 +854,10 @@ export function PeopleComponentPage({
                           : 'rgba(224 224 224 / 0.06)',
                     }}
                   >
-                    <td className="InfoTableBodyTD" style={{ color: 'grey' }}>
+                    <td
+                      className="InfoTableBodyTD"
+                      style={{ color: 'var(--Text-Color-Grey)' }}
+                    >
                       {highlightText(index + 1, mainSearch)}
                     </td>
                     <td className="InfoTableBodyTD">
@@ -882,7 +898,12 @@ export function PeopleComponentPage({
                         mainSearch
                       )}{' '}
                       <div></div>c:{' '}
-                      <em style={{ color: 'grey', fontSize: '12px' }}>
+                      <em
+                        style={{
+                          color: 'var(--Text-Color-Grey)',
+                          fontSize: '12px',
+                        }}
+                      >
                         {highlightText(
                           review.AgreedCommission.toLocaleString() || '',
                           mainSearch

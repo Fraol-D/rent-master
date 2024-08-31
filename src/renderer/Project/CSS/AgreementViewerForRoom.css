@@ -1,8 +1,9 @@
 .AgreementMainContianer {
-  background-color: #454959;
+  background-color: var(--Secondary-Color);
   padding: 5px;
   border-radius: 5px;
-  margin: 5px;    overflow-y: auto;
+  margin: 5px;
+  overflow-y: auto;
 }
 .AgreementNavigationButtons {
   display: flex;
@@ -14,7 +15,7 @@
   width: 450px;
   height: 500px;
   border-radius: 5px;
-  background-color: #2e2f30;
+  background-color: var(--Background-Color);
   position: absolute;
   left: 50%;
   top: 50%;

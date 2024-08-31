@@ -9,12 +9,12 @@ import {
 interface EthiopianCalendarConverterProps {
   onConvert: (gregorianDate: string) => void;
   handleUse: (gagorianDate: number) => void;
-  Cancel: () =>void;
+  Cancel: () => void;
 }
 
 const EthiopianCalanderConverterMenu: React.FC<
   EthiopianCalendarConverterProps
-> = ({ onConvert, handleUse,Cancel }) => {
+> = ({ onConvert, handleUse, Cancel }) => {
   const [ethiopianDate, setEthiopianDate] = useState('');
   const [gregorianDate, setGregorianDate] = useState('');
 
@@ -30,8 +30,8 @@ const EthiopianCalanderConverterMenu: React.FC<
   };
   const Use = () => {
     try {
-        const [day, month, year] = ethiopianDate.split('/').map(Number);
-        const convertedDate = convertToGC(day, month, year, 0, 0, 0);
+      const [day, month, year] = ethiopianDate.split('/').map(Number);
+      const convertedDate = convertToGC(day, month, year, 0, 0, 0);
       const date = new Date(convertedDate).getTime();
       handleUse(date);
     } catch (error: any) {
@@ -52,7 +52,7 @@ const EthiopianCalanderConverterMenu: React.FC<
   };
 
   const converterStyle: React.CSSProperties = {
-    backgroundColor: '#2e2f30',
+    backgroundColor: 'var(--Background-Color)',
     padding: '20px',
     borderRadius: '8px',
     boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',

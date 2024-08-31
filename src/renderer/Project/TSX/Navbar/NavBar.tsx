@@ -9,6 +9,9 @@ interface Props {
   ShopName: string;
   setSelectedPage:(newval:any)=>void;
   SelectedPage: string;
+  setThemeMode: (newval: any) => void;
+  ThemeMode: string;
+  ChangeTheme: () => void;
 }
 
 const NavBar = ({
@@ -16,7 +19,7 @@ const NavBar = ({
   ProfileState,
   ShopName,
   setSelectedPage,
-  SelectedPage,
+  SelectedPage,setThemeMode,ThemeMode,ChangeTheme
 }: Props) => {
   const [currentTime, setCurrentTime] = useState(new Date());
 
@@ -102,7 +105,7 @@ const NavBar = ({
       </div>
 
       <div className="RightSide">
-        <div className="CurrentTimeContainer">
+        <button onClick={()=>{ChangeTheme();setThemeMode(ThemeMode === "light" ? "dark" : "light")}}>To {ThemeMode === "light" ? "dark" : "light"}</button><div className="CurrentTimeContainer">
           <p className="CurrentTime">
             {currentHour}:{currentMinute}
           </p>

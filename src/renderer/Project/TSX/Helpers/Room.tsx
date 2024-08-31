@@ -1002,8 +1002,8 @@ const Room = ({
           background: roomType.AddTenantState
             ? '#2C2C30'
             : roomType.status === 'Empty'
-            ? '#14325'
-            : '#63809d',
+            ? 'var(--Secondary-Color20)'
+            : 'var(--Primary-Color25)', 
           border: roomType.AddTenantState ? '1px solid #00e1f1' : '',
         }}
       >
@@ -1136,7 +1136,6 @@ const Room = ({
                         display: 'flex',
                         justifyContent: 'center',
                         marginTop: '5px',
-
                         fontWeight: '400',
                       }}
                       onClick={() => {
@@ -1233,8 +1232,9 @@ const Room = ({
                 )}
               </p>
               <button
-                className="Show-button-Pay"
+                className="PageNavigatorButtonSelected"
                 ref={hideButtonRef}
+                style={{borderBottom:"1px solid grey"}}
                 onClick={() => {
                   updateRoomProperty(
                     roomType.id,
@@ -1359,7 +1359,7 @@ const Room = ({
                     width: TenantPageSelected === 'Select' ? '60%' : '40%',
                     borderBottom:
                       TenantPageSelected === 'Select'
-                        ? '1px solid #00e1ff'
+                        ? '1px solid var(--Primary-Color)'
                         : '1px solid grey',
                   }}
                 >
@@ -1374,7 +1374,7 @@ const Room = ({
                     width: TenantPageSelected === 'New' ? '60%' : '40%',
                     borderBottom:
                       TenantPageSelected === 'New'
-                        ? '1px solid #00e1ff'
+                        ? '1px solid var(--Primary-Color)'
                         : '1px solid grey',
                   }}
                 >
@@ -1869,7 +1869,11 @@ const Room = ({
                                 {isPercentCommission && (
                                   <>
                                     %{' '}
-                                    <em style={{ color: 'grey' }}>
+                                    <em
+                                      style={{
+                                        color: 'var(--Text-Color-Grey)',
+                                      }}
+                                    >
                                       {commissionValue != '' &&
                                         (commissionValue / 100) * agreedPrice}
                                     </em>
@@ -2228,7 +2232,11 @@ const Room = ({
                                       {isPercentCommission && (
                                         <>
                                           %{' '}
-                                          <em style={{ color: 'grey' }}>
+                                          <em
+                                            style={{
+                                              color: 'var(--Text-Color-Grey)',
+                                            }}
+                                          >
                                             {commissionValue != '' &&
                                               (commissionValue / 100) *
                                                 agreedPrice}
@@ -2388,11 +2396,11 @@ const Room = ({
                   style={{
                     marginBottom: '10px',
                     fontSize: '16px',
-                    color: 'GREY',
+                    color: 'var(--Text-Color-Grey)',
                   }}
                 >
                   <span style={{ fontWeight: 'bold' }}>Name:</span>{' '}
-                  <em style={{ fontWeight: '600', color: '#02b2af' }}>
+                  <em style={{ fontWeight: '600', color: 'var(--Accent-Color)' }}>
                     {
                       TenantList.find(
                         (tenant: any) => tenant.id === roomType.tenantId
@@ -2404,11 +2412,11 @@ const Room = ({
                   style={{
                     marginBottom: '10px',
                     fontSize: '16px',
-                    color: 'GREY',
+                    color: 'var(--Text-Color-Grey)',
                   }}
                 >
                   <span style={{ fontWeight: 'bold' }}>Tel 1:</span>{' '}
-                  <em style={{ fontWeight: '600', color: '#02b2af' }}>
+                  <em style={{ fontWeight: '600', color: 'var(--Accent-Color)' }}>
                     {
                       TenantList.find(
                         (tenant: any) => tenant.id === roomType.tenantId
@@ -2420,11 +2428,11 @@ const Room = ({
                   style={{
                     marginBottom: '10px',
                     fontSize: '16px',
-                    color: 'GREY',
+                    color: 'var(--Text-Color-Grey)',
                   }}
                 >
                   <span style={{ fontWeight: 'bold' }}>Tel 2:</span>{' '}
-                  <em style={{ fontWeight: '600', color: '#02b2af' }}>
+                  <em style={{ fontWeight: '600', color: 'var(--Accent-Color)' }}>
                     {
                       TenantList.find(
                         (tenant: any) => tenant.id === roomType.tenantId
@@ -2436,11 +2444,11 @@ const Room = ({
                   style={{
                     marginBottom: '10px',
                     fontSize: '16px',
-                    color: 'GREY',
+                    color: 'var(--Text-Color-Grey)',
                   }}
                 >
                   <span style={{ fontWeight: 'bold' }}>Email:</span>{' '}
-                  <em style={{ fontWeight: '600', color: '#02b2af' }}>
+                  <em style={{ fontWeight: '600', color: 'var(--Accent-Color)' }}>
                     {
                       TenantList.find(
                         (tenant: any) => tenant.id === roomType.tenantId
@@ -2452,11 +2460,11 @@ const Room = ({
                   style={{
                     marginBottom: '10px',
                     fontSize: '16px',
-                    color: 'GREY',
+                    color: 'var(--Text-Color-Grey)',
                   }}
                 >
                   <span style={{ fontWeight: 'bold' }}>TIN:</span>{' '}
-                  <em style={{ fontWeight: '600', color: '#02b2af' }}>
+                  <em style={{ fontWeight: '600', color: 'var(--Accent-Color)' }}>
                     {
                       TenantList.find(
                         (tenant: any) => tenant.id === roomType.tenantId
@@ -2468,11 +2476,11 @@ const Room = ({
                   style={{
                     marginBottom: '10px',
                     fontSize: '16px',
-                    color: 'GREY',
+                    color: 'var(--Text-Color-Grey)',
                   }}
                 >
                   <span style={{ fontWeight: 'bold' }}>Rent Reason:</span>{' '}
-                  <em style={{ fontWeight: '600', color: '#02b2af' }}>
+                  <em style={{ fontWeight: '600', color: 'var(--Accent-Color)' }}>
                     {
                       TenantList.find(
                         (tenant: any) => tenant.id === roomType.tenantId
@@ -2567,7 +2575,7 @@ const Room = ({
               <div
                 style={{
                   width: '100%',
-                  background: '#434445',
+                  background: 'var(--Secondary-Color20)',
                   minHeight: '100px',
                   paddingTop: '5px',
                   paddingLeft: '5px',
@@ -2630,6 +2638,7 @@ const Room = ({
               agreedPrice={roomType.AgreedPrice}
               extendPaymentSchedule={extendPaymentSchedule}
               refresh={handlePaymentRefresh}
+              tenantList={TenantList}
             ></PaymentProgressBarGUI>
           </div>
         </div>

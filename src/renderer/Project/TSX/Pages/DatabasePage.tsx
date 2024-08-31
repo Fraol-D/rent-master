@@ -1,4 +1,8 @@
-import { getValuesWithSql, updateValue, deleteValue } from 'Backend/localServerApis';
+import {
+  getValuesWithSql,
+  updateValue,
+  deleteValue,
+} from 'Backend/localServerApis';
 import React, { useEffect, useState } from 'react';
 
 const DatabasePage = () => {
@@ -109,9 +113,9 @@ const DatabasePage = () => {
       try {
         await updateValue(
           SelectedTable,
-          Data[editCell.rowIndex].id, editCell.key,
-          editValue,
-          
+          Data[editCell.rowIndex].id,
+          editCell.key,
+          editValue
         );
         const updatedData = [...Data];
         updatedData[editCell.rowIndex] = {
@@ -129,7 +133,7 @@ const DatabasePage = () => {
   const handleDelete = async (id: string) => {
     try {
       await deleteValue(SelectedTable, id);
-      const updatedData = Data.filter(item => item.id !== id);
+      const updatedData = Data.filter((item) => item.id !== id);
       setData(updatedData);
     } catch (error) {
       console.error('Failed to delete value:', error);
@@ -145,8 +149,12 @@ const DatabasePage = () => {
         }}
       >
         <div className="CalenderOptionsMainContainer">
-          <span style={{ color: 'red', fontWeight: 'bold' }}>Warning: Modifying database values without proper understanding can lead to critical system errors. Only edit if you are certain of the consequences.</span>
-          <label htmlFor="monthsFutureInput" style={{ fontWeight: 'bold' }}>
+          <span style={{ color: 'red', fontWeight: 'bold' }}>
+            Warning: Modifying database values without proper understanding can
+            lead to critical system errors. Only edit if you are certain of the
+            consequences.
+          </span>
+          <label htmlFor="monthsFutureInput" >
             Select a table:{' '}
           </label>
           <select
@@ -160,7 +168,7 @@ const DatabasePage = () => {
               </option>
             ))}
           </select>
-          <label htmlFor="monthsFutureInput" style={{ fontWeight: 'bold' }}>
+          <label htmlFor="monthsFutureInput" >
             Search all fields:{' '}
           </label>
           <input
@@ -182,137 +190,75 @@ const DatabasePage = () => {
             marginTop: '5px',
           }}
         >
-          <table
-            style={{
-              width: '100%',
-              borderCollapse: 'collapse',
-              backgroundColor: '#1e1e1e',
-              color: '#e0e0e0',
-              fontFamily: 'Arial, sans-serif',
-              fontSize: '14px',
-              boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-            }}
-          >
-            <thead>
-              <tr
-                style={{
-                  backgroundColor: '#2c2c2c',
-                  borderBottom: '2px solid #3c3c3c',
-                }}
-              >
-                {Data.length > 0 &&
-                  Object.keys(Data[0]).map((header, index) => (
-                    <th
-                      key={index}
-                      style={{
-                        padding: '12px 15px',
-                        textAlign: 'left',
-                        fontWeight: 'bold',
-                        cursor: 'pointer',
-                        transition: 'background-color 0.3s',
-                      }}
-                      onClick={() => handleSearch(header)}
-                    >
-                      {searchConfig.key === header ? (
-                        <input
-                          type="text"
-                          value={searchConfig.query}
-                          onChange={handleQueryChange}
-                          placeholder={`Search ${header}`}
-                          autoFocus
-                          style={{
-                            backgroundColor: '#3c3c3c',
-                            color: '#e0e0e0',
-                            border: 'none',
-                            padding: '5px',
-                            borderRadius: '3px',
-                            width: '100%',
-                          }}
-                        />
-                      ) : (
-                        header
-                      )}
-                    </th>
-                  ))}
-                <th style={{ padding: '12px 15px', textAlign: 'left', fontWeight: 'bold' }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredData(Data, searchConfig.key, searchConfig.query).map(
-                (row, rowIndex) => (
-                  <tr
-                    key={rowIndex}
-                    style={{
-                      backgroundColor:
-                        rowIndex % 2 === 0 ? '#262626' : '#2a2a2a',
-                      transition: 'background-color 0.3s',
-                    }}
-                  >
-                    {Object.entries(row).map(([key, value], cellIndex) => (
-                      <td
-                        key={cellIndex}
-                        style={{
-                          padding: '10px 15px',
-                          borderBottom: '1px solid #3c3c3c',
-                        }}
-                        onDoubleClick={() =>
-                          handleCellDoubleClick(rowIndex, key, String(value))
-                        }
-                      >
-                        {editCell &&
-                        editCell.rowIndex === rowIndex &&
-                        editCell.key === key ? (
-                          <input
-                            type="text"
-                            value={editValue}
-                            onChange={handleEditChange}
-                            onBlur={handleEditSubmit}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') {
-
-                                handleEditSubmit();
-                              }
-                            }}
-                            autoFocus
-                            style={{
-                              backgroundColor: '#3c3c3c',
-                              color: '#e0e0e0',
-                              border: 'none',
-                              padding: '5px',
-                              borderRadius: '3px',
-                              width: '100%',
-                            }}
-                          />
-                        ) : (
-                          highlightText(String(value), mainSearch)
-                        )}
-                      </td>
-                    ))}
-                    <td style={{ padding: '10px 15px', borderBottom: '1px solid #3c3c3c' }}>
-                      <button
-                        onClick={() => handleDelete(row.id)}
-                        style={{
-                          backgroundColor: '#d32f2f',
-                          color: 'white',
-                          border: 'none',
-                          padding: '5px 10px',
-                          borderRadius: '3px',
-                          cursor: 'pointer',
-                        }}
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                )
+          <table className="table-container">
+  <thead className="table-header">
+    <tr>
+      {Data.length > 0 &&
+        Object.keys(Data[0]).map((header, index) => (
+          <th key={index} onClick={() => handleSearch(header)}>
+            {searchConfig.key === header ? (
+              <input
+                type="text"
+                value={searchConfig.query}
+                onChange={handleQueryChange}
+                placeholder={`Search ${header}`}
+                autoFocus
+              />
+            ) : (
+              header
+            )}
+          </th>
+        ))}
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody className="table-body">
+    {filteredData(Data, searchConfig.key, searchConfig.query).map(
+      (row, rowIndex) => (
+        <tr key={rowIndex}>
+          {Object.entries(row).map(([key, value], cellIndex) => (
+            <td
+              key={cellIndex}
+              onDoubleClick={() =>
+                handleCellDoubleClick(rowIndex, key, String(value))
+              }
+            >
+              {editCell &&
+              editCell.rowIndex === rowIndex &&
+              editCell.key === key ? (
+                <input
+                  type="text"
+                  value={editValue}
+                  onChange={handleEditChange}
+                  onBlur={handleEditSubmit}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handleEditSubmit();
+                    }
+                  }}
+                  autoFocus
+                />
+              ) : (
+                highlightText(String(value), mainSearch)
               )}
-            </tbody>
-          </table>
+            </td>
+          ))}
+          <td>
+            <button
+              className="delete-button"
+              onClick={() => handleDelete(row.id)}
+            >
+              Delete
+            </button>
+          </td>
+        </tr>
+      )
+    )}
+  </tbody>
+</table>
         </div>
       </div>
     </div>
   );
 };
-
-
 export default DatabasePage;

@@ -85,7 +85,7 @@ const DashbPastPayments = ({
       style={{
         width: '400px',
         alignItems: 'flex-start',
-        color: 'white',
+
         height: '500px',
         overflowY: 'auto',
         overflowX: 'hidden',
@@ -97,8 +97,11 @@ const DashbPastPayments = ({
           style={{
             flex: 1,
             padding: '10px',
-            backgroundColor: activeTab === 'past' ? '#454959' : '#2e2f30',
-           
+            backgroundColor:
+              activeTab === 'past'
+                ? 'var(--Secondary-Color)'
+                : 'var(--Background-Color)',
+
             cursor: 'pointer',
           }}
         >
@@ -109,8 +112,11 @@ const DashbPastPayments = ({
           style={{
             flex: 1,
             padding: '10px',
-            backgroundColor: activeTab === 'upcoming' ? '#454959' : '#2e2f30',
-           
+            backgroundColor:
+              activeTab === 'upcoming'
+                ? 'var(--Secondary-Color)'
+                : 'var(--Background-Color)',
+
             cursor: 'pointer',
           }}
         >
@@ -271,18 +277,23 @@ const DashbPastPayments = ({
                         alignItems: 'center',
                       }}
                     >
-                      <span>In {Math.ceil((payment.DueDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))} days</span>
-                     
+                      <span>
+                        In{' '}
+                        {Math.ceil(
+                          (payment.DueDate.getTime() - new Date().getTime()) /
+                            (1000 * 60 * 60 * 24)
+                        )}{' '}
+                        days
+                      </span>
+
                       <span style={{ fontSize: '11px' }}>
                         {payment.DueDate.toDateString()}
                       </span>
                     </td>
                     <td className="InfoTableBodyTD">
-                      {
-                        RoomList.find(
-                          (r: RoomType) => r.tenantId === payment.tenant.id
-                        )?.AgreedPrice.toLocaleString()
-                      }
+                      {RoomList.find(
+                        (r: RoomType) => r.tenantId === payment.tenant.id
+                      )?.AgreedPrice.toLocaleString()}
                       $
                     </td>
                   </tr>
@@ -320,7 +331,7 @@ const DashbPastPayments = ({
             style={{
               position: 'relative',
               width: '390px',
-              background: '#2e2f30',
+              background: 'var(--Background-Color)',
               padding: '5px',
               borderRadius: '5px',
               border: '1px solid grey',
@@ -343,6 +354,7 @@ const DashbPastPayments = ({
                   tenantList.find((t: tenant) => t.id == SelectedTenantViewShow)
                     ?.id
               )}
+              tenantList={tenantList}
               agreedPrice={
                 RoomList.find(
                   (r: RoomType) =>

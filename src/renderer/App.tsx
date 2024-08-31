@@ -689,6 +689,11 @@ function Hello() {
   const [SelectedPage, setSelectedPage] = useState<
     'Dashboard' | 'People' | 'Rooms' | 'Calendar' | 'Settings' | 'Database'
   >('Rooms');
+
+  const [ThemeMode, setThemeMode] = useState<'light' | 'dark'>('dark');
+  const ChangeTheme = () =>{
+    document.body.classList.toggle("DarkTheme");
+  }
   return (
     <>
       <NavBar
@@ -697,6 +702,8 @@ function Hello() {
         setSelectedPage={setSelectedPage}
         Image={''}
         ShopName={'The company'}
+        ThemeMode={ThemeMode}
+        setThemeMode={setThemeMode}ChangeTheme={ChangeTheme}
       ></NavBar>
       <MainPage
       roomSpecificationAPI={roomSpecificationAPI}

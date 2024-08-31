@@ -88,11 +88,11 @@ const DashbRevenuePerSquareMeter = ({ RoomList }: { RoomList: RoomType[] }) => {
           </select>{' '}
           revenue per square meter is:
           <br />
-          <span style={{ fontSize: '14px', color: '#666' }}>
+          <span style={{ fontSize: '14px', color: 'var(--Text-Color-Grey)' }}>
             (${revenuePerSquareMeter.totalRevenue.toFixed(2)} / {revenuePerSquareMeter.totalSquareMeters.toFixed(2)} m²)
           </span> = {" "}
      
-          <strong style={{ color: '#02B2AF', fontSize: '24px' }}>
+          <strong style={{ color: 'var(--Accent-Color)', fontSize: '24px' }}>
             ${revenuePerSquareMeter.result}
           </strong>
         </p>

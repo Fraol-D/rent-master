@@ -1,47 +1,77 @@
-/*
- * @NOTE: Prepend a `~` to css file paths that are in your node_modules
- *        See https://github.com/webpack-contrib/sass-loader#imports
- */
+:root {
+  --Text-Color-Grey: rgb(128, 128, 128);
+  --Text-Color: rgb(255, 255, 255);
+  --Background-Color: #2e2f30;
+
+  --Primary-Color: #00e1ff;
+  --Primary-Color25: hsl(187, 100%, 50%, 50%);
+  --Primary-Color50: hsl(187, 100%, 50%, 50%);
+  
+  --Secondary-Color: #454959;
+  --Secondary-Color20: hsl(228, 13%, 31%, 20%);
+  --Secondary-Color30: hsl(228, 13%, 31%, 30%);
+
+  --Accent-Color: #e59b25;
+  --Accent-Color50: hsl(37, 79%, 52%, 50%);
+
+
+}
+.DarkTheme {
+  --Text-Color-Grey: rgb(128, 128, 128);
+  --Text-Color: #000000;
+  --Background-Color: #d0d1d2;
+
+  --Primary-Color: #00e1ff;
+  --Primary-Color25: hsl(187, 100%, 50%, 25%);
+  --Primary-Color50: hsl(187, 100%, 50%, 50%);
+
+  --Secondary-Color: #a6aaba;
+  --Secondary-Color20: hsl(228, 13%, 69%, 20%);
+  --Secondary-Color30: hsl(228, 13%, 69%, 30%);
+
+  --Accent-Color: #db911a;
+  --Accent-Color50: hsl(37, 79%, 48%, 50%);
+
+  --Static11: hsl(225, 7.1%, 78%);
+
+}
 body {
   position: relative;
-  color: rgb(255, 255, 255);
+  color: var(--Text-Color);
   height: 100vh;
-  /*background: linear-gradient(
-    200.96deg,
-    #fedc2a -29.09%,
-    #dd5789 51.77%,
-    #7a2c9e 129.35%
-  );*/
 
   font-family: sans-serif;
   overflow-y: hidden;
   padding: 0px;
   margin: 0px;
-  background: #222324;
+  background: var(--Background-Color);
 }
+
 button {
   border-radius: 5px;
   padding: 5px;
-  background-color: #454959;
-  color: white;
-  border-right: 0.5px solid white;
+  background-color: var(--Secondary-Color);
+  color: var(--Text-Color);
+ border: none;
   margin: 0px;
   font-family: 'Inter';
   transition: all 0.2s;
-  border-bottom: 0.5px solid white;
+  
+}
+button:hover {
+ 
+  transform: translate(0, -3px);
+  transition: transform ease 0.2s;
 }
 select,
 input {
-  background-color: #454959;
-  color: white;
+  background-color: var(--Secondary-Color);
+  color: var(--Text-Color);
   border: 1px solid grey;
   border-radius: 5px;
   font-family: 'Inter';
 }
-button:hover {
-  transform: scale(1.05);
-  border: 0.5px solid black;
-}
+
 
 li {
   list-style: none;
@@ -80,7 +110,7 @@ body {
   height: 100%;
 }
 ::-webkit-scrollbar {
-  background-color: #4549592d;
+  background-color: var(--Secondary-Color) 2d;
   width: 15px;
   height: 15px;
 }
@@ -89,7 +119,7 @@ body {
   background-color: #353844;
   border-radius: 5px;
   transition: all 1s;
-  border: 1px solid #00e1ff;
+  border: 1px solid var(--Primary-Color);
 }
 
 ::-webkit-scrollbar-corner {
@@ -97,14 +127,14 @@ body {
 }
 
 ::-webkit-scrollbar-thumb:active {
-  background-color: #454959;
+  background-color: var(--Secondary-Color);
   border-radius: 5px;
   transition: all 1s;
-  border: 1px solid #00e1ff;
+  border: 1px solid var(--Primary-Color);
 }
 
 ::-webkit-scrollbar-button {
-  background-color: #00e1ff79;
+  background-color: var(--Primary-Color) 79;
   width: 15px;
   border-radius: 5px;
   height: 15px;
@@ -123,11 +153,11 @@ body {
   border-collapse: collapse;
 }
 .InfoTableThead {
-  background-color: #454959;
+  background-color: var(--Secondary-Color);
 }
 
 .InfoTableHeadTR {
-  background-color: #454959;
+  background-color: var(--Secondary-Color);
   height: 40px;
 }
 .InfoTableHeadTh {
