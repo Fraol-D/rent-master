@@ -24,6 +24,7 @@ const AgreementViewerForRoom = ({
   calculateDaysDifference,
   roomPaymentInfoApi,
   handlePaymentRefresh,
+  setChangeMade,view
 }: any) => {
   const [Agreements, setAgreements] = useState<agreements[]>([]);
   const [CurrentAgreementIndex, setCurrentAgreementIndex] = useState(0);
@@ -61,12 +62,21 @@ const AgreementViewerForRoom = ({
   }, [ShowState, refreshKey]);
   useEffect(() => {
     if (Agreements[CurrentAgreementIndex]) {
-      setMemoText(Agreements[CurrentAgreementIndex].Memo || '');
+      setMemoText(Agreements[CurrentAgreementIndex].Memo);
       setRentReservedText(
         Agreements[CurrentAgreementIndex].RentReserved.toString() || ''
       );
     }
   }, [CurrentAgreementIndex]);
+  useEffect(() => {
+    
+    if (Agreements[CurrentAgreementIndex]) {
+      setMemoText(Agreements[CurrentAgreementIndex].Memo);
+      setRentReservedText(
+        Agreements[CurrentAgreementIndex].RentReserved.toString()
+      );
+    }
+  }, [view]);
   const handlePrevAgreement = () => {
     setCurrentAgreementIndex((prevIndex) =>
       prevIndex > 0 ? prevIndex - 1 : prevIndex
@@ -129,7 +139,13 @@ const AgreementViewerForRoom = ({
       if (FutruePaymentsRaw.length >= 1) {
         for (let i = 0; i < FutruePaymentsRaw.length; i++) {
           const element = FutruePaymentsRaw[i];
-          await updateValue('room_pay_info', element.id, 'Paid', 1);
+          await updateValue(
+            'room_pay_info',
+            element.id,
+            'Paid',
+            1,
+            setChangeMade
+          );
         }
       }
     }
@@ -221,8 +237,8 @@ const AgreementViewerForRoom = ({
     setShowAddAgreementPannal(false);
     console.log('Hide add agreement form');
   };
-  const [MemoText, setMemoText] = useState('');
-  const [RentReservedText, setRentReservedText] = useState('');
+  const [MemoText, setMemoText] = useState('INITIALLLI');
+  const [RentReservedText, setRentReservedText] = useState('INITIALLLI');
 
   return (
     ShowState &&
@@ -355,7 +371,7 @@ const AgreementViewerForRoom = ({
             <input
               type="text"
               className="StartTime"
-              value={MemoText}
+              value={MemoText === "INITIALLLI" ? Agreements[CurrentAgreementIndex].Memo : MemoText}
               onChange={(e) => {
                 setMemoText(e.target.value);
               }}
@@ -383,7 +399,7 @@ const AgreementViewerForRoom = ({
               type="text"
               style={{ width: '80px' }}
               className="StartTime"
-              value={RentReservedText}
+              value={RentReservedText === "INITIALLLI" ? Agreements[CurrentAgreementIndex].RentReserved : RentReservedText}
               onChange={(e) => {
                 setRentReservedText(e.target.value);
               }}

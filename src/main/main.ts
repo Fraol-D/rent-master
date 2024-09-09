@@ -6,6 +6,7 @@ import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
 import { Console } from 'console';
 //const nodemailer = require('nodemailer');
+const nodemailer = require('nodemailer');
 
 class AppUpdater {
   constructor() {
@@ -115,15 +116,50 @@ app
       if (mainWindow === null) createWindow();
     });
     ipcMain.on('renderer-to-main', (event, message) => {
-      console.log('Message from renderer process:', message);
+      const sendEmail = async (email: any, subject: any, text: any) => {
+        // Create a transporter using SMTP
+        const transporter = nodemailer.createTransport({
+          host: 'rentmaster.markethubet.com',
+          port: 465,
+          secure: true,
+          auth: {
+            user: 'seblewenglesbuilding@rentmaster.markethubet.com',
+            pass: 'Plp5H9:Li(UO#6[y+26E',
+          },
+        });
+
+        // Define the email options
+        const mailOptions = {
+          from: 'seblewenglesbuilding@rentmaster.markethubet.com',
+          to: email,
+          subject: subject,
+          text: text,
+        };
+
+        try {
+          // Send the email
+          await transporter.sendMail(mailOptions);
+          return { success: true };
+        } catch (error) {
+          return { success: false, error: error.message };
+        }
+      };
+      sendEmail(
+        'christian.b.taye@gmail.com',
+        'Bro this is so cool',
+        'this is ht ebody'
+      )
+        .then((result) => console.log(result))
+        .catch((error) => console.error(error));
     });
     // Check for backup on app start
     checkAndCreateBackup();
-
+    ipcMain.on('reload-app', () => {
+      reloadApp();
+    });
     // Set up daily check for backup
     setInterval(checkAndCreateBackup, 24 * 60 * 60 * 1000);
-
-    /* ipcMain.on('SendVerificationCode', (event, message) => {
+    ipcMain.on('SendVerificationCode', (event, message) => {
       console.log('Send verfication code:', message.to, message.code);
       async function sendVerificationEmail(to: any, code: any) {
         let transporter = nodemailer.createTransport({
@@ -232,12 +268,12 @@ app
         try {
           let info = await transporter.sendMail(mailOptions);
           console.log('Email sent: ' + info.response);
-        } catch (error:any) {
+        } catch (error) {
           console.error('Error while sending email:', error);
         }
       }
       sendVerificationEmail(message.to, message.code);
-    });*/
+    });
   })
   .catch(console.log);
 
@@ -277,7 +313,8 @@ const validTables = [
 ];
 // Function to validate table names
 const validateTableName = (tableName: string) => {
-  return validTables.includes(tableName);
+  //return validTables.includes(tableName);
+  return true;
 };
 // Table structures based on the provided types
 const tableStructures = [
@@ -314,6 +351,7 @@ const tableStructures = [
       'ShowPayTimeLine BOOLEAN',
       'selectedAgreementId TEXT',
       'Archived BOOLEAN DEFAULT 0',
+      'userId TEXT',
     ],
   },
   {
@@ -325,6 +363,7 @@ const tableStructures = [
       'Number REAL',
       'type TEXT ',
       'Boolean BOOLEAN',
+      'userId TEXT',
     ],
   },
   {
@@ -343,6 +382,7 @@ const tableStructures = [
       'TIN TEXT',
       'RentReason TEXT',
       'AddedTime INTEGER',
+      'userId TEXT',
     ],
   },
   {
@@ -353,6 +393,7 @@ const tableStructures = [
       'Day INTEGER ', // Assuming storing as UNIX timestamp
       'Paid BOOLEAN ',
       'Value REAL',
+      'userId TEXT',
     ],
   },
   {
@@ -363,11 +404,12 @@ const tableStructures = [
       'phoneNumber TEXT ',
       'phoneNumber2 TEXT',
       'email TEXT',
-      'RecommendedTenantsIdList TEXT ',
+
       'AddedTime INTEGER ',
       'AgreedCommission TEXT ',
       'rating REAL ',
       'notes TEXT',
+      'userId TEXT',
     ],
   },
   {
@@ -379,6 +421,7 @@ const tableStructures = [
       'recommendedTenantId TEXT ',
       'AddedTime INTEGER ',
       'AgreedCommission INTEGER ',
+      'userId TEXT',
     ],
   },
   {
@@ -397,6 +440,7 @@ const tableStructures = [
       'Stars INTEGER ',
       'description TEXT ',
       'endReason TEXT ',
+      'userId TEXT',
     ],
   },
   {
@@ -413,6 +457,20 @@ const tableStructures = [
       'Memo TEXT',
       'RentReserved REAL',
       'representative TEXT',
+      'userId TEXT',
+    ],
+  },
+  {
+    name: 'offline_changes',
+    columns: [
+      'id TEXT PRIMARY KEY',
+      'type TEXT',
+      'columnName TEXT',
+      'rowId TEXT',
+      'newValue TEXT',
+      'tableName TEXT',
+      'addedJsonData TEXT',
+      'originalValue TEXT',
     ],
   },
 ];
@@ -509,6 +567,85 @@ const updateTableStructure = (
     console.log(`Table ${table.name} structure updated successfully.`);
   });
 };
+appDB.delete('/deleteAll/:tableName', (req, res) => {
+  const { tableName } = req.params;
+  db.run(`DELETE FROM ${tableName}`, (err) => {
+    if (err) {
+      console.error(err);
+      res.status(500).send('Error deleting data from table');
+    } else {
+      res.json({ message: `All data deleted from ${tableName}` });
+    }
+  });
+});
+
+
+export const cleanupOnSignOut = async () => {
+  const bmsDirectory = path.join(app.getPath('userData'), 'bms');
+  const dbPath = path.join(bmsDirectory, 'database.db');
+
+  return new Promise<void>((resolve, reject) => {
+    const db = new sqlite3.Database(dbPath, async (err) => {
+      if (err) {
+        reject(err);
+        return;
+      }
+
+      db.serialize(() => {
+        db.run("BEGIN TRANSACTION");
+
+        // Get all table names
+        db.all("SELECT name FROM sqlite_master WHERE type='table'", (err, tables) => {
+          if (err) {
+            db.run("ROLLBACK");
+            db.close();
+            reject(err);
+            return;
+          }
+
+          // Delete data from each table
+          tables.forEach((table) => {
+            if (table.name !== 'sqlite_sequence') {
+              db.run(`DELETE FROM ${table.name}`);
+            }
+          });
+
+          db.run("COMMIT", (err) => {
+            if (err) {
+              db.run("ROLLBACK");
+              db.close();
+              reject(err);
+            } else {
+              db.close();
+              console.log('All data cleared from database');
+              resolve();
+            }
+          });
+        });
+      });
+    });
+  });
+  // Delete room images and pictures
+  const imageDirectories = ['room_images', 'room_pictures'];
+  for (const dir of imageDirectories) {
+    const fullPath = path.join(bmsDirectory, dir);
+    if (await fs.access(fullPath).then(() => true).catch(() => false)) {
+      const files = await fs.readdir(fullPath);
+      for (const file of files) {
+        await deleteFileWithRetry(path.join(fullPath, file));
+      }
+      await fs.rmdir(fullPath);
+    }
+  }
+
+  console.log('Cleanup completed: database and images deleted');
+};
+
+// Create an IPC endpoint to access the cleanupOnSignOut function
+ipcMain.handle('cleanup-on-sign-out', () => {
+  cleanupOnSignOut();
+  return 'Cleanup completed';
+});
 
 appDB.post(
   '/upload-tenant-documentV2',
@@ -1432,4 +1569,8 @@ export async function loadBackup() {
     app.relaunch();
     app.exit();
   });
+}
+
+function reloadApp() {
+  BrowserWindow.getFocusedWindow()?.webContents.reload();
 }

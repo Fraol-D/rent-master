@@ -61,6 +61,7 @@ declare global {
     ShowPayTimeLine?: boolean;
     AllRoomPayInfo: AllRoomPayInfo;
     selectedAgreementId: string;
+    
   };
   type BrokerRecommendationType = {
     id: string;
@@ -98,7 +99,7 @@ declare global {
     phoneNumber: string;
     phoneNumber2?: string;
     email?: string;
-    RecommendedTenantsIdList: string[];
+  
     AddedTime: number;
     AgreedCommission: string;
     rating: number;
@@ -165,7 +166,7 @@ const MainPage = ({
   setSelectedPage,
   SelectedPage,
   agreementApi,
-  roomSpecificationAPI,
+  roomSpecificationAPI,setChangeMade,SelectedUserId
 }: any) => {
   const [floorFilter, setFloorFilter] = useState<string>('');
   const [TenantNameFilter, setTenantNameFilter] = useState<string>('');
@@ -196,7 +197,7 @@ const MainPage = ({
     propertyName: string,
     newValue: any
   ) => {
-    await updateValue('rooms', roomId, propertyName, newValue);
+    await updateValue('rooms', roomId, propertyName, newValue,setChangeMade);
     //Load the updated room data from the API With THE specific ROOM ID and only get the value insted of the  whole object
     setRoomList((prevRoomList: any[]) => {
       return prevRoomList.map((room: { id: string }) => {
@@ -244,7 +245,7 @@ const MainPage = ({
     propertyName: string,
     newValue: any
   ) => {
-    await updateValue('rooms', roomId, propertyName, newValue);
+    await updateValue('rooms', roomId, propertyName, newValue,setChangeMade);
     setRoomList((prevRoomList: any[]) => {
       return prevRoomList.map((room: { id: string }) => {
         if (room.id === roomId) {
@@ -629,14 +630,13 @@ const MainPage = ({
       floor: AddRoomFormFloor,
       roomIndex: AddRoomFormRoomIndex,
       price: AddRoomFormPrice,
-      PaymentCycleType: AddRoomFormPaymentCycleType as
-        | '30'
-        | '15'
-        | '7'
-        | 'monthly'
-        | 'weekly'
-        | 'daily'
-        | 'custom',
+      PaymentCycleType: AddRoomFormPaymentCycleType as '30' |
+        '15' |
+        '7' |
+        'monthly' |
+        'weekly' |
+        'daily' |
+        'custom',
       PaymentCycleCustomeDays: AddRoomFormPaymentCycleCustomDays,
       squareMeters: AddRoomFormSquareMeters,
       RoomSpecifications: AddRoomFormRoomSpecifications,
@@ -644,6 +644,7 @@ const MainPage = ({
       AgreedPrice: AddRoomFormPrice,
       AllRoomPayInfo: { RoomPayInfo: [] },
       selectedAgreementId: '',
+      Archived: false
     };
 
     // Add to sqlite database
@@ -896,27 +897,6 @@ const MainPage = ({
                     }}
                     onClick={() => {
                       setShowArchived(!ShowArchived);
-                      
-                        const sendMessage = async (identifierId: string, senderName: string, recipient: string, message: string, callback: string) => {
-                          const url = `https://api.afromessage.com/api/send?from=${identifierId}&sender=${senderName}&to=${recipient}&message=${message}&callback=${callback}`;
-                          
-                          try {
-                            const response = await fetch(url, {
-                              method: 'GET',
-                            });
-                            
-                            if (!response.ok) {
-                              throw new Error(`HTTP error! status: ${response.status}`);
-                            }
-                            
-                            const data = await response.json();
-                            return data;
-                          } catch (error) {
-                            console.error('Error sending message:', error);
-                            throw error;
-                          }
-                        };
-                      sendMessage("Whale","","0944508888", "I am looking at you from christian yabsria", "");
                     }}
                   >
                     {ShowArchived ? 'Show unarchived' : 'Show archived'}
@@ -1765,6 +1745,7 @@ const MainPage = ({
               updateRoomPropertyWithOutRefresh={
                 updateRoomPropertyWithOutRefresh
               }
+              SelectedUserId={SelectedUserId}
               ShowArchived={ShowArchived}
               agreementApi={agreementApi}
               updateRoomPropertyLocal={updateRoomPropertyLocal}
@@ -1787,6 +1768,7 @@ const MainPage = ({
               setIsUpdatingTenantList={setIsUpdatingTenantList}
               setSelectedEditRoomId={setSelectedEditRoomId}
               brokersRecommendationListApi={brokersRecommendationListApi}
+              setChangeMade={setChangeMade}
             />
           )}
           {SelectedPage === 'People' && (
@@ -1818,7 +1800,7 @@ const MainPage = ({
               roomPaymentInfoApi={roomPaymentInfoApi}
               sortedAndFilteredRooms={sortedAndFilteredRooms}
               removeFilterOption={removeFilterOption}
-              filterOptions={filterOptions}
+              filterOptions={filterOptions}setChangeMade={setChangeMade}
             />
           )}
           {SelectedPage === 'Dashboard' && (
@@ -1831,7 +1813,7 @@ const MainPage = ({
               BrokerRecommendationList={BrokerRecommendationList}
             />
           )}
-          {SelectedPage === 'Database' && <DatabasePage />}
+          {SelectedPage === 'Database' && <DatabasePage setChangeMade={setChangeMade}/>}
         </div>
       </div>
     </>

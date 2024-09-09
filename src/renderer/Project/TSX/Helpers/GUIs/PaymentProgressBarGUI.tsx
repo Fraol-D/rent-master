@@ -236,7 +236,7 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
         .style('font-size', '12')
         .style('cursor', 'pointer')
         .text((d: any) => {
-          console.log(d);
+         
           return d.Value === null
             ? agreedPrice.toLocaleString() + '$ X'
             : d.Value.toLocaleString() + '$ X';
@@ -261,7 +261,7 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
               roomType.id,
               roomType.AllRoomPayInfo.RoomPayInfo
             );
-            console.log('0 it is');
+          
           } else {
             roomPaymentInfoApi.editRoomPaymentApi(
               d.id,

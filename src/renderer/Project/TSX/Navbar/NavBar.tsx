@@ -2,16 +2,26 @@ import React, { useState, useEffect } from 'react';
 import '../../Css/NavBarCss.css';
 
 import InsertImageIcon from '../../../assets/assets/Dark mode/Insert Image Pic.png';
+import { syncOnlineToLocalWithBool } from 'Backend/OnlineServerApis';
 
 interface Props {
   Image: string;
   ProfileState: boolean;
   ShopName: string;
-  setSelectedPage:(newval:any)=>void;
+  setSelectedPage: (newval: any) => void;
   SelectedPage: string;
   setThemeMode: (newval: any) => void;
   ThemeMode: string;
   ChangeTheme: () => void;
+  signOutUserAndRestart: () => void;
+  UploadingLoadingEffect: boolean;
+  uploadProgress: number;
+  ChangeMade: number;
+  handleUpload: () => void;
+  SelectedUserId: string;
+  isSyncing: boolean;
+  setIsSyncing: (newval: boolean) => void;RefreshDataFromSqlite:()=>void;
+  setSyncProgress: (newval: number) => void;
 }
 
 const NavBar = ({
@@ -19,9 +29,21 @@ const NavBar = ({
   ProfileState,
   ShopName,
   setSelectedPage,
-  SelectedPage,setThemeMode,ThemeMode,ChangeTheme
+  SelectedPage,
+  setThemeMode,
+  ThemeMode,
+  ChangeTheme,
+  signOutUserAndRestart,
+  UploadingLoadingEffect,
+  uploadProgress,
+  ChangeMade,
+  handleUpload,
+  SelectedUserId,
+  setIsSyncing,
+  setSyncProgress,RefreshDataFromSqlite
 }: Props) => {
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -73,6 +95,20 @@ const NavBar = ({
     }
   }
 
+  const handleSignOut = () => {
+    setShowSignOutConfirm(true);
+  };
+
+  const confirmSignOut = () => {
+    signOutUserAndRestart();
+  
+    setShowSignOutConfirm(false);
+  };
+
+  const cancelSignOut = () => {
+    setShowSignOutConfirm(false);
+  };
+
   return (
     <div className="navigation">
       <div className="LeftSide">
@@ -88,24 +124,89 @@ const NavBar = ({
             <input type="text" className="Name-ofShop-input" value={ShopName} />
           ) : (
             <p className="Name-ofShop">{ShopName}</p>
-          )} */} <p className="Name-ofShop">Rent Master</p>
+          )} */}{' '}
+          <p className="Name-ofShop">Rent Master</p>
         </div>
       </div>
       <div className="TopPageNavigatorContainer">
-        {['Dashboard', 'People', 'Rooms', 'Calendar', "Database"].map((page) => (
-          <button
-            key={page}
-              className={SelectedPage === page? "PageNavigatorButtonSelected":"PageNavigatorButton"}
-              
-            onClick={() => setSelectedPage(page)}
-          >
-            {page}
-          </button>
-        ))}
+        {['Dashboard', 'People', 'Rooms', 'Calendar', 'Database'].map(
+          (page) => (
+            <button
+              key={page}
+              className={
+                SelectedPage === page
+                  ? 'PageNavigatorButtonSelected'
+                  : 'PageNavigatorButton'
+              }
+              onClick={() => setSelectedPage(page)}
+            >
+              {page}
+            </button>
+          )
+        )}
       </div>
 
       <div className="RightSide">
-        <button onClick={()=>{ChangeTheme();setThemeMode(ThemeMode === "light" ? "dark" : "light")}}>To {ThemeMode === "light" ? "dark" : "light"}</button><div className="CurrentTimeContainer">
+        <div>
+          <button
+            onClick={() => {
+              if (navigator.onLine) {
+                syncOnlineToLocalWithBool(
+                  SelectedUserId,
+                  setIsSyncing,
+                  setSyncProgress,     RefreshDataFromSqlite
+                );
+        
+              }
+            }}
+          >
+            <p>Sync</p>
+          </button>
+        </div>
+        <div>
+          {' '}
+          <button
+            style={{ marginLeft: '10px' }}
+            onClick={handleUpload}
+            disabled={ChangeMade <= 0}
+          >
+            <p>
+              {ChangeMade >= 1 ? (
+                uploadProgress === 100 || uploadProgress === 0 ? (
+                  <>
+                    Upload <br />
+                    <span style={{ fontSize: '10px' }}>
+                      {ChangeMade} change
+                    </span>
+                  </>
+                ) : uploadProgress >= 50 ? (
+                  'Syncing'
+                ) : (
+                  'Uploading'
+                )
+              ) : (
+                'No Change'
+              )}
+            </p>
+            {UploadingLoadingEffect && (
+              <p style={{ fontSize: '20px', marginLeft: '10px' }}>
+                {uploadProgress.toString().slice(0, 5)}%
+              </p>
+            )}
+          </button>
+        </div>
+        <button
+          style={{ marginLeft: '10px', marginRight: '10px' }}
+          onClick={() => {
+            ChangeTheme();
+            setThemeMode(ThemeMode === 'light' ? 'dark' : 'light');
+          }}
+        >
+          To {ThemeMode === 'light' ? 'dark' : 'light'}
+        </button>
+
+        <button onClick={handleSignOut}>Sign out</button>
+        <div className="CurrentTimeContainer">
           <p className="CurrentTime">
             {currentHour}:{currentMinute}
           </p>
@@ -120,6 +221,13 @@ const NavBar = ({
           style={{ display: 'none' }}
         />
       </div>
+      {showSignOutConfirm && (
+        <div className="signOutConfirmation">
+          <p>Are you sure you want to sign out?</p>
+          <button onClick={confirmSignOut}>Yes</button>
+          <button onClick={cancelSignOut}>No</button>
+        </div>
+      )}
     </div>
   );
 };

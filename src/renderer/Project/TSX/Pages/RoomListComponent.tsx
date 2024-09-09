@@ -24,7 +24,7 @@ export function RoomListComponent({
   handleAddRoomButtonInitial,
   updateRoomPropertyLocal,
   agreementApi,
-  ShowArchived,
+  ShowArchived,setChangeMade,SelectedUserId
 }: any) {
   return (
     <>
@@ -80,6 +80,8 @@ export function RoomListComponent({
             .map((room: any, index: any) => (
               <Room
                 agreementApi={agreementApi}
+                SelectedUserId={SelectedUserId}
+                setChangeMade={setChangeMade}
                 brokerApi={brokerApi}
                 brokersRecommendationListApi={brokersRecommendationListApi}
                 BrokerList={BrokerList}

@@ -21,6 +21,7 @@ import LeavePanel from './LeavePanel';
 import EthiopianCalanderConverterMenu from './GUIs/EthiopianCalanderConverterMenu';
 import AgreementViewerForRoom from './GUIs/AgreementViewerForRoom';
 import { toEthiopianDateString } from 'renderer/Project/JS/Calendar Converter';
+import { sendEmail } from 'Backend/Cpanel/Telegram bot paymentReminder/server';
 const Room = ({
   roomType,
   updateRoomProperty,
@@ -41,7 +42,7 @@ const Room = ({
   setBrokerList,
   brokersRecommendationListApi,
   updateRoomPropertyLocal,
-  agreementApi,
+  agreementApi,setChangeMade,SelectedUserId
 }: {
   roomType: RoomType;
   updateRoomProperty: any;
@@ -62,6 +63,8 @@ const Room = ({
   brokersRecommendationListApi: any;
   updateRoomPropertyLocal: any;
   agreementApi: any;
+  setChangeMade:any;
+  SelectedUserId:any;
 }) => {
   const handleAddTenant = () => {
     turnOffAddTenantStateForAll();
@@ -287,17 +290,7 @@ const Room = ({
           ? (commissionValue / 100) * agreedPrice
           : commissionValue
       );
-      await updateValue(
-        'brokers',
-        AddTenantSelectedBrokerId,
-        'RecommendedTenantsIdList',
-        [
-          ...BrokerList.find(
-            (b: BrokerType) => b.id === AddTenantSelectedBrokerId
-          ).RecommendedTenantsIdList,
-          tenant.id,
-        ]
-      );
+      
     }
     let DocumentFiles = [];
     const roomDocs = await getRoomDocuments('Add a tenant documents');
@@ -525,17 +518,7 @@ const Room = ({
             ? (commissionValue / 100) * agreedPrice
             : commissionValue
         );
-        await updateValue(
-          'brokers',
-          AddTenantSelectedBrokerId,
-          'RecommendedTenantsIdList',
-          [
-            ...BrokerList.find(
-              (b: BrokerType) => b.id === AddTenantSelectedBrokerId
-            ).RecommendedTenantsIdList,
-            tenant.id,
-          ]
-        );
+      
       }
       let DocumentFiles = [];
       const roomDocs = await getRoomDocuments('Add a tenant documents');
@@ -841,8 +824,8 @@ const Room = ({
           : 0,
       Stars: tenantRating,
       description: tenantDescription,
-      endReason: endReason,
-    });
+      endReason: endReason,   userId: SelectedUserId,
+    },setChangeMade);
     setEndReason('');
     setTenantDescription('');
     setTenantRating(0);
@@ -931,7 +914,7 @@ const Room = ({
         phoneNumber: AddTenantAddBrokerFormPhoneNumber,
         phoneNumber2: AddTenantAddBrokerFormPhoneNumber2 || '',
         email: AddTenantAddBrokerFormEmail || '',
-        RecommendedTenantsIdList: [],
+      
         AddedTime: Date.now(),
         AgreedCommission: AddTenantAddBrokerFormAgreedCommission,
         rating: AddTenantAddBrokerFormRating,
@@ -994,6 +977,21 @@ const Room = ({
   const [ShowConverterEndDate, setShowConverterEndDate] = useState(false);
   const [ShowConverterSignDate, setShowConverterSignDate] = useState(false);
 
+  const [TelegramNumberRN, setTelegramNumberRN] = useState('');
+  const [TelegramMessageRN, setTelegramMessageRN] = useState('');
+
+  const handleSendTelegramMessageRN = () => {
+    // Implement the logic to send Telegram message here
+    console.log(`Sending message to ${TelegramNumberRN}: ${TelegramMessageRN}`);
+    // Reset the input fields after sending
+    setTelegramNumberRN('');
+    setTelegramMessageRN('');
+  };
+
+  const setMessageNumberRN = (value: string) => {
+    setTelegramMessageRN(value);
+  };
+
   return (
     <>
       <div
@@ -1003,7 +1001,7 @@ const Room = ({
             ? '#2C2C30'
             : roomType.status === 'Empty'
             ? 'var(--Secondary-Color20)'
-            : 'var(--Primary-Color25)', 
+            : 'var(--Primary-Color25)',
           border: roomType.AddTenantState ? '1px solid #00e1f1' : '',
         }}
       >
@@ -1234,7 +1232,7 @@ const Room = ({
               <button
                 className="PageNavigatorButtonSelected"
                 ref={hideButtonRef}
-                style={{borderBottom:"1px solid grey"}}
+                style={{ borderBottom: '1px solid grey' }}
                 onClick={() => {
                   updateRoomProperty(
                     roomType.id,
@@ -2400,7 +2398,9 @@ const Room = ({
                   }}
                 >
                   <span style={{ fontWeight: 'bold' }}>Name:</span>{' '}
-                  <em style={{ fontWeight: '600', color: 'var(--Accent-Color)' }}>
+                  <em
+                    style={{ fontWeight: '600', color: 'var(--Accent-Color)' }}
+                  >
                     {
                       TenantList.find(
                         (tenant: any) => tenant.id === roomType.tenantId
@@ -2416,7 +2416,9 @@ const Room = ({
                   }}
                 >
                   <span style={{ fontWeight: 'bold' }}>Tel 1:</span>{' '}
-                  <em style={{ fontWeight: '600', color: 'var(--Accent-Color)' }}>
+                  <em
+                    style={{ fontWeight: '600', color: 'var(--Accent-Color)' }}
+                  >
                     {
                       TenantList.find(
                         (tenant: any) => tenant.id === roomType.tenantId
@@ -2432,7 +2434,9 @@ const Room = ({
                   }}
                 >
                   <span style={{ fontWeight: 'bold' }}>Tel 2:</span>{' '}
-                  <em style={{ fontWeight: '600', color: 'var(--Accent-Color)' }}>
+                  <em
+                    style={{ fontWeight: '600', color: 'var(--Accent-Color)' }}
+                  >
                     {
                       TenantList.find(
                         (tenant: any) => tenant.id === roomType.tenantId
@@ -2448,7 +2452,9 @@ const Room = ({
                   }}
                 >
                   <span style={{ fontWeight: 'bold' }}>Email:</span>{' '}
-                  <em style={{ fontWeight: '600', color: 'var(--Accent-Color)' }}>
+                  <em
+                    style={{ fontWeight: '600', color: 'var(--Accent-Color)' }}
+                  >
                     {
                       TenantList.find(
                         (tenant: any) => tenant.id === roomType.tenantId
@@ -2464,7 +2470,9 @@ const Room = ({
                   }}
                 >
                   <span style={{ fontWeight: 'bold' }}>TIN:</span>{' '}
-                  <em style={{ fontWeight: '600', color: 'var(--Accent-Color)' }}>
+                  <em
+                    style={{ fontWeight: '600', color: 'var(--Accent-Color)' }}
+                  >
                     {
                       TenantList.find(
                         (tenant: any) => tenant.id === roomType.tenantId
@@ -2480,7 +2488,9 @@ const Room = ({
                   }}
                 >
                   <span style={{ fontWeight: 'bold' }}>Rent Reason:</span>{' '}
-                  <em style={{ fontWeight: '600', color: 'var(--Accent-Color)' }}>
+                  <em
+                    style={{ fontWeight: '600', color: 'var(--Accent-Color)' }}
+                  >
                     {
                       TenantList.find(
                         (tenant: any) => tenant.id === roomType.tenantId
@@ -2551,6 +2561,9 @@ const Room = ({
                 ) : (
                   <>
                     <AgreementViewerForRoom
+                    view={TenantList.find(
+                      (tenant: any) => tenant.id === roomType.tenantId
+                    )?.SelectedAgreement == 'Fixed-Term'}
                       updateRoomPropertyLocal={updateRoomPropertyLocal}
                       getCorrectPaymentStatment={getCorrectPaymentStatment}
                       TenantList={TenantList}
@@ -2560,7 +2573,7 @@ const Room = ({
                       calculateDaysDifference={calculateDaysDifference}
                       roomPaymentInfoApi={roomPaymentInfoApi}
                       updateRoomProperty={updateRoomProperty}
-                      handlePaymentRefresh={handlePaymentRefresh}
+                      handlePaymentRefresh={handlePaymentRefresh}setChangeMade={setChangeMade}
                     />
                   </>
                 )}
@@ -2583,6 +2596,136 @@ const Room = ({
                 }}
               >
                 <DocumentInteractor room={roomType} TenantsList={TenantList} />
+              </div>
+              <div>
+                <hr />
+
+                <p
+                  className="DashboardWigetPieChartTextHeader"
+                  style={{ width: '400px', fontSize: '20px' }}
+                >
+                  Reminders and Notifications
+                </p>
+
+                <table style={{ fontSize: '14px', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr>
+                      <th style={{ padding: '5px', textAlign: 'left' }}>
+                        Notification
+                      </th>
+                      <th style={{ padding: '5px', textAlign: 'center' }}>
+                        Email
+                      </th>
+                      <th style={{ padding: '5px', textAlign: 'center' }}>
+                        SMS
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td style={{ padding: '5px' }}>5 days before due</td>
+                      <td style={{ padding: '5px', textAlign: 'center' }}>
+                        <input type="checkbox" />
+                      </td>
+                      <td style={{ padding: '5px', textAlign: 'center' }}>
+                        <input type="checkbox" />
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style={{ padding: '5px' }}>3 days before due</td>
+                      <td style={{ padding: '5px', textAlign: 'center' }}>
+                        <input type="checkbox" />
+                      </td>
+                      <td style={{ padding: '5px', textAlign: 'center' }}>
+                        <input type="checkbox" />
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style={{ padding: '5px' }}>1 day before due</td>
+                      <td style={{ padding: '5px', textAlign: 'center' }}>
+                        <input type="checkbox" />
+                      </td>
+                      <td style={{ padding: '5px', textAlign: 'center' }}>
+                        <input type="checkbox" />
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style={{ padding: '5px' }}>On due date</td>
+                      <td style={{ padding: '5px', textAlign: 'center' }}>
+                        <input type="checkbox" />
+                      </td>
+                      <td style={{ padding: '5px', textAlign: 'center' }}>
+                        <input type="checkbox" />
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style={{ padding: '5px' }}>1 day after due</td>
+                      <td style={{ padding: '5px', textAlign: 'center' }}>
+                        <input type="checkbox" />
+                      </td>
+                      <td style={{ padding: '5px', textAlign: 'center' }}>
+                        <input type="checkbox" />
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style={{ padding: '5px' }}>3 days after due</td>
+                      <td style={{ padding: '5px', textAlign: 'center' }}>
+                        <input type="checkbox" />
+                      </td>
+                      <td style={{ padding: '5px', textAlign: 'center' }}>
+                        <input type="checkbox" />
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style={{ padding: '5px' }}>Weekly while overdue</td>
+                      <td style={{ padding: '5px', textAlign: 'center' }}>
+                        <input type="checkbox" />
+                      </td>
+                      <td style={{ padding: '5px', textAlign: 'center' }}>
+                        <input type="checkbox" />
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+                <button
+                  onClick={() => {
+
+
+
+
+
+
+
+                    window.electron.ipcRenderer.send('renderer-to-main', {
+                      email: 'christian.b.taye@gmail.com',
+                      subject: 'Bro this is so cool',
+                      text: 'this is ht ebody'
+                    });
+                  }}
+                >
+                  Send now
+                </button>
+                <input
+                  type="text"
+                  placeholder="Number"
+                  value={TelegramNumberRN}
+                  onChange={(e) => {
+                    setTelegramNumberRN(e.target.value);
+                  }}
+                />
+                <textarea
+                  style={{
+                    fontFamily: 'Inter',
+                    width: '100%',
+                    resize: 'none',
+                    height: '60px',
+                  }}
+                  placeholder="Message"
+                  value={TelegramMessageRN}
+                  onChange={(e) => {
+                    setMessageNumberRN(e.target.value);
+                  }}
+                />
               </div>
             </div>
             <div

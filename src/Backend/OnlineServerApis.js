@@ -1,7 +1,7 @@
+import { deleteAllFromTable, getValuesWithSql } from './localServerApis';
 
 //import { downloadImageFromLocalEndpoint, getFileContent, getListOfFiles } from './localServerApis';
-
-const baseUrl = 'https://www.management.markethubet.com';
+const baseUrl = 'https://www.rentmaster.markethubet.com/api';
 const baseUrlLocal = 'http://localhost:8100';
 const apiKey = 'HH(CzZuQoW@tB$By)e';
 
@@ -11,14 +11,25 @@ const deleteValue = async (tableName, id) => {
       method: 'DELETE',
     });
     const data = await response.text();
-   
+
     return data;
   } catch (error) {
     console.error('Error deleting value:', error);
     return null;
   }
 };
-
+const handleSignOut = async () => {
+  try {
+    await window.electron.ipcRenderer.invoke('cleanup-on-sign-out');
+    console.log('Cleanup completed successfully');
+    // Perform any additional sign-out logic here
+  } catch (error) {
+    console.error('Error during cleanup:', error);
+  }}
+export const SignOutUser = async () => {
+  // Clear the local storage
+  handleSignOut();
+};
 export const AddUserOnline = async (json) => {
   try {
     const response = await fetch(`${baseUrl}/users`, {
@@ -56,12 +67,13 @@ function convertBase64ToBlob(base64String) {
 export const Upload = async (
   offline_changes_Array,
   SelectedUserId,
-  setUploadProgress,
+  setUploadProgress,RefreshApp
 ) => {
   const totalChanges = offline_changes_Array.length;
   const syncProgressWeight = 0.5;
   const uploadProgressWeight = 1 - syncProgressWeight;
   let failedUploads = [];
+  let uploadedChanges = [];
 
   for (let i = 0; i < totalChanges; i++) {
     const change = offline_changes_Array[i];
@@ -80,7 +92,7 @@ export const Upload = async (
                   'x-api-key': apiKey,
                 },
                 body: JSON.stringify({ [change.columnName]: change.newValue }),
-              },
+              }
             );
             await editResponse.json();
             break;
@@ -93,7 +105,7 @@ export const Upload = async (
                   'Content-Type': 'application/json',
                   'x-api-key': apiKey,
                 },
-              },
+              }
             );
             await deleteResponse.text();
             break;
@@ -110,12 +122,12 @@ export const Upload = async (
                     'x-api-key': 'HH(CzZuQoW@tB$By)e',
                   },
                   body: change.addedJsonData,
-                },
+                }
               );
               await addResponse.json();
             }
             break;
-          case 'addImage':
+          /*case 'addImage':
             const userId = JSON.parse(JSON.parse(change.addedJsonData)).user_id;
             const filename = JSON.parse(
               JSON.parse(change.addedJsonData),
@@ -131,7 +143,7 @@ export const Upload = async (
               ).id;
             }
             await uploadImage(userId, file, filename, change.columnName);
-            break;
+            break;*/
 
           default:
             console.error(`Unknown change type: ${change.type}`);
@@ -139,6 +151,7 @@ export const Upload = async (
       }
       // If the upload was successful, delete the offline change row
       await deleteValue('offline_changes', change.id);
+      uploadedChanges.push(change);
     } catch (error) {
       console.log(`Error processing ${change.type} change:`, error);
       failedUploads.push(change);
@@ -152,9 +165,7 @@ export const Upload = async (
 
   // Handle failed uploads
   if (failedUploads.length > 0) {
-    console.log(
-      `Failed to upload ${failedUploads.length} changes. Retrying...`,
-    );
+    console.log(`Failed to upload ${failedUploads.length} changes.`);
     // Optionally, you can retry failed uploads here
     // For simplicity, let's assume that the retry mechanism is implemented elsewhere
     // and we're only logging the failed uploads for now
@@ -167,183 +178,97 @@ export const Upload = async (
     setUploadProgress(totalProgress);
   });
 
+  console.log('Uploaded changes:', uploadedChanges);
+  RefreshApp();
   return true;
 };
 export const syncOnlineToLocalWithCallback = async (SelectedUserId, setSyncProgress) => {
+  console.log(`Starting sync process for user: ${SelectedUserId}`);
+
   const tables = [
-    'settings_table',
-    'product_price_changes',
-    'product_advanced_positions',
-    'products',
-    'branches',
-    'categories',
-    'saleshistory',
-    'number_time_ob_statgraph',
-    'number_time_ob_statgraph_productids',
-    'customers',
-    'vendors',
-    'paylater_customers',
-    'paylater_vendor',
-    'stockitems',
-    'stockitemsimport',
-    'sellandprofittotimeproduct',
+   
+    'rooms',
+    'room_specifications',
+    'tenants',
+    'room_pay_info',
+    'brokers',
+    'brokersRecommendationList',
+    'PastTenantsForRoom',
+    'agreements',
   ];
 
-  // Get all the correct branchIds for the SelectedUserId
-  const branchesData = await fetchDataFromOnlineDatabase('branches');
-  const correctBranchIds = branchesData
-    .filter((branch) => branch.userId === SelectedUserId)
-    .map((branch) => branch.id);
-
-  // Get all the correct productIds for the correctBranchIds
-  const productsData = await fetchDataFromOnlineDatabase('products');
-  const CurrentProductIDs = productsData
-    .filter((product) => correctBranchIds.includes(product.branchId))
-    .map((product) => product.id);
+  console.log(`Tables to sync: ${tables.join(', ')}`);
 
   let completedTables = 0;
   const totalTables = tables.length;
 
   for (const table of tables) {
+    console.log(`Processing table: ${table}`);
+
     const onlineData = await fetchDataFromOnlineDatabase(table);
+    console.log(`Fetched ${onlineData.length} rows from online database for table: ${table}`);
+
     const localData = await fetchDataFromLocalDatabase(table);
+    console.log(`Fetched ${localData.length} rows from local database for table: ${table}`);
 
     const onlineDataMap = new Map(onlineData.map((row) => [row.id, row]));
     const localDataMap = new Map(localData.map((row) => [row.id, row]));
 
+    console.log(`Processing rows for table: ${table}`);
+    let updatedRows = 0;
+    let addedRows = 0;
+    let skippedRows = 0;
+
     // Add or update rows in the local database
     for (const [id, onlineRow] of onlineDataMap.entries()) {
-      if (table === 'branches') {
-        if (onlineRow.userId !== SelectedUserId) {
-          continue;
-        }
-      } else if (table === 'products') {
-        if (!correctBranchIds.includes(onlineRow.branchId)) {
-          continue;
-        }
-      } else if (table === 'categories') {
-        if (!correctBranchIds.includes(onlineRow.branchId)) {
-          continue;
-        }
-      } else if (table === 'customers') {
-        if (!correctBranchIds.includes(onlineRow.branchId)) {
-          continue;
-        }
-      } else if (table === 'vendors') {
-        if (!correctBranchIds.includes(onlineRow.branchId)) {
-          continue;
-        }
-      } else if (table === 'paylater_customers') {
-        if (!correctBranchIds.includes(onlineRow.branchId)) {
-          continue;
-        }
-      } else if (table === 'paylater_vendor') {
-        if (!correctBranchIds.includes(onlineRow.branchId)) {
-          continue;
-        }
-      } else if (table === 'number_time_ob_statgraph') {
-        if (!correctBranchIds.includes(onlineRow.branchId)) {
-          continue;
-        }
-      } else if (table === 'number_time_ob_statgraph_productids') {
-        if (!correctBranchIds.includes(onlineRow.branchId)) {
-          continue;
-        }
-      } else if (table === 'saleshistory') {
-        if (!correctBranchIds.includes(onlineRow.branchId)) {
-          continue;
-        }
-      } else if (table === 'number_time_ob_statgraph_productids') {
-        if (!correctBranchIds.includes(onlineRow.branchId)) {
-          continue;
-        }
-      } else if (table === 'settings_table') {
-        if (SelectedUserId !== onlineRow.branchId) {
-          continue;
-        }
-      } else if (table === 'product_price_changes') {
-        if (!CurrentProductIDs.includes(onlineRow.productId)) {
-          continue;
-        }
-      } else if (table === 'product_advanced_positions') {
-        if (!CurrentProductIDs.includes(onlineRow.productId)) {
-          continue;
-        }
-      } else if (table === 'sellandprofittotimeproduct') {
-        if (!CurrentProductIDs.includes(onlineRow.productId)) {
-          continue;
-        }
-      } else if (table === 'stockitems') {
-        if (!CurrentProductIDs.includes(onlineRow.productId)) {
-          continue;
-        }
-      } else if (table === 'stockitemsimport') {
-        if (!CurrentProductIDs.includes(onlineRow.productId)) {
-          continue;
-        }
+      if (onlineRow.userId !== SelectedUserId) {
+        skippedRows++;
+        continue;
       }
 
       if (localDataMap.has(id)) {
         const localRow = localDataMap.get(id);
         if (JSON.stringify(onlineRow) !== JSON.stringify(localRow)) {
           await updateLocalRecord(table, id, onlineRow);
+          updatedRows++;
+          console.log(`Updated row with id: ${id} in table: ${table}`);
         }
       } else {
         await addLocalRecord(table, onlineRow);
+        addedRows++;
+        console.log(`Added new row with id: ${id} to table: ${table}`);
       }
     }
 
+    console.log(`Table ${table} - Updated: ${updatedRows}, Added: ${addedRows}, Skipped: ${skippedRows}`);
+
     // Optionally delete local rows that do not exist in the online database
+    let deletedRows = 0;
     for (const id of localDataMap.keys()) {
       if (!onlineDataMap.has(id)) {
         await deleteLocalRecord(table, id);
+        deletedRows++;
+        console.log(`Deleted row with id: ${id} from table: ${table}`);
       }
     }
+
+    console.log(`Deleted ${deletedRows} rows from table: ${table}`);
 
     completedTables++;
     const progress = (completedTables / totalTables) * 100;
     setSyncProgress(progress);
+    console.log(`Sync progress: ${progress.toFixed(2)}%`);
   }
 
-  // Apply images
-  const localImages = await getListOfFiles(SelectedUserId);
-  const OnlineImages = await getOnlineFileNames(SelectedUserId);
-  const UserImages = await getValuesWithSql_Online("user_images", `WHERE user_id = "${SelectedUserId}"`);
-
-  let completedImages = 0;
-  const totalImages = UserImages.length;
-
-  for (let i = 0; i < UserImages.length; i++) {
-    const element = UserImages[i];
-    const filename = element.filename;
-
-    // Check if the image exists locally
-    if (!localImages.includes(filename)) {
-      // Check if the image exists online
-      if (OnlineImages.includes(filename)) {
-        // Download the image
-        try {
-          await downloadImageFromLocalEndpoint(SelectedUserId, filename);
-          console.log(`Downloaded image: ${filename}`);
-        } catch (error) {
-          console.error(`Failed to download image: ${filename}`, error);
-        }
-      } else {
-        console.warn(`Image not found online: ${filename}`);
-      }
-    }
-
-    completedImages++;
-    const progress = ((completedTables * totalTables) + completedImages) / (totalTables + totalImages) * 100;
-    setSyncProgress(progress);
-  }
-
-  // Apply offline changes
+  console.log('Applying offline changes');
   const offlineChanges = await fetchOfflineChanges();
+  console.log(`Found ${offlineChanges.length} offline changes to apply`);
   await applyOfflineChangesToLocalDatabase(offlineChanges);
 
+  console.log('Sync completed');
   return 'Sync completed';
 };
+
 
 export const RevertOfflineChanges = async () => {
   //make it delete all the rows in the offlinechangestable
@@ -352,7 +277,7 @@ export const RevertOfflineChanges = async () => {
       method: 'DELETE',
     });
     const data = await response.text();
-    
+
     return data;
   } catch (error) {
     console.error('Error deleting value:', error);
@@ -387,7 +312,7 @@ export const getValuesWithSql_Online = async (tableName, sqlCode) => {
           'Content-Type': 'application/json',
           'x-api-key': apiKey,
         },
-      },
+      }
     );
     const data = await response.json();
     return data;
@@ -441,175 +366,190 @@ const fetchDataFromOnlineDatabase = async (tableName) => {
 
 // Fetch data from the local SQLite database
 const fetchDataFromLocalDatabase = async (tableName) => {
-  return getValues(tableName);
+  return getValuesWithSql(tableName,"WHERE 1");
 };
-/*
+
 // Sync data from online to local database
 export const syncOnlineToLocal = async (SelectedUserId) => {
+  console.log(`Starting sync process for user: ${SelectedUserId}`);
+
   const tables = [
-    'settings_table',
-    'product_price_changes',
-    'product_advanced_positions',
-    'products',
-    'branches',
-    'categories',
-    'saleshistory',
-    'number_time_ob_statgraph',
-    'number_time_ob_statgraph_productids',
-    'customers',
-    'vendors',
-    'paylater_customers',
-    'paylater_vendor',
-    'stockitems',
-    'stockitemsimport',
-    'sellandprofittotimeproduct',
+    'rooms',
+    'room_specifications',
+    'tenants',
+    'room_pay_info',
+    'brokers',
+    'brokersRecommendationList',
+    'PastTenantsForRoom',
+    'agreements',
   ];
 
-  // Get all the correct branchIds for the SelectedUserId
-  const branchesData = await fetchDataFromOnlineDatabase('branches');
-  const correctBranchIds = branchesData
-    .filter((branch) => branch.userId === SelectedUserId)
-    .map((branch) => branch.id);
-
-  // Get all the correct productIds for the correctBranchIds
-  const productsData = await fetchDataFromOnlineDatabase('products');
-  const CurrentProductIDs = productsData
-    .filter((product) => correctBranchIds.includes(product.branchId))
-    .map((product) => product.id);
+  console.log(`Tables to sync: ${tables.join(', ')}`);
 
   for (const table of tables) {
+    console.log(`Processing table: ${table}`);
+
     const onlineData = await fetchDataFromOnlineDatabase(table);
+    console.log(`Fetched ${onlineData.length} rows from online database for table: ${table}`);
+
     const localData = await fetchDataFromLocalDatabase(table);
+    console.log(`Fetched ${localData.length} rows from local database for table: ${table}`);
 
     const onlineDataMap = new Map(onlineData.map((row) => [row.id, row]));
     const localDataMap = new Map(localData.map((row) => [row.id, row]));
 
+    console.log(`Processing rows for table: ${table}`);
+    let updatedRows = 0;
+    let addedRows = 0;
+    let skippedRows = 0;
+
     // Add or update rows in the local database
     for (const [id, onlineRow] of onlineDataMap.entries()) {
-      if (table === 'branches') {
-        if (onlineRow.userId !== SelectedUserId) {
-          continue;
-        }
-      } else if (table === 'products') {
-        if (!correctBranchIds.includes(onlineRow.branchId)) {
-          continue;
-        }
-      } else if (table === 'categories') {
-        if (!correctBranchIds.includes(onlineRow.branchId)) {
-          continue;
-        }
-      } else if (table === 'customers') {
-        if (!correctBranchIds.includes(onlineRow.branchId)) {
-          continue;
-        }
-      } else if (table === 'vendors') {
-        if (!correctBranchIds.includes(onlineRow.branchId)) {
-          continue;
-        }
-      } else if (table === 'paylater_customers') {
-        if (!correctBranchIds.includes(onlineRow.branchId)) {
-          continue;
-        }
-      } else if (table === 'paylater_vendor') {
-        if (!correctBranchIds.includes(onlineRow.branchId)) {
-          continue;
-        }
-      } else if (table === 'number_time_ob_statgraph') {
-        if (!correctBranchIds.includes(onlineRow.branchId)) {
-          continue;
-        }
-      } else if (table === 'number_time_ob_statgraph_productids') {
-        if (!correctBranchIds.includes(onlineRow.branchId)) {
-          continue;
-        }
-      } else if (table === 'saleshistory') {
-        if (!correctBranchIds.includes(onlineRow.branchId)) {
-          continue;
-        }
-      } else if (table === 'number_time_ob_statgraph_productids') {
-        if (!correctBranchIds.includes(onlineRow.branchId)) {
-          continue;
-        }
-      } else if (table === 'settings_table') {
-        if (SelectedUserId !== onlineRow.branchId) {
-          continue;
-        }
-      } else if (table === 'product_price_changes') {
-        if (!CurrentProductIDs.includes(onlineRow.productId)) {
-          continue;
-        }
-      } else if (table === 'product_advanced_positions') {
-        if (!CurrentProductIDs.includes(onlineRow.productId)) {
-          continue;
-        }
-      } else if (table === 'sellandprofittotimeproduct') {
-        if (!CurrentProductIDs.includes(onlineRow.productId)) {
-          continue;
-        }
-      } else if (table === 'stockitems') {
-        if (!CurrentProductIDs.includes(onlineRow.productId)) {
-          continue;
-        }
-      } else if (table === 'stockitemsimport') {
-        if (!CurrentProductIDs.includes(onlineRow.productId)) {
-          continue;
-        }
+      if (onlineRow.userId !== SelectedUserId) {
+        skippedRows++;
+        continue;
       }
 
       if (localDataMap.has(id)) {
         const localRow = localDataMap.get(id);
         if (JSON.stringify(onlineRow) !== JSON.stringify(localRow)) {
           await updateLocalRecord(table, id, onlineRow);
+          updatedRows++;
+          console.log(`Updated row with id: ${id} in table: ${table}`);
         }
       } else {
         await addLocalRecord(table, onlineRow);
+        addedRows++;
+        console.log(`Added new row with id: ${id} to table: ${table}`);
       }
     }
 
+    console.log(`Table ${table} - Updated: ${updatedRows}, Added: ${addedRows}, Skipped: ${skippedRows}`);
+
     // Optionally delete local rows that do not exist in the online database
+    let deletedRows = 0;
     for (const id of localDataMap.keys()) {
       if (!onlineDataMap.has(id)) {
         await deleteLocalRecord(table, id);
+        deletedRows++;
+        console.log(`Deleted row with id: ${id} from table: ${table}`);
       }
     }
+
+    console.log(`Deleted ${deletedRows} rows from table: ${table}`);
   }
-  //Apply images
-  const localImages = await getListOfFiles(SelectedUserId);
-  const OnlineImages = await getOnlineFileNames(SelectedUserId);
-  const UserImages = await getValuesWithSql_Online("user_images", `WHERE user_id = "${SelectedUserId}"`);
-  
-  for (let i = 0; i < UserImages.length; i++) {
-    const element = UserImages[i];
-    const filename = element.filename;
-  
-    // Check if the image exists locally
-    if (!localImages.includes(filename)) {
-      // Check if the image exists online
-      if (OnlineImages.includes(filename)) {
-        // Download the image
-        try {
-          await downloadImageFromLocalEndpoint(SelectedUserId, filename);
-          console.log(`Downloaded image: ${filename}`);
-        } catch (error) {
-          console.error(`Failed to download image: ${filename}`, error);
-        }
-      } else {
-        console.warn(`Image not found online: ${filename}`);
-      }
-    }
-  }
-  // Apply offline changes
+
+  console.log('Applying offline changes');
   const offlineChanges = await fetchOfflineChanges();
+  console.log(`Found ${offlineChanges.length} offline changes to apply`);
   await applyOfflineChangesToLocalDatabase(offlineChanges);
 
+  console.log('Sync completed');
   return 'Sync completed';
 };
 
-// Fetch offline changes from the local SQLite database
-const fetchOfflineChanges = async () => {
-  return getValues('offline_changes');
-};
+export const syncOnlineToLocalWithBool = async (SelectedUserId, setIsSyncing, setSyncProgress,RefreshDataFromSqlite) => {
+  console.log(`Starting sync process for user: ${SelectedUserId}`);
+  setIsSyncing(true);
+  setSyncProgress(0);
 
+  const tables = [
+    'rooms',
+    'room_specifications',
+    'tenants',
+    'room_pay_info',
+    'brokers',
+    'brokersRecommendationList',
+    'PastTenantsForRoom',
+    'agreements',
+  ];
+
+  console.log(`Tables to sync: ${tables.join(', ')}`);
+  const totalSteps = tables.length + 1; // +1 for offline changes
+  let currentStep = 0;
+
+  for (const table of tables) {
+    console.log(`Processing table: ${table}`);
+
+    const onlineData = await fetchDataFromOnlineDatabase(table);
+    console.log(`Fetched ${onlineData.length} rows from online database for table: ${table}`);
+
+    const localData = await fetchDataFromLocalDatabase(table);
+    console.log(`Fetched ${localData.length} rows from local database for table: ${table}`);
+
+    const onlineDataMap = new Map(onlineData.map((row) => [row.id, row]));
+    const localDataMap = new Map(localData.map((row) => [row.id, row]));
+
+    console.log(`Processing rows for table: ${table}`);
+    let updatedRows = 0;
+    let addedRows = 0;
+    let skippedRows = 0;
+
+    // Add or update rows in the local database
+    for (const [id, onlineRow] of onlineDataMap.entries()) {
+      if (onlineRow.userId !== SelectedUserId) {
+        skippedRows++;
+        continue;
+      }
+
+      if (localDataMap.has(id)) {
+        const localRow = localDataMap.get(id);
+        if (JSON.stringify(onlineRow) !== JSON.stringify(localRow)) {
+          await updateLocalRecord(table, id, onlineRow);
+          updatedRows++;
+          console.log(`Updated row with id: ${id} in table: ${table}`);
+        }
+      } else {
+        await addLocalRecord(table, onlineRow);
+        addedRows++;
+        console.log(`Added new row with id: ${id} to table: ${table}`);
+      }
+    }
+
+    console.log(`Table ${table} - Updated: ${updatedRows}, Added: ${addedRows}, Skipped: ${skippedRows}`);
+
+    // Optionally delete local rows that do not exist in the online database
+    let deletedRows = 0;
+    for (const id of localDataMap.keys()) {
+      if (!onlineDataMap.has(id)) {
+        await deleteLocalRecord(table, id);
+        deletedRows++;
+        console.log(`Deleted row with id: ${id} from table: ${table}`);
+      }
+    }
+
+    console.log(`Deleted ${deletedRows} rows from table: ${table}`);
+
+    currentStep++;
+    setSyncProgress(Math.round((currentStep / totalSteps) * 100));
+  }
+
+  console.log('Applying offline changes');
+  const offlineChanges = await fetchOfflineChanges();
+  console.log(`Found ${offlineChanges.length} offline changes to apply`);
+  await applyOfflineChangesToLocalDatabase(offlineChanges);
+
+  currentStep++;
+  setSyncProgress(100);
+
+  console.log('Sync completed');
+  setIsSyncing(false);
+  RefreshDataFromSqlite();
+  return 'Sync completed';
+};
+export const getValues = async (tableName) => {
+  try {
+    const response = await fetch(`${baseUrlLocal}/${tableName}`);
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error fetching values:', error);
+    return [];
+  }
+};// Fetch offline changes from the local SQLite database
+const fetchOfflineChanges = async () => {
+  return getValuesWithSql('offline_changes',"WHERE 1");
+};
 // Apply offline changes to the local SQLite database
 const applyOfflineChangesToLocalDatabase = async (changes) => {
   for (const change of changes) {
@@ -703,17 +643,9 @@ export const updateValue = async (tableName, id, columnName, columnValue) => {
     return null;
   }
 };
+/*
 
-export const getValues = async (tableName) => {
-  try {
-    const response = await fetch(`${baseUrlLocal}/${tableName}`);
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error('Error fetching values:', error);
-    return [];
-  }
-};
+
 const FormData = require('form-data');
 const { v4: uuidv4 } = require('uuid');
 const deleteImageLocal = async (userId, filename) => {
@@ -851,7 +783,7 @@ export const uploadImage = async (userId, file, newFilename, rowId) => {
       // Get the list of files in the user's directory
       const filesInDirectory = await getListOfFiles(userId);
 
-      const productsData = await getValues('products');
+      const productsData = await getValuesWithSql('products');
 
       for (const file of filesInDirectory) {
         const isAssignedToProduct = productsData.some(
@@ -898,3 +830,4 @@ export const uploadImage = async (userId, file, newFilename, rowId) => {
   }
 };
 */
+

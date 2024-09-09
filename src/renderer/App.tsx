@@ -9,9 +9,12 @@ const { v4: uuidv4 } = require('uuid');
 import {
   addValue,
   deleteValue,
+  getValues,
   getValuesWithSql,
   updateValue,
 } from 'Backend/localServerApis';
+import AccountManager from './Project/TSX/Sign up and login/AccountManager';
+import { SignOutUser, Upload } from 'Backend/OnlineServerApis';
 declare global {}
 function Hello() {
   const [RoomList, setRoomList] = useState<RoomType[]>([]);
@@ -27,10 +30,11 @@ function Hello() {
 
   class RoomApi {
     getPaymentTimelineInfo = async (roomId: string) => {
-      const AllRoomPayInfo = await roomPaymentInfoApi.getRoomPaymentsApi(roomId) || [];
+      const AllRoomPayInfo =
+        (await roomPaymentInfoApi.getRoomPaymentsApi(roomId)) || [];
       return AllRoomPayInfo;
     };
-    
+
     getRoomFromApi = async () => {
       const roomsRaw = await getValuesWithSql('rooms', 'WHERE 1');
       if (roomsRaw) {
@@ -54,13 +58,14 @@ function Hello() {
               PaymentCycleCustomeDays: room.PaymentCycleCustomeDays,
               squareMeters: room.squareMeters,
               RoomSpecifications: roomSpecifications,
-              Archived:room.Archived,
+              Archived: room.Archived,
               tenantId: room.tenantId || '',
               AddTenantState: room.AddTenantState || false,
               ViewAgreement: room.ViewAgreement || false,
               ShowPayTimeLine: room.ShowPayTimeLine || false,
               AllRoomPayInfo: { RoomPayInfo: AllRoomPayInfo },
               selectedAgreementId: room.selectedAgreementId || '',
+              
             };
           })
         );
@@ -70,20 +75,26 @@ function Hello() {
     getSpecificValueFromRoomAPI = async (
       roomId: string,
       propertyName: string
-
     ) => {
       const room = await getValuesWithSql('rooms', `WHERE id = '${roomId}'`);
       return room[0][propertyName];
-    }
-    
+    };
+
     editRoomApi = async (
       roomId: string,
       propertyName: string,
-      newValue: any
+      newValue: any,
+      originalValue:any
     ) => {
       // wrap around try catch
       try {
-        await updateValue('rooms', roomId, propertyName, newValue);
+        await updateValue(
+          'rooms',
+          roomId,
+          propertyName,
+          newValue,
+          setChangeMade, originalValue
+        );
         await this.getRoomFromApi();
       } catch (error: any) {
         console.error(error.message);
@@ -103,22 +114,27 @@ function Hello() {
       try {
         //Add room
 
-        await addValue('rooms', {
-          id: roomID,
-          floor: AddRoomFormFloor,
-          roomIndex: AddRoomFormRoomIndex,
-          status: 'Empty',
-          price: AddRoomFormPrice,
-          AgreedPrice: AddRoomFormPrice,
-          PaymentCycleType: AddRoomFormPaymentCycleType,
-          PaymentCycleCustomeDays: AddRoomFormPaymentCycleCustomDays,
-          squareMeters: AddRoomFormSquareMeters,
-          tenantId: '',
-          AddTenantState: false,
-          ViewAgreement: false,
-          ShowPayTimeLine: false,
-          selectedAgreementId: '',
-        });
+        await addValue(
+          'rooms',
+          {
+            id: roomID,
+            floor: AddRoomFormFloor,
+            roomIndex: AddRoomFormRoomIndex,
+            status: 'Empty',
+            price: AddRoomFormPrice,
+            AgreedPrice: AddRoomFormPrice,
+            PaymentCycleType: AddRoomFormPaymentCycleType,
+            PaymentCycleCustomeDays: AddRoomFormPaymentCycleCustomDays,
+            squareMeters: AddRoomFormSquareMeters,
+            tenantId: '',
+            AddTenantState: false,
+            ViewAgreement: false,
+            ShowPayTimeLine: false,
+            selectedAgreementId: '',
+            userId: SelectedUserId,
+          },
+          setChangeMade
+        );
 
         //Add roomspecfications
         for (let i = 0; i < AddRoomFormRoomSpecifications.length; i++) {
@@ -186,14 +202,18 @@ function Hello() {
       Boolean: boolean
     ) => {
       try {
-        addValue('room_specifications', {
-          id: id,
-          roomId: roomId,
-          Detail: Detail,
-          Number: Number,
-          type: type,
-          Boolean: Boolean,
-        });
+        addValue(
+          'room_specifications',
+          {
+            id: id,
+            roomId: roomId,
+            Detail: Detail,
+            Number: Number,
+            type: type,
+            Boolean: Boolean,   userId: SelectedUserId,
+          },
+          setChangeMade
+        );
       } catch (error: any) {
         console.log(error.message);
       }
@@ -201,11 +221,16 @@ function Hello() {
     editRoomSpecificationApi = async (
       specificationId: string,
       propertyName: string,
-      newValue: any
+      newValue: any,originalValue:any
     ) => {
       try {
-        await updateValue('room_specifications', specificationId, propertyName, newValue);
-       
+        await updateValue(
+          'room_specifications',
+          specificationId,
+          propertyName,
+          newValue,
+          setChangeMade,originalValue
+        );
       } catch (error: any) {
         console.error(error.message);
       }
@@ -238,7 +263,7 @@ function Hello() {
                 agreedPrice: tenant.agreedPrice,
                 TIN: tenant.TIN || '',
                 RentReason: tenant.RentReason || '',
-                AddedTime:tenant.AddedTime,
+                AddedTime: tenant.AddedTime,
               };
             })
           );
@@ -259,26 +284,30 @@ function Hello() {
       startTime: string,
       endTime: string,
       agreedPrice: string,
-      TIN:string,
-      RentReason:string,
-      AddedTime:number,
+      TIN: string,
+      RentReason: string,
+      AddedTime: number
     ) => {
       try {
-        await addValue('tenants', {
-          id: id,
-          name: name,
-          phoneNumber: phoneNumber,
-          phoneNumber2: phoneNumber2,
-          email: email,
-          SelectedAgreement: SelectedAgreement,
-          RentingOrOut: RentingOrOut,
-          startTime: startTime,
-          endTime: endTime,
-          agreedPrice: agreedPrice,
-          TIN: TIN,
-          RentReason:RentReason,
-          AddedTime:AddedTime,
-        });
+        await addValue(
+          'tenants',
+          {
+            id: id,
+            name: name,
+            phoneNumber: phoneNumber,
+            phoneNumber2: phoneNumber2,
+            email: email,
+            SelectedAgreement: SelectedAgreement,
+            RentingOrOut: RentingOrOut,
+            startTime: startTime,
+            endTime: endTime,
+            agreedPrice: agreedPrice,
+            TIN: TIN,
+            RentReason: RentReason,
+            AddedTime: AddedTime,   userId: SelectedUserId,
+          },
+          setChangeMade
+        );
         // Update the TenantList and set the state to indicate that the update is complete
         await this.getTenantsApi();
         setIsUpdatingTenantList(false);
@@ -289,10 +318,16 @@ function Hello() {
     EditTenantApi = async (
       tenantId: string,
       propertyName: string,
-      newValue: any
+      newValue: any,originalValue:any
     ) => {
       try {
-        await updateValue('tenants', tenantId, propertyName, newValue);
+        await updateValue(
+          'tenants',
+          tenantId,
+          propertyName,
+          newValue,
+          setChangeMade,originalValue
+        );
         this.getTenantsApi();
         roomAPI.getRoomFromApi();
       } catch (error: any) {
@@ -302,10 +337,16 @@ function Hello() {
     EditTenantApiWithOutRefresh = async (
       tenantId: string,
       propertyName: string,
-      newValue: any
+      newValue: any,originalValue:any
     ) => {
       try {
-        await updateValue('tenants', tenantId, propertyName, newValue);
+        await updateValue(
+          'tenants',
+          tenantId,
+          propertyName,
+          newValue,
+          setChangeMade,originalValue
+        );
       } catch (error: any) {
         console.log(error.message);
       }
@@ -334,16 +375,20 @@ function Hello() {
       roomId: string,
       Day: string,
       Paid: string,
-      Value:number
+      Value: number
     ) => {
       try {
-        await addValue('room_pay_info', {
-          id: id,
-          roomId: roomId,
-          Day: Day,
-          Paid: Paid,
-          Value:Value,
-        });
+        await addValue(
+          'room_pay_info',
+          {
+            id: id,
+            roomId: roomId,
+            Day: Day,
+            Paid: Paid,
+            Value: Value,   userId: SelectedUserId,
+          },
+          setChangeMade
+        );
         await roomAPI.getRoomFromApi();
       } catch (error: any) {
         console.log(error.message);
@@ -357,13 +402,17 @@ function Hello() {
       Value: number
     ) => {
       try {
-        await addValue('room_pay_info', {
-          id: id,
-          roomId: roomId,
-          Day: Day,
-          Paid: Paid,
-          Value: Value,
-        });
+        await addValue(
+          'room_pay_info',
+          {
+            id: id,
+            roomId: roomId,
+            Day: Day,
+            Paid: Paid,
+            Value: Value,   userId: SelectedUserId,
+          },
+          setChangeMade
+        );
       } catch (error: any) {
         console.log(error.message);
       }
@@ -372,30 +421,52 @@ function Hello() {
       roomPaymentId: string,
       propertyName: string,
       newValue: any,
-      roomId:any,
-      lastList:any,
+      roomId: any,
+      lastList: any,originalValue:any
     ) => {
       try {
         await updateValue(
           'room_pay_info',
           roomPaymentId,
           propertyName,
-          newValue
+          newValue,
+          setChangeMade,originalValue
         );
-        setRoomList(prevRoomList => {
-          return prevRoomList.map(room => {
+        setRoomList((prevRoomList) => {
+          return prevRoomList.map((room) => {
             if (room.id === roomId) {
-              const updatedPayInfo = lastList.find((item:any) => item.id === roomPaymentId);
-              console.log({ ...room, 'AllRoomPayInfo': { RoomPayInfo: lastList.map((item: { id: string; Paid: any; }) => item.id === roomPaymentId ? { ...item, Paid: !item.Paid } : item) } });
+              const updatedPayInfo = lastList.find(
+                (item: any) => item.id === roomPaymentId
+              );
+              console.log({
+                ...room,
+                AllRoomPayInfo: {
+                  RoomPayInfo: lastList.map((item: { id: string; Paid: any }) =>
+                    item.id === roomPaymentId
+                      ? { ...item, Paid: !item.Paid }
+                      : item
+                  ),
+                },
+              });
               if (updatedPayInfo) {
-                return { ...room, 'AllRoomPayInfo': { RoomPayInfo: lastList.map((item: { id: string; Paid: any; }) => item.id === roomPaymentId ? { ...item, Paid: !item.Paid } : item) } };
+                return {
+                  ...room,
+                  AllRoomPayInfo: {
+                    RoomPayInfo: lastList.map(
+                      (item: { id: string; Paid: any }) =>
+                        item.id === roomPaymentId
+                          ? { ...item, Paid: !item.Paid }
+                          : item
+                    ),
+                  },
+                };
               }
               return room;
             }
             return room;
           });
         });
-      
+
         //roomAPI.getPaymentTimelineInfoAndSet(roomId);
         //roomAPI.getRoomFromApi();
       } catch (error: any) {
@@ -417,7 +488,7 @@ function Hello() {
           'PastTenantsForRoom',
           `WHERE 1`
         );
-      
+
         if (pastTenantReviewRaw) {
           const pastTenantReviews = pastTenantReviewRaw.map(
             (pastTenantReview: PastTenantReviewType) => {
@@ -460,7 +531,7 @@ function Hello() {
               phoneNumber: broker.phoneNumber,
               phoneNumber2: broker.phoneNumber2 || '',
               email: broker.email || '',
-              RecommendedTenantsIdList: broker.RecommendedTenantsIdList,
+
               AddedTime: broker.AddedTime,
               AgreedCommission: broker.AgreedCommission,
               rating: broker.rating,
@@ -475,7 +546,7 @@ function Hello() {
     };
     addBrokerApi = async (broker: BrokerType) => {
       try {
-        await addValue('brokers', broker);
+        await addValue('brokers', { ...broker, userId: SelectedUserId }, setChangeMade);
         await this.getBrokersApi();
       } catch (error: any) {
         console.log(error.message);
@@ -487,7 +558,13 @@ function Hello() {
       newValue: any
     ) => {
       try {
-        await updateValue('brokers', brokerId, propertyName, newValue);
+        await updateValue(
+          'brokers',
+          brokerId,
+          propertyName,
+          newValue,
+          setChangeMade
+        );
         await this.getBrokersApi();
       } catch (error: any) {
         console.log(error.message);
@@ -512,14 +589,18 @@ function Hello() {
       AgreedCommission: number
     ) => {
       try {
-        await addValue('brokersRecommendationList', {
-          id,
-          brokerId,
-          roomId,
-          recommendedTenantId,
-          AddedTime,
-          AgreedCommission,
-        });
+        await addValue(
+          'brokersRecommendationList',
+          {
+            id,
+            brokerId,
+            roomId,
+            recommendedTenantId,
+            AddedTime,
+            AgreedCommission,   userId: SelectedUserId,
+          },
+          setChangeMade
+        );
       } catch (error: any) {
         console.error(error.message);
       }
@@ -553,7 +634,7 @@ function Hello() {
       try {
         const agreementsRaw = await getValuesWithSql('agreements', 'WHERE 1');
         if (agreementsRaw) {
-          return agreementsRaw.map((agreement:agreements) => ({
+          return agreementsRaw.map((agreement: agreements) => ({
             id: agreement.id,
             roomId: agreement.roomId,
             tenantId: agreement.tenantId,
@@ -564,7 +645,7 @@ function Hello() {
             paymentCycleType: agreement.paymentCycleType,
             Memo: agreement.Memo,
             RentReserved: agreement.RentReserved,
-            representative:agreement.representative,
+            representative: agreement.representative,
           }));
         }
       } catch (error: any) {
@@ -574,7 +655,10 @@ function Hello() {
 
     getAgreementByIdApi = async (agreementId: string) => {
       try {
-        const agreement = await getValuesWithSql('agreements', `WHERE id = '${agreementId}'`);
+        const agreement = await getValuesWithSql(
+          'agreements',
+          `WHERE id = '${agreementId}'`
+        );
         if (agreement && agreement.length > 0) {
           return {
             id: agreement[0].id,
@@ -597,9 +681,12 @@ function Hello() {
 
     getAgreementsByRoomIdApi = async (roomId: string) => {
       try {
-        const agreements = await getValuesWithSql('agreements', `WHERE roomId = '${roomId}'`);
+        const agreements = await getValuesWithSql(
+          'agreements',
+          `WHERE roomId = '${roomId}'`
+        );
         if (agreements && agreements.length > 0) {
-          return agreements.map((agreement:agreements) => ({
+          return agreements.map((agreement: agreements) => ({
             id: agreement.id,
             roomId: agreement.roomId,
             tenantId: agreement.tenantId,
@@ -619,9 +706,19 @@ function Hello() {
         return [];
       }
     };
-    editAgreementApi = async (agreementId: string, propertyName: string, newValue: any) => {
+    editAgreementApi = async (
+      agreementId: string,
+      propertyName: string,
+      newValue: any
+    ) => {
       try {
-        await updateValue('agreements', agreementId, propertyName, newValue);
+        await updateValue(
+          'agreements',
+          agreementId,
+          propertyName,
+          newValue,
+          setChangeMade
+        );
       } catch (error: any) {
         console.log(error.message);
       }
@@ -646,21 +743,26 @@ function Hello() {
       paymentCycleType: string,
       Memo: string,
       RentReserved: number,
-      representative:string,
+      representative: string
     ) => {
       try {
-        await addValue('agreements', {
-          id,
-          roomId,
-          tenantId,
-          startTime,
-          endTime,
-          signTime,
-          agreedPrice,
-          paymentCycleType,
-          Memo,
-          RentReserved,representative
-        });
+        await addValue(
+          'agreements',
+          {
+            id,
+            roomId,
+            tenantId,
+            startTime,
+            endTime,
+            signTime,
+            agreedPrice,
+            paymentCycleType,
+            Memo,
+            RentReserved,
+            representative,   userId: SelectedUserId,
+          },
+          setChangeMade
+        );
       } catch (error: any) {
         console.log(error.message);
       }
@@ -684,50 +786,185 @@ function Hello() {
     tenantAPI.getTenantsApi();
     pastTenantReviewApi.getPastTenantReviewLatestApi();
     brokersRecommendationListApi.getBrokerRecommendationsFromApi();
-
   };
   const [SelectedPage, setSelectedPage] = useState<
     'Dashboard' | 'People' | 'Rooms' | 'Calendar' | 'Settings' | 'Database'
   >('Rooms');
 
   const [ThemeMode, setThemeMode] = useState<'light' | 'dark'>('dark');
-  const ChangeTheme = () =>{
-    document.body.classList.toggle("DarkTheme");
-  }
+  const ChangeTheme = () => {
+    document.body.classList.toggle('DarkTheme');
+  };
+  const [Refresh, setRefresh] = useState(0);
+  const [isSignedIn, setisSignedIn] = useState(false);
+  const signOutUserAndRestart = async () => {
+    await SignOutUser();
+    //setRefresh(Refresh + 1);
+    //setisSignedIn(false);
+  };
+
+  const [SelectedUserId, setSelectedUserId] = useState('');
+  const [ChangeMade, setChangeMade] = useState(0);
+  useEffect(() => {
+    const getChanges = async() => {
+      const OfflineChanges = await getValuesWithSql("offline_changes", "WHERE 1");
+      if(OfflineChanges) {
+        setChangeMade(OfflineChanges.length);
+
+      }
+    };
+    getChanges()
+  }, [ChangeMade]);
+  const [UploadingLoadingEffect, setUploadingLoadingEffect] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const handleUploadChanges = async () => {
+    if (!UploadingLoadingEffect) {
+      setUploadingLoadingEffect(true);
+      setUploadProgress(0);
+
+      if (navigator.onLine) {
+        const offline_changes = await getValuesWithSql(
+          'offline_changes',
+          'WHERE 1'
+        );
+        if (offline_changes.length > 0) {
+          const offline_changes_data = offline_changes.map((change: any) => ({
+            id: change.id,
+            type: change.type,
+            columnName: change.columnName,
+            rowId: change.rowId,
+            newValue: change.newValue,
+            tableName: change.tableName,
+            addedJsonData: change.addedJsonData,
+          }));
+
+          await Upload(offline_changes_data, SelectedUserId, setUploadProgress, RefreshDataFromSqlite);
+        }
+      } else {
+        console.log('Wait it is already uploading');
+      }
+      setChangeMade(0);
+      setUploadProgress(0);
+      setUploadingLoadingEffect(false);
+    }
+  };
+  //Initial syncing
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [SyncProgress, setSyncProgress] = useState(0);
+  const colors = {
+    primary: 'var(--Primary-Color)',
+    secondary: 'var(--Secondary-Color)',
+    background: 'var(--Background-Color)',
+    text: 'var(--Text-Color)',
+  };
+  const SyncLoadingPopup = ({ colors, isVisible }:any) => {
+    return (
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
+        display: isVisible ? 'flex' : 'none',
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        zIndex: 9999,
+      }}>
+        <div style={{
+          backgroundColor: colors.background,
+          color: colors.text,
+          padding: '20px',
+          borderRadius: '10px',
+          boxShadow: '0 0 10px rgba(0, 0, 0, 0.3)',
+          textAlign: 'center',
+        }}>
+          <div style={{
+            border: `4px solid ${colors.secondary}`,
+            borderTop: `4px solid ${colors.primary}`,
+            borderRadius: '50%',
+            width: '40px',
+            height: '40px',
+            animation: 'spin 1s linear infinite',
+            margin: '0 auto 10px',
+          }} />
+          <p style={{ margin: 0 }}>Syncing... {SyncProgress}%</p>
+        </div>
+      </div>
+    );
+  };
   return (
     <>
-      <NavBar
-        ProfileState={false}
-        SelectedPage={SelectedPage}
-        setSelectedPage={setSelectedPage}
-        Image={''}
-        ShopName={'The company'}
-        ThemeMode={ThemeMode}
-        setThemeMode={setThemeMode}ChangeTheme={ChangeTheme}
-      ></NavBar>
-      <MainPage
-      roomSpecificationAPI={roomSpecificationAPI}
-        SelectedPage={SelectedPage}
-        setSelectedPage={setSelectedPage}
-        RoomList={RoomList}
-        setRoomList={setRoomList}
-        setTenantList={setTenantList}
-        TenantList={TenantList}
-        roomAPI={roomAPI}
-        tenantAPI={tenantAPI}
-        roomPaymentInfoApi={roomPaymentInfoApi}
-        isUpdatingTenantList={isUpdatingTenantList}
-        setIsUpdatingTenantList={setIsUpdatingTenantList}
-        pastTenantReviewApi={pastTenantReviewApi}
-        brokerApi={brokerApi}
-        BrokerList={BrokerList}
-        setBrokerList={setBrokerList}
-        PastTenantReviews={PastTenantReviews}
-        brokersRecommendationListApi={brokersRecommendationListApi}
+      {UploadingLoadingEffect && (
+        <>
+          <div className="progress-container">
+            <div
+              className="progress-bar"
+              style={{ width: `${uploadProgress}%`, position: 'absolute' }}
+            ></div>
+          </div>
+        </>
+      )} <SyncLoadingPopup colors={colors} isVisible={isSyncing} />
+      <AccountManager
+        Refresh={Refresh}
+        isSignedIn={isSignedIn}
+        setisSignedIn={setisSignedIn}
+        setChangeMade={setChangeMade}
+        SelectedUserId={SelectedUserId}
+        setSelectedUserId={setSelectedUserId}
+        setIsSyncing={setIsSyncing}
         RefreshDataFromSqlite={RefreshDataFromSqlite}
-        BrokerRecommendationList={BrokerRecommendationList}
-        agreementApi={agreementApi}
-      />
+        setSyncProgress={setSyncProgress}
+      >
+        <>
+          <NavBar
+          RefreshDataFromSqlite={RefreshDataFromSqlite}
+            setIsSyncing={setIsSyncing}
+            SelectedUserId={SelectedUserId}
+            isSyncing={isSyncing}
+            setSyncProgress={setSyncProgress}
+            ChangeMade={ChangeMade}
+            handleUpload={handleUploadChanges}
+            uploadProgress={uploadProgress}
+            UploadingLoadingEffect={UploadingLoadingEffect}
+            ProfileState={false}
+            SelectedPage={SelectedPage}
+            setSelectedPage={setSelectedPage}
+            Image={''}
+            ShopName={'The company'}
+            ThemeMode={ThemeMode}
+            setThemeMode={setThemeMode}
+            ChangeTheme={ChangeTheme}
+            signOutUserAndRestart={signOutUserAndRestart}
+          ></NavBar>
+          <MainPage
+            roomSpecificationAPI={roomSpecificationAPI}
+            SelectedPage={SelectedPage}
+            setSelectedPage={setSelectedPage}
+            RoomList={RoomList}
+            setRoomList={setRoomList}
+            setTenantList={setTenantList}
+            TenantList={TenantList}
+            roomAPI={roomAPI}
+            tenantAPI={tenantAPI}
+            roomPaymentInfoApi={roomPaymentInfoApi}
+            isUpdatingTenantList={isUpdatingTenantList}
+            setIsUpdatingTenantList={setIsUpdatingTenantList}
+            pastTenantReviewApi={pastTenantReviewApi}
+            brokerApi={brokerApi}
+            BrokerList={BrokerList}
+            setBrokerList={setBrokerList}
+            PastTenantReviews={PastTenantReviews}
+            brokersRecommendationListApi={brokersRecommendationListApi}
+            RefreshDataFromSqlite={RefreshDataFromSqlite}
+            BrokerRecommendationList={BrokerRecommendationList}
+            agreementApi={agreementApi}
+            setChangeMade={setChangeMade}
+            SelectedUserId={SelectedUserId}
+          />
+        </>
+      </AccountManager>
+      {/**/}
     </>
   );
 }

@@ -5,7 +5,7 @@ import {
 } from 'Backend/localServerApis';
 import React, { useEffect, useState } from 'react';
 
-const DatabasePage = () => {
+const DatabasePage = ({setChangeMade}:any) => {
   const [Data, setData] = useState<any[]>([]);
   const [searchConfig, setSearchConfig] = useState({ key: '', query: '' });
   const [mainSearch, setMainSearch] = useState('');
@@ -115,7 +115,7 @@ const DatabasePage = () => {
           SelectedTable,
           Data[editCell.rowIndex].id,
           editCell.key,
-          editValue
+          editValue,setChangeMade
         );
         const updatedData = [...Data];
         updatedData[editCell.rowIndex] = {
