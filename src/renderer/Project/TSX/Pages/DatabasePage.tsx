@@ -5,7 +5,7 @@ import {
 } from 'Backend/localServerApis';
 import React, { useEffect, useState } from 'react';
 
-const DatabasePage = ({setChangeMade}:any) => {
+const DatabasePage = ({ setChangeMade }: any) => {
   const [Data, setData] = useState<any[]>([]);
   const [searchConfig, setSearchConfig] = useState({ key: '', query: '' });
   const [mainSearch, setMainSearch] = useState('');
@@ -115,7 +115,8 @@ const DatabasePage = ({setChangeMade}:any) => {
           SelectedTable,
           Data[editCell.rowIndex].id,
           editCell.key,
-          editValue,setChangeMade
+          editValue,
+          setChangeMade
         );
         const updatedData = [...Data];
         updatedData[editCell.rowIndex] = {
@@ -154,9 +155,7 @@ const DatabasePage = ({setChangeMade}:any) => {
             lead to critical system errors. Only edit if you are certain of the
             consequences.
           </span>
-          <label htmlFor="monthsFutureInput" >
-            Select a table:{' '}
-          </label>
+          <label htmlFor="monthsFutureInput">Select a table: </label>
           <select
             value={SelectedTable}
             onChange={OnChangeSelect}
@@ -168,9 +167,7 @@ const DatabasePage = ({setChangeMade}:any) => {
               </option>
             ))}
           </select>
-          <label htmlFor="monthsFutureInput" >
-            Search all fields:{' '}
-          </label>
+          <label htmlFor="monthsFutureInput">Search all fields: </label>
           <input
             type="text"
             style={{
@@ -191,71 +188,71 @@ const DatabasePage = ({setChangeMade}:any) => {
           }}
         >
           <table className="table-container">
-  <thead className="table-header">
-    <tr>
-      {Data.length > 0 &&
-        Object.keys(Data[0]).map((header, index) => (
-          <th key={index} onClick={() => handleSearch(header)}>
-            {searchConfig.key === header ? (
-              <input
-                type="text"
-                value={searchConfig.query}
-                onChange={handleQueryChange}
-                placeholder={`Search ${header}`}
-                autoFocus
-              />
-            ) : (
-              header
-            )}
-          </th>
-        ))}
-      <th>Actions</th>
-    </tr>
-  </thead>
-  <tbody className="table-body">
-    {filteredData(Data, searchConfig.key, searchConfig.query).map(
-      (row, rowIndex) => (
-        <tr key={rowIndex}>
-          {Object.entries(row).map(([key, value], cellIndex) => (
-            <td
-              key={cellIndex}
-              onDoubleClick={() =>
-                handleCellDoubleClick(rowIndex, key, String(value))
-              }
-            >
-              {editCell &&
-              editCell.rowIndex === rowIndex &&
-              editCell.key === key ? (
-                <input
-                  type="text"
-                  value={editValue}
-                  onChange={handleEditChange}
-                  onBlur={handleEditSubmit}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      handleEditSubmit();
-                    }
-                  }}
-                  autoFocus
-                />
-              ) : (
-                highlightText(String(value), mainSearch)
+            <thead className="table-header">
+              <tr>
+                {Data.length > 0 &&
+                  Object.keys(Data[0]).map((header, index) => (
+                    <th key={index} onClick={() => handleSearch(header)}>
+                      {searchConfig.key === header ? (
+                        <input
+                          type="text"
+                          value={searchConfig.query}
+                          onChange={handleQueryChange}
+                          placeholder={`Search ${header}`}
+                          autoFocus
+                        />
+                      ) : (
+                        header
+                      )}
+                    </th>
+                  ))}
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody className="table-body">
+              {filteredData(Data, searchConfig.key, searchConfig.query).map(
+                (row, rowIndex) => (
+                  <tr key={rowIndex}>
+                    {Object.entries(row).map(([key, value], cellIndex) => (
+                      <td
+                        key={cellIndex}
+                        onDoubleClick={() =>
+                          handleCellDoubleClick(rowIndex, key, String(value))
+                        }
+                      >
+                        {editCell &&
+                        editCell.rowIndex === rowIndex &&
+                        editCell.key === key ? (
+                          <input
+                            type="text"
+                            value={editValue}
+                            onChange={handleEditChange}
+                            onBlur={handleEditSubmit}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                handleEditSubmit();
+                              }
+                            }}
+                            autoFocus
+                          />
+                        ) : (
+                          highlightText(String(value), mainSearch)
+                        )}
+                      </td>
+                    ))}
+                    <td>
+                      <button
+                        className="delete-button"
+                        onClick={() => handleDelete(row.id)}
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                )
               )}
-            </td>
-          ))}
-          <td>
-            <button
-              className="delete-button"
-              onClick={() => handleDelete(row.id)}
-            >
-              Delete
-            </button>
-          </td>
-        </tr>
-      )
-    )}
-  </tbody>
-</table>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>

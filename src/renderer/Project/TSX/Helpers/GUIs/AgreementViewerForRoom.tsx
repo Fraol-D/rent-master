@@ -144,7 +144,7 @@ const AgreementViewerForRoom = ({
             element.id,
             'Paid',
             1,
-            setChangeMade
+            setChangeMade, 0
           );
         }
       }
@@ -379,7 +379,7 @@ const AgreementViewerForRoom = ({
                 agreementApi.editAgreementApi(
                   Agreements[CurrentAgreementIndex].id,
                   'Memo',
-                  MemoText
+                  MemoText,Agreements[CurrentAgreementIndex].Memo
                 );
               }}
               onKeyDown={(e) => {
@@ -387,7 +387,7 @@ const AgreementViewerForRoom = ({
                   agreementApi.editAgreementApi(
                     Agreements[CurrentAgreementIndex].id,
                     'Memo',
-                    MemoText
+                    MemoText,Agreements[CurrentAgreementIndex].Memo
                   );
                 }
               }}
@@ -407,7 +407,7 @@ const AgreementViewerForRoom = ({
                 agreementApi.editAgreementApi(
                   Agreements[CurrentAgreementIndex].id,
                   'RentReserved',
-                  RentReservedText
+                  RentReservedText,Agreements[CurrentAgreementIndex].RentReserved
                 );
               }}
               onKeyDown={(e) => {
@@ -415,7 +415,7 @@ const AgreementViewerForRoom = ({
                   agreementApi.editAgreementApi(
                     Agreements[CurrentAgreementIndex].id,
                     'RentReserved',
-                    RentReservedText
+                    RentReservedText,Agreements[CurrentAgreementIndex].RentReserved
                   );
                 }
               }}

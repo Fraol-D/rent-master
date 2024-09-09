@@ -99,15 +99,10 @@ const addRowToOfflineChanges = async (
           'offline_changes',
           `WHERE rowId = \'${RowIdP}\' AND type = 'add'`
         );
-        console.log(
-          `-----------------------------------------------------------------------------HI ${allRows[0].id}`
-        );
-
+    
         //If there is a row i want you to delete that edit row and add a delete row
         if (allRows.length > 0) {
-          console.log(
-            `WHERE rowId = \'${RowIdP}\' AND type = 'edit' ------------------------------------------------------------------------------------------------------- `
-          );
+       
 
           const response = await fetch(
             `${baseUrl}/${'offline_changes'}/${allRows[0].id}`,
@@ -116,7 +111,6 @@ const addRowToOfflineChanges = async (
             }
           );
           const data = await response.text();
-          console.log('Deleted: ', data);
         } else {
           const response = await fetch(`${baseUrl}/${'offline_changes'}`, {
             method: 'POST',
@@ -140,7 +134,7 @@ const addRowToOfflineChanges = async (
           );
         }
       } else {
-        const response = await fetch(`${baseUrl}/${'offline_changes'}`, {
+        if(columnValueP!==originalValue) {const response = await fetch(`${baseUrl}/${'offline_changes'}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -160,23 +154,44 @@ const addRowToOfflineChanges = async (
         console.log(
           `Row with that id(${RowIdP}) with type(${typevalue}) was not found so it added`,
           data
-        );
+        );}
       }
     } else {
-      if (columnValueP === RowWithTheSameThing[0].originalValue) {
-        // Delete the offline changes row if the new value matches the original value
-        const deleteResponse = await fetch(
-          `${baseUrl}/${'offline_changes'}/${RowWithTheSameThing[0].id}`,
-          {
-            method: 'DELETE',
-          }
-        );
-        const deleteData = await deleteResponse.text();
-        console.log(`Deleted offline change row: ${deleteData}`);
+      console.log(
+        String(columnValueP),
+        String(RowWithTheSameThing[0].originalValue)
+      );
+      
+      const compareValues = (value1, value2) => {
+        // Compare as strings
+        if (String(value1) === String(value2)) return true;
+        
+        // Compare as numbers
+        if (!isNaN(value1) && !isNaN(value2) && Number(value1) === Number(value2)) return true;
+        
+        // Compare as booleans
+        if (
+          (value1 === true && (value2 === 'true' || value2 === '1' || value2 === 1)) ||
+          (value1 === false && (value2 === 'false' || value2 === '0' || value2 === 0))
+        ) return true;
+      
+        return false;
+      };
+      
+      if (compareValues(columnValueP, RowWithTheSameThing[0].originalValue)) {
+        setChangeMade(prev=>prev-1)
+        const response = await fetch(`${baseUrl}/offline_changes/${RowWithTheSameThing[0].id}`, {
+          method: 'DELETE',
+        });
+        const data = await response.text();
+        console.log(`Deleted offline change row with id: ${RowWithTheSameThing[0].id}`);
+      
       } else {
         // Update the existing offline change row
         const response = await fetch(
-          `${baseUrl}/${'offline_changes'}/${RowWithTheSameThing[0].id}/newValue`,
+          `${baseUrl}/${'offline_changes'}/${
+            RowWithTheSameThing[0].id
+          }/newValue`,
           {
             method: 'PUT',
             headers: {
@@ -194,7 +209,7 @@ const addRowToOfflineChanges = async (
         );
       }
     }
-    
+
     setChangeMade((prevValue) => prevValue + 1);
   }
 };

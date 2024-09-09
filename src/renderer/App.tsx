@@ -27,7 +27,17 @@ function Hello() {
   const [BrokerRecommendationList, setBrokerRecommendationList] = useState<
     BrokerRecommendationType[]
   >([]);
-
+  const getOriginlPropertyValue = (
+    list: any[],
+    id: string,
+    propertyName: string
+  ) => {
+    const room = list.find((r: RoomType) => r.id === id);
+    if (room) {
+      const propertyValue = room[propertyName];
+      return propertyValue;
+    }
+  };
   class RoomApi {
     getPaymentTimelineInfo = async (roomId: string) => {
       const AllRoomPayInfo =
@@ -65,7 +75,6 @@ function Hello() {
               ShowPayTimeLine: room.ShowPayTimeLine || false,
               AllRoomPayInfo: { RoomPayInfo: AllRoomPayInfo },
               selectedAgreementId: room.selectedAgreementId || '',
-              
             };
           })
         );
@@ -83,8 +92,7 @@ function Hello() {
     editRoomApi = async (
       roomId: string,
       propertyName: string,
-      newValue: any,
-      originalValue:any
+      newValue: any
     ) => {
       // wrap around try catch
       try {
@@ -93,8 +101,10 @@ function Hello() {
           roomId,
           propertyName,
           newValue,
-          setChangeMade, originalValue
+          setChangeMade,
+          getOriginlPropertyValue(RoomList, roomId, propertyName)
         );
+
         await this.getRoomFromApi();
       } catch (error: any) {
         console.error(error.message);
@@ -210,7 +220,8 @@ function Hello() {
             Detail: Detail,
             Number: Number,
             type: type,
-            Boolean: Boolean,   userId: SelectedUserId,
+            Boolean: Boolean,
+            userId: SelectedUserId,
           },
           setChangeMade
         );
@@ -221,7 +232,8 @@ function Hello() {
     editRoomSpecificationApi = async (
       specificationId: string,
       propertyName: string,
-      newValue: any,originalValue:any
+      newValue: any,
+      OriginalValue:any
     ) => {
       try {
         await updateValue(
@@ -229,7 +241,8 @@ function Hello() {
           specificationId,
           propertyName,
           newValue,
-          setChangeMade,originalValue
+          setChangeMade,
+          OriginalValue
         );
       } catch (error: any) {
         console.error(error.message);
@@ -304,7 +317,8 @@ function Hello() {
             agreedPrice: agreedPrice,
             TIN: TIN,
             RentReason: RentReason,
-            AddedTime: AddedTime,   userId: SelectedUserId,
+            AddedTime: AddedTime,
+            userId: SelectedUserId,
           },
           setChangeMade
         );
@@ -318,7 +332,7 @@ function Hello() {
     EditTenantApi = async (
       tenantId: string,
       propertyName: string,
-      newValue: any,originalValue:any
+      newValue: any
     ) => {
       try {
         await updateValue(
@@ -326,7 +340,8 @@ function Hello() {
           tenantId,
           propertyName,
           newValue,
-          setChangeMade,originalValue
+          setChangeMade,
+          getOriginlPropertyValue(TenantList, tenantId, propertyName)
         );
         this.getTenantsApi();
         roomAPI.getRoomFromApi();
@@ -337,7 +352,7 @@ function Hello() {
     EditTenantApiWithOutRefresh = async (
       tenantId: string,
       propertyName: string,
-      newValue: any,originalValue:any
+      newValue: any
     ) => {
       try {
         await updateValue(
@@ -345,7 +360,7 @@ function Hello() {
           tenantId,
           propertyName,
           newValue,
-          setChangeMade,originalValue
+          setChangeMade,getOriginlPropertyValue(TenantList, tenantId, propertyName)
         );
       } catch (error: any) {
         console.log(error.message);
@@ -385,7 +400,8 @@ function Hello() {
             roomId: roomId,
             Day: Day,
             Paid: Paid,
-            Value: Value,   userId: SelectedUserId,
+            Value: Value,
+            userId: SelectedUserId,
           },
           setChangeMade
         );
@@ -409,7 +425,8 @@ function Hello() {
             roomId: roomId,
             Day: Day,
             Paid: Paid,
-            Value: Value,   userId: SelectedUserId,
+            Value: Value,
+            userId: SelectedUserId,
           },
           setChangeMade
         );
@@ -422,16 +439,20 @@ function Hello() {
       propertyName: string,
       newValue: any,
       roomId: any,
-      lastList: any,originalValue:any
+      lastList: any
     ) => {
       try {
-        await updateValue(
-          'room_pay_info',
-          roomPaymentId,
-          propertyName,
-          newValue,
-          setChangeMade,originalValue
-        );
+        const originalValue = RoomList.find((r) => r.id === roomId)?.AllRoomPayInfo?.RoomPayInfo?.find((item) => item.id === roomPaymentId)?.[propertyName];
+
+await updateValue(
+  'room_pay_info',
+  roomPaymentId,
+  propertyName,
+  newValue,
+  setChangeMade,
+  originalValue
+);
+
         setRoomList((prevRoomList) => {
           return prevRoomList.map((room) => {
             if (room.id === roomId) {
@@ -546,7 +567,11 @@ function Hello() {
     };
     addBrokerApi = async (broker: BrokerType) => {
       try {
-        await addValue('brokers', { ...broker, userId: SelectedUserId }, setChangeMade);
+        await addValue(
+          'brokers',
+          { ...broker, userId: SelectedUserId },
+          setChangeMade
+        );
         await this.getBrokersApi();
       } catch (error: any) {
         console.log(error.message);
@@ -563,7 +588,7 @@ function Hello() {
           brokerId,
           propertyName,
           newValue,
-          setChangeMade
+          setChangeMade,getOriginlPropertyValue(BrokerList, brokerId, propertyName)
         );
         await this.getBrokersApi();
       } catch (error: any) {
@@ -597,7 +622,8 @@ function Hello() {
             roomId,
             recommendedTenantId,
             AddedTime,
-            AgreedCommission,   userId: SelectedUserId,
+            AgreedCommission,
+            userId: SelectedUserId,
           },
           setChangeMade
         );
@@ -709,7 +735,8 @@ function Hello() {
     editAgreementApi = async (
       agreementId: string,
       propertyName: string,
-      newValue: any
+      newValue: any,
+      originalValue:any,
     ) => {
       try {
         await updateValue(
@@ -717,7 +744,7 @@ function Hello() {
           agreementId,
           propertyName,
           newValue,
-          setChangeMade
+          setChangeMade,originalValue
         );
       } catch (error: any) {
         console.log(error.message);
@@ -759,7 +786,8 @@ function Hello() {
             paymentCycleType,
             Memo,
             RentReserved,
-            representative,   userId: SelectedUserId,
+            representative,
+            userId: SelectedUserId,
           },
           setChangeMade
         );
@@ -806,14 +834,16 @@ function Hello() {
   const [SelectedUserId, setSelectedUserId] = useState('');
   const [ChangeMade, setChangeMade] = useState(0);
   useEffect(() => {
-    const getChanges = async() => {
-      const OfflineChanges = await getValuesWithSql("offline_changes", "WHERE 1");
-      if(OfflineChanges) {
+    const getChanges = async () => {
+      const OfflineChanges = await getValuesWithSql(
+        'offline_changes',
+        'WHERE 1'
+      );
+      if (OfflineChanges) {
         setChangeMade(OfflineChanges.length);
-
       }
     };
-    getChanges()
+    getChanges();
   }, [ChangeMade]);
   const [UploadingLoadingEffect, setUploadingLoadingEffect] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -838,7 +868,12 @@ function Hello() {
             addedJsonData: change.addedJsonData,
           }));
 
-          await Upload(offline_changes_data, SelectedUserId, setUploadProgress, RefreshDataFromSqlite);
+          await Upload(
+            offline_changes_data,
+            SelectedUserId,
+            setUploadProgress,
+            RefreshDataFromSqlite
+          );
         }
       } else {
         console.log('Wait it is already uploading');
@@ -857,37 +892,43 @@ function Hello() {
     background: 'var(--Background-Color)',
     text: 'var(--Text-Color)',
   };
-  const SyncLoadingPopup = ({ colors, isVisible }:any) => {
+  const SyncLoadingPopup = ({ colors, isVisible }: any) => {
     return (
-      <div style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        width: '100%',
-        height: '100%',
-        display: isVisible ? 'flex' : 'none',
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        zIndex: 9999,
-      }}>
-        <div style={{
-          backgroundColor: colors.background,
-          color: colors.text,
-          padding: '20px',
-          borderRadius: '10px',
-          boxShadow: '0 0 10px rgba(0, 0, 0, 0.3)',
-          textAlign: 'center',
-        }}>
-          <div style={{
-            border: `4px solid ${colors.secondary}`,
-            borderTop: `4px solid ${colors.primary}`,
-            borderRadius: '50%',
-            width: '40px',
-            height: '40px',
-            animation: 'spin 1s linear infinite',
-            margin: '0 auto 10px',
-          }} />
+      <div
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          display: isVisible ? 'flex' : 'none',
+          justifyContent: 'center',
+          alignItems: 'center',
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          zIndex: 9999,
+        }}
+      >
+        <div
+          style={{
+            backgroundColor: colors.background,
+            color: colors.text,
+            padding: '20px',
+            borderRadius: '10px',
+            boxShadow: '0 0 10px rgba(0, 0, 0, 0.3)',
+            textAlign: 'center',
+          }}
+        >
+          <div
+            style={{
+              border: `4px solid ${colors.secondary}`,
+              borderTop: `4px solid ${colors.primary}`,
+              borderRadius: '50%',
+              width: '40px',
+              height: '40px',
+              animation: 'spin 1s linear infinite',
+              margin: '0 auto 10px',
+            }}
+          />
           <p style={{ margin: 0 }}>Syncing... {SyncProgress}%</p>
         </div>
       </div>
@@ -904,7 +945,8 @@ function Hello() {
             ></div>
           </div>
         </>
-      )} <SyncLoadingPopup colors={colors} isVisible={isSyncing} />
+      )}{' '}
+      <SyncLoadingPopup colors={colors} isVisible={isSyncing} />
       <AccountManager
         Refresh={Refresh}
         isSignedIn={isSignedIn}
@@ -918,7 +960,7 @@ function Hello() {
       >
         <>
           <NavBar
-          RefreshDataFromSqlite={RefreshDataFromSqlite}
+            RefreshDataFromSqlite={RefreshDataFromSqlite}
             setIsSyncing={setIsSyncing}
             SelectedUserId={SelectedUserId}
             isSyncing={isSyncing}

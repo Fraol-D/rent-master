@@ -192,12 +192,23 @@ const MainPage = ({
   const [filterSquareFeetValue, setFilterSquareFeetValue] =
     useState<string>('');
   const [filterOptions, setFilterOptions] = useState<FilterOption[]>([]);
+  const getOriginlPropertyValue = (
+    list: any[],
+    id: string,
+    propertyName: string
+  ) => {
+    const room = list.find((r: RoomType) => r.id === id);
+    if (room) {
+      const propertyValue = room[propertyName];
+      return propertyValue;
+    }
+  };
   const updateRoomProperty = async (
     roomId: string,
     propertyName: string,
     newValue: any
   ) => {
-    await updateValue('rooms', roomId, propertyName, newValue,setChangeMade);
+    await updateValue('rooms', roomId, propertyName, newValue,setChangeMade,getOriginlPropertyValue(RoomList, roomId, propertyName));
     //Load the updated room data from the API With THE specific ROOM ID and only get the value insted of the  whole object
     setRoomList((prevRoomList: any[]) => {
       return prevRoomList.map((room: { id: string }) => {
@@ -245,7 +256,7 @@ const MainPage = ({
     propertyName: string,
     newValue: any
   ) => {
-    await updateValue('rooms', roomId, propertyName, newValue,setChangeMade);
+    await updateValue('rooms', roomId, propertyName, newValue,setChangeMade,getOriginlPropertyValue(RoomList, roomId, propertyName));
     setRoomList((prevRoomList: any[]) => {
       return prevRoomList.map((room: { id: string }) => {
         if (room.id === roomId) {
@@ -1563,7 +1574,7 @@ const MainPage = ({
                               roomSpecificationAPI.editRoomSpecificationApi(
                                 spec.id,
                                 'Detail',
-                                e.target.value
+                                e.target.value, spec.Detail
                               );
                               const updatedSpecifications = RoomList.find(
                                 (r: RoomType) => r.id === SelectedEditRoomId
@@ -1588,7 +1599,7 @@ const MainPage = ({
                                   roomSpecificationAPI.editRoomSpecificationApi(
                                     spec.id,
                                     'Boolean',
-                                    e.target.checked
+                                    e.target.checked,spec.Boolean
                                   );
                                   const updatedSpecifications = RoomList.find(
                                     (r: RoomType) => r.id === SelectedEditRoomId
@@ -1616,7 +1627,7 @@ const MainPage = ({
                                 roomSpecificationAPI.editRoomSpecificationApi(
                                   spec.id,
                                   'Number',
-                                  e.target.value
+                                  e.target.value,spec.Number
                                 );
                                 const updatedSpecifications = RoomList.find(
                                   (r: RoomType) => r.id === SelectedEditRoomId
@@ -1644,7 +1655,7 @@ const MainPage = ({
                               roomSpecificationAPI.editRoomSpecificationApi(
                                 spec.id,
                                 'type',
-                                'bool'
+                                'bool',spec.type
                               );
 
                               const updatedSpecifications = RoomList.find(
@@ -1669,7 +1680,7 @@ const MainPage = ({
                               roomSpecificationAPI.editRoomSpecificationApi(
                                 spec.id,
                                 'type',
-                                'number'
+                                'number',spec.type
                               );
 
                               const updatedSpecifications = RoomList.find(
