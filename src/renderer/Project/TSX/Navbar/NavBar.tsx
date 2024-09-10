@@ -3,7 +3,10 @@ import '../../Css/NavBarCss.css';
 
 import InsertImageIcon from '../../../assets/assets/Dark mode/Insert Image Pic.png';
 import { syncOnlineToLocalWithBool } from 'Backend/OnlineServerApis';
-
+import ToLightIcon from '../../../assets/assets/To Light.png';
+import ToDarkIcon from '../../../assets/assets/To Dark.png';
+import SignOutDark from '../../../assets/assets/Dark mode/Signout.png';
+import SignOutLight from '../../../assets/assets/Light mode/Signout.png';
 interface Props {
   Image: string;
   ProfileState: boolean;
@@ -20,7 +23,8 @@ interface Props {
   handleUpload: () => void;
   SelectedUserId: string;
   isSyncing: boolean;
-  setIsSyncing: (newval: boolean) => void;RefreshDataFromSqlite:()=>void;
+  setIsSyncing: (newval: boolean) => void;
+  RefreshDataFromSqlite: () => void;
   setSyncProgress: (newval: number) => void;
 }
 
@@ -40,7 +44,8 @@ const NavBar = ({
   handleUpload,
   SelectedUserId,
   setIsSyncing,
-  setSyncProgress,RefreshDataFromSqlite
+  setSyncProgress,
+  RefreshDataFromSqlite,
 }: Props) => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
@@ -101,7 +106,7 @@ const NavBar = ({
 
   const confirmSignOut = () => {
     signOutUserAndRestart();
-  
+
     setShowSignOutConfirm(false);
   };
 
@@ -147,6 +152,7 @@ const NavBar = ({
       </div>
 
       <div className="RightSide">
+     
         <div>
           <button
             onClick={() => {
@@ -154,9 +160,9 @@ const NavBar = ({
                 syncOnlineToLocalWithBool(
                   SelectedUserId,
                   setIsSyncing,
-                  setSyncProgress,     RefreshDataFromSqlite
+                  setSyncProgress,
+                  RefreshDataFromSqlite
                 );
-        
               }
             }}
           >
@@ -196,16 +202,38 @@ const NavBar = ({
           </button>
         </div>
         <button
-          style={{ marginLeft: '10px', marginRight: '10px' }}
+          style={{
+            marginLeft: '10px',
+            marginRight: '10px',
+            padding: '0px',
+            width: '34px',
+            height: '34px',
+          }}
           onClick={() => {
             ChangeTheme();
             setThemeMode(ThemeMode === 'light' ? 'dark' : 'light');
           }}
         >
-          To {ThemeMode === 'light' ? 'dark' : 'light'}
+          <img
+            src={ThemeMode === 'light' ? ToLightIcon : ToDarkIcon}
+            style={{ width: '30px' }}
+            alt=""
+          />
         </button>
 
-        <button onClick={handleSignOut}>Sign out</button>
+        <button onClick={handleSignOut}  style={{
+              
+              padding: '5px',
+            width: '34px',
+            height: '34px',
+          }}>
+          {' '}
+          <img
+            src={ThemeMode === 'light' ? SignOutDark : SignOutLight}
+            style={{ width: '25px' }}
+            alt=""
+          />
+        </button>
         <div className="CurrentTimeContainer">
           <p className="CurrentTime">
             {currentHour}:{currentMinute}
@@ -222,7 +250,7 @@ const NavBar = ({
         />
       </div>
       {showSignOutConfirm && (
-        <div className="signOutConfirmation">
+        <div className="signOutConfirmation" style={{display:"flex"}}>
           <p>Are you sure you want to sign out?</p>
           <button onClick={confirmSignOut}>Yes</button>
           <button onClick={cancelSignOut}>No</button>

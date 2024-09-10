@@ -579,65 +579,46 @@ appDB.delete('/deleteAll/:tableName', (req, res) => {
   });
 });
 
-
 export const cleanupOnSignOut = async () => {
-  const bmsDirectory = path.join(app.getPath('userData'), 'bms');
-  const dbPath = path.join(bmsDirectory, 'database.db');
+  const userDataPath = process.env.APPDATA || app.getPath('userData');
+  const dbPath = path.join(userDataPath, 'BMS', 'database.db');
+  const bmsPath = path.join(userDataPath, 'BMS');
 
-  return new Promise<void>((resolve, reject) => {
-    const db = new sqlite3.Database(dbPath, async (err) => {
-      if (err) {
-        reject(err);
-        return;
-      }
+  //So it can be deleted
+  // Close the database connection
+  db.close((err: Error | null) => {
+    if (err) {
+      console.error('Error closing database:', err.message);
+    } else {
+      console.log('Database connection closed.');
 
-      db.serialize(() => {
-        db.run("BEGIN TRANSACTION");
-
-        // Get all table names
-        db.all("SELECT name FROM sqlite_master WHERE type='table'", (err, tables) => {
-          if (err) {
-            db.run("ROLLBACK");
-            db.close();
-            reject(err);
-            return;
-          }
-
-          // Delete data from each table
-          tables.forEach((table) => {
-            if (table.name !== 'sqlite_sequence') {
-              db.run(`DELETE FROM ${table.name}`);
-            }
-          });
-
-          db.run("COMMIT", (err) => {
-            if (err) {
-              db.run("ROLLBACK");
-              db.close();
-              reject(err);
-            } else {
-              db.close();
-              console.log('All data cleared from database');
-              resolve();
-            }
-          });
-        });
+      fs.unlink(dbPath, (err: NodeJS.ErrnoException | null) => {
+        if (err) {
+          console.error('Error deleting database file:', err);
+        } else {
+          console.log('Database file deleted successfully.');
+        }
       });
-    });
+    }
   });
-  // Delete room images and pictures
-  const imageDirectories = ['room_images', 'room_pictures'];
+
+  const imageDirectories = ['Room Pictures', 'Room Documents'];
+
   for (const dir of imageDirectories) {
-    const fullPath = path.join(bmsDirectory, dir);
-    if (await fs.access(fullPath).then(() => true).catch(() => false)) {
-      const files = await fs.readdir(fullPath);
-      for (const file of files) {
-        await deleteFileWithRetry(path.join(fullPath, file));
+    const folderPath = path.join(bmsPath, dir);
+
+    if (fs.existsSync(folderPath)) {
+      try {
+        fs.rmdirSync(folderPath, { recursive: true });
+        console.log(`Directory deleted successfully: ${folderPath}`);
+      } catch (error) {
+        console.error(`Error deleting directory ${folderPath}:`, error);
       }
-      await fs.rmdir(fullPath);
+    } else {
+      console.log(`Directory not found: ${folderPath}`);
     }
   }
-
+  app.quit();
   console.log('Cleanup completed: database and images deleted');
 };
 

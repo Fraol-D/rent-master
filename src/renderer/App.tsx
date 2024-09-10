@@ -827,8 +827,8 @@ await updateValue(
   const [isSignedIn, setisSignedIn] = useState(false);
   const signOutUserAndRestart = async () => {
     await SignOutUser();
-    //setRefresh(Refresh + 1);
-    //setisSignedIn(false);
+    setRefresh(Refresh + 1);
+    setisSignedIn(false);
   };
 
   const [SelectedUserId, setSelectedUserId] = useState('');
