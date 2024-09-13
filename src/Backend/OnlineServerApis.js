@@ -1,4 +1,4 @@
-import { deleteAllFromTable, getValuesWithSql } from './localServerApis';
+import { deleteAllFromTable, getLocalImagesDirectory, getValuesWithSql } from './localServerApis';
 
 //import { downloadImageFromLocalEndpoint, getFileContent, getListOfFiles } from './localServerApis';
 const baseUrl = 'https://www.rentmaster.markethubet.com/api';
@@ -25,7 +25,8 @@ const handleSignOut = async () => {
     // Perform any additional sign-out logic here
   } catch (error) {
     console.error('Error during cleanup:', error);
-  }}
+  }
+};
 export const SignOutUser = async () => {
   // Clear the local storage
   handleSignOut();
@@ -67,7 +68,8 @@ function convertBase64ToBlob(base64String) {
 export const Upload = async (
   offline_changes_Array,
   SelectedUserId,
-  setUploadProgress,RefreshApp
+  setUploadProgress,
+  RefreshApp
 ) => {
   const totalChanges = offline_changes_Array.length;
   const syncProgressWeight = 0.5;
@@ -182,11 +184,13 @@ export const Upload = async (
   RefreshApp();
   return true;
 };
-export const syncOnlineToLocalWithCallback = async (SelectedUserId, setSyncProgress) => {
+export const syncOnlineToLocalWithCallback = async (
+  SelectedUserId,
+  setSyncProgress
+) => {
   console.log(`Starting sync process for user: ${SelectedUserId}`);
 
   const tables = [
-   
     'rooms',
     'room_specifications',
     'tenants',
@@ -206,10 +210,14 @@ export const syncOnlineToLocalWithCallback = async (SelectedUserId, setSyncProgr
     console.log(`Processing table: ${table}`);
 
     const onlineData = await fetchDataFromOnlineDatabase(table);
-    console.log(`Fetched ${onlineData.length} rows from online database for table: ${table}`);
+    console.log(
+      `Fetched ${onlineData.length} rows from online database for table: ${table}`
+    );
 
     const localData = await fetchDataFromLocalDatabase(table);
-    console.log(`Fetched ${localData.length} rows from local database for table: ${table}`);
+    console.log(
+      `Fetched ${localData.length} rows from local database for table: ${table}`
+    );
 
     const onlineDataMap = new Map(onlineData.map((row) => [row.id, row]));
     const localDataMap = new Map(localData.map((row) => [row.id, row]));
@@ -240,7 +248,9 @@ export const syncOnlineToLocalWithCallback = async (SelectedUserId, setSyncProgr
       }
     }
 
-    console.log(`Table ${table} - Updated: ${updatedRows}, Added: ${addedRows}, Skipped: ${skippedRows}`);
+    console.log(
+      `Table ${table} - Updated: ${updatedRows}, Added: ${addedRows}, Skipped: ${skippedRows}`
+    );
 
     // Optionally delete local rows that do not exist in the online database
     let deletedRows = 0;
@@ -268,7 +278,6 @@ export const syncOnlineToLocalWithCallback = async (SelectedUserId, setSyncProgr
   console.log('Sync completed');
   return 'Sync completed';
 };
-
 
 export const RevertOfflineChanges = async () => {
   //make it delete all the rows in the offlinechangestable
@@ -366,7 +375,7 @@ const fetchDataFromOnlineDatabase = async (tableName) => {
 
 // Fetch data from the local SQLite database
 const fetchDataFromLocalDatabase = async (tableName) => {
-  return getValuesWithSql(tableName,"WHERE 1");
+  return getValuesWithSql(tableName, 'WHERE 1');
 };
 
 // Sync data from online to local database
@@ -390,10 +399,14 @@ export const syncOnlineToLocal = async (SelectedUserId) => {
     console.log(`Processing table: ${table}`);
 
     const onlineData = await fetchDataFromOnlineDatabase(table);
-    console.log(`Fetched ${onlineData.length} rows from online database for table: ${table}`);
+    console.log(
+      `Fetched ${onlineData.length} rows from online database for table: ${table}`
+    );
 
     const localData = await fetchDataFromLocalDatabase(table);
-    console.log(`Fetched ${localData.length} rows from local database for table: ${table}`);
+    console.log(
+      `Fetched ${localData.length} rows from local database for table: ${table}`
+    );
 
     const onlineDataMap = new Map(onlineData.map((row) => [row.id, row]));
     const localDataMap = new Map(localData.map((row) => [row.id, row]));
@@ -424,7 +437,9 @@ export const syncOnlineToLocal = async (SelectedUserId) => {
       }
     }
 
-    console.log(`Table ${table} - Updated: ${updatedRows}, Added: ${addedRows}, Skipped: ${skippedRows}`);
+    console.log(
+      `Table ${table} - Updated: ${updatedRows}, Added: ${addedRows}, Skipped: ${skippedRows}`
+    );
 
     // Optionally delete local rows that do not exist in the online database
     let deletedRows = 0;
@@ -448,7 +463,12 @@ export const syncOnlineToLocal = async (SelectedUserId) => {
   return 'Sync completed';
 };
 
-export const syncOnlineToLocalWithBool = async (SelectedUserId, setIsSyncing, setSyncProgress,RefreshDataFromSqlite) => {
+export const syncOnlineToLocalWithBool = async (
+  SelectedUserId,
+  setIsSyncing,
+  setSyncProgress,
+  RefreshDataFromSqlite
+) => {
   console.log(`Starting sync process for user: ${SelectedUserId}`);
   setIsSyncing(true);
   setSyncProgress(0);
@@ -472,10 +492,14 @@ export const syncOnlineToLocalWithBool = async (SelectedUserId, setIsSyncing, se
     console.log(`Processing table: ${table}`);
 
     const onlineData = await fetchDataFromOnlineDatabase(table);
-    console.log(`Fetched ${onlineData.length} rows from online database for table: ${table}`);
+    console.log(
+      `Fetched ${onlineData.length} rows from online database for table: ${table}`
+    );
 
     const localData = await fetchDataFromLocalDatabase(table);
-    console.log(`Fetched ${localData.length} rows from local database for table: ${table}`);
+    console.log(
+      `Fetched ${localData.length} rows from local database for table: ${table}`
+    );
 
     const onlineDataMap = new Map(onlineData.map((row) => [row.id, row]));
     const localDataMap = new Map(localData.map((row) => [row.id, row]));
@@ -506,7 +530,9 @@ export const syncOnlineToLocalWithBool = async (SelectedUserId, setIsSyncing, se
       }
     }
 
-    console.log(`Table ${table} - Updated: ${updatedRows}, Added: ${addedRows}, Skipped: ${skippedRows}`);
+    console.log(
+      `Table ${table} - Updated: ${updatedRows}, Added: ${addedRows}, Skipped: ${skippedRows}`
+    );
 
     // Optionally delete local rows that do not exist in the online database
     let deletedRows = 0;
@@ -546,9 +572,9 @@ export const getValues = async (tableName) => {
     console.error('Error fetching values:', error);
     return [];
   }
-};// Fetch offline changes from the local SQLite database
+}; // Fetch offline changes from the local SQLite database
 const fetchOfflineChanges = async () => {
-  return getValuesWithSql('offline_changes',"WHERE 1");
+  return getValuesWithSql('offline_changes', 'WHERE 1');
 };
 // Apply offline changes to the local SQLite database
 const applyOfflineChangesToLocalDatabase = async (changes) => {
@@ -562,7 +588,7 @@ const applyOfflineChangesToLocalDatabase = async (changes) => {
       case 'add':
         await addLocalRecord(
           change.tableName,
-          JSON.parse(change.addedJsonData),
+          JSON.parse(change.addedJsonData)
         );
         break;
       case 'delete':
@@ -634,7 +660,7 @@ export const updateValue = async (tableName, id, columnName, columnValue) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ [columnName]: columnValue }),
-      },
+      }
     );
     const data = await response.json();
     return data;
@@ -643,6 +669,77 @@ export const updateValue = async (tableName, id, columnName, columnValue) => {
     return null;
   }
 };
+
+/// UIAMgeses
+
+export const UploadRoomPicturesToTheOnlineDatabase = async (userId) => {
+  try {
+    console.log('Getting local directory...');
+    const localDirectory = await getLocalImagesDirectory();
+    console.log('Local directory obtained:', localDirectory);
+
+    console.log('Sending directory data to online database...');
+    const response = await retry(() => fetch(`${baseUrl}/check-image-directory`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+      },
+      body: JSON.stringify({ userId, directory: localDirectory }),
+    }));
+    const { requiredFiles } = await response.json();
+    console.log('Response received from online database:', requiredFiles);
+
+    if (requiredFiles.length > 0) {
+      console.log('Required files missing:', requiredFiles);
+      
+      const prepareResponse = await fetch(`${baseUrlLocal}/prepare-upload-images`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId, requiredFiles }),
+      });
+      
+      const zipContent = await prepareResponse.arrayBuffer();
+
+      const formData = new FormData();
+      formData.append('files', new Blob([zipContent]), 'required_files.zip');
+      formData.append('userId', userId);
+
+      console.log('Sending zip file to online database...');
+      await fetch(`${baseUrl}/upload-missing-files`, {
+        method: 'POST',
+        headers: {
+          'x-api-key': apiKey,
+        },
+        body: formData,
+      });
+
+      console.log('Missing files uploaded successfully.');
+    } else {
+      console.log('No missing files required for upload.');
+    }
+
+    console.log('Upload completed successfully.');
+  } catch (error) {
+    console.error('Error during file upload process:', error);
+  }
+};
+
+const retry = async (fn, retries = 3, delay = 1000) => {
+  try {
+    return await fn();
+  } catch (error) {
+    if (retries > 0) {
+      await new Promise(resolve => setTimeout(resolve, delay));
+      return retry(fn, retries - 1, delay * 2);
+    }
+    throw error;
+  }
+};
+
+
 /*
 
 
@@ -830,4 +927,3 @@ export const uploadImage = async (userId, file, newFilename, rowId) => {
   }
 };
 */
-

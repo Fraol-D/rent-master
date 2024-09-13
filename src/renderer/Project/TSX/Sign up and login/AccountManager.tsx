@@ -81,7 +81,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
         setSelectedUserId(allUsersInTable[0].id);
         console.log('Signed in',SelectedUserId);
         if(navigator.onLine) {
-         syncOnlineToLocalWithBool(allUsersInTable[0].id,setIsSyncing,setSyncProgress,RefreshDataFromSqlite);
+        // syncOnlineToLocalWithBool(allUsersInTable[0].id,setIsSyncing,setSyncProgress,RefreshDataFromSqlite);
         }
       } else {
         setisSignedIn(false);

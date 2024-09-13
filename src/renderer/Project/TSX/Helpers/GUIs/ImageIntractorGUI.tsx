@@ -64,23 +64,34 @@ const ImageInteractor: React.FC<ImageInteractorProps> = ({
   const handleOnAddImage = () => {
     const input = document.createElement('input');
     input.type = 'file';
-    input.accept = 'image/*';
+    input.accept = 'image/jpeg,image/png,image/gif,image/svg+xml';
     input.multiple = true;
 
     input.onchange = async (event) => {
       const files = (event.target as HTMLInputElement).files;
       if (files && files.length > 0) {
+        const validFiles = Array.from(files).filter(file => file.size <= 5 * 1024 * 1024); // 5MB limit
+        if (validFiles.length === 0) {
+          alert('All selected files exceed the 5MB size limit. Please select smaller images.');
+          console.error('All selected files exceed the 5MB size limit');
+          return;
+        }
+        if (validFiles.length < files.length) {
+          alert(`${files.length - validFiles.length} file(s) were skipped because they exceed the 5MB size limit.`);
+        }
         try {
           const folderText = `Floor ${room.floor}, Room ${room.roomIndex} - ${room.id}`;
-          const results = await AddRoomImageToFiles(files, folderText);
+          const results = await AddRoomImageToFiles(validFiles, folderText);
           if (results) {
             console.log('Images uploaded successfully:', results);
             fetchRoomImages();
           } else {
             console.error('Failed to upload images');
+            alert('Failed to upload images. Please try again.');
           }
         } catch (error) {
           console.error('Error uploading files:', error);
+          alert('An error occurred while uploading files. Please try again.');
         }
       }
     };

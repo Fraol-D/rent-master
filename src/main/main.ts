@@ -290,7 +290,12 @@ const fs = require('fs');
 const appDB = express();
 const port = 8100;
 const appname = 'BMS';
-
+appDB.use(cors({
+  origin: ['http://localhost:1212', 'https://www.rentmaster.markethubet.com'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key'],
+  credentials: true
+}));
 appDB.use(bodyParser.json({ limit: '50mb' }));
 appDB.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 
@@ -536,7 +541,11 @@ const checkAndUpdateTableStructure = (
     }
   });
 };
-
+appDB.use((req: any, res: { header: (arg0: string, arg1: string) => void; }, next: () => void) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, x-api-key');
+  next();
+});
 // Function to update table structure
 const updateTableStructure = (
   db: any,
@@ -567,9 +576,58 @@ const updateTableStructure = (
     console.log(`Table ${table.name} structure updated successfully.`);
   });
 };
-appDB.delete('/deleteAll/:tableName', (req, res) => {
+appDB.get('/local-images-directory', (req, res) => {
+  const userDataPath = process.env.APPDATA || app.getPath('userData');
+  const roomPicturesPath = path.join(userDataPath, 'BMS', 'Room Pictures');
+
+  function directoryToJson(dir: string): any {
+    const result: any = { name: path.basename(dir), type: 'directory', children: [] };
+    const files = fs.readdirSync(dir, { withFileTypes: true });
+
+    files.forEach(file => {
+      const filePath = path.join(dir, file.name);
+      if (file.isDirectory()) {
+        result.children.push(directoryToJson(filePath));
+      } else {
+        result.children.push({ name: file.name, type: 'file' });
+      }
+    });
+
+    return result;
+  }
+
+  try {
+    const directoryStructure = directoryToJson(roomPicturesPath);
+    res.json(directoryStructure);
+  } catch (error) {
+    console.error('Error reading directory structure:', error);
+    res.status(500).json({ error: 'Failed to read directory structure' });
+  }
+});
+const JSZip = require('jszip');
+const fs2 = require('fs').promises;
+appDB.post('/prepare-upload-images', async (req, res) => {
+  const { userId, requiredFiles } = req.body;
+
+  try {
+    const zip = new JSZip();
+    for (const filePath of requiredFiles) {
+      const fullPath = path.join(process.env.APPDATA, 'BMS', 'Room Pictures', filePath);
+      const fileContent = await fs2.readFile(fullPath);
+      zip.file(filePath, fileContent);
+    }
+
+    const zipContent = await zip.generateAsync({ type: 'nodebuffer' });
+    res.send(zipContent);
+  } catch (error) {
+    console.error('Error preparing files for upload:', error);
+    res.status(500).json({ error: 'Failed to prepare files for upload' });
+  }
+});
+
+appDB.delete('/deleteAll/:tableName', (req: { params: { tableName: any; }; }, res: { status: (arg0: number) => { (): any; new(): any; send: { (arg0: string): void; new(): any; }; }; json: (arg0: { message: string; }) => void; }) => {
   const { tableName } = req.params;
-  db.run(`DELETE FROM ${tableName}`, (err) => {
+  db.run(`DELETE FROM ${tableName}`, (err: any) => {
     if (err) {
       console.error(err);
       res.status(500).send('Error deleting data from table');
@@ -578,56 +636,6 @@ appDB.delete('/deleteAll/:tableName', (req, res) => {
     }
   });
 });
-
-export const cleanupOnSignOut = async () => {
-  const userDataPath = process.env.APPDATA || app.getPath('userData');
-  const dbPath = path.join(userDataPath, 'BMS', 'database.db');
-  const bmsPath = path.join(userDataPath, 'BMS');
-
-  //So it can be deleted
-  // Close the database connection
-  db.close((err: Error | null) => {
-    if (err) {
-      console.error('Error closing database:', err.message);
-    } else {
-      console.log('Database connection closed.');
-
-      fs.unlink(dbPath, (err: NodeJS.ErrnoException | null) => {
-        if (err) {
-          console.error('Error deleting database file:', err);
-        } else {
-          console.log('Database file deleted successfully.');
-        }
-      });
-    }
-  });
-
-  const imageDirectories = ['Room Pictures', 'Room Documents'];
-
-  for (const dir of imageDirectories) {
-    const folderPath = path.join(bmsPath, dir);
-
-    if (fs.existsSync(folderPath)) {
-      try {
-        fs.rmdirSync(folderPath, { recursive: true });
-        console.log(`Directory deleted successfully: ${folderPath}`);
-      } catch (error) {
-        console.error(`Error deleting directory ${folderPath}:`, error);
-      }
-    } else {
-      console.log(`Directory not found: ${folderPath}`);
-    }
-  }
-  app.quit();
-  console.log('Cleanup completed: database and images deleted');
-};
-
-// Create an IPC endpoint to access the cleanupOnSignOut function
-ipcMain.handle('cleanup-on-sign-out', () => {
-  cleanupOnSignOut();
-  return 'Cleanup completed';
-});
-
 appDB.post(
   '/upload-tenant-documentV2',
   (
@@ -730,7 +738,6 @@ appDB.delete(
     }
   }
 );
-
 appDB.delete(
   '/room-document/delete-tenant-document/:fileName',
   (
@@ -860,7 +867,6 @@ appDB.delete(
     });
   }
 );
-
 appDB.post(
   '/upload-room-document',
   (
@@ -931,7 +937,6 @@ appDB.post(
     }
   }
 );
-
 appDB.get(
   '/room-documents/:roomId',
   (
@@ -985,7 +990,6 @@ appDB.get(
     });
   }
 );
-
 appDB.delete(
   '/room-image/:roomId/:fileName',
   (
@@ -1371,7 +1375,54 @@ appDB.put(
     );
   }
 );
+export const cleanupOnSignOut = async () => {
+  const userDataPath = process.env.APPDATA || app.getPath('userData');
+  const dbPath = path.join(userDataPath, 'BMS', 'database.db');
+  const bmsPath = path.join(userDataPath, 'BMS');
 
+  //So it can be deleted
+  // Close the database connection
+  db.close((err: Error | null) => {
+    if (err) {
+      console.error('Error closing database:', err.message);
+    } else {
+      console.log('Database connection closed.');
+
+      fs.unlink(dbPath, (err: NodeJS.ErrnoException | null) => {
+        if (err) {
+          console.error('Error deleting database file:', err);
+        } else {
+          console.log('Database file deleted successfully.');
+        }
+      });
+    }
+  });
+
+  const imageDirectories = ['Room Pictures', 'Room Documents'];
+
+  for (const dir of imageDirectories) {
+    const folderPath = path.join(bmsPath, dir);
+
+    if (fs.existsSync(folderPath)) {
+      try {
+        fs.rmdirSync(folderPath, { recursive: true });
+        console.log(`Directory deleted successfully: ${folderPath}`);
+      } catch (error) {
+        console.error(`Error deleting directory ${folderPath}:`, error);
+      }
+    } else {
+      console.log(`Directory not found: ${folderPath}`);
+    }
+  }
+  app.quit();
+  console.log('Cleanup completed: database and images deleted');
+};
+
+// Create an IPC endpoint to access the cleanupOnSignOut function
+ipcMain.handle('cleanup-on-sign-out', () => {
+  cleanupOnSignOut();
+  return 'Cleanup completed';
+});
 const dbPath = path.join(process.env.APPDATA || '', appname, 'database.db');
 if (!fs.existsSync(path.dirname(dbPath))) {
   fs.mkdirSync(path.dirname(dbPath), { recursive: true });
@@ -1555,3 +1606,5 @@ export async function loadBackup() {
 function reloadApp() {
   BrowserWindow.getFocusedWindow()?.webContents.reload();
 }
+
+

@@ -606,3 +606,20 @@ export const deleteAllFromTable = async (tableName) => {
     return null;
   }
 };
+
+
+
+export const getLocalImagesDirectory = async () => {
+  try {
+    const response = await fetch(`${baseUrl}/local-images-directory`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch local images directory');
+    }
+    const data = await response.json();
+    console.log(data);
+    return data;
+  } catch (error) {
+    console.error('Error fetching local images directory:', error);
+    return null;
+  }
+};

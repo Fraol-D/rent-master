@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import '../../Css/NavBarCss.css';
 
 import InsertImageIcon from '../../../assets/assets/Dark mode/Insert Image Pic.png';
-import { syncOnlineToLocalWithBool } from 'Backend/OnlineServerApis';
-import ToLightIcon from '../../../assets/assets/To Light.png';
-import ToDarkIcon from '../../../assets/assets/To Dark.png';
-import SignOutDark from '../../../assets/assets/Dark mode/Signout.png';
-import SignOutLight from '../../../assets/assets/Light mode/Signout.png';
+import {
+  syncOnlineToLocalWithBool,
+  UploadRoomPicturesToTheOnlineDatabase,
+} from 'Backend/OnlineServerApis';
+import { getLocalImagesDirectory } from 'Backend/localServerApis';
+
 interface Props {
   Image: string;
   ProfileState: boolean;
@@ -130,7 +131,17 @@ const NavBar = ({
           ) : (
             <p className="Name-ofShop">{ShopName}</p>
           )} */}{' '}
-          <p className="Name-ofShop">Rent Master</p>
+          <p className="Name-ofShop">
+            Rent Master
+            <button
+              onClick={() => {
+                UploadRoomPicturesToTheOnlineDatabase(SelectedUserId);
+              }}
+            >
+              UP IMAGES
+            </button>
+            <button>Down Images</button>
+          </p>
         </div>
       </div>
       <div className="TopPageNavigatorContainer">
@@ -152,7 +163,6 @@ const NavBar = ({
       </div>
 
       <div className="RightSide">
-     
         <div>
           <button
             onClick={() => {
@@ -202,38 +212,16 @@ const NavBar = ({
           </button>
         </div>
         <button
-          style={{
-            marginLeft: '10px',
-            marginRight: '10px',
-            padding: '0px',
-            width: '34px',
-            height: '34px',
-          }}
+          style={{ marginLeft: '10px', marginRight: '10px' }}
           onClick={() => {
             ChangeTheme();
             setThemeMode(ThemeMode === 'light' ? 'dark' : 'light');
           }}
         >
-          <img
-            src={ThemeMode === 'light' ? ToLightIcon : ToDarkIcon}
-            style={{ width: '30px' }}
-            alt=""
-          />
+          To {ThemeMode === 'light' ? 'dark' : 'light'}
         </button>
 
-        <button onClick={handleSignOut}  style={{
-              
-              padding: '5px',
-            width: '34px',
-            height: '34px',
-          }}>
-          {' '}
-          <img
-            src={ThemeMode === 'light' ? SignOutDark : SignOutLight}
-            style={{ width: '25px' }}
-            alt=""
-          />
-        </button>
+        <button onClick={handleSignOut}>Sign out</button>
         <div className="CurrentTimeContainer">
           <p className="CurrentTime">
             {currentHour}:{currentMinute}
@@ -250,7 +238,7 @@ const NavBar = ({
         />
       </div>
       {showSignOutConfirm && (
-        <div className="signOutConfirmation" style={{display:"flex"}}>
+        <div className="signOutConfirmation">
           <p>Are you sure you want to sign out?</p>
           <button onClick={confirmSignOut}>Yes</button>
           <button onClick={cancelSignOut}>No</button>
