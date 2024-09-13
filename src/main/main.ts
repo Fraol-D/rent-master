@@ -5,6 +5,9 @@ import log from 'electron-log';
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
 import { Console } from 'console';
+import AdmZip from 'adm-zip';
+import { dialog } from 'electron';
+import mime from 'mime';
 //const nodemailer = require('nodemailer');
 const nodemailer = require('nodemailer');
 
@@ -575,16 +578,119 @@ const updateTableStructure = (
     db.run(`COMMIT`);
     console.log(`Table ${table.name} structure updated successfully.`);
   });
-};
-appDB.get('/local-images-directory', (req, res) => {
-  const userDataPath = process.env.APPDATA || app.getPath('userData');
-  const roomPicturesPath = path.join(userDataPath, 'BMS', 'Room Pictures');
+};const NodeClam = require('clamscan');
+const JSZip = require('jszip');
+const fs2 = require('fs').promises;
+const mime2 = require('mime-types');
 
-  function directoryToJson(dir: string): any {
-    const result: any = { name: path.basename(dir), type: 'directory', children: [] };
+const ClamScan = new NodeClam().init({
+  removeInfected: false, // Set to false if you don't want to remove infected files
+  quarantineInfected: '/path/to/quarantine',
+  scanRecursively: true,
+  clamscan: {
+    path: '/usr/bin/clamscan',
+    db: '/var/lib/clamav',
+  },
+});
+
+// Initialize the ClamScan object
+ClamScan.then(clamscan => {
+  // ClamScan is now initialized and can be used
+  // You can use clamscan.isInfected(filePath) as shown below
+}).catch(err => {
+  console.error('Error initializing ClamScan:', err);
+});
+
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const allowedFileTypes = [
+  'image/jpeg', 
+  'image/png', 
+  'application/pdf', 
+  'application/msword', 
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+];
+
+// Allowed folders for files: 'Room Pictures' and 'Room Documents'
+const allowedFolders = ['Room Pictures', 'Room Documents'];
+
+function isAllowedFileSize(file) {
+  return file.size <= MAX_FILE_SIZE;
+}
+
+function isAllowedFileType(file) {
+  return allowedFileTypes.includes(file.type);
+}
+
+async function isFileClean(filePath) {
+  try {
+    const clamscan = await ClamScan;
+    const { isInfected, viruses } = await clamscan.isInfected(filePath);
+    if (isInfected) {
+      console.log(`Virus detected in file ${filePath}: ${viruses}`);
+      return false;
+    }
+    return true;
+  } catch (error) {
+    console.error('Error scanning file:', error);
+    return false;
+  }
+}
+
+appDB.post('/prepare-upload-files', async (req, res) => {
+  const { userId, requiredFiles } = req.body;
+
+  try {
+    const zip = new JSZip();
+
+    for (const filePath of requiredFiles) {
+      const fullPath = path.join(process.env.APPDATA, 'BMS', filePath);
+      const relativePath = path.relative(process.env.APPDATA, fullPath);
+
+      const normalizedPath = relativePath.substring(relativePath.indexOf('/') + 1);
+      if (!allowedFolders.some(folder => normalizedPath.includes(folder))) {
+        console.log(`Skipping file not in allowed folder: ${relativePath}`);
+        continue;
+      }
+
+      const fileStats = await fs2.stat(fullPath);
+      const fileType = mime2.lookup(fullPath);
+
+      if (!isAllowedFileType({ type: fileType })) {
+        console.log(`Skipping file with disallowed type: ${filePath}`);
+        continue;
+      }
+
+      if (!isAllowedFileSize({ size: fileStats.size })) {
+        console.log(`Skipping file that exceeds size limit: ${filePath}`);
+        continue;
+      }
+
+    /*  if (!(await isFileClean(fullPath))) {
+        console.log(`Skipping file that failed virus scan: ${filePath}`);
+        continue;
+      }*/
+
+      const fileContent = await fs2.readFile(fullPath);
+      zip.file(filePath, fileContent);
+    }
+
+    const zipContent = await zip.generateAsync({ type: 'nodebuffer' });
+    res.send(zipContent);
+  } catch (error) {
+    console.error('Error preparing files for upload:', error);
+    res.status(500).json({ error: 'Failed to prepare files for upload', details: error.message });
+  }
+});
+
+appDB.get('/local-user-directory', (req: any, res: { json: (arg0: { name: string; type: string; children: never[]; }) => void; status: (arg0: number) => { (): any; new(): any; json: { (arg0: { error: string; }): void; new(): any; }; }; }) => {
+  const userDataPath = process.env.APPDATA || app.getPath('userData');
+  const bmsFolderPath = path.join(userDataPath, 'BMS');
+
+  function directoryToJson(dir: string) {
+    const result = { name: path.basename(dir), type: 'directory', children: [] };
     const files = fs.readdirSync(dir, { withFileTypes: true });
 
-    files.forEach(file => {
+    files.forEach((file: { name: string; isDirectory: () => any; }) => {
       const filePath = path.join(dir, file.name);
       if (file.isDirectory()) {
         result.children.push(directoryToJson(filePath));
@@ -597,31 +703,11 @@ appDB.get('/local-images-directory', (req, res) => {
   }
 
   try {
-    const directoryStructure = directoryToJson(roomPicturesPath);
+    const directoryStructure = directoryToJson(bmsFolderPath);
     res.json(directoryStructure);
   } catch (error) {
     console.error('Error reading directory structure:', error);
     res.status(500).json({ error: 'Failed to read directory structure' });
-  }
-});
-const JSZip = require('jszip');
-const fs2 = require('fs').promises;
-appDB.post('/prepare-upload-images', async (req, res) => {
-  const { userId, requiredFiles } = req.body;
-
-  try {
-    const zip = new JSZip();
-    for (const filePath of requiredFiles) {
-      const fullPath = path.join(process.env.APPDATA, 'BMS', 'Room Pictures', filePath);
-      const fileContent = await fs2.readFile(fullPath);
-      zip.file(filePath, fileContent);
-    }
-
-    const zipContent = await zip.generateAsync({ type: 'nodebuffer' });
-    res.send(zipContent);
-  } catch (error) {
-    console.error('Error preparing files for upload:', error);
-    res.status(500).json({ error: 'Failed to prepare files for upload' });
   }
 });
 
@@ -1463,8 +1549,7 @@ ipcMain.handle('read-file', async (event, filePath) => {
   return fs.readFileSync(cleanPath);
 });
 
-import AdmZip from 'adm-zip';
-import { dialog } from 'electron';
+
 
 export async function createBackup(Another?: boolean) {
   const backupPath = path.join(app.getPath('documents'), 'BMS_Backups');

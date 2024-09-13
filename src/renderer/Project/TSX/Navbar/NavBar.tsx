@@ -4,7 +4,8 @@ import '../../Css/NavBarCss.css';
 import InsertImageIcon from '../../../assets/assets/Dark mode/Insert Image Pic.png';
 import {
   syncOnlineToLocalWithBool,
-  UploadRoomPicturesToTheOnlineDatabase,
+  
+  UploadUserFilesToTheOnlineDatabase,
 } from 'Backend/OnlineServerApis';
 import { getLocalImagesDirectory } from 'Backend/localServerApis';
 
@@ -135,7 +136,7 @@ const NavBar = ({
             Rent Master
             <button
               onClick={() => {
-                UploadRoomPicturesToTheOnlineDatabase(SelectedUserId);
+                UploadUserFilesToTheOnlineDatabase(SelectedUserId);
               }}
             >
               UP IMAGES

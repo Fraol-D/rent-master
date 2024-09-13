@@ -609,9 +609,9 @@ export const deleteAllFromTable = async (tableName) => {
 
 
 
-export const getLocalImagesDirectory = async () => {
+export const getLocalUserDirectory = async () => {
   try {
-    const response = await fetch(`${baseUrl}/local-images-directory`);
+    const response = await fetch(`${baseUrl}/local-user-directory`);
     if (!response.ok) {
       throw new Error('Failed to fetch local images directory');
     }

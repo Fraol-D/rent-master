@@ -1,4 +1,4 @@
-import { deleteAllFromTable, getLocalImagesDirectory, getValuesWithSql } from './localServerApis';
+import { deleteAllFromTable, getLocalUserDirectory , getValuesWithSql } from './localServerApis';
 
 //import { downloadImageFromLocalEndpoint, getFileContent, getListOfFiles } from './localServerApis';
 const baseUrl = 'https://www.rentmaster.markethubet.com/api';
@@ -671,15 +671,14 @@ export const updateValue = async (tableName, id, columnName, columnValue) => {
 };
 
 /// UIAMgeses
-
-export const UploadRoomPicturesToTheOnlineDatabase = async (userId) => {
+export const UploadUserFilesToTheOnlineDatabase = async (userId) => {
   try {
     console.log('Getting local directory...');
-    const localDirectory = await getLocalImagesDirectory();
+    const localDirectory = await getLocalUserDirectory();
     console.log('Local directory obtained:', localDirectory);
 
     console.log('Sending directory data to online database...');
-    const response = await retry(() => fetch(`${baseUrl}/check-image-directory`, {
+    const response = await retry(() => fetch(`${baseUrl}/check-user-directory`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -693,7 +692,7 @@ export const UploadRoomPicturesToTheOnlineDatabase = async (userId) => {
     if (requiredFiles.length > 0) {
       console.log('Required files missing:', requiredFiles);
       
-      const prepareResponse = await fetch(`${baseUrlLocal}/prepare-upload-images`, {
+      const prepareResponse = await fetch(`${baseUrlLocal}/prepare-upload-files`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
