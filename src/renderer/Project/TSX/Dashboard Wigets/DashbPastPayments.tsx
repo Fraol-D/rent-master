@@ -338,6 +338,7 @@ const DashbPastPayments = ({
             }}
           >
             <PaymentProgressBarGUI
+            refresh={()=>{}}
               paymentData={
                 RoomList.find(
                   (r: RoomType) =>

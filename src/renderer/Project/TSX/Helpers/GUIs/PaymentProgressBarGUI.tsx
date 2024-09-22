@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { format, isBefore, isAfter, subDays, differenceInDays } from 'date-fns';
 import * as d3 from 'd3';
-
+import editIconDark from '../../../../assets/assets/Dark mode/Editicon.png' 
+import editIconLight from '../../../../assets/assets/Light mode/Editicon.png' 
 export type RoomPayInfo = {
   Day: number; // milliseconds since January 1, 1970, 00:00:00 UTC
   Paid: boolean;
@@ -202,17 +203,33 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
         .on('click', (event: any, d: any) => {
           const updatedData = sortedPaymentData.map((item) => {
             if (item.Day === d.Day) {
-              return { ...item, Paid: true };
+              if (item.Paid) {
+                return { ...item, Paid: false };
+              } else {
+                return { ...item, Paid: true };
+              }
             }
             return item;
           });
-          roomPaymentInfoApi.editRoomPaymentApi(
-            d.id,
-            'Paid',
-            1,
-            roomType.id,
-            roomType.AllRoomPayInfo.RoomPayInfo
-          );
+
+          if (d.Paid) {
+            roomPaymentInfoApi.editRoomPaymentApi(
+              d.id,
+              'Paid',
+              0,
+              roomType.id,
+              roomType.AllRoomPayInfo.RoomPayInfo
+            );
+          
+          } else {
+            roomPaymentInfoApi.editRoomPaymentApi(
+              d.id,
+              'Paid',
+              1,
+              roomType.id,
+              roomType.AllRoomPayInfo.RoomPayInfo
+            );
+          }
         });
       const payButtons2 = svg
         .selectAll('text2.pay-button')
@@ -230,13 +247,10 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
         .attr('fill', (d: { Day: number; Paid: boolean }) => {
           if (isBefore(d.Day, today) && !d.Paid) return 'red';
           if (d.Paid) return 'var(--Accent-Color)';
-        
           return 'var(--Text-Color)';
         })
         .style('font-size', '12')
-        .style('cursor', 'pointer')
         .text((d: any) => {
-         
           return d.Value === null
             ? agreedPrice.toLocaleString() + '$ X'
             : d.Value.toLocaleString() + '$ X';

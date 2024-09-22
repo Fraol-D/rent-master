@@ -281,6 +281,51 @@ app
   .catch(console.log);
 
 // Sending verification codes
+ipcMain.on('SendCustomEmail', async (event, message) => {
+  console.log('Send custom email:', message.to, message.subject, message.body);
+  
+  const sendEmail = async (email, subject, text) => {
+   
+    const transporter = nodemailer.createTransport({
+      host: 'rentmaster.markethubet.com',
+      port: 465,
+      secure: true,
+      auth: {
+        user: 'seblewenglesbuilding@rentmaster.markethubet.com',
+        pass: 'Plp5H9:Li(UO#6[y+26E'
+      }
+    });
+
+    const mailOptions = {
+      from: 'seblewenglesbuilding@rentmaster.markethubet.com',
+      to: email,
+      subject: subject,
+      text: text
+    };
+
+    try {
+
+      await transporter.sendMail(mailOptions);
+      
+      return { success: true };
+    } catch (error) {
+    
+      return { success: false, error: error.message };
+    }
+  };
+
+  try {
+    const result = await sendEmail(message.to, message.subject, message.body);
+    if (result.success) {
+      event.reply('SendCustomEmailResponse', { success: true, message: 'Email sent successfully' });
+    } else {
+      event.reply('SendCustomEmailResponse', { success: false, message: 'Failed to send email', error: result.error });
+    }
+  } catch (error) {
+    console.error('Error while sending email:', error);
+    event.reply('SendCustomEmailResponse', { success: false, message: 'Failed to send email', error: error.message });
+  }
+});
 
 // Server
 const express = require('express');
@@ -293,12 +338,14 @@ const fs = require('fs');
 const appDB = express();
 const port = 8100;
 const appname = 'BMS';
-appDB.use(cors({
-  origin: ['http://localhost:1212', 'https://www.rentmaster.markethubet.com'],
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key'],
-  credentials: true
-}));
+appDB.use(
+  cors({
+    origin: ['http://localhost:1212', 'https://www.rentmaster.markethubet.com'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key'],
+    credentials: true,
+  })
+);
 appDB.use(bodyParser.json({ limit: '50mb' }));
 appDB.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 
@@ -307,18 +354,7 @@ appDB.use(bodyParser.urlencoded({ extended: false }));
 appDB.use(bodyParser.json());
 
 const apiKey = 'HH(CzZuQoW@tB$By)e';
-const validTables = [
-  'users',
-  'rooms',
-  'room_specifications',
-  'tenants',
-  'room_pay_info',
-  'PastTenantReview',
-  'brokers',
-  'brokersRecommendationList',
-  'PastTenantsForRoom',
-  'agreements',
-];
+
 // Function to validate table names
 const validateTableName = (tableName: string) => {
   //return validTables.includes(tableName);
@@ -359,7 +395,9 @@ const tableStructures = [
       'ShowPayTimeLine BOOLEAN',
       'selectedAgreementId TEXT',
       'Archived BOOLEAN DEFAULT 0',
+      'notificationSettings INTEGER DEFAULT 0',
       'userId TEXT',
+
     ],
   },
   {
@@ -481,6 +519,27 @@ const tableStructures = [
       'originalValue TEXT',
     ],
   },
+  {
+    name: 'email_templates',
+    columns: [
+      'id TEXT PRIMARY KEY',
+      'name TEXT',
+      'subject TEXT',
+      'body TEXT',
+      'created_at REAL',
+      'updated_at REAL',
+      'userId TEXT',
+    ],
+  },
+  {
+    name: 'notification_template_selections',
+    columns: [
+      'id INTEGER PRIMARY KEY',
+      'notification_type TEXT',
+      'email_template_id TEXT',
+      'user_id  TEXT',
+    ],
+  },
 ];
 
 // Function to initialize tables
@@ -544,12 +603,22 @@ const checkAndUpdateTableStructure = (
     }
   });
 };
-appDB.use((req: any, res: { header: (arg0: string, arg1: string) => void; }, next: () => void) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, x-api-key');
-  next();
-});
+appDB.use(
+  (
+    req: any,
+    res: { header: (arg0: string, arg1: string) => void },
+    next: () => void
+  ) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header(
+      'Access-Control-Allow-Headers',
+      'Origin, X-Requested-With, Content-Type, Accept, x-api-key'
+    );
+    next();
+  }
+);
 // Function to update table structure
+
 const updateTableStructure = (
   db: any,
   table: { columns: any[]; name: any },
@@ -578,7 +647,8 @@ const updateTableStructure = (
     db.run(`COMMIT`);
     console.log(`Table ${table.name} structure updated successfully.`);
   });
-};const NodeClam = require('clamscan');
+};
+const NodeClam = require('clamscan');
 const JSZip = require('jszip');
 const fs2 = require('fs').promises;
 const mime2 = require('mime-types');
@@ -594,20 +664,20 @@ const ClamScan = new NodeClam().init({
 });
 
 // Initialize the ClamScan object
-ClamScan.then(clamscan => {
+ClamScan.then((clamscan) => {
   // ClamScan is now initialized and can be used
   // You can use clamscan.isInfected(filePath) as shown below
-}).catch(err => {
+}).catch((err) => {
   console.error('Error initializing ClamScan:', err);
 });
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const allowedFileTypes = [
-  'image/jpeg', 
-  'image/png', 
-  'application/pdf', 
-  'application/msword', 
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+  'image/jpeg',
+  'image/png',
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
 ];
 
 // Allowed folders for files: 'Room Pictures' and 'Room Documents'
@@ -635,6 +705,78 @@ async function isFileClean(filePath) {
     return false;
   }
 }
+appDB.use(
+  cors({
+    origin: ['http://localhost:1212', 'https://www.rentmaster.markethubet.com'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key', 'User-ID'],
+    credentials: true,
+  })
+);
+// Add this middleware before your routes
+appDB.use(express.raw({ type: 'application/octet-stream', limit: '50mb' }));
+
+appDB.options('/extract-downloaded-files', cors());
+
+appDB.post('/extract-downloaded-files', async (req, res) => {
+  try {
+    console.log('Received zip file for extraction');
+    const zipBuffer = req.body;
+    const zip = new JSZip();
+    await zip.loadAsync(zipBuffer);
+
+    const appDataPath = process.env.APPDATA || (process.platform == 'darwin' ? process.env.HOME + '/Library/Preferences' : process.env.HOME + "/.local/share");
+    const basePath = path.join(appDataPath, 'BMS');
+    console.log('Base extraction path:', basePath);
+
+    for (const [filePath, file] of Object.entries(zip.files)) {
+      const fullPath = path.join(basePath, filePath);
+      console.log('Processing:', filePath);
+
+      if (file.dir) {
+        console.log('Creating directory:', fullPath);
+        await fs2.mkdir(fullPath, { recursive: true });
+      } else {
+        console.log('Extracting file:', fullPath);
+        const content = await file.async('nodebuffer');
+        await fs2.mkdir(path.dirname(fullPath), { recursive: true });
+        await fs2.writeFile(fullPath, content);
+      }
+    }
+
+    console.log('Extraction completed successfully');
+    res.json({ message: 'Files extracted successfully' });
+  } catch (error) {
+    console.error('Error during extraction:', error);
+    res.status(500).json({ error: 'Failed to extract files', details: error.message });
+  }
+
+
+    //Just download zip
+  /*try {
+    console.log('Received zip file for saving');
+    const zipBuffer = req.body;
+
+    const appDataPath =
+      process.env.APPDATA ||
+      (process.platform == 'darwin'
+        ? process.env.HOME + '/Library/Preferences'
+        : process.env.HOME + '/.local/share');
+    const basePath = path.join(appDataPath, 'BMS');
+    const zipFilePath = path.join(basePath, 'downloaded_files.zip');
+
+    console.log('Saving zip file to:', zipFilePath);
+    await fs2.writeFile(zipFilePath, zipBuffer);
+
+    console.log('Zip file saved successfully');
+    res.json({ message: 'Zip file saved successfully', path: zipFilePath });
+  } catch (error) {
+    console.error('Error saving zip file:', error);
+    res
+      .status(500)
+      .json({ error: 'Failed to save zip file', details: error.message });
+  }*/
+});
 
 appDB.post('/prepare-upload-files', async (req, res) => {
   const { userId, requiredFiles } = req.body;
@@ -646,8 +788,10 @@ appDB.post('/prepare-upload-files', async (req, res) => {
       const fullPath = path.join(process.env.APPDATA, 'BMS', filePath);
       const relativePath = path.relative(process.env.APPDATA, fullPath);
 
-      const normalizedPath = relativePath.substring(relativePath.indexOf('/') + 1);
-      if (!allowedFolders.some(folder => normalizedPath.includes(folder))) {
+      const normalizedPath = relativePath.substring(
+        relativePath.indexOf('/') + 1
+      );
+      if (!allowedFolders.some((folder) => normalizedPath.includes(folder))) {
         console.log(`Skipping file not in allowed folder: ${relativePath}`);
         continue;
       }
@@ -665,7 +809,7 @@ appDB.post('/prepare-upload-files', async (req, res) => {
         continue;
       }
 
-    /*  if (!(await isFileClean(fullPath))) {
+      /*  if (!(await isFileClean(fullPath))) {
         console.log(`Skipping file that failed virus scan: ${filePath}`);
         continue;
       }*/
@@ -678,50 +822,85 @@ appDB.post('/prepare-upload-files', async (req, res) => {
     res.send(zipContent);
   } catch (error) {
     console.error('Error preparing files for upload:', error);
-    res.status(500).json({ error: 'Failed to prepare files for upload', details: error.message });
+    res
+      .status(500)
+      .json({
+        error: 'Failed to prepare files for upload',
+        details: error.message,
+      });
   }
 });
 
-appDB.get('/local-user-directory', (req: any, res: { json: (arg0: { name: string; type: string; children: never[]; }) => void; status: (arg0: number) => { (): any; new(): any; json: { (arg0: { error: string; }): void; new(): any; }; }; }) => {
-  const userDataPath = process.env.APPDATA || app.getPath('userData');
-  const bmsFolderPath = path.join(userDataPath, 'BMS');
+appDB.get(
+  '/local-user-directory',
+  (
+    req: any,
+    res: {
+      json: (arg0: { name: string; type: string; children: never[] }) => void;
+      status: (arg0: number) => {
+        (): any;
+        new (): any;
+        json: { (arg0: { error: string }): void; new (): any };
+      };
+    }
+  ) => {
+    const userDataPath = process.env.APPDATA || app.getPath('userData');
+    const bmsFolderPath = path.join(userDataPath, 'BMS');
 
-  function directoryToJson(dir: string) {
-    const result = { name: path.basename(dir), type: 'directory', children: [] };
-    const files = fs.readdirSync(dir, { withFileTypes: true });
+    function directoryToJson(dir: string) {
+      const result = {
+        name: path.basename(dir),
+        type: 'directory',
+        children: [],
+      };
+      const files = fs.readdirSync(dir, { withFileTypes: true });
 
-    files.forEach((file: { name: string; isDirectory: () => any; }) => {
-      const filePath = path.join(dir, file.name);
-      if (file.isDirectory()) {
-        result.children.push(directoryToJson(filePath));
+      files.forEach((file: { name: string; isDirectory: () => any }) => {
+        const filePath = path.join(dir, file.name);
+        if (file.isDirectory()) {
+          result.children.push(directoryToJson(filePath));
+        } else {
+          result.children.push({ name: file.name, type: 'file' });
+        }
+      });
+
+      return result;
+    }
+
+    try {
+      const directoryStructure = directoryToJson(bmsFolderPath);
+      res.json(directoryStructure);
+    } catch (error) {
+      console.error('Error reading directory structure:', error);
+      res.status(500).json({ error: 'Failed to read directory structure' });
+    }
+  }
+);
+
+appDB.delete(
+  '/deleteAll/:tableName',
+  (
+    req: { params: { tableName: any } },
+    res: {
+      status: (arg0: number) => {
+        (): any;
+        new (): any;
+        send: { (arg0: string): void; new (): any };
+      };
+      json: (arg0: { message: string }) => void;
+    }
+  ) => {
+    const { tableName } = req.params;
+    db.run(`DELETE FROM ${tableName}`, (err: any) => {
+      if (err) {
+        console.error(err);
+        res.status(500).send('Error deleting data from table');
       } else {
-        result.children.push({ name: file.name, type: 'file' });
+        res.json({ message: `All data deleted from ${tableName}` });
       }
     });
-
-    return result;
   }
-
-  try {
-    const directoryStructure = directoryToJson(bmsFolderPath);
-    res.json(directoryStructure);
-  } catch (error) {
-    console.error('Error reading directory structure:', error);
-    res.status(500).json({ error: 'Failed to read directory structure' });
-  }
-});
-
-appDB.delete('/deleteAll/:tableName', (req: { params: { tableName: any; }; }, res: { status: (arg0: number) => { (): any; new(): any; send: { (arg0: string): void; new(): any; }; }; json: (arg0: { message: string; }) => void; }) => {
-  const { tableName } = req.params;
-  db.run(`DELETE FROM ${tableName}`, (err: any) => {
-    if (err) {
-      console.error(err);
-      res.status(500).send('Error deleting data from table');
-    } else {
-      res.json({ message: `All data deleted from ${tableName}` });
-    }
-  });
-});
+);
 appDB.post(
   '/upload-tenant-documentV2',
   (
@@ -1550,8 +1729,7 @@ ipcMain.handle('read-file', async (event, filePath) => {
 });
 
 
-
-export async function createBackup(Another?: boolean) {
+export async function createBackup(Another?:boolean) {
   const backupPath = path.join(app.getPath('documents'), 'BMS_Backups');
   if (!fs.existsSync(backupPath)) {
     fs.mkdirSync(backupPath, { recursive: true });
@@ -1560,7 +1738,7 @@ export async function createBackup(Another?: boolean) {
   const zip = new AdmZip();
   const timestamp = new Date().toISOString().replace(/:/g, '-');
   let backupFileName = `BMS_Backup_${timestamp}.zip`;
-  if (Another) {
+  if(Another) {
     backupFileName = `BMS_Backup_ToLoadAnother_${timestamp}.zip`;
   }
   const appDataPath = process.env.APPDATA || '';
@@ -1582,20 +1760,15 @@ export async function createBackup(Another?: boolean) {
 
   zip.writeZip(path.join(backupPath, backupFileName));
 
-  fs.writeFileSync(
-    path.join(backupPath, 'last_backup.txt'),
-    Date.now().toString()
-  );
+  fs.writeFileSync(path.join(backupPath, 'last_backup.txt'), Date.now().toString());
 
   dialog.showMessageBox({
     type: 'info',
     title: Another ? 'Backup Created To Load Another' : 'Backup Created',
-    message: `Backup created successfully at ${path.join(
-      backupPath,
-      backupFileName
-    )}`,
+    message: `Backup created successfully at ${path.join(backupPath, backupFileName)}`
   });
 }
+
 
 function checkAndCreateBackup() {
   const backupPath = path.join(app.getPath('documents'), 'BMS_Backups');
@@ -1618,7 +1791,7 @@ export async function loadBackup() {
   const result = await dialog.showOpenDialog({
     properties: ['openFile'],
     filters: [{ name: 'Zip Files', extensions: ['zip'] }],
-    title: 'Select BMS Backup File',
+    title: 'Select BMS Backup File'
   });
 
   console.log('File dialog result:', result);
@@ -1633,29 +1806,19 @@ export async function loadBackup() {
 
   const zip = new AdmZip(backupPath);
   const zipEntries = zip.getEntries();
-  console.log(
-    'Zip entries:',
-    zipEntries.map((entry: { entryName: any }) => entry.entryName)
-  );
+  console.log('Zip entries:', zipEntries.map((entry: { entryName: any; }) => entry.entryName));
 
-  // ... [rest of the validation code] ...
-
+  createBackup(true);
   const bmsPath = path.join(process.env.APPDATA || '', appname);
   console.log('BMS path:', bmsPath);
 
   console.log('Clearing existing data...');
   try {
-    fs.rmdirSync(path.join(bmsPath, 'Room Pictures'), {
-      recursive: true,
-      force: true,
-    });
-    fs.rmdirSync(path.join(bmsPath, 'Room Documents'), {
-      recursive: true,
-      force: true,
-    });
+    fs.rmdirSync(path.join(bmsPath, 'Room Pictures'), { recursive: true, force: true });
+    fs.rmdirSync(path.join(bmsPath, 'Room Documents'), { recursive: true, force: true });
     fs.unlinkSync(path.join(bmsPath, 'database.db'));
     console.log('Existing data cleared successfully');
-  } catch (error: any) {
+  } catch (error:any) {
     console.error('Error clearing existing data:', error);
   }
 
@@ -1679,8 +1842,7 @@ export async function loadBackup() {
     dialog.showMessageBox({
       type: 'info',
       title: 'Backup Loaded',
-      message:
-        'Backup has been successfully loaded. The application will now restart.',
+      message: 'Backup has been successfully loaded. The application will now restart.'
     });
 
     app.relaunch();
@@ -1688,8 +1850,7 @@ export async function loadBackup() {
   });
 }
 
+
 function reloadApp() {
   BrowserWindow.getFocusedWindow()?.webContents.reload();
 }
-
-

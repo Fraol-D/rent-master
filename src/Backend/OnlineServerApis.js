@@ -671,11 +671,13 @@ export const updateValue = async (tableName, id, columnName, columnValue) => {
 };
 
 /// UIAMgeses
-export const UploadUserFilesToTheOnlineDatabase = async (userId) => {
+export const UploadUserFilesToTheOnlineDatabase = async (userId, setProgressValue) => {
   try {
+    setProgressValue(0);
     console.log('Getting local directory...');
     const localDirectory = await getLocalUserDirectory();
     console.log('Local directory obtained:', localDirectory);
+    setProgressValue(10);
 
     console.log('Sending directory data to online database...');
     const response = await retry(() => fetch(`${baseUrl}/check-user-directory`, {
@@ -688,6 +690,7 @@ export const UploadUserFilesToTheOnlineDatabase = async (userId) => {
     }));
     const { requiredFiles } = await response.json();
     console.log('Response received from online database:', requiredFiles);
+    setProgressValue(30);
 
     if (requiredFiles.length > 0) {
       console.log('Required files missing:', requiredFiles);
@@ -701,6 +704,7 @@ export const UploadUserFilesToTheOnlineDatabase = async (userId) => {
       });
       
       const zipContent = await prepareResponse.arrayBuffer();
+      setProgressValue(50);
 
       const formData = new FormData();
       formData.append('files', new Blob([zipContent]), 'required_files.zip');
@@ -716,27 +720,104 @@ export const UploadUserFilesToTheOnlineDatabase = async (userId) => {
       });
 
       console.log('Missing files uploaded successfully.');
+      setProgressValue(90);
     } else {
       console.log('No missing files required for upload.');
+      setProgressValue(90);
     }
 
     console.log('Upload completed successfully.');
+    setProgressValue(100);
   } catch (error) {
     console.error('Error during file upload process:', error);
+    setProgressValue(0);
   }
 };
 
-const retry = async (fn, retries = 3, delay = 1000) => {
-  try {
-    return await fn();
-  } catch (error) {
-    if (retries > 0) {
+const retry = async (fn, maxRetries = 3, delay = 1000) => {
+  let lastError;
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error;
       await new Promise(resolve => setTimeout(resolve, delay));
-      return retry(fn, retries - 1, delay * 2);
     }
+  }
+  throw lastError;
+};
+
+export const DownloadUserFilesFromOnlineDatabase = async (userId, setProgressValue) => {
+  try {
+    setProgressValue(0);
+    console.log('Getting local directory structure...');
+    const localDirectory = await getLocalUserDirectory();
+    setProgressValue(20);
+
+    console.log('Requesting file list from online database...');
+    const response = await fetch(`${baseUrl}/check-missing-files`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+      },
+      body: JSON.stringify({ userId, localDirectory }),
+    });
+    const { missingFiles } = await response.json();
+    setProgressValue(40);
+
+    if (missingFiles.length > 0) {
+      console.log('Downloading missing files...');
+      const downloadResponse = await fetch(`${baseUrl}/download-missing-files`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+        },
+        body: JSON.stringify({ userId, missingFiles }),
+      });
+      const zipBuffer = await downloadResponse.arrayBuffer();
+      setProgressValue(70);
+
+      console.log('Extracting downloaded files...');
+      await extractDownloadedFiles(zipBuffer, userId);
+      setProgressValue(90);
+
+      console.log('Files downloaded and extracted successfully.');
+
+    } else {
+      console.log('No missing files to download.');
+      setProgressValue(90);
+    }
+    setProgressValue(100);
+  } catch (error) {
+    console.error('Error during file download process:', error);
+    setProgressValue(0);
+  }
+};
+
+const extractDownloadedFiles = async (zipBuffer, userId) => {
+  try {
+    const response = await fetch(`${baseUrlLocal}/extract-downloaded-files`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/octet-stream',
+      },
+      body: zipBuffer,
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+
+    const result = await response.json();
+    console.log('Files extracted successfully:', result);
+  } catch (error) {
+    console.error('Error extracting files:', error);
     throw error;
   }
 };
+
 
 
 /*

@@ -3,11 +3,10 @@ import '../../Css/NavBarCss.css';
 
 import InsertImageIcon from '../../../assets/assets/Dark mode/Insert Image Pic.png';
 import {
+  DownloadUserFilesFromOnlineDatabase,
   syncOnlineToLocalWithBool,
-  
   UploadUserFilesToTheOnlineDatabase,
 } from 'Backend/OnlineServerApis';
-import { getLocalImagesDirectory } from 'Backend/localServerApis';
 
 interface Props {
   Image: string;
@@ -48,6 +47,7 @@ const NavBar = ({
   setIsSyncing,
   setSyncProgress,
   RefreshDataFromSqlite,
+
 }: Props) => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
@@ -115,7 +115,20 @@ const NavBar = ({
   const cancelSignOut = () => {
     setShowSignOutConfirm(false);
   };
+  const [UploadAssetsProgress, setUploadAssetsProgress] = useState(0);
+  const [DownloadAssetsProgress, setDownloadAssetsProgress] = useState(0);
 
+  const [ShowAdvancedUpload, setShowAdvancedUpload] = useState(false);
+
+  useEffect(()=>{if(uploadProgress >= 50) {
+    setIsSyncing(true);
+      setSyncProgress(uploadProgress);
+  }
+if(uploadProgress<=49 || uploadProgress>=101) {
+      setIsSyncing(false);
+      setSyncProgress(0);
+    }
+},[uploadProgress])
   return (
     <div className="navigation">
       <div className="LeftSide">
@@ -132,21 +145,11 @@ const NavBar = ({
           ) : (
             <p className="Name-ofShop">{ShopName}</p>
           )} */}{' '}
-          <p className="Name-ofShop">
-            Rent Master
-            <button
-              onClick={() => {
-                UploadUserFilesToTheOnlineDatabase(SelectedUserId);
-              }}
-            >
-              UP IMAGES
-            </button>
-            <button>Down Images</button>
-          </p>
+          <p className="Name-ofShop">Rent Master</p>
         </div>
       </div>
       <div className="TopPageNavigatorContainer">
-        {['Dashboard', 'People', 'Rooms', 'Calendar', 'Database'].map(
+        {['Dashboard', 'People', 'Rooms', 'Calendar', 'Database', 'Tools'].map(
           (page) => (
             <button
               key={page}
@@ -164,26 +167,11 @@ const NavBar = ({
       </div>
 
       <div className="RightSide">
-        <div>
-          <button
-            onClick={() => {
-              if (navigator.onLine) {
-                syncOnlineToLocalWithBool(
-                  SelectedUserId,
-                  setIsSyncing,
-                  setSyncProgress,
-                  RefreshDataFromSqlite
-                );
-              }
-            }}
-          >
-            <p>Sync</p>
-          </button>
-        </div>
-        <div>
+        <div></div>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
           {' '}
           <button
-            style={{ marginLeft: '10px' }}
+            style={{ marginLeft: '10px', borderRadius: '10px 0px 0px 10px' }}
             onClick={handleUpload}
             disabled={ChangeMade <= 0}
           >
@@ -211,15 +199,128 @@ const NavBar = ({
               </p>
             )}
           </button>
+          <button
+            style={{
+              borderRadius: ShowAdvancedUpload
+                ? '0px 10px 0px 0px'
+                : '0px 10px 10px 0px',
+              height:
+                ChangeMade >= 1
+                  ? uploadProgress === 100 || uploadProgress === 0
+                    ? '42px'
+                    : uploadProgress >= 50
+                    ? '42px'
+                    : '42px'
+                  : '26px',
+            }}
+            onClick={() => {
+              setShowAdvancedUpload(!ShowAdvancedUpload);
+            }}
+          >
+            {ShowAdvancedUpload ? <>▲</> : <>▼</>}
+          </button>
         </div>
+        {ShowAdvancedUpload ? (
+          <>
+            <div className="AdvancedUploadPanel">
+              <h3
+                style={{ margin: '0', display: 'flex', alignItems: 'center' }}
+              >
+                Complete Sync{' '}
+              </h3>
+              <button
+                onClick={() => {
+                  if (navigator.onLine) {
+                    syncOnlineToLocalWithBool(
+                      SelectedUserId,
+                      setIsSyncing,
+                      setSyncProgress,
+                      RefreshDataFromSqlite
+                    );
+                  }
+                }}
+                style={{ width: '100%', marginTop: '10px' }}
+              >
+                <p>Sync</p>
+              </button>
+              <hr style={{ margin: '10px',width:"100%" }} />
+              <h3
+                style={{ margin: '0', display: 'flex', alignItems: 'center' }}
+              >
+                Assets{' '}
+                <span style={{ fontSize: '12px' }}>
+                  (Room Pictures,Documents)
+                </span>
+              </h3>
+              <div className="AdvancedUploadButtons">
+                <button
+                  className="AdvancedUploadButtonsUploadButton"
+                  onClick={() => {
+                    UploadUserFilesToTheOnlineDatabase(
+                      SelectedUserId,
+                      setUploadAssetsProgress
+                    );
+                  }}
+                >
+                  <span className="AdvancedUploadButtonsButtonText">
+                    Upload Room Assets
+                  </span>
+                  <span className="AdvancedUploadButtonsProgressText">
+                    {UploadAssetsProgress === 100 || UploadAssetsProgress === 0
+                      ? ''
+                      : UploadAssetsProgress + '%'}
+                  </span>
+                </button>
+                <button
+                  className="AdvancedUploadButtonsUploadButton"
+                  onClick={() => {
+                    DownloadUserFilesFromOnlineDatabase(
+                      SelectedUserId,
+                      setDownloadAssetsProgress
+                    );
+                  }}
+                >
+                  <span className="AdvancedUploadButtonsButtonText">
+                    Download Room Assets
+                  </span>
+                  <span className="AdvancedUploadButtonsProgressText">
+                    {DownloadAssetsProgress === 100 ||
+                    DownloadAssetsProgress === 0
+                      ? ''
+                      : DownloadAssetsProgress + '%'}
+                  </span>
+                </button>
+              </div>
+            </div>
+          </>
+        ) : (
+          <></>
+        )}
         <button
           style={{ marginLeft: '10px', marginRight: '10px' }}
           onClick={() => {
             ChangeTheme();
-            setThemeMode(ThemeMode === 'light' ? 'dark' : 'light');
+            switch (ThemeMode) {
+              case 'light':
+                setThemeMode('dark');
+                break;
+              case 'dark':
+                setThemeMode('grey');
+                break;
+              case 'grey':
+                setThemeMode('light');
+                break;
+              default:
+                break;
+            }
           }}
         >
-          To {ThemeMode === 'light' ? 'dark' : 'light'}
+          To{' '}
+          {ThemeMode === 'light'
+            ? 'dark'
+            : ThemeMode === 'dark'
+            ? 'light'
+            : 'grey'}
         </button>
 
         <button onClick={handleSignOut}>Sign out</button>

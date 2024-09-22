@@ -75,6 +75,7 @@ function Hello() {
               ShowPayTimeLine: room.ShowPayTimeLine || false,
               AllRoomPayInfo: { RoomPayInfo: AllRoomPayInfo },
               selectedAgreementId: room.selectedAgreementId || '',
+              notificationSettings: room.notificationSettings || 0,
             };
           })
         );
@@ -142,6 +143,7 @@ function Hello() {
             ShowPayTimeLine: false,
             selectedAgreementId: '',
             userId: SelectedUserId,
+            notificationSettings: 0,
           },
           setChangeMade
         );
@@ -816,13 +818,34 @@ await updateValue(
     brokersRecommendationListApi.getBrokerRecommendationsFromApi();
   };
   const [SelectedPage, setSelectedPage] = useState<
-    'Dashboard' | 'People' | 'Rooms' | 'Calendar' | 'Settings' | 'Database'
+    'Dashboard' | 'People' | 'Rooms' | 'Calendar' | 'Settings' | 'Database' | 'Tools'
   >('Rooms');
 
-  const [ThemeMode, setThemeMode] = useState<'light' | 'dark'>('dark');
-  const ChangeTheme = () => {
-    document.body.classList.toggle('DarkTheme');
-  };
+  const [ThemeMode, setThemeMode] = useState<'light' | 'dark' | 'grey'>('dark');
+
+const ChangeTheme = () => {
+  const body = document.body;
+
+  switch (ThemeMode) {
+    case 'light':
+      body.classList.remove('DarkTheme', 'GreyTheme');
+      setThemeMode('dark');
+      break;
+    case 'dark':
+      body.classList.remove('GreyTheme');
+      body.classList.add('DarkTheme');
+      setThemeMode('grey');
+      break;
+    case 'grey':
+      body.classList.remove('DarkTheme');
+      body.classList.add('GreyTheme');
+      setThemeMode('light');
+      break;
+    default:
+      break;
+  }
+};
+
   const [Refresh, setRefresh] = useState(0);
   const [isSignedIn, setisSignedIn] = useState(false);
   const signOutUserAndRestart = async () => {

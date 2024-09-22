@@ -22,6 +22,7 @@ import EthiopianCalanderConverterMenu from './GUIs/EthiopianCalanderConverterMen
 import AgreementViewerForRoom from './GUIs/AgreementViewerForRoom';
 import { toEthiopianDateString } from 'renderer/Project/JS/Calendar Converter';
 import { sendEmail } from 'Backend/Cpanel/Telegram bot paymentReminder/server';
+import NotificationSettingsTable from './GUIs/NotificationSettingsProps';
 const Room = ({
   roomType,
   updateRoomProperty,
@@ -991,6 +992,7 @@ const Room = ({
   const setMessageNumberRN = (value: string) => {
     setTelegramMessageRN(value);
   };
+  const [notificationSettings, setNotificationSettings] = useState<number>(0);
 
   return (
     <>
@@ -2607,87 +2609,14 @@ const Room = ({
                   Reminders and Notifications
                 </p>
 
-                <table style={{ fontSize: '14px', borderCollapse: 'collapse' }}>
-                  <thead>
-                    <tr>
-                      <th style={{ padding: '5px', textAlign: 'left' }}>
-                        Notification
-                      </th>
-                      <th style={{ padding: '5px', textAlign: 'center' }}>
-                        Email
-                      </th>
-                      <th style={{ padding: '5px', textAlign: 'center' }}>
-                        SMS
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td style={{ padding: '5px' }}>5 days before due</td>
-                      <td style={{ padding: '5px', textAlign: 'center' }}>
-                        <input type="checkbox" />
-                      </td>
-                      <td style={{ padding: '5px', textAlign: 'center' }}>
-                        <input type="checkbox" />
-                      </td>
-                    </tr>
-                    <tr>
-                      <td style={{ padding: '5px' }}>3 days before due</td>
-                      <td style={{ padding: '5px', textAlign: 'center' }}>
-                        <input type="checkbox" />
-                      </td>
-                      <td style={{ padding: '5px', textAlign: 'center' }}>
-                        <input type="checkbox" />
-                      </td>
-                    </tr>
-                    <tr>
-                      <td style={{ padding: '5px' }}>1 day before due</td>
-                      <td style={{ padding: '5px', textAlign: 'center' }}>
-                        <input type="checkbox" />
-                      </td>
-                      <td style={{ padding: '5px', textAlign: 'center' }}>
-                        <input type="checkbox" />
-                      </td>
-                    </tr>
-                    <tr>
-                      <td style={{ padding: '5px' }}>On due date</td>
-                      <td style={{ padding: '5px', textAlign: 'center' }}>
-                        <input type="checkbox" />
-                      </td>
-                      <td style={{ padding: '5px', textAlign: 'center' }}>
-                        <input type="checkbox" />
-                      </td>
-                    </tr>
-                    <tr>
-                      <td style={{ padding: '5px' }}>1 day after due</td>
-                      <td style={{ padding: '5px', textAlign: 'center' }}>
-                        <input type="checkbox" />
-                      </td>
-                      <td style={{ padding: '5px', textAlign: 'center' }}>
-                        <input type="checkbox" />
-                      </td>
-                    </tr>
-                    <tr>
-                      <td style={{ padding: '5px' }}>3 days after due</td>
-                      <td style={{ padding: '5px', textAlign: 'center' }}>
-                        <input type="checkbox" />
-                      </td>
-                      <td style={{ padding: '5px', textAlign: 'center' }}>
-                        <input type="checkbox" />
-                      </td>
-                    </tr>
-                    <tr>
-                      <td style={{ padding: '5px' }}>Weekly while overdue</td>
-                      <td style={{ padding: '5px', textAlign: 'center' }}>
-                        <input type="checkbox" />
-                      </td>
-                      <td style={{ padding: '5px', textAlign: 'center' }}>
-                        <input type="checkbox" />
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-                <button
+                <NotificationSettingsTable 
+  notificationSettings={roomType.notificationSettings} 
+  setNotificationSettings={(settings:number) => {updateRoomProperty(roomType.id, "notificationSettings", settings)}} 
+userId={SelectedUserId}
+setChangeMade={setChangeMade}
+roomId={roomType.id}
+/>
+                {/*<button
                   onClick={() => {
 
 
@@ -2725,8 +2654,8 @@ const Room = ({
                   onChange={(e) => {
                     setMessageNumberRN(e.target.value);
                   }}
-                />
-              </div>
+                />*/}
+              </div> 
             </div>
             <div
               className="BottomAddTenantContainer"

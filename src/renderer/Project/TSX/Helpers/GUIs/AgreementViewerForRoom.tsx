@@ -33,7 +33,7 @@ const AgreementViewerForRoom = ({
 
   const getAgreements = async () => {
     const agreements = await agreementApi.getAgreementsByRoomIdApi(roomType.id);
-    console.log('lol');
+
 
     // Sort agreements by signTime, oldest first
     const sortedAgreements = agreements.sort(
@@ -354,7 +354,7 @@ const AgreementViewerForRoom = ({
               Agreements[CurrentAgreementIndex].paymentCycleType,
               Agreements[CurrentAgreementIndex].paymentCycleType.slice(1)
             )}
-            {console.log('payment cycle', Agreements[CurrentAgreementIndex])}
+           
           </div>
           <div className="AddTenantContainerinnerElement">
             Payment cycle:{' '}

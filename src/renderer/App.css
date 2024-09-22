@@ -1,6 +1,7 @@
 :root {
   --Text-Color-Grey: rgb(128, 128, 128);
   --Text-Color: rgb(255, 255, 255);
+  --Text-Color-Reverse: rgb(0, 0, 0);
   --Background-Color: #2e2f30;
 
   --Primary-Color: #00e1ff;
@@ -19,6 +20,43 @@
 .DarkTheme {
   --Text-Color-Grey: rgb(128, 128, 128);
   --Text-Color: #000000;
+  --Text-Color-Reverse: rgb(255, 255, 255);
+  --Background-Color: #d0d1d2;
+
+  --Primary-Color: #00e1ff;
+  --Primary-Color25: hsl(187, 100%, 50%, 25%);
+  --Primary-Color50: hsl(187, 100%, 50%, 50%);
+
+  --Secondary-Color: #a6aaba;
+  --Secondary-Color20: hsl(228, 13%, 69%, 20%);
+  --Secondary-Color30: hsl(228, 13%, 69%, 30%);
+
+  --Accent-Color: #db911a;
+  --Accent-Color50: hsl(37, 79%, 48%, 50%);
+
+  --Static11: hsl(225, 7.1%, 78%);
+
+}
+.GreyTheme {
+  --Text-Color-Grey: rgb(128, 128, 128);
+  --Text-Color: rgb(0, 0, 0);
+  --Text-Color-Reverse: rgb(153, 153, 153);
+  --Background-Color: #414141;
+
+  --Primary-Color: #00c6e0;
+  --Primary-Color25: hsl(187, 100%, 43%, 37%);
+  --Primary-Color50: hsl(187, 100%, 43%, 50%);
+
+  --Secondary-Color: #b3b3b3;
+  --Secondary-Color20: hsl(228, 13%, 55%, 20%);
+  --Secondary-Color30: hsl(228, 13%, 55%, 30%);
+
+  --Accent-Color: #d89a1f;
+  --Accent-Color50: hsl(37, 79%, 49%, 50%);
+
+  --Static11: hsl(225, 7.1%, 72%);  --Text-Color-Grey: rgb(128, 128, 128);
+  --Text-Color: #000000;
+  --Text-Color-Reverse: rgb(255, 255, 255);
   --Background-Color: #d0d1d2;
 
   --Primary-Color: #00e1ff;

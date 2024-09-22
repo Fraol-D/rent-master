@@ -25,6 +25,7 @@ import ImageInteractor2 from './Helpers/GUIs/ImageInteractor2';
 import { set } from 'date-fns';
 import DashboardPage from './Pages/DashboardPage';
 import DatabasePage from './Pages/DatabasePage';
+import ToolsPage from './Pages/ToolsPage';
 type FilterOption = {
   key: string;
   value: any;
@@ -61,7 +62,7 @@ declare global {
     ShowPayTimeLine?: boolean;
     AllRoomPayInfo: AllRoomPayInfo;
     selectedAgreementId: string;
-    
+    notificationSettings: number;
   };
   type BrokerRecommendationType = {
     id: string;
@@ -99,7 +100,7 @@ declare global {
     phoneNumber: string;
     phoneNumber2?: string;
     email?: string;
-  
+
     AddedTime: number;
     AgreedCommission: string;
     rating: number;
@@ -144,6 +145,15 @@ declare global {
     RentReserved: number;
     representative: string;
   };
+  type email_templates = {
+    id: string;
+    name: string;
+    subject: string;
+    body: string;
+    created_at: number;
+    updated_at: number;
+    userId: string;
+  };
 }
 const MainPage = ({
   RoomList,
@@ -166,7 +176,9 @@ const MainPage = ({
   setSelectedPage,
   SelectedPage,
   agreementApi,
-  roomSpecificationAPI,setChangeMade,SelectedUserId
+  roomSpecificationAPI,
+  setChangeMade,
+  SelectedUserId,
 }: any) => {
   const [floorFilter, setFloorFilter] = useState<string>('');
   const [TenantNameFilter, setTenantNameFilter] = useState<string>('');
@@ -208,7 +220,14 @@ const MainPage = ({
     propertyName: string,
     newValue: any
   ) => {
-    await updateValue('rooms', roomId, propertyName, newValue,setChangeMade,getOriginlPropertyValue(RoomList, roomId, propertyName));
+    await updateValue(
+      'rooms',
+      roomId,
+      propertyName,
+      newValue,
+      setChangeMade,
+      getOriginlPropertyValue(RoomList, roomId, propertyName)
+    );
     //Load the updated room data from the API With THE specific ROOM ID and only get the value insted of the  whole object
     setRoomList((prevRoomList: any[]) => {
       return prevRoomList.map((room: { id: string }) => {
@@ -256,7 +275,14 @@ const MainPage = ({
     propertyName: string,
     newValue: any
   ) => {
-    await updateValue('rooms', roomId, propertyName, newValue,setChangeMade,getOriginlPropertyValue(RoomList, roomId, propertyName));
+    await updateValue(
+      'rooms',
+      roomId,
+      propertyName,
+      newValue,
+      setChangeMade,
+      getOriginlPropertyValue(RoomList, roomId, propertyName)
+    );
     setRoomList((prevRoomList: any[]) => {
       return prevRoomList.map((room: { id: string }) => {
         if (room.id === roomId) {
@@ -578,6 +604,9 @@ const MainPage = ({
   const [PeopleSelectedPage, setPeopleSelectedPage] = useState<
     'TenantsList' | 'BrokersList' | 'TenantReviews'
   >('TenantsList');
+  const [ToolsSelectedPage, setToolsSelectedPage] = useState<
+    'EmailTemplates' | 'b' | 'c'
+  >('EmailTemplates');
   const [AddARoomState, setAddARoomState] = useState(false);
   const [AddRoomFormFloor, setAddRoomFormFloor] = useState(1);
   const [AddRoomFormRoomIndex, setAddRoomFormRoomIndex] = useState(1);
@@ -641,13 +670,14 @@ const MainPage = ({
       floor: AddRoomFormFloor,
       roomIndex: AddRoomFormRoomIndex,
       price: AddRoomFormPrice,
-      PaymentCycleType: AddRoomFormPaymentCycleType as '30' |
-        '15' |
-        '7' |
-        'monthly' |
-        'weekly' |
-        'daily' |
-        'custom',
+      PaymentCycleType: AddRoomFormPaymentCycleType as
+        | '30'
+        | '15'
+        | '7'
+        | 'monthly'
+        | 'weekly'
+        | 'daily'
+        | 'custom',
       PaymentCycleCustomeDays: AddRoomFormPaymentCycleCustomDays,
       squareMeters: AddRoomFormSquareMeters,
       RoomSpecifications: AddRoomFormRoomSpecifications,
@@ -655,7 +685,7 @@ const MainPage = ({
       AgreedPrice: AddRoomFormPrice,
       AllRoomPayInfo: { RoomPayInfo: [] },
       selectedAgreementId: '',
-      Archived: false
+      Archived: false,
     };
 
     // Add to sqlite database
@@ -841,6 +871,21 @@ const MainPage = ({
       }
     }
   }, [SelectedPage]);
+
+  const SideBarItem = ({ page, currentPage, onClick, children }) => (
+    <div
+      onClick={onClick}
+      className={
+        currentPage === page
+          ? 'sideBarItemComponentMainSelected'
+          : 'sideBarItemComponentMain'
+      }
+    >
+      <div>{children}</div>
+      {currentPage !== page && <div>{'-→'}</div>}
+    </div>
+  );
+
   return (
     <>
       <div
@@ -1423,57 +1468,52 @@ const MainPage = ({
                 Peoples page{' '}
                 <button onClick={RefreshDataFromSqlite}>Refresh</button>
               </p>
-              <div
-                onClick={() => {
-                  setPeopleSelectedPage('TenantsList');
-                }}
-                className={
-                  PeopleSelectedPage === 'TenantsList'
-                    ? 'sideBarItemComponentMainSelected'
-                    : 'sideBarItemComponentMain'
-                }
+
+              <SideBarItem
+                page="TenantsList"
+                currentPage={PeopleSelectedPage}
+                onClick={() => setPeopleSelectedPage('TenantsList')}
               >
-                <div>Tenant list</div>
-                {PeopleSelectedPage !== 'TenantsList' ? (
-                  <div>{'-→'}</div>
-                ) : (
-                  <></>
-                )}
-              </div>
-              <div
-                onClick={() => {
-                  setPeopleSelectedPage('BrokersList');
-                }}
-                className={
-                  PeopleSelectedPage === 'BrokersList'
-                    ? 'sideBarItemComponentMainSelected'
-                    : 'sideBarItemComponentMain'
-                }
+                Tenant list
+              </SideBarItem>
+              <SideBarItem
+                page="BrokersList"
+                currentPage={PeopleSelectedPage}
+                onClick={() => setPeopleSelectedPage('BrokersList')}
               >
-                <div>Broker list</div>
-                {PeopleSelectedPage !== 'BrokersList' ? (
-                  <div>{'-→'}</div>
-                ) : (
-                  <></>
-                )}
-              </div>
-              <div
-                onClick={() => {
-                  setPeopleSelectedPage('TenantReviews');
-                }}
-                className={
-                  PeopleSelectedPage === 'TenantReviews'
-                    ? 'sideBarItemComponentMainSelected'
-                    : 'sideBarItemComponentMain'
-                }
+                Broker list
+              </SideBarItem>
+              <SideBarItem
+                page="TenantReviews"
+                currentPage={PeopleSelectedPage}
+                onClick={() => setPeopleSelectedPage('TenantReviews')}
               >
-                <div>Tenant Reviews</div>
-                {PeopleSelectedPage !== 'TenantReviews' ? (
-                  <div>{'-→'}</div>
-                ) : (
-                  <></>
-                )}
-              </div>
+                Tenant Reviews
+              </SideBarItem>
+            </>
+          ) : SelectedPage === 'Tools' ? (
+            <>
+              <SideBarItem
+                page="EmailTemplates"
+                currentPage={ToolsSelectedPage}
+                onClick={() => setToolsSelectedPage('EmailTemplates')}
+              >
+                Email Templates
+              </SideBarItem>
+              <SideBarItem
+                page="b"
+                currentPage={ToolsSelectedPage}
+                onClick={() => setToolsSelectedPage('b')}
+              >
+                b
+              </SideBarItem>
+              <SideBarItem
+                page="c"
+                currentPage={ToolsSelectedPage}
+                onClick={() => setToolsSelectedPage('c')}
+              >
+                c
+              </SideBarItem>
             </>
           ) : (
             <></>
@@ -1574,7 +1614,8 @@ const MainPage = ({
                               roomSpecificationAPI.editRoomSpecificationApi(
                                 spec.id,
                                 'Detail',
-                                e.target.value, spec.Detail
+                                e.target.value,
+                                spec.Detail
                               );
                               const updatedSpecifications = RoomList.find(
                                 (r: RoomType) => r.id === SelectedEditRoomId
@@ -1599,7 +1640,8 @@ const MainPage = ({
                                   roomSpecificationAPI.editRoomSpecificationApi(
                                     spec.id,
                                     'Boolean',
-                                    e.target.checked,spec.Boolean
+                                    e.target.checked,
+                                    spec.Boolean
                                   );
                                   const updatedSpecifications = RoomList.find(
                                     (r: RoomType) => r.id === SelectedEditRoomId
@@ -1627,7 +1669,8 @@ const MainPage = ({
                                 roomSpecificationAPI.editRoomSpecificationApi(
                                   spec.id,
                                   'Number',
-                                  e.target.value,spec.Number
+                                  e.target.value,
+                                  spec.Number
                                 );
                                 const updatedSpecifications = RoomList.find(
                                   (r: RoomType) => r.id === SelectedEditRoomId
@@ -1655,7 +1698,8 @@ const MainPage = ({
                               roomSpecificationAPI.editRoomSpecificationApi(
                                 spec.id,
                                 'type',
-                                'bool',spec.type
+                                'bool',
+                                spec.type
                               );
 
                               const updatedSpecifications = RoomList.find(
@@ -1680,7 +1724,8 @@ const MainPage = ({
                               roomSpecificationAPI.editRoomSpecificationApi(
                                 spec.id,
                                 'type',
-                                'number',spec.type
+                                'number',
+                                spec.type
                               );
 
                               const updatedSpecifications = RoomList.find(
@@ -1794,6 +1839,14 @@ const MainPage = ({
               BrokerRecommendationList={BrokerRecommendationList}
             />
           )}
+          {SelectedPage === 'Tools' && (
+            <ToolsPage
+              ToolsSelectedPage={ToolsSelectedPage}
+              setToolsSelectedPage={setToolsSelectedPage}
+              setChangeMade={setChangeMade}
+              SelectedUserId={SelectedUserId}
+            />
+          )}
           {SelectedPage === 'Calendar' && (
             <CalendarPage
               updateRoomProperty={updateRoomProperty}
@@ -1811,7 +1864,8 @@ const MainPage = ({
               roomPaymentInfoApi={roomPaymentInfoApi}
               sortedAndFilteredRooms={sortedAndFilteredRooms}
               removeFilterOption={removeFilterOption}
-              filterOptions={filterOptions}setChangeMade={setChangeMade}
+              filterOptions={filterOptions}
+              setChangeMade={setChangeMade}
             />
           )}
           {SelectedPage === 'Dashboard' && (
@@ -1824,7 +1878,9 @@ const MainPage = ({
               BrokerRecommendationList={BrokerRecommendationList}
             />
           )}
-          {SelectedPage === 'Database' && <DatabasePage setChangeMade={setChangeMade}/>}
+          {SelectedPage === 'Database' && (
+            <DatabasePage setChangeMade={setChangeMade} />
+          )}
         </div>
       </div>
     </>

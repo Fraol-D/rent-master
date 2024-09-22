@@ -13,14 +13,15 @@ import NotAllowedScreen from './NotAllowedScreen';
 interface MyComponentProps {
   children: React.ReactNode;
   Refresh: number;
-  isSignedIn:boolean;
-  setisSignedIn: (newval: boolean) => void;setChangeMade:any;
+  isSignedIn: boolean;
+  setisSignedIn: (newval: boolean) => void;
+  setChangeMade: any;
   setSelectedUserId: (newval: string) => void;
   SelectedUserId: string;
-  isSyncing:boolean;
-  setIsSyncing:(newval: boolean)=>void;
-  setSyncProgress: (newval:number)=>void;
-  RefreshDataFromSqlite:()=>void;
+  isSyncing: boolean;
+  setIsSyncing: (newval: boolean) => void;
+  setSyncProgress: (newval: number) => void;
+  RefreshDataFromSqlite: () => void;
 }
 const AccountManager = (React.FC<MyComponentProps> = ({
   children,
@@ -29,7 +30,10 @@ const AccountManager = (React.FC<MyComponentProps> = ({
   setisSignedIn,
   setChangeMade,
   setSelectedUserId,
-  SelectedUserId,setIsSyncing,setSyncProgress,RefreshDataFromSqlite
+  SelectedUserId,
+  setIsSyncing,
+  setSyncProgress,
+  RefreshDataFromSqlite,
 }) => {
   const [TrialExpiredState, setTrialExpiredState] = useState(false);
   const [IsAllowedState, setIsAllowedState] = useState(false);
@@ -39,7 +43,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
       const allUsersInTable = await getValuesWithSql('users', 'WHERE 1');
       if (allUsersInTable.length > 0) {
         setisSignedIn(true);
-        
+
         const check = async () => {
           const usersRaw = await getValuesWithSql('users', 'WHERE 1');
           const userRaw = usersRaw[0];
@@ -71,7 +75,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
               `WHERE id = '${userRaw.id}'`
             );
             setIsAllowedState(OnlineUser[0].Allowed);
-            await updateValue('users', userRaw.id, 'Allowed', 1,setChangeMade);
+            await updateValue('users', userRaw.id, 'Allowed', 1, setChangeMade);
           } else {
             setIsAllowedState(userRaw.Allowed);
           }
@@ -79,9 +83,14 @@ const AccountManager = (React.FC<MyComponentProps> = ({
 
         check();
         setSelectedUserId(allUsersInTable[0].id);
-        console.log('Signed in',SelectedUserId);
-        if(navigator.onLine) {
-        // syncOnlineToLocalWithBool(allUsersInTable[0].id,setIsSyncing,setSyncProgress,RefreshDataFromSqlite);
+        console.log('Signed in', SelectedUserId);
+        if (navigator.onLine) {
+          /*syncOnlineToLocalWithBool(
+            allUsersInTable[0].id,    
+            setIsSyncing,
+            setSyncProgress,
+            RefreshDataFromSqlite
+          );*/
         }
       } else {
         setisSignedIn(false);
@@ -136,7 +145,6 @@ const AccountManager = (React.FC<MyComponentProps> = ({
           setisSignUpMode={setisSignUpMode}
           setisSignedIn={setisSignedIn}
           setChangeMade={setChangeMade}
-
         ></SignUpPage>
       ) : (
         <LoginPage
