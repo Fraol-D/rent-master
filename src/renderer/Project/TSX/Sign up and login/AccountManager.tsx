@@ -40,57 +40,74 @@ const AccountManager = (React.FC<MyComponentProps> = ({
   const [isSignUpMode, setisSignUpMode] = useState(true);
   useEffect(() => {
     const checkIfSignedIn = async () => {
+     
       const allUsersInTable = await getValuesWithSql('users', 'WHERE 1');
       if (allUsersInTable.length > 0) {
-        setisSignedIn(true);
+      
+        const userONLINE = await getValuesWithSql_Online(
+          'users',
+          `WHERE id = '${allUsersInTable[0].id}' AND password = '${allUsersInTable[0].password}'`
+        );
+        if (userONLINE.length !== 1 && navigator.onLine) {
+        
+       
+          return;
+        } else {
+          setisSignedIn(true);
+          const check = async () => {
+            const usersRaw = await getValuesWithSql('users', 'WHERE 1');
+            const userRaw = usersRaw[0];
+            console.log('userRaw:', userRaw); // Added console.log for debugging
+            if (userRaw.packageType === '7daytrial') {
+              console.log('userRawssssssss:', userRaw.TrailEndDate, Date.now()); // Added console.log for debugging
 
-        const check = async () => {
-          const usersRaw = await getValuesWithSql('users', 'WHERE 1');
-          const userRaw = usersRaw[0];
-          console.log('userRaw:', userRaw); // Added console.log for debugging
-          if (userRaw.packageType === '7daytrial') {
-            console.log('userRawssssssss:', userRaw.TrailEndDate, Date.now()); // Added console.log for debugging
+              if (userRaw.TrailEndDate < Date.now()) {
+                setTrialExpiredState(true);
+                console.log('Trial expired');
+              }
+              //Also make the trial expired true if the trialenddate - 7days is bigger than date.now
+              if (userRaw.TrailEndDate - 7 * 24 * 60 * 60 * 1000 > Date.now()) {
+                setTrialExpiredState(true);
+                console.log('Tiral Has expired bc invalid date input');
+              }
+              if (
+                userRaw.TrailEndDate > Date.now() &&
+                userRaw.TrailEndDate - 7 * 24 * 60 * 60 * 1000 < Date.now()
+              ) {
+                setTrialExpiredState(false);
+                console.log('Trial is still active'); // Added console.log for debugging
+              }
+            }
 
-            if (userRaw.TrailEndDate < Date.now()) {
-              setTrialExpiredState(true);
-              console.log('Trial expired');
+            if (navigator.onLine) {
+              const OnlineUser = await getValuesWithSql_Online(
+                'users',
+                `WHERE id = '${userRaw.id}'`
+              );
+              setIsAllowedState(OnlineUser[0].Allowed);
+              await updateValue(
+                'users',
+                userRaw.id,
+                'Allowed',
+                1,
+                setChangeMade
+              );
+            } else {
+              setIsAllowedState(userRaw.Allowed);
             }
-            //Also make the trial expired true if the trialenddate - 7days is bigger than date.now
-            if (userRaw.TrailEndDate - 7 * 24 * 60 * 60 * 1000 > Date.now()) {
-              setTrialExpiredState(true);
-              console.log('Tiral Has expired bc invalid date input');
-            }
-            if (
-              userRaw.TrailEndDate > Date.now() &&
-              userRaw.TrailEndDate - 7 * 24 * 60 * 60 * 1000 < Date.now()
-            ) {
-              setTrialExpiredState(false);
-              console.log('Trial is still active'); // Added console.log for debugging
-            }
-          }
+          };
 
+          check();
+          setSelectedUserId(allUsersInTable[0].id);
+          console.log('Signed in', SelectedUserId);
           if (navigator.onLine) {
-            const OnlineUser = await getValuesWithSql_Online(
-              'users',
-              `WHERE id = '${userRaw.id}'`
+            syncOnlineToLocalWithBool(
+              allUsersInTable[0].id,
+              setIsSyncing,
+              setSyncProgress,
+              RefreshDataFromSqlite
             );
-            setIsAllowedState(OnlineUser[0].Allowed);
-            await updateValue('users', userRaw.id, 'Allowed', 1, setChangeMade);
-          } else {
-            setIsAllowedState(userRaw.Allowed);
           }
-        };
-
-        check();
-        setSelectedUserId(allUsersInTable[0].id);
-        console.log('Signed in', SelectedUserId);
-        if (navigator.onLine) {
-          /*syncOnlineToLocalWithBool(
-            allUsersInTable[0].id,    
-            setIsSyncing,
-            setSyncProgress,
-            RefreshDataFromSqlite
-          );*/
         }
       } else {
         setisSignedIn(false);

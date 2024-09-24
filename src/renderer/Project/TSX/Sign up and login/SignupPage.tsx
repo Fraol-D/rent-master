@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { AddUserOnline } from 'Backend/OnlineServerApis';
 import {
   addValue,
+  deleteValue,
+  getValuesWithSql,
 
 } from 'Backend/localServerApis';
 import { v4 as uuidv4 } from 'uuid';
@@ -87,7 +89,11 @@ const SignupPage = ({ setisSignUpMode, setisSignedIn,setChangeMade }: any) => {
       const daysUntilEnd = Math.ceil(
         (endDate.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24)
       );
-
+      const allUsersInTable = await getValuesWithSql('users', 'WHERE 1');
+      for (let i = 0; i < allUsersInTable.length; i++) {
+        const user = allUsersInTable[i];
+        await deleteValue('users', user.id, (val:number)=>{});
+      }
       await AddUserOnline(
         JSON.stringify({
           id: userID,

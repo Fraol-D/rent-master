@@ -47,7 +47,6 @@ const NavBar = ({
   setIsSyncing,
   setSyncProgress,
   RefreshDataFromSqlite,
-
 }: Props) => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
@@ -120,15 +119,16 @@ const NavBar = ({
 
   const [ShowAdvancedUpload, setShowAdvancedUpload] = useState(false);
 
-  useEffect(()=>{if(uploadProgress >= 50) {
-    setIsSyncing(true);
+  useEffect(() => {
+    if (uploadProgress >= 50) {
+      setIsSyncing(true);
       setSyncProgress(uploadProgress);
-  }
-if(uploadProgress<=49 || uploadProgress>=101) {
+    }
+    if (uploadProgress <= 49 || uploadProgress >= 101) {
       setIsSyncing(false);
       setSyncProgress(0);
     }
-},[uploadProgress])
+  }, [uploadProgress]);
   return (
     <div className="navigation">
       <div className="LeftSide">
@@ -243,7 +243,7 @@ if(uploadProgress<=49 || uploadProgress>=101) {
               >
                 <p>Sync</p>
               </button>
-              <hr style={{ margin: '10px',width:"100%" }} />
+              <hr style={{ margin: '10px', width: '100%' }} />
               <h3
                 style={{ margin: '0', display: 'flex', alignItems: 'center' }}
               >
@@ -289,6 +289,32 @@ if(uploadProgress<=49 || uploadProgress>=101) {
                       ? ''
                       : DownloadAssetsProgress + '%'}
                   </span>
+                </button>
+              </div>
+              <hr style={{ margin: '10px', width: '100%' }} />
+              <h3
+                style={{ margin: '0', display: 'flex', alignItems: 'center' }}
+              >
+                Backup{' '}
+              </h3>
+              <div style={{ display: 'flex',width:"100%" }}>
+                <button
+                  onClick={() => {
+                    window.electron.ipcRenderer.send('create-backup', false);
+
+                  }}
+                  style={{ width: '100%', marginTop: '10px',marginRight:"10px" }}
+                >
+                  <p>Create Backup</p>
+                </button>
+                <button
+                  onClick={() => {
+                    window.electron.ipcRenderer.send('load-backup');
+
+                  }}
+                  style={{ width: '100%', marginTop: '10px' }}
+                >
+                  <p>Load Backup</p>
                 </button>
               </div>
             </div>

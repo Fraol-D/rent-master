@@ -11,6 +11,20 @@ import mime from 'mime';
 //const nodemailer = require('nodemailer');
 const nodemailer = require('nodemailer');
 
+const Store = require('electron-store');
+const store = new Store();
+const getStoreValue = (key: string) => {
+  return store.get(key);
+};
+const setStoreValue = (key: string, value: any) => {
+  store.set(key, value);
+};
+ipcMain.on('electron-store-get', async (event, val) => {
+  event.returnValue = getStoreValue(val );
+});
+ipcMain.on('electron-store-set', async (event, key, val) => {
+  setStoreValue(key, val);
+});
 class AppUpdater {
   constructor() {
     log.transports.file.level = 'info';
@@ -56,6 +70,7 @@ const createWindow = async () => {
   if (isDebug) {
     await installExtensions();
   }
+ 
 
   const RESOURCES_PATH = app.isPackaged
     ? path.join(process.resourcesPath, 'assets')
@@ -64,11 +79,19 @@ const createWindow = async () => {
   const getAssetPath = (...paths: string[]): string => {
     return path.join(RESOURCES_PATH, ...paths);
   };
-
-  mainWindow = new BrowserWindow({
-    show: false,
+  // Load the previous window state or use default values
+  const windowState = store.get('windowState', {
     width: 1024,
     height: 728,
+    x: undefined,
+    y: undefined
+  });
+  mainWindow = new BrowserWindow({
+    show: false,
+    width: windowState.width,
+    height: windowState.height,
+    x: windowState.x,
+    y: windowState.y,
     icon: getAssetPath('icon.png'),
     webPreferences: {
       preload: app.isPackaged
@@ -93,7 +116,17 @@ const createWindow = async () => {
   mainWindow.on('closed', () => {
     mainWindow = null;
   });
-
+  mainWindow.on('close', () => {
+    if (mainWindow) {
+      const { width, height } = mainWindow.getBounds();
+      store.set('windowState', {
+        width,
+        height,
+        x: mainWindow.getPosition()[0],
+        y: mainWindow.getPosition()[1]
+      });
+    }
+  });
   const menuBuilder = new MenuBuilder(mainWindow);
   menuBuilder.buildMenu();
 
@@ -1854,3 +1887,4 @@ export async function loadBackup() {
 function reloadApp() {
   BrowserWindow.getFocusedWindow()?.webContents.reload();
 }
+
