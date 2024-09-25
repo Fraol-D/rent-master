@@ -41,35 +41,36 @@ const AccountManager = (React.FC<MyComponentProps> = ({
   useEffect(() => {
     const checkIfSignedIn = async () => {
      
-      const allUsersInTable = await getValuesWithSql('users', 'WHERE 1');
-      if (allUsersInTable.length > 0) {
-      
+      const allUsers = window.electron.store.get('users', )||[];
+
+      if (allUsers.length > 0) {
         const userONLINE = await getValuesWithSql_Online(
           'users',
-          `WHERE id = '${allUsersInTable[0].id}' AND password = '${allUsersInTable[0].password}'`
+          `WHERE id = '${allUsers[0].id}' AND password = '${allUsers[0].password}'`
         );
+      
         if (userONLINE.length !== 1 && navigator.onLine) {
-        
-       
           return;
         } else {
           setisSignedIn(true);
           const check = async () => {
-            const usersRaw = await getValuesWithSql('users', 'WHERE 1');
-            const userRaw = usersRaw[0];
+            const userRaw = allUsers[0];
             console.log('userRaw:', userRaw); // Added console.log for debugging
+      
             if (userRaw.packageType === '7daytrial') {
               console.log('userRawssssssss:', userRaw.TrailEndDate, Date.now()); // Added console.log for debugging
-
+      
               if (userRaw.TrailEndDate < Date.now()) {
                 setTrialExpiredState(true);
                 console.log('Trial expired');
               }
+      
               //Also make the trial expired true if the trialenddate - 7days is bigger than date.now
               if (userRaw.TrailEndDate - 7 * 24 * 60 * 60 * 1000 > Date.now()) {
                 setTrialExpiredState(true);
                 console.log('Tiral Has expired bc invalid date input');
               }
+      
               if (
                 userRaw.TrailEndDate > Date.now() &&
                 userRaw.TrailEndDate - 7 * 24 * 60 * 60 * 1000 < Date.now()
@@ -78,40 +79,39 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                 console.log('Trial is still active'); // Added console.log for debugging
               }
             }
-
+      
             if (navigator.onLine) {
               const OnlineUser = await getValuesWithSql_Online(
                 'users',
                 `WHERE id = '${userRaw.id}'`
               );
               setIsAllowedState(OnlineUser[0].Allowed);
-              await updateValue(
-                'users',
-                userRaw.id,
-                'Allowed',
-                1,
-                setChangeMade
+              const updatedUsers = allUsers.map(user => 
+                user.id === userRaw.id ? {...user, Allowed: 1} : user
               );
+              window.electron.store.set('users', updatedUsers);
+              setChangeMade(true);
             } else {
               setIsAllowedState(userRaw.Allowed);
             }
           };
-
+      
           check();
-          setSelectedUserId(allUsersInTable[0].id);
+          setSelectedUserId(allUsers[0].id);
           console.log('Signed in', SelectedUserId);
           if (navigator.onLine) {
-            syncOnlineToLocalWithBool(
-              allUsersInTable[0].id,
+            /*syncOnlineToLocalWithBool(
+              allUsers[0].id,
               setIsSyncing,
               setSyncProgress,
               RefreshDataFromSqlite
-            );
+            );*/
           }
         }
       } else {
         setisSignedIn(false);
       }
+      
     };
     checkIfSignedIn();
   }, [isSignedIn, Refresh]);
@@ -119,19 +119,21 @@ const AccountManager = (React.FC<MyComponentProps> = ({
   useEffect(() => {
     if (isSignedIn == true) {
       const check = async () => {
-        const usersRaw = await getValuesWithSql('users', 'WHERE 1');
-        const userRaw = usersRaw[0];
+        const users = window.electron.store.get('users')||[];
+        const userRaw = users[0];
+
         if (userRaw.packageType === '7daytrial') {
           if (userRaw.trialEndDate < Date.now()) {
             setTrialExpiredState(true);
             console.log('Trial expired');
           }
+
           //Also make the trial expired true if the trialenddate - 7days is bigger than date.now
           if (userRaw.trialEndDate - 7 * 24 * 60 * 60 * 1000 > Date.now()) {
             setTrialExpiredState(true);
-
-            console.log('Tiral Has expired bc invalid date input');
+            console.log('Trial Has expired bc invalid date input');
           }
+
           if (
             userRaw.trialEndDate > Date.now() &&
             userRaw.trialEndDate - 7 * 24 * 60 * 60 * 1000 < Date.now()

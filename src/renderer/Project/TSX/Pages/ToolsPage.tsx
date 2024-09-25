@@ -48,7 +48,6 @@ const ToolsPage = ({
 
     'landlord_Email',
     'landlord_Telephone',
-
   ];
 
   const insertVariable = (variable: string) => {
@@ -218,16 +217,22 @@ const ToolsPage = ({
   };
   const [recipientEmail, setRecipientEmail] = useState('');
 
-  const handleSendEmail = () => {
+  const handleSendEmail = async () => {
     const template = emailTemplates.find((t) => t.id === tryOutMode);
     if (template) {
       const subject = replaceVariables(template.subject);
       const body = replaceVariables(template.body);
+      const userDATA = await window.electron.store.get('users');
+      const userEmail = userDATA[0].email;
+      const userPass = userDATA[0].password;
+      console.log(userEmail, userPass);
       if (navigator.onLine) {
         window.electron.ipcRenderer.send('SendCustomEmail', {
           to: recipientEmail,
           subject: subject,
           body: body,
+          userEmail:userEmail,
+          userPassword:userPass
         });
 
         window.electron.ipcRenderer.once(

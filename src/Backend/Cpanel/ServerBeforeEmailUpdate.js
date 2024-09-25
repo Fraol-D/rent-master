@@ -488,7 +488,7 @@ app.post(
 
 const validateTableName = (tableName) => {
   const validTables = [
-    'users',
+   
     'rooms',
     'room_specifications',
     'tenants',

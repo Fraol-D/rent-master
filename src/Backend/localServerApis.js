@@ -83,7 +83,7 @@ const addRowToOfflineChanges = async (
       }
     }
   } else if (
-    tableName !== 'users' &&
+    
     columnNameP !== 'MainPc' &&
     columnNameP !== 'LockToBranchId'
   ) {
@@ -623,3 +623,32 @@ export const getLocalUserDirectory = async () => {
     return null;
   }
 };
+export const uploadReceiptDocuments = async (files, roomId, tenantName, tenantId, formattedDate, AddedTimeText) => {
+  try {
+    const uploadPromises = Array.from(files).map(async (file) => {
+      const base64Document = await fileToBase64(file);
+      const response = await fetch(`${baseUrl}/upload-receipt-document`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          base64Document,
+          fileName: `${formattedDate}_${file.name}`,
+          roomId,
+          tenantName,
+          tenantId,
+          formattedDate,
+          AddedTimeText,
+        }),
+      });
+      return response.json();
+    });
+    const results = await Promise.all(uploadPromises);
+    return results;
+  } catch (error) {
+    console.error('Error uploading receipt documents:', error);
+    return null;
+  }
+};
+

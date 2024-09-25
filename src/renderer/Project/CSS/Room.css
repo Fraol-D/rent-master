@@ -289,7 +289,7 @@
     padding: 5px;
     overflow-x: auto;
     overflow-y: hidden;
-    color: var(--Text-Color);
+    color: var(--Text-Color);    border: 1px solid grey;
 }
 .TabsContainerForTenantAdding {
   width: 100%;

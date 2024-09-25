@@ -2690,16 +2690,16 @@ roomId={roomType.id}
           className="PopOutContainer"
           ref={showPayTimeLineRef}
           style={{
-            top: '155px',
-            left: '-528px',
+            top: '189px',
+            left: '-567px',
             zIndex: roomType.ShowPayTimeLine ? '1' : '-1',
           }}
         >
           <div
             className="TimeLineMainContaner"
             style={{
-              width: roomType.ShowPayTimeLine ? '500px' : '0px',
-              height: roomType.ShowPayTimeLine ? '185px' : '0px',
+              width: roomType.ShowPayTimeLine ? '568px' : '0px',
+              height: roomType.ShowPayTimeLine ? '246px' : '0px',
               opacity: roomType.ShowPayTimeLine ? '1' : '0',
             }}
           >

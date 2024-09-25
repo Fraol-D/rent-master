@@ -89,11 +89,7 @@ const SignupPage = ({ setisSignUpMode, setisSignedIn,setChangeMade }: any) => {
       const daysUntilEnd = Math.ceil(
         (endDate.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24)
       );
-      const allUsersInTable = await getValuesWithSql('users', 'WHERE 1');
-      for (let i = 0; i < allUsersInTable.length; i++) {
-        const user = allUsersInTable[i];
-        await deleteValue('users', user.id, (val:number)=>{});
-      }
+     
       await AddUserOnline(
         JSON.stringify({
           id: userID,
@@ -109,7 +105,7 @@ const SignupPage = ({ setisSignUpMode, setisSignedIn,setChangeMade }: any) => {
         })
       );
 
-      await addValue('users', {
+      window.electron.store.set('users', [{
         id: userID,
         Allowed: 0,
         email: email,
@@ -120,7 +116,7 @@ const SignupPage = ({ setisSignUpMode, setisSignedIn,setChangeMade }: any) => {
         maxNumberOfBranches: 1,
         packageType: '7daytrial',
         TrailEndDate: endDate.getTime(),
-      },setChangeMade);
+      }]);
       console.log('Start Date:', startDate);
       console.log('End Date:', endDate);
       console.log('Current Date:', currentDate);
@@ -142,7 +138,7 @@ const SignupPage = ({ setisSignUpMode, setisSignedIn,setChangeMade }: any) => {
         })
       );
 
-      await addValue('users', {
+      window.electron.store.set('users', [{
         id: userID,
         Allowed: 0,
         email: email,
@@ -153,7 +149,7 @@ const SignupPage = ({ setisSignUpMode, setisSignedIn,setChangeMade }: any) => {
         maxNumberOfBranches: 1,
         packageType: 'fullpackage',
         TrailEndDate: 0,
-      },setChangeMade);
+      }]);
     }
     setisSignedIn(true);
     setErrorMessage('Sign up successful!');

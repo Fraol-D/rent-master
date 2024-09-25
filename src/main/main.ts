@@ -20,7 +20,7 @@ const setStoreValue = (key: string, value: any) => {
   store.set(key, value);
 };
 ipcMain.on('electron-store-get', async (event, val) => {
-  event.returnValue = getStoreValue(val );
+  event.returnValue = getStoreValue(val);
 });
 ipcMain.on('electron-store-set', async (event, key, val) => {
   setStoreValue(key, val);
@@ -70,7 +70,6 @@ const createWindow = async () => {
   if (isDebug) {
     await installExtensions();
   }
- 
 
   const RESOURCES_PATH = app.isPackaged
     ? path.join(process.resourcesPath, 'assets')
@@ -84,14 +83,31 @@ const createWindow = async () => {
     width: 1024,
     height: 728,
     x: undefined,
-    y: undefined
+    y: undefined,
   });
+
+  const { screen } = require('electron');
+  const primaryDisplay = screen.getPrimaryDisplay();
+  const { width: screenWidth, height: screenHeight } =
+    primaryDisplay.workAreaSize;
+
+  let finalWidth = windowState.width;
+  let finalHeight = windowState.height;
+  let finalX = windowState.x;
+  let finalY = windowState.y;
+
+  if (windowState.x >= screenWidth && screen.getAllDisplays().length === 1) {
+    finalWidth = Math.min(windowState.width, screenWidth);
+    finalX = Math.floor((screenWidth - finalWidth) / 2);
+    finalY = Math.floor((screenHeight - finalHeight) / 2);
+  }
+
   mainWindow = new BrowserWindow({
     show: false,
-    width: windowState.width,
-    height: windowState.height,
-    x: windowState.x,
-    y: windowState.y,
+    width: finalWidth,
+    height: finalHeight,
+    x: finalX,
+    y: finalY,
     icon: getAssetPath('icon.png'),
     webPreferences: {
       preload: app.isPackaged
@@ -123,7 +139,7 @@ const createWindow = async () => {
         width,
         height,
         x: mainWindow.getPosition()[0],
-        y: mainWindow.getPosition()[1]
+        y: mainWindow.getPosition()[1],
       });
     }
   });
@@ -154,6 +170,7 @@ app
     ipcMain.on('renderer-to-main', (event, message) => {
       const sendEmail = async (email: any, subject: any, text: any) => {
         // Create a transporter using SMTP
+
         const transporter = nodemailer.createTransport({
           host: 'rentmaster.markethubet.com',
           port: 465,
@@ -316,47 +333,81 @@ app
 // Sending verification codes
 ipcMain.on('SendCustomEmail', async (event, message) => {
   console.log('Send custom email:', message.to, message.subject, message.body);
-  
-  const sendEmail = async (email, subject, text) => {
+
+  const sendEmail = async (
+    email: any,
+    subject: any,
+    text: any,
+    userEmail: any,
+    userPassword: any
+  ) => {
+    //Getemail and pass from online
+    const user = await getValuesWithSql_Online(
+      'users',
+      `WHERE email = '${userEmail}' AND password = '${userPassword}' AND Allowed = 1`
+    );
+    console.log(
+      'user',
+      user,
+      `WHERE email = '${userEmail}' AND password = '${userPassword}' AND Allowed = 1`
+    );
+    console.log(user[0].selectedEmailToSendWith)
+    console.log(user[0].selectedEmailToSendWithPassword)
+    if (user[0]) {
+      const transporter = nodemailer.createTransport({
+        host: 'rentmaster.markethubet.com',
+        port: 465,
+        secure: true,
+        auth: {
+          user: user[0].selectedEmailToSendWith,
+          pass: user[0].selectedEmailToSendWithPassword,
+        },
+      });
    
-    const transporter = nodemailer.createTransport({
-      host: 'rentmaster.markethubet.com',
-      port: 465,
-      secure: true,
-      auth: {
-        user: 'seblewenglesbuilding@rentmaster.markethubet.com',
-        pass: 'Plp5H9:Li(UO#6[y+26E'
+      const mailOptions = {
+        from: user[0].selectedEmailToSendWith,
+        to: email,
+        subject: subject,
+        text: text,
+      };
+
+      try {
+        await transporter.sendMail(mailOptions);
+
+        return { success: true };
+      } catch (error) {
+        return { success: false, error: error.message };
       }
-    });
-
-    const mailOptions = {
-      from: 'seblewenglesbuilding@rentmaster.markethubet.com',
-      to: email,
-      subject: subject,
-      text: text
-    };
-
-    try {
-
-      await transporter.sendMail(mailOptions);
-      
-      return { success: true };
-    } catch (error) {
-    
-      return { success: false, error: error.message };
     }
   };
 
   try {
-    const result = await sendEmail(message.to, message.subject, message.body);
+    const result = await sendEmail(
+      message.to,
+      message.subject,
+      message.body,
+      message.userEmail,
+      message.userPassword
+    );
     if (result.success) {
-      event.reply('SendCustomEmailResponse', { success: true, message: 'Email sent successfully' });
+      event.reply('SendCustomEmailResponse', {
+        success: true,
+        message: 'Email sent successfully',
+      });
     } else {
-      event.reply('SendCustomEmailResponse', { success: false, message: 'Failed to send email', error: result.error });
+      event.reply('SendCustomEmailResponse', {
+        success: false,
+        message: 'Failed to send email',
+        error: result.error,
+      });
     }
   } catch (error) {
     console.error('Error while sending email:', error);
-    event.reply('SendCustomEmailResponse', { success: false, message: 'Failed to send email', error: error.message });
+    event.reply('SendCustomEmailResponse', {
+      success: false,
+      message: 'Failed to send email',
+      error: error.message,
+    });
   }
 });
 
@@ -430,7 +481,6 @@ const tableStructures = [
       'Archived BOOLEAN DEFAULT 0',
       'notificationSettings INTEGER DEFAULT 0',
       'userId TEXT',
-
     ],
   },
   {
@@ -567,7 +617,7 @@ const tableStructures = [
   {
     name: 'notification_template_selections',
     columns: [
-      'id INTEGER PRIMARY KEY',
+      'id TEXT PRIMARY KEY',
       'notification_type TEXT',
       'email_template_id TEXT',
       'user_id  TEXT',
@@ -697,10 +747,10 @@ const ClamScan = new NodeClam().init({
 });
 
 // Initialize the ClamScan object
-ClamScan.then((clamscan) => {
+ClamScan.then((clamscan: any) => {
   // ClamScan is now initialized and can be used
   // You can use clamscan.isInfected(filePath) as shown below
-}).catch((err) => {
+}).catch((err: any) => {
   console.error('Error initializing ClamScan:', err);
 });
 
@@ -716,15 +766,15 @@ const allowedFileTypes = [
 // Allowed folders for files: 'Room Pictures' and 'Room Documents'
 const allowedFolders = ['Room Pictures', 'Room Documents'];
 
-function isAllowedFileSize(file) {
+function isAllowedFileSize(file: { size: any }) {
   return file.size <= MAX_FILE_SIZE;
 }
 
-function isAllowedFileType(file) {
+function isAllowedFileType(file: { type: any }) {
   return allowedFileTypes.includes(file.type);
 }
 
-async function isFileClean(filePath) {
+async function isFileClean(filePath: any) {
   try {
     const clamscan = await ClamScan;
     const { isInfected, viruses } = await clamscan.isInfected(filePath);
@@ -751,42 +801,59 @@ appDB.use(express.raw({ type: 'application/octet-stream', limit: '50mb' }));
 
 appDB.options('/extract-downloaded-files', cors());
 
-appDB.post('/extract-downloaded-files', async (req, res) => {
-  try {
-    console.log('Received zip file for extraction');
-    const zipBuffer = req.body;
-    const zip = new JSZip();
-    await zip.loadAsync(zipBuffer);
+appDB.post(
+  '/extract-downloaded-files',
+  async (
+    req: { body: any },
+    res: {
+      json: (arg0: { message: string }) => void;
+      status: (arg0: number) => {
+        (): any;
+        new (): any;
+        json: { (arg0: { error: string; details: any }): void; new (): any };
+      };
+    }
+  ) => {
+    try {
+      console.log('Received zip file for extraction');
+      const zipBuffer = req.body;
+      const zip = new JSZip();
+      await zip.loadAsync(zipBuffer);
 
-    const appDataPath = process.env.APPDATA || (process.platform == 'darwin' ? process.env.HOME + '/Library/Preferences' : process.env.HOME + "/.local/share");
-    const basePath = path.join(appDataPath, 'BMS');
-    console.log('Base extraction path:', basePath);
+      const appDataPath =
+        process.env.APPDATA ||
+        (process.platform == 'darwin'
+          ? process.env.HOME + '/Library/Preferences'
+          : process.env.HOME + '/.local/share');
+      const basePath = path.join(appDataPath, appname);
+      console.log('Base extraction path:', basePath);
 
-    for (const [filePath, file] of Object.entries(zip.files)) {
-      const fullPath = path.join(basePath, filePath);
-      console.log('Processing:', filePath);
+      for (const [filePath, file] of Object.entries(zip.files)) {
+        const fullPath = path.join(basePath, filePath);
+        console.log('Processing:', filePath);
 
-      if (file.dir) {
-        console.log('Creating directory:', fullPath);
-        await fs2.mkdir(fullPath, { recursive: true });
-      } else {
-        console.log('Extracting file:', fullPath);
-        const content = await file.async('nodebuffer');
-        await fs2.mkdir(path.dirname(fullPath), { recursive: true });
-        await fs2.writeFile(fullPath, content);
+        if (file.dir) {
+          console.log('Creating directory:', fullPath);
+          await fs2.mkdir(fullPath, { recursive: true });
+        } else {
+          console.log('Extracting file:', fullPath);
+          const content = await file.async('nodebuffer');
+          await fs2.mkdir(path.dirname(fullPath), { recursive: true });
+          await fs2.writeFile(fullPath, content);
+        }
       }
+
+      console.log('Extraction completed successfully');
+      res.json({ message: 'Files extracted successfully' });
+    } catch (error) {
+      console.error('Error during extraction:', error);
+      res
+        .status(500)
+        .json({ error: 'Failed to extract files', details: error.message });
     }
 
-    console.log('Extraction completed successfully');
-    res.json({ message: 'Files extracted successfully' });
-  } catch (error) {
-    console.error('Error during extraction:', error);
-    res.status(500).json({ error: 'Failed to extract files', details: error.message });
-  }
-
-
     //Just download zip
-  /*try {
+    /*try {
     console.log('Received zip file for saving');
     const zipBuffer = req.body;
 
@@ -795,7 +862,7 @@ appDB.post('/extract-downloaded-files', async (req, res) => {
       (process.platform == 'darwin'
         ? process.env.HOME + '/Library/Preferences'
         : process.env.HOME + '/.local/share');
-    const basePath = path.join(appDataPath, 'BMS');
+    const basePath = path.join(appDataPath, appname);
     const zipFilePath = path.join(basePath, 'downloaded_files.zip');
 
     console.log('Saving zip file to:', zipFilePath);
@@ -809,60 +876,72 @@ appDB.post('/extract-downloaded-files', async (req, res) => {
       .status(500)
       .json({ error: 'Failed to save zip file', details: error.message });
   }*/
-});
+  }
+);
 
-appDB.post('/prepare-upload-files', async (req, res) => {
-  const { userId, requiredFiles } = req.body;
+appDB.post(
+  '/prepare-upload-files',
+  async (
+    req: { body: { userId: any; requiredFiles: any } },
+    res: {
+      send: (arg0: any) => void;
+      status: (arg0: number) => {
+        (): any;
+        new (): any;
+        json: { (arg0: { error: string; details: any }): void; new (): any };
+      };
+    }
+  ) => {
+    const { userId, requiredFiles } = req.body;
 
-  try {
-    const zip = new JSZip();
+    try {
+      const zip = new JSZip();
 
-    for (const filePath of requiredFiles) {
-      const fullPath = path.join(process.env.APPDATA, 'BMS', filePath);
-      const relativePath = path.relative(process.env.APPDATA, fullPath);
+      for (const filePath of requiredFiles) {
+        const fullPath = path.join(process.env.APPDATA, appname, filePath);
+        const relativePath = path.relative(process.env.APPDATA, fullPath);
 
-      const normalizedPath = relativePath.substring(
-        relativePath.indexOf('/') + 1
-      );
-      if (!allowedFolders.some((folder) => normalizedPath.includes(folder))) {
-        console.log(`Skipping file not in allowed folder: ${relativePath}`);
-        continue;
-      }
+        const normalizedPath = relativePath.substring(
+          relativePath.indexOf('/') + 1
+        );
+        if (!allowedFolders.some((folder) => normalizedPath.includes(folder))) {
+          console.log(`Skipping file not in allowed folder: ${relativePath}`);
+          continue;
+        }
 
-      const fileStats = await fs2.stat(fullPath);
-      const fileType = mime2.lookup(fullPath);
+        const fileStats = await fs2.stat(fullPath);
+        const fileType = mime2.lookup(fullPath);
 
-      if (!isAllowedFileType({ type: fileType })) {
-        console.log(`Skipping file with disallowed type: ${filePath}`);
-        continue;
-      }
+        if (!isAllowedFileType({ type: fileType })) {
+          console.log(`Skipping file with disallowed type: ${filePath}`);
+          continue;
+        }
 
-      if (!isAllowedFileSize({ size: fileStats.size })) {
-        console.log(`Skipping file that exceeds size limit: ${filePath}`);
-        continue;
-      }
+        if (!isAllowedFileSize({ size: fileStats.size })) {
+          console.log(`Skipping file that exceeds size limit: ${filePath}`);
+          continue;
+        }
 
-      /*  if (!(await isFileClean(fullPath))) {
+        /*  if (!(await isFileClean(fullPath))) {
         console.log(`Skipping file that failed virus scan: ${filePath}`);
         continue;
       }*/
 
-      const fileContent = await fs2.readFile(fullPath);
-      zip.file(filePath, fileContent);
-    }
+        const fileContent = await fs2.readFile(fullPath);
+        zip.file(filePath, fileContent);
+      }
 
-    const zipContent = await zip.generateAsync({ type: 'nodebuffer' });
-    res.send(zipContent);
-  } catch (error) {
-    console.error('Error preparing files for upload:', error);
-    res
-      .status(500)
-      .json({
+      const zipContent = await zip.generateAsync({ type: 'nodebuffer' });
+      res.send(zipContent);
+    } catch (error) {
+      console.error('Error preparing files for upload:', error);
+      res.status(500).json({
         error: 'Failed to prepare files for upload',
         details: error.message,
       });
+    }
   }
-});
+);
 
 appDB.get(
   '/local-user-directory',
@@ -878,7 +957,7 @@ appDB.get(
     }
   ) => {
     const userDataPath = process.env.APPDATA || app.getPath('userData');
-    const bmsFolderPath = path.join(userDataPath, 'BMS');
+    const bmsFolderPath = path.join(userDataPath, appname);
 
     function directoryToJson(dir: string) {
       const result = {
@@ -934,6 +1013,86 @@ appDB.delete(
     });
   }
 );
+appDB.post(
+  '/upload-receipt-document',
+  (
+    req: {
+      body: {
+        base64Document: any;
+        fileName: any;
+        roomId: any;
+        tenantName: any;
+        tenantId: any;
+        formattedDate: any;
+        AddedTimeText: any;
+      };
+    },
+    res: {
+      status: (arg0: number) => {
+        (): any;
+        new (): any;
+        json: { (arg0: { error: string; details?: any }): void; new (): any };
+      };
+      json: (arg0: {
+        message: string;
+        fileName: any;
+        filePath: string;
+      }) => void;
+    }
+  ) => {
+    try {
+      const {
+        base64Document,
+        fileName,
+        roomId,
+        tenantName,
+        tenantId,
+        formattedDate,
+        AddedTimeText,
+      } = req.body;
+      if (
+        !base64Document ||
+        !fileName ||
+        !roomId ||
+        !tenantName ||
+        !tenantId ||
+        !formattedDate ||
+        !AddedTimeText
+      ) {
+        return res.status(400).json({ error: 'Missing required parameters' });
+      }
+
+      const base64Data = base64Document.replace(/^data:.*?;base64,/, '');
+      const buffer = Buffer.from(base64Data, 'base64');
+
+      const dirPath = path.join(
+        process.env.APPDATA || '',
+        appname || '',
+        'Room Documents',
+        roomId,
+        `${tenantName}, ${AddedTimeText}, ${tenantId}`,
+        'receipts'
+      );
+
+      fs.mkdirSync(dirPath, { recursive: true });
+      const filePath = path.join(dirPath, fileName);
+      fs.writeFileSync(filePath, buffer);
+
+      res.json({
+        message: 'Receipt document uploaded successfully',
+        fileName,
+        filePath,
+      });
+    } catch (error) {
+      console.error('Error uploading receipt document:', error);
+      res.status(500).json({
+        error: 'Failed to upload receipt document',
+        details: error.message,
+      });
+    }
+  }
+);
+
 appDB.post(
   '/upload-tenant-documentV2',
   (
@@ -1401,13 +1560,13 @@ appDB.put(
     const { oldName, newName } = req.body;
     const oldPath = path.join(
       process.env.APPDATA,
-      'BMS',
+      appname,
       'Room Pictures',
       oldName
     );
     const newPath = path.join(
       process.env.APPDATA,
-      'BMS',
+      appname,
       'Room Pictures',
       newName
     );
@@ -1436,7 +1595,7 @@ appDB.delete(
     const folderName = req.params.folderName;
     const folderPath = path.join(
       process.env.APPDATA,
-      'BMS',
+      appname,
       'Room Pictures',
       folderName
     );
@@ -1675,9 +1834,9 @@ appDB.put(
 );
 export const cleanupOnSignOut = async () => {
   const userDataPath = process.env.APPDATA || app.getPath('userData');
-  const dbPath = path.join(userDataPath, 'BMS', 'database.db');
-  const bmsPath = path.join(userDataPath, 'BMS');
-
+  const dbPath = path.join(userDataPath, appname, 'database.db');
+  const bmsPath = path.join(userDataPath, appname);
+  store.set('users', []);
   //So it can be deleted
   // Close the database connection
   db.close((err: Error | null) => {
@@ -1761,18 +1920,17 @@ ipcMain.handle('read-file', async (event, filePath) => {
   return fs.readFileSync(cleanPath);
 });
 
-
-export async function createBackup(Another?:boolean) {
-  const backupPath = path.join(app.getPath('documents'), 'BMS_Backups');
+export async function createBackup(Another?: boolean) {
+  const backupPath = path.join(app.getPath('documents'), appname + '_Backups');
   if (!fs.existsSync(backupPath)) {
     fs.mkdirSync(backupPath, { recursive: true });
   }
 
   const zip = new AdmZip();
   const timestamp = new Date().toISOString().replace(/:/g, '-');
-  let backupFileName = `BMS_Backup_${timestamp}.zip`;
-  if(Another) {
-    backupFileName = `BMS_Backup_ToLoadAnother_${timestamp}.zip`;
+  let backupFileName = `${appname}_Backup_${timestamp}.zip`;
+  if (Another) {
+    backupFileName = `${appname}_Backup_ToLoadAnother_${timestamp}.zip`;
   }
   const appDataPath = process.env.APPDATA || '';
   const bmsPath = path.join(appDataPath, appname);
@@ -1793,18 +1951,23 @@ export async function createBackup(Another?:boolean) {
 
   zip.writeZip(path.join(backupPath, backupFileName));
 
-  fs.writeFileSync(path.join(backupPath, 'last_backup.txt'), Date.now().toString());
+  fs.writeFileSync(
+    path.join(backupPath, 'last_backup.txt'),
+    Date.now().toString()
+  );
 
   dialog.showMessageBox({
     type: 'info',
     title: Another ? 'Backup Created To Load Another' : 'Backup Created',
-    message: `Backup created successfully at ${path.join(backupPath, backupFileName)}`
+    message: `Backup created successfully at ${path.join(
+      backupPath,
+      backupFileName
+    )}`,
   });
 }
 
-
 function checkAndCreateBackup() {
-  const backupPath = path.join(app.getPath('documents'), 'BMS_Backups');
+  const backupPath = path.join(app.getPath('documents'), appname + '_Backups');
   const lastBackupFile = path.join(backupPath, 'last_backup.txt');
 
   if (fs.existsSync(lastBackupFile)) {
@@ -1824,7 +1987,7 @@ export async function loadBackup() {
   const result = await dialog.showOpenDialog({
     properties: ['openFile'],
     filters: [{ name: 'Zip Files', extensions: ['zip'] }],
-    title: 'Select BMS Backup File'
+    title: `Select ${appname} Backup File`,
   });
 
   console.log('File dialog result:', result);
@@ -1839,7 +2002,10 @@ export async function loadBackup() {
 
   const zip = new AdmZip(backupPath);
   const zipEntries = zip.getEntries();
-  console.log('Zip entries:', zipEntries.map((entry: { entryName: any; }) => entry.entryName));
+  console.log(
+    'Zip entries:',
+    zipEntries.map((entry: { entryName: any }) => entry.entryName)
+  );
 
   createBackup(true);
   const bmsPath = path.join(process.env.APPDATA || '', appname);
@@ -1847,11 +2013,17 @@ export async function loadBackup() {
 
   console.log('Clearing existing data...');
   try {
-    fs.rmdirSync(path.join(bmsPath, 'Room Pictures'), { recursive: true, force: true });
-    fs.rmdirSync(path.join(bmsPath, 'Room Documents'), { recursive: true, force: true });
+    fs.rmdirSync(path.join(bmsPath, 'Room Pictures'), {
+      recursive: true,
+      force: true,
+    });
+    fs.rmdirSync(path.join(bmsPath, 'Room Documents'), {
+      recursive: true,
+      force: true,
+    });
     fs.unlinkSync(path.join(bmsPath, 'database.db'));
     console.log('Existing data cleared successfully');
-  } catch (error:any) {
+  } catch (error: any) {
     console.error('Error clearing existing data:', error);
   }
 
@@ -1875,7 +2047,8 @@ export async function loadBackup() {
     dialog.showMessageBox({
       type: 'info',
       title: 'Backup Loaded',
-      message: 'Backup has been successfully loaded. The application will now restart.'
+      message:
+        'Backup has been successfully loaded. The application will now restart.',
     });
 
     app.relaunch();
@@ -1883,8 +2056,70 @@ export async function loadBackup() {
   });
 }
 
+// Add IPC handlers for create-backup and load-backup
+ipcMain.on('create-backup', (event, isAnother) => {
+  createBackup(isAnother);
+});
+
+ipcMain.on('load-backup', () => {
+  loadBackup();
+});
+ipcMain.handle('get-receipt-file', (event, dirPath, formattedDate) => {
+  const files = fs.readdirSync(dirPath);
+  const receiptFile = files.find((file: string) =>
+    file.startsWith(formattedDate)
+  );
+  return receiptFile ? path.join(dirPath, receiptFile) : null;
+});
+
+ipcMain.on('delete-receipt', (event, filePath) => {
+  try {
+    const filePath2 = filePath.replace('local-resource://', '');
+    fs.unlinkSync(filePath2);
+    event.reply('receipt-deleted', { success: true });
+  } catch (error) {
+    console.error('Error deleting receipt:', error);
+    event.reply('receipt-deleted', { success: false, error: error.message });
+  }
+});
+
+import { format, isBefore, isAfter, subDays, differenceInDays } from 'date-fns';
+import { getValuesWithSql_Online } from '../Backend/OnlineServerApis';
+ipcMain.handle('GetReceiptFile', (event, date, roomId, tenant) => {
+  const formattedDate = format(new Date(date), 'yyyy-MM-dd');
+  const addedTimeText = format(
+    new Date(tenant?.startTime || 0),
+    'EEE MMM dd yyyy'
+  );
+  const tenantName = tenant?.name || '';
+  const tenantId = tenant?.id || '';
+  const dirPath = path.join(
+    process.env.APPDATA || '',
+    appname,
+    'Room Documents',
+    roomId,
+    `${tenantName}, ${addedTimeText}, ${tenantId}`,
+    'receipts'
+  );
+
+  try {
+    const files = fs.readdirSync(dirPath);
+    const receiptFile = files.find((file: string) =>
+      file.startsWith(formattedDate)
+    );
+
+    if (receiptFile) {
+      const filePath = path.join(dirPath, receiptFile);
+      return `local-resource://${filePath}`;
+    } else {
+      return null;
+    }
+  } catch (error) {
+    console.error('Error reading receipt directory:', error);
+    return null;
+  }
+});
 
 function reloadApp() {
   BrowserWindow.getFocusedWindow()?.webContents.reload();
 }
-

@@ -35,7 +35,7 @@ const LoginPage = ({ setisSignUpMode, setisSignedIn,setChangeMade }: any) => {
   };
   const handleLogin = async (user: any) => {
     setErrorMessage('Login successful!');
-    await addValue('users', {
+    window.electron.store.set('users', [{
       id: user.id,
       Allowed: user.Allowed,
       email: user.email,
@@ -46,7 +46,7 @@ const LoginPage = ({ setisSignUpMode, setisSignedIn,setChangeMade }: any) => {
       maxNumberOfBranches: 1,
       packageType: user.packageType,
       TrailEndDate: user.TrailEndDate,
-    },setChangeMade);
+    }]);
     setisSignedIn(true);
   };
   const handleOrLoginButtonClick = () => {

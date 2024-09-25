@@ -88,9 +88,9 @@ const NotificationSettingsTable: React.FC<NotificationSettingsProps> = ({
         'notification_template_selections',
         {
           id: `${roomId}_${notificationType}`,
-          user_id: userId,
           notification_type: notificationType,
           email_template_id: templateId,
+          user_id: userId,
         },
         setChangeMade
       );
