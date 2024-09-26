@@ -132,7 +132,13 @@ const NavBar = ({
   return (
     <div className="navigation">
       <div className="LeftSide">
-        <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'flex-start',
+            flexDirection: 'column',
+          }}
+        >
           {/* <img
             className={ProfileState ? 'LogoImageEdit' : 'LogoImage'}
             src={Image || InsertImageIcon}
@@ -145,7 +151,13 @@ const NavBar = ({
           ) : (
             <p className="Name-ofShop">{ShopName}</p>
           )} */}{' '}
-          <p className="Name-ofShop">Rent Master</p>
+          <p className="Name-ofShop" style={{height: '28px'}}>Rent Master</p>
+          <p
+            className="Name-ofShop"
+            style={{ fontSize: '14px', color: 'grey',height: 'auto' }}
+          >
+            {window.electron.store.get('users')[0].email}
+          </p>
         </div>
       </div>
       <div className="TopPageNavigatorContainer">
@@ -261,6 +273,10 @@ const NavBar = ({
                       setUploadAssetsProgress
                     );
                   }}
+                  style={{
+                    position: 'relative',
+                    overflow: 'hidden'
+                  }}
                 >
                   <span className="AdvancedUploadButtonsButtonText">
                     Upload Room Assets
@@ -270,6 +286,17 @@ const NavBar = ({
                       ? ''
                       : UploadAssetsProgress + '%'}
                   </span>
+                  <div
+                    style={{
+                      position: 'absolute',
+                      bottom: 0,
+                      left: 0,
+                      width: `${UploadAssetsProgress}%`,
+                      height: '3px',
+                      backgroundColor: 'var(--Primary-Color)',
+                      transition: 'width 0.3s ease-in-out'
+                    }}
+                  />
                 </button>
                 <button
                   className="AdvancedUploadButtonsUploadButton"
@@ -279,6 +306,10 @@ const NavBar = ({
                       setDownloadAssetsProgress
                     );
                   }}
+                  style={{
+                    position: 'relative',
+                    overflow: 'hidden'
+                  }}
                 >
                   <span className="AdvancedUploadButtonsButtonText">
                     Download Room Assets
@@ -287,8 +318,20 @@ const NavBar = ({
                     {DownloadAssetsProgress === 100 ||
                     DownloadAssetsProgress === 0
                       ? ''
-                      : DownloadAssetsProgress + '%'}
+
+                      : DownloadAssetsProgress.toFixed(2) + '%'}
                   </span>
+                  <div
+                    style={{
+                      position: 'absolute',
+                      bottom: 0,
+                      left: 0,
+                      width: `${DownloadAssetsProgress}%`,
+                      height: '3px',
+                      backgroundColor: 'var(--Primary-Color)',
+                      transition: 'width 0.3s ease-in-out'
+                    }}
+                  />
                 </button>
               </div>
               <hr style={{ margin: '10px', width: '100%' }} />
@@ -297,20 +340,22 @@ const NavBar = ({
               >
                 Backup{' '}
               </h3>
-              <div style={{ display: 'flex',width:"100%" }}>
+              <div style={{ display: 'flex', width: '100%' }}>
                 <button
                   onClick={() => {
                     window.electron.ipcRenderer.send('create-backup', false);
-
                   }}
-                  style={{ width: '100%', marginTop: '10px',marginRight:"10px" }}
+                  style={{
+                    width: '100%',
+                    marginTop: '10px',
+                    marginRight: '10px',
+                  }}
                 >
                   <p>Create Backup</p>
                 </button>
                 <button
                   onClick={() => {
                     window.electron.ipcRenderer.send('load-backup');
-
                   }}
                   style={{ width: '100%', marginTop: '10px' }}
                 >

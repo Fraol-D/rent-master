@@ -1500,20 +1500,7 @@ const MainPage = ({
               >
                 Email Templates
               </SideBarItem>
-              <SideBarItem
-                page="b"
-                currentPage={ToolsSelectedPage}
-                onClick={() => setToolsSelectedPage('b')}
-              >
-                b
-              </SideBarItem>
-              <SideBarItem
-                page="c"
-                currentPage={ToolsSelectedPage}
-                onClick={() => setToolsSelectedPage('c')}
-              >
-                c
-              </SideBarItem>
+             
             </>
           ) : (
             <></>

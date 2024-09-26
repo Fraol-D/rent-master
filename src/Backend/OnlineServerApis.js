@@ -704,6 +704,8 @@ export const UploadUserFilesToTheOnlineDatabase = async (userId, setProgressValu
       });
       
       const zipContent = await prepareResponse.arrayBuffer();
+      const totalSize = zipContent.byteLength;
+      console.log(`Total upload size: ${totalSize} bytes`);
       setProgressValue(50);
 
       const formData = new FormData();
@@ -711,6 +713,13 @@ export const UploadUserFilesToTheOnlineDatabase = async (userId, setProgressValu
       formData.append('userId', userId);
 
       console.log('Sending zip file to online database...');
+      const startTime = Date.now();
+      let uploadedSize = 0;
+      const logInterval = setInterval(() => {
+        console.log(`Upload progress: ${((uploadedSize / totalSize) * 100).toFixed(2)}%`);
+        console.log(`Upload size: ${uploadedSize} bytes`);
+      }, 3000);
+
       await fetch(`${baseUrl}/upload-missing-files`, {
         method: 'POST',
         headers: {
@@ -719,6 +728,10 @@ export const UploadUserFilesToTheOnlineDatabase = async (userId, setProgressValu
         body: formData,
       });
 
+      clearInterval(logInterval);
+      const endTime = Date.now();
+      const uploadTime = (endTime - startTime) / 1000;
+      console.log(`Upload completed in ${uploadTime} seconds`);
       console.log('Missing files uploaded successfully.');
       setProgressValue(90);
     } else {
@@ -734,6 +747,7 @@ export const UploadUserFilesToTheOnlineDatabase = async (userId, setProgressValu
   }
 };
 
+
 const retry = async (fn, maxRetries = 3, delay = 1000) => {
   let lastError;
   for (let i = 0; i < maxRetries; i++) {
@@ -746,7 +760,6 @@ const retry = async (fn, maxRetries = 3, delay = 1000) => {
   }
   throw lastError;
 };
-
 export const DownloadUserFilesFromOnlineDatabase = async (userId, setProgressValue) => {
   try {
     setProgressValue(0);
@@ -776,15 +789,45 @@ export const DownloadUserFilesFromOnlineDatabase = async (userId, setProgressVal
         },
         body: JSON.stringify({ userId, missingFiles }),
       });
-      const zipBuffer = await downloadResponse.arrayBuffer();
-      setProgressValue(70);
+
+      const reader = downloadResponse.body.getReader();
+      const contentLength = +downloadResponse.headers.get('Content-Length');
+      let receivedLength = 0;
+      const chunks = [];
+      const startTime = Date.now();
+
+      const logInterval = setInterval(() => {
+        console.log(`Download size: ${receivedLength} bytes`);
+        console.log(`Download progress: ${((receivedLength / contentLength) * 100).toFixed(2)}%`);
+      }, 3000);
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        chunks.push(value);
+        receivedLength += value.length;
+        setProgressValue(40 + (receivedLength / contentLength) * 30);
+      }
+
+      clearInterval(logInterval);
+
+      const zipBuffer = new Uint8Array(receivedLength);
+      let position = 0;
+      for (const chunk of chunks) {
+        zipBuffer.set(chunk, position);
+        position += chunk.length;
+      }
 
       console.log('Extracting downloaded files...');
+      const extractStartTime = Date.now();
       await extractDownloadedFiles(zipBuffer, userId);
+      const extractEndTime = Date.now();
+      const extractionTime = (extractEndTime - extractStartTime) / 1000;
+      console.log(`Extraction time: ${extractionTime} seconds`);
+      console.log(`Extracted size: ${receivedLength} bytes`);
+
       setProgressValue(90);
-
       console.log('Files downloaded and extracted successfully.');
-
     } else {
       console.log('No missing files to download.');
       setProgressValue(90);
