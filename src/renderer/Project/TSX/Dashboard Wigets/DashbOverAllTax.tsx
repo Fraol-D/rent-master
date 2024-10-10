@@ -162,4 +162,4 @@ const DashbOverAllTax = ({ RoomList }: { RoomList: RoomType[] }) => {
   );
 };
 
-export default DashbOverAllTax;
+export default React.memo(DashbOverAllTax);

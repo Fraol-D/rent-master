@@ -66,4 +66,4 @@ const BottomNavBar = ({ SelectedPage, setSelectedPage }: any) => {
   );
 };
 
-export default BottomNavBar;
+export default React.memo(BottomNavBar);

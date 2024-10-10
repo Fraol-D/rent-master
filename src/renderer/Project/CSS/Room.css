@@ -252,7 +252,7 @@
   border-radius: 10px 10px 10px 10px;
   text-align: center;
   flex-direction: column;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-content: center;
   margin-top: 10px;
   align-items: center;
@@ -351,3 +351,18 @@
   overflow-y: auto;
 }
 /*/*/
+.UtilityPriceInput {
+  background-color: var(--Secondary-Color);
+  border: 1px solid grey;
+  box-shadow: 2px 2px 2px lab(0 0 0 / 0.21);
+  border-radius: 5px;
+  color: var(--Text-Color);
+}
+.UtilityPriceInputDisabled {
+  background-color: var(--Secondary-Color);
+  color: var(--Text-Color-Grey);
+}
+.UtilityPriceInputDisabled:hover {
+  background-color: var(--Secondary-Color);
+  color: var(--Text-Color-Grey);
+}

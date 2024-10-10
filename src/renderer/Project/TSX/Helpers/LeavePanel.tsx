@@ -146,4 +146,4 @@ const LeavePanel = ({
   );
 };
 
-export default LeavePanel;
+export default React.memo(LeavePanel);

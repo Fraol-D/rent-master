@@ -7,6 +7,7 @@ import {
   deleteReceipt2,
   uploadReceiptDocuments,
 } from 'Backend/localServerApis';
+import UtilityPanel from './UtilityPanel';
 export type RoomPayInfo = {
   Day: number; // milliseconds since January 1, 1970, 00:00:00 UTC
   Paid: boolean;
@@ -20,6 +21,8 @@ interface Props {
   roomPaymentInfoApi: any;
   refresh: () => void;
   extendPaymentSchedule: () => void;
+  ShowReceipt: boolean;
+  setShowReceipt: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 const PaymentProgressBarGUI: React.FC<Props> = ({
@@ -29,12 +32,14 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
   roomType,
   extendPaymentSchedule,
   refresh,
-  tenantList,
+  tenantList,ShowReceipt,setShowReceipt
 }) => {
   const today = new Date().getTime();
   const svgRef = useRef<SVGSVGElement | null>(null);
   const paragraphRef = useRef<HTMLParagraphElement | null>(null);
   const [selectedDates, setSelectedDates] = useState<number[]>([]); // State to track selected dates
+  
+  const [showUtilityPanel, setShowUtilityPanel] = useState(false);
 
   useEffect(() => {
     if (paymentData.length > 0 && svgRef.current) {
@@ -47,7 +52,7 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
       // Calculate the width and height based on the number of payments
       const paymentWidth = 75; // Width of each payment section
       const width = sortedPaymentData.length * paymentWidth + 40; // Total width based on number of payments
-      const height = 200; // Increased height to accommodate dates
+      const height = ShowReceipt ? 200 : 180; // Increased height to accommodate dates
       const padding = 0;
 
       // Set SVG dimensions
@@ -73,7 +78,7 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
           (d: { Day: number }, i: number) =>
             padding + i * paymentWidth + paymentWidth / 2
         )
-        .attr('y2', padding + height / 2 + 24) // Moved line end position down
+        .attr('y2', padding + height / 2 + 33) // Moved line end position down
         .attr('stroke-width', 1)
         .attr('stroke-dasharray', '5, 5')
         .attr('stroke', (d: { Day: number; Paid: boolean }) => {
@@ -195,7 +200,7 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
           (d: { Day: number }, i: number) =>
             padding + i * paymentWidth + paymentWidth / 2
         )
-        .attr('y', padding + height / 2 + 29) // Adjusted position below payment circles
+        .attr('y', padding + height / 2 + 45) // Adjusted position below payment circles
         .attr('text-anchor', 'middle')
         .attr('fill', (d: { Day: number; Paid: boolean }) => {
           if (isBefore(d.Day, today) && !d.Paid) return 'red';
@@ -291,7 +296,7 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
           (d: { Day: number }, i: number) =>
             padding + i * paymentWidth + paymentWidth / 2
         )
-        .attr('y', padding + height / 2 + 45) // Adjusted position below payment circles
+        .attr('y', padding + height / 2 + 60) // Adjusted position below payment circles
         .attr('text-anchor', 'middle')
         .attr('fill', (d: { Day: number; Paid: boolean }) => {
           if (isBefore(d.Day, today) && !d.Paid) return 'red';
@@ -335,282 +340,284 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
           }
         });
       /////////////////////////////////////////////
-      let currentContextData: any;
-      const receiptGroup = svg
-        .selectAll('g.receipt-group')
-        .data(sortedPaymentData)
-        .enter()
-        .append('g')
-        .attr('class', 'receipt-group');
-
-      receiptGroup
-        .append('rect')
-        .attr('width', 45)
-        .attr('height', 45)
-        .attr(
-          'x',
-          (d: { Day: number }, i: number) =>
-            padding + i * paymentWidth + paymentWidth / 2 - 25
-        )
-        .attr('y', padding + height / 2 + 50)
-        .attr('fill', 'none')
-        .attr('stroke', 'var(--Text-Color)')
-        .attr('stroke-width', 1);
-      const contextMenuGroup = svg
-        .append('g')
-        .attr('class', 'context-menu-group')
-        .style('display', 'none');
-
-      contextMenuGroup
-        .append('rect')
-        .attr('width', 120)
-        .attr('height', 70)
-        .attr('fill', 'var(--Secondary-Color)') .attr('stroke', 'var(--Text-Color)');
-
-      const menuItems = ['Open', 'File explorer', 'Delete'];
-      contextMenuGroup
-        .selectAll('.menu-item')
-        .data(menuItems)
-        .enter()
-        .append('text')
-        .attr('class', 'menu-item')
-        .attr('fill', 'var(--Text-Color)')
-
-        .attr('x', 5)
-        .attr('y', (d, i) => 20 + i * 20)
-        .text((d) => d);
-
-      receiptGroup
-        .append('foreignObject')
-        .attr('width', 45)
-        .attr('height', 45)
-        .attr(
-          'x',
-          (d: { Day: number }, i: number) =>
-            padding + i * paymentWidth + paymentWidth / 2 - 25
-        )
-        .attr('y', padding + height / 2 + 50)
-        .append('xhtml:div')
-        .style('width', '100%')
-        .style('height', '100%')
-        .style('display', 'flex')
-        .style('flex-direction', 'column')
-        .style('align-items', 'center')
-        .style('justify-content', 'center')
-        .style('font-size', '10px')
-        .style('text-align', 'center')
-        .html((d: any) => {
-          // Return a placeholder initially
-          return '<div class="receipt-placeholder">Loading...</div>';
-        })
-        .each(function (d: any) {
-          const element = d3.select(this);
-          GetReceiptFile(d.Day).then((receiptFile) => {
+      if(ShowReceipt) {
+        let currentContextData: any;
+        const receiptGroup = svg
+          .selectAll('g.receipt-group')
+          .data(sortedPaymentData)
+          .enter()
+          .append('g')
+          .attr('class', 'receipt-group');
+  
+        receiptGroup
+          .append('rect')
+          .attr('width', 35)
+          .attr('height', 35)
+          .attr(
+            'x',
+            (d: { Day: number }, i: number) =>
+              padding + i * paymentWidth + paymentWidth / 2 - 17
+          )
+          .attr('y', padding + height / 2 + 65)
+          .attr('fill', 'none')
+          .attr('stroke', 'var(--Text-Color)')
+          .attr('stroke-width', 1);
+        const contextMenuGroup = svg
+          .append('g')
+          .attr('class', 'context-menu-group')
+          .style('display', 'none');
+  
+        contextMenuGroup
+          .append('rect')
+          .attr('width', 120)
+          .attr('height', 70)
+          .attr('fill', 'var(--Secondary-Color)') .attr('stroke', 'var(--Text-Color)');
+  
+        const menuItems = ['Open', 'File explorer', 'Delete'];
+        contextMenuGroup
+          .selectAll('.menu-item')
+          .data(menuItems)
+          .enter()
+          .append('text')
+          .attr('class', 'menu-item')
+          .attr('fill', 'var(--Text-Color)')
+  
+          .attr('x', 5)
+          .attr('y', (d, i) => 20 + i * 20)
+          .text((d) => d);
+  
+        receiptGroup
+          .append('foreignObject')
+          .attr('width', 34)
+          .attr('height', 34)
+          .attr(
+            'x',
+            (d: { Day: number }, i: number) =>
+              padding + i * paymentWidth + paymentWidth / 2 - 17
+          )
+          .attr('y', padding + height / 2 + 65)
+          .append('xhtml:div')
+          .style('width', '100%')
+          .style('height', '100%')
+          .style('display', 'flex')
+          .style('flex-direction', 'column')
+          .style('align-items', 'center')
+          .style('justify-content', 'center')
+          .style('font-size', '10px')
+          .style('text-align', 'center')
+          .html((d: any) => {
+            // Return a placeholder initially
+            return '<div class="receipt-placeholder">Loading...</div>';
+          })
+          .each(function (d: any) {
+            const element = d3.select(this);
+            GetReceiptFile(d.Day).then((receiptFile) => {
+              if (!receiptFile) {
+                element.html('Add receipt');
+                return;
+              }
+  
+              const extension = receiptFile.split('.').pop().toLowerCase();
+              const isImage = ['jpg', 'jpeg', 'png', 'gif', 'bmp'].includes(
+                extension
+              );
+  
+              let content = '';
+              if (isImage) {
+                content = `<img src="${receiptFile}" width="40" height="40" title="Click to open" />`;
+              } else {
+                content = `<div style="font-weight: bold;">${extension.toUpperCase()}</div>`;
+              }
+  
+              element.html(`
+                <div style="position: relative; width: 100%; height: 100%; background-color: grey;">
+                  ${content}
+                  
+                </div>
+              `);
+  
+              element.on('mouseover', function () {
+                element.select('.hover-text').style('display', 'flex');
+              });
+  
+              element.on('mouseout', function () {
+                element.select('.hover-text').style('display', 'none');
+              });
+            });
+          })
+          .on('click', async function (event: Event, d: any) {
+            const receiptFile = await GetReceiptFile(d.Day);
             if (!receiptFile) {
-              element.html('Add receipt');
+              AddAReceipt(d);
+              console.log('Add receipt');
+            } else {
+              openInPhotos(d);
+            }
+          })
+          .on('contextmenu', async function (event: Event, d: any) {
+            event.preventDefault();
+            const receiptFile = await GetReceiptFile(d.Day);
+  
+            if (!receiptFile) {
+              // If there's no receipt, don't show the context menu
               return;
             }
-
-            const extension = receiptFile.split('.').pop().toLowerCase();
-            const isImage = ['jpg', 'jpeg', 'png', 'gif', 'bmp'].includes(
-              extension
-            );
-
-            let content = '';
-            if (isImage) {
-              content = `<img src="${receiptFile}" width="40" height="40" title="Click to open" />`;
-            } else {
-              content = `<div style="font-weight: bold;">${extension.toUpperCase()}</div>`;
+  
+            currentContextData = d;
+            const [x, y] = d3.pointer(event, svg.node());
+            const svgBounds = svg.node()?.getBoundingClientRect();
+            const menuHeight = 100; // Adjust based on your menu's actual height
+            const menuWidth = 120; // Adjust based on your menu's actual width
+  
+            let menuX = x;
+            let menuY = y;
+  
+            // Adjust vertical position if needed
+            if (svgBounds && y + menuHeight > svgBounds.height) {
+              menuY = y - menuHeight;
             }
-
-            element.html(`
-              <div style="position: relative; width: 100%; height: 100%;">
-                ${content}
-                
-              </div>
-            `);
-
-            element.on('mouseover', function () {
-              element.select('.hover-text').style('display', 'flex');
-            });
-
-            element.on('mouseout', function () {
-              element.select('.hover-text').style('display', 'none');
+  
+            // Adjust horizontal position if needed
+            if (svgBounds && x + menuWidth > svgBounds.width) {
+              menuX = svgBounds.width - menuWidth;
+            }
+  
+            contextMenuGroup
+              .attr('transform', `translate(${menuX},${menuY})`)
+              .style('display', 'block');
+  
+            // Close menu when clicking outside
+            d3.select('body').on('click.context-menu', () => {
+              contextMenuGroup.style('display', 'none');
+              d3.select('body').on('click.context-menu', null);
             });
           });
-        })
-        .on('click', async function (event: Event, d: any) {
-          const receiptFile = await GetReceiptFile(d.Day);
-          if (!receiptFile) {
-            AddAReceipt(d);
-            console.log('Add receipt');
-          } else {
-            openInPhotos(d);
-          }
-        })
-        .on('contextmenu', async function (event: Event, d: any) {
-          event.preventDefault();
-          const receiptFile = await GetReceiptFile(d.Day);
-
-          if (!receiptFile) {
-            // If there's no receipt, don't show the context menu
-            return;
-          }
-
-          currentContextData = d;
-          const [x, y] = d3.pointer(event, svg.node());
-          const svgBounds = svg.node()?.getBoundingClientRect();
-          const menuHeight = 100; // Adjust based on your menu's actual height
-          const menuWidth = 120; // Adjust based on your menu's actual width
-
-          let menuX = x;
-          let menuY = y;
-
-          // Adjust vertical position if needed
-          if (svgBounds && y + menuHeight > svgBounds.height) {
-            menuY = y - menuHeight;
-          }
-
-          // Adjust horizontal position if needed
-          if (svgBounds && x + menuWidth > svgBounds.width) {
-            menuX = svgBounds.width - menuWidth;
-          }
-
-          contextMenuGroup
-            .attr('transform', `translate(${menuX},${menuY})`)
-            .style('display', 'block');
-
-          // Close menu when clicking outside
-          d3.select('body').on('click.context-menu', () => {
+  
+        // Event listeners for menu items
+        contextMenuGroup
+          .selectAll('.menu-item')
+          .on('click', function (event: Event) {
+            const action = d3.select(this).text();
+            switch (action) {
+              case 'Open':
+                openInPhotos(currentContextData);
+                break;
+              case 'File explorer':
+                openInFileExplorer(currentContextData);
+                break;
+  
+              case 'Delete':
+                deleteReceipt(currentContextData.Day);
+                break;
+            }
             contextMenuGroup.style('display', 'none');
-            d3.select('body').on('click.context-menu', null);
           });
-        });
-
-      // Event listeners for menu items
-      contextMenuGroup
-        .selectAll('.menu-item')
-        .on('click', function (event: Event) {
-          const action = d3.select(this).text();
-          switch (action) {
-            case 'Open':
-              openInPhotos(currentContextData);
-              break;
-            case 'File explorer':
-              openInFileExplorer(currentContextData);
-              break;
-
-            case 'Delete':
-              deleteReceipt(currentContextData.Day);
-              break;
-          }
-          contextMenuGroup.style('display', 'none');
-        });
-
-      function GetReceiptFile(date: Date) {
-        return window.electron.ipcRenderer.invoke(
-          'GetReceiptFile',
-          date,
-          roomType.id,
-          tenantList.find((t: tenant) => t.id === roomType.tenantId)
-        );
-      }
-      // Unimplemented functions
-      function AddAReceipt(d: any) {
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.multiple = true;
-        input.accept = 'image/*,.pdf,.doc,.docx,.txt';
-
-        input.onchange = async (event) => {
-          const files = (event.target as HTMLInputElement).files;
-          if (files && files.length > 0) {
-            const validFiles = Array.from(files).filter(
-              (file) => file.size <= 5 * 1024 * 1024
-            );
-
-            if (validFiles.length !== files.length) {
-              alert(
-                'Some files were skipped because they exceed the 5MB size limit.'
+  
+        function GetReceiptFile(date: Date) {
+          return window.electron.ipcRenderer.invoke(
+            'GetReceiptFile',
+            date,
+            roomType.id,
+            tenantList.find((t: tenant) => t.id === roomType.tenantId)
+          );
+        }
+        // Unimplemented functions
+        function AddAReceipt(d: any) {
+          const input = document.createElement('input');
+          input.type = 'file';
+          input.multiple = true;
+          input.accept = 'image/*,.pdf,.doc,.docx,.txt';
+  
+          input.onchange = async (event) => {
+            const files = (event.target as HTMLInputElement).files;
+            if (files && files.length > 0) {
+              const validFiles = Array.from(files).filter(
+                (file) => file.size <= 5 * 1024 * 1024
               );
-            }
-
-            if (validFiles.length > 0) {
-              try {
-                const roomId = roomType.id;
-                const tenantId = roomType.tenantId || '';
-                const tenantName =
-                  tenantList.find((t: tenant) => t.id === tenantId)?.name || '';
-                const formattedDate = format(d.Day, 'yyyy-MM-dd');
-                const AddedTimeText = format(
-                  new Date(
-                    tenantList.find((t: tenant) => t.id === tenantId)
-                      ?.startTime || 0
-                  ),
-                  'EEE MMM dd yyyy'
+  
+              if (validFiles.length !== files.length) {
+                alert(
+                  'Some files were skipped because they exceed the 5MB size limit.'
                 );
-
-                const results = await uploadReceiptDocuments(
-                  validFiles,
-                  roomId,
-                  tenantName,
-                  tenantId,
-                  formattedDate,
-                  AddedTimeText
-                );
-
-                if (results) {
-                  console.log('Receipts uploaded successfully:', results);
-                  refresh(); // Assuming you have a refresh function to update the UI
-                } else {
-                  console.error('Failed to upload receipts');
-                }
-              } catch (error) {
-                console.error('Error uploading files:', error);
               }
-            } else {
-              alert(
-                'No valid files selected. Please choose files under 5MB in size.'
-              );
+  
+              if (validFiles.length > 0) {
+                try {
+                  const roomId = roomType.id;
+                  const tenantId = roomType.tenantId || '';
+                  const tenantName =
+                    tenantList.find((t: tenant) => t.id === tenantId)?.name || '';
+                  const formattedDate = format(d.Day, 'yyyy-MM-dd');
+                  const AddedTimeText = format(
+                    new Date(
+                      tenantList.find((t: tenant) => t.id === tenantId)
+                        ?.startTime || 0
+                    ),
+                    'EEE MMM dd yyyy'
+                  );
+  
+                  const results = await uploadReceiptDocuments(
+                    validFiles,
+                    roomId,
+                    tenantName,
+                    tenantId,
+                    formattedDate,
+                    AddedTimeText
+                  );
+  
+                  if (results) {
+                    console.log('Receipts uploaded successfully:', results);
+                    refresh(); // Assuming you have a refresh function to update the UI
+                  } else {
+                    console.error('Failed to upload receipts');
+                  }
+                } catch (error) {
+                  console.error('Error uploading files:', error);
+                }
+              } else {
+                alert(
+                  'No valid files selected. Please choose files under 5MB in size.'
+                );
+              }
             }
-          }
-        };
-
-        input.click();
-      }
-
-      async function openInPhotos(d: any) {
-        console.log('Open in photos', d);
-        const receiptFile = await GetReceiptFile(d.Day);
-        if (receiptFile) {
-          window.electron.ipcRenderer.send('open-document', receiptFile);
+          };
+  
+          input.click();
         }
-      }
-
-      async function openInFileExplorer(d: any) {
-        const receiptFile = await GetReceiptFile(d.Day);
-        if (receiptFile) {
-          window.electron.ipcRenderer.send('show-item-in-folder', receiptFile);
-        }
-        console.log('Open in file explorer');
-      }
-      function deleteReceipt(date: number) {
-        GetReceiptFile(date).then((receiptFile) => {
+  
+        async function openInPhotos(d: any) {
+          console.log('Open in photos', d);
+          const receiptFile = await GetReceiptFile(d.Day);
           if (receiptFile) {
-            window.electron.ipcRenderer.send('delete-receipt', receiptFile);
-            window.electron.ipcRenderer.once(
-              'receipt-deleted',
-              (result: any) => {
-                if (result.success) {
-                  console.log('Receipt deleted successfully');
-                  refresh(); // Refresh the UI
-                } else {
-                  console.error('Failed to delete receipt:', result.error);
-                }
-              }
-            );
+            window.electron.ipcRenderer.send('open-document', receiptFile);
           }
-        });
+        }
+  
+        async function openInFileExplorer(d: any) {
+          const receiptFile = await GetReceiptFile(d.Day);
+          if (receiptFile) {
+            window.electron.ipcRenderer.send('show-item-in-folder', receiptFile);
+          }
+          console.log('Open in file explorer');
+        }
+        function deleteReceipt(date: number) {
+          GetReceiptFile(date).then((receiptFile) => {
+            if (receiptFile) {
+              window.electron.ipcRenderer.send('delete-receipt', receiptFile);
+              window.electron.ipcRenderer.once(
+                'receipt-deleted',
+                (result: any) => {
+                  if (result.success) {
+                    console.log('Receipt deleted successfully');
+                    refresh(); // Refresh the UI
+                  } else {
+                    console.error('Failed to delete receipt:', result.error);
+                  }
+                }
+              );
+            }
+          });
+        }
       }
       /////////////////////////////////////////////
       paymentCircles.on('click', (event: any, d: any) => {
@@ -667,7 +674,7 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
     }
   }, [paymentData, today, paymentData]);
   // Function to handle multi-pay
-  const handleMultiPay = async() => {
+  const handleMultiPay = async () => {
     for (let i = 0; i < selectedDates.length; i++) {
       const date = selectedDates[i];
       const payment = paymentData.find((item) => item.Day === date);
@@ -683,12 +690,13 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
     }
     refresh();
   };
-  const handleMultiUnPay = async() => {
+  const handleMultiUnPay = async () => {
     for (let i = 0; i < selectedDates.length; i++) {
       const date = selectedDates[i];
       const payment = paymentData.find((item) => item.Day === date);
 
-      if (payment && payment.Paid) {  // Changed condition to check if payment is Paid
+      if (payment && payment.Paid) {
+        // Changed condition to check if payment is Paid
         await roomPaymentInfoApi.editRoomPaymentApi(
           payment.id,
           'Paid',
@@ -747,30 +755,47 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
         </button>{' '}
         <button
           onClick={() => {
-            handleMultiUnPay();
+            setShowReceipt(!ShowReceipt);
+            setShowUtilityPanel(!ShowReceipt)
           }}
         >
-          UnPay
+          RCT
         </button>
-        <button
-          onClick={() => {
-            handleMultiPay();
-          }}
-        >
-          Pay
-        </button>
+        {selectedDates.length > 0 ? (
+          <>
+            {' '}
+            <button
+              onClick={() => {
+                handleMultiUnPay();
+              }}
+            >
+              UnPay
+            </button>
+            <button
+              onClick={() => {
+                handleMultiPay();
+              }}
+            >
+              Pay
+            </button>
+          </>
+        ) : (
+          <></>
+        )}
       </div>
       <div
         style={{
           overflowX: 'auto',
           maxWidth: '100%',
           overflowY: 'hidden',
-          height: '220px',
+          height: ShowReceipt ?'220px' : '174px',
+          transition:"all .2s"
         }}
       >
         {' '}
-        <svg ref={svgRef} width="100%" height="156" />
+        <svg ref={svgRef} width="100%" height="126" />
       </div>
+     
     </div>
   );
 };

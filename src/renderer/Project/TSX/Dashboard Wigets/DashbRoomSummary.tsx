@@ -67,4 +67,4 @@ const DashbRoomSummary = ({ RoomList }: { RoomList: RoomType[] }) => {
   );
 };
 
-export default DashbRoomSummary;
+export default React.memo(DashbRoomSummary);

@@ -2,15 +2,41 @@ import {
   addValue,
   getValuesWithSql,
   updateValue,
+  deleteValue,
 } from 'Backend/localServerApis';
 import React, { useEffect, useState, useRef } from 'react';
 import '../../CSS/ToolsPage.css';
+import {
+  addValueOnline,
+  getValuesWithSql_Online,
+} from 'Backend/OnlineServerApis';
+import EmailTemplates from '../Tools page components/EmailTemplates';
+import SMSTemplates from '../Tools page components/SMSTemplates';
 const { v4: uuidv4 } = require('uuid');
 interface EmailTemplate {
   id: string;
   name: string;
   subject: string;
   body: string;
+}
+
+interface SMSTemplate {
+  id: string;
+  name: string;
+  body: string;
+}
+
+interface Expense {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  date: number;
+  userId: string;
+  fullBuilding: boolean;
+  roomId: string;
+  doesRecur: boolean;
+  recurringCycle: string;
 }
 
 const ToolsPage = ({
@@ -20,15 +46,18 @@ const ToolsPage = ({
   SelectedUserId,
 }: any) => {
   const [emailTemplates, setEmailTemplates] = useState<EmailTemplate[]>([]);
+  const [smsTemplates, setSMSTemplates] = useState<SMSTemplate[]>([]);
+  const [expenses, setExpenses] = useState<Expense[]>([]);
   const [openTemplateId, setOpenTemplateId] = useState<string | null>(null);
   const [editingTemplateId, setEditingTemplateId] = useState<string | null>(
     null
   );
-  const [editedTemplate, setEditedTemplate] = useState<EmailTemplate | null>(
-    null
-  );
-  const [originalTemplate, setOriginalTemplate] =
-    useState<EmailTemplate | null>(null);
+  const [editedTemplate, setEditedTemplate] = useState<
+    EmailTemplate | SMSTemplate | null
+  >(null);
+  const [originalTemplate, setOriginalTemplate] = useState<
+    EmailTemplate | SMSTemplate | null
+  >(null);
   const [selectedInput, setSelectedInput] = useState<'subject' | 'body' | null>(
     null
   );
@@ -45,6 +74,7 @@ const ToolsPage = ({
 
     'due_amount',
     'due_date',
+    'due_duration',
 
     'landlord_Email',
     'landlord_Telephone',
@@ -92,6 +122,18 @@ const ToolsPage = ({
         setEmailTemplates(templates);
       };
       getEmailTemplates();
+    } else if (ToolsSelectedPage === 'SMSTemplates') {
+      const getSMSTemplates = async () => {
+        const templates = await getValuesWithSql('sms_templates', 'WHERE 1');
+        setSMSTemplates(templates);
+      };
+      getSMSTemplates();
+    } else if (ToolsSelectedPage === 'Expense Manager') {
+      const getExpenses = async () => {
+        const expenses = await getValuesWithSql('expenses', 'WHERE 1');
+        setExpenses(expenses);
+      };
+      getExpenses();
     }
   }, [ToolsSelectedPage]);
 
@@ -134,6 +176,46 @@ const ToolsPage = ({
     setEditedTemplate(null);
   };
 
+  const ChangeSMSTemplateValues = async (
+    id: string,
+    name: string,
+    body: string
+  ) => {
+    const updatedTemplates = smsTemplates.map((template) =>
+      template.id === id ? { ...template, name, body } : template
+    );
+    setSMSTemplates(updatedTemplates);
+
+    await updateValue(
+      'sms_templates',
+      id,
+      'body',
+      body,
+      setChangeMade,
+      originalTemplate?.body
+    );
+    await updateValue(
+      'sms_templates',
+      id,
+      'name',
+      name,
+      setChangeMade,
+      originalTemplate?.name
+    );
+    setEditingTemplateId(null);
+    setEditedTemplate(null);
+  };
+
+  const deleteEmailTemplate = async (id: string) => {
+    await deleteValue('email_templates', id, setChangeMade);
+    setEmailTemplates(emailTemplates.filter((template) => template.id !== id));
+  };
+
+  const deleteSMSTemplate = async (id: string) => {
+    await deleteValue('sms_templates', id, setChangeMade);
+    setSMSTemplates(smsTemplates.filter((template) => template.id !== id));
+  };
+
   const formatEmailBody = (body: string) => {
     const parts = body.split(/(\{\{.*?\}\}|\n)/);
     return parts.map((part, index) => {
@@ -160,7 +242,7 @@ const ToolsPage = ({
     return matches ? [...new Set(matches)] : [];
   };
 
-  const startEditing = (template: EmailTemplate) => {
+  const startEditing = (template: EmailTemplate | SMSTemplate) => {
     setEditingTemplateId(template.id);
     setEditedTemplate({ ...template });
     setOriginalTemplate({ ...template });
@@ -171,7 +253,10 @@ const ToolsPage = ({
     setEditedTemplate(null);
   };
 
-  const handleEditChange = (field: keyof EmailTemplate, value: string) => {
+  const handleEditChange = (
+    field: keyof EmailTemplate | keyof SMSTemplate,
+    value: string
+  ) => {
     if (editedTemplate) {
       setEditedTemplate({ ...editedTemplate, [field]: value });
     }
@@ -179,22 +264,33 @@ const ToolsPage = ({
 
   const saveChanges = () => {
     if (editedTemplate) {
-      ChangeEmailTemplateValues(
-        editedTemplate.id,
-        editedTemplate.name,
-        editedTemplate.subject,
-        editedTemplate.body
-      );
+      if (ToolsSelectedPage === 'EmailTemplates') {
+        ChangeEmailTemplateValues(
+          editedTemplate.id,
+          editedTemplate.name,
+          (editedTemplate as EmailTemplate).subject,
+          editedTemplate.body
+        );
+      } else if (ToolsSelectedPage === 'SMSTemplates') {
+        ChangeSMSTemplateValues(
+          editedTemplate.id,
+          editedTemplate.name,
+          editedTemplate.body
+        );
+      }
     }
   };
 
   const handleTryOut = (templateId: string) => {
     setTryOutMode(templateId);
-    const template = emailTemplates.find((t) => t.id === templateId);
+    const template =
+      ToolsSelectedPage === 'EmailTemplates'
+        ? emailTemplates.find((t) => t.id === templateId)
+        : smsTemplates.find((t) => t.id === templateId);
     if (template) {
       const usedVariables = [
         ...new Set([
-          ...extractVariables(template.subject),
+          ...extractVariables((template as EmailTemplate).subject || ''),
           ...extractVariables(template.body),
         ]),
       ];
@@ -216,32 +312,72 @@ const ToolsPage = ({
     });
   };
   const [recipientEmail, setRecipientEmail] = useState('');
+  const [emailSentSuccess, setEmailSentSuccess] = useState(false);
 
   const handleSendEmail = async () => {
-    const template = emailTemplates.find((t) => t.id === tryOutMode);
+    if (navigator.onLine) {
+      const template = emailTemplates.find((t) => t.id === tryOutMode);
+      if (template) {
+        const subject = replaceVariables(template.subject);
+        const body = replaceVariables(template.body);
+        const userDATA = await window.electron.store.get('users');
+        const userEmail = userDATA[0].email;
+        const userPass = userDATA[0].password;
+        console.log(userEmail, userPass);
+        if (navigator.onLine) {
+          window.electron.ipcRenderer.send('SendCustomEmail', {
+            to: recipientEmail,
+            subject: subject,
+            body: body,
+            userEmail: userEmail,
+            userPassword: userPass,
+            SelectedUserId: SelectedUserId,
+            templateId: template.id,
+          });
+
+          window.electron.ipcRenderer.once(
+            'SendCustomEmailResponse',
+            (response) => {
+              if (response.success) {
+                console.log('Email sent successfully');
+
+                setEmailSentSuccess(true);
+              } else {
+                console.error('Failed to send email:', response.error);
+                setEmailSentSuccess(false);
+              }
+            }
+          );
+        }
+      }
+
+      setRecipientEmail('');
+    }
+  };
+
+  const handleSendSMS = async () => {
+    const template = smsTemplates.find((t) => t.id === tryOutMode);
     if (template) {
-      const subject = replaceVariables(template.subject);
       const body = replaceVariables(template.body);
       const userDATA = await window.electron.store.get('users');
-      const userEmail = userDATA[0].email;
+      const userPhone = userDATA[0].phone;
       const userPass = userDATA[0].password;
-      console.log(userEmail, userPass);
+      console.log(userPhone, userPass);
       if (navigator.onLine) {
-        window.electron.ipcRenderer.send('SendCustomEmail', {
+        window.electron.ipcRenderer.send('SendCustomSMS', {
           to: recipientEmail,
-          subject: subject,
           body: body,
-          userEmail:userEmail,
-          userPassword:userPass
+          userPhone: userPhone,
+          userPassword: userPass,
         });
 
         window.electron.ipcRenderer.once(
-          'SendCustomEmailResponse',
+          'SendCustomSMSResponse',
           (response) => {
             if (response.success) {
-              console.log('Email sent successfully');
+              console.log('SMS sent successfully');
             } else {
-              console.error('Failed to send email:', response.error);
+              console.error('Failed to send SMS:', response.error);
             }
           }
         );
@@ -279,220 +415,314 @@ const ToolsPage = ({
     setEditedTemplate(newTemplate);
     setOriginalTemplate(newTemplate);
   };
+
+  const handleAddSMSTemplate = async () => {
+    const newTemplate: sms_templates = {
+      id: uuidv4(),
+      name: 'New Template',
+      body: 'New Template',
+      created_at: Date.now(),
+      updated_at: Date.now(),
+      userId: SelectedUserId,
+    };
+    await addValue(
+      'sms_templates',
+      {
+        id: newTemplate.id,
+        name: newTemplate.name,
+        body: newTemplate.body,
+        created_at: newTemplate.created_at,
+        updated_at: newTemplate.updated_at,
+        userId: newTemplate.userId,
+      },
+      setChangeMade
+    );
+    setSMSTemplates([...smsTemplates, newTemplate]);
+    setEditingTemplateId(newTemplate.id);
+    setEditedTemplate(newTemplate);
+    setOriginalTemplate(newTemplate);
+  };
+
+  const handleAddExpense = async () => {
+    const newExpense: Expense = {
+      id: uuidv4(),
+      name: 'New Expense',
+      description: 'New Expense Description',
+      price: 0,
+      date: Date.now(),
+      userId: SelectedUserId,
+      fullBuilding: false,
+      roomId: '',
+      doesRecur: false,
+      recurringCycle: '',
+    };
+    await addValue(
+      'expenses',
+      {
+        id: newExpense.id,
+        name: newExpense.name,
+        description: newExpense.description,
+        price: newExpense.price,
+        date: newExpense.date,
+        userId: newExpense.userId,
+        fullBuilding: newExpense.fullBuilding,
+        roomId: newExpense.roomId,
+        doesRecur: newExpense.doesRecur,
+        recurringCycle: newExpense.recurringCycle,
+      },
+      setChangeMade
+    );
+    setExpenses([...expenses, newExpense]);
+  };
+
+  const handleEditExpense = async (
+    id: string,
+    name: string,
+    description: string,
+    price: number,
+    fullBuilding: boolean,
+    roomId: string,
+    doesRecur: boolean,
+    recurringCycle: string,
+    date: number
+  ) => {
+    const updatedExpenses = expenses.map((expense) =>
+      expense.id === id
+        ? {
+            ...expense,
+            name,
+            description,
+            price,
+            fullBuilding,
+            roomId,
+            doesRecur,
+            recurringCycle,
+            date,
+          }
+        : expense
+    );
+    setExpenses(updatedExpenses);
+
+    await updateValue(
+      'expenses',
+      id,
+      'name',
+      name,
+      setChangeMade,
+      originalTemplate?.name
+    );
+    await updateValue(
+      'expenses',
+      id,
+      'description',
+      description,
+      setChangeMade,
+      originalTemplate?.description
+    );
+    await updateValue(
+      'expenses',
+      id,
+      'price',
+      price,
+      setChangeMade,
+      originalTemplate?.price
+    );
+    await updateValue(
+      'expenses',
+      id,
+      'fullBuilding',
+      fullBuilding,
+      setChangeMade,
+      originalTemplate?.fullBuilding
+    );
+    await updateValue(
+      'expenses',
+      id,
+      'roomId',
+      roomId,
+      setChangeMade,
+      originalTemplate?.roomId
+    );
+    await updateValue(
+      'expenses',
+      id,
+      'doesRecur',
+      doesRecur,
+      setChangeMade,
+      originalTemplate?.doesRecur
+    );
+    await updateValue(
+      'expenses',
+      id,
+      'recurringCycle',
+      recurringCycle,
+      setChangeMade,
+      originalTemplate?.recurringCycle
+    );
+    await updateValue(
+      'expenses',
+      id,
+      'date',
+      date,
+      setChangeMade,
+      originalTemplate?.date
+    );
+  };
+
+  const handleDeleteExpense = async (id: string) => {
+    await deleteValue('expenses', id, setChangeMade);
+    setExpenses(expenses.filter((expense) => expense.id !== id));
+  };
+
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortField, setSortField] = useState<'name' | 'price' | 'date'>('name');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+
+  const filteredExpenses = expenses
+    .filter((expense) =>
+      expense.name.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    .sort((a, b) => {
+      if (sortOrder === 'asc') {
+        return a[sortField] > b[sortField] ? 1 : -1;
+      } else {
+        return a[sortField] < b[sortField] ? 1 : -1;
+      }
+    });
+
+  const [emailSendingwith, setEmailSendingwith] = useState('');
+  useEffect(() => {
+    const a = async () => {
+      const emaiSendingwith = await getValuesWithSql_Online('users', `WHERE 1`);
+      const selectedEmail = emaiSendingwith.find(
+        (a: any) => a.id === SelectedUserId
+      )?.selectedEmailToSendWith;
+      console.log('Selected email to send with:', selectedEmail);
+      setEmailSendingwith(selectedEmail || '');
+    };
+    a();
+  }, []);
+
   return (
-    <div className="tools-page">
+    <>
+      <></>
+
       {ToolsSelectedPage === 'EmailTemplates' && (
+        <EmailTemplates
+          emailTemplates={emailTemplates}
+          openTemplateId={openTemplateId}
+          editingTemplateId={editingTemplateId}
+          editedTemplate={editedTemplate}
+          variables={variables}
+          variableValues={variableValues}
+          recipientEmail={recipientEmail}
+          emailSendingwith={emailSendingwith}
+          handleAddEmailTemplate={handleAddEmailTemplate}
+          toggleTemplate={toggleTemplate}
+          startEditing={startEditing}
+          saveChanges={saveChanges}
+          cancelEditing={cancelEditing}
+          deleteEmailTemplate={deleteEmailTemplate}
+          handleEditChange={handleEditChange}
+          insertVariable={insertVariable}
+          extractVariables={extractVariables}
+          handleTryOut={handleTryOut}
+          tryOutMode={tryOutMode}
+          setTryOutMode={setTryOutMode}
+          formatEmailBody={formatEmailBody}
+          replaceVariables={replaceVariables}
+          handleVariableValueChange={handleVariableValueChange}
+          setRecipientEmail={setRecipientEmail}
+          handleSendEmail={handleSendEmail}
+          subjectInputRef={subjectInputRef}
+          bodyTextareaRef={bodyTextareaRef}
+          setSelectedInput={setSelectedInput}
+        />
+      )}
+
+      {ToolsSelectedPage === 'SMSTemplates' && (
+        <SMSTemplates
+          smsTemplates={smsTemplates}
+          openTemplateId={openTemplateId}
+          editingTemplateId={editingTemplateId}
+          editedTemplate={editedTemplate}
+          variables={variables}
+          variableValues={variableValues}
+          recipientEmail={recipientEmail}
+          handleAddSMSTemplate={handleAddSMSTemplate}
+          toggleTemplate={toggleTemplate}
+          startEditing={startEditing}
+          saveChanges={saveChanges}
+          cancelEditing={cancelEditing}
+          deleteSMSTemplate={deleteSMSTemplate}
+          handleEditChange={handleEditChange}
+          insertVariable={insertVariable}
+          extractVariables={extractVariables}
+          handleTryOut={handleTryOut}
+          tryOutMode={tryOutMode}
+          setTryOutMode={setTryOutMode}
+          formatEmailBody={formatEmailBody}
+          replaceVariables={replaceVariables}
+          handleVariableValueChange={handleVariableValueChange}
+          setRecipientEmail={setRecipientEmail}
+          handleSendSMS={handleSendSMS}
+          bodyTextareaRef={bodyTextareaRef}
+          setSelectedInput={setSelectedInput}
+        />
+      )}
+      {ToolsSelectedPage === 'Expense Manager' && (
         <>
           <div
             style={{
               display: 'flex',
               justifyContent: 'space-between',
-              alignItems: 'center',
+              alignItems: 'flex-start',
+              width: '100%',
+              height: '100%',
             }}
           >
-            {' '}
-            <h2>Your Email Templates</h2>
-            <button
-              onClick={() => {
-                handleAddEmailTemplate();
-              }}
-            >
-              Add a email template
-            </button>
+            <h2>Expense Manager</h2>
+            <button onClick={handleAddExpense}>Add Expense</button>
           </div>
-          {emailTemplates.map((template) => (
-            <div
-              key={template.id}
-              className="email-template-container"
-              style={{
-                minHeight: openTemplateId === template.id ? '181px' : '',
-              }}
+          <div>
+            <input
+              type="text"
+              placeholder="Search expenses"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            <select
+              value={sortField}
+              onChange={(e) => setSortField(e.target.value as 'name' | 'price' | 'date')}
             >
-              <div
-                className="email-template-header"
-                style={{
-                  padding: editingTemplateId === template.id ? '10px' : '15px',
-                }}
-              >
-                {editingTemplateId === template.id ? (
-                  <input
-                    value={editedTemplate?.name || ''}
-                    onChange={(e) => handleEditChange('name', e.target.value)}
-                  />
-                ) : (
-                  <h3>{template.name}</h3>
-                )}
-                <div className="email-template-buttons">
-                  <button onClick={() => toggleTemplate(template.id)}>
-                    {openTemplateId === template.id ? 'Close' : 'Open'}
-                  </button>
-                  {editingTemplateId === template.id ? (
-                    <>
-                      <button onClick={saveChanges}>Save</button>
-                      <button onClick={cancelEditing}>Cancel</button>
-                    </>
-                  ) : (
-                    <button onClick={() => startEditing(template)}>Edit</button>
-                  )}
-                </div>
+              <option value="name">Name</option>
+              <option value="price">Price</option>
+              <option value="date">Date</option>
+            </select>
+            <select
+              value={sortOrder}
+              onChange={(e) => setSortOrder(e.target.value as 'asc' | 'desc')}
+            >
+              <option value="asc">Ascending</option>
+              <option value="desc">Descending</option>
+            </select>
+          </div>
+          <div className="expense-cards">
+            {filteredExpenses.map((expense) => (
+              <div key={expense.id} className="expense-card">
+                <h3>{expense.name}</h3>
+                <p>{expense.description}</p>
+                <p>Price: ${expense.price}</p>
+                <p>Date: {new Date(expense.date).toLocaleDateString()}</p>
+                <button onClick={() => handleEditExpense(expense.id, expense.name, expense.description, expense.price)}>Edit</button>
+                <button onClick={() => handleDeleteExpense(expense.id)}>Delete</button>
               </div>
-              {openTemplateId === template.id && (
-                <div className="email-template-content">
-                  <div className="email-template-body">
-                    <h4
-                      style={{
-                        margin: editingTemplateId === template.id ? '0px,' : '',
-                        marginTop:
-                          editingTemplateId === template.id ? '12px' : '',
-                        marginBottom:
-                          editingTemplateId === template.id ? '14px' : '',
-                        width: editingTemplateId === template.id ? '100%' : '',
-                        fontSize: '20px',
-                      }}
-                    >
-                      {editingTemplateId === template.id ? (
-                        <>
-                          Subject:
-                          <input
-                            ref={subjectInputRef}
-                            value={editedTemplate?.subject || ''}
-                            onChange={(e) =>
-                              handleEditChange('subject', e.target.value)
-                            }
-                            onFocus={() => setSelectedInput('subject')}
-                          />
-                        </>
-                      ) : (
-                        <p>Subject:{formatEmailBody(template.subject)}</p>
-                      )}
-                    </h4>
-                    {editingTemplateId === template.id ? (
-                      <textarea
-                        ref={bodyTextareaRef}
-                        value={editedTemplate?.body || ''}
-                        onChange={(e) =>
-                          handleEditChange('body', e.target.value)
-                        }
-                        onFocus={() => setSelectedInput('body')}
-                      />
-                    ) : (
-                      <p>{formatEmailBody(template.body)}</p>
-                    )}
-                  </div>
-                  <div className="email-template-variables">
-                    <h4>
-                      {editingTemplateId === template.id
-                        ? 'Variables:'
-                        : 'Variables Used:'}
-                    </h4>
-                    {editingTemplateId === template.id ? (
-                      <div className="variable-buttons">
-                        {variables.map((variable) => (
-                          <button
-                            key={variable}
-                            onClick={() => insertVariable(variable)}
-                          >
-                            {variable}
-                          </button>
-                        ))}
-                      </div>
-                    ) : (
-                      <div
-                        style={{
-                          display: 'flex',
-                          flexDirection: 'column',
-                          height: '89%',
-                          justifyContent: 'space-between',
-                        }}
-                      >
-                        <ul>
-                          {extractVariables(template.body).map(
-                            (variable, index) => (
-                              <li key={index}>
-                                {variable
-                                  .replaceAll('{', '')
-                                  .replaceAll('}', '')}
-                              </li>
-                            )
-                          )}
-                        </ul>
-                        <button onClick={() => handleTryOut(template.id)}>
-                          Send / Try Out
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-              {tryOutMode === template.id && (
-                <>
-                  <div
-                    className="try-out-container-Opacity"
-                    onClick={() => setTryOutMode(null)}
-                  ></div>{' '}
-                  <div className="try-out-container">
-                    <div
-                      style={{
-                        display: 'flex',
-                        flexDirection: 'row',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                      }}
-                    >
-                      <h2>Send / Try Out</h2>{' '}
-                      <button onClick={() => setTryOutMode(null)}>
-                        Close Try Out
-                      </button>
-                    </div>
-                    <div className="try-out-preview">
-                      <h3>
-                        Subject:{' '}
-                        {formatEmailBody(replaceVariables(template.subject))}
-                      </h3>
-                      <p>{formatEmailBody(replaceVariables(template.body))}</p>
-                    </div>
-                    <hr />
-                    <h3>Fill in to see email preview above </h3>
-                    <div className="try-out-inputs">
-                      {Object.keys(variableValues).map((variable) => (
-                        <div key={variable} className="variable-input">
-                          <label>{variable}:</label>
-                          <input
-                            type="text"
-                            value={variableValues[variable]}
-                            className="try-out-container-input"
-                            onChange={(e) =>
-                              handleVariableValueChange(
-                                variable,
-                                e.target.value
-                              )
-                            }
-                          />
-                        </div>
-                      ))}
-                    </div>{' '}
-                    <hr />
-                    <h3>Send Email</h3>
-                    <p>
-                      You will now send the above email to the email address
-                      specified below
-                    </p>
-                    <input
-                      type="text"
-                      placeholder="Enter Email"
-                      value={recipientEmail}
-                      onChange={(e) => setRecipientEmail(e.target.value)}
-                    />
-                    <button onClick={handleSendEmail}>Send</button>
-                  </div>
-                </>
-              )}
-            </div>
-          ))}
+            ))}
+          </div>
         </>
       )}
-    </div>
+    </>
   );
 };
 
-export default ToolsPage;
+export default React.memo(ToolsPage);

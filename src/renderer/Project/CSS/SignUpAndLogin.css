@@ -1,0 +1,427 @@
+.SignUpMainContainer {
+    width: auto;
+    height: auto;
+    background: var(--Secondary-Color20);
+    border-radius: 8px;
+   
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.25);
+
+    padding: 20px;
+}
+.UtitlityButton-Icon-Height {
+  width: 25px;
+  height: 25px;
+  transition: all 0.2s;
+}
+.UtitlityButton-Icon-Height :active {
+  width: 25px;
+  transition: all 0.2s;
+  height: 20px;
+}
+.main-Container {
+  width: 400px;
+  /* height: 490px; */
+  padding-bottom: 30px;
+  padding-top: 10px;
+  /* margin-top: -80px; */
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  border-radius: 5px;
+  /* border: 1px solid rgba(0, 0, 0, 0.192); */
+  /* box-shadow: 5px 5px 5px rgb(0 0 0 / 20%); */
+  transform: scale(1.2);
+  /*box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.25);*/
+}
+.image-main-container {
+  margin-bottom: 10px;
+  display: flex;
+}
+
+.AccountButtonText {
+  padding-left: 10px;
+  margin-bottom: 0px;
+}
+.AccountButton {
+  margin-left: 10px;
+  margin-right: 10px;
+  transition: all 0.2s;
+}
+.AccountButton-Selected {
+  margin-left: 10px;
+  margin-right: 10px;
+  transition: all 0.2s;
+  border: 1px solid #00e1ff;
+}
+.login-text {
+  font-size: 40px;
+  font-weight: 300;
+  margin-bottom: 0px;
+}
+.login-text2 {
+  font-size: 30px;
+  font-weight: 200;
+
+  margin-bottom: 0px;
+  margin-top: 0px;
+}
+.userName-input {
+  height: 30px;
+
+  /* border-radius: 35px; */
+  padding-left: 5px;
+  width: 90%;
+  margin-bottom: 13px;
+  border: 1px solid grey;
+  transition: all 0.5s;
+  outline: none;
+  position: relative;
+  left: 0;
+  font-size: 14px;
+}
+.userName-input:hover::placeholder {
+    color: var(--Text-Color-Reverse);
+    opacity: .5;
+  }
+  .userName-input::placeholder {
+    color: var(--Text-Color-Grey);
+  }
+.Password-input {
+  height: 30px;
+  /* border-radius: 35px; */
+  padding-left: 5px;
+  width: 200px;
+  margin-bottom: 13px;
+  border: 1px solid grey;
+  transition: all 0.5s;
+  outline: none;
+  position: relative;
+  left: 0;
+  font-size: 14px;
+}
+.userName-input:focus,
+.Password-input:focus {
+  width: 250px;
+  position: relative;
+}
+.LoginButton {
+  border-radius: 5px;
+  
+  width: 100px;
+  font-size: 16px;
+  font-family: 'Inter';
+  font-weight: 400;
+  transition: all 0.2s;
+  border: 1px solid #00e1ff;
+  display: flex;
+  justify-content: center;
+  transition: all .2s;
+}
+
+.LoginButton:hover {
+  flex: '2';
+  border: 1px solid #00e1ff;
+  width: 115px; transition: all .2s;
+}
+.LoginButton:active {
+  width: 105px;
+  flex: '3';
+  border: 2px solid #00e1ff; transition: all .2s;
+}
+.UsernameMainContainer {
+  position: relative;
+  left: -13px;
+  height: 44px;
+}
+.ShowHidePasswordButton {
+  width: 25px;
+  height: 23px;
+  padding: 0px;
+  z-index: 2;
+  position: relative;
+
+  right: 30px;
+
+  border-radius: 35px;
+}
+.ShowHidePasswordImage {
+  width: 20px;
+  height: 20px;
+  user-select: none;
+}
+.Icon-UsernameAndPassword {
+  width: 40px;
+  height: 40px;
+  position: relative;
+  right: 0px;
+  margin-right: 5px;
+  top: 17px;
+}
+.SignUp-Button {
+  width: 300px;
+  height: 50px;
+  border-radius: 10px;
+  font-size: larger;
+}
+.SignUpSettings-Continer {
+  display: flex;
+  align-items: center;
+  align-content: center;
+  justify-content: center;
+  margin: 10px;
+  height: 30px;
+}
+.SignUpSettings-input {
+  height: 35px;
+  width: 160px;
+}
+.SignUpSettings-logo {
+  width: 50px;
+  height: 50px;
+  margin: 0px;
+  border-radius: 5px;
+}
+.SignUpSettings-radio-container {
+  display: flex;
+  font-weight: 200;
+  margin-bottom: 10px;
+}
+.SignUpSettings-radio {
+  margin-left: 10px;
+}
+.forgotPasswordButton {
+  background: transparent;
+  color: black;
+  margin-top: 14px;
+  /* width: 100%; */
+  text-align: left;
+  border-bottom: 1px solid #00e1ff;
+  padding-bottom: 0px;
+  margin-right: 50%;
+  border-radius: 0px;
+  padding: 0px;
+}
+.ResetPasswordsInput {
+  margin-top: 10px;
+  margin-bottom: 10px;
+  height: 30px;
+  width: 250px;
+}
+.SignUph1Text {
+  font-size: 70px;
+}
+.SignUph2Text {
+  margin-top: 20px;
+  margin-bottom: 20px;
+  font-size: 19.1px;
+}
+.SignUpInputsInfo {
+  width: 284px;
+  height: 35px;
+}
+.SignUpInputsInfoContianer {
+  display: flex;
+  flex-direction: row;
+  margin-top: 10px;
+  justify-content: center;
+  align-items: center;
+}
+.SignUpErrorText {
+  width: 300px;
+  height: 5px;
+  left: 0;
+
+  font-size: 16px;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  text-align: center;
+}
+.LoginErrorText {
+  margin-top: 10px;
+  display: flex;
+  align-items:center;
+  justify-content: center;
+
+}
+.loginbuttonIcon {
+  width: 30px;
+  height: 30px;
+  margin-left: 10px;
+}
+.Option-Buttons {
+  width: 150px;
+  height: 40px;
+  font-size: 20px;
+  margin: 20px;
+  border: 1px dashed #00e1ff;
+  font-weight: 200;
+  margin-bottom: 0px;
+  font-family: inter;
+  border-radius: 5px;
+  transition: all 0.2s;
+}
+.Option-Buttons-Selected {
+  width: 200px;
+  height: 50px;
+  font-size: 20px;
+  margin: 20px;
+  border: 1px solid #00e1ff;
+  font-weight: 300;
+  font-family: inter;
+  margin-bottom: 0px;
+  border-radius: 5px;
+  transition: all 0.2s;
+}.Option-Info {
+  font-size: 17px;
+  text-align: center;
+}
+.inputF {
+  height: 35px;
+
+  /* border-radius: 35px; */
+  padding-left: 5px;
+  width: 200px;
+
+  border: 1px solid grey;
+  transition: all 0.5s;
+  outline: none;
+  position: relative;
+  left: 0;
+  font-size: 16px;
+}
+.image-container-SignUp {
+  display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-size: 16px;
+}
+
+.main-Container-signup {
+  width: 603px;
+  height: 809px;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  border-radius: 5px;
+  /* border: 1px solid rgba(0, 0, 0, 0.192); */
+  box-shadow: 5px 5px 5px rgb(0, 0, 0);
+  transform: scale(1);
+  box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.25);
+}
+.SignUpSignOutTryAgainContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 400px;
+}
+.SignUpSignOutTryAgain {
+  margin: 10px;
+  width: 130px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  transition: all 0.2s;
+  box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.25);
+}
+.SignUpSignOutTryAgainIcon {
+  width: 30px;
+  height: 30px;
+  margin-left: 10px;
+}
+.SignOutButton {
+  width: 150px;
+  height: 40px;
+  box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.25);
+
+  margin: 0px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  transition: all 0.2s;
+}
+
+.signOutAndIfNot {
+  
+}
+.signup-success-message {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.25);
+  border-radius: 5px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.SignUpSignOutTryAgain:hover {
+  width: 140px;
+}
+.SignUpSignOutTryAgain:active {
+  width: 125px;
+}
+
+
+
+.inputmulticontainer {
+  display: flex;
+}
+.inputcontainercontainer {
+}
+
+.AdminNormalText {
+  text-align: center;
+  margin: 00px;
+}
+
+.usernameandpassicon {
+  width: 50px;
+  height: 50px;
+  margin-right: 10px;
+  margin-left: 10px;
+}
+.gearicon {
+  width: 20px;
+  height: 20px;
+  margin-right: 10px;
+  margin-left: 10px;
+}
+.imageandinput {
+  display: flex;
+  align-items: center;
+}
+.SignUp-Button {
+}
+.threelettererrortext {
+  font-size: 12px;
+  position: relative;
+  height: 0px;
+  left: 70px;
+  bottom: 20px;
+  color: red;
+  font-weight: 300;
+}
+.threelettererrortextusername {
+  font-size: 12px;
+  position: relative;
+  height: 0px;
+  left: -210px;
+  bottom: 20px;
+  color: red;
+  font-weight: 300;
+}
+
+.EmailandPasswordContainer {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}

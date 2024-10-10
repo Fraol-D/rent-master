@@ -50,10 +50,13 @@ const NotificationSettingsTable: React.FC<NotificationSettingsProps> = ({
     const fetchSelectedTemplates = async () => {
       const selections = await getValuesWithSql(
         'notification_template_selections',
-        `WHERE user_id = '${userId}'`
+        `WHERE userId = '${userId}'`
       );
       const selectionsMap = selections.reduce((acc, selection) => {
-        acc[selection.notification_type] = selection.email_template_id;
+        const expectedId = `${roomId}_${selection.notification_type}`;
+        if (selection.id === expectedId) {
+          acc[selection.notification_type] = selection.email_template_id;
+        }
         return acc;
       }, {} as Record<string, string>);
       setSelectedTemplates(selectionsMap);
@@ -61,7 +64,7 @@ const NotificationSettingsTable: React.FC<NotificationSettingsProps> = ({
 
     fetchEmailTemplates();
     fetchSelectedTemplates();
-  }, [userId]);
+  }, [userId, roomId]);
 
   const toggleSetting = (index: number) => {
     setNotificationSettings(notificationSettings ^ (1 << (index * 2)));
@@ -90,7 +93,7 @@ const NotificationSettingsTable: React.FC<NotificationSettingsProps> = ({
           id: `${roomId}_${notificationType}`,
           notification_type: notificationType,
           email_template_id: templateId,
-          user_id: userId,
+          userId: userId,
         },
         setChangeMade
       );
@@ -157,4 +160,4 @@ const NotificationSettingsTable: React.FC<NotificationSettingsProps> = ({
   );
 };
 
-export default NotificationSettingsTable;
+export default React.memo(NotificationSettingsTable);

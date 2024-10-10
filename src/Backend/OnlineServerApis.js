@@ -18,6 +18,24 @@ const deleteValue = async (tableName, id) => {
     return null;
   }
 };
+
+export const deleteValueOnline = async (tableName, id) => {
+  try {
+    const response = await fetch(`${baseUrl}/${tableName}/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+      },
+    });
+    const data = await response.text();
+   
+    return data;
+  } catch (error) {
+    console.error('Error deleting value:', error);
+    return null;
+  }
+};
 const handleSignOut = async () => {
   try {
     await window.electron.ipcRenderer.invoke('cleanup-on-sign-out');
@@ -863,6 +881,68 @@ const extractDownloadedFiles = async (zipBuffer, userId) => {
 
 
 
+export const replaceUserData = async (userId, tables) => {
+  const filteredTables = Object.fromEntries(
+    Object.entries(tables).map(([tableName, rows]) => [
+      tableName,
+      rows.map(row => {
+        const { RecommendedTenantsIdList, ...rest } = row;
+        return rest;
+      })
+    ])
+  );
+
+  try {
+    const response = await fetch('https://www.rentmaster.markethubet.com/api/replace-user-data', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+      },
+      body: JSON.stringify({ userId, tables: filteredTables }),
+    });
+
+    const responseData = await response.text();
+    console.log('Full server response:', responseData);
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}, response: ${responseData}`);
+    }
+
+    return JSON.parse(responseData);
+  } catch (error) {
+    console.error('Error replacing user data:', error);
+    throw error;
+  }
+};
+
+
+export const SetBackUpAsMain = async (userId) => {
+  const tables = [
+    'rooms', 'room_specifications', 'tenants', 'room_pay_info',
+    'brokers', 'brokersRecommendationList', 'PastTenantsForRoom',
+    'agreements', 'email_templates', 'notification_template_selections'
+  ];
+
+  const allData = {};
+
+  // Fetch data from all tables
+  for (const table of tables) {
+    const tableData = await getValuesWithSql(table,"WHERE 1");
+    // Ensure tableData is an array
+    allData[table] = Array.isArray(tableData) ? tableData : [];
+  }
+  console.log(allData);
+  // Replace online data with local data
+  try {
+    const result = await replaceUserData(userId, allData);
+    console.log('Data sync completed:', result);
+    return result;
+  } catch (error) {
+    console.error('Error syncing data:', error);
+    throw error;
+  }
+};
 /*
 
 

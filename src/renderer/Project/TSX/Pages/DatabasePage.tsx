@@ -258,4 +258,4 @@ const DatabasePage = ({ setChangeMade }: any) => {
     </div>
   );
 };
-export default DatabasePage;
+export default React.memo(DatabasePage);

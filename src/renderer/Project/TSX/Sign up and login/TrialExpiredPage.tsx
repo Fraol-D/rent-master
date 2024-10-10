@@ -8,4 +8,4 @@ const TrialExpiredPage = () => {
   )
 }
 
-export default TrialExpiredPage
+export default React.memo(TrialExpiredPage)

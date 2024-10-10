@@ -213,4 +213,4 @@ const DashbTotalCollected = ({ RoomList }: { RoomList: RoomType[] }) => {
   );
 };
 
-export default DashbTotalCollected;
+export default React.memo(DashbTotalCollected);

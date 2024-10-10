@@ -84,6 +84,7 @@ const createWindow = async () => {
     height: 728,
     x: undefined,
     y: undefined,
+    FullScreen: false,
   });
 
   const { screen } = require('electron');
@@ -101,11 +102,15 @@ const createWindow = async () => {
     finalX = Math.floor((screenWidth - finalWidth) / 2);
     finalY = Math.floor((screenHeight - finalHeight) / 2);
   }
-
+  
+  if(finalX >=1800) {
+    finalX=0;
+  }
   mainWindow = new BrowserWindow({
     show: false,
     width: finalWidth,
     height: finalHeight,
+    fullscreen: windowState.FullScreen,
     x: finalX,
     y: finalY,
     icon: getAssetPath('icon.png'),
@@ -140,7 +145,9 @@ const createWindow = async () => {
         height,
         x: mainWindow.getPosition()[0],
         y: mainWindow.getPosition()[1],
+        FullScreen: mainWindow.isFullScreen(),
       });
+      console.log('Window closed', mainWindow.isFullScreen());
     }
   });
   const menuBuilder = new MenuBuilder(mainWindow);
@@ -305,12 +312,12 @@ app
             <body>
               <div class="container">
                 <h1>Email Verification</h1>
-                <p>Thank you for signing up with MarketHub. Please verify your email address to complete your registration.</p>
+                <p>Thank you for signing up with RentMaster. Please verify your email address to complete your registration.</p>
                 <p class="verification-code"><strong>Your Verification Code:</strong> <span style="font-weight: bold; font-size: 18px;">${code}</span></p>
                 <a href="#" class="btn">Verify Email</a>
                 <div class="footer">
                   <p>Contact us at <a href="mailto:support@markethubet.com">support@markethubet.com</a> for assistance.</p>
-                  <p>Visit our website: <a href="https://www.markethubet.com">www.markethubet.com</a></p>
+                  <p>Visit our website: <a href="https://www.rentmaster.markethubet.com">www.markethubet.com</a></p>
                 </div>
               </div>
             </body>
@@ -329,7 +336,7 @@ app
     });
   })
   .catch(console.log);
-
+  const { v4: uuidv4 } = require('uuid');
 // Sending verification codes
 ipcMain.on('SendCustomEmail', async (event, message) => {
   console.log('Send custom email:', message.to, message.subject, message.body);
@@ -351,8 +358,8 @@ ipcMain.on('SendCustomEmail', async (event, message) => {
       user,
       `WHERE email = '${userEmail}' AND password = '${userPassword}' AND Allowed = 1`
     );
-    console.log(user[0].selectedEmailToSendWith)
-    console.log(user[0].selectedEmailToSendWithPassword)
+    console.log(user[0].selectedEmailToSendWith);
+    console.log(user[0].selectedEmailToSendWithPassword);
     if (user[0]) {
       const transporter = nodemailer.createTransport({
         host: 'rentmaster.markethubet.com',
@@ -363,7 +370,7 @@ ipcMain.on('SendCustomEmail', async (event, message) => {
           pass: user[0].selectedEmailToSendWithPassword,
         },
       });
-   
+
       const mailOptions = {
         from: user[0].selectedEmailToSendWith,
         to: email,
@@ -373,7 +380,16 @@ ipcMain.on('SendCustomEmail', async (event, message) => {
 
       try {
         await transporter.sendMail(mailOptions);
-
+        await addValueOnline('email_history', {
+          id: uuidv4(),
+          receiver: message.to,
+          subject: message.subject,
+          body: message.body,
+          from:user[0].selectedEmailToSendWith,
+          sentDate: Date.now(),
+         templateId:message.templateId,
+          userId: user[0].id,
+        })
         return { success: true };
       } catch (error) {
         return { success: false, error: error.message };
@@ -390,6 +406,7 @@ ipcMain.on('SendCustomEmail', async (event, message) => {
       message.userPassword
     );
     if (result.success) {
+    
       event.reply('SendCustomEmailResponse', {
         success: true,
         message: 'Email sent successfully',
@@ -468,11 +485,12 @@ const tableStructures = [
       'floor INTEGER ',
       'roomIndex INTEGER ',
       'status TEXT ',
-      'price REAL ',
-      'AgreedPrice REAL ',
+      'price REAL DEFAULT 0',
+      'AgreedPrice REAL DEFAULT 0',
       'PaymentCycleType TEXT ',
+
       'PaymentCycleCustomeDays INTEGER',
-      'squareMeters REAL ',
+      'squareMeters REAL DEFAULT 0',
       'tenantId TEXT',
       'AddTenantState BOOLEAN',
       'ViewAgreement BOOLEAN',
@@ -480,6 +498,10 @@ const tableStructures = [
       'selectedAgreementId TEXT',
       'Archived BOOLEAN DEFAULT 0',
       'notificationSettings INTEGER DEFAULT 0',
+      'utilityPaymentEvery TEXT DEFAULT 30',
+      'utilityPaymentEveryCustom INTEGER DEFAULT 0',
+      'utilityPaymentStartDate INTEGER DEFAULT 0',
+      'utilityPaymentUseDifferentStartDate BOOLEAN',
       'userId TEXT',
     ],
   },
@@ -489,7 +511,7 @@ const tableStructures = [
       'id TEXT PRIMARY KEY',
       'roomId TEXT ',
       'Detail TEXT ',
-      'Number REAL',
+      'Number REAL DEFAULT 0',
       'type TEXT ',
       'Boolean BOOLEAN',
       'userId TEXT',
@@ -507,7 +529,7 @@ const tableStructures = [
       'RentingOrOut BOOLEAN ',
       'startTime INTEGER ', // Assuming storing as UNIX timestamp
       'endTime INTEGER',
-      'agreedPrice REAL',
+      'agreedPrice REAL DEFAULT 0',
       'TIN TEXT',
       'RentReason TEXT',
       'AddedTime INTEGER',
@@ -521,7 +543,7 @@ const tableStructures = [
       'roomId TEXT ',
       'Day INTEGER ', // Assuming storing as UNIX timestamp
       'Paid BOOLEAN ',
-      'Value REAL',
+      'Value REAL DEFAULT 0',
       'userId TEXT',
     ],
   },
@@ -536,7 +558,7 @@ const tableStructures = [
 
       'AddedTime INTEGER ',
       'AgreedCommission TEXT ',
-      'rating REAL ',
+      'rating REAL DEFAULT 0',
       'notes TEXT',
       'userId TEXT',
     ],
@@ -547,7 +569,7 @@ const tableStructures = [
       'id TEXT PRIMARY KEY',
       'roomId TEXT',
       'brokerId TEXT ',
-      'recommendedTenantId TEXT ',
+
       'AddedTime INTEGER ',
       'AgreedCommission INTEGER ',
       'userId TEXT',
@@ -581,10 +603,10 @@ const tableStructures = [
       'startTime INTEGER',
       'endTime INTEGER',
       'signTime INTEGER',
-      'agreedPrice REAL',
+      'agreedPrice REAL DEFAULT 0',
       'paymentCycleType TEXT',
       'Memo TEXT',
-      'RentReserved REAL',
+      'RentReserved REAL DEFAULT 0',
       'representative TEXT',
       'userId TEXT',
     ],
@@ -609,8 +631,18 @@ const tableStructures = [
       'name TEXT',
       'subject TEXT',
       'body TEXT',
-      'created_at REAL',
-      'updated_at REAL',
+      'created_at REAL DEFAULT 0',
+      'updated_at REAL DEFAULT 0',
+      'userId TEXT',
+    ],
+  },{
+    name: 'sms_templates',
+    columns: [
+      'id TEXT PRIMARY KEY',
+      'name TEXT',
+      'body TEXT',
+      'created_at REAL DEFAULT 0',
+      'updated_at REAL DEFAULT 0',
       'userId TEXT',
     ],
   },
@@ -620,9 +652,53 @@ const tableStructures = [
       'id TEXT PRIMARY KEY',
       'notification_type TEXT',
       'email_template_id TEXT',
-      'user_id  TEXT',
+      'userId  TEXT',
     ],
   },
+  {
+    name: 'utility_payments_settings',
+    columns: [
+      'id TEXT PRIMARY KEY',
+      'roomId TEXT',
+      'type TEXT',
+      'useThis BOOLEAN',
+      'price REAL DEFAULT 0',
+      'alwaysAsk BOOLEAN',
+      'userId TEXT',
+    ],
+  },
+  {
+    name: 'utility_payments',
+    columns: [
+      'id TEXT PRIMARY KEY',
+      'roomId TEXT',
+      'type TEXT',
+      'price REAL DEFAULT 0',
+      'custom BOOLEAN',
+      'paid BOOLEAN',
+      'date INTEGER',
+      'userId TEXT',
+    ],
+  },
+  {
+    name:'expenses',
+    columns:[
+      'id TEXT PRIMARY KEY',
+
+      'fullBuilding BOOLEAN',
+      'roomId TEXT',
+      'name TEXT',
+      'description TEXT',
+      
+      'doesReoccur BOOLEAN',
+      'recurringCycle INTEGER',
+      'price REAL DEFAULT 0',
+
+      'date INTEGER',
+      'userId TEXT',
+    ]
+  }
+  
 ];
 
 // Function to initialize tables
@@ -1447,6 +1523,62 @@ appDB.get(
     });
   }
 );
+appDB.get(
+  '/room-documents/:roomId/:string',
+  (
+    req: { params: { roomId: string; string:string } },
+    res: {
+      status: (arg0: number) => {
+        (): any;
+        new (): any;
+        json: { (arg0: { error: string }): any; new (): any };
+      };
+      json: (arg0: { documents: string[]; roomFolder: string | null; tenantFolder: string | null }) => void;
+    }
+  ) => {
+    const { roomId, string} = req.params;
+    const roomDocumentsPath = path.join(process.env.APPDATA, appname, 'Room Documents');
+
+    fs.readdir(roomDocumentsPath, (err: any, folders: string[]) => {
+      if (err) {
+        return res.status(500).json({ error: 'Failed to read room documents directory' });
+      }
+
+      const roomFolder = folders.find((folder: string) => folder.includes(roomId));
+      if (!roomFolder) {
+        return res.json({ documents: [], roomFolder: null, tenantFolder: null });
+      }
+
+      const roomFolderPath = path.join(roomDocumentsPath, roomFolder);
+      fs.readdir(roomFolderPath, (err: any, tenantFolders: string[]) => {
+        if (err) {
+          return res.status(500).json({ error: 'Failed to read room folder' });
+        }
+
+        console.log(string);
+        const tenantFolder = tenantFolders.find((folder: string) => folder === string);
+
+        if (!tenantFolder) {
+          return res.json({ documents: [], roomFolder, tenantFolder: null });
+        }
+
+        const tenantFolderPath = path.join(roomFolderPath, tenantFolder);
+        fs.readdir(tenantFolderPath, (err: any, files: string[]) => {
+          if (err) {
+            return res.status(500).json({ error: 'Failed to read tenant folder' });
+          }
+
+          const documents = files.map((file: string) => 
+            `local-resource://${path.join(tenantFolderPath, file)}`
+          );
+
+          res.json({ documents, roomFolder, tenantFolder });
+        });
+      });
+    });
+  }
+);
+
 appDB.delete(
   '/room-image/:roomId/:fileName',
   (
@@ -1920,7 +2052,7 @@ ipcMain.handle('read-file', async (event, filePath) => {
   return fs.readFileSync(cleanPath);
 });
 
-export async function createBackup(Another?: boolean) {
+export async function createBackup(Another?: boolean, num?: number) {
   const backupPath = path.join(app.getPath('documents'), appname + '_Backups');
   if (!fs.existsSync(backupPath)) {
     fs.mkdirSync(backupPath, { recursive: true });
@@ -1931,6 +2063,7 @@ export async function createBackup(Another?: boolean) {
   let backupFileName = `${appname}_Backup_${timestamp}.zip`;
   if (Another) {
     backupFileName = `${appname}_Backup_ToLoadAnother_${timestamp}.zip`;
+    if (num !== 1) store.set('MainBackupPath', backupFileName);
   }
   const appDataPath = process.env.APPDATA || '';
   const bmsPath = path.join(appDataPath, appname);
@@ -2054,6 +2187,7 @@ export async function loadBackup() {
     app.relaunch();
     app.exit();
   });
+  store.set('IsOnBackup', true);
 }
 
 // Add IPC handlers for create-backup and load-backup
@@ -2064,6 +2198,91 @@ ipcMain.on('create-backup', (event, isAnother) => {
 ipcMain.on('load-backup', () => {
   loadBackup();
 });
+
+export async function loadSpecificBackup(backupFileName: string) {
+  console.log('Starting specific backup load process');
+
+  const backupPath = path.join(
+    app.getPath('documents'),
+    appname + '_Backups',
+    backupFileName
+  );
+  console.log('Attempting to load backup:', backupPath);
+
+  if (!fs.existsSync(backupPath)) {
+    console.log('Backup file not found');
+    dialog.showMessageBox({
+      type: 'error',
+      title: 'Backup Not Found',
+      message: `The backup file ${backupFileName} was not found in the ${appname}_Backups folder.`,
+    });
+    return;
+  }
+
+  console.log('Backup file found, proceeding with load');
+
+  const zip = new AdmZip(backupPath);
+  const zipEntries = zip.getEntries();
+  console.log(
+    'Zip entries:',
+    zipEntries.map((entry: { entryName: any }) => entry.entryName)
+  );
+
+  //createBackup(true,2);
+  const bmsPath = path.join(process.env.APPDATA || '', appname);
+  console.log('BMS path:', bmsPath);
+
+  console.log('Clearing existing data...');
+  try {
+    fs.rmdirSync(path.join(bmsPath, 'Room Pictures'), {
+      recursive: true,
+      force: true,
+    });
+    fs.rmdirSync(path.join(bmsPath, 'Room Documents'), {
+      recursive: true,
+      force: true,
+    });
+    fs.unlinkSync(path.join(bmsPath, 'database.db'));
+    console.log('Existing data cleared successfully');
+  } catch (error: any) {
+    console.error('Error clearing existing data:', error);
+  }
+
+  console.log('Extracting new data...');
+  zip.extractAllTo(bmsPath, true);
+  console.log('Extraction complete');
+
+  console.log('Verifying extracted files...');
+  fs.readdirSync(bmsPath).forEach((file: any) => {
+    console.log('Extracted file/folder:', file);
+  });
+
+  if (fs.existsSync(path.join(bmsPath, 'database.db'))) {
+    console.log('Database file extracted successfully');
+  } else {
+    console.log('Failed to extract database file');
+  }
+
+  console.log('Closing database and restarting application...');
+  db.close(() => {
+    dialog.showMessageBox({
+      type: 'info',
+      title: 'Specific Backup Loaded',
+      message: `Backup ${backupFileName} has been successfully loaded. The application will now restart.`,
+    });
+
+    app.relaunch();
+    app.exit();
+  });
+  store.set('IsOnBackup', false);
+  store.set('MainBackupPath', '');
+}
+
+// Add IPC handler for load-specific-backup
+ipcMain.handle('load-specific-backup', (event, backupFileName) => {
+  loadSpecificBackup(backupFileName);
+});
+
 ipcMain.handle('get-receipt-file', (event, dirPath, formattedDate) => {
   const files = fs.readdirSync(dirPath);
   const receiptFile = files.find((file: string) =>
@@ -2084,7 +2303,7 @@ ipcMain.on('delete-receipt', (event, filePath) => {
 });
 
 import { format, isBefore, isAfter, subDays, differenceInDays } from 'date-fns';
-import { getValuesWithSql_Online } from '../Backend/OnlineServerApis';
+import { addValueOnline, getValuesWithSql_Online } from '../Backend/OnlineServerApis';
 ipcMain.handle('GetReceiptFile', (event, date, roomId, tenant) => {
   const formattedDate = format(new Date(date), 'yyyy-MM-dd');
   const addedTimeText = format(

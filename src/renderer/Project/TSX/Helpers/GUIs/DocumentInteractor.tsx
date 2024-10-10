@@ -7,6 +7,7 @@ import {
   deleteRoomDocument,
   deleteTenantDocument,
   getRoomDocuments,
+  getTenantRoomDocuments,
   uploadTenantDocument,
 } from 'Backend/localServerApis';
 
@@ -43,17 +44,53 @@ const DocumentInteractor: React.FC<DocumentInteractorProps> = ({
     }
   }, [room?.id, isAddRoomDocument]);
 
+
   useEffect(() => {
-    if (isAddRoomDocument) {
+    if (isAddRoomDocument) {      
       fetchRoomDocuments2();
     }
   }, []);
+  function convertUnixToDateString(unixTimestamp) {
+    
+    const date = new Date(unixTimestamp);
+    const options = {
+      weekday: 'short',
+      year: 'numeric',
+      month: 'short',
+      day: '2-digit',
+    };
+    console.log(date.toLocaleDateString('en-US', options).replace(/,/g, ''));
+    return date.toLocaleDateString('en-US', options).replace(/,/g, '');
+  
+  }
 
   const fetchRoomDocuments = async () => {
     if (room) {
-      const roomDocs = await getRoomDocuments(room.id);
-      if (roomDocs && roomDocs.documents) {
-        setDocuments(roomDocs.documents);
+      const tenant: tenant = TenantsList.find(
+        (t: any) => t.id === room.tenantId
+      );
+      if (tenant) {
+        const date = new Date(tenant.startTime);
+        const options = {
+          weekday: 'short',
+          year: 'numeric',
+          month: 'short',
+          day: '2-digit',
+        };
+        const roomDocs = await getTenantRoomDocuments(
+          room.id,
+          `${tenant.name}, ${date
+            .toLocaleDateString('en-US', options)
+            .replace(/,/g, '')}, ${tenant.id}`
+        );
+        console.log(
+          tenant.name,
+          date.toLocaleDateString('en-US', options).replace(/,/g, ''),
+          tenant.id
+        );
+        if (roomDocs && roomDocs.documents) {
+          setDocuments(roomDocs.documents);
+        }
       }
     }
   };
@@ -250,4 +287,4 @@ const DocumentInteractor: React.FC<DocumentInteractorProps> = ({
   );
 };
 
-export default DocumentInteractor;
+export default React.memo(DocumentInteractor);

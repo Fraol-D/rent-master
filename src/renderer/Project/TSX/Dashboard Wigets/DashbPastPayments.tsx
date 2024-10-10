@@ -387,4 +387,4 @@ const DashbPastPayments = ({
   );
 };
 
-export default DashbPastPayments;
+export default React.memo(DashbPastPayments);

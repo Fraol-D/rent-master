@@ -1,28 +1,35 @@
 import { getAllUsers } from 'Backend/OnlineServerApis';
 import { addValue } from 'Backend/localServerApis';
 import React, { useState } from 'react';
+import loadingGif from '../../../assets/assets/Loading/Rolling-1s-200px.gif';
 
-const LoginPage = ({ setisSignUpMode, setisSignedIn,setChangeMade }: any) => {
+const LoginPage = ({ setisSignUpMode, setisSignedIn, setChangeMade, email,
+  password,
+  setEmail,
+  setPassword, }: any) => {
   const [errorMessage, setErrorMessage] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const [EmailInput, setEmailInput] = useState('');
-  const [PasswordInput, setPasswordInput] = useState('');
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setEmailInput(e.target.value);
+    setEmail(e.target.value);
   };
 
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setPasswordInput(e.target.value);
+    setPassword(e.target.value);
   };
+
   const SubmitEmailAndPassword = async () => {
-    if (!EmailInput || !PasswordInput) {
+    setErrorMessage('');
+    setLoading(true);
+    if (!email || !password) {
       setErrorMessage('Please fill in your email and password.');
+      setLoading(false);
       return;
     }
     const usersRaw = await getAllUsers();
-    const user = usersRaw.find((user: any) => user.email === EmailInput);
+    const user = usersRaw.find((user: any) => user.email.toLowerCase() === email.toLowerCase());
     if (user) {
-      if (user.password === PasswordInput) {
+      if (user.password === password) {
         handleLogin(user);
       } else {
         setErrorMessage('Wrong password');
@@ -30,9 +37,9 @@ const LoginPage = ({ setisSignUpMode, setisSignedIn,setChangeMade }: any) => {
     } else {
       setErrorMessage('Email does not exist');
     }
-
-    //if it is add a row to offline tables and change the states
+    setLoading(false);
   };
+
   const handleLogin = async (user: any) => {
     setErrorMessage('Login successful!');
     window.electron.store.set('users', [{
@@ -49,32 +56,84 @@ const LoginPage = ({ setisSignUpMode, setisSignedIn,setChangeMade }: any) => {
     }]);
     setisSignedIn(true);
   };
+
   const handleOrLoginButtonClick = () => {
     setisSignUpMode(true);
   };
+
   return (
-    <div>
-      <div>
-        <div></div>
-        <h1>Login Page</h1>
-        <button onClick={handleOrLoginButtonClick}>Or Signup</button>
-      </div>
-      <input
-        type="email"
-        placeholder="Email"
-        value={EmailInput}
-        onChange={handleEmailChange}
-      />
-      <input
-        type="password"
-        placeholder="Password"
-        value={PasswordInput}
-        onChange={handlePasswordChange}
-      />
-      <button onClick={SubmitEmailAndPassword}>Submit</button>
-      {errorMessage && <p>{errorMessage}</p>}
+    <>
+      {loading && (
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            backgroundColor: 'rgba(0, 0, 0, 0.6)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 9999,
+          }}
+        >
+          <img
+            src={loadingGif}
+            style={{ width: '80px', height: '80px' }}
+            alt="Loading..."
+          />
+        </div>
+      )}
+      <div className="SignUpMainContainer"> 
+        <div style={{ 
+            display: 'flex',
+            justifyContent: 'space-between',
+            width: '100%',
+            alignItems: 'center',
+            height: 'auto',
+            marginBottom: '15px' 
+        }}>
+            <h1 style={{ 
+                marginRight: '10px',
+                marginTop: '0px',
+                marginBottom: '0px',
+                fontSize: '65px' 
+            }}>
+                Login
+            </h1> 
+            <button onClick={handleOrLoginButtonClick}>Or Sign up</button>
+        </div>
+
+        <p style={{ color: 'var(--Text-Color-Grey)', marginBottom: '25px' }}>
+            Login with your Email and Password
+        </p>
+
+        <input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={handleEmailChange}
+            className="userName-input" 
+        />
+
+        <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={handlePasswordChange}
+            className="userName-input" 
+        />
+        {errorMessage && <p className="errorMessage" >{errorMessage}</p>} 
+
+     <br />
+        <button onClick={SubmitEmailAndPassword} className="LoginButton">
+            Submit {' ▶'}
+        </button>
+
     </div>
+    </>
   );
 };
 
-export default LoginPage;
+export default React.memo(LoginPage);

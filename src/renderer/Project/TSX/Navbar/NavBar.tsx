@@ -4,6 +4,7 @@ import '../../Css/NavBarCss.css';
 import InsertImageIcon from '../../../assets/assets/Dark mode/Insert Image Pic.png';
 import {
   DownloadUserFilesFromOnlineDatabase,
+  SetBackUpAsMain,
   syncOnlineToLocalWithBool,
   UploadUserFilesToTheOnlineDatabase,
 } from 'Backend/OnlineServerApis';
@@ -16,7 +17,7 @@ interface Props {
   SelectedPage: string;
   setThemeMode: (newval: any) => void;
   ThemeMode: string;
-  ChangeTheme: () => void;
+  ChangeTheme: (theme: 'light' | 'dark') => void;
   signOutUserAndRestart: () => void;
   UploadingLoadingEffect: boolean;
   uploadProgress: number;
@@ -54,7 +55,7 @@ const NavBar = ({
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(new Date());
-    }, 1000);
+    }, 60000);
 
     return () => {
       clearInterval(timer);
@@ -124,7 +125,7 @@ const NavBar = ({
       setIsSyncing(true);
       setSyncProgress(uploadProgress);
     }
-    if (uploadProgress <= 49 || uploadProgress >= 101) {
+    if (uploadProgress >= 99) {
       setIsSyncing(false);
       setSyncProgress(0);
     }
@@ -151,10 +152,12 @@ const NavBar = ({
           ) : (
             <p className="Name-ofShop">{ShopName}</p>
           )} */}{' '}
-          <p className="Name-ofShop" style={{height: '28px'}}>Rent Master</p>
+          <p className="Name-ofShop" style={{ height: '28px' }}>
+            Rent Master
+          </p>
           <p
             className="Name-ofShop"
-            style={{ fontSize: '14px', color: 'grey',height: 'auto' }}
+            style={{ fontSize: '14px', color: 'grey', height: 'auto' }}
           >
             {window.electron.store.get('users')[0].email}
           </p>
@@ -184,7 +187,7 @@ const NavBar = ({
           {' '}
           <button
             style={{ marginLeft: '10px', borderRadius: '10px 0px 0px 10px' }}
-            onClick={handleUpload}
+            onClick={()=>{if(navigator.onLine)handleUpload()}}
             disabled={ChangeMade <= 0}
           >
             <p>
@@ -268,14 +271,14 @@ const NavBar = ({
                 <button
                   className="AdvancedUploadButtonsUploadButton"
                   onClick={() => {
-                    UploadUserFilesToTheOnlineDatabase(
+                if(navigator.onLine)UploadUserFilesToTheOnlineDatabase(
                       SelectedUserId,
                       setUploadAssetsProgress
                     );
                   }}
                   style={{
                     position: 'relative',
-                    overflow: 'hidden'
+                    overflow: 'hidden',
                   }}
                 >
                   <span className="AdvancedUploadButtonsButtonText">
@@ -294,21 +297,21 @@ const NavBar = ({
                       width: `${UploadAssetsProgress}%`,
                       height: '3px',
                       backgroundColor: 'var(--Primary-Color)',
-                      transition: 'width 0.3s ease-in-out'
+                      transition: 'width 0.3s ease-in-out',
                     }}
                   />
                 </button>
                 <button
                   className="AdvancedUploadButtonsUploadButton"
                   onClick={() => {
-                    DownloadUserFilesFromOnlineDatabase(
+                    if(navigator.onLine) DownloadUserFilesFromOnlineDatabase(
                       SelectedUserId,
                       setDownloadAssetsProgress
                     );
                   }}
                   style={{
                     position: 'relative',
-                    overflow: 'hidden'
+                    overflow: 'hidden',
                   }}
                 >
                   <span className="AdvancedUploadButtonsButtonText">
@@ -318,7 +321,6 @@ const NavBar = ({
                     {DownloadAssetsProgress === 100 ||
                     DownloadAssetsProgress === 0
                       ? ''
-
                       : DownloadAssetsProgress.toFixed(2) + '%'}
                   </span>
                   <div
@@ -329,7 +331,7 @@ const NavBar = ({
                       width: `${DownloadAssetsProgress}%`,
                       height: '3px',
                       backgroundColor: 'var(--Primary-Color)',
-                      transition: 'width 0.3s ease-in-out'
+                      transition: 'width 0.3s ease-in-out',
                     }}
                   />
                 </button>
@@ -361,7 +363,64 @@ const NavBar = ({
                 >
                   <p>Load Backup</p>
                 </button>
-              </div>
+              </div>{' '}
+              {window.electron.store.get('IsOnBackup') ? (
+                <>
+                  {' '}
+                  <p
+                    style={{
+                      margin: '0',
+                      marginTop: '5px',
+                      display: 'flex',
+                      fontSize: '14px',
+                      alignItems: 'center',
+                      background: 'var(--Accent-Color)',
+                      textShadow: '2px 2px 4px rgba(0, 0, 0, 0.5)',
+                      textAlign: 'center',
+                    }}
+                  >
+                    You have changed to an older backup, do you want to{' '}
+                  </p>
+                  <div style={{ display: 'flex', width: '100%' }}>
+                    <button
+                      onClick={() => {
+                        
+                          window.electron.ipcRenderer.invoke(
+                            'load-specific-backup',
+                            window.electron.store.get('MainBackupPath')
+                          );
+                        
+                        
+                      }}
+                      style={{
+                        width: '100%',
+                        marginTop: '10px',
+                        marginRight: '10px',
+                      }}
+                    >
+                      <p>Revert to old</p>
+                    </button>
+                    <button
+                     onClick={async () => {
+                      try {
+                        const result = await SetBackUpAsMain(SelectedUserId);
+                        console.log('Data sync completed:', result);
+                        window.electron.store.set("MainBackupPath", '')
+                        window.electron.store.set("IsOnBackup", false)
+                      } catch (error) {
+                        console.error('Error during sync:', error);
+                        // Handle sync error (e.g., show an error message)
+                      }
+                    }}
+                      style={{ width: '100%', marginTop: '10px' }}
+                    >
+                      <p>Set as main</p>
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <></>
+              )}
             </div>
           </>
         ) : (
@@ -370,28 +429,16 @@ const NavBar = ({
         <button
           style={{ marginLeft: '10px', marginRight: '10px' }}
           onClick={() => {
-            ChangeTheme();
-            switch (ThemeMode) {
-              case 'light':
-                setThemeMode('dark');
-                break;
-              case 'dark':
-                setThemeMode('grey');
-                break;
-              case 'grey':
-                setThemeMode('light');
-                break;
-              default:
-                break;
-            }
+            ChangeTheme(ThemeMode === 'light' ? 'dark' : 'light');
           }}
+          
         >
           To{' '}
           {ThemeMode === 'light'
-            ? 'dark'
-            : ThemeMode === 'dark'
             ? 'light'
-            : 'grey'}
+            : ThemeMode === 'dark'
+            ? 'dark'
+            : ''}
         </button>
 
         <button onClick={handleSignOut}>Sign out</button>
@@ -421,4 +468,4 @@ const NavBar = ({
   );
 };
 
-export default NavBar;
+export default React.memo(NavBar);

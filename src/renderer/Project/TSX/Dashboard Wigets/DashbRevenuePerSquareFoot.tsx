@@ -101,4 +101,4 @@ const DashbRevenuePerSquareMeter = ({ RoomList }: { RoomList: RoomType[] }) => {
   );
 };
 
-export default DashbRevenuePerSquareMeter;
+export default React.memo(DashbRevenuePerSquareMeter);

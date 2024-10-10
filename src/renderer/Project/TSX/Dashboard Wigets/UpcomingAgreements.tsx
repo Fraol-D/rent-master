@@ -134,4 +134,4 @@ const UpcomingAgreements = ({
   );
 };
 
-export default UpcomingAgreements;
+export default React.memo(UpcomingAgreements);

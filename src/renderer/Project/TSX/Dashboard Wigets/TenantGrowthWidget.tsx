@@ -177,4 +177,4 @@ const TenantGrowthWidget = ({ TenantList }: { TenantList: tenant[] }) => {
   );
 };
 
-export default TenantGrowthWidget;
+export default React.memo(TenantGrowthWidget);

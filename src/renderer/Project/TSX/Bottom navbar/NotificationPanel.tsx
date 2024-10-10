@@ -25,4 +25,4 @@ const NotificationPanel: React.FC = ({RoomList}:any) => {
   )
 }
 
-export default NotificationPanel
+export default React.memo(NotificationPanel);

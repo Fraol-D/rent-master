@@ -211,4 +211,4 @@ const ImageInteractor: React.FC<ImageInteractorProps> = ({
   );
 };
 
-export default ImageInteractor;
+export default React.memo(ImageInteractor);

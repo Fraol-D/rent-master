@@ -35,6 +35,7 @@ const CalendarGUI: React.FC<CalendarProps> = ({
   useEffect(() => {
     if (ref.current) {
       d3.select(ref.current).selectAll('*').remove();
+      
       const baseWidth = 1500;
       const additionalMonthWidth = 750;
       const width =
@@ -174,6 +175,7 @@ const CalendarGUI: React.FC<CalendarProps> = ({
         .attr('y1', (d: any) => (yScale(d) || 0) + yScale.bandwidth())
         .attr('y2', (d: any) => (yScale(d) || 0) + yScale.bandwidth())
         .attr('stroke', 'grey');
+        if (filteredRooms.length === 0) return;
 
       svg
         .selectAll('.y-grid')
@@ -186,7 +188,6 @@ const CalendarGUI: React.FC<CalendarProps> = ({
         .attr('y1', 0 - 0)
         .attr('y2', height - 65)
         .attr('stroke', 'grey');
-
       const currentDateRect = svg
         .append('rect')
         .attr('x', xScale(today))
@@ -426,4 +427,4 @@ const CalendarGUI: React.FC<CalendarProps> = ({
   );
 };
 
-export default CalendarGUI;
+export default React.memo(CalendarGUI);

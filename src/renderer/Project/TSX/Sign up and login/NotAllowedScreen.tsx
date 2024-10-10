@@ -8,4 +8,4 @@ const NotAllowedScreen = () => {
   )
 }
 
-export default NotAllowedScreen
+export default React.memo( NotAllowedScreen)

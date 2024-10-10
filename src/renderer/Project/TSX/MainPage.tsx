@@ -44,6 +44,10 @@ declare global {
     status: 'Empty' | 'Taken';
     price: number;
     AgreedPrice: number;
+    utilityPaymentEvery: string;
+    utilityPaymentStartDate: number;
+    utilityPaymentUseDifferentStartDate:boolean;
+    utilityPaymentEveryCustom: number;
     PaymentCycleType:
       | '30'
       | '15'
@@ -60,17 +64,11 @@ declare global {
     AddTenantState?: boolean;
     ViewAgreement?: boolean;
     ShowPayTimeLine?: boolean;
+    ShowUtilityLine?: boolean;
     AllRoomPayInfo: AllRoomPayInfo;
     selectedAgreementId: string;
     notificationSettings: number;
-  };
-  type BrokerRecommendationType = {
-    id: string;
-    roomId: string;
-    brokerId: string;
-    recommendedTenantId: string;
-    AddedTime: number;
-    AgreedCommission: number;
+    utilityPayments: UtilityPaymentSettings[];
   };
   type RoomSpecificationType = {
     id: string;
@@ -79,6 +77,33 @@ declare global {
     type: 'bool' | 'number';
     Boolean: boolean;
   };
+  type UtilityPaymentSettings = {
+    type: string;
+    useThis: boolean;
+    price: string;
+    alwaysAsk: boolean;
+    id: string;
+    userId: string;
+  };
+  type UtilityPayment = {
+    id: string;
+    roomId: string;
+    type: string;
+    price: string;
+    custom: boolean;
+    
+    userId: string;
+  };
+
+  type BrokerRecommendationType = {
+    id: string;
+    roomId: string;
+    brokerId: string;
+    recommendedTenantId: string;
+    AddedTime: number;
+    AgreedCommission: number;
+  };
+ 
   type tenant = {
     id: string;
     name: string;
@@ -87,8 +112,8 @@ declare global {
     email?: string;
     SelectedAgreement: string;
     RentingOrOut: boolean;
-    startTime: string;
-    endTime?: string;
+    startTime: number;
+    endTime?: number;
     agreedPrice: string;
     TIN: string;
     RentReason: string;
@@ -152,6 +177,18 @@ declare global {
     body: string;
     created_at: number;
     updated_at: number;
+    userId: string;
+  };
+  type expenses = {
+    id: string;
+    fullBuilding: boolean;
+    roomId: string;
+    name: string;
+    description: string;
+    doesReoccur: boolean;
+    recurringCycle: number;
+    price: number;
+    date: number;
     userId: string;
   };
 }
@@ -605,8 +642,11 @@ const MainPage = ({
     'TenantsList' | 'BrokersList' | 'TenantReviews'
   >('TenantsList');
   const [ToolsSelectedPage, setToolsSelectedPage] = useState<
-    'EmailTemplates' | 'b' | 'c'
+    'EmailTemplates' | 'SMSTemplates' | 'Expense Manager'
   >('EmailTemplates');
+  const [DashboardSelectedPage, setDashboardSelectedPage] = useState<
+    'Overview' | 'Email History' | 'c'
+  >('Overview');
   const [AddARoomState, setAddARoomState] = useState(false);
   const [AddRoomFormFloor, setAddRoomFormFloor] = useState(1);
   const [AddRoomFormRoomIndex, setAddRoomFormRoomIndex] = useState(1);
@@ -771,7 +811,7 @@ const MainPage = ({
       if (listOfPayments)
         for (let i = 0; i < listOfPayments.length; i++) {
           const element = listOfPayments[i];
-          deleteValue('room_pay_info', element.id);
+          deleteValue('room_pay_info', element.id, setChangeMade);
         }
       roomAPI.DeleteRoom(SelectedEditRoomId);
 
@@ -882,7 +922,7 @@ const MainPage = ({
       }
     >
       <div>{children}</div>
-      {currentPage !== page && <div>{'-→'}</div>}
+      {currentPage !== page && <div>{'-▶'}</div>}
     </div>
   );
 
@@ -1500,9 +1540,39 @@ const MainPage = ({
               >
                 Email Templates
               </SideBarItem>
-             
+              <SideBarItem
+                page="SMSTemplates"
+                currentPage={ToolsSelectedPage}
+                onClick={() => setToolsSelectedPage('SMSTemplates')}
+              >
+                SMS Templates
+              </SideBarItem>
+              <SideBarItem
+                page="Expense Manager"
+                currentPage={ToolsSelectedPage}
+                onClick={() => setToolsSelectedPage('Expense Manager')}
+              >
+               Expense Manager
+              </SideBarItem>
             </>
-          ) : (
+          ) :  SelectedPage === 'Dashboard' ? 
+            <>
+              <SideBarItem
+                page="Overview"
+                currentPage={DashboardSelectedPage}
+                onClick={() => setDashboardSelectedPage('Overview')}
+              >
+               Overview
+              </SideBarItem>
+              <SideBarItem
+                page="Email History"
+                currentPage={DashboardSelectedPage}
+                onClick={() => setDashboardSelectedPage('Email History')}
+              >
+         Email History
+              </SideBarItem>
+            </>
+          :(
             <></>
           )}
         </div>
@@ -1863,6 +1933,8 @@ const MainPage = ({
               BrokerList={BrokerList}
               PastTenantReviews={PastTenantReviews}
               BrokerRecommendationList={BrokerRecommendationList}
+              DashboardSelectedPage={DashboardSelectedPage}
+              SelectedUserId={SelectedUserId}
             />
           )}
           {SelectedPage === 'Database' && (
@@ -1874,4 +1946,4 @@ const MainPage = ({
   );
 };
 
-export default MainPage;
+export default React.memo(MainPage);

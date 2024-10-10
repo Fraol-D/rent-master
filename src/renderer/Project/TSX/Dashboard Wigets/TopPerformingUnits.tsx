@@ -335,4 +335,4 @@ const calculateTotalPaid = (tenant: tenant, RoomList: RoomType[]) => {
   if (!room) return 0;
   return calculateAnnualRevenue(room);
 };
-export default TopPerformingUnits;
+export default React.memo(TopPerformingUnits);

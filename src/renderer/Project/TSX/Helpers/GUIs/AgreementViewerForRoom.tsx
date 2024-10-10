@@ -554,7 +554,7 @@ const AgreementViewerForRoom = ({
                           }}
                         ></EthiopianCalanderConverterMenu>
                       )}{' '}
-                      {[30, 60, 90, 120, 150, 180, 365].map((days) => (
+                      {/*[30, 60, 90, 120, 150, 180, 365].map((days) => (
                         <button
                           key={days}
                           disabled={startTime !== undefined}
@@ -568,7 +568,7 @@ const AgreementViewerForRoom = ({
                         >
                           +{days}
                         </button>
-                      ))}
+                      ))*/}
                     </div>
                     <div>
                       Sign date:
@@ -668,4 +668,4 @@ const AgreementViewerForRoom = ({
   );
 };
 
-export default AgreementViewerForRoom;
+export default React.memo(AgreementViewerForRoom);

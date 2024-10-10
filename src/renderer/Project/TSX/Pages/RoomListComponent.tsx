@@ -75,64 +75,80 @@ export function RoomListComponent({
           }}
         ></div>
         <div className="RoomContainer">
-          {sortedAndFilteredRooms
-            .filter((r: RoomType) => r.Archived == ShowArchived)
-            .map((room: any, index: any) => (
-              <Room
-                agreementApi={agreementApi}
-                SelectedUserId={SelectedUserId}
-                setChangeMade={setChangeMade}
-                brokerApi={brokerApi}
-                brokersRecommendationListApi={brokersRecommendationListApi}
-                BrokerList={BrokerList}
-                updateRoomPropertyLocal={updateRoomPropertyLocal}
-                setBrokerList={setBrokerList}
-                isUpdatingTenantList={isUpdatingTenantList}
-                setIsUpdatingTenantList={setIsUpdatingTenantList}
-                setSelectedEditRoomId={setSelectedEditRoomId}
-                roomPaymentInfoApi={roomPaymentInfoApi}
-                roomType={room}
-                updateRoomPropertyWithOutRefresh={
-                  updateRoomPropertyWithOutRefresh
-                }
-                updateRoomProperty={updateRoomProperty}
-                turnOffAddTenantStateForAll={() => {
-                  for (let i = 0; i < RoomList.length; i++) {
-                    const element = RoomList[i];
-                    if (element.AddTenantState) {
-                      updateRoomProperty(element.id, 'AddTenantState', 0);
+          {sortedAndFilteredRooms.filter((r: RoomType) => r.Archived == ShowArchived).length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '20px',width:'100%', color:'var(--Text-Color-Grey)'}}>
+              <p>There are no rooms. Add a room by clicking the "Add room" button on the left.</p>
+            </div>
+          ) : (
+            sortedAndFilteredRooms
+              .filter((r: RoomType) => r.Archived == ShowArchived)
+              .map((room: any, index: any) => (
+                <Room
+                  agreementApi={agreementApi}
+                  SelectedUserId={SelectedUserId}
+                  setChangeMade={setChangeMade}
+                  brokerApi={brokerApi}
+                  brokersRecommendationListApi={brokersRecommendationListApi}
+                  BrokerList={BrokerList}
+                  updateRoomPropertyLocal={updateRoomPropertyLocal}
+                  setBrokerList={setBrokerList}
+                  isUpdatingTenantList={isUpdatingTenantList}
+                  setIsUpdatingTenantList={setIsUpdatingTenantList}
+                  setSelectedEditRoomId={setSelectedEditRoomId}
+                  roomPaymentInfoApi={roomPaymentInfoApi}
+                  roomType={room}
+                  updateRoomPropertyWithOutRefresh={updateRoomPropertyWithOutRefresh}
+                  updateRoomProperty={updateRoomProperty}
+                  turnOffAddTenantStateForAll={() => {
+                    for (let i = 0; i < RoomList.length; i++) {
+                      const element = RoomList[i];
+                      if (element.AddTenantState) {
+                        updateRoomPropertyLocal(element.id, 'AddTenantState', 0);
+                      }
                     }
-                  }
 
-                  for (let i = 0; i < RoomList.length; i++) {
-                    const element = RoomList[i];
-                    if (element.ViewAgreement) {
-                      updateRoomProperty(element.id, 'ViewAgreement', 0);
+                    for (let i = 0; i < RoomList.length; i++) {
+                      const element = RoomList[i];
+                      if (element.ViewAgreement) {
+                        updateRoomPropertyLocal(element.id, 'ViewAgreement', 0);
+                      }
                     }
-                  }
-                }}
-                turnOffViewStateForAll={() => {
-                  for (let i = 0; i < RoomList.length; i++) {
-                    const element = RoomList[i];
-                    if (element.AddTenantState) {
-                      updateRoomProperty(element.id, 'AddTenantState', 0);
+                    for (let i = 0; i < RoomList.length; i++) {
+                      const element = RoomList[i];
+                      if (element.ShowUtilityLine) {
+                        updateRoomPropertyLocal(element.id, 'ShowUtilityLine', 0);
+                      }
                     }
-                  }
+                  }}
+                  turnOffViewStateForAll={() => {
+                    for (let i = 0; i < RoomList.length; i++) {
+                      const element = RoomList[i];
+                      if (element.AddTenantState) {
+                        updateRoomPropertyLocal(element.id, 'AddTenantState', 0);
+                      }
+                    }
 
-                  for (let i = 0; i < RoomList.length; i++) {
-                    const element = RoomList[i];
-                    if (element.ViewAgreement) {
-                      updateRoomProperty(element.id, 'ViewAgreement', 0);
+                    for (let i = 0; i < RoomList.length; i++) {
+                      const element = RoomList[i];
+                      if (element.ViewAgreement) {
+                        updateRoomPropertyLocal(element.id, 'ViewAgreement', 0);
+                      }
                     }
-                  }
-                }}
-                key={room.id}
-                setTenantList={setTenantList}
-                TenantList={TenantList}
-                tenantAPI={tenantAPI}
-                pastTenantReviewApi={pastTenantReviewApi}
-              />
-            ))}
+                    for (let i = 0; i < RoomList.length; i++) {
+                      const element = RoomList[i];
+                      if (element.ShowUtilityLine) {
+                        updateRoomPropertyLocal(element.id, 'ShowUtilityLine', 0);
+                      }
+                    }
+                  }}
+                  key={room.id}
+                  setTenantList={setTenantList}
+                  TenantList={TenantList}
+                  tenantAPI={tenantAPI}
+                  pastTenantReviewApi={pastTenantReviewApi}
+                />
+              ))
+          )}
         </div>
       </div>
     </>

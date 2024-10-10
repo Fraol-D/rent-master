@@ -57,6 +57,39 @@ function Hello() {
             const roomSpecifications = (await getRoomSpecifications()) || [];
             const AllRoomPayInfo = await this.getPaymentTimelineInfo(room.id);
 
+            const utilityPayments = await getValuesWithSql(
+              'utility_payments_settings',
+              `WHERE roomId = '${room.id}'`
+            );
+            const defaultUtilities = [
+              'Security',
+              'Electricity',
+              'Water',
+              'Generator',
+              'Internet',
+              'Trash Collection',
+              'Parking',
+              'Utility',
+            ];
+
+            const formattedUtilityPayments = defaultUtilities.map((type) => {
+              const existingUtility = utilityPayments.find(
+                (u) => u.type === type
+              );
+              return {
+                type,
+                useThis: existingUtility
+                  ? existingUtility.useThis === 1
+                  : false,
+                price: existingUtility ? existingUtility.price.toString() : '',
+                alwaysAsk: existingUtility
+                  ? existingUtility.alwaysAsk === 1
+                  : false,
+                id: existingUtility ? existingUtility.id : uuidv4(),
+                userId: existingUtility ? existingUtility.userId : uuidv4(),
+              };
+            });
+
             return {
               id: room.id,
               floor: room.floor,
@@ -76,6 +109,11 @@ function Hello() {
               AllRoomPayInfo: { RoomPayInfo: AllRoomPayInfo },
               selectedAgreementId: room.selectedAgreementId || '',
               notificationSettings: room.notificationSettings || 0,
+              utilityPaymentEvery: room.utilityPaymentEvery || '30',
+              utilityPaymentStartDate: room.utilityPaymentStartDate || 0,
+              utilityPaymentUseDifferentStartDate: room.utilityPaymentUseDifferentStartDate || false,
+              utilityPaymentEveryCustom: room.utilityPaymentEveryCustom || 0,
+              utilityPayments: formattedUtilityPayments,
             };
           })
         );
@@ -144,6 +182,8 @@ function Hello() {
             selectedAgreementId: '',
             userId: SelectedUserId,
             notificationSettings: 0,
+            utilityPaymentEvery: '30',
+            utilityPaymentEveryCustom: '',
           },
           setChangeMade
         );
@@ -167,7 +207,7 @@ function Hello() {
     };
     DeleteRoom = async (roomId: string) => {
       try {
-        await deleteValue('rooms', roomId);
+        await deleteValue('rooms', roomId, setChangeMade);
         this.getRoomFromApi();
         /* Delete All room specifications */
       } catch (error: any) {
@@ -235,7 +275,7 @@ function Hello() {
       specificationId: string,
       propertyName: string,
       newValue: any,
-      OriginalValue:any
+      OriginalValue: any
     ) => {
       try {
         await updateValue(
@@ -296,7 +336,7 @@ function Hello() {
       email: string,
       SelectedAgreement: string,
       RentingOrOut: string,
-      startTime: string,
+      startTime: number,
       endTime: string,
       agreedPrice: string,
       TIN: string,
@@ -314,8 +354,9 @@ function Hello() {
             email: email,
             SelectedAgreement: SelectedAgreement,
             RentingOrOut: RentingOrOut,
-            startTime: startTime,
-            endTime: endTime,
+            startTime: new Date(startTime).getTime(),
+
+            endTime: new Date(endTime).getTime(),
             agreedPrice: agreedPrice,
             TIN: TIN,
             RentReason: RentReason,
@@ -362,7 +403,8 @@ function Hello() {
           tenantId,
           propertyName,
           newValue,
-          setChangeMade,getOriginlPropertyValue(TenantList, tenantId, propertyName)
+          setChangeMade,
+          getOriginlPropertyValue(TenantList, tenantId, propertyName)
         );
       } catch (error: any) {
         console.log(error.message);
@@ -444,16 +486,20 @@ function Hello() {
       lastList: any
     ) => {
       try {
-        const originalValue = RoomList.find((r) => r.id === roomId)?.AllRoomPayInfo?.RoomPayInfo?.find((item) => item.id === roomPaymentId)?.[propertyName];
+        const originalValue = RoomList.find(
+          (r) => r.id === roomId
+        )?.AllRoomPayInfo?.RoomPayInfo?.find(
+          (item) => item.id === roomPaymentId
+        )?.[propertyName];
 
-await updateValue(
-  'room_pay_info',
-  roomPaymentId,
-  propertyName,
-  newValue,
-  setChangeMade,
-  originalValue
-);
+        await updateValue(
+          'room_pay_info',
+          roomPaymentId,
+          propertyName,
+          newValue,
+          setChangeMade,
+          originalValue
+        );
 
         setRoomList((prevRoomList) => {
           return prevRoomList.map((room) => {
@@ -590,7 +636,8 @@ await updateValue(
           brokerId,
           propertyName,
           newValue,
-          setChangeMade,getOriginlPropertyValue(BrokerList, brokerId, propertyName)
+          setChangeMade,
+          getOriginlPropertyValue(BrokerList, brokerId, propertyName)
         );
         await this.getBrokersApi();
       } catch (error: any) {
@@ -738,7 +785,7 @@ await updateValue(
       agreementId: string,
       propertyName: string,
       newValue: any,
-      originalValue:any,
+      originalValue: any
     ) => {
       try {
         await updateValue(
@@ -746,7 +793,8 @@ await updateValue(
           agreementId,
           propertyName,
           newValue,
-          setChangeMade,originalValue
+          setChangeMade,
+          originalValue
         );
       } catch (error: any) {
         console.log(error.message);
@@ -818,38 +866,52 @@ await updateValue(
     brokersRecommendationListApi.getBrokerRecommendationsFromApi();
   };
   const [SelectedPage, setSelectedPage] = useState<
-    'Dashboard' | 'People' | 'Rooms' | 'Calendar' | 'Settings' | 'Database' | 'Tools'
+    | 'Dashboard'
+    | 'People'
+    | 'Rooms'
+    | 'Calendar'
+    | 'Settings'
+    | 'Database'
+    | 'Tools'
   >('Rooms');
 
-  const [ThemeMode, setThemeMode] = useState<'light' | 'dark' | 'grey'>('dark');
+  const [ThemeMode, setThemeMode] = useState<'light' | 'dark'>('light');
 
-const ChangeTheme = () => {
-  const body = document.body;
+  useEffect(() => {
+    const get = async () => {
+      const storedTheme =  window.electron.store.get('ThemeMode');
+      if (storedTheme) {
+        setThemeMode(storedTheme);
+        applyTheme(storedTheme);
+      } else {
+        applyTheme('light');
+      }
+    };
+    get();
+  }, []);
 
-  switch (ThemeMode) {
-    case 'light':
-      body.classList.remove('DarkTheme', 'GreyTheme');
-      setThemeMode('dark');
-      break;
-    case 'dark':
-      body.classList.remove('GreyTheme');
-      body.classList.add('DarkTheme');
-      setThemeMode('grey');
-      break;
-    case 'grey':
-      body.classList.remove('DarkTheme');
-      body.classList.add('GreyTheme');
-      setThemeMode('light');
-      break;
-    default:
-      break;
-  }
-};
+  const ChangeTheme = async (theme: 'light' | 'dark') => {
+     window.electron.store.set('ThemeMode', theme);
+    setThemeMode(theme);
+    applyTheme(theme);
+  };
+
+  const applyTheme = (theme: 'light' | 'dark') => {
+    const body = document.body;
+    body.classList.remove('DarkTheme');
+    if(theme === 'dark'){
+         body.classList.add('DarkTheme');
+    }
+ 
+  };
 
   const [Refresh, setRefresh] = useState(0);
   const [isSignedIn, setisSignedIn] = useState(false);
   const signOutUserAndRestart = async () => {
     await SignOutUser();
+    window.electron.store.set('MainBackupPath', '');
+    window.electron.store.set('IsOnBackup', false);
+    window.electron.store.set('users', []);
     setRefresh(Refresh + 1);
     setisSignedIn(false);
   };
@@ -874,6 +936,7 @@ const ChangeTheme = () => {
     if (!UploadingLoadingEffect) {
       setUploadingLoadingEffect(true);
       setUploadProgress(0);
+      setIsSyncing(true);
 
       if (navigator.onLine) {
         const offline_changes = await getValuesWithSql(
@@ -906,6 +969,12 @@ const ChangeTheme = () => {
       setUploadingLoadingEffect(false);
     }
   };
+  useEffect(() => {
+    if (uploadProgress >= 1 && uploadProgress <= 99) {
+      setSyncProgress(uploadProgress);
+      setIsSyncing(true);
+    }
+  }, [uploadProgress]);
   //Initial syncing
   const [isSyncing, setIsSyncing] = useState(false);
   const [SyncProgress, setSyncProgress] = useState(0);
@@ -927,7 +996,7 @@ const ChangeTheme = () => {
           display: isVisible ? 'flex' : 'none',
           justifyContent: 'center',
           alignItems: 'center',
-          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          backgroundColor: 'rgba(0, 0, 0, 0.8)',
           zIndex: 9999,
         }}
       >
@@ -952,19 +1021,28 @@ const ChangeTheme = () => {
               margin: '0 auto 10px',
             }}
           />
-          <p style={{ margin: 0 }}>Syncing... {SyncProgress}%</p>
+          <p style={{ margin: 0 }}>
+            {uploadProgress >= 1 && uploadProgress <= 50
+              ? 'Uploading...'
+              : 'Syncing...'}{' '}
+            {SyncProgress.toFixed(1)}%
+          </p>
         </div>
       </div>
     );
   };
   return (
     <>
-      {UploadingLoadingEffect && (
+      {SyncProgress >= 1 && SyncProgress <= 99 && (
         <>
           <div className="progress-container">
             <div
               className="progress-bar"
-              style={{ width: `${uploadProgress}%`, position: 'absolute' }}
+              style={{
+                width: `${SyncProgress}%`,
+                position: 'absolute',
+                zIndex: 10000,
+              }}
             ></div>
           </div>
         </>
@@ -980,6 +1058,7 @@ const ChangeTheme = () => {
         setIsSyncing={setIsSyncing}
         RefreshDataFromSqlite={RefreshDataFromSqlite}
         setSyncProgress={setSyncProgress}
+        signOutUserAndRestart={signOutUserAndRestart}
       >
         <>
           <NavBar
@@ -998,7 +1077,7 @@ const ChangeTheme = () => {
             Image={''}
             ShopName={'The company'}
             ThemeMode={ThemeMode}
-            setThemeMode={setThemeMode}
+            setThemeMode={ChangeTheme}
             ChangeTheme={ChangeTheme}
             signOutUserAndRestart={signOutUserAndRestart}
           ></NavBar>

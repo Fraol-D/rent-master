@@ -97,4 +97,4 @@ const EthiopianCalanderConverterMenu: React.FC<
   );
 };
 
-export default EthiopianCalanderConverterMenu;
+export default React.memo(EthiopianCalanderConverterMenu);

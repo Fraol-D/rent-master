@@ -266,6 +266,29 @@ export const addValue = async (tableName, value, setChangeMade) => {
     return null;
   }
 };
+export const addValueWithOutOfflineChange = async (tableName, value) => {
+  try {
+    const response = await fetch(`${baseUrl}/${tableName}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(value),
+    });
+    const data = await response.json();
+  
+
+    return data;
+  } catch (error) {
+    console.error(
+      'Error adding value:',
+      error,
+      'Body is',
+      JSON.stringify(value)
+    );
+    return null;
+  }
+};
 export const updateValue = async (
   tableName,
   id,
@@ -482,6 +505,25 @@ export const getRoomDocuments = async (roomId) => {
     return [];
   }
 };
+export const getTenantRoomDocuments = async (roomId, string) => {
+  try {
+
+    const url = `${baseUrl}/room-documents/${roomId}/${string}`;
+    
+    console.log('Attempting to fetch documents from:', url);
+    
+    const response = await fetch(url);
+    const data = await response.json();
+    
+    
+    return data;
+  } catch (error) {
+    console.log('Error fetching tenant room documents:', error);
+    return { documents: [], roomFolder: null, tenantFolder: null };
+  }
+};
+
+
 export const deleteRoomDocument = async (roomId, filePath) => {
   try {
     const fileName = filePath.split('\\').pop();

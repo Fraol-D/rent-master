@@ -248,4 +248,4 @@ useEffect(() => {
   );
 };
 
-export default ImageInteractor2;
+export default React.memo(ImageInteractor2);
