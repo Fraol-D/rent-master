@@ -43,6 +43,13 @@ const DatabasePage = ({ setChangeMade }: any) => {
     | 'brokersRecommendationList'
     | 'PastTenantsForRoom'
     | 'agreements'
+    | 'notification_template_selections'
+    | 'email_templates'
+    | 'utility_payments'
+    | 'utility_payments_settings'
+    | 'sms_templates'
+
+    | 'expenses'
   >('rooms');
 
   const validTables = [
@@ -55,6 +62,13 @@ const DatabasePage = ({ setChangeMade }: any) => {
     'brokersRecommendationList',
     'PastTenantsForRoom',
     'agreements',
+    'notification_template_selections',
+    'email_templates',
+    'utility_payments',
+    'utility_payments_settings',
+    'sms_templates',
+
+    'expenses',
   ];
 
   const OnChangeSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {

@@ -302,7 +302,7 @@ const UtilityPanel: React.FC<props> = ({
           {
             id: paymentId,
             type: updatedPayment.type,
-            price: updatedPayment.price,
+            price: updatedPayment.price || 0,
             custom: updatedPayment.custom ? 1 : 0,
             paid: updatedPayment.paid ? 1 : 0,
             date: updatedPayment.ParentDate,
@@ -382,7 +382,7 @@ const UtilityPanel: React.FC<props> = ({
           {
             id: paymentId,
             type: updatedPayment.type,
-            price: updatedPayment.price,
+            price: updatedPayment.price || 0,
             custom: updatedPayment.custom ? 1 : 0,
             paid: updatedPayment.paid ? 1 : 0,
             date: updatedPayment.ParentDate,
@@ -470,7 +470,7 @@ const UtilityPanel: React.FC<props> = ({
           {
             id: paymentId,
             type: updatedPayment.type,
-            price: updatedPayment.price,
+            price: updatedPayment.price || 0,
             custom: updatedPayment.custom ? 1 : 0,
             paid: updatedPayment.paid ? 1 : 0,
             date: updatedPayment.ParentDate,
@@ -548,7 +548,7 @@ const UtilityPanel: React.FC<props> = ({
           {
             id: paymentId,
             type: updatedPayment.type,
-            price: newPrice,
+            price: newPrice || 0,
             custom: updatedPayment.custom ? 1 : 0,
             paid: updatedPayment.paid ? 1 : 0,
             date: updatedPayment.ParentDate,
@@ -820,7 +820,7 @@ const UtilityPanel: React.FC<props> = ({
                                     )
                                   }
                                 />
-                                <input
+                                $<input
                                   type="number"
                                   value={
                                     tempPrice[paymentType.id] !== undefined
@@ -861,7 +861,7 @@ const UtilityPanel: React.FC<props> = ({
                                       : 'UtilityPriceInputDisabled'
                                   }
                                 />
-                                $
+                                
                               </td>
                               <td style={{ textAlign: 'center' }}>
                                 <input

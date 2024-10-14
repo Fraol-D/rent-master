@@ -104,13 +104,13 @@ const AccountManager = (React.FC<MyComponentProps> = ({
         setSelectedUserId(allUsers[0].id);
         console.log('Signed in', SelectedUserId);
         if (navigator.onLine) {
-          // setIsSyncing(true);
-          // syncOnlineToLocalWithBool(
-          //   allUsers[0].id,
-          //   setIsSyncing,
-          //   setSyncProgress,
-          //   RefreshDataFromSqlite
-          // );
+          //  setIsSyncing(true);
+          //  syncOnlineToLocalWithBool(
+          //    allUsers[0].id,
+          //    setIsSyncing,
+          //    setSyncProgress,
+          //    RefreshDataFromSqlite
+          //  );
         }
       }
     } else {

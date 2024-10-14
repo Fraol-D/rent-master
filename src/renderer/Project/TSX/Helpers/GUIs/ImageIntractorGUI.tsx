@@ -204,7 +204,7 @@ const ImageInteractor: React.FC<ImageInteractorProps> = ({
       ) : (
         <div className="no-images">
           <p>No images available</p>
-          <button onClick={handleOnAddImage}>Add Image</button>
+          <button onClick={handleOnAddImage} style={{boxShadow: '2px 2px 6px var(--Text-Color-Reverse)'}}>Add Image</button>
         </div>
       )}
     </div>

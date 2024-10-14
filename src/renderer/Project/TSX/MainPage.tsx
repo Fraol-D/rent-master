@@ -182,7 +182,8 @@ declare global {
   type expenses = {
     id: string;
     fullBuilding: boolean;
-    roomId: string;
+    floor: number;
+    room: number;
     name: string;
     description: string;
     doesReoccur: boolean;
@@ -191,6 +192,7 @@ declare global {
     date: number;
     userId: string;
   };
+  
 }
 const MainPage = ({
   RoomList,
@@ -645,7 +647,7 @@ const MainPage = ({
     'EmailTemplates' | 'SMSTemplates' | 'Expense Manager'
   >('EmailTemplates');
   const [DashboardSelectedPage, setDashboardSelectedPage] = useState<
-    'Overview' | 'Email History' | 'c'
+    'Overview' | 'Email History' | 'Expenses'
   >('Overview');
   const [AddARoomState, setAddARoomState] = useState(false);
   const [AddRoomFormFloor, setAddRoomFormFloor] = useState(1);
@@ -726,6 +728,8 @@ const MainPage = ({
       AllRoomPayInfo: { RoomPayInfo: [] },
       selectedAgreementId: '',
       Archived: false,
+
+
     };
 
     // Add to sqlite database
@@ -912,7 +916,7 @@ const MainPage = ({
     }
   }, [SelectedPage]);
 
-  const SideBarItem = ({ page, currentPage, onClick, children }) => (
+  const SideBarItem = ({ page, currentPage, onClick, children }:any) => (
     <div
       onClick={onClick}
       className={
@@ -1019,7 +1023,8 @@ const MainPage = ({
                         width: '100%',
                         display: 'flex',
                         flexDirection: 'column',
-                        alignItems: 'center',
+                        marginLeft: '30px',
+                        alignItems: 'flex-start'
                       }}
                     >
                       {' '}
@@ -1029,7 +1034,9 @@ const MainPage = ({
                         <input
                           type="text1"
                           className="TenantSearchBar"
+                          placeholder='Search tenant name'
                           value={TenantNameFilter}
+                          style={{width:"145px"}}
                           onChange={(e) => {
                             setTenantNameFilter(e.target.value);
                             addFilterOption('tenantName', e.target.value);
@@ -1041,6 +1048,7 @@ const MainPage = ({
                           Floor:
                           <input
                             type="number"
+                          placeholder='0'
                             className="FloorSearchBar"
                             value={floorFilter}
                             onChange={(e) => {
@@ -1053,6 +1061,7 @@ const MainPage = ({
                           {' '}
                           Room:
                           <input
+                          placeholder='0'
                             type="number"
                             className="RoomSearchBar"
                             value={roomFilter}
@@ -1086,7 +1095,9 @@ const MainPage = ({
                           alignItems: 'center',
                           marginRight: '10px',
                           flexDirection: 'row',
-                          justifyContent: 'center',
+                          justifyContent: 'flex-start',
+                          marginLeft: '30px',
+                          marginTop: '10px',
                         }}
                       >
                         Room status:
@@ -1110,10 +1121,11 @@ const MainPage = ({
                       </div>
                       <div
                         className="AdvanceRoomFindingINPUTCONTAINER"
-                        style={{ width: '100%' }}
+                        style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'flex-start',  justifyContent: 'flex-start',
+                          marginLeft: '30px', }}
                       >
                         <div
-                          style={{ marginBottom: '10px', marginTop: '10px' }}
+                          style={{ marginTop: '10px' }}
                         >
                           <div>
                             Filter Price:
@@ -1571,6 +1583,13 @@ const MainPage = ({
               >
          Email History
               </SideBarItem>
+              <SideBarItem
+                page="Expenses"
+                currentPage={DashboardSelectedPage}
+                onClick={() => setDashboardSelectedPage('Expenses')}
+              >
+         Expenses
+              </SideBarItem>
             </>
           :(
             <></>
@@ -1902,6 +1921,7 @@ const MainPage = ({
               setToolsSelectedPage={setToolsSelectedPage}
               setChangeMade={setChangeMade}
               SelectedUserId={SelectedUserId}
+              
             />
           )}
           {SelectedPage === 'Calendar' && (

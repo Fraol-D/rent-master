@@ -48,7 +48,7 @@
   flex-direction: row;
   margin-top: 10px;
   width: 100%;
-  justify-content: center;
+  justify-content: flex-start;
 }
 .FloorSearchBar {
   width: 50px;
@@ -303,7 +303,6 @@
   padding: 5px;
   transition: all 0.2s;
   border-radius: 5px;
-  border: 1px solid grey;
 }
 .sideBarItemComponentMainSelected {
   width: 90%;
@@ -316,7 +315,6 @@
   align-items: center;
   padding: 5px;
   border-radius: 5px;
-  border: 1px solid var(--Primary-Color);
 }
 .sideBarItemComponentMain:hover {
   border: 1px solid white;

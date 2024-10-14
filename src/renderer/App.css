@@ -11,6 +11,7 @@
   --Secondary-Color: #454959;
   --Secondary-Color20: hsl(228, 13%, 31%, 20%);
   --Secondary-Color30: hsl(228, 13%, 31%, 30%);
+  --Secondary-Color60: hsl(228, 13%, 31%, 60%);
 
   --Accent-Color: #e59b25;
   --Accent-Color50: hsl(37, 79%, 52%, 50%);
@@ -28,6 +29,7 @@
   --Secondary-Color: #a6aaba;
   --Secondary-Color20: hsl(228, 13%, 69%, 20%);
   --Secondary-Color30: hsl(228, 13%, 69%, 30%);
+  --Secondary-Color60: hsl(228, 13%, 69%, 60%);
 
   --Accent-Color: #db911a;
   --Accent-Color50: hsl(37, 79%, 48%, 50%);

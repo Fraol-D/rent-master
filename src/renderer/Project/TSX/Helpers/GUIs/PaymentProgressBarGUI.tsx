@@ -51,7 +51,7 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
 
       // Calculate the width and height based on the number of payments
       const paymentWidth = 75; // Width of each payment section
-      const width = sortedPaymentData.length * paymentWidth + 40; // Total width based on number of payments
+      const width = sortedPaymentData.length * paymentWidth + 70; // Total width based on number of payments
       const height = ShowReceipt ? 200 : 180; // Increased height to accommodate dates
       const padding = 0;
 
@@ -94,7 +94,7 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
         .append('rect')
         .attr('x', padding)
         .attr('y', padding + height / 2 - 35)
-        .attr('width', width - 40)
+        .attr('width', width - 80)
         .attr('height', 10)
         .attr('fill', '#f0f0f0')
         .attr('stroke', '#aaa')
@@ -306,8 +306,8 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
         .style('font-size', '14')
         .text((d: any) => {
           return d.Value === null
-            ? agreedPrice.toLocaleString() + '$ X'
-            : d.Value.toLocaleString() + '$ X';
+            ? '$' + agreedPrice.toLocaleString() + ' X'
+            : '$' + d.Value.toLocaleString() + ' X';
         })
         .on('click', (event: any, d: any) => {
           const updatedData = sortedPaymentData.map((item) => {
@@ -643,7 +643,7 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
       ) {
         svg
           .append('rect')
-          .attr('x', width + padding - 30)
+          .attr('x', width + padding - 70)
           .attr('y', padding + height / 2 - 44)
           .attr('width', 60)
           .attr('height', 30)
@@ -658,7 +658,7 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
 
         svg
           .append('text')
-          .attr('x', width + padding)
+          .attr('x', width + padding-40)
           .attr('y', padding + height / 2 - 29)
           .attr('text-anchor', 'middle')
           .attr('dominant-baseline', 'middle')

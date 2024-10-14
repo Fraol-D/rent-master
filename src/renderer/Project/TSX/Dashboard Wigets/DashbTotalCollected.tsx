@@ -151,13 +151,13 @@ const DashbTotalCollected = ({ RoomList }: { RoomList: RoomType[] }) => {
             Total:
           </span>
           <span className="TotalValue">
-            {totalCollected.toLocaleString()}$ /{' '}
-            {totalExpected.toLocaleString()}$
+            ${totalCollected.toLocaleString()} /{' '}
+            ${totalExpected.toLocaleString()}
           </span>
           <span className="DifferenceLabel">
             <span className={difference > 0 ? "DifferenceValue" : "DifferenceValueNegative"}>
               {difference > 0 ? '+' : ''}
-              {difference.toLocaleString()}$ ({percentageChange}%)
+              ${difference.toLocaleString()} ({percentageChange}%)
             </span>{' '}
             in {parseInt(selectedDate) - 1}
           </span>
@@ -188,6 +188,7 @@ const DashbTotalCollected = ({ RoomList }: { RoomList: RoomType[] }) => {
             color: 'var(--Accent-Color50)',
           },
         ]}
+        grid={{ vertical: true, horizontal:true }}
         width={710}
         height={400}
         margin={{

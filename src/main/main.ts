@@ -388,6 +388,7 @@ ipcMain.on('SendCustomEmail', async (event, message) => {
           from:user[0].selectedEmailToSendWith,
           sentDate: Date.now(),
          templateId:message.templateId,
+         mode:'Manually',
           userId: user[0].id,
         })
         return { success: true };
@@ -686,7 +687,8 @@ const tableStructures = [
       'id TEXT PRIMARY KEY',
 
       'fullBuilding BOOLEAN',
-      'roomId TEXT',
+      'floor INTEGER',
+      'room INTEGER',
       'name TEXT',
       'description TEXT',
       

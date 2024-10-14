@@ -115,7 +115,7 @@ const DashbOverAllTax = ({ RoomList }: { RoomList: RoomType[] }) => {
             step="1"
           />
           <span className="TotalLabel">Total Tax:</span>
-          <span className="TotalValue">{totalTax.toLocaleString()}$</span>
+          <span className="TotalValue">${totalTax.toLocaleString()}</span>
         </div>
       </div>
       <BarChart
