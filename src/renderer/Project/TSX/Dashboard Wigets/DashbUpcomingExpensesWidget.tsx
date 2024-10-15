@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { format, addMonths, isBefore, isAfter } from 'date-fns';
+import { format, addMonths, isBefore, isAfter, addDays } from 'date-fns';
 
 interface Expense {
   id: string;
@@ -13,6 +13,7 @@ interface Expense {
   price: number;
   date: number;
   userId: string;
+  isUtility: boolean;
 }
 
 interface UpcomingExpensesWidgetProps {
@@ -26,21 +27,22 @@ const DashbUpcomingExpensesWidget: React.FC<UpcomingExpensesWidgetProps> = ({ ex
   const [filterRoom, setFilterRoom] = useState<number | ''>('');
   const [filterPriceLimit, setFilterPriceLimit] = useState<number | ''>('');
   const [monthsToShow, setMonthsToShow] = useState<number>(3);
-  const [limit, setLimit] = useState<number>(25);
+  const [limit, setLimit] = useState<number>(
+    200);
 
   const upcomingExpenses = useMemo(() => {
     const today = new Date();
     const futureDate = addMonths(today, monthsToShow);
 
     const expandedExpenses = expenses.flatMap(expense => {
-      if (!expense.doesReoccur) {
+      if (!expense.doesReoccur && !expense.isUtility) {
         return isAfter(new Date(expense.date), today) && isBefore(new Date(expense.date), futureDate) ? [expense] : [];
       }
 
       const occurrences = [];
       let currentDate = new Date(expense.date);
       let count = 0;
-      while (isBefore(currentDate, futureDate) && count < limit && count < 100) {
+      while (isBefore(currentDate, futureDate) && count < limit) {
         if (isAfter(currentDate, today)) {
           occurrences.push({
             ...expense,
@@ -48,7 +50,11 @@ const DashbUpcomingExpensesWidget: React.FC<UpcomingExpensesWidgetProps> = ({ ex
           });
           count++;
         }
-        currentDate = addMonths(currentDate, Math.max(1, Math.round(expense.recurringCycle / 30)));
+        if (expense.isUtility) {
+          currentDate = addMonths(currentDate, 1); // Utilities typically recur monthly
+        } else {
+          currentDate = addDays(currentDate, expense.recurringCycle);
+        }
       }
       return occurrences;
     });
@@ -63,8 +69,7 @@ const DashbUpcomingExpensesWidget: React.FC<UpcomingExpensesWidgetProps> = ({ ex
         if (filterPriceLimit !== '' && expense.price > Number(filterPriceLimit)) return false;
         return true;
       })
-      .sort((a, b) => a.date - b.date)
-      .slice(0, limit);
+      .sort((a, b) => a.date - b.date);
   }, [expenses, filterFullBuilding, filterFloor, filterRoom, filterPriceLimit, monthsToShow, limit]);
 
   const groupedExpenses = useMemo(() => {
@@ -94,7 +99,8 @@ const DashbUpcomingExpensesWidget: React.FC<UpcomingExpensesWidgetProps> = ({ ex
       boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
       backgroundColor: 'var(--Secondary-Color30)',
       margin: '10px',
-      height: '600px',    overflowY: 'auto',
+      height: '600px',
+      overflowY: 'auto',
     }}>
       <h2 style={{
         fontSize: '24px',
@@ -160,85 +166,76 @@ const DashbUpcomingExpensesWidget: React.FC<UpcomingExpensesWidgetProps> = ({ ex
             <option value={12}>1 Year</option>
           </select>
         </div>
-        <div>
-          <label style={{ marginRight: '10px' }}>Limit:</label>
-          <select value={limit} onChange={e => setLimit(Number(e.target.value))}>
-            <option value={10}>10</option>
-            <option value={25}>25</option>
-            <option value={50}>50</option>
-            <option value={100}>100</option>
-          </select>
-        </div>
       </div>
       <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-        {groupedExpenses.map(([month, monthExpenses]) => (
-          <li key={month} style={{ marginBottom: '20px' }}>
-            <h3 
-              onClick={() => toggleMonth(month)} 
-              style={{ 
-                cursor: 'pointer', 
-                color: 'var(--Text-Color)',
-                marginBottom: '10px'
-              }}
-            >
-              {format(new Date(month), 'MMMM yyyy')}
-              {expandedMonths.includes(month) ? ' ▼' : ' ▶'}
-            </h3>
-            {expandedMonths.includes(month) && (
-              <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-                {monthExpenses.map((expense, index) => (
-                  <li
-                    key={`${expense.id}-${index}`}
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      padding: '10px',
-                      marginBottom: '10px',
-                      borderBottom: '1px solid var(--Secondary-Color)',
-                      backgroundColor: 'var(--Secondary-Color60)',
-                      borderRadius: '10px',
-                      marginLeft: '10px',
-                    }}
-                  >
-                    <div style={{
-                      flex: '0 0 120px',
-                      fontSize: '14px',
-                      color: 'var(--Text-Color)',
-                    }}>
-                      {format(new Date(expense.date), 'MMM dd, yyyy')}
-                    </div>
-                    <div style={{
-                      flex: '1',
-                      fontSize: '16px',
-                      fontWeight: 'bold',
-                      color: 'var(--Text-Color)',
-                      marginLeft: '20px',
-                    }}>
-                      {expense.name}
-                    </div>
-                    <div style={{
-                      flex: '0 0 100px',
-                      fontSize: '16px',
-                      fontWeight: 'bold',
-                      color: 'var(--Primary-Color)',
-                      textAlign: 'right',
-                    }}>
-                      ${expense.price.toLocaleString()}
-                    </div>
-                    <div style={{
-                      flex: '0 0 120px',
-                      fontSize: '14px',
-                      color: 'var(--Text-Color)',
-                      textAlign: 'center',
-                    }}>
-                      {expense.fullBuilding ? (
-                        <strong>Full Building</strong>
-                      ) : (
-                        <em>{`Room ${expense.room}, Floor ${expense.floor}`}</em>
-                      )}
-                    </div>
-                    {expense.doesReoccur && (
+        {groupedExpenses.length > 0 ? (
+          groupedExpenses.map(([month, monthExpenses]) => (
+            <li key={month} style={{ marginBottom: '20px' }}>
+              <h3 
+                onClick={() => toggleMonth(month)} 
+                style={{ 
+                  cursor: 'pointer', 
+                  color: 'var(--Text-Color)',
+                  marginBottom: '10px'
+                }}
+              >
+                {expandedMonths.includes(month) ? ' ▼' : ' ▶'}{" "}
+                {format(new Date(month), 'MMMM yyyy')}
+              </h3>
+              {expandedMonths.includes(month) && (
+                <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                  {monthExpenses.map((expense, index) => (
+                    <li
+                      key={`${expense.id}-${index}`}
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        padding: '10px',
+                        marginBottom: '10px',
+                        borderBottom: '1px solid var(--Secondary-Color)',
+                        backgroundColor: 'var(--Secondary-Color60)',
+                        borderRadius: '10px',
+                        marginLeft: '10px',
+                      }}
+                    >
+                      <div style={{
+                        flex: '0 0 120px',
+                        fontSize: '14px',
+                        color: 'var(--Text-Color)',
+                      }}>
+                        {format(new Date(expense.date), 'MMM dd, yyyy')}
+                      </div>
+                      <div style={{
+                        flex: '1',
+                        fontSize: '16px',
+                        fontWeight: 'bold',
+                        color: 'var(--Text-Color)',
+                        marginLeft: '20px',
+                      }}>
+                        {expense.name}
+                      </div>
+                      <div style={{
+                        flex: '0 0 100px',
+                        fontSize: '16px',
+                        fontWeight: 'bold',
+                        color: 'var(--Text-Color-Grey)',
+                        textAlign: 'right',
+                      }}>
+                        ${expense.price.toLocaleString()}
+                      </div>
+                      <div style={{
+                        flex: '0 0 120px',
+                        fontSize: '14px',
+                        color: 'var(--Text-Color)',
+                        textAlign: 'center',
+                      }}>
+                        {expense.fullBuilding ? (
+                          <strong>Full Building</strong>
+                        ) : (
+                          <em>{`Room ${expense.room}, Floor ${expense.floor}`}</em>
+                        )}
+                      </div>
                       <div style={{
                         flex: '0 0 80px',
                         fontSize: '12px',
@@ -246,15 +243,19 @@ const DashbUpcomingExpensesWidget: React.FC<UpcomingExpensesWidgetProps> = ({ ex
                         textAlign: 'right',
                         marginLeft: '20px',
                       }}>
-                        Recurring
+                        {expense.isUtility ? 'Utility' : (expense.doesReoccur ? 'Recurring' : '')}
                       </div>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </li>
+          ))
+        ) : (
+          <li style={{ textAlign: 'center', padding: '20px', color: 'var(--Text-Color)' }}>
+            There are currently no upcoming expenses to display. This could be due to your current filter settings or a lack of recorded expenses for the specified time period.
           </li>
-        ))}
+        )}
       </ul>
     </div>
   );

@@ -1,13 +1,26 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { format, isBefore, isAfter, subDays, differenceInDays } from 'date-fns';
+import {
+  format,
+  isBefore,
+  isAfter,
+  subDays,
+  differenceInDays,
+  addDays,
+  addMonths,
+} from 'date-fns';
 import * as d3 from 'd3';
 import editIconDark from '../../../../assets/assets/Dark mode/Editicon.png';
 import editIconLight from '../../../../assets/assets/Light mode/Editicon.png';
 import {
+  addValue,
   deleteReceipt2,
+  deleteValue,
+  getValuesWithSql,
+  updateValue,
   uploadReceiptDocuments,
 } from 'Backend/localServerApis';
 import UtilityPanel from './UtilityPanel';
+import { Payment } from 'electron';
 export type RoomPayInfo = {
   Day: number; // milliseconds since January 1, 1970, 00:00:00 UTC
   Paid: boolean;
@@ -23,7 +36,11 @@ interface Props {
   extendPaymentSchedule: () => void;
   ShowReceipt: boolean;
   setShowReceipt: React.Dispatch<React.SetStateAction<boolean>>;
+  setChangeMade: any;
+  SelectedUserId: string;
+  updateRoomPropertyLocal:any
 }
+const { v4: uuidv4 } = require('uuid');
 
 const PaymentProgressBarGUI: React.FC<Props> = ({
   paymentData,
@@ -32,18 +49,247 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
   roomType,
   extendPaymentSchedule,
   refresh,
-  tenantList,ShowReceipt,setShowReceipt
+  tenantList,
+  ShowReceipt,
+  setShowReceipt,
+  setChangeMade,
+  SelectedUserId,updateRoomPropertyLocal
 }) => {
   const today = new Date().getTime();
   const svgRef = useRef<SVGSVGElement | null>(null);
   const paragraphRef = useRef<HTMLParagraphElement | null>(null);
   const [selectedDates, setSelectedDates] = useState<number[]>([]); // State to track selected dates
-  
-  const [showUtilityPanel, setShowUtilityPanel] = useState(false);
 
+  const [showUtilityPanel, setShowUtilityPanel] = useState(false);
+  const [payments, setPayments] = useState<RoomPayInfo[]>([]);
   useEffect(() => {
-    if (paymentData.length > 0 && svgRef.current) {
-      const sortedPaymentData = [...paymentData].sort((a, b) => a.Day - b.Day);
+    const calculatePayments = async () => {
+      const newPayments: Payment[] = [];
+      let startDate =
+        tenantList.find((tenant) => tenant.id === roomType.tenantId)
+          ?.startTime || Date.now();
+      let endDate = null;
+      if (roomType.selectedAgreementId) {
+        const agreements = await getValuesWithSql(
+          'agreements',
+          `WHERE id = '${roomType.selectedAgreementId}'`
+        );
+        if (agreements.length > 0) startDate = agreements[0].startTime;
+        if (
+          tenantList.find((t: tenant) => t.id === roomType.tenantId)
+            ?.SelectedAgreement === 'Fixed-Term'
+        )
+          if (agreements.length > 0) endDate = agreements[0].endTime;
+      }
+
+      let currentDate = new Date(startDate);
+      let paymentCount = 0;
+      const existingPayments = await getValuesWithSql(
+        'room_pay_info',
+        `WHERE roomId = '${roomType.id}'`
+      );
+      while (paymentCount < 10 * roomType.paymentShowAmount && (endDate == null || currentDate < endDate)) {
+        const paymentId = `${roomType.id}-${currentDate.getTime()}`;
+        newPayments.push({
+          id: paymentId,
+          Day: currentDate.getTime(),
+          Value: roomType.AgreedPrice,
+          Paid:
+            existingPayments.length > 0
+              ? existingPayments.find((p: RoomPayInfo) => p.id === paymentId)
+                  ?.Paid
+              : false,
+          userId: SelectedUserId,
+        });
+
+        paymentCount++;
+
+        // Calculate next payment date based on payment cycle
+        switch (roomType.PaymentCycleType) {
+          case '30':
+            currentDate = addDays(currentDate, 30);
+            break;
+          case '15':
+            currentDate = addDays(currentDate, 15);
+            break;
+          case '7':
+            currentDate = addDays(currentDate, 7);
+            break;
+          case 'daily':
+            currentDate = addDays(currentDate, 1);
+            break;
+          case 'monthly':
+            currentDate = addMonths(currentDate, 1);
+            break;
+          case 'weekly':
+            currentDate = addDays(currentDate, 7);
+            break;
+          case 'custom':
+            currentDate = addDays(
+              currentDate,
+              roomType.PaymentCycleCustomeDays || 30
+            );
+            break;
+          default:
+            currentDate = addMonths(currentDate, 1);
+        }
+      }
+
+      return newPayments;
+    };
+
+    calculatePayments().then(setPayments);
+  }, [roomType, tenantList]);
+  const calculatePredictedPayments = async (room: RoomType) => {
+    const allPayments = [];
+    const today = new Date();
+    const yearEnd = new Date(today.getFullYear() + 1, 11, 31);
+    const tenant = await getValuesWithSql(
+      'tenants',
+      `WHERE id = '${room.tenantId}'`
+    );
+    let startDate = new Date(tenant[0]?.startTime || Date.now()).getTime();
+
+    let endDate = null;
+    if (room.selectedAgreementId) {
+      const agreements = await getValuesWithSql(
+        'agreements',
+        `WHERE id = '${room.selectedAgreementId}'`
+      );
+      if (agreements.length > 0) {
+        startDate = agreements[0].startTime;
+      }
+      if (tenant[0]?.SelectedAgreement === 'Fixed-Term') {
+        if (agreements.length > 0) {
+          endDate = agreements[0].endTime;
+        }
+      }
+    }
+
+    let currentDate = new Date(startDate);
+    while (
+      currentDate <= yearEnd &&
+      (endDate == null || currentDate <= new Date(endDate))
+    ) {
+      const paymentId = `${room.id}-${currentDate.getTime()}`;
+      allPayments.push({
+        id: paymentId,
+        Day: currentDate.getTime(),
+        Value: room.AgreedPrice,
+        Paid: false,
+        roomId: room.id,
+      });
+
+      switch (room.PaymentCycleType) {
+        case '30':
+          currentDate = addDays(currentDate, 30);
+          break;
+        case '15':
+          currentDate = addDays(currentDate, 15);
+          break;
+        case '7':
+          currentDate = addDays(currentDate, 7);
+          break;
+        case 'daily':
+          currentDate = addDays(currentDate, 1);
+          break;
+        case 'monthly':
+          currentDate = addMonths(currentDate, 1);
+          break;
+        case 'weekly':
+          currentDate = addDays(currentDate, 7);
+          break;
+        case 'custom':
+          currentDate = addDays(
+            currentDate,
+            room.PaymentCycleCustomeDays || 30
+          );
+          break;
+        default:
+          currentDate = addMonths(currentDate, 1);
+      }
+    }
+
+    const actualPayments = await getValuesWithSql(
+      'room_pay_info',
+      `WHERE roomId = '${room.id}'`
+    );
+
+    const finalPayments = allPayments.map((payment) => {
+      const actualPayment = actualPayments.find(
+        (p: any) => p.id === payment.id
+      );
+      return actualPayment
+        ? { ...payment, Paid: actualPayment.Paid === 1 }
+        : payment;
+    });
+
+    return finalPayments;
+  };
+
+  const calculateDaysTillNextPayment = (predictedPayments: Payment[]) => {
+    const today = new Date();
+
+    const sortedPayments = predictedPayments.sort((a, b) => a.Day - b.Day);
+
+    for (const payment of sortedPayments) {
+      const paymentDate = new Date(payment.Day);
+      const daysDifference = differenceInDays(paymentDate, today);
+
+      if (!payment.Paid) {
+        if (daysDifference === 0) {
+          return 0;
+        } else if (daysDifference < 0) {
+          return daysDifference;
+        } else {
+          return daysDifference;
+        }
+      }
+    }
+
+    return 0;
+  };
+  const handlePayClick = async (payment: RoomPayInfo) => {
+    const existingPayment = await getValuesWithSql(
+      'room_pay_info',
+      `WHERE id = '${payment.id}'`
+    );
+    const newPaidStatus = !payment.Paid;
+    if (existingPayment.length > 0) {
+      if (newPaidStatus) {
+        await updateValue(
+          'room_pay_info',
+          payment.id,
+          'Paid',
+          1,
+          setChangeMade,
+          0
+        );
+      } else {
+        await deleteValue('room_pay_info', payment.id, setChangeMade);
+      }
+    } else if (newPaidStatus) {
+      await addValue(
+        'room_pay_info',
+        {
+          ...payment,
+          Paid: 1,
+          roomId: roomType.id,
+        },
+        setChangeMade
+      );
+    }
+
+    setPayments((prevPayments) =>
+      prevPayments.map((p) =>
+        p.id === payment.id ? { ...p, Paid: newPaidStatus } : p
+      )
+    );
+    updateRoomPropertyLocal(roomType.id, 'DaysTillNextPayment', calculateDaysTillNextPayment(await calculatePredictedPayments(roomType)));
+  };
+  useEffect(() => {
+    if (payments.length > 0 && svgRef.current) {
+      const sortedPaymentData = [...payments].sort((a, b) => a.Day - b.Day);
       const svg = d3.select(svgRef.current);
 
       // Clear existing SVG content
@@ -211,36 +457,7 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
         .style('font-size', '14')
         .style('cursor', 'pointer')
         .text((d: { Paid: boolean }) => (d.Paid ? 'Paid' : 'Pay'))
-        .on('click', (event: any, d: any) => {
-          const updatedData = sortedPaymentData.map((item) => {
-            if (item.Day === d.Day) {
-              if (item.Paid) {
-                return { ...item, Paid: false };
-              } else {
-                return { ...item, Paid: true };
-              }
-            }
-            return item;
-          });
-
-          if (d.Paid) {
-            roomPaymentInfoApi.editRoomPaymentApi(
-              d.id,
-              'Paid',
-              0,
-              roomType.id,
-              roomType.AllRoomPayInfo.RoomPayInfo
-            );
-          } else {
-            roomPaymentInfoApi.editRoomPaymentApi(
-              d.id,
-              'Paid',
-              1,
-              roomType.id,
-              roomType.AllRoomPayInfo.RoomPayInfo
-            );
-          }
-        });
+        .on('click', (event, d) => handlePayClick(d));
       const selectButtons = svg
         .selectAll('rect.select-button')
         .data(sortedPaymentData)
@@ -309,38 +526,9 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
             ? '$' + agreedPrice.toLocaleString() + ' X'
             : '$' + d.Value.toLocaleString() + ' X';
         })
-        .on('click', (event: any, d: any) => {
-          const updatedData = sortedPaymentData.map((item) => {
-            if (item.Day === d.Day) {
-              if (item.Paid) {
-                return { ...item, Paid: false };
-              } else {
-                return { ...item, Paid: true };
-              }
-            }
-            return item;
-          });
-
-          if (d.Paid) {
-            roomPaymentInfoApi.editRoomPaymentApi(
-              d.id,
-              'Paid',
-              0,
-              roomType.id,
-              roomType.AllRoomPayInfo.RoomPayInfo
-            );
-          } else {
-            roomPaymentInfoApi.editRoomPaymentApi(
-              d.id,
-              'Paid',
-              1,
-              roomType.id,
-              roomType.AllRoomPayInfo.RoomPayInfo
-            );
-          }
-        });
+        .on('click', (event, d) => handlePayClick(d));
       /////////////////////////////////////////////
-      if(ShowReceipt) {
+      if (ShowReceipt) {
         let currentContextData: any;
         const receiptGroup = svg
           .selectAll('g.receipt-group')
@@ -348,7 +536,7 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
           .enter()
           .append('g')
           .attr('class', 'receipt-group');
-  
+
         receiptGroup
           .append('rect')
           .attr('width', 35)
@@ -366,13 +554,14 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
           .append('g')
           .attr('class', 'context-menu-group')
           .style('display', 'none');
-  
+
         contextMenuGroup
           .append('rect')
           .attr('width', 120)
           .attr('height', 70)
-          .attr('fill', 'var(--Secondary-Color)') .attr('stroke', 'var(--Text-Color)');
-  
+          .attr('fill', 'var(--Secondary-Color)')
+          .attr('stroke', 'var(--Text-Color)');
+
         const menuItems = ['Open', 'File explorer', 'Delete'];
         contextMenuGroup
           .selectAll('.menu-item')
@@ -381,11 +570,11 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
           .append('text')
           .attr('class', 'menu-item')
           .attr('fill', 'var(--Text-Color)')
-  
+
           .attr('x', 5)
           .attr('y', (d, i) => 20 + i * 20)
           .text((d) => d);
-  
+
         receiptGroup
           .append('foreignObject')
           .attr('width', 34)
@@ -416,30 +605,30 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
                 element.html('Add receipt');
                 return;
               }
-  
+
               const extension = receiptFile.split('.').pop().toLowerCase();
               const isImage = ['jpg', 'jpeg', 'png', 'gif', 'bmp'].includes(
                 extension
               );
-  
+
               let content = '';
               if (isImage) {
                 content = `<img src="${receiptFile}" width="40" height="40" title="Click to open" />`;
               } else {
                 content = `<div style="font-weight: bold;">${extension.toUpperCase()}</div>`;
               }
-  
+
               element.html(`
                 <div style="position: relative; width: 100%; height: 100%; background-color: grey;">
                   ${content}
                   
                 </div>
               `);
-  
+
               element.on('mouseover', function () {
                 element.select('.hover-text').style('display', 'flex');
               });
-  
+
               element.on('mouseout', function () {
                 element.select('.hover-text').style('display', 'none');
               });
@@ -457,42 +646,42 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
           .on('contextmenu', async function (event: Event, d: any) {
             event.preventDefault();
             const receiptFile = await GetReceiptFile(d.Day);
-  
+
             if (!receiptFile) {
               // If there's no receipt, don't show the context menu
               return;
             }
-  
+
             currentContextData = d;
             const [x, y] = d3.pointer(event, svg.node());
             const svgBounds = svg.node()?.getBoundingClientRect();
             const menuHeight = 100; // Adjust based on your menu's actual height
             const menuWidth = 120; // Adjust based on your menu's actual width
-  
+
             let menuX = x;
             let menuY = y;
-  
+
             // Adjust vertical position if needed
             if (svgBounds && y + menuHeight > svgBounds.height) {
               menuY = y - menuHeight;
             }
-  
+
             // Adjust horizontal position if needed
             if (svgBounds && x + menuWidth > svgBounds.width) {
               menuX = svgBounds.width - menuWidth;
             }
-  
+
             contextMenuGroup
               .attr('transform', `translate(${menuX},${menuY})`)
               .style('display', 'block');
-  
+
             // Close menu when clicking outside
             d3.select('body').on('click.context-menu', () => {
               contextMenuGroup.style('display', 'none');
               d3.select('body').on('click.context-menu', null);
             });
           });
-  
+
         // Event listeners for menu items
         contextMenuGroup
           .selectAll('.menu-item')
@@ -505,14 +694,14 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
               case 'File explorer':
                 openInFileExplorer(currentContextData);
                 break;
-  
+
               case 'Delete':
                 deleteReceipt(currentContextData.Day);
                 break;
             }
             contextMenuGroup.style('display', 'none');
           });
-  
+
         function GetReceiptFile(date: Date) {
           return window.electron.ipcRenderer.invoke(
             'GetReceiptFile',
@@ -527,26 +716,27 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
           input.type = 'file';
           input.multiple = true;
           input.accept = 'image/*,.pdf,.doc,.docx,.txt';
-  
+
           input.onchange = async (event) => {
             const files = (event.target as HTMLInputElement).files;
             if (files && files.length > 0) {
               const validFiles = Array.from(files).filter(
                 (file) => file.size <= 5 * 1024 * 1024
               );
-  
+
               if (validFiles.length !== files.length) {
                 alert(
                   'Some files were skipped because they exceed the 5MB size limit.'
                 );
               }
-  
+
               if (validFiles.length > 0) {
                 try {
                   const roomId = roomType.id;
                   const tenantId = roomType.tenantId || '';
                   const tenantName =
-                    tenantList.find((t: tenant) => t.id === tenantId)?.name || '';
+                    tenantList.find((t: tenant) => t.id === tenantId)?.name ||
+                    '';
                   const formattedDate = format(d.Day, 'yyyy-MM-dd');
                   const AddedTimeText = format(
                     new Date(
@@ -555,7 +745,7 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
                     ),
                     'EEE MMM dd yyyy'
                   );
-  
+
                   const results = await uploadReceiptDocuments(
                     validFiles,
                     roomId,
@@ -564,7 +754,7 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
                     formattedDate,
                     AddedTimeText
                   );
-  
+
                   if (results) {
                     console.log('Receipts uploaded successfully:', results);
                     refresh(); // Assuming you have a refresh function to update the UI
@@ -581,10 +771,10 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
               }
             }
           };
-  
+
           input.click();
         }
-  
+
         async function openInPhotos(d: any) {
           console.log('Open in photos', d);
           const receiptFile = await GetReceiptFile(d.Day);
@@ -592,11 +782,14 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
             window.electron.ipcRenderer.send('open-document', receiptFile);
           }
         }
-  
+
         async function openInFileExplorer(d: any) {
           const receiptFile = await GetReceiptFile(d.Day);
           if (receiptFile) {
-            window.electron.ipcRenderer.send('show-item-in-folder', receiptFile);
+            window.electron.ipcRenderer.send(
+              'show-item-in-folder',
+              receiptFile
+            );
           }
           console.log('Open in file explorer');
         }
@@ -658,7 +851,7 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
 
         svg
           .append('text')
-          .attr('x', width + padding-40)
+          .attr('x', width + padding - 40)
           .attr('y', padding + height / 2 - 29)
           .attr('text-anchor', 'middle')
           .attr('dominant-baseline', 'middle')
@@ -672,42 +865,47 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
           });
       }
     }
-  }, [paymentData, today, paymentData]);
+  }, [payments, today]);
   // Function to handle multi-pay
-  const handleMultiPay = async () => {
-    for (let i = 0; i < selectedDates.length; i++) {
-      const date = selectedDates[i];
-      const payment = paymentData.find((item) => item.Day === date);
-      if (payment && !payment.Paid) {
-        await roomPaymentInfoApi.editRoomPaymentApi(
-          payment.id,
-          'Paid',
-          1,
-          roomType.id,
-          roomType.AllRoomPayInfo.RoomPayInfo
-        );
-      }
-    }
-    refresh();
-  };
-  const handleMultiUnPay = async () => {
-    for (let i = 0; i < selectedDates.length; i++) {
-      const date = selectedDates[i];
-      const payment = paymentData.find((item) => item.Day === date);
 
-      if (payment && payment.Paid) {
-        // Changed condition to check if payment is Paid
-        await roomPaymentInfoApi.editRoomPaymentApi(
-          payment.id,
-          'Paid',
-          0,
-          roomType.id,
-          roomType.AllRoomPayInfo.RoomPayInfo
-        );
+  const handleMultiPay = async () => {
+    for (const date of selectedDates) {
+      const payment = payments.find((item) => item.Day === date);
+      if (payment && !payment.Paid) {
+        await handlePayClick(payment);
       }
     }
-    refresh();
+    setSelectedDates([]);
   };
+
+  const handleMultiUnPay = async () => {
+    for (const date of selectedDates) {
+      const payment = payments.find((item) => item.Day === date);
+      if (payment && payment.Paid) {
+        const existingPayment = await getValuesWithSql(
+          'room_pay_info',
+          `WHERE id = '${payment.id}'`
+        );
+        if (existingPayment.length > 0) {
+          await updateValue(
+            'room_pay_info',
+            payment.id,
+            'paid',
+            0,
+            setChangeMade,
+            1
+          );
+          setPayments((prevPayments) =>
+            prevPayments.map((p) =>
+              p.id === payment.id ? { ...p, Paid: false } : p
+            )
+          );
+        }
+      }
+    }
+    setSelectedDates([]);
+  };
+
   // Calculate days until or past due date for paragraph message
   const dueDate = paymentData.find((payment) => !payment.Paid)?.Day;
   const daysDifference = dueDate
@@ -756,7 +954,7 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
         <button
           onClick={() => {
             setShowReceipt(!ShowReceipt);
-            setShowUtilityPanel(!ShowReceipt)
+            setShowUtilityPanel(!ShowReceipt);
           }}
         >
           RCT
@@ -788,14 +986,13 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
           overflowX: 'auto',
           maxWidth: '100%',
           overflowY: 'hidden',
-          height: ShowReceipt ?'220px' : '174px',
-          transition:"all .2s"
+          height: ShowReceipt ? '220px' : '174px',
+          transition: 'all .2s',
         }}
       >
         {' '}
         <svg ref={svgRef} width="100%" height="126" />
       </div>
-     
     </div>
   );
 };

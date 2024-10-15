@@ -1,83 +1,150 @@
+import React, { useState, useEffect } from 'react';
 import { getValuesWithSql } from 'Backend/localServerApis';
-import React, { useEffect, useState } from 'react';
+import { addDays, addMonths, startOfYear, endOfYear } from 'date-fns';
 import PaymentProgressBarGUI from '../Helpers/GUIs/PaymentProgressBarGUI';
+
+interface Payment {
+  id: string;
+  Day: number;
+  Value: number;
+  Paid: boolean;
+  roomId: string;
+}
 
 const DashbPastPayments = ({
   tenantList,
   RoomList,
-  roomPaymentInfoApi,
+  roomPaymentInfoApi,setChangeMade
 }: {
   tenantList: tenant[];
   RoomList: RoomType[];
   roomPaymentInfoApi: any;
+  setChangeMade:any;
 }) => {
-  const [PastPaymentList, setPastPaymentList] = React.useState<
+  const [PastPaymentList, setPastPaymentList] = useState<
     { tenant: tenant; NumOfPayments: number; PastBy: number }[]
   >([]);
-  const [UpcomingPaymentList, setUpcomingPaymentList] = React.useState<
+  const [UpcomingPaymentList, setUpcomingPaymentList] = useState<
     { tenant: tenant; DueDate: Date; Amount: number }[]
   >([]);
   const [SelectedTenantViewShow, setSelectedTenantViewShow] = useState('');
   const [activeTab, setActiveTab] = useState('past');
+  const [predictedPayments, setPredictedPayments] = useState<Payment[]>([]);
 
   useEffect(() => {
-    const getData = async () => {
-      const PaymentData = await getValuesWithSql(
-        'room_pay_info',
-        `WHERE Paid = 0 AND Day < ${new Date().getTime()}`
-      );
-      const tenantMap = new Map();
-      const newPastPaymentList = PaymentData.reduce(
-        (acc: any[], element: any) => {
-          const tenant = tenantList.find(
-            (t: tenant) =>
-              t.id ===
-              RoomList.find((r: RoomType) => r.id === element.roomId)?.tenantId
-          );
-          if (tenant && !tenantMap.has(tenant.id)) {
-            const currentDate = new Date();
-            const paymentDate = new Date(element.Day);
-            const daysPastDue = Math.floor(
-              (currentDate.getTime() - paymentDate.getTime()) /
-                (1000 * 3600 * 24)
-            );
-            tenantMap.set(tenant.id, true);
-            acc.push({
-              tenant,
-              NumOfPayments: PaymentData.filter(
-                (payment: any) => payment.roomId === element.roomId
-              ).length,
-              PastBy: daysPastDue,
-            });
-          }
-          return acc;
-        },
-        []
-      );
-      setPastPaymentList(newPastPaymentList);
+    const calculatePayments = async () => {
+      const allPayments: Payment[] = [];
+      const currentYear = new Date().getFullYear();
+      const yearStart = startOfYear(new Date(currentYear, 0, 1));
+      const yearEnd = endOfYear(new Date(currentYear, 11, 31));
 
-      const tenDaysFromNow = new Date();
-      tenDaysFromNow.setDate(tenDaysFromNow.getDate() + 10);
-      const UpcomingPaymentData = await getValuesWithSql(
-        'room_pay_info',
-        `WHERE Paid = 0 AND Day >= ${new Date().getTime()} AND Day <= ${tenDaysFromNow.getTime()}`
-      );
-      const newUpcomingPaymentList = UpcomingPaymentData.map((element: any) => {
-        const tenant = tenantList.find(
-          (t: tenant) =>
-            t.id ===
-            RoomList.find((r: RoomType) => r.id === element.roomId)?.tenantId
-        );
-        return {
-          tenant,
-          DueDate: new Date(element.Day),
-          Amount: element.Amount,
-        };
-      });
-      setUpcomingPaymentList(newUpcomingPaymentList);
+      // Get all actual payments for the current year
+      const actualPayments = await getValuesWithSql('room_pay_info', `WHERE Day >= ${yearStart.getTime()} AND Day <= ${yearEnd.getTime()}`);
+
+      for (const room of RoomList) {
+        let startDate = new Date(tenantList.find((tenant) => tenant.id === room.tenantId)?.startTime || Date.now()).getTime();
+        if (room.selectedAgreementId) {
+          const agreements = await getValuesWithSql(
+            'agreements',
+            `WHERE id = '${room.selectedAgreementId}'`
+          );
+          if (agreements.length > 0) startDate = agreements[0].startTime;
+        }
+
+        let currentDate = new Date(Math.max(startDate, yearStart.getTime()));
+
+        while (currentDate <= yearEnd) {
+          const paymentId = `${room.id}-${currentDate.getTime()}`;
+          const actualPayment = actualPayments.find((p: any) => p.id === paymentId);
+
+          allPayments.push({
+            id: paymentId,
+            Day: currentDate.getTime(),
+            Value: room.AgreedPrice,
+            Paid: actualPayment ? actualPayment.Paid === 1 : false,
+            roomId: room.id
+          });
+
+          // Calculate next payment date based on payment cycle
+          switch (room.PaymentCycleType) {
+            case '30':
+              currentDate = addDays(currentDate, 30);
+              break;
+            case '15':
+              currentDate = addDays(currentDate, 15);
+              break;
+            case '7':
+              currentDate = addDays(currentDate, 7);
+              break;
+            case 'daily':
+              currentDate = addDays(currentDate, 1);
+              break;
+            case 'monthly':
+              currentDate = addMonths(currentDate, 1);
+              break;
+            case 'weekly':
+              currentDate = addDays(currentDate, 7);
+              break;
+            case 'custom':
+              currentDate = addDays(currentDate, room.PaymentCycleCustomeDays || 30);
+              break;
+            default:
+              currentDate = addMonths(currentDate, 1);
+          }
+        }
+      }
+
+      setPredictedPayments(allPayments);
     };
-    getData();
-  }, []);
+
+    calculatePayments();
+  }, [RoomList, tenantList]);
+
+  useEffect(() => {
+    const currentDate = new Date();
+    const pastPayments = predictedPayments.filter(payment => 
+      payment.Day < currentDate.getTime() && !payment.Paid
+    );
+
+    const newPastPaymentList = pastPayments.reduce((acc, payment) => {
+      const tenant = tenantList.find(t => 
+        t.id === RoomList.find(r => r.id === payment.roomId)?.tenantId
+      );
+      if (tenant) {
+        const existingTenant = acc.find(item => item.tenant.id === tenant.id);
+        if (existingTenant) {
+          existingTenant.NumOfPayments++;
+        } else {
+          acc.push({
+            tenant,
+            NumOfPayments: 1,
+            PastBy: Math.floor((currentDate.getTime() - payment.Day) / (1000 * 3600 * 24))
+          });
+        }
+      }
+      return acc;
+    }, [] as { tenant: tenant; NumOfPayments: number; PastBy: number }[]);
+
+    setPastPaymentList(newPastPaymentList);
+
+    const tenDaysFromNow = new Date(currentDate.getTime() + 10 * 24 * 60 * 60 * 1000);
+    const upcomingPayments = predictedPayments.filter(payment => 
+      payment.Day >= currentDate.getTime() && payment.Day <= tenDaysFromNow.getTime() && !payment.Paid
+    );
+
+    const newUpcomingPaymentList = upcomingPayments.map(payment => {
+      const tenant = tenantList.find(t => 
+        t.id === RoomList.find(r => r.id === payment.roomId)?.tenantId
+      );
+      return {
+        tenant,
+        DueDate: new Date(payment.Day),
+        Amount: payment.Value
+      };
+    });
+
+    setUpcomingPaymentList(newUpcomingPaymentList);
+  }, [predictedPayments, RoomList, tenantList]);
 
   return (
     <div
@@ -85,7 +152,6 @@ const DashbPastPayments = ({
       style={{
         width: '400px',
         alignItems: 'flex-start',
-
         height: '500px',
         overflowY: 'auto',
         overflowX: 'hidden',
@@ -101,7 +167,6 @@ const DashbPastPayments = ({
               activeTab === 'past'
                 ? 'var(--Secondary-Color)'
                 : 'var(--Background-Color)',
-
             cursor: 'pointer',
           }}
         >
@@ -116,7 +181,6 @@ const DashbPastPayments = ({
               activeTab === 'upcoming'
                 ? 'var(--Secondary-Color)'
                 : 'var(--Background-Color)',
-
             cursor: 'pointer',
           }}
         >
@@ -291,10 +355,7 @@ const DashbPastPayments = ({
                       </span>
                     </td>
                     <td className="InfoTableBodyTD">
-                      {RoomList.find(
-                        (r: RoomType) => r.tenantId === payment.tenant.id
-                      )?.AgreedPrice.toLocaleString()}
-                      $
+                      {payment.Amount.toLocaleString()}$
                     </td>
                   </tr>
                 ))
@@ -338,15 +399,19 @@ const DashbPastPayments = ({
             }}
           >
             <PaymentProgressBarGUI
-            refresh={()=>{}}
+              refresh={() => {}}
               paymentData={
-                RoomList.find(
-                  (r: RoomType) =>
-                    r.tenantId ===
-                    tenantList.find(
-                      (t: tenant) => t.id == SelectedTenantViewShow
+                predictedPayments.filter(
+                  (p) =>
+                    p.roomId ===
+                    RoomList.find(
+                      (r: RoomType) =>
+                        r.tenantId ===
+                        tenantList.find(
+                          (t: tenant) => t.id == SelectedTenantViewShow
+                        )?.id
                     )?.id
-                )?.AllRoomPayInfo.RoomPayInfo || []
+                ) || []
               }
               roomPaymentInfoApi={roomPaymentInfoApi}
               roomType={RoomList.find(
@@ -378,6 +443,7 @@ const DashbPastPayments = ({
                     )?.id
                 )?.id || ''
               }
+              setChangeMade={setChangeMade}
               setSelectedTenantViewShow={setSelectedTenantViewShow}
             />
           </div>

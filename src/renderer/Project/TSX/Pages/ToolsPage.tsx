@@ -835,7 +835,6 @@ const ToolsPage = ({
               ></div>
             </div>
           )}
-
           <table className="expense-cards">
             <thead>
               <tr>
@@ -1005,7 +1004,7 @@ const ToolsPage = ({
                     colSpan={editingExpenseId !== null ? 7 : 6}
                     style={{ textAlign: 'center' }}
                   >
-                    No expenses found with the current filters.
+                    There are currently no expenses to display. Please add an expense or adjust your filters to see results.
                   </td>
                 </tr>
               ) : (

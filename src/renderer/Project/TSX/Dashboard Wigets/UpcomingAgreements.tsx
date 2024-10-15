@@ -12,7 +12,6 @@ const UpcomingAgreements = ({
     []
   );
   const [daysThreshold, setDaysThreshold] = useState(30);
-
   useEffect(() => {
     const fetchUpcomingAgreements = async () => {
       const currentTime = new Date().getTime();
@@ -22,12 +21,15 @@ const UpcomingAgreements = ({
         'agreements',
         `WHERE endTime > ${currentTime} AND endTime <= ${thresholdTime}`
       );
-
-      setUpcomingAgreements(agreementsData);
+      // Filter out agreements that are not currently selected for any room
+      const filteredAgreements = agreementsData.filter((agreement) => {
+        return RoomList.some((room) => room.selectedAgreementId === agreement.id);
+      });
+      setUpcomingAgreements(filteredAgreements);
     };
 
     fetchUpcomingAgreements();
-  }, [daysThreshold]);
+  }, [daysThreshold, RoomList]);
 
   return (
     <div

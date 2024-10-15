@@ -14,7 +14,7 @@ const TopPerformingUnits = ({
   PastTenantReviews: PastTenantReviewType[];
   BrokerRecommendationList: BrokerRecommendationType[];
 }) => {
-  const [activeTab, setActiveTab] = useState('rooms');
+  const [activeTab, setActiveTab] = useState('brokers');
   const [showAll, setShowAll] = useState(false);
 
   const topRooms = useMemo(() => {
@@ -124,34 +124,7 @@ const TopPerformingUnits = ({
       </div>
       <div style={{ flexDirection: 'row', display: 'flex', width: '100%' }}>
         <div style={{ width: '34%', display: 'flex', flexDirection: 'column' }}>
-          <button
-            onClick={() => setActiveTab('rooms')}
-            style={{
-              padding: '5px',
-              width: '100px',
-              backgroundColor:
-                activeTab === 'rooms'
-                  ? 'var(--Secondary-Color)'
-                  : 'var(--Background-Color)',
-              cursor: 'pointer',
-            }}
-          >
-            Rooms
-          </button>
-          <button
-            onClick={() => setActiveTab('tenants')}
-            style={{
-              width: '100px',
-              padding: '5px',
-              backgroundColor:
-                activeTab === 'tenants'
-                  ? 'var(--Secondary-Color)'
-                  : 'var(--Background-Color)',
-              cursor: 'pointer',
-            }}
-          >
-            Tenants
-          </button>
+       
           <button
             onClick={() => setActiveTab('brokers')}
             style={{

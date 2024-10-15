@@ -126,9 +126,9 @@ const DashbMonthlyExpenseTrendWidget: React.FC<
     showBy === 'Monthly' ? aggregateMonthlyData : aggregateYearlyData;
 
   const expenseStats = useMemo(() => {
-    const currentYear = new Date().getFullYear();
-    const yearStart = startOfYear(new Date(currentYear, 0, 1));
-    const yearEnd = endOfYear(new Date(currentYear, 11, 31));
+    const selectedYear = parseInt(selectedDate);
+    const yearStart = startOfYear(new Date(selectedYear, 0, 1));
+    const yearEnd = endOfYear(new Date(selectedYear, 11, 31));
 
     const allExpenses = generateRecurringExpenses(
       expensesData,
@@ -159,7 +159,7 @@ const DashbMonthlyExpenseTrendWidget: React.FC<
       averageMonthlyExpense,
       totalExpenseCount,
     };
-  }, [expensesData]);
+  }, [expensesData, selectedDate]);
 
   return (
     <div className="DashboardWigetMainContainer" style={{width: '800px'}}>

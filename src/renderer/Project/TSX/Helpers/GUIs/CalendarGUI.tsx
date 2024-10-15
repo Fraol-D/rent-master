@@ -1,11 +1,22 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import * as d3 from 'd3';
 import '../../../CSS/Calendar.css';
+import { addDays, addMonths, startOfYear, endOfYear } from 'date-fns';
+import { getValuesWithSql } from 'Backend/localServerApis';
+
 interface CalendarProps {
   rooms: RoomType[];
   initialMonths: number;
   initialMonthsPast: number;
   tenantList: tenant[];
+}
+
+interface Payment {
+  id: string;
+  Day: number;
+  Value: number;
+  Paid: boolean;
+  roomId: string;
 }
 
 const CalendarGUI: React.FC<CalendarProps> = ({
@@ -20,6 +31,8 @@ const CalendarGUI: React.FC<CalendarProps> = ({
     useState(initialMonthsPast);
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredRooms, setFilteredRooms] = useState(rooms);
+  const [predictedPayments, setPredictedPayments] = useState<Payment[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const ref = useRef<SVGSVGElement | null>(null);
 
   useEffect(() => {
@@ -33,254 +46,345 @@ const CalendarGUI: React.FC<CalendarProps> = ({
   }, [searchTerm, rooms, tenantList]);
 
   useEffect(() => {
-    if (ref.current) {
-      d3.select(ref.current).selectAll('*').remove();
-      
-      const baseWidth = 1500;
-      const additionalMonthWidth = 750;
-      const width =
-        baseWidth +
-        (numberOfMonthsFuture + numberOfMonthsPast - 2) * additionalMonthWidth;
-      const height = filteredRooms.length * 70;
-      const cellSize = 25;
-      const margin = { top: 70, right: 30, bottom: 30, left: 200 };
+    const makeTable = async () => {
+      let load = true;
+      const calculatePayments = async () => {
+        setIsLoading(true);
+        const allPayments: Payment[] = [];
+        const currentYear = new Date().getFullYear();
+        let yearStart = startOfYear(new Date(currentYear - 2, 0, 1));
+        let yearEnd = endOfYear(new Date(currentYear + 2, 11, 31));
+        
 
-      const svg = d3
-        .select(ref.current)
-        .attr('width', width + margin.left + margin.right)
-        .attr('height', height + margin.top + margin.bottom)
-        .append('g')
-        .attr('transform', `translate(${margin.left},${margin.top})`);
+        // Get all actual payments for the selected years
+        const actualPayments = await getValuesWithSql(
+          'room_pay_info',
+          `WHERE Day >= ${yearStart.getTime()} AND Day <= ${yearEnd.getTime()}`
+        );
 
-      const today = new Date();
-      const startDate = d3.timeMonth.offset(today, -numberOfMonthsPast);
-      const endDate = d3.timeMonth.offset(today, numberOfMonthsFuture);
-
-      const xScale = d3
-        .scaleTime()
-        .domain([startDate, endDate])
-        .range([0, width]);
-
-      const yScale = d3
-        .scaleBand()
-        .domain(filteredRooms.map((room) => room.id))
-        .range([0, height - 60])
-        .padding(0.1);
-
-      const xAxis = d3
-        .axisTop(xScale)
-        .ticks(d3.timeDay.every(1))
-        .tickFormat((d: Date) => {
-          const day = d3.timeFormat('%d')(d);
-          return day;
-        })
-        .tickSizeOuter(0);
-
-      const monthAxis = d3
-        .axisTop(xScale)
-        .ticks(d3.timeMonth.every(1))
-        .tickFormat((d: Date) => {
-          const monthStart = d3.timeMonth(d);
-          const monthEnd = d3.timeMonth.offset(monthStart, 1);
-          const monthCenter = new Date(
-            (monthStart.getTime() + monthEnd.getTime()) / 2
-          );
-          if (monthCenter >= startDate && monthCenter <= endDate) {
-            return d3.timeFormat(`%B ${monthCenter.getFullYear()}`)(d);
+        for (const room of rooms) {
+          let startDate = new Date(
+            tenantList.find((tenant) => tenant.id === room.tenantId)?.startTime ||
+              Date.now()
+          ).getTime();
+          let endDate = null;
+          if (room.selectedAgreementId) {
+            const agreements = await getValuesWithSql(
+              'agreements',
+              `WHERE id = '${room.selectedAgreementId}'`
+            );
+            if (agreements.length > 0) startDate = agreements[0].startTime;
+            if (
+              tenantList.find((t: tenant) => t.id === room.tenantId)
+                ?.SelectedAgreement === 'Fixed-Term'
+            )
+              if (agreements.length > 0) endDate = agreements[0].endTime;
           }
-          return '';
-        })
-        .tickSize(0);
 
-      svg
-        .append('g')
-        .call(monthAxis)
-        .attr('transform', `translate(0, -20)`)
-        .style('font-size', '18px');
-      svg.append('g').call(xAxis).attr('transform', `translate(0, -0)`);
+          let currentDate = new Date(startDate);
 
-      const yAxis = d3
-        .axisLeft(yScale)
-        .tickFormat((d: string) => {
-          const room = filteredRooms.find((room) => room.id === d);
-          return room
-            ? `${
-                tenantList.find((t: tenant) => t.id === room.tenantId)?.name
-              }\n` +
-                `${room.AgreedPrice.toLocaleString()}$ - Floor. ${
-                  room.floor
-                } Room. ${room.roomIndex}`
-            : '';
-        })
-        .tickSize(10)
-        .tickPadding(5);
+          while (currentDate <= yearEnd && (endDate == null || currentDate < endDate)) {
+            const paymentId = `${room.id}-${currentDate.getTime()}`;
+            const actualPayment = actualPayments.find(
+              (p: any) => p.id === paymentId
+            );
 
-      svg
-        .append('g')
-        .call(yAxis)
-        .raise()
-        .selectAll('.tick text')
-        .call(function (text: any) {
-          text.each(function (this: SVGTextElement) {
-            var text = d3.select(this);
-            var words = text.text().split('\n');
-            text.text('');
-            text
-              .append('tspan')
-              .attr('x', -10)
-              .attr('dy', '-0.5em')
-              .style('font-size', '14px')
-              .text(words[0]);
-            text
-              .append('tspan')
-              .attr('x', -15)
-              .attr('dy', '1.2em')
-              .style('font-size', '11.3px')
-              .text(words[1]);
+            allPayments.push({
+              id: paymentId,
+              Day: currentDate.getTime(),
+              Value: room.AgreedPrice,
+              Paid: actualPayment ? actualPayment.Paid === 1 : false,
+              roomId: room.id,
+            });
 
-            var parentNode = this.parentNode;
-            if (parentNode) {
-              d3.select(parentNode)
-                .append('line')
-                .attr('x1', -0)
-                .attr('x2', -100)
-                .attr('y1', 15)
-                .attr('y2', 15)
-                .attr('stroke', '#DDDDDD')
-                .attr('stroke-width', 1);
+            // Calculate next payment date based on payment cycle
+            switch (room.PaymentCycleType) {
+              case '30':
+                currentDate = addDays(currentDate, 30);
+                break;
+              case '15':
+                currentDate = addDays(currentDate, 15);
+                break;
+              case '7':
+                currentDate = addDays(currentDate, 7);
+                break;
+              case 'daily':
+                currentDate = addDays(currentDate, 1);
+                break;
+              case 'monthly':
+                currentDate = addMonths(currentDate, 1);
+                break;
+              case 'weekly':
+                currentDate = addDays(currentDate, 7);
+                break;
+              case 'custom':
+                currentDate = addDays(
+                  currentDate,
+                  room.PaymentCycleCustomeDays || 30
+                );
+                break;
+              default:
+                currentDate = addMonths(currentDate, 1);
             }
+          }
+        }
+
+        return allPayments;
+      };
+
+      if (ref.current) {
+        d3.select(ref.current).selectAll('*').remove();
+
+        const baseWidth = 1500;
+        const additionalMonthWidth = 750;
+        const width =
+          baseWidth +
+          (numberOfMonthsFuture + numberOfMonthsPast - 2) *
+            additionalMonthWidth;
+        const height = filteredRooms.length * 70;
+        const cellSize = 25;
+        const margin = { top: 70, right: 30, bottom: 30, left: 200 };
+
+        const svg = d3
+          .select(ref.current)
+          .attr('width', width + margin.left + margin.right)
+          .attr('height', height + margin.top + margin.bottom)
+          .append('g')
+          .attr('transform', `translate(${margin.left},${margin.top})`);
+
+        const today = new Date();
+        const startDate = d3.timeMonth.offset(today, -numberOfMonthsPast);
+        const endDate = d3.timeMonth.offset(today, numberOfMonthsFuture);
+
+        const xScale = d3
+          .scaleTime()
+          .domain([startDate, endDate])
+          .range([0, width]);
+
+        const yScale = d3
+          .scaleBand()
+          .domain(filteredRooms.map((room) => room.id))
+          .range([0, height - 60])
+          .padding(0.1);
+
+        const xAxis = d3
+          .axisTop(xScale)
+          .ticks(d3.timeDay.every(1))
+          .tickFormat((d: Date) => {
+            const day = d3.timeFormat('%d')(d);
+            return day;
+          })
+          .tickSizeOuter(0);
+
+        const monthAxis = d3
+          .axisTop(xScale)
+          .ticks(d3.timeMonth.every(1))
+          .tickFormat((d: Date) => {
+            const monthStart = d3.timeMonth(d);
+            const monthEnd = d3.timeMonth.offset(monthStart, 1);
+            const monthCenter = new Date(
+              (monthStart.getTime() + monthEnd.getTime()) / 2
+            );
+            if (monthCenter >= startDate && monthCenter <= endDate) {
+              return d3.timeFormat(`%B ${monthCenter.getFullYear()}`)(d);
+            }
+            return '';
+          })
+          .tickSize(0);
+
+        svg
+          .append('g')
+          .call(monthAxis)
+          .attr('transform', `translate(0, -20)`)
+          .style('font-size', '18px');
+        svg.append('g').call(xAxis).attr('transform', `translate(0, -0)`);
+
+        const yAxis = d3
+          .axisLeft(yScale)
+          .tickFormat((d: string) => {
+            const room = filteredRooms.find((room) => room.id === d);
+            return room
+              ? `${
+                  tenantList.find((t: tenant) => t.id === room.tenantId)?.name
+                }\n` +
+                  `${room.AgreedPrice.toLocaleString()}$ - Floor. ${
+                    room.floor
+                  } Room. ${room.roomIndex}`
+              : '';
+          })
+          .tickSize(10)
+          .tickPadding(5);
+
+        svg
+          .append('g')
+          .call(yAxis)
+          .raise()
+          .selectAll('.tick text')
+          .call(function (text: any) {
+            text.each(function (this: SVGTextElement) {
+              var text = d3.select(this);
+              var words = text.text().split('\n');
+              text.text('');
+              text
+                .append('tspan')
+                .attr('x', -10)
+                .attr('dy', '-0.5em')
+                .style('font-size', '14px')
+                .text(words[0]);
+              text
+                .append('tspan')
+                .attr('x', -15)
+                .attr('dy', '1.2em')
+                .style('font-size', '11.3px')
+                .text(words[1]);
+
+              var parentNode = this.parentNode;
+              if (parentNode) {
+                d3.select(parentNode)
+                  .append('line')
+                  .attr('x1', -0)
+                  .attr('x2', -100)
+                  .attr('y1', 15)
+                  .attr('y2', 15)
+                  .attr('stroke', '#DDDDDD')
+                  .attr('stroke-width', 1);
+              }
+            });
           });
-        });
 
-      svg
-        .selectAll('.x-grid')
-        .data(yScale.domain())
-        .enter()
-        .append('line')
-        .attr('class', 'x-grid')
-        .attr('x1', 0)
-        .attr('x2', width)
-        .attr('y1', (d: any) => yScale(d) - 5 || 0)
-        .attr('y2', (d: any) => yScale(d) - 5 || 0)
-        .attr('stroke', 'grey');
+        svg
+          .selectAll('.x-grid')
+          .data(yScale.domain())
+          .enter()
+          .append('line')
+          .attr('class', 'x-grid')
+          .attr('x1', 0)
+          .attr('x2', width)
+          .attr('y1', (d: any) => yScale(d) - 5 || 0)
+          .attr('y2', (d: any) => yScale(d) - 5 || 0)
+          .attr('stroke', 'grey');
 
-      svg
-        .selectAll('.x-grid-bottom')
-        .data(yScale.domain())
-        .enter()
-        .append('line')
-        .attr('class', 'x-grid-bottom')
-        .attr('x1', 0)
-        .attr('x2', width)
-        .attr('y1', (d: any) => (yScale(d) || 0) + yScale.bandwidth())
-        .attr('y2', (d: any) => (yScale(d) || 0) + yScale.bandwidth())
-        .attr('stroke', 'grey');
+        svg
+          .selectAll('.x-grid-bottom')
+          .data(yScale.domain())
+          .enter()
+          .append('line')
+          .attr('class', 'x-grid-bottom')
+          .attr('x1', 0)
+          .attr('x2', width)
+          .attr('y1', (d: any) => (yScale(d) || 0) + yScale.bandwidth())
+          .attr('y2', (d: any) => (yScale(d) || 0) + yScale.bandwidth())
+          .attr('stroke', 'grey');
         if (filteredRooms.length === 0) return;
 
-      svg
-        .selectAll('.y-grid')
-        .data(xScale.ticks(d3.timeDay))
-        .enter()
-        .append('line')
-        .attr('class', 'y-grid')
-        .attr('x1', (d: any) => xScale(d))
-        .attr('x2', (d: any) => xScale(d))
-        .attr('y1', 0 - 0)
-        .attr('y2', height - 65)
-        .attr('stroke', 'grey');
-      const currentDateRect = svg
-        .append('rect')
-        .attr('x', xScale(today))
-        .attr('y', 0 - 0)
-        .attr('width', 2)
-        .attr('height', height - 65)
-        .attr('fill', '#db911a')
-        .attr('opacity', 1);
+        svg
+          .selectAll('.y-grid')
+          .data(xScale.ticks(d3.timeDay))
+          .enter()
+          .append('line')
+          .attr('class', 'y-grid')
+          .attr('x1', (d: any) => xScale(d))
+          .attr('x2', (d: any) => xScale(d))
+          .attr('y1', 0 - 0)
+          .attr('y2', height - 65)
+          .attr('stroke', 'grey');
+        const currentDateRect = svg
+          .append('rect')
+          .attr('x', xScale(today))
+          .attr('y', 0 - 0)
+          .attr('width', 2)
+          .attr('height', height - 65)
+          .attr('fill', '#db911a')
+          .attr('opacity', 1);
 
-        const currentdatehight = today.getDate() >= 26 || today.getDate()<=6 ? 40 : 25
-      svg
-        .append('text')
-        .attr('x', xScale(today))
-        .attr('y', -currentdatehight)
-        .attr('text-anchor', 'middle')
-        .attr('fill', '#db911a')
-        .text(today.toDateString());
+        const currentdatehight =
+          today.getDate() >= 26 || today.getDate() <= 6 ? 40 : 25;
+        svg
+          .append('text')
+          .attr('x', xScale(today))
+          .attr('y', -currentdatehight)
+          .attr('text-anchor', 'middle')
+          .attr('fill', '#db911a')
+          .text(today.toDateString());
 
-      const monthStarts = d3.timeMonths(startDate, endDate);
-      svg
-        .selectAll('.month-indicator')
-        .data(monthStarts)
-        .enter()
-        .append('line')
-        .attr('class', 'month-indicator')
-        .attr('x1', (d: any) => xScale(d))
-        .attr('x2', (d: any) => xScale(d))
-        .attr('y1', -0)
-        .attr('y2', height - 65)
-        .attr('stroke', 'blue')
-        .attr('stroke-width', 1);
+        const monthStarts = d3.timeMonths(startDate, endDate);
+        svg
+          .selectAll('.month-indicator')
+          .data(monthStarts)
+          .enter()
+          .append('line')
+          .attr('class', 'month-indicator')
+          .attr('x1', (d: any) => xScale(d))
+          .attr('x2', (d: any) => xScale(d))
+          .attr('y1', -0)
+          .attr('y2', height - 65)
+          .attr('stroke', 'blue')
+          .attr('stroke-width', 1);
 
-      const tooltip = d3
-        .select('body')
-        .append('div')
-        .attr('class', 'tooltip')
-        .style('position', 'absolute')
-        .style('visibility', 'hidden')
-        .style('background-color', 'rgba(0,0,0,0.8)')
-        .style('color', 'white')
-        .style('padding', '10px')
-        .style('border-radius', '5px')
-        .style('font-size', '12px')
-        .style('pointer-events', 'none');
+        const tooltip = d3
+          .select('body')
+          .append('div')
+          .attr('class', 'tooltip')
+          .style('position', 'absolute')
+          .style('visibility', 'hidden')
+          .style('background-color', 'rgba(0,0,0,0.8)')
+          .style('color', 'white')
+          .style('padding', '10px')
+          .style('border-radius', '5px')
+          .style('font-size', '12px')
+          .style('pointer-events', 'none');
 
-      // Add empty squares for all dates and rooms
-      filteredRooms.forEach((room) => {
-        const allDates = d3.timeDays(startDate, endDate);
-        allDates.forEach((date) => {
-          svg
-            .append('rect')
-            .attr('x', xScale(date) - 2)
-            .attr('y', yScale(room.id) - 4)
-            .attr('width', cellSize)
-            .attr('height', yScale.bandwidth() + 4)
-            .attr('fill', 'transparent')
-            .attr('stroke', '#DDDDDD')
-            .attr('stroke-width', 0)
-            .on('mouseover', (event: MouseEvent) => {
-              d3.select(event.target as SVGRectElement)
-                .attr('fill', '#f0f0f0')
-                .attr('opacity', 0.5);
-            })
-            .on('mouseout', (event: MouseEvent) => {
-              d3.select(event.target as SVGRectElement)
-                .attr('fill', 'transparent')
-                .attr('opacity', 0);
-            });
-        });
-      });
-
-      filteredRooms.forEach((room) => {
-        room.AllRoomPayInfo.RoomPayInfo.forEach((payment) => {
-          const paymentDate = new Date(payment.Day);
-
-          if (paymentDate >= startDate && paymentDate <= endDate) {
+        // Add empty squares for all dates and rooms
+        filteredRooms.forEach((room) => {
+          const allDates = d3.timeDays(startDate, endDate);
+          allDates.forEach((date) => {
             svg
               .append('rect')
-              .attr('x', xScale(paymentDate) - 2)
+              .attr('x', xScale(date) - 2)
               .attr('y', yScale(room.id) - 4)
               .attr('width', cellSize)
               .attr('height', yScale.bandwidth() + 4)
-              .attr('fill', payment.Paid ? '#00e1ff' : 'red')
-              .attr('opacity', 0.5)
-              .on('mouseover', (event: MouseEvent, d: any) => {
-                const daysUntil = Math.ceil(
-                  (paymentDate.getTime() - new Date().getTime()) /
-                    (1000 * 60 * 60 * 24)
-                );
-                tooltip
-                  .style('visibility', 'visible')
-                  .html(
-                    `
+              .attr('fill', 'transparent')
+              .attr('stroke', '#DDDDDD')
+              .attr('stroke-width', 0)
+              .on('mouseover', (event: MouseEvent) => {
+                d3.select(event.target as SVGRectElement)
+                  .attr('fill', '#f0f0f0')
+                  .attr('opacity', 0.5);
+              })
+              .on('mouseout', (event: MouseEvent) => {
+                d3.select(event.target as SVGRectElement)
+                  .attr('fill', 'transparent')
+                  .attr('opacity', 0);
+              });
+          });
+        });
+
+        filteredRooms.forEach(async (room) => {
+          const roomPayments = await (
+            await calculatePayments()
+          ).filter((payment: Payment) => payment.roomId === room.id);
+          roomPayments.forEach((payment) => {
+            const paymentDate = new Date(payment.Day);
+
+            if (paymentDate >= startDate && paymentDate <= endDate) {
+              svg
+                .append('rect')
+                .attr('x', xScale(paymentDate) - 2)
+                .attr('y', yScale(room.id) - 4)
+                .attr('width', cellSize)
+                .attr('height', yScale.bandwidth() + 4)
+                .attr('fill', payment.Paid ? '#00e1ff' : 'red')
+                .attr('opacity', 0.5)
+                .on('mouseover', (event: MouseEvent, d: any) => {
+                  const daysUntil = Math.ceil(
+                    (paymentDate.getTime() - new Date().getTime()) /
+                      (1000 * 60 * 60 * 24)
+                  );
+                  tooltip
+                    .style('visibility', 'visible')
+                    .html(
+                      `
                     <div style="font-family: Arial, sans-serif; line-height: 1.6;">
                       <h3 style="color: #4a4a4a; margin-bottom: 5px;">Room Details</h3>
                       <p><em>Date:</em> <span style="color: #0066cc;">${paymentDate.toDateString()}</span></p>
@@ -304,29 +408,31 @@ const CalendarGUI: React.FC<CalendarProps> = ({
                       <p style="font-size: 0.9em; color: #7f8c8d;">Days until payment: ${daysUntil}</p>
                     </div>
                   `
-                  )
-                  .style('left', event.pageX + 10 + 'px')
-                  .style('top', event.pageY - 10 + 'px');
-                d3.select(event.target)
-                  .attr('fill', payment.Paid ? '#00e1ff' : '#FF0000')
-                  .attr('opacity', 0.8);
-              })
-              .on('mousemove', (event: MouseEvent) => {
-                tooltip
-                  .style('left', event.pageX + 10 + 'px')
-                  .style('top', event.pageY - 10 + 'px');
-              })
+                    )
+                    .style('left', event.pageX + 10 + 'px')
+                    .style('top', event.pageY - 10 + 'px');
+                  d3.select(event.target)
+                    .attr('fill', payment.Paid ? '#00e1ff' : '#FF0000')
+                    .attr('opacity', 0.8);
+                })
+                .on('mousemove', (event: MouseEvent) => {
+                  tooltip
+                    .style('left', event.pageX + 10 + 'px')
+                    .style('top', event.pageY - 10 + 'px');
+                })
 
-              .on('mouseout', (event: MouseEvent) => {
-                tooltip.style('visibility', 'hidden');
-                d3.select(event.target)
-                  .attr('fill', payment.Paid ? '#00e1ff' : 'red')
-                  .attr('opacity', 0.5);
-              });
-          }
+                .on('mouseout', (event: MouseEvent) => {
+                  tooltip.style('visibility', 'hidden');
+                  d3.select(event.target)
+                    .attr('fill', payment.Paid ? '#00e1ff' : 'red')
+                    .attr('opacity', 0.5);
+                });
+            }
+          });
         });
-      });
-    }
+      }
+    };
+    makeTable();
   }, [filteredRooms, numberOfMonthsFuture, numberOfMonthsPast, tenantList]);
 
   const handleMonthsFutureChange = (

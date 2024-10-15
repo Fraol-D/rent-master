@@ -46,7 +46,7 @@ declare global {
     AgreedPrice: number;
     utilityPaymentEvery: string;
     utilityPaymentStartDate: number;
-    utilityPaymentUseDifferentStartDate:boolean;
+    utilityPaymentUseDifferentStartDate: boolean;
     utilityPaymentEveryCustom: number;
     PaymentCycleType:
       | '30'
@@ -57,6 +57,7 @@ declare global {
       | 'daily'
       | 'custom';
     PaymentCycleCustomeDays: number;
+    paymentShowAmount: number;
     squareMeters: number;
     RoomSpecifications: RoomSpecificationType[];
     Archived: boolean;
@@ -69,6 +70,7 @@ declare global {
     selectedAgreementId: string;
     notificationSettings: number;
     utilityPayments: UtilityPaymentSettings[];
+    DaysTillNextPayment: number;
   };
   type RoomSpecificationType = {
     id: string;
@@ -91,7 +93,7 @@ declare global {
     type: string;
     price: string;
     custom: boolean;
-    
+
     userId: string;
   };
 
@@ -103,7 +105,7 @@ declare global {
     AddedTime: number;
     AgreedCommission: number;
   };
- 
+
   type tenant = {
     id: string;
     name: string;
@@ -192,7 +194,6 @@ declare global {
     date: number;
     userId: string;
   };
-  
 }
 const MainPage = ({
   RoomList,
@@ -728,8 +729,6 @@ const MainPage = ({
       AllRoomPayInfo: { RoomPayInfo: [] },
       selectedAgreementId: '',
       Archived: false,
-
-
     };
 
     // Add to sqlite database
@@ -835,6 +834,16 @@ const MainPage = ({
     } else {
       setHideSideBarForCalendar(false);
     }
+    if (
+      SelectedPage === 'People' ||
+      SelectedPage === 'Dashboard' ||
+      SelectedPage === 'ToolsPage'
+    ) {
+      if (!SideBarShowState) {
+        setSideBarWidth(290);
+        setSideBarShowState(true);
+      }
+    }
   }, [SelectedPage]);
 
   const handleAddRoomButtonInitial = (state: boolean, plusOne?: boolean) => {
@@ -916,7 +925,7 @@ const MainPage = ({
     }
   }, [SelectedPage]);
 
-  const SideBarItem = ({ page, currentPage, onClick, children }:any) => (
+  const SideBarItem = ({ page, currentPage, onClick, children }: any) => (
     <div
       onClick={onClick}
       className={
@@ -929,7 +938,27 @@ const MainPage = ({
       {currentPage !== page && <div>{'-▶'}</div>}
     </div>
   );
+  const [tempSquareMeters, setTempSquareMeters] = useState(
+    RoomList.find((r: RoomType) => r.id === SelectedEditRoomId)?.squareMeters || 0
+  );
+  useEffect(() => {
+    setTempSquareMeters(
+      RoomList.find((r: RoomType) => r.id === SelectedEditRoomId)?.squareMeters || 0
+    );
+  }, [SelectedEditRoomId]);
+  const handleBlur = () => {
+    updateRoomProperty(
+      SelectedEditRoomId,
+      'squareMeters',
+      parseInt(tempSquareMeters.toString())
+    );
+  };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleBlur();
+    }
+  };
   return (
     <>
       <div
@@ -1024,7 +1053,7 @@ const MainPage = ({
                         display: 'flex',
                         flexDirection: 'column',
                         marginLeft: '30px',
-                        alignItems: 'flex-start'
+                        alignItems: 'flex-start',
                       }}
                     >
                       {' '}
@@ -1034,9 +1063,9 @@ const MainPage = ({
                         <input
                           type="text1"
                           className="TenantSearchBar"
-                          placeholder='Search tenant name'
+                          placeholder="Search tenant name"
                           value={TenantNameFilter}
-                          style={{width:"145px"}}
+                          style={{ width: '145px' }}
                           onChange={(e) => {
                             setTenantNameFilter(e.target.value);
                             addFilterOption('tenantName', e.target.value);
@@ -1048,7 +1077,7 @@ const MainPage = ({
                           Floor:
                           <input
                             type="number"
-                          placeholder='0'
+                            placeholder="0"
                             className="FloorSearchBar"
                             value={floorFilter}
                             onChange={(e) => {
@@ -1061,7 +1090,7 @@ const MainPage = ({
                           {' '}
                           Room:
                           <input
-                          placeholder='0'
+                            placeholder="0"
                             type="number"
                             className="RoomSearchBar"
                             value={roomFilter}
@@ -1121,12 +1150,16 @@ const MainPage = ({
                       </div>
                       <div
                         className="AdvanceRoomFindingINPUTCONTAINER"
-                        style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'flex-start',  justifyContent: 'flex-start',
-                          marginLeft: '30px', }}
+                        style={{
+                          width: '100%',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'flex-start',
+                          justifyContent: 'flex-start',
+                          marginLeft: '30px',
+                        }}
                       >
-                        <div
-                          style={{ marginTop: '10px' }}
-                        >
+                        <div style={{ marginTop: '10px' }}>
                           <div>
                             Filter Price:
                             <select
@@ -1377,6 +1410,18 @@ const MainPage = ({
                       />
                       : Square Meters
                     </div>
+                    <div className="AddaNewRoomRowObject">
+                      <input
+                        className="AddANewRoomInputsSmall"
+                        type="number"
+                        placeholder="Square Meters"
+                        value={AddRoomFormSquareMeters}
+                        onChange={(e) =>
+                          setAddRoomFormSquareMeters(parseInt(e.target.value))
+                        }
+                      />
+                      : Square Meters
+                    </div>
                     <div className="RoomSpecficationsMainContainer">
                       <h3>
                         Room Specifications{' - '}
@@ -1564,34 +1609,34 @@ const MainPage = ({
                 currentPage={ToolsSelectedPage}
                 onClick={() => setToolsSelectedPage('Expense Manager')}
               >
-               Expense Manager
+                Expense Manager
               </SideBarItem>
             </>
-          ) :  SelectedPage === 'Dashboard' ? 
+          ) : SelectedPage === 'Dashboard' ? (
             <>
               <SideBarItem
                 page="Overview"
                 currentPage={DashboardSelectedPage}
                 onClick={() => setDashboardSelectedPage('Overview')}
               >
-               Overview
+                Overview
               </SideBarItem>
               <SideBarItem
                 page="Email History"
                 currentPage={DashboardSelectedPage}
                 onClick={() => setDashboardSelectedPage('Email History')}
               >
-         Email History
+                Email History
               </SideBarItem>
               <SideBarItem
                 page="Expenses"
                 currentPage={DashboardSelectedPage}
                 onClick={() => setDashboardSelectedPage('Expenses')}
               >
-         Expenses
+                Expenses
               </SideBarItem>
             </>
-          :(
+          ) : (
             <></>
           )}
         </div>
@@ -1627,6 +1672,24 @@ const MainPage = ({
                   }
                 </p>
               </div>{' '}
+              <div className="AddaNewRoomRowObject">
+                Square Meters :{' '}
+               
+                  
+
+                
+                    <input
+                      className="AddANewRoomInputsSmall"
+                      type="number"
+                      placeholder="Square Meters"
+                      value={tempSquareMeters}
+                      onChange={(e) => setTempSquareMeters(parseInt(e.target.value))}
+                      onBlur={handleBlur}
+                      onKeyDown={handleKeyDown}
+                    />
+                
+               
+              </div>
               <div style={{ display: 'flex' }}>
                 <div className="RoomSpecficationsMainContainer">
                   <h3>
@@ -1921,7 +1984,6 @@ const MainPage = ({
               setToolsSelectedPage={setToolsSelectedPage}
               setChangeMade={setChangeMade}
               SelectedUserId={SelectedUserId}
-              
             />
           )}
           {SelectedPage === 'Calendar' && (
@@ -1955,6 +2017,7 @@ const MainPage = ({
               BrokerRecommendationList={BrokerRecommendationList}
               DashboardSelectedPage={DashboardSelectedPage}
               SelectedUserId={SelectedUserId}
+              setChangeMade={setChangeMade}
             />
           )}
           {SelectedPage === 'Database' && (

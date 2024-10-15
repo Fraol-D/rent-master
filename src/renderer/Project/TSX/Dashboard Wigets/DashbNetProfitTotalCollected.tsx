@@ -12,14 +12,15 @@ import {
   addDays,
   isBefore,
   isAfter,
+  addMonths,
 } from 'date-fns';
 
 const DashbTotalCollected = ({
   RoomList,
-  expenses2,
+  expenses2,tenantList
 }: {
   RoomList: RoomType[];
-  expenses2: expenses[];
+  expenses2: expenses[];tenantList:tenant[]
 }) => {
   const [showBy, setShowBy] = useState<'Monthly' | 'Yearly'>('Monthly');
   const [selectedDate, setSelectedDate] = useState(
@@ -31,18 +32,104 @@ const DashbTotalCollected = ({
   const [expenses, setExpenses] = useState<expenses[]>([]);
 
   useEffect(() => {
-    const getDataRoomPayInfo = async () => {
+    const getPredictedRoomPayInfo = async () => {
       setExpenses(expenses2);
-      const data = await getValuesWithSql('room_pay_info', 'WHERE 1');
-      const CorretData = data.map((d: any) => ({
+      const predictedPayments = await calculatePredictedPayments(RoomList);
+      const CorretData = predictedPayments.map((d: any) => ({
         date: new Date(d.Day),
-        value: d.Paid === 1 ? d.Value : 0,
+        value: d.Paid ? d.Value : 0,
         expectedValue: d.Value,
+        expenses: 0,
       }));
       setDataRoomPayInfo(CorretData);
     };
-    getDataRoomPayInfo();
-  }, []);
+    getPredictedRoomPayInfo();
+  }, [RoomList, expenses2, selectedDate,showBy]);
+
+  const calculatePredictedPayments = async (rooms: RoomType[]) => {
+    const allPayments: Payment[] = [];
+    const selectedYear = parseInt(selectedDate);
+    let yearStart = startOfYear(new Date(selectedYear - 2, 0, 1));
+    let yearEnd = endOfYear(new Date(selectedYear + 2, 11, 31));
+    if (showBy === 'Yearly') {
+      yearStart = startOfYear(new Date(selectedYear - 2, 0, 1));
+      yearEnd = endOfYear(new Date(selectedYear + 2, 11, 31));
+    }
+    // Get all actual payments for the selected year range
+    const actualPayments = await getValuesWithSql(
+      'room_pay_info',
+      `WHERE Day >= ${yearStart.getTime()} AND Day <= ${yearEnd.getTime()}`
+    );
+
+    for (const room of rooms) {
+      let startDate = new Date(
+        tenantList.find((tenant) => tenant.id === room.tenantId)?.startTime ||
+          Date.now()
+      ).getTime();
+      let endDate = null;
+      if (room.selectedAgreementId) {
+        const agreements = await getValuesWithSql(
+          'agreements',
+          `WHERE id = '${room.selectedAgreementId}'`
+        );
+        if (agreements.length > 0) startDate = agreements[0].startTime;
+        if (
+          tenantList.find((t: tenant) => t.id === room.tenantId)
+            ?.SelectedAgreement === 'Fixed-Term'
+        )
+          if (agreements.length > 0) endDate = agreements[0].endTime;
+      }
+
+      let currentDate = new Date(startDate);
+
+      while (currentDate <= yearEnd && (endDate == null || currentDate < endDate)) {
+        const paymentId = `${room.id}-${currentDate.getTime()}`;
+        const actualPayment = actualPayments.find(
+          (p: any) => p.id === paymentId
+        );
+
+        allPayments.push({
+          id: paymentId,
+          Day: currentDate.getTime(),
+          Value: room.AgreedPrice,
+          Paid: actualPayment ? actualPayment.Paid === 1 : false,
+          roomId: room.id,
+        });
+
+        // Calculate next payment date based on payment cycle
+        switch (room.PaymentCycleType) {
+          case '30':
+            currentDate = addDays(currentDate, 30);
+            break;
+          case '15':
+            currentDate = addDays(currentDate, 15);
+            break;
+          case '7':
+            currentDate = addDays(currentDate, 7);
+            break;
+          case 'daily':
+            currentDate = addDays(currentDate, 1);
+            break;
+          case 'monthly':
+            currentDate = addMonths(currentDate, 1);
+            break;
+          case 'weekly':
+            currentDate = addDays(currentDate, 7);
+            break;
+          case 'custom':
+            currentDate = addDays(
+              currentDate,
+              room.PaymentCycleCustomeDays || 30
+            );
+            break;
+          default:
+            currentDate = addMonths(currentDate, 1);
+        }
+      }
+    }
+
+    return allPayments;
+  };
 
   const generateRecurringExpenses = (
     expenses: expenses[],
@@ -85,6 +172,7 @@ const DashbTotalCollected = ({
       (v: any) => ({
         value: d3.sum(v, (d: any) => d.value),
         expectedValue: d3.sum(v, (d: any) => d.expectedValue),
+        expenses: d3.sum(v, (d: any) => d.expenses),
       }),
       (d: any) => d.date.getMonth()
     );
@@ -289,7 +377,7 @@ const DashbTotalCollected = ({
             dataKey: 'expectedValue',
             label: 'Expected',
             color: 'var(--Accent-Color50)',
-          },
+          }, 
         ]}
         width={710}
         height={400}

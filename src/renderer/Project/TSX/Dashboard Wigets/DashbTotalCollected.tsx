@@ -3,80 +3,167 @@ import * as d3 from 'd3';
 import { BarChart, barElementClasses } from '@mui/x-charts/BarChart';
 import { axisClasses } from '@mui/x-charts/ChartsAxis';
 import { getValuesWithSql } from 'Backend/localServerApis';
-import { Console } from 'console';
+import { addDays, addMonths, format, startOfYear, endOfYear } from 'date-fns';
 
-const DashbTotalCollected = ({ RoomList }: { RoomList: RoomType[] }) => {
+interface Payment {
+  id: string;
+  Day: number;
+  Value: number;
+  Paid: boolean;
+  roomId: string;
+}
+
+const DashbTotalCollected = ({
+  RoomList,
+  tenantList,
+}: {
+  RoomList: RoomType[];
+  tenantList: tenant[];
+}) => {
   const [showBy, setShowBy] = useState<'Monthly' | 'Yearly'>('Monthly');
   const [selectedDate, setSelectedDate] = useState(
     new Date().getFullYear().toString()
   );
-  const [DataRoomPayInfo, setDataRoomPayInfo] = useState<
-    { date: any; value: any; expectedValue: any }[]
-  >([]);
+  const [predictedPayments, setPredictedPayments] = useState<Payment[]>([]);
 
   useEffect(() => {
-    const getDataRoomPayInfo = async () => {
-      const data = await getValuesWithSql('room_pay_info', 'WHERE 1');
-      const CorretData = data.map((d: any) => ({
-        date: d.Day,
-        value: d.Paid === 1 ? d.Value : 0,
-        expectedValue: d.Value,
-      }));
-      console.log(CorretData);
-      setDataRoomPayInfo(CorretData);
+    const calculatePayments = async () => {
+      const allPayments: Payment[] = [];
+      const selectedYear = parseInt(selectedDate);
+      let yearStart = startOfYear(new Date(selectedYear- 2, 0, 1));
+      let yearEnd = endOfYear(new Date(selectedYear+ 2, 11, 31));
+      if (showBy === 'Yearly') {
+        yearStart = startOfYear(new Date(selectedYear - 2, 0, 1));
+        yearEnd = endOfYear(new Date(selectedYear + 2, 11, 31));
+      }
+      // Get all actual payments for the selected year
+      const actualPayments = await getValuesWithSql(
+        'room_pay_info',
+        `WHERE Day >= ${yearStart.getTime()} AND Day <= ${yearEnd.getTime()}`
+      );
+
+      for (const room of RoomList) {
+        let startDate = new Date(
+          tenantList.find((tenant) => tenant.id === room.tenantId)?.startTime ||
+            Date.now()
+        ).getTime();
+        let endDate = null;
+        if (room.selectedAgreementId) {
+          const agreements = await getValuesWithSql(
+            'agreements',
+            `WHERE id = '${room.selectedAgreementId}'`
+          );
+          if (agreements.length > 0) startDate = agreements[0].startTime;
+          if (
+            tenantList.find((t: tenant) => t.id === room.tenantId)
+              ?.SelectedAgreement === 'Fixed-Term'
+          )
+            if (agreements.length > 0) endDate = agreements[0].endTime;
+        }
+
+        let currentDate = new Date(startDate);
+
+        while (currentDate <= yearEnd && (endDate == null || currentDate < endDate)) {
+          const paymentId = `${room.id}-${currentDate.getTime()}`;
+          const actualPayment = actualPayments.find(
+            (p: any) => p.id === paymentId
+          );
+
+          allPayments.push({
+            id: paymentId,
+            Day: currentDate.getTime(),
+            Value: room.AgreedPrice,
+            Paid: actualPayment ? actualPayment.Paid === 1 : false,
+            roomId: room.id,
+          });
+
+          // Calculate next payment date based on payment cycle
+          switch (room.PaymentCycleType) {
+            case '30':
+              currentDate = addDays(currentDate, 30);
+              break;
+            case '15':
+              currentDate = addDays(currentDate, 15);
+              break;
+            case '7':
+              currentDate = addDays(currentDate, 7);
+              break;
+            case 'daily':
+              currentDate = addDays(currentDate, 1);
+              break;
+            case 'monthly':
+              currentDate = addMonths(currentDate, 1);
+              break;
+            case 'weekly':
+              currentDate = addDays(currentDate, 7);
+              break;
+            case 'custom':
+              currentDate = addDays(
+                currentDate,
+                room.PaymentCycleCustomeDays || 30
+              );
+              break;
+            default:
+              currentDate = addMonths(currentDate, 1);
+          }
+        }
+      }
+
+      setPredictedPayments(allPayments);
     };
-    getDataRoomPayInfo();
-  }, []);
+
+    calculatePayments();
+  }, [RoomList, tenantList, selectedDate, showBy]);
 
   const aggregateMonthlyData = useMemo(() => {
     const selectedYear = parseInt(selectedDate);
-    const filteredData = DataRoomPayInfo.filter(
-      (d) => new Date(d.date).getFullYear() === selectedYear
+    const filteredData = predictedPayments.filter(
+      (d) => new Date(d.Day).getFullYear() === selectedYear
     );
 
     const monthlyData = d3.rollups(
       filteredData,
-      (v: any) => ({
-        value: d3.sum(v, (d: any) => d.value),
-        expectedValue: d3.sum(v, (d: any) => d.expectedValue),
+      (v) => ({
+        value: d3.sum(v, (d) => (d.Paid ? d.Value : 0)),
+        expectedValue: d3.sum(v, (d) => d.Value),
       }),
-      (d: any) => new Date(d.date).getMonth()
+      (d) => new Date(d.Day).getMonth()
     );
 
-    const allMonths = d3.range(0, 12).map((month: any) => ({
+    const allMonths = d3.range(0, 12).map((month) => ({
       month: d3.timeFormat('%b')(new Date(0, month)),
       value: 0,
       expectedValue: 0,
     }));
 
-    monthlyData.forEach(([month, values]: any) => {
+    monthlyData.forEach(([month, values]) => {
       allMonths[month].value = values.value;
       allMonths[month].expectedValue = values.expectedValue;
     });
 
     return allMonths;
-  }, [selectedDate, DataRoomPayInfo]);
+  }, [selectedDate, predictedPayments, showBy]);
 
   const aggregateYearlyData = useMemo(() => {
     const yearlyData = d3.rollups(
-      DataRoomPayInfo,
-      (v: any) => ({
-        value: d3.sum(v, (d: any) => d.value),
-        expectedValue: d3.sum(v, (d: any) => d.expectedValue),
+      predictedPayments,
+      (v) => ({
+        value: d3.sum(v, (d) => (d.Paid ? d.Value : 0)),
+        expectedValue: d3.sum(v, (d) => d.Value),
       }),
-      (d: any) => new Date(d.date).getFullYear()
+      (d) => new Date(d.Day).getFullYear()
     );
 
     const yearRange = d3
       .range(parseInt(selectedDate) - 2, parseInt(selectedDate) + 3)
-      .map((year: any) => ({
+      .map((year) => ({
         year: year,
         value: 0,
         expectedValue: 0,
       }));
 
-    yearlyData.forEach(([year, values]: any) => {
-      const index = yearRange.findIndex((y: any) => y.year === year);
+    yearlyData.forEach(([year, values]) => {
+      const index = yearRange.findIndex((y) => y.year === year);
       if (index !== -1) {
         yearRange[index].value = values.value;
         yearRange[index].expectedValue = values.expectedValue;
@@ -84,31 +171,31 @@ const DashbTotalCollected = ({ RoomList }: { RoomList: RoomType[] }) => {
     });
 
     return yearRange;
-  }, [selectedDate, DataRoomPayInfo]);
+  }, [selectedDate, predictedPayments, showBy]);
 
   const dataset =
     showBy === 'Monthly' ? aggregateMonthlyData : aggregateYearlyData;
 
   const totalCollected = useMemo(() => {
     const selectedYear = parseInt(selectedDate);
-    return DataRoomPayInfo.filter(
-      (d) => new Date(d.date).getFullYear() === selectedYear
-    ).reduce((sum, item) => sum + item.value, 0);
-  }, [selectedDate, DataRoomPayInfo]);
+    return predictedPayments
+      .filter((d) => new Date(d.Day).getFullYear() === selectedYear && d.Paid)
+      .reduce((sum, item) => sum + item.Value, 0);
+  }, [selectedDate, predictedPayments, showBy]);
 
   const totalExpected = useMemo(() => {
     const selectedYear = parseInt(selectedDate);
-    return DataRoomPayInfo.filter(
-      (d) => new Date(d.date).getFullYear() === selectedYear
-    ).reduce((sum, item) => sum + item.expectedValue, 0);
-  }, [selectedDate, DataRoomPayInfo]);
+    return predictedPayments
+      .filter((d) => new Date(d.Day).getFullYear() === selectedYear)
+      .reduce((sum, item) => sum + item.Value, 0);
+  }, [selectedDate, predictedPayments, showBy]);
 
   const lastYearTotalCollected = useMemo(() => {
     const previousYear = parseInt(selectedDate) - 1;
-    return DataRoomPayInfo.filter(
-      (d) => new Date(d.date).getFullYear() === previousYear
-    ).reduce((sum, item) => sum + item.value, 0);
-  }, [selectedDate, DataRoomPayInfo]);
+    return predictedPayments
+      .filter((d) => new Date(d.Day).getFullYear() === previousYear && d.Paid)
+      .reduce((sum, item) => sum + item.Value, 0);
+  }, [selectedDate, predictedPayments, showBy]);
 
   const difference = totalCollected - lastYearTotalCollected;
   const percentageChange =
@@ -118,15 +205,11 @@ const DashbTotalCollected = ({ RoomList }: { RoomList: RoomType[] }) => {
 
   return (
     <div className="DashboardWigetMainContainer">
-      <p className="DashboardWigetPieChartTextHeader">
-        Total Collected
-      </p>
+      <p className="DashboardWigetPieChartTextHeader">Total Collected</p>
 
       <div className="DashboardTotalCollectedTopPart">
         <div className="ShowByContainer">
-          <span className="ShowByLabel">
-            Show by:
-          </span>
+          <span className="ShowByLabel">Show by:</span>
           <select
             className="ShowBySelect"
             value={showBy}
@@ -147,17 +230,19 @@ const DashbTotalCollected = ({ RoomList }: { RoomList: RoomType[] }) => {
             max="2100"
             step="1"
           />
-          <span className="TotalLabel">
-            Total:
-          </span>
+          <span className="TotalLabel">Total:</span>
           <span className="TotalValue">
-            ${totalCollected.toLocaleString()} /{' '}
-            ${totalExpected.toLocaleString()}
+            ${totalCollected.toLocaleString()} / $
+            {totalExpected.toLocaleString()}
           </span>
           <span className="DifferenceLabel">
-            <span className={difference > 0 ? "DifferenceValue" : "DifferenceValueNegative"}>
-              {difference > 0 ? '+' : ''}
-              ${difference.toLocaleString()} ({percentageChange}%)
+            <span
+              className={
+                difference > 0 ? 'DifferenceValue' : 'DifferenceValueNegative'
+              }
+            >
+              {difference > 0 ? '+' : ''}${difference.toLocaleString()} (
+              {percentageChange}%)
             </span>{' '}
             in {parseInt(selectedDate) - 1}
           </span>
@@ -188,7 +273,7 @@ const DashbTotalCollected = ({ RoomList }: { RoomList: RoomType[] }) => {
             color: 'var(--Accent-Color50)',
           },
         ]}
-        grid={{ vertical: true, horizontal:true }}
+        grid={{ vertical: true, horizontal: true }}
         width={710}
         height={400}
         margin={{
@@ -198,7 +283,6 @@ const DashbTotalCollected = ({ RoomList }: { RoomList: RoomType[] }) => {
           bottom: 35,
         }}
         sx={(theme) => ({
-          
           [`.${axisClasses.root}`]: {
             [`.${axisClasses.tick}, .${axisClasses.line}`]: {
               stroke: 'var(--Text-Color)',

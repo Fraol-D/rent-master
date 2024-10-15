@@ -22,7 +22,7 @@ interface props {
   PastTenantReviews: PastTenantReviewType[];
   BrokerRecommendationList: BrokerRecommendationType[];
   DashboardSelectedPage: string;
-  SelectedUserId: string;
+  SelectedUserId: string;setChangeMade:any;
 }
 const DashboardPage: React.FC<props> = ({
   RoomList,
@@ -32,7 +32,7 @@ const DashboardPage: React.FC<props> = ({
   BrokerList,
   BrokerRecommendationList,
   DashboardSelectedPage,
-  SelectedUserId,
+  SelectedUserId,setChangeMade
 }) => {
   const [expenses, setExpenses] = useState<expenses[]>([]);
 
@@ -51,11 +51,11 @@ const DashboardPage: React.FC<props> = ({
           style={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap' }}
         >
           <DashbRoomSummary RoomList={RoomList} />
-          <DashbTotalCollected RoomList={RoomList} />
+          <DashbTotalCollected RoomList={RoomList} tenantList={tenantList}/>
           <DashbPastPayments
             tenantList={tenantList}
             RoomList={RoomList}
-            roomPaymentInfoApi={roomPaymentInfoApi}
+            roomPaymentInfoApi={roomPaymentInfoApi}setChangeMade={setChangeMade}
           />
           <div>
             <DashbRevenuePerSquareFoot RoomList={RoomList} />
@@ -85,7 +85,7 @@ const DashboardPage: React.FC<props> = ({
         >
           <DashbNetProfitTotalCollected
             RoomList={RoomList}
-            expenses2={expenses}
+            expenses2={expenses}   tenantList={tenantList}
           ></DashbNetProfitTotalCollected>
           <DashbMonthlyExpenseTrendWidget expenses={expenses} />
           <DashbExpenseHistory expenses={expenses} />

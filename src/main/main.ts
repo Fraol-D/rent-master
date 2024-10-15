@@ -489,7 +489,7 @@ const tableStructures = [
       'price REAL DEFAULT 0',
       'AgreedPrice REAL DEFAULT 0',
       'PaymentCycleType TEXT ',
-
+      'paymentShowAmount INTEGER DEFAULT 1',
       'PaymentCycleCustomeDays INTEGER',
       'squareMeters REAL DEFAULT 0',
       'tenantId TEXT',

@@ -15,6 +15,8 @@ import {
 } from 'Backend/localServerApis';
 import AccountManager from './Project/TSX/Sign up and login/AccountManager';
 import { SignOutUser, Upload } from 'Backend/OnlineServerApis';
+import { addDays, addMonths, differenceInDays } from 'date-fns';
+import { Payment } from 'electron';
 declare global {}
 function Hello() {
   const [RoomList, setRoomList] = useState<RoomType[]>([]);
@@ -37,6 +39,115 @@ function Hello() {
       const propertyValue = room[propertyName];
       return propertyValue;
     }
+  };
+  const calculatePredictedPayments = async (room: RoomType) => {
+    const allPayments = [];
+    const today = new Date();
+    const yearEnd = new Date(today.getFullYear() + 1, 11, 31);
+    const tenant = await getValuesWithSql(
+      'tenants',
+      `WHERE id = '${room.tenantId}'`
+    );
+    let startDate = new Date(tenant[0]?.startTime || Date.now()).getTime();
+
+    let endDate = null;
+    if (room.selectedAgreementId) {
+      const agreements = await getValuesWithSql(
+        'agreements',
+        `WHERE id = '${room.selectedAgreementId}'`
+      );
+      if (agreements.length > 0) {
+        startDate = agreements[0].startTime;
+      }
+      if (tenant[0]?.SelectedAgreement === 'Fixed-Term') {
+        if (agreements.length > 0) {
+          endDate = agreements[0].endTime;
+        }
+      }
+    }
+
+    let currentDate = new Date(startDate);
+    while (
+      currentDate <= yearEnd &&
+      (endDate == null || currentDate <= new Date(endDate))
+    ) {
+      const paymentId = `${room.id}-${currentDate.getTime()}`;
+      allPayments.push({
+        id: paymentId,
+        Day: currentDate.getTime(),
+        Value: room.AgreedPrice,
+        Paid: false,
+        roomId: room.id,
+      });
+
+      switch (room.PaymentCycleType) {
+        case '30':
+          currentDate = addDays(currentDate, 30);
+          break;
+        case '15':
+          currentDate = addDays(currentDate, 15);
+          break;
+        case '7':
+          currentDate = addDays(currentDate, 7);
+          break;
+        case 'daily':
+          currentDate = addDays(currentDate, 1);
+          break;
+        case 'monthly':
+          currentDate = addMonths(currentDate, 1);
+          break;
+        case 'weekly':
+          currentDate = addDays(currentDate, 7);
+          break;
+        case 'custom':
+          currentDate = addDays(
+            currentDate,
+            room.PaymentCycleCustomeDays || 30
+          );
+          break;
+        default:
+          currentDate = addMonths(currentDate, 1);
+      }
+    }
+
+    const actualPayments = await getValuesWithSql(
+      'room_pay_info',
+      `WHERE roomId = '${room.id}'`
+    );
+
+    const finalPayments = allPayments.map((payment) => {
+      const actualPayment = actualPayments.find(
+        (p: any) => p.id === payment.id
+      );
+      return actualPayment
+        ? { ...payment, Paid: actualPayment.Paid === 1 }
+        : payment;
+    });
+
+    return finalPayments;
+  };
+
+  const calculateDaysTillNextPayment = (predictedPayments: Payment[]) => {
+    const today = new Date();
+
+    const sortedPayments = predictedPayments.sort((a, b) => a.Day - b.Day);
+
+    for (const payment of sortedPayments) {
+      const paymentDate = new Date(payment.Day);
+      const daysDifference = differenceInDays(paymentDate, today);
+
+      if (!payment.Paid) {
+        if (daysDifference === 0) {
+          return 0;
+        } else if (daysDifference < 0) {
+          return daysDifference;
+        } else {
+          return daysDifference;
+        }
+      }
+    }
+
+    return 0;
   };
   class RoomApi {
     getPaymentTimelineInfo = async (roomId: string) => {
@@ -90,6 +201,13 @@ function Hello() {
               };
             });
 
+            // Calculate predicted payments
+            const predictedPayments = await calculatePredictedPayments(room);
+
+            // Calculate days till next payment
+            const DaysTillNextPayment =
+              calculateDaysTillNextPayment(predictedPayments);
+            console.log(DaysTillNextPayment, room.roomIndex);
             return {
               id: room.id,
               floor: room.floor,
@@ -106,14 +224,17 @@ function Hello() {
               AddTenantState: room.AddTenantState || false,
               ViewAgreement: room.ViewAgreement || false,
               ShowPayTimeLine: room.ShowPayTimeLine || false,
-              AllRoomPayInfo: { RoomPayInfo: AllRoomPayInfo },
+              AllRoomPayInfo: { RoomPayInfo: predictedPayments },
               selectedAgreementId: room.selectedAgreementId || '',
               notificationSettings: room.notificationSettings || 0,
               utilityPaymentEvery: room.utilityPaymentEvery || '30',
               utilityPaymentStartDate: room.utilityPaymentStartDate || 0,
-              utilityPaymentUseDifferentStartDate: room.utilityPaymentUseDifferentStartDate || false,
+              utilityPaymentUseDifferentStartDate:
+                room.utilityPaymentUseDifferentStartDate || false,
               utilityPaymentEveryCustom: room.utilityPaymentEveryCustom || 0,
               utilityPayments: formattedUtilityPayments,
+              paymentShowAmount: room.paymentShowAmount,
+              DaysTillNextPayment: DaysTillNextPayment,
             };
           })
         );
@@ -879,7 +1000,7 @@ function Hello() {
 
   useEffect(() => {
     const get = async () => {
-      const storedTheme =  window.electron.store.get('ThemeMode');
+      const storedTheme = window.electron.store.get('ThemeMode');
       if (storedTheme) {
         setThemeMode(storedTheme);
         applyTheme(storedTheme);
@@ -891,7 +1012,7 @@ function Hello() {
   }, []);
 
   const ChangeTheme = async (theme: 'light' | 'dark') => {
-     window.electron.store.set('ThemeMode', theme);
+    window.electron.store.set('ThemeMode', theme);
     setThemeMode(theme);
     applyTheme(theme);
   };
@@ -899,10 +1020,9 @@ function Hello() {
   const applyTheme = (theme: 'light' | 'dark') => {
     const body = document.body;
     body.classList.remove('DarkTheme');
-    if(theme === 'dark'){
-         body.classList.add('DarkTheme');
+    if (theme === 'dark') {
+      body.classList.add('DarkTheme');
     }
- 
   };
 
   const [Refresh, setRefresh] = useState(0);

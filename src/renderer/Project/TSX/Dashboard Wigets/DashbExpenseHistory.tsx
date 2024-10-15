@@ -168,88 +168,93 @@ const DashbExpenseHistory: React.FC<DashbExpenseHistoryProps> = ({
         </div>
       </div>
       <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-        {sortedExpenses.map((expense, index) => (
-          <li
-            key={`${expense.id}-${index}`}
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              padding: '10px',
-              marginBottom: '10px',
-              borderBottom: '1px solid var(--Secondary-Color)',
-              backgroundColor: 'var(--Secondary-Color60)',
-              borderRadius: '10px',
-
-              marginLeft: '10px',
-            }}
-          >
-            <div
+        {sortedExpenses.length > 0 ? (
+          sortedExpenses.map((expense, index) => (
+            <li
+              key={`${expense.id}-${index}`}
               style={{
-                flex: '0 0 120px',
-                fontSize: '14px',
-                color: 'var(--Text-Color)',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '10px',
+                marginBottom: '10px',
+                borderBottom: '1px solid var(--Secondary-Color)',
+                backgroundColor: 'var(--Secondary-Color60)',
+                borderRadius: '10px',
+                marginLeft: '10px',
               }}
             >
-              {format(new Date(expense.date), 'MMM dd, yyyy')}
-            </div>
-            <div
-              style={{
-                flex: '1',
-                fontSize: '16px',
-                fontWeight: 'bold',
-                color: 'var(--Text-Color)',
-                marginLeft: '20px',
-              }}
-            >
-              {expense.name}
-            </div>
-            <div
-              style={{
-                flex: '0 0 100px',
-                fontSize: '16px',
-                fontWeight: 'bold',
-                color: 'var(--Primary-Color)',
-                textAlign: 'right',
-              }}
-            >
-              ${expense.price.toLocaleString()}
-            </div>
-            <div
-              style={{
-                flex: '0 0 120px',
-                fontSize: '14px',
-                color: 'var(--Text-Color)',
-                textAlign: 'center',
-              }}
-            >
-              {expense.fullBuilding ? (
-                <strong>Full Building <br />.</strong>
-              ) : (
-                <em>{`Room ${expense.room}`}, <br /> {`Floor ${expense.floor}`}</em>
-              )}
-            </div>
-            {expense.doesReoccur ? (
               <div
                 style={{
-                  flex: '0 0 80px',
-                  fontSize: '12px',
-                  color: 'var(--Accent-Color)',
-                  textAlign: 'right',
+                  flex: '0 0 120px',
+                  fontSize: '14px',
+                  color: 'var(--Text-Color)',
+                }}
+              >
+                {format(new Date(expense.date), 'MMM dd, yyyy')}
+              </div>
+              <div
+                style={{
+                  flex: '1',
+                  fontSize: '16px',
+                  fontWeight: 'bold',
+                  color: 'var(--Text-Color)',
                   marginLeft: '20px',
                 }}
               >
-                Recurring
+                {expense.name}
               </div>
-            ) : (
-              <div style={{ flex: '0 0 80px',
-                fontSize: '12px',
-                color: 'var(--Accent-Color)',
-                textAlign: 'right',
-                marginLeft: '20px' }}></div>
-            )}
+              <div
+                style={{
+                  flex: '0 0 100px',
+                  fontSize: '16px',
+                  fontWeight: 'bold',
+                  color: 'var(--Text-Color-Grey)',
+                  textAlign: 'right',
+                }}
+              >
+                ${expense.price.toLocaleString()}
+              </div>
+              <div
+                style={{
+                  flex: '0 0 120px',
+                  fontSize: '14px',
+                  color: 'var(--Text-Color)',
+                  textAlign: 'center',
+                }}
+              >
+                {expense.fullBuilding ? (
+                  <strong>Full Building <br />.</strong>
+                ) : (
+                  <em>{`Room ${expense.room}`}, <br /> {`Floor ${expense.floor}`}</em>
+                )}
+              </div>
+              {expense.doesReoccur ? (
+                <div
+                  style={{
+                    flex: '0 0 80px',
+                    fontSize: '12px',
+                    color: 'var(--Accent-Color)',
+                    textAlign: 'right',
+                    marginLeft: '20px',
+                  }}
+                >
+                  Recurring
+                </div>
+              ) : (
+                <div style={{ flex: '0 0 80px',
+                  fontSize: '12px',
+                  color: 'var(--Accent-Color)',
+                  textAlign: 'right',
+                  marginLeft: '20px' }}></div>
+              )}
+            </li>
+          ))
+        ) : (
+          <li style={{ textAlign: 'center', padding: '20px', color: 'var(--Text-Color)' }}>
+            There are currently no expenses to display. Please adjust your filters or add new expenses to see them here.
           </li>
-        ))}
+        )}
       </ul>
     </div>
   );
