@@ -59,10 +59,9 @@ const AccountManager = (React.FC<MyComponentProps> = ({
         setisSignedIn(true);
         const check = async () => {
           const userRaw = allUsers[0];
-          console.log('userRaw:', userRaw); // Added console.log for debugging
+        
 
           if (userRaw.packageType === '7daytrial') {
-            console.log('userRawssssssss:', userRaw.TrailEndDate, Date.now()); // Added console.log for debugging
 
             if (userRaw.TrailEndDate < Date.now()) {
               setTrialExpiredState(true);

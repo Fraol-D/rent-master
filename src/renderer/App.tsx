@@ -68,7 +68,7 @@ function Hello() {
 
     let currentDate = new Date(startDate);
     while (
-      currentDate <= yearEnd &&
+    
       (endDate == null || currentDate <= new Date(endDate))
     ) {
       const paymentId = `${room.id}-${currentDate.getTime()}`;
@@ -207,7 +207,7 @@ function Hello() {
             // Calculate days till next payment
             const DaysTillNextPayment =
               calculateDaysTillNextPayment(predictedPayments);
-            console.log(DaysTillNextPayment, room.roomIndex);
+     
             return {
               id: room.id,
               floor: room.floor,

@@ -13,6 +13,8 @@ import {
   getValuesWithSql,
   updateValue,
 } from 'Backend/localServerApis';
+import { addDays } from 'date-fns'; // Add this import
+
 const AgreementViewerForRoom = ({
   TenantList,
   roomType,
@@ -24,7 +26,8 @@ const AgreementViewerForRoom = ({
   calculateDaysDifference,
   roomPaymentInfoApi,
   handlePaymentRefresh,
-  setChangeMade,view
+  setChangeMade,
+  view,
 }: any) => {
   const [Agreements, setAgreements] = useState<agreements[]>([]);
   const [CurrentAgreementIndex, setCurrentAgreementIndex] = useState(0);
@@ -33,7 +36,6 @@ const AgreementViewerForRoom = ({
 
   const getAgreements = async () => {
     const agreements = await agreementApi.getAgreementsByRoomIdApi(roomType.id);
-
 
     // Sort agreements by signTime, oldest first
     const sortedAgreements = agreements.sort(
@@ -69,7 +71,6 @@ const AgreementViewerForRoom = ({
     }
   }, [CurrentAgreementIndex]);
   useEffect(() => {
-    
     if (Agreements[CurrentAgreementIndex]) {
       setMemoText(Agreements[CurrentAgreementIndex].Memo);
       setRentReservedText(
@@ -102,6 +103,7 @@ const AgreementViewerForRoom = ({
   const [paymentCycle, setPaymentCycle] = useState('Every 30 days');
   const [customDays, setCustomDays] = useState('');
   const [agreedPrice, setAgreedPrice] = useState(0);
+  const [endDateError, setEndDateError] = useState('');
 
   const handlePaymentCycleChange = (
     e: React.ChangeEvent<HTMLSelectElement>
@@ -110,6 +112,29 @@ const AgreementViewerForRoom = ({
     if (e.target.value !== 'custom') {
       setCustomDays('');
     }
+  };
+  const movePaymentsToHistory = async (
+    roomId: string,
+    newAgreementId: string
+  ) => {
+    const existingPayments = await getValuesWithSql(
+      'room_pay_info',
+      `WHERE roomId = '${roomId}'`
+    );
+
+    for (const payment of existingPayments) {
+      if(payment.Paid)await addValue(
+        'room_pay_info_history',
+        {
+          ...payment,
+          agreementId: newAgreementId,
+        },
+        setChangeMade
+      );
+      await deleteValue('room_pay_info', payment.id,setChangeMade);
+    }
+
+    // Now delete only the paid payments from room_pay_info
   };
   const HandleAddAgreement = async () => {
     // Deal with deleting, keeping, and makeing true of payments
@@ -120,7 +145,7 @@ const AgreementViewerForRoom = ({
           roomType.id
         }' AND Day >= '${Date.now()}' AND Paid = '0'`
       );
-      console.log(FutruePaymentsRaw.length, 'length');
+
       if (FutruePaymentsRaw.length >= 1) {
         for (let i = 0; i < FutruePaymentsRaw.length; i++) {
           const element = FutruePaymentsRaw[i];
@@ -144,11 +169,17 @@ const AgreementViewerForRoom = ({
             element.id,
             'Paid',
             1,
-            setChangeMade, 0
+            setChangeMade,
+            0
           );
         }
       }
     }
+    const agreementId = uuidv4();
+
+    // Move existing payments to history
+    await movePaymentsToHistory(roomType.id, agreementId);
+
     // Create new payment data from start time to endtime using payment cycle
     console.log(paymentCycle);
     const paymentIntervals = {
@@ -166,27 +197,10 @@ const AgreementViewerForRoom = ({
     console.log('reached1', interval);
 
     const startDate = new Date(startTime);
-    const endDate = new Date(endTime);
-    let currentDate = new Date(startDate);
 
-    while (currentDate <= endDate) {
-      roomPaymentInfoApi.addRoomPaymentApiWithOutRefresh(
-        uuidv4(),
-        roomType.id,
-        currentDate.getTime(),
-        false,
-        agreedPrice
-      );
-
-      if (paymentCycle === 'monthly') {
-        currentDate.setMonth(currentDate.getMonth() + 1);
-      } else {
-        currentDate.setDate(currentDate.getDate() + interval);
-      }
-    }
+    // Create a new agreement ID first
 
     // Create a new agreement and add it to the agreements table
-    const agreementId = uuidv4();
     agreementApi.addAgreementApi(
       agreementId,
       roomType.id,
@@ -354,7 +368,6 @@ const AgreementViewerForRoom = ({
               Agreements[CurrentAgreementIndex].paymentCycleType,
               Agreements[CurrentAgreementIndex].paymentCycleType.slice(1)
             )}
-           
           </div>
           <div className="AddTenantContainerinnerElement">
             Payment cycle:{' '}
@@ -371,7 +384,11 @@ const AgreementViewerForRoom = ({
             <input
               type="text"
               className="StartTime"
-              value={MemoText === "INITIALLLI" ? Agreements[CurrentAgreementIndex].Memo : MemoText}
+              value={
+                MemoText === 'INITIALLLI'
+                  ? Agreements[CurrentAgreementIndex].Memo
+                  : MemoText
+              }
               onChange={(e) => {
                 setMemoText(e.target.value);
               }}
@@ -379,7 +396,8 @@ const AgreementViewerForRoom = ({
                 agreementApi.editAgreementApi(
                   Agreements[CurrentAgreementIndex].id,
                   'Memo',
-                  MemoText,Agreements[CurrentAgreementIndex].Memo
+                  MemoText,
+                  Agreements[CurrentAgreementIndex].Memo
                 );
               }}
               onKeyDown={(e) => {
@@ -387,7 +405,8 @@ const AgreementViewerForRoom = ({
                   agreementApi.editAgreementApi(
                     Agreements[CurrentAgreementIndex].id,
                     'Memo',
-                    MemoText,Agreements[CurrentAgreementIndex].Memo
+                    MemoText,
+                    Agreements[CurrentAgreementIndex].Memo
                   );
                 }
               }}
@@ -399,7 +418,11 @@ const AgreementViewerForRoom = ({
               type="text"
               style={{ width: '80px' }}
               className="StartTime"
-              value={RentReservedText === "INITIALLLI" ? Agreements[CurrentAgreementIndex].RentReserved : RentReservedText}
+              value={
+                RentReservedText === 'INITIALLLI'
+                  ? Agreements[CurrentAgreementIndex].RentReserved
+                  : RentReservedText
+              }
               onChange={(e) => {
                 setRentReservedText(e.target.value);
               }}
@@ -407,7 +430,8 @@ const AgreementViewerForRoom = ({
                 agreementApi.editAgreementApi(
                   Agreements[CurrentAgreementIndex].id,
                   'RentReserved',
-                  RentReservedText,Agreements[CurrentAgreementIndex].RentReserved
+                  RentReservedText,
+                  Agreements[CurrentAgreementIndex].RentReserved
                 );
               }}
               onKeyDown={(e) => {
@@ -415,7 +439,8 @@ const AgreementViewerForRoom = ({
                   agreementApi.editAgreementApi(
                     Agreements[CurrentAgreementIndex].id,
                     'RentReserved',
-                    RentReservedText,Agreements[CurrentAgreementIndex].RentReserved
+                    RentReservedText,
+                    Agreements[CurrentAgreementIndex].RentReserved
                   );
                 }
               }}
@@ -529,7 +554,16 @@ const AgreementViewerForRoom = ({
                         value={endTime}
                         className="StartTime"
                         style={{ fontWeight: '700' }}
-                        onChange={(e) => setEndTime(e.target.value)}
+                        onChange={(e) => {
+                          setEndTime(e.target.value);
+                          if (new Date(e.target.value) <= new Date(startTime)) {
+                            setEndDateError(
+                              'End date must be after start date'
+                            );
+                          } else {
+                            setEndDateError('');
+                          }
+                        }}
                       />{' '}
                       <button
                         onClick={() => {
@@ -549,26 +583,22 @@ const AgreementViewerForRoom = ({
                           handleUse={(num: number) => {
                             const date = new Date(num);
                             date.setDate(date.getDate() + 1);
-                            setEndTime(date.toISOString().split('T')[0]);
+                            const newEndDate = date.toISOString().split('T')[0];
+                            setEndTime(newEndDate);
                             setShowConverterEndDate(false);
+                            if (new Date(newEndDate) <= new Date(startTime)) {
+                              setEndDateError(
+                                'End date must be after start date'
+                              );
+                            } else {
+                              setEndDateError('');
+                            }
                           }}
                         ></EthiopianCalanderConverterMenu>
                       )}{' '}
-                      {/*[30, 60, 90, 120, 150, 180, 365].map((days) => (
-                        <button
-                          key={days}
-                          disabled={startTime !== undefined}
-                          onClick={() => {
-                            const startDate = new Date(startTime);
-                            const endDate = new Date(
-                              startDate.getTime() + days * 24 * 60 * 60 * 1000
-                            );
-                            setEndTime(endDate.toISOString().split('T')[0]);
-                          }}
-                        >
-                          +{days}
-                        </button>
-                      ))*/}
+                      {endDateError && (
+                        <span style={{ color: 'red' }}>{endDateError}</span>
+                      )}
                     </div>
                     <div>
                       Sign date:
@@ -658,7 +688,9 @@ const AgreementViewerForRoom = ({
               <div></div>
               <div style={{ display: 'flex' }}>
                 <button onClick={HandleCancelAddAgreement}>Cancel</button>
-                <button onClick={HandleAddAgreement}>Add</button>
+                <button onClick={HandleAddAgreement} disabled={!!endDateError}>
+                  Add
+                </button>
               </div>
             </div>
           </div>

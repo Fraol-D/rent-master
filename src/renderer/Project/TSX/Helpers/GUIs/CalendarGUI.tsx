@@ -52,50 +52,74 @@ const CalendarGUI: React.FC<CalendarProps> = ({
         setIsLoading(true);
         const allPayments: Payment[] = [];
         const currentYear = new Date().getFullYear();
-        let yearStart = startOfYear(new Date(currentYear - 2, 0, 1));
-        let yearEnd = endOfYear(new Date(currentYear + 2, 11, 31));
+        let yearStart = startOfYear(new Date(currentYear - 3, 0, 1));
+        let yearEnd = endOfYear(new Date(currentYear + 3, 11, 31));
         
-
         // Get all actual payments for the selected years
         const actualPayments = await getValuesWithSql(
           'room_pay_info',
           `WHERE Day >= ${yearStart.getTime()} AND Day <= ${yearEnd.getTime()}`
         );
 
+        // Get historical payments
+        const historicalPayments = await getValuesWithSql(
+          'room_pay_info_history',
+          `WHERE Day >= ${yearStart.getTime()} AND Day <= ${yearEnd.getTime()}`
+        );
+
+        // Combine actual and historical payments
+        const combinedPayments = [...actualPayments, ...historicalPayments];
+
+        // Process all combined payments
+        combinedPayments.forEach(payment => {
+          allPayments.push({
+            id: payment.id,
+            Day: payment.Day,
+            Value: payment.Value,
+            Paid: payment.Paid === 1,
+            roomId: payment.roomId,
+          });
+        });
+
+        // Generate predicted payments only for future dates or missing payments
         for (const room of rooms) {
           let startDate = new Date(
             tenantList.find((tenant) => tenant.id === room.tenantId)?.startTime ||
               Date.now()
           ).getTime();
-          let endDate = null;
+          let endDate = yearEnd.getTime();
           if (room.selectedAgreementId) {
             const agreements = await getValuesWithSql(
               'agreements',
               `WHERE id = '${room.selectedAgreementId}'`
             );
-            if (agreements.length > 0) startDate = agreements[0].startTime;
-            if (
-              tenantList.find((t: tenant) => t.id === room.tenantId)
-                ?.SelectedAgreement === 'Fixed-Term'
-            )
-              if (agreements.length > 0) endDate = agreements[0].endTime;
+            if (agreements.length > 0) {
+              startDate = Math.max(agreements[0].startTime, yearStart.getTime());
+              if (
+                tenantList.find((t: tenant) => t.id === room.tenantId)
+                  ?.SelectedAgreement === 'Fixed-Term' &&
+                agreements[0].endTime
+              ) {
+                endDate = Math.min(agreements[0].endTime, yearEnd.getTime());
+              }
+            }
           }
 
           let currentDate = new Date(startDate);
 
-          while (currentDate <= yearEnd && (endDate == null || currentDate < endDate)) {
+          while (currentDate.getTime() <= endDate) {
             const paymentId = `${room.id}-${currentDate.getTime()}`;
-            const actualPayment = actualPayments.find(
-              (p: any) => p.id === paymentId
-            );
+            const existingPayment = allPayments.find(p => p.id === paymentId);
 
-            allPayments.push({
-              id: paymentId,
-              Day: currentDate.getTime(),
-              Value: room.AgreedPrice,
-              Paid: actualPayment ? actualPayment.Paid === 1 : false,
-              roomId: room.id,
-            });
+            if (!existingPayment) {
+              allPayments.push({
+                id: paymentId,
+                Day: currentDate.getTime(),
+                Value: room.AgreedPrice,
+                Paid: false,
+                roomId: room.id,
+              });
+            }
 
             // Calculate next payment date based on payment cycle
             switch (room.PaymentCycleType) {
@@ -129,8 +153,12 @@ const CalendarGUI: React.FC<CalendarProps> = ({
           }
         }
 
+        setIsLoading(false);
         return allPayments;
       };
+
+      const payments = await calculatePayments();
+      setPredictedPayments(payments);
 
       if (ref.current) {
         d3.select(ref.current).selectAll('*').remove();

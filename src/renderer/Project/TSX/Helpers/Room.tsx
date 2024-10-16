@@ -624,8 +624,8 @@ const Room = ({
       setAgreedPrice(Math.round(roomType.price));
     }
   };
-  const getBorderColor = (roomInfo: AllRoomPayInfo) => {
-    const daysUntilPayment = getDaysUntilPayment(roomInfo);
+  const getBorderColor = () => {
+    const daysUntilPayment = roomType.DaysTillNextPayment;
     if (daysUntilPayment > 8) {
       return '1px solid white';
     } else if (daysUntilPayment > 5) {
@@ -644,75 +644,99 @@ const Room = ({
   const [SelectTenantSearch, setSelectTenantSearch] = useState('');
   const [SelectedTenantIdOnAdding, setSelectedTenantIdOnAdding] = useState('');
   const handleTenantLeft = async () => {
-    // Find the tenant in the TenantList
-    const tenantIndex = TenantList.findIndex(
-      (tenant: any) => tenant.id === roomType.tenantId
-    );
-    const allPayInfos = await getValuesWithSql(
-      'room_pay_info',
-      `WHERE roomId = '${roomType.id}'`
-    );
-    let totalEarningsFromTenant = 0;
-    if (allPayInfos) {
-      for (let i = 0; i < allPayInfos.length; i++) {
-        const element = allPayInfos[i];
-        if (element.Paid) {
-          totalEarningsFromTenant += roomType.AgreedPrice;
+    try {
+      // Get the current agreement for the room
+      const [currentAgreement] = await getValuesWithSql(
+        'agreements',
+        `WHERE roomId = '${roomType.id}' AND tenantId = '${roomType.tenantId}' ORDER BY startTime DESC LIMIT 1`
+      );
+
+      if (currentAgreement) {
+        // Get all payments for this agreement
+        const payments = await getValuesWithSql(
+          'room_pay_info',
+          `WHERE roomId = '${roomType.id}' AND Day >= ${currentAgreement.startTime} AND Day <= ${Date.now()}`
+        );
+
+        // Add these payments to the historical payments table
+        for (const payment of payments) {
+          await addValue('room_pay_info_history', {
+            ...payment,
+            agreementId: currentAgreement.id
+          }, setChangeMade);  await deleteValue('room_pay_info', payment.id,setChangeMade);
+        }
+
+        // Now delete the payments from the room_pay_info table
+      
+      }
+
+      // Update the room's tenant information
+      await updateValue('rooms', roomType.id, 'tenantId', null, setChangeMade, 0);
+      await updateValue('rooms', roomType.id, 'selectedAgreementId', null, setChangeMade, 0);
+
+      // Update the tenant's information
+      await updateValue('tenants', roomType.tenantId, 'roomId', null, setChangeMade, 0);
+      await updateValue('tenants', roomType.tenantId, 'SelectedAgreement', null, setChangeMade, 0);
+
+      // Additional logic from the original function
+      const allPayInfos = await getValuesWithSql(
+        'room_pay_info',
+        `WHERE roomId = '${roomType.id}'`
+      );
+      let totalEarningsFromTenant = 0;
+      if (allPayInfos) {
+        for (let i = 0; i < allPayInfos.length; i++) {
+          const element = allPayInfos[i];
+          if (element.Paid) {
+            totalEarningsFromTenant += roomType.AgreedPrice;
+          }
         }
       }
-    }
-    let agreedCommissionForBroker = (
-      await getValuesWithSql(
-        'brokersRecommendationList',
-        `WHERE roomId = '${roomType.id}'`
-      )
-    ).sort((a: any, b: any) => b.AddedTime - a.AddedTime);
-    if (agreedCommissionForBroker.length > 0) {
-    } else {
-    }
-    addValue(
-      'PastTenantsForRoom',
-      {
-        id: uuidv4(),
-        roomId: roomType.id,
-        brokerId:
-          agreedCommissionForBroker.length > 0
-            ? agreedCommissionForBroker[0].brokerId
-            : '',
-        tenantId: roomType.tenantId,
-        enterDate: new Date(
-          TenantList.find((t: tenant) => t.id === roomType.tenantId).startTime
-        ).getTime(),
-        exitDate: Date.now(),
-        totalEarnings: totalEarningsFromTenant,
-        paymentCycleType:
-          roomType.PaymentCycleType === 'custom'
-            ? ('-' + roomType.PaymentCycleCustomeDays).toString()
-            : roomType.PaymentCycleType,
-        AgreedPrice: roomType.AgreedPrice,
-        AgreedCommission:
-          agreedCommissionForBroker.length > 0
-            ? agreedCommissionForBroker[0].AgreedCommission
-            : 0,
-        Stars: tenantRating,
-        description: tenantDescription,
-        endReason: endReason,
-        userId: SelectedUserId,
-      },
-      setChangeMade
-    );
-    setEndReason('');
-    setTenantDescription('');
-    setTenantRating(0);
-    if (tenantIndex !== -1) {
-      // Update the tenant's RentingOrOut status to false
-      tenantAPI.EditTenantApi(roomType.tenantId, 'RentingOrOut', false);
+      let agreedCommissionForBroker = (
+        await getValuesWithSql(
+          'brokersRecommendationList',
+          `WHERE roomId = '${roomType.id}'`
+        )
+      ).sort((a: any, b: any) => b.AddedTime - a.AddedTime);
+
+      addValue(
+        'PastTenantsForRoom',
+        {
+          id: uuidv4(),
+          roomId: roomType.id,
+          brokerId:
+            agreedCommissionForBroker.length > 0
+              ? agreedCommissionForBroker[0].brokerId
+              : '',
+          tenantId: roomType.tenantId,
+          enterDate: new Date(
+            TenantList.find((t: tenant) => t.id === roomType.tenantId).startTime
+          ).getTime(),
+          exitDate: Date.now(),
+          totalEarnings: totalEarningsFromTenant,
+          paymentCycleType:
+            roomType.PaymentCycleType === 'custom'
+              ? ('-' + roomType.PaymentCycleCustomeDays).toString()
+              : roomType.PaymentCycleType,
+          AgreedPrice: roomType.AgreedPrice,
+          AgreedCommission:
+            agreedCommissionForBroker.length > 0
+              ? agreedCommissionForBroker[0].AgreedCommission
+              : 0,
+          Stars: tenantRating,
+          description: tenantDescription,
+          endReason: endReason,
+          userId: SelectedUserId,
+        },
+        setChangeMade
+      );
+
+      setEndReason('');
+      setTenantDescription('');
+      setTenantRating(0);
 
       // Update the room's status to 'Empty'
       updateRoomPropertyWithOutRefresh(roomType.id, 'status', 'Empty');
-
-      // Clear the room's tenantId
-      updateRoomPropertyWithOutRefresh(roomType.id, 'tenantId', '');
 
       // Clear the room's AgreedPrice
       updateRoomPropertyWithOutRefresh(roomType.id, 'AgreedPrice', 0);
@@ -726,6 +750,7 @@ const Room = ({
         'PaymentCycleCustomeDays',
         0
       );
+
       const utilityPayments = await getValuesWithSql(
         'utility_payments',
         `WHERE roomId = '${roomType.id}'`
@@ -736,21 +761,14 @@ const Room = ({
           deleteValue('utility_payments', element.id, setChangeMade);
         }
 
-      const listOfPayments = await getValuesWithSql(
-        'room_pay_info',
-        `WHERE roomId = '${roomType.id}'`
-      );
-      if (listOfPayments)
-        for (let i = 0; i < listOfPayments.length; i++) {
-          const element = listOfPayments[i];
-          deleteValue('room_pay_info', element.id, setChangeMade);
-        }
-
       // Reset the room's AddTenantState
       updateRoomProperty(roomType.id, 'AddTenantState', 0);
       updateRoomProperty(roomType.id, 'ViewAgreement', 0);
 
       setTenantLeavePannelState(false);
+
+    } catch (error) {
+      console.error('Error in handleTenantLeft:', error);
     }
   };
 
@@ -1297,7 +1315,7 @@ const Room = ({
           {roomType.status === 'Taken' && (
             <div
               className="PayAndDueShowerContainer"
-              style={{ border: getBorderColor(roomType.AllRoomPayInfo) }}
+              style={{ border: getBorderColor() }}
             >
               <p>
                 {paymentStatus == 'All payments have been made.' ? (
@@ -2908,6 +2926,33 @@ const Room = ({
                       />
                     )}
                   </div>
+                  <div
+              className="BottomAddTenantContainer"
+              style={{
+                height: '55px',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                marginTop: '20px',
+              }}
+            >
+              <button
+                onClick={() => {
+                  setTenantLeavePannelState(true);
+                }}
+                style={{ marginRight: '20px' }}
+              >
+                End Stay
+              </button>
+              <button
+                className="AddTenantButton"
+                onClick={() =>
+                  updateRoomProperty(roomType.id, 'ViewAgreement', false)
+                }
+              >
+                Close
+              </button>
+            </div>
                 </div>
               </div>
             </div>

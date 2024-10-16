@@ -17,17 +17,19 @@ import {
 
 const DashbTotalCollected = ({
   RoomList,
-  expenses2,tenantList
+  expenses2,
+  tenantList
 }: {
   RoomList: RoomType[];
-  expenses2: expenses[];tenantList:tenant[]
+  expenses2: expenses[];
+  tenantList: tenant[]
 }) => {
   const [showBy, setShowBy] = useState<'Monthly' | 'Yearly'>('Monthly');
   const [selectedDate, setSelectedDate] = useState(
     new Date().getFullYear().toString()
   );
   const [DataRoomPayInfo, setDataRoomPayInfo] = useState<
-    { date: any; value: any; expectedValue: any }[]
+    { date: Date; value: number; expectedValue: number }[]
   >([]);
   const [expenses, setExpenses] = useState<expenses[]>([]);
 
@@ -44,57 +46,81 @@ const DashbTotalCollected = ({
       setDataRoomPayInfo(CorretData);
     };
     getPredictedRoomPayInfo();
-  }, [RoomList, expenses2, selectedDate,showBy]);
+  }, [RoomList, expenses2, selectedDate, showBy]);
 
   const calculatePredictedPayments = async (rooms: RoomType[]) => {
     const allPayments: Payment[] = [];
     const selectedYear = parseInt(selectedDate);
     let yearStart = startOfYear(new Date(selectedYear - 2, 0, 1));
     let yearEnd = endOfYear(new Date(selectedYear + 2, 11, 31));
-    if (showBy === 'Yearly') {
-      yearStart = startOfYear(new Date(selectedYear - 2, 0, 1));
-      yearEnd = endOfYear(new Date(selectedYear + 2, 11, 31));
-    }
+    
     // Get all actual payments for the selected year range
     const actualPayments = await getValuesWithSql(
       'room_pay_info',
       `WHERE Day >= ${yearStart.getTime()} AND Day <= ${yearEnd.getTime()}`
     );
 
+    // Get historical payments
+    const historicalPayments = await getValuesWithSql(
+      'room_pay_info_history',
+      `WHERE Day >= ${yearStart.getTime()} AND Day <= ${yearEnd.getTime()}`
+    );
+
+    // Combine actual and historical payments
+    const combinedPayments = [...actualPayments, ...historicalPayments];
+
+    console.log('Combined Payments:', combinedPayments);
+
+    // Process all combined payments
+    combinedPayments.forEach(payment => {
+      allPayments.push({
+        id: payment.id,
+        Day: payment.Day,
+        Value: payment.Value,
+        Paid: payment.Paid === 1,
+        roomId: payment.roomId,
+      });
+    });
+
+    // Generate predicted payments only for future dates or missing payments
     for (const room of rooms) {
       let startDate = new Date(
         tenantList.find((tenant) => tenant.id === room.tenantId)?.startTime ||
           Date.now()
       ).getTime();
-      let endDate = null;
+      let endDate = yearEnd.getTime();
       if (room.selectedAgreementId) {
         const agreements = await getValuesWithSql(
           'agreements',
           `WHERE id = '${room.selectedAgreementId}'`
         );
-        if (agreements.length > 0) startDate = agreements[0].startTime;
-        if (
-          tenantList.find((t: tenant) => t.id === room.tenantId)
-            ?.SelectedAgreement === 'Fixed-Term'
-        )
-          if (agreements.length > 0) endDate = agreements[0].endTime;
+        if (agreements.length > 0) {
+          startDate = Math.max(agreements[0].startTime, yearStart.getTime());
+          if (
+            tenantList.find((t: tenant) => t.id === room.tenantId)
+              ?.SelectedAgreement === 'Fixed-Term' &&
+            agreements[0].endTime
+          ) {
+            endDate = Math.min(agreements[0].endTime, yearEnd.getTime());
+          }
+        }
       }
 
       let currentDate = new Date(startDate);
 
-      while (currentDate <= yearEnd && (endDate == null || currentDate < endDate)) {
+      while (currentDate.getTime() <= endDate) {
         const paymentId = `${room.id}-${currentDate.getTime()}`;
-        const actualPayment = actualPayments.find(
-          (p: any) => p.id === paymentId
-        );
+        const existingPayment = allPayments.find(p => p.id === paymentId);
 
-        allPayments.push({
-          id: paymentId,
-          Day: currentDate.getTime(),
-          Value: room.AgreedPrice,
-          Paid: actualPayment ? actualPayment.Paid === 1 : false,
-          roomId: room.id,
-        });
+        if (!existingPayment) {
+          allPayments.push({
+            id: paymentId,
+            Day: currentDate.getTime(),
+            Value: room.AgreedPrice,
+            Paid: false,
+            roomId: room.id,
+          });
+        }
 
         // Calculate next payment date based on payment cycle
         switch (room.PaymentCycleType) {
@@ -128,6 +154,7 @@ const DashbTotalCollected = ({
       }
     }
 
+    console.log('All Payments:', allPayments);
     return allPayments;
   };
 

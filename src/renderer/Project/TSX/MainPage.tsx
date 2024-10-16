@@ -1410,18 +1410,7 @@ const MainPage = ({
                       />
                       : Square Meters
                     </div>
-                    <div className="AddaNewRoomRowObject">
-                      <input
-                        className="AddANewRoomInputsSmall"
-                        type="number"
-                        placeholder="Square Meters"
-                        value={AddRoomFormSquareMeters}
-                        onChange={(e) =>
-                          setAddRoomFormSquareMeters(parseInt(e.target.value))
-                        }
-                      />
-                      : Square Meters
-                    </div>
+                   
                     <div className="RoomSpecficationsMainContainer">
                       <h3>
                         Room Specifications{' - '}
@@ -1674,21 +1663,15 @@ const MainPage = ({
               </div>{' '}
               <div className="AddaNewRoomRowObject">
                 Square Meters :{' '}
-               
-                  
-
-                
-                    <input
-                      className="AddANewRoomInputsSmall"
-                      type="number"
-                      placeholder="Square Meters"
-                      value={tempSquareMeters}
-                      onChange={(e) => setTempSquareMeters(parseInt(e.target.value))}
-                      onBlur={handleBlur}
-                      onKeyDown={handleKeyDown}
-                    />
-                
-               
+                <input
+                  className="AddANewRoomInputsSmall"
+                  type="number"
+                  placeholder="Square Meters"
+                  value={tempSquareMeters}
+                  onChange={(e) => setTempSquareMeters(e.target.value)}
+                  onBlur={handleBlur}
+                  onKeyDown={handleKeyDown}
+                />
               </div>
               <div style={{ display: 'flex' }}>
                 <div className="RoomSpecficationsMainContainer">

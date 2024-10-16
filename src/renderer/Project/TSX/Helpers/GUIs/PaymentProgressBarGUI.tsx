@@ -38,7 +38,7 @@ interface Props {
   setShowReceipt: React.Dispatch<React.SetStateAction<boolean>>;
   setChangeMade: any;
   SelectedUserId: string;
-  updateRoomPropertyLocal:any
+  updateRoomPropertyLocal: any;
 }
 const { v4: uuidv4 } = require('uuid');
 
@@ -53,7 +53,8 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
   ShowReceipt,
   setShowReceipt,
   setChangeMade,
-  SelectedUserId,updateRoomPropertyLocal
+  SelectedUserId,
+  updateRoomPropertyLocal,
 }) => {
   const today = new Date().getTime();
   const svgRef = useRef<SVGSVGElement | null>(null);
@@ -88,7 +89,10 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
         'room_pay_info',
         `WHERE roomId = '${roomType.id}'`
       );
-      while (paymentCount < 10 * roomType.paymentShowAmount && (endDate == null || currentDate < endDate)) {
+      while (
+        paymentCount < 10 * roomType.paymentShowAmount &&
+        (endDate == null || currentDate < endDate)
+      ) {
         const paymentId = `${roomType.id}-${currentDate.getTime()}`;
         newPayments.push({
           id: paymentId,
@@ -224,11 +228,26 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
         : payment;
     });
 
+    if (finalPayments.length === 0) {
+      console.log('No payments predicted. Possible reasons:');
+      console.log('- No tenant assigned to the room');
+      console.log('- No valid start date for the tenant');
+      console.log('- No valid payment cycle set for the room');
+      console.log('- End date is before or equal to start date');
+    }
+
     return finalPayments;
   };
 
   const calculateDaysTillNextPayment = (predictedPayments: Payment[]) => {
     const today = new Date();
+
+    if (predictedPayments.length === 0) {
+      console.log(
+        'No predicted payments available to calculate days till next payment'
+      );
+      return 0;
+    }
 
     const sortedPayments = predictedPayments.sort((a, b) => a.Day - b.Day);
 
@@ -247,6 +266,7 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
       }
     }
 
+    console.log('All predicted payments are marked as paid');
     return 0;
   };
   const handlePayClick = async (payment: RoomPayInfo) => {
@@ -285,7 +305,11 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
         p.id === payment.id ? { ...p, Paid: newPaidStatus } : p
       )
     );
-    updateRoomPropertyLocal(roomType.id, 'DaysTillNextPayment', calculateDaysTillNextPayment(await calculatePredictedPayments(roomType)));
+    updateRoomPropertyLocal(
+      roomType.id,
+      'DaysTillNextPayment',
+      calculateDaysTillNextPayment(await calculatePredictedPayments(roomType))
+    );
   };
   useEffect(() => {
     if (payments.length > 0 && svgRef.current) {
@@ -353,6 +377,9 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
           (sortedPaymentData[sortedPaymentData.length - 1].Day -
             sortedPaymentData[0].Day)) *
           width;
+      const currentDateX2 = width - 80; // Set to the end of the progress bar
+      const currentDateX3 = 0; // Set to the end of the progress bar
+
       svg
         .append('line')
         .attr('x1', 0)
@@ -360,7 +387,25 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
         .attr('x2', currentDateX + 36.5)
         .attr('y2', padding + height / 2 - 30)
         .attr('stroke', 'var(--Secondary-Color)')
-        .attr('stroke-width', '15');
+        .attr('stroke-width', '10');
+      svg.append('line');
+
+      svg
+        .append('line')
+        .attr('x1', currentDateX2)
+        .attr('y1', padding + height / 2 - 40)
+        .attr('x2', currentDateX2)
+        .attr('y2', padding + height / 2 - 18)
+        .attr('stroke', 'grey')
+        .attr('stroke-width', '5');
+      svg
+        .append('line')
+        .attr('x1', currentDateX3)
+        .attr('y1', padding + height / 2 - 40)
+        .attr('x2', currentDateX3)
+        .attr('y2', padding + height / 2 - 18)
+        .attr('stroke', 'grey')
+        .attr('stroke-width', '5');
       svg
         .append('line')
         .attr('x1', currentDateX + 36.3)

@@ -75,6 +75,8 @@ const DashboardPage: React.FC<props> = ({
         <>
           <DashbEmailHistory
             SelectedUserId={SelectedUserId}
+            RoomList={RoomList}
+            tenantList={tenantList}
           ></DashbEmailHistory>
         </>
       ) : DashboardSelectedPage === 'SMS History' ? (

@@ -50,6 +50,7 @@ const DatabasePage = ({ setChangeMade }: any) => {
     | 'sms_templates'
 
     | 'expenses'
+    | 'room_pay_info_history'
   >('rooms');
 
   const validTables = [
@@ -57,6 +58,8 @@ const DatabasePage = ({ setChangeMade }: any) => {
     'room_specifications',
     'tenants',
     'room_pay_info',
+    'room_pay_info_history',
+
     'PastTenantReview',
     'brokers',
     'brokersRecommendationList',
@@ -147,7 +150,7 @@ const DatabasePage = ({ setChangeMade }: any) => {
 
   const handleDelete = async (id: string) => {
     try {
-      await deleteValue(SelectedTable, id);
+      await deleteValue(SelectedTable, id,setChangeMade);
       const updatedData = Data.filter((item) => item.id !== id);
       setData(updatedData);
     } catch (error) {

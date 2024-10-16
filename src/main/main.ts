@@ -548,7 +548,19 @@ const tableStructures = [
       'userId TEXT',
     ],
   },
+  
   {
+    name: 'room_pay_info_history',
+    columns: [
+      'id TEXT PRIMARY KEY',
+      'roomId TEXT',
+      'Day INTEGER',
+      'Value REAL',
+      'Paid INTEGER',
+      'userId TEXT',
+      'agreementId TEXT'
+    ]
+  },{
     name: 'brokers',
     columns: [
       'id TEXT PRIMARY KEY',

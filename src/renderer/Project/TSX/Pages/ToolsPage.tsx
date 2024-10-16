@@ -974,7 +974,7 @@ const ToolsPage = ({
                   )}
           
                 </th>
-                {editingExpenseId !== null && <th>Actions</th>}
+               
               </tr>
               <tr>
                 <th style={{ width: '5%' }}>No.</th>

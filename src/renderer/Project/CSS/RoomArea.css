@@ -307,7 +307,7 @@
 .sideBarItemComponentMainSelected {
   width: 90%;
   height: 30px;
-  background-color: var(--Secondary-Color);
+  background-color: var(--Primary-Color25);
   margin: 5px;
   display: flex;
 
@@ -315,6 +315,7 @@
   align-items: center;
   padding: 5px;
   border-radius: 5px;
+  transition: all 0.2s;
 }
 .sideBarItemComponentMain:hover {
   border: 1px solid white;
