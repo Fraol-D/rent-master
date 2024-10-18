@@ -68,7 +68,10 @@ function Hello() {
     }
 
     let currentDate = new Date(startDate);
-    while (endDate == null || currentDate <= new Date(endDate)) {
+    while (
+      currentDate <= yearEnd &&
+      (endDate == null || currentDate <= new Date(endDate))
+    ) {
       const paymentId = `${room.id}-${currentDate.getTime()}`;
       allPayments.push({
         id: paymentId,
@@ -122,8 +125,17 @@ function Hello() {
         : payment;
     });
 
+    if (finalPayments.length === 0) {
+      console.log('No payments predicted. Possible reasons:');
+      console.log('- No tenant assigned to the room');
+      console.log('- No valid start date for the tenant');
+      console.log('- No valid payment cycle set for the room');
+      console.log('- End date is before or equal to start date');
+    }
+
     return finalPayments;
   };
+
 
   const calculateDaysTillNextPayment = (predictedPayments: Payment[]) => {
     const today = new Date();
