@@ -742,45 +742,19 @@ const MainPage = ({
       AllRoomPayInfo: { RoomPayInfo: [] },
       selectedAgreementId: '',
       Archived: false,
-      utilityPaymentEvery: '',
-      utilityPaymentStartDate: 0,
-      utilityPaymentUseDifferentStartDate: false,
-      utilityPaymentEveryCustom: 0,
-      paymentShowAmount: 0,
-      notificationSettings: 0,
-      utilityPayments: [],
-      DaysTillNextPayment: 0,
     };
-console.log(newRoom);
+
     // Add to sqlite database
-    try {
-      await addValue('rooms', {
-        id: newRoom.id,
-        floor: newRoom.floor,
-        roomIndex: newRoom.roomIndex,
-        status: newRoom.status,
-        price: newRoom.price,
-        AgreedPrice: newRoom.AgreedPrice,
-        PaymentCycleType: newRoom.PaymentCycleType,
-        paymentShowAmount: newRoom.paymentShowAmount,
-        PaymentCycleCustomeDays: newRoom.PaymentCycleCustomeDays,
-        squareMeters: newRoom.squareMeters,
-        tenantId: '',
-        AddTenantState: 0,
-        ViewAgreement: 0,
-        ShowPayTimeLine: 0,
-        selectedAgreementId: '',
-        Archived: 0,
-        notificationSettings: 0,
-        utilityPaymentEvery: '30',
-        utilityPaymentEveryCustom: 0,
-        utilityPaymentStartDate: 0,
-        utilityPaymentUseDifferentStartDate: 0,
-        userId: SelectedUserId,
-      }, setChangeMade);
-    } catch (error: any) {
-      console.log(error);
-    }
+    await roomAPI.AddRoomApi(
+      newRoom.id,
+      AddRoomFormFloor,
+      AddRoomFormRoomIndex,
+      AddRoomFormPrice,
+      AddRoomFormPaymentCycleType,
+      AddRoomFormPaymentCycleCustomDays,
+      AddRoomFormSquareMeters,
+      AddRoomFormRoomSpecifications
+    );
     if (isMoreThanOneImage) {
       handleRenameFolder(
         'Add a room images',
