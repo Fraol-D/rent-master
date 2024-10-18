@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import '../../Css/NavBarCss.css';
 
 import InsertImageIcon from '../../../assets/assets/Dark mode/Insert Image Pic.png';
@@ -8,6 +8,7 @@ import {
   syncOnlineToLocalWithBool,
   UploadUserFilesToTheOnlineDatabase,
 } from 'Backend/OnlineServerApis';
+import { getUserPrivileges } from 'renderer/App';
 
 interface Props {
   Image: string;
@@ -28,6 +29,9 @@ interface Props {
   setIsSyncing: (newval: boolean) => void;
   RefreshDataFromSqlite: () => void;
   setSyncProgress: (newval: number) => void;
+  setAppUserManagerShow: (newval: boolean) => void;
+  setAppUserManagerPromptPassword: (newval: boolean) => void;
+  SelectedAppUser: appUser | null;
 }
 
 const NavBar = ({
@@ -48,6 +52,8 @@ const NavBar = ({
   setIsSyncing,
   setSyncProgress,
   RefreshDataFromSqlite,
+  setAppUserManagerShow,
+  setAppUserManagerPromptPassword,SelectedAppUser
 }: Props) => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
@@ -73,7 +79,7 @@ const NavBar = ({
       document.getElementById('image-input')?.click();
     }
   };
-
+  const privileges = useMemo(() => getUserPrivileges(SelectedAppUser), [SelectedAppUser]);
   function calculateDaysDifference(
     startDate: Date | number,
     endDate: Date | number
@@ -153,7 +159,18 @@ const NavBar = ({
             <p className="Name-ofShop">{ShopName}</p>
           )} */}{' '}
           <p className="Name-ofShop" style={{ height: '28px' }}>
-            Rent Master
+            Rent Master{' '}
+            <button
+              style={{ marginLeft: '10px' }}
+              onClick={() => {
+                if (navigator.onLine) {
+                  setAppUserManagerShow(true);
+                  setAppUserManagerPromptPassword(true);
+                }
+              }}
+            >
+              Change App User
+            </button>
           </p>
           <p
             className="Name-ofShop"
@@ -164,20 +181,53 @@ const NavBar = ({
         </div>
       </div>
       <div className="TopPageNavigatorContainer">
-        {['Dashboard', 'People', 'Rooms', 'Calendar', 'Database', 'Tools'].map(
-          (page) => (
-            <button
-              key={page}
-              className={
-                SelectedPage === page
-                  ? 'PageNavigatorButtonSelected'
-                  : 'PageNavigatorButton'
-              }
-              onClick={() => setSelectedPage(page)}
-            >
-              {page}
-            </button>
-          )
+        {privileges.viewDashboard && (
+          <button
+            className={SelectedPage === 'Dashboard' ? 'PageNavigatorButtonSelected' : 'PageNavigatorButton'}
+            onClick={() => setSelectedPage('Dashboard')}
+          >
+            Dashboard
+          </button>
+        )}
+        {privileges.viewPeoplesPage && (
+          <button
+            className={SelectedPage === 'People' ? 'PageNavigatorButtonSelected' : 'PageNavigatorButton'}
+            onClick={() => setSelectedPage('People')}
+          >
+            People
+          </button>
+        )}
+        {privileges.viewRoomsPage && (
+          <button
+            className={SelectedPage === 'Rooms' ? 'PageNavigatorButtonSelected' : 'PageNavigatorButton'}
+            onClick={() => setSelectedPage('Rooms')}
+          >
+            Rooms
+          </button>
+        )}
+        {privileges.viewCalendar && (
+          <button
+            className={SelectedPage === 'Calendar' ? 'PageNavigatorButtonSelected' : 'PageNavigatorButton'}
+            onClick={() => setSelectedPage('Calendar')}
+          >
+            Calendar
+          </button>
+        )}
+        {privileges.viewDatabase && (
+          <button
+            className={SelectedPage === 'Database' ? 'PageNavigatorButtonSelected' : 'PageNavigatorButton'}
+            onClick={() => setSelectedPage('Database')}
+          >
+            Database
+          </button>
+        )}
+        {privileges.viewToolsPage && (
+          <button
+            className={SelectedPage === 'Tools' ? 'PageNavigatorButtonSelected' : 'PageNavigatorButton'}
+            onClick={() => setSelectedPage('Tools')}
+          >
+            Tools
+          </button>
         )}
       </div>
 
@@ -187,7 +237,9 @@ const NavBar = ({
           {' '}
           <button
             style={{ marginLeft: '10px', borderRadius: '10px 0px 0px 10px' }}
-            onClick={()=>{if(navigator.onLine)handleUpload()}}
+            onClick={() => {
+              if (navigator.onLine) handleUpload();
+            }}
             disabled={ChangeMade <= 0}
           >
             <p>
@@ -271,10 +323,11 @@ const NavBar = ({
                 <button
                   className="AdvancedUploadButtonsUploadButton"
                   onClick={() => {
-                if(navigator.onLine)UploadUserFilesToTheOnlineDatabase(
-                      SelectedUserId,
-                      setUploadAssetsProgress
-                    );
+                    if (navigator.onLine)
+                      UploadUserFilesToTheOnlineDatabase(
+                        SelectedUserId,
+                        setUploadAssetsProgress
+                      );
                   }}
                   style={{
                     position: 'relative',
@@ -304,10 +357,11 @@ const NavBar = ({
                 <button
                   className="AdvancedUploadButtonsUploadButton"
                   onClick={() => {
-                    if(navigator.onLine) DownloadUserFilesFromOnlineDatabase(
-                      SelectedUserId,
-                      setDownloadAssetsProgress
-                    );
+                    if (navigator.onLine)
+                      DownloadUserFilesFromOnlineDatabase(
+                        SelectedUserId,
+                        setDownloadAssetsProgress
+                      );
                   }}
                   style={{
                     position: 'relative',
@@ -384,13 +438,10 @@ const NavBar = ({
                   <div style={{ display: 'flex', width: '100%' }}>
                     <button
                       onClick={() => {
-                        
-                          window.electron.ipcRenderer.invoke(
-                            'load-specific-backup',
-                            window.electron.store.get('MainBackupPath')
-                          );
-                        
-                        
+                        window.electron.ipcRenderer.invoke(
+                          'load-specific-backup',
+                          window.electron.store.get('MainBackupPath')
+                        );
                       }}
                       style={{
                         width: '100%',
@@ -401,17 +452,17 @@ const NavBar = ({
                       <p>Revert to old</p>
                     </button>
                     <button
-                     onClick={async () => {
-                      try {
-                        const result = await SetBackUpAsMain(SelectedUserId);
-                        console.log('Data sync completed:', result);
-                        window.electron.store.set("MainBackupPath", '')
-                        window.electron.store.set("IsOnBackup", false)
-                      } catch (error) {
-                        console.error('Error during sync:', error);
-                        // Handle sync error (e.g., show an error message)
-                      }
-                    }}
+                      onClick={async () => {
+                        try {
+                          const result = await SetBackUpAsMain(SelectedUserId);
+                          console.log('Data sync completed:', result);
+                          window.electron.store.set('MainBackupPath', '');
+                          window.electron.store.set('IsOnBackup', false);
+                        } catch (error) {
+                          console.error('Error during sync:', error);
+                          // Handle sync error (e.g., show an error message)
+                        }
+                      }}
                       style={{ width: '100%', marginTop: '10px' }}
                     >
                       <p>Set as main</p>
@@ -431,14 +482,9 @@ const NavBar = ({
           onClick={() => {
             ChangeTheme(ThemeMode === 'light' ? 'dark' : 'light');
           }}
-          
         >
           To{' '}
-          {ThemeMode === 'light'
-            ? 'light'
-            : ThemeMode === 'dark'
-            ? 'dark'
-            : ''}
+          {ThemeMode === 'light' ? 'light' : ThemeMode === 'dark' ? 'dark' : ''}
         </button>
 
         <button onClick={handleSignOut}>Sign out</button>

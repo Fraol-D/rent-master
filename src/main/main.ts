@@ -102,9 +102,9 @@ const createWindow = async () => {
     finalX = Math.floor((screenWidth - finalWidth) / 2);
     finalY = Math.floor((screenHeight - finalHeight) / 2);
   }
-  
-  if(finalX >=1800) {
-    finalX=0;
+
+  if (finalX >= 1800) {
+    finalX = 0;
   }
   mainWindow = new BrowserWindow({
     show: false,
@@ -124,13 +124,18 @@ const createWindow = async () => {
   mainWindow.loadURL(resolveHtmlPath('index.html'));
 
   mainWindow.on('ready-to-show', () => {
-    if (!mainWindow) {
-      throw new Error('"mainWindow" is not defined');
-    }
-    if (process.env.START_MINIMIZED) {
-      mainWindow.minimize();
-    } else {
-      mainWindow.show();
+    try {
+      if (!mainWindow) {
+        throw new Error('"mainWindow" is not defined');
+      }
+
+      if (process.env.START_MINIMIZED) {
+        mainWindow.minimize();
+      } else {
+        mainWindow.show();
+      }
+    } catch (error: any) {
+      console.log(error);
     }
   });
 
@@ -336,7 +341,7 @@ app
     });
   })
   .catch(console.log);
-  const { v4: uuidv4 } = require('uuid');
+const { v4: uuidv4 } = require('uuid');
 // Sending verification codes
 ipcMain.on('SendCustomEmail', async (event, message) => {
   console.log('Send custom email:', message.to, message.subject, message.body);
@@ -385,12 +390,12 @@ ipcMain.on('SendCustomEmail', async (event, message) => {
           receiver: message.to,
           subject: message.subject,
           body: message.body,
-          from:user[0].selectedEmailToSendWith,
+          from: user[0].selectedEmailToSendWith,
           sentDate: Date.now(),
-         templateId:message.templateId,
-         mode:'Manually',
+          templateId: message.templateId,
+          mode: 'Manually',
           userId: user[0].id,
-        })
+        });
         return { success: true };
       } catch (error) {
         return { success: false, error: error.message };
@@ -407,7 +412,6 @@ ipcMain.on('SendCustomEmail', async (event, message) => {
       message.userPassword
     );
     if (result.success) {
-    
       event.reply('SendCustomEmailResponse', {
         success: true,
         message: 'Email sent successfully',
@@ -502,7 +506,7 @@ const tableStructures = [
       'utilityPaymentEvery TEXT DEFAULT 30',
       'utilityPaymentEveryCustom INTEGER DEFAULT 0',
       'utilityPaymentStartDate INTEGER DEFAULT 0',
-      'utilityPaymentUseDifferentStartDate BOOLEAN',
+      'utilityPaymentUseDifferentStartDate BOOLEAN DEFAULT 0',
       'userId TEXT',
     ],
   },
@@ -548,7 +552,7 @@ const tableStructures = [
       'userId TEXT',
     ],
   },
-  
+
   {
     name: 'room_pay_info_history',
     columns: [
@@ -558,9 +562,10 @@ const tableStructures = [
       'Value REAL',
       'Paid INTEGER',
       'userId TEXT',
-      'agreementId TEXT'
-    ]
-  },{
+      'agreementId TEXT',
+    ],
+  },
+  {
     name: 'brokers',
     columns: [
       'id TEXT PRIMARY KEY',
@@ -648,7 +653,8 @@ const tableStructures = [
       'updated_at REAL DEFAULT 0',
       'userId TEXT',
     ],
-  },{
+  },
+  {
     name: 'sms_templates',
     columns: [
       'id TEXT PRIMARY KEY',
@@ -694,8 +700,8 @@ const tableStructures = [
     ],
   },
   {
-    name:'expenses',
-    columns:[
+    name: 'expenses',
+    columns: [
       'id TEXT PRIMARY KEY',
 
       'fullBuilding BOOLEAN',
@@ -703,16 +709,29 @@ const tableStructures = [
       'room INTEGER',
       'name TEXT',
       'description TEXT',
-      
+
       'doesReoccur BOOLEAN',
       'recurringCycle INTEGER',
       'price REAL DEFAULT 0',
 
       'date INTEGER',
       'userId TEXT',
-    ]
-  }
-  
+    ],
+  },
+
+  {
+    name: 'action_history',
+    columns: [
+      'id TEXT PRIMARY KEY',
+      'action_table TEXT',
+      'action_type TEXT',
+      'description TEXT',
+      'performed_by TEXT',
+      'action_date INTEGER',
+
+      'userId TEXT',
+    ],
+  },
 ];
 
 // Function to initialize tables
@@ -1540,27 +1559,43 @@ appDB.get(
 appDB.get(
   '/room-documents/:roomId/:string',
   (
-    req: { params: { roomId: string; string:string } },
+    req: { params: { roomId: string; string: string } },
     res: {
       status: (arg0: number) => {
         (): any;
         new (): any;
         json: { (arg0: { error: string }): any; new (): any };
       };
-      json: (arg0: { documents: string[]; roomFolder: string | null; tenantFolder: string | null }) => void;
+      json: (arg0: {
+        documents: string[];
+        roomFolder: string | null;
+        tenantFolder: string | null;
+      }) => void;
     }
   ) => {
-    const { roomId, string} = req.params;
-    const roomDocumentsPath = path.join(process.env.APPDATA, appname, 'Room Documents');
+    const { roomId, string } = req.params;
+    const roomDocumentsPath = path.join(
+      process.env.APPDATA,
+      appname,
+      'Room Documents'
+    );
 
     fs.readdir(roomDocumentsPath, (err: any, folders: string[]) => {
       if (err) {
-        return res.status(500).json({ error: 'Failed to read room documents directory' });
+        return res
+          .status(500)
+          .json({ error: 'Failed to read room documents directory' });
       }
 
-      const roomFolder = folders.find((folder: string) => folder.includes(roomId));
+      const roomFolder = folders.find((folder: string) =>
+        folder.includes(roomId)
+      );
       if (!roomFolder) {
-        return res.json({ documents: [], roomFolder: null, tenantFolder: null });
+        return res.json({
+          documents: [],
+          roomFolder: null,
+          tenantFolder: null,
+        });
       }
 
       const roomFolderPath = path.join(roomDocumentsPath, roomFolder);
@@ -1570,7 +1605,9 @@ appDB.get(
         }
 
         console.log(string);
-        const tenantFolder = tenantFolders.find((folder: string) => folder === string);
+        const tenantFolder = tenantFolders.find(
+          (folder: string) => folder === string
+        );
 
         if (!tenantFolder) {
           return res.json({ documents: [], roomFolder, tenantFolder: null });
@@ -1579,11 +1616,14 @@ appDB.get(
         const tenantFolderPath = path.join(roomFolderPath, tenantFolder);
         fs.readdir(tenantFolderPath, (err: any, files: string[]) => {
           if (err) {
-            return res.status(500).json({ error: 'Failed to read tenant folder' });
+            return res
+              .status(500)
+              .json({ error: 'Failed to read tenant folder' });
           }
 
-          const documents = files.map((file: string) => 
-            `local-resource://${path.join(tenantFolderPath, file)}`
+          const documents = files.map(
+            (file: string) =>
+              `local-resource://${path.join(tenantFolderPath, file)}`
           );
 
           res.json({ documents, roomFolder, tenantFolder });
@@ -2317,7 +2357,10 @@ ipcMain.on('delete-receipt', (event, filePath) => {
 });
 
 import { format, isBefore, isAfter, subDays, differenceInDays } from 'date-fns';
-import { addValueOnline, getValuesWithSql_Online } from '../Backend/OnlineServerApis';
+import {
+  addValueOnline,
+  getValuesWithSql_Online,
+} from '../Backend/OnlineServerApis';
 ipcMain.handle('GetReceiptFile', (event, date, roomId, tenant) => {
   const formattedDate = format(new Date(date), 'yyyy-MM-dd');
   const addedTimeText = format(

@@ -8,6 +8,7 @@ import LogoImage from './assets/Insert Image Pic.png';
 const { v4: uuidv4 } = require('uuid');
 import {
   addValue,
+  addValueROOM,
   deleteValue,
   getValues,
   getValuesWithSql,
@@ -67,10 +68,7 @@ function Hello() {
     }
 
     let currentDate = new Date(startDate);
-    while (
-    
-      (endDate == null || currentDate <= new Date(endDate))
-    ) {
+    while (endDate == null || currentDate <= new Date(endDate)) {
       const paymentId = `${room.id}-${currentDate.getTime()}`;
       allPayments.push({
         id: paymentId,
@@ -207,7 +205,7 @@ function Hello() {
             // Calculate days till next payment
             const DaysTillNextPayment =
               calculateDaysTillNextPayment(predictedPayments);
-     
+
             return {
               id: room.id,
               floor: room.floor,
@@ -219,12 +217,12 @@ function Hello() {
               PaymentCycleCustomeDays: room.PaymentCycleCustomeDays,
               squareMeters: room.squareMeters,
               RoomSpecifications: roomSpecifications,
-              Archived: room.Archived,
+              Archived: room.Archived || false,
               tenantId: room.tenantId || '',
               AddTenantState: room.AddTenantState || false,
               ViewAgreement: room.ViewAgreement || false,
               ShowPayTimeLine: room.ShowPayTimeLine || false,
-              AllRoomPayInfo: { RoomPayInfo: predictedPayments },
+              AllRoomPayInfo: { RoomPayInfo: predictedPayments||[] },
               selectedAgreementId: room.selectedAgreementId || '',
               notificationSettings: room.notificationSettings || 0,
               utilityPaymentEvery: room.utilityPaymentEvery || '30',
@@ -232,9 +230,9 @@ function Hello() {
               utilityPaymentUseDifferentStartDate:
                 room.utilityPaymentUseDifferentStartDate || false,
               utilityPaymentEveryCustom: room.utilityPaymentEveryCustom || 0,
-              utilityPayments: formattedUtilityPayments,
-              paymentShowAmount: room.paymentShowAmount,
-              DaysTillNextPayment: DaysTillNextPayment,
+              utilityPayments: formattedUtilityPayments || [],
+              paymentShowAmount: room.paymentShowAmount || 10,
+              DaysTillNextPayment: DaysTillNextPayment || 0,
             };
           })
         );
@@ -284,29 +282,33 @@ function Hello() {
       try {
         //Add room
 
-        await addValue(
+        await addValueROOM(
           'rooms',
           {
-            id: roomID,
-            floor: AddRoomFormFloor,
-            roomIndex: AddRoomFormRoomIndex,
+            id: roomID || uuidv4(), // Assuming you have a uuidv4 function for generating IDs
+            floor: AddRoomFormFloor || 0,
+            roomIndex: AddRoomFormRoomIndex || 0,
             status: 'Empty',
-            price: AddRoomFormPrice,
-            AgreedPrice: AddRoomFormPrice,
-            PaymentCycleType: AddRoomFormPaymentCycleType,
-            PaymentCycleCustomeDays: AddRoomFormPaymentCycleCustomDays,
-            squareMeters: AddRoomFormSquareMeters,
+            price: AddRoomFormPrice || 0,
+            AgreedPrice: AddRoomFormPrice || 0,
+            PaymentCycleType: AddRoomFormPaymentCycleType || 'monthly',
+            paymentShowAmount: 1,
+            PaymentCycleCustomeDays: AddRoomFormPaymentCycleCustomDays || 0,
+            squareMeters: AddRoomFormSquareMeters || 0,
             tenantId: '',
-            AddTenantState: false,
-            ViewAgreement: false,
-            ShowPayTimeLine: false,
+            AddTenantState: 0,
+            ViewAgreement: 0,
+            ShowPayTimeLine: 0,
             selectedAgreementId: '',
-            userId: SelectedUserId,
+            Archived: 0,
             notificationSettings: 0,
             utilityPaymentEvery: '30',
-            utilityPaymentEveryCustom: '',
+            utilityPaymentEveryCustom: 0,
+            utilityPaymentStartDate: 0,
+            utilityPaymentUseDifferentStartDate: 0,
+            userId: SelectedUserId || '',
           },
-          setChangeMade
+          setChangeMade,
         );
 
         //Add roomspecfications
@@ -986,15 +988,6 @@ function Hello() {
     pastTenantReviewApi.getPastTenantReviewLatestApi();
     brokersRecommendationListApi.getBrokerRecommendationsFromApi();
   };
-  const [SelectedPage, setSelectedPage] = useState<
-    | 'Dashboard'
-    | 'People'
-    | 'Rooms'
-    | 'Calendar'
-    | 'Settings'
-    | 'Database'
-    | 'Tools'
-  >('Rooms');
 
   const [ThemeMode, setThemeMode] = useState<'light' | 'dark'>('light');
 
@@ -1151,6 +1144,47 @@ function Hello() {
       </div>
     );
   };
+
+  const [AppUserManagerShow, setAppUserManagerShow] = useState(false);
+  const [SelectedAppUser, setSelectedAppUser] = useState<appUser | null>(null);
+  const [AppUserManagerPromptPassword, setAppUserManagerPromptPassword] =
+    useState(false);
+  const [SelectedPage, setSelectedPage] = useState<
+    | 'Dashboard'
+    | 'People'
+    | 'Rooms'
+    | 'Calendar'
+    | 'Settings'
+    | 'Database'
+    | 'Tools'
+    | 'non'
+  >(() => {
+    const privileges = getUserPrivileges(SelectedAppUser);
+    if (privileges.viewDashboard) return 'Dashboard';
+    if (privileges.viewPeoplesPage) return 'People';
+    if (privileges.viewRoomsPage) return 'Rooms';
+    if (privileges.viewCalendar) return 'Calendar';
+    if (privileges.viewDatabase) return 'Database';
+    if (privileges.viewToolsPage) return 'Tools';
+    return 'non'; // Default fallback
+  });
+  const privileges = getUserPrivileges(SelectedAppUser);
+     
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSelectedPage((prevPage) => {
+        if (privileges.viewDashboard) return 'Dashboard';
+        if (privileges.viewPeoplesPage) return 'People';
+        if (privileges.viewRoomsPage) return 'Rooms';
+        if (privileges.viewCalendar) return 'Calendar';
+        if (privileges.viewDatabase) return 'Database';
+        if (privileges.viewToolsPage) return 'Tools';
+        return prevPage;
+      });
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, [SelectedAppUser]);
   return (
     <>
       {SyncProgress >= 1 && SyncProgress <= 99 && (
@@ -1179,6 +1213,11 @@ function Hello() {
         RefreshDataFromSqlite={RefreshDataFromSqlite}
         setSyncProgress={setSyncProgress}
         signOutUserAndRestart={signOutUserAndRestart}
+        setAppUserManagerShow={setAppUserManagerShow}
+        AppUserManagerShow={AppUserManagerShow}
+        AppUserManagerPromptPassword={AppUserManagerPromptPassword}
+        setAppUserManagerPromptPassword={setAppUserManagerPromptPassword}
+        setSelectedAppUser={setSelectedAppUser}
       >
         <>
           <NavBar
@@ -1200,6 +1239,9 @@ function Hello() {
             setThemeMode={ChangeTheme}
             ChangeTheme={ChangeTheme}
             signOutUserAndRestart={signOutUserAndRestart}
+            setAppUserManagerShow={setAppUserManagerShow}
+            setAppUserManagerPromptPassword={setAppUserManagerPromptPassword}
+            SelectedAppUser={SelectedAppUser}
           ></NavBar>
           <MainPage
             roomSpecificationAPI={roomSpecificationAPI}
@@ -1224,6 +1266,8 @@ function Hello() {
             BrokerRecommendationList={BrokerRecommendationList}
             agreementApi={agreementApi}
             setChangeMade={setChangeMade}
+            SelectedAppUser={SelectedAppUser}
+       
             SelectedUserId={SelectedUserId}
           />
         </>
@@ -1242,3 +1286,127 @@ export default function App() {
     </Router>
   );
 }
+export const getUserPrivileges = (
+  selectedAppUser: appUser | null
+): {
+  viewDashboard: boolean;
+  viewPeoplesPage: boolean;
+  viewCalendar: boolean;
+  viewDatabase: boolean;
+  editDatabaseData: boolean;
+  viewToolsPage: boolean;
+  editEmailTemplates: boolean;
+  editSmsTemplates: boolean;
+  editExpenses: boolean;
+  viewRoomsPage: boolean;
+  addRoom: boolean;
+  editRoomData: boolean;
+  editRoomPayment: boolean;
+  editUtilityPayments: boolean;
+  editTenantRoomTenantInfo: boolean;
+  editTenantRoomAgreementInfo: boolean;
+  editTenantRoomUtilitySettings: boolean;
+  editTenantRoomAttachments: boolean;
+  editTenantRoomNotificationSettings: boolean;addTenant:boolean;
+} => {
+  const privilegeObject: { [key: string]: boolean } = {
+    viewDashboard: false,
+    viewPeoplesPage: false,
+    viewCalendar: false,
+    viewDatabase: false,
+    editDatabaseData: false,
+    viewToolsPage: false,
+    editEmailTemplates: false,
+    editSmsTemplates: false,
+    editExpenses: false,
+    viewRoomsPage: false,
+    addRoom: false,
+    editRoomData: false,
+    editRoomPayment: false,
+    editUtilityPayments: false,
+    editTenantRoomTenantInfo: false,
+    editTenantRoomAgreementInfo: false,
+    editTenantRoomUtilitySettings: false,
+    editTenantRoomAttachments: false,
+    editTenantRoomNotificationSettings: false,
+    addTenant:false,
+  };
+
+  if (selectedAppUser) {
+    if (selectedAppUser.id === 'admin') {
+      Object.keys(privilegeObject).forEach(key => {
+        privilegeObject[key] = true;
+      });
+    } else if (selectedAppUser.privileges) {
+      const userPrivileges = selectedAppUser.privileges.split(',');
+
+      userPrivileges.forEach((privilege) => {
+        switch (privilege.trim()) {
+          case 'View dashboard page':
+            privilegeObject.viewDashboard = true;
+            break;
+          case 'View peoples page':
+            privilegeObject.viewPeoplesPage = true;
+            break;
+          case 'View calendar page':
+            privilegeObject.viewCalendar = true;
+            break;
+          case 'View database page':
+            privilegeObject.viewDatabase = true;
+            break;
+          case 'edit database data':
+            privilegeObject.editDatabaseData = true;
+            break;
+          case 'View tools page':
+            privilegeObject.viewToolsPage = true;
+            break;
+          case 'edit email templates':
+            privilegeObject.editEmailTemplates = true;
+            break;
+          case 'edit sms templates':
+            privilegeObject.editSmsTemplates = true;
+            break;
+          case 'edit expenses':
+            privilegeObject.editExpenses = true;
+            break;
+          case 'View rooms page':
+            privilegeObject.viewRoomsPage = true;
+            break;
+          case 'Add a room':
+            privilegeObject.addRoom = true;
+            break;
+          case 'Add a tenant':
+            privilegeObject.addTenant = true;
+            break;
+          case 'edit room data':
+            privilegeObject.editRoomData = true;
+            break;
+          case 'edit rent payments':
+            privilegeObject.editRoomPayment = true;
+            break;
+          case 'edit utility payments':
+            privilegeObject.editUtilityPayments = true;
+            break;
+          case 'edit tenant room tenant info':
+            privilegeObject.editTenantRoomTenantInfo = true;
+            break;
+          case 'edit tenant room agreement info':
+            privilegeObject.editTenantRoomAgreementInfo = true;
+            break;
+          case 'edit tenant room utility settings':
+            privilegeObject.editTenantRoomUtilitySettings = true;
+            break;
+          case 'edit tenant room attachments':
+            privilegeObject.editTenantRoomAttachments = true;
+            break;
+          case 'edit tenant room notification settings':
+            privilegeObject.editTenantRoomNotificationSettings = true;
+            break;
+            
+        }
+      });
+    }
+  }
+
+  return privilegeObject;
+};

@@ -1,4 +1,4 @@
-import { getAllUsers } from 'Backend/OnlineServerApis';
+import { getAllUsers, verifyCredentials } from 'Backend/OnlineServerApis';
 import { addValue } from 'Backend/localServerApis';
 import React, { useState } from 'react';
 import loadingGif from '../../../assets/assets/Loading/Rolling-1s-200px.gif';
@@ -17,29 +17,39 @@ const LoginPage = ({ setisSignUpMode, setisSignedIn, setChangeMade, email,
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setPassword(e.target.value);
   };
-
   const SubmitEmailAndPassword = async () => {
     setErrorMessage('');
     setLoading(true);
+  
     if (!email || !password) {
       setErrorMessage('Please fill in your email and password.');
       setLoading(false);
       return;
     }
-    const usersRaw = await getAllUsers();
-    const user = usersRaw.find((user: any) => user.email.toLowerCase() === email.toLowerCase());
-    if (user) {
-      if (user.password === password) {
-        handleLogin(user);
+  
+    try {
+      const isValid = await verifyCredentials(email, password);
+  
+      if (isValid) {
+        // Fetch user data if credentials are valid
+        const usersRaw = await getAllUsers();
+        const user = usersRaw.find((u: any) => u.email.toLowerCase() === email.toLowerCase());
+        
+        if (user) {
+          handleLogin(user);
+        } else {
+          setErrorMessage('Error retrieving user data. Please try again.');
+        }
       } else {
-        setErrorMessage('Wrong password');
+        setErrorMessage('Invalid email or password');
       }
-    } else {
-      setErrorMessage('Email does not exist');
+    } catch (error) {
+      console.error('Error during login:', error);
+      setErrorMessage('An error occurred during login. Please try again.');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
-
   const handleLogin = async (user: any) => {
     setErrorMessage('Login successful!');
     window.electron.store.set('users', [{

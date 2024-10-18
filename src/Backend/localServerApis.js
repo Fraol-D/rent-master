@@ -1,6 +1,36 @@
 const baseUrl = 'http://localhost:8100';
 const { v4: uuidv4 } = require('uuid');
-
+export const addValueROOM = async (tableName, value, setChangeMade) => {
+  try {
+    const response = await fetch(`${baseUrl}/${tableName}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(value),
+    });
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`);
+    }
+    const data = await response.json();
+    await addRowToOfflineChanges(
+      tableName,
+      value.id,
+      'not_needed',
+      'not_needed',
+      'add',
+      value,
+      setChangeMade,
+      'Not needed'
+    ); 
+    return data;
+  } catch (error) {
+    console.error('Error adding value:', error.message);
+    console.error('Request body:', JSON.stringify(value, null, 2));
+    return null;
+  }
+};
 export const getValuesWithSql = async (tableName, sqlCode) => {
   try {
     const response = await fetch(
@@ -82,11 +112,7 @@ const addRowToOfflineChanges = async (
         return null;
       }
     }
-  } else if (
-    
-    columnNameP !== 'MainPc' &&
-    columnNameP !== 'LockToBranchId'
-  ) {
+  } else if (columnNameP !== 'MainPc' && columnNameP !== 'LockToBranchId') {
     const RowWithTheSameThing = await getValuesWithSqlL(
       'offline_changes',
       `WHERE columnName = '${columnNameP}' AND rowId = '${RowIdP}' AND type = 'edit'`
@@ -99,11 +125,9 @@ const addRowToOfflineChanges = async (
           'offline_changes',
           `WHERE rowId = \'${RowIdP}\' AND type = 'add'`
         );
-    
+
         //If there is a row i want you to delete that edit row and add a delete row
         if (allRows.length > 0) {
-       
-
           const response = await fetch(
             `${baseUrl}/${'offline_changes'}/${allRows[0].id}`,
             {
@@ -134,58 +158,72 @@ const addRowToOfflineChanges = async (
           );
         }
       } else {
-        if(columnValueP!==originalValue) {const response = await fetch(`${baseUrl}/${'offline_changes'}`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            id: uuidv4(), // Generate a random UUID
-            type: typevalue,
-            columnName: columnNameP,
-            rowId: RowIdP,
-            newValue: columnValueP,
-            tableName: tableName,
-            addedJsonData: JSON.stringify(addedJsonData),
-            originalValue: originalValue,
-          }),
-        });
-        const data = await response.json();
-        console.log(
-          `Row with that id(${RowIdP}) with type(${typevalue}) was not found so it added`,
-          data
-        );}
+        if (columnValueP !== originalValue) {
+          const response = await fetch(`${baseUrl}/${'offline_changes'}`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              id: uuidv4(), // Generate a random UUID
+              type: typevalue,
+              columnName: columnNameP,
+              rowId: RowIdP,
+              newValue: columnValueP,
+              tableName: tableName,
+              addedJsonData: JSON.stringify(addedJsonData),
+              originalValue: originalValue,
+            }),
+          });
+          const data = await response.json();
+          console.log(
+            `Row with that id(${RowIdP}) with type(${typevalue}) was not found so it added`,
+            data
+          );
+        }
       }
     } else {
       console.log(
         String(columnValueP),
         String(RowWithTheSameThing[0].originalValue)
       );
-      
+
       const compareValues = (value1, value2) => {
         // Compare as strings
         if (String(value1) === String(value2)) return true;
-        
+
         // Compare as numbers
-        if (!isNaN(value1) && !isNaN(value2) && Number(value1) === Number(value2)) return true;
-        
+        if (
+          !isNaN(value1) &&
+          !isNaN(value2) &&
+          Number(value1) === Number(value2)
+        )
+          return true;
+
         // Compare as booleans
         if (
-          (value1 === true && (value2 === 'true' || value2 === '1' || value2 === 1)) ||
-          (value1 === false && (value2 === 'false' || value2 === '0' || value2 === 0))
-        ) return true;
-      
+          (value1 === true &&
+            (value2 === 'true' || value2 === '1' || value2 === 1)) ||
+          (value1 === false &&
+            (value2 === 'false' || value2 === '0' || value2 === 0))
+        )
+          return true;
+
         return false;
       };
-      
+
       if (compareValues(columnValueP, RowWithTheSameThing[0].originalValue)) {
-        setChangeMade(prev=>prev-1)
-        const response = await fetch(`${baseUrl}/offline_changes/${RowWithTheSameThing[0].id}`, {
-          method: 'DELETE',
-        });
+        setChangeMade((prev) => prev - 1);
+        const response = await fetch(
+          `${baseUrl}/offline_changes/${RowWithTheSameThing[0].id}`,
+          {
+            method: 'DELETE',
+          }
+        );
         const data = await response.text();
-        console.log(`Deleted offline change row with id: ${RowWithTheSameThing[0].id}`);
-      
+        console.log(
+          `Deleted offline change row with id: ${RowWithTheSameThing[0].id}`
+        );
       } else {
         // Update the existing offline change row
         const response = await fetch(
@@ -211,6 +249,53 @@ const addRowToOfflineChanges = async (
     }
 
     setChangeMade((prevValue) => prevValue + 1);
+  }
+  // User history
+  async function addToActionHistory(
+    actionTable,
+    actionType,
+    description,
+    performedBy,
+    userId
+  ) {
+    const id = uuidv4();
+    const actionDate = Date.now();
+
+    await addValueWithOutOfflineChange('action_history', {
+      id,
+      action_table: actionTable,
+      action_type: actionType,
+      description,
+      performed_by: performedBy,
+      action_date: actionDate,
+      userId: userId,
+    });
+  }
+  if (originalValue !== columnValueP) {
+    const users = await window.electron.store.get('users');
+    let description = '...';
+    if (typevalue === 'add') {
+      description = 'Added ' + RowIdP + ' to the ' + tableName;
+    } else if (typevalue === 'edit') {
+      description = `edited '${RowIdP}'s ${columnNameP} to ${columnValueP}`;
+      if (originalValue !== null) {
+        description = `edited '${RowIdP}'s ${columnNameP} from ${originalValue} to ${columnValueP}`;
+      }
+    } else if (typevalue === 'delete') {
+      description = 'deleted ' + RowIdP + ' from the ' + tableName;
+    }
+    /** window.electron.store
+        .get('app_users')
+        .find(
+          (user) => user.id === window.electron.store.get('SelectedAppUserId')
+        ).roleName || 'Unknown User' */
+    await addToActionHistory(
+      tableName,
+      typevalue,
+      description,
+      'aaaa',
+      users[0].id
+    );
   }
 };
 
@@ -252,7 +337,8 @@ export const addValue = async (tableName, value, setChangeMade) => {
       'not_needed',
       'add',
       value,
-      setChangeMade
+      setChangeMade,
+      'Not needed'
     );
 
     return data;
@@ -276,7 +362,6 @@ export const addValueWithOutOfflineChange = async (tableName, value) => {
       body: JSON.stringify(value),
     });
     const data = await response.json();
-  
 
     return data;
   } catch (error) {
@@ -507,22 +592,19 @@ export const getRoomDocuments = async (roomId) => {
 };
 export const getTenantRoomDocuments = async (roomId, string) => {
   try {
-
     const url = `${baseUrl}/room-documents/${roomId}/${string}`;
-    
+
     console.log('Attempting to fetch documents from:', url);
-    
+
     const response = await fetch(url);
     const data = await response.json();
-    
-    
+
     return data;
   } catch (error) {
     console.log('Error fetching tenant room documents:', error);
     return { documents: [], roomFolder: null, tenantFolder: null };
   }
 };
-
 
 export const deleteRoomDocument = async (roomId, filePath) => {
   try {
@@ -649,8 +731,6 @@ export const deleteAllFromTable = async (tableName) => {
   }
 };
 
-
-
 export const getLocalUserDirectory = async () => {
   try {
     const response = await fetch(`${baseUrl}/local-user-directory`);
@@ -665,7 +745,14 @@ export const getLocalUserDirectory = async () => {
     return null;
   }
 };
-export const uploadReceiptDocuments = async (files, roomId, tenantName, tenantId, formattedDate, AddedTimeText) => {
+export const uploadReceiptDocuments = async (
+  files,
+  roomId,
+  tenantName,
+  tenantId,
+  formattedDate,
+  AddedTimeText
+) => {
   try {
     const uploadPromises = Array.from(files).map(async (file) => {
       const base64Document = await fileToBase64(file);
@@ -693,4 +780,3 @@ export const uploadReceiptDocuments = async (files, roomId, tenantName, tenantId
     return null;
   }
 };
-

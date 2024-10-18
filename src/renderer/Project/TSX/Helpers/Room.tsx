@@ -33,6 +33,7 @@ import NotificationSettingsTable from './GUIs/NotificationSettingsProps';
 import UtilityPaymentsTable from './UtilityPaymentsTable';
 import UtilityPanel from './GUIs/UtilityPanel';
 import { addDays } from 'date-fns';
+import { getUserPrivileges } from 'renderer/App';
 const Room = ({
   roomType,
   updateRoomProperty,
@@ -55,7 +56,7 @@ const Room = ({
   updateRoomPropertyLocal,
   agreementApi,
   setChangeMade,
-  SelectedUserId,
+  SelectedUserId,SelectedAppUser
 }: {
   roomType: RoomType;
   updateRoomProperty: any;
@@ -78,11 +79,13 @@ const Room = ({
   agreementApi: any;
   setChangeMade: any;
   SelectedUserId: any;
+  SelectedAppUser:any;
 }) => {
   const handleAddTenant = () => {
     turnOffAddTenantStateForAll();
     updateRoomProperty(roomType.id, 'AddTenantState', !roomType.AddTenantState);
-  };
+  };  const privileges = useMemo(() => getUserPrivileges(SelectedAppUser), [SelectedAppUser]);
+
   const [name, setName] = useState('');
   const [tel1, setTel1] = useState('');
   const [tel2, setTel2] = useState('');
@@ -1109,7 +1112,7 @@ const Room = ({
         <div className="FirstLine">
           <div style={{ display: 'flex' }}>
             <p className="FloorText">Floor {roomType.floor}</p>{' '}
-            <img
+            {privileges.editRoomData ? <><img
               onClick={() => {
                 setSelectedEditRoomId(roomType.id);
               }}
@@ -1129,7 +1132,7 @@ const Room = ({
               >
                 {roomType.Archived ? 'Unarchive' : 'Archive'}
               </button>
-            )}
+            )}</>:<></>}
           </div>
           <p className="RoomText">Room {roomType.roomIndex}</p>
 
@@ -1166,7 +1169,7 @@ const Room = ({
                   <>
                     {roomType.AddTenantState ? (
                       <>
-                        <strong
+                        {privileges.addTenant ? <strong
                           style={{
                             fontWeight: '600',
                             fontSize: '17px',
@@ -1177,11 +1180,11 @@ const Room = ({
                           }}
                         >
                           Add tenant
-                        </strong>
+                        </strong>:<></>}
                       </>
                     ) : (
                       <>
-                        <em
+                        {privileges.addTenant ? <em
                           style={{
                             fontWeight: '400',
                             borderBottom: '1px solid white',
@@ -1191,7 +1194,7 @@ const Room = ({
                           }}
                         >
                           Add tenant
-                        </em>
+                        </em>:<></>}
                       </>
                     )}
                   </>
@@ -1229,7 +1232,7 @@ const Room = ({
                   </>
                 ) : (
                   <>
-                    <em
+                    {privileges.viewTenantAgreementPanel ? <em
                       style={{
                         fontSize: '16px',
                         display: 'flex',
@@ -1258,7 +1261,7 @@ const Room = ({
                       >
                         View Agreement
                       </button>
-                    </em>
+                    </em>:<></>}
                   </>
                 )
               ) : (
@@ -1335,7 +1338,7 @@ const Room = ({
                 )}
               </p>
               <div style={{ display: 'flex', alignItems: 'center' }}>
-                <button
+               {privileges.editRoomPayment ? <button
                   className="PageNavigatorButtonSelected"
                   ref={hideButtonRef}
                   style={{ borderBottom: '1px solid grey', width: '100px' }}
@@ -1349,8 +1352,8 @@ const Room = ({
                   }}
                 >
                   {roomType.ShowPayTimeLine ? 'Hide' : 'Rent'}
-                </button>
-                <button
+                </button>:<></>} 
+                {privileges.editUtilityPayments ? <button
                   style={{
                     borderBottom: '1px solid grey',
                     borderTop: '2px solid var(--Primary-Color)',
@@ -1368,7 +1371,8 @@ const Room = ({
                   }}
                 >
                   {roomType.ShowUtilityLine ? 'Hide' : 'Utility'}
-                </button>
+                </button> : <></>}
+                
               </div>
             </div>
           )}

@@ -3,9 +3,10 @@ import {
   updateValue,
   deleteValue,
 } from 'Backend/localServerApis';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { getUserPrivileges } from 'renderer/App';
 
-const DatabasePage = ({ setChangeMade }: any) => {
+const DatabasePage = ({ setChangeMade,SelectedAppUser }: any) => {
   const [Data, setData] = useState<any[]>([]);
   const [searchConfig, setSearchConfig] = useState({ key: '', query: '' });
   const [mainSearch, setMainSearch] = useState('');
@@ -14,7 +15,8 @@ const DatabasePage = ({ setChangeMade }: any) => {
     key: string;
   } | null>(null);
   const [editValue, setEditValue] = useState('');
-
+  const [highlightedRow, setHighlightedRow] = useState<string | null>(null);
+  const privileges = useMemo(() => getUserPrivileges(SelectedAppUser), [SelectedAppUser]);
   const GetDataBaseData = async (TableName: string) => {
     try {
       const DataRaw = await getValuesWithSql(TableName, 'WHERE 1');
@@ -48,9 +50,9 @@ const DatabasePage = ({ setChangeMade }: any) => {
     | 'utility_payments'
     | 'utility_payments_settings'
     | 'sms_templates'
-
     | 'expenses'
     | 'room_pay_info_history'
+
   >('rooms');
 
   const validTables = [
@@ -59,7 +61,6 @@ const DatabasePage = ({ setChangeMade }: any) => {
     'tenants',
     'room_pay_info',
     'room_pay_info_history',
-
     'PastTenantReview',
     'brokers',
     'brokersRecommendationList',
@@ -70,13 +71,14 @@ const DatabasePage = ({ setChangeMade }: any) => {
     'utility_payments',
     'utility_payments_settings',
     'sms_templates',
-
     'expenses',
+   
   ];
 
   const OnChangeSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
     GetDataBaseData(e.target.value);
     setSelectedTable(e.target.value as typeof SelectedTable);
+    setHighlightedRow(null);
   };
 
   const handleSearch = (key: string) => {
@@ -133,7 +135,8 @@ const DatabasePage = ({ setChangeMade }: any) => {
           Data[editCell.rowIndex].id,
           editCell.key,
           editValue,
-          setChangeMade
+          setChangeMade,
+          Data[editCell.rowIndex][editCell.key]
         );
         const updatedData = [...Data];
         updatedData[editCell.rowIndex] = {
@@ -158,6 +161,43 @@ const DatabasePage = ({ setChangeMade }: any) => {
     }
   };
 
+  const handleGoTo = async (key: string, value: string) => {
+    let targetTable = '';
+    switch (key) {
+      case 'roomId':
+        targetTable = 'rooms';
+        break;
+      case 'tenantId':
+        targetTable = 'tenants';
+        break;
+      case 'brokerId':
+        targetTable = 'brokers';
+        break;
+      case 'agreementId':
+        targetTable = 'agreements';
+        break;
+      
+      case 'email_template_id':
+        targetTable = 'email_templates';
+        break;
+      case 'selectedAgreementId':
+        targetTable = 'agreements';
+        break;
+      default:
+        console.log('No matching table found for this ID');
+        return;
+    }
+
+    await GetDataBaseData(targetTable);
+    setSelectedTable(targetTable as typeof SelectedTable);
+    setHighlightedRow(value);
+    // Update the select element to reflect the new table
+    const selectElement = document.querySelector('select') as HTMLSelectElement;
+    if (selectElement) {
+      selectElement.value = targetTable;
+    }
+  };
+
   return (
     <div className="CalenderContainer">
       <div
@@ -167,10 +207,8 @@ const DatabasePage = ({ setChangeMade }: any) => {
         }}
       >
         <div className="CalenderOptionsMainContainer">
-          <span style={{ color: 'red', fontWeight: 'bold' }}>
-            Warning: Modifying database values without proper understanding can
-            lead to critical system errors. Only edit if you are certain of the
-            consequences.
+          <span style={{ color: 'pink', fontWeight: 'bold' }}>
+            Warning: Modifying database values can cause critical errors. Edit only if certain.
           </span>
           <label htmlFor="monthsFutureInput">Select a table: </label>
           <select
@@ -229,12 +267,12 @@ const DatabasePage = ({ setChangeMade }: any) => {
             <tbody className="table-body">
               {filteredData(Data, searchConfig.key, searchConfig.query).map(
                 (row, rowIndex) => (
-                  <tr key={rowIndex}>
+                  <tr key={rowIndex} style={row.id === highlightedRow ? {backgroundColor: 'var(--Accent-Color50)'} : {}}>
                     {Object.entries(row).map(([key, value], cellIndex) => (
                       <td
                         key={cellIndex}
                         onDoubleClick={() =>
-                          handleCellDoubleClick(rowIndex, key, String(value))
+                          {if(privileges.editDatabaseData){handleCellDoubleClick(rowIndex, key, String(value));}}
                         }
                       >
                         {editCell &&
@@ -253,7 +291,17 @@ const DatabasePage = ({ setChangeMade }: any) => {
                             autoFocus
                           />
                         ) : (
-                          highlightText(String(value), mainSearch)
+                          <>
+                            {highlightText(String(value), mainSearch)}
+                            {['roomId', 'tenantId', 'brokerId', 'agreementId', 'email_template_id', 'selectedAgreementId'].includes(key) && value && (
+                              <button
+                                onClick={() => handleGoTo(key, String(value))}
+                                style={{ marginLeft: '5px' }}
+                              >
+                                Go to
+                              </button>
+                            )}
+                          </>
                         )}
                       </td>
                     ))}

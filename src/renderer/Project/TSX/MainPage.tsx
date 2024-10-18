@@ -1,6 +1,6 @@
 import { RoomListComponent } from './Pages/RoomListComponent';
 import { PeopleComponentPage } from './Pages/PeopleComponentPage';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 const { v4: uuidv4 } = require('uuid');
 import ImageInteractor from './Helpers/GUIs/ImageIntractorGUI';
 import LONGIMAGE from './Helpers/WIN_20240802_19_41_23_Pro.jpg';
@@ -26,6 +26,7 @@ import { set } from 'date-fns';
 import DashboardPage from './Pages/DashboardPage';
 import DatabasePage from './Pages/DatabasePage';
 import ToolsPage from './Pages/ToolsPage';
+import { getUserPrivileges } from 'renderer/App';
 type FilterOption = {
   key: string;
   value: any;
@@ -194,6 +195,13 @@ declare global {
     date: number;
     userId: string;
   };
+  type appUser = {
+    id: string;
+    roleName: string;
+    privileges: string;
+    userId: string;
+    addedDate: number;
+  };
 }
 const MainPage = ({
   RoomList,
@@ -219,12 +227,17 @@ const MainPage = ({
   roomSpecificationAPI,
   setChangeMade,
   SelectedUserId,
+  SelectedAppUser,
 }: any) => {
   const [floorFilter, setFloorFilter] = useState<string>('');
   const [TenantNameFilter, setTenantNameFilter] = useState<string>('');
   const [roomFilter, setRoomFilter] = useState<string>('');
   const [sortType, setSortType] = useState<string>('name');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const privileges = useMemo(
+    () => getUserPrivileges(SelectedAppUser),
+    [SelectedAppUser]
+  );
 
   // Add state variables for filtering
   const [filterStatus, setFilterStatus] = useState<
@@ -648,7 +661,7 @@ const MainPage = ({
     'EmailTemplates' | 'SMSTemplates' | 'Expense Manager'
   >('EmailTemplates');
   const [DashboardSelectedPage, setDashboardSelectedPage] = useState<
-    'Overview' | 'Email History' | 'Expenses'
+    'Overview' | 'Email History' | 'Expenses' | 'Action History'
   >('Overview');
   const [AddARoomState, setAddARoomState] = useState(false);
   const [AddRoomFormFloor, setAddRoomFormFloor] = useState(1);
@@ -729,19 +742,45 @@ const MainPage = ({
       AllRoomPayInfo: { RoomPayInfo: [] },
       selectedAgreementId: '',
       Archived: false,
+      utilityPaymentEvery: '',
+      utilityPaymentStartDate: 0,
+      utilityPaymentUseDifferentStartDate: false,
+      utilityPaymentEveryCustom: 0,
+      paymentShowAmount: 0,
+      notificationSettings: 0,
+      utilityPayments: [],
+      DaysTillNextPayment: 0,
     };
-
+console.log(newRoom);
     // Add to sqlite database
-    await roomAPI.AddRoomApi(
-      newRoom.id,
-      AddRoomFormFloor,
-      AddRoomFormRoomIndex,
-      AddRoomFormPrice,
-      AddRoomFormPaymentCycleType,
-      AddRoomFormPaymentCycleCustomDays,
-      AddRoomFormSquareMeters,
-      AddRoomFormRoomSpecifications
-    );
+    try {
+      await addValue('rooms', {
+        id: newRoom.id,
+        floor: newRoom.floor,
+        roomIndex: newRoom.roomIndex,
+        status: newRoom.status,
+        price: newRoom.price,
+        AgreedPrice: newRoom.AgreedPrice,
+        PaymentCycleType: newRoom.PaymentCycleType,
+        paymentShowAmount: newRoom.paymentShowAmount,
+        PaymentCycleCustomeDays: newRoom.PaymentCycleCustomeDays,
+        squareMeters: newRoom.squareMeters,
+        tenantId: '',
+        AddTenantState: 0,
+        ViewAgreement: 0,
+        ShowPayTimeLine: 0,
+        selectedAgreementId: '',
+        Archived: 0,
+        notificationSettings: 0,
+        utilityPaymentEvery: '30',
+        utilityPaymentEveryCustom: 0,
+        utilityPaymentStartDate: 0,
+        utilityPaymentUseDifferentStartDate: 0,
+        userId: SelectedUserId,
+      }, setChangeMade);
+    } catch (error: any) {
+      console.log(error);
+    }
     if (isMoreThanOneImage) {
       handleRenameFolder(
         'Add a room images',
@@ -939,11 +978,13 @@ const MainPage = ({
     </div>
   );
   const [tempSquareMeters, setTempSquareMeters] = useState(
-    RoomList.find((r: RoomType) => r.id === SelectedEditRoomId)?.squareMeters || 0
+    RoomList.find((r: RoomType) => r.id === SelectedEditRoomId)?.squareMeters ||
+      0
   );
   useEffect(() => {
     setTempSquareMeters(
-      RoomList.find((r: RoomType) => r.id === SelectedEditRoomId)?.squareMeters || 0
+      RoomList.find((r: RoomType) => r.id === SelectedEditRoomId)
+        ?.squareMeters || 0
     );
   }, [SelectedEditRoomId]);
   const handleBlur = () => {
@@ -1003,14 +1044,18 @@ const MainPage = ({
                   >
                     <img src={DoubleArrowIconDark} alt="" />
                   </button>
-                  <button
-                    className="SideBarTopButton"
-                    onClick={() => {
-                      handleAddRoomButtonInitial(!AddARoomState);
-                    }}
-                  >
-                    Add room
-                  </button>
+                  {privileges.addRoom ? (
+                    <button
+                      className="SideBarTopButton"
+                      onClick={() => {
+                        handleAddRoomButtonInitial(!AddARoomState);
+                      }}
+                    >
+                      Add room
+                    </button>
+                  ) : (
+                    <></>
+                  )}
                   <button
                     className="SideBarTopButton"
                     onClick={handleClearFilters}
@@ -1410,7 +1455,7 @@ const MainPage = ({
                       />
                       : Square Meters
                     </div>
-                   
+
                     <div className="RoomSpecficationsMainContainer">
                       <h3>
                         Room Specifications{' - '}
@@ -1623,6 +1668,13 @@ const MainPage = ({
                 onClick={() => setDashboardSelectedPage('Expenses')}
               >
                 Expenses
+              </SideBarItem>
+              <SideBarItem
+                page="Action History"
+                currentPage={DashboardSelectedPage}
+                onClick={() => setDashboardSelectedPage('Action History')}
+              >
+                Action History
               </SideBarItem>
             </>
           ) : (
@@ -1919,6 +1971,7 @@ const MainPage = ({
         >
           {SelectedPage === 'Rooms' && (
             <RoomListComponent
+              SelectedAppUser={SelectedAppUser}
               updateRoomProperty={updateRoomProperty}
               updateRoomPropertyWithOutRefresh={
                 updateRoomPropertyWithOutRefresh
@@ -2004,7 +2057,10 @@ const MainPage = ({
             />
           )}
           {SelectedPage === 'Database' && (
-            <DatabasePage setChangeMade={setChangeMade} />
+            <DatabasePage
+              setChangeMade={setChangeMade}
+              SelectedAppUser={SelectedAppUser}
+            />
           )}
         </div>
       </div>

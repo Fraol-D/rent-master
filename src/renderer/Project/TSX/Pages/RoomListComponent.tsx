@@ -24,7 +24,7 @@ export function RoomListComponent({
   handleAddRoomButtonInitial,
   updateRoomPropertyLocal,
   agreementApi,
-  ShowArchived,setChangeMade,SelectedUserId
+  ShowArchived,setChangeMade,SelectedUserId,SelectedAppUser
 }: any) {
   return (
     <>
@@ -145,7 +145,7 @@ export function RoomListComponent({
                   setTenantList={setTenantList}
                   TenantList={TenantList}
                   tenantAPI={tenantAPI}
-                  pastTenantReviewApi={pastTenantReviewApi}
+                  pastTenantReviewApi={pastTenantReviewApi}SelectedAppUser={SelectedAppUser}
                 />
               ))
           )}

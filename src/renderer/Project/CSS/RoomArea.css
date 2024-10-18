@@ -433,4 +433,67 @@
   cursor: pointer;
   color: white;
 }
+.appUserItemContainer{
+  background-color: var(--Secondary-Color30);
+  margin: 10px;
+  border-radius: 10px;
+  padding: 10px;
+}
+.appUserItem {
+  width: 350px;
+  background-color: var(--Secondary-Color30);
+  border-radius: 5px;
+  margin: 10px;
+  box-shadow: 1px 1px 3px -1px var(--Text-Color);
+  padding: 5px;
+}
+.appUserItemM {
+  background-color: var(--Secondary-Color60);
 
+}.appUserItem {
+  margin-bottom: 20px;
+
+  padding: 10px;
+}
+.appUserButtons {
+  margin-left: 10px;
+  padding: 5px 10px;
+  background-color: var(--Primary-Color);
+  color: var(--Text-Color-Reverse);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  
+}
+.appUserHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.appUserHeader span {
+}
+.privilege-actions {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-evenly;
+  margin-top: 10px;
+}
+.privileges-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+
+}
+
+.privilege-item {
+  display: flex;
+  align-items: flex-start;
+  flex-direction: column;
+}
+
+.privilege-item input[type="checkbox"] {
+  margin-right: 5px;
+}

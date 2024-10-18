@@ -3,9 +3,9 @@ import {
   getValuesWithSql,
   updateValue,
 } from 'Backend/localServerApis';
-import { ReactElement, JSXElementConstructor, ReactNode, Key } from 'react';
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 const { v4: uuidv4 } = require('uuid');
+
 const UtilityPaymentsTable = ({
   roomId,
   userId,
@@ -13,7 +13,14 @@ const UtilityPaymentsTable = ({
   updateRoomPropertyLocal,
   setChangeMade,
 }: any) => {
-  const handleUtilityChange = async (
+  const [tempPrices, setTempPrices] = useState<{ [key: string]: string }>(
+    utilityPayments.reduce((acc: any, utility: UtilityPaymentSettings) => {
+      acc[utility.id] = utility.price.toString();
+      return acc;
+    }, {})
+  );
+
+  const handleUtilityChange = useCallback(async (
     index: number,
     field: 'useThis' | 'price' | 'alwaysAsk',
     value: boolean | string,
@@ -38,12 +45,10 @@ const UtilityPaymentsTable = ({
       })
     );
 
-    // Check if the utilty object exists
     const utilityPaymentRaw = await getValuesWithSql(
       'utility_payments_settings',
       `WHERE type = '${utility.type}' AND roomId = '${roomId}'`
     );
-    //If it does edit it with the new data
     if (utilityPaymentRaw == 0) {
       await addValue(
         'utility_payments_settings',
@@ -64,12 +69,22 @@ const UtilityPaymentsTable = ({
         utility.id,
         field,
         value,
-        setChangeMade, // You can add a callback function here if needed
+        setChangeMade,
         utility[field]
       );
-      
     }
+  }, [utilityPayments, roomId, userId, updateRoomPropertyLocal, setChangeMade]);
+
+  const handlePriceChange = (id: string, value: string) => {
+    setTempPrices(prev => ({ ...prev, [id]: value }));
   };
+
+  const handlePriceUpdate = useCallback((index: number, utility: UtilityPaymentSettings) => {
+    const newPrice = tempPrices[utility.id];
+    if (newPrice !== utility.price.toString()) {
+      handleUtilityChange(index, 'price', newPrice, utility);
+    }
+  }, [tempPrices, handleUtilityChange]);
 
   return (
     <table style={{ fontSize: '14px', borderCollapse: 'collapse' }}>
@@ -102,10 +117,14 @@ const UtilityPaymentsTable = ({
             <td style={{ padding: '5px', textAlign: 'center' }}>
               <input
                 type="number"
-                value={utility.price}
-                onChange={(e) =>
-                  handleUtilityChange(index, 'price', e.target.value, utility)
-                }
+                value={tempPrices[utility.id]}
+                onChange={(e) => handlePriceChange(utility.id, e.target.value)}
+                onBlur={() => handlePriceUpdate(index, utility)}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    handlePriceUpdate(index, utility);
+                  }
+                }}
                 style={{ width: '70px' }}
               />
               $
@@ -130,4 +149,5 @@ const UtilityPaymentsTable = ({
     </table>
   );
 };
+
 export default React.memo(UtilityPaymentsTable);

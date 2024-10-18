@@ -14,6 +14,7 @@ import DashbMonthlyExpenseTrendWidget from '../Dashboard Wigets/DashbMonthlyExpe
 import { getValuesWithSql } from 'Backend/localServerApis';
 import DashbExpenseHistory from '../Dashboard Wigets/DashbExpenseHistory';
 import DashbUpcomingExpensesWidget from '../Dashboard Wigets/DashbUpcomingExpensesWidget';
+import DashbActionHistoryDashboard from '../Dashboard Wigets/DashbActionHistoryDashboard';
 interface props {
   RoomList: RoomType[];
   tenantList: tenant[];
@@ -22,7 +23,8 @@ interface props {
   PastTenantReviews: PastTenantReviewType[];
   BrokerRecommendationList: BrokerRecommendationType[];
   DashboardSelectedPage: string;
-  SelectedUserId: string;setChangeMade:any;
+  SelectedUserId: string;
+  setChangeMade: any;
 }
 const DashboardPage: React.FC<props> = ({
   RoomList,
@@ -32,7 +34,8 @@ const DashboardPage: React.FC<props> = ({
   BrokerList,
   BrokerRecommendationList,
   DashboardSelectedPage,
-  SelectedUserId,setChangeMade
+  SelectedUserId,
+  setChangeMade,
 }) => {
   const [expenses, setExpenses] = useState<expenses[]>([]);
 
@@ -51,11 +54,12 @@ const DashboardPage: React.FC<props> = ({
           style={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap' }}
         >
           <DashbRoomSummary RoomList={RoomList} />
-          <DashbTotalCollected RoomList={RoomList} tenantList={tenantList}/>
+          <DashbTotalCollected RoomList={RoomList} tenantList={tenantList} />
           <DashbPastPayments
             tenantList={tenantList}
             RoomList={RoomList}
-            roomPaymentInfoApi={roomPaymentInfoApi}setChangeMade={setChangeMade}
+            roomPaymentInfoApi={roomPaymentInfoApi}
+            setChangeMade={setChangeMade}
           />
           <div>
             <DashbRevenuePerSquareFoot RoomList={RoomList} />
@@ -81,18 +85,20 @@ const DashboardPage: React.FC<props> = ({
         </>
       ) : DashboardSelectedPage === 'SMS History' ? (
         <></>
+      ) : DashboardSelectedPage === 'Action History' ? (
+        <DashbActionHistoryDashboard />
       ) : DashboardSelectedPage === 'Expenses' ? (
         <div
           style={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap' }}
         >
           <DashbNetProfitTotalCollected
             RoomList={RoomList}
-            expenses2={expenses}   tenantList={tenantList}
+            expenses2={expenses}
+            tenantList={tenantList}
           ></DashbNetProfitTotalCollected>
           <DashbMonthlyExpenseTrendWidget expenses={expenses} />
           <DashbExpenseHistory expenses={expenses} />
           <DashbUpcomingExpensesWidget expenses={expenses} />
-
         </div>
       ) : (
         <></>

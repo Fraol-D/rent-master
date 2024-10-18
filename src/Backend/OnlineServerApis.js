@@ -18,6 +18,32 @@ const deleteValue = async (tableName, id) => {
     return null;
   }
 };
+export const updateValueOnline = async (tableName, id, columnName, columnValue) => {
+  try {
+    const response = await fetch(
+      `${baseUrl}/${tableName}/${id}/${columnName}`,
+      {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+        },
+        body: JSON.stringify({ [columnName]: columnValue }),
+      }
+    );
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    console.log(`Successfully updated ${columnName} for ${tableName} with id ${id}`);
+    return data;
+  } catch (error) {
+    console.error('Error updating value online:', error);
+    throw error;
+  }
+};
 
 export const deleteValueOnline = async (tableName, id) => {
   try {
@@ -328,7 +354,28 @@ export const getAllUsers = async () => {
     return [];
   }
 };
+export async function verifyCredentials(email, password) {
+  try {
+    const response = await fetch(`${baseUrl}/verify-credentials`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': 'HH(CzZuQoW@tB$By)e'
+      },
+      body: JSON.stringify({ email, password })
+    });
 
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+
+    const data = await response.json();
+    return data.isValid;
+  } catch (error) {
+    console.error('Error verifying credentials:', error);
+    return false;
+  }
+}
 export const getValuesWithSql_Online = async (tableName, sqlCode) => {
   try {
     const response = await fetch(

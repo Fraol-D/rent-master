@@ -2,6 +2,7 @@
   --Text-Color-Grey: rgb(128, 128, 128);
   --Text-Color: rgb(255, 255, 255);
   --Text-Color-Reverse: rgb(0, 0, 0);
+  --Text-Color-Reverse50: rgba(0, 0, 0, 0.5);
   --Background-Color: #2e2f30;
 
   --Primary-Color: #00e1ff;
@@ -19,6 +20,7 @@
 .DarkTheme {
   --Text-Color-Grey: rgb(128, 128, 128);
   --Text-Color: #000000;
+  --Text-Color-Reverse50: rgba(255, 255, 255, 0.5);
   --Text-Color-Reverse: rgb(255, 255, 255);
   --Background-Color: #d0d1d2;
 
@@ -91,13 +93,16 @@ button {
   color: var(--Text-Color);
   border: none;
   margin: 0px;
+  box-shadow: 1px 1px 3px -1px var(--Text-Color);
   font-family: 'Inter';
   transition: all 0.2s;
 }
 button:hover {
   background-color: var(--Primary-Color50);
+  box-shadow: 3px 3px 3px -1px var(--Text-Color);
+  /* box-shadow: 2px 2px 55px var(--Text-Color-Reverse);*/
   color: var(--Text-Color-Reverse);
-
+  text-shadow: 0px 0px 10px var(--Text-Color);
   transform: translate(0, -3px);
   transition: transform ease 0.2s;
 }
@@ -108,6 +113,9 @@ input {
   border: 1px solid grey;
   border-radius: 5px;
   font-family: 'Inter';
+}
+input[type="checkbox"] {
+  accent-color: var(--Accent-Color);
 }
 input:hover {
   background-color: var(--Primary-Color50);
