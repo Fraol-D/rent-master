@@ -4,7 +4,7 @@ import {
   updateValue,
   deleteValue,
 } from 'Backend/localServerApis';
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 import '../../CSS/ToolsPage.css';
 import {
   addValueOnline,
@@ -12,6 +12,7 @@ import {
 } from 'Backend/OnlineServerApis';
 import EmailTemplates from '../Tools page components/EmailTemplates';
 import SMSTemplates from '../Tools page components/SMSTemplates';
+import { getUserPrivileges } from 'renderer/App';
 const { v4: uuidv4 } = require('uuid');
 interface EmailTemplate {
   id: string;
@@ -30,7 +31,7 @@ const ToolsPage = ({
   setToolsSelectedPage,
   ToolsSelectedPage,
   setChangeMade,
-  SelectedUserId,
+  SelectedUserId,SelectedAppUser
 }: any) => {
   const [emailTemplates, setEmailTemplates] = useState<EmailTemplate[]>([]);
   const [smsTemplates, setSMSTemplates] = useState<SMSTemplate[]>([]);
@@ -708,543 +709,551 @@ const ToolsPage = ({
     };
     a();
   }, []);
-
+  const privileges = useMemo(
+    () => getUserPrivileges(SelectedAppUser),
+    [SelectedAppUser]
+  );
   return (
     <>
       <></>
-
-      {ToolsSelectedPage === 'EmailTemplates' && (
-        <EmailTemplates
-          emailTemplates={emailTemplates}
-          openTemplateId={openTemplateId}
-          editingTemplateId={editingTemplateId}
-          editedTemplate={editedTemplate}
-          variables={variables}
-          variableValues={variableValues}
-          recipientEmail={recipientEmail}
-          emailSendingwith={emailSendingwith}
-          handleAddEmailTemplate={handleAddEmailTemplate}
-          toggleTemplate={toggleTemplate}
-          startEditing={startEditing}
-          saveChanges={saveChanges}
-          cancelEditing={cancelEditing}
-          deleteEmailTemplate={deleteEmailTemplate}
-          handleEditChange={handleEditChange}
-          insertVariable={insertVariable}
-          extractVariables={extractVariables}
-          handleTryOut={handleTryOut}
-          tryOutMode={tryOutMode}
-          setTryOutMode={setTryOutMode}
-          formatEmailBody={formatEmailBody}
-          replaceVariables={replaceVariables}
-          handleVariableValueChange={handleVariableValueChange}
-          setRecipientEmail={setRecipientEmail}
-          handleSendEmail={handleSendEmail}
-          subjectInputRef={subjectInputRef}
-          bodyTextareaRef={bodyTextareaRef}
-          setSelectedInput={setSelectedInput}
-        />
-      )}
-
-      {ToolsSelectedPage === 'SMSTemplates' && (
-        <SMSTemplates
-          smsTemplates={smsTemplates}
-          openTemplateId={openTemplateId}
-          editingTemplateId={editingTemplateId}
-          editedTemplate={editedTemplate}
-          variables={variables}
-          variableValues={variableValues}
-          recipientEmail={recipientEmail}
-          handleAddSMSTemplate={handleAddSMSTemplate}
-          toggleTemplate={toggleTemplate}
-          startEditing={startEditing}
-          saveChanges={saveChanges}
-          cancelEditing={cancelEditing}
-          deleteSMSTemplate={deleteSMSTemplate}
-          handleEditChange={handleEditChange}
-          insertVariable={insertVariable}
-          extractVariables={extractVariables}
-          handleTryOut={handleTryOut}
-          tryOutMode={tryOutMode}
-          setTryOutMode={setTryOutMode}
-          formatEmailBody={formatEmailBody}
-          replaceVariables={replaceVariables}
-          handleVariableValueChange={handleVariableValueChange}
-          setRecipientEmail={setRecipientEmail}
-          handleSendSMS={handleSendSMS}
-          bodyTextareaRef={bodyTextareaRef}
-          setSelectedInput={setSelectedInput}
-        />
-      )}
-      {ToolsSelectedPage === 'Expense Manager' && (
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'flex-start',
-            alignItems: 'center',
-            flexDirection: 'column',
-            width: '100%',
-            maxWidth: '1200px',
-            margin: '0 auto',
-            height: '100%',
-          }}
-        >
+      {privileges.editExpenses ||
+      privileges.editEmailTemplates ||
+      privileges.editSmsTemplates ? (
+        <>{ToolsSelectedPage === 'EmailTemplates' && (
+          <EmailTemplates
+            emailTemplates={emailTemplates}
+            openTemplateId={openTemplateId}
+            editingTemplateId={editingTemplateId}
+            editedTemplate={editedTemplate}
+            variables={variables}
+            variableValues={variableValues}
+            recipientEmail={recipientEmail}
+            emailSendingwith={emailSendingwith}
+            handleAddEmailTemplate={handleAddEmailTemplate}
+            toggleTemplate={toggleTemplate}
+            startEditing={startEditing}
+            saveChanges={saveChanges}
+            cancelEditing={cancelEditing}
+            deleteEmailTemplate={deleteEmailTemplate}
+            handleEditChange={handleEditChange}
+            insertVariable={insertVariable}
+            extractVariables={extractVariables}
+            handleTryOut={handleTryOut}
+            tryOutMode={tryOutMode}
+            setTryOutMode={setTryOutMode}
+            formatEmailBody={formatEmailBody}
+            replaceVariables={replaceVariables}
+            handleVariableValueChange={handleVariableValueChange}
+            setRecipientEmail={setRecipientEmail}
+            handleSendEmail={handleSendEmail}
+            subjectInputRef={subjectInputRef}
+            bodyTextareaRef={bodyTextareaRef}
+            setSelectedInput={setSelectedInput}
+          />
+        )}
+  
+        {ToolsSelectedPage === 'SMSTemplates' && (
+          <SMSTemplates
+            smsTemplates={smsTemplates}
+            openTemplateId={openTemplateId}
+            editingTemplateId={editingTemplateId}
+            editedTemplate={editedTemplate}
+            variables={variables}
+            variableValues={variableValues}
+            recipientEmail={recipientEmail}
+            handleAddSMSTemplate={handleAddSMSTemplate}
+            toggleTemplate={toggleTemplate}
+            startEditing={startEditing}
+            saveChanges={saveChanges}
+            cancelEditing={cancelEditing}
+            deleteSMSTemplate={deleteSMSTemplate}
+            handleEditChange={handleEditChange}
+            insertVariable={insertVariable}
+            extractVariables={extractVariables}
+            handleTryOut={handleTryOut}
+            tryOutMode={tryOutMode}
+            setTryOutMode={setTryOutMode}
+            formatEmailBody={formatEmailBody}
+            replaceVariables={replaceVariables}
+            handleVariableValueChange={handleVariableValueChange}
+            setRecipientEmail={setRecipientEmail}
+            handleSendSMS={handleSendSMS}
+            bodyTextareaRef={bodyTextareaRef}
+            setSelectedInput={setSelectedInput}
+          />
+        )}
+        {ToolsSelectedPage === 'Expense Manager' && (
           <div
             style={{
               display: 'flex',
-              justifyContent: 'space-between',
+              justifyContent: 'flex-start',
               alignItems: 'center',
-              width: '500%',
-              maxWidth: '800px',
+              flexDirection: 'column',
+              width: '100%',
+              maxWidth: '1200px',
               margin: '0 auto',
+              height: '100%',
             }}
           >
-            <h2>Expense Manager</h2>
-            <button
-              onClick={() => {
-                setShowFilters(!showFilters);
-                if (showFilters) {
-                  resetFilters();
-                }
-              }}
-              style={{}}
-            >
-              {showFilters ? 'Hide Filters' : 'Show Filters'}
-            </button>
-            <button onClick={handleAddExpense}>Add Expense</button>
-          </div>
-          <div
-            style={{
-              marginBottom: '20px',
-              width: '90%',
-              display: 'flex',
-              gap: '10px',
-            }}
-          ></div>
-          {showFilters && (
             <div
               style={{
                 display: 'flex',
-                flexWrap: 'wrap',
-                gap: '10px',
-                marginBottom: '20px',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                width: '500%',
+                maxWidth: '800px',
+                margin: '0 auto',
               }}
             >
-              <div
-                style={{ display: 'flex', alignItems: 'center', flex: '1' }}
-              ></div>
+              <h2>Expense Manager</h2>
+              <button
+                onClick={() => {
+                  setShowFilters(!showFilters);
+                  if (showFilters) {
+                    resetFilters();
+                  }
+                }}
+                style={{}}
+              >
+                {showFilters ? 'Hide Filters' : 'Show Filters'}
+              </button>
+              <button onClick={handleAddExpense}>Add Expense</button>
             </div>
-          )}
-          <table className="expense-cards">
-            <thead>
-              <tr>
-                <th style={{ width: '5%' }}>
-                 
-                </th>
-                <th style={{ width: '30%' }}>
-                  {' '}
-                  {showFilters && (
-                    <input
-                      type="text"
-                      placeholder="Search expenses"
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      style={{ padding: '5px', width: '60%' }}
-                    />
-                  )}
-            
-                </th>
-                <th style={{ width: '10%' }}>
-                  {' '}
-                  {showFilters && (
-                    <>
-                      <input
-                        type="number"
-                        placeholder="Max Price"
-                        value={maxPrice}
-                        onChange={(e) =>
-                          setMaxPrice(
-                            e.target.value ? parseFloat(e.target.value) : ''
-                          )
-                        }
-                        style={{ flex: '1', padding: '5px', width: '80px' }}
-                      />
-                      <input
-                        type="number"
-                        placeholder="Min Price"
-                        value={minPrice}
-                        onChange={(e) =>
-                          setMinPrice(
-                            e.target.value ? parseFloat(e.target.value) : ''
-                          )
-                        }
-                        style={{ flex: '1', padding: '5px', width: '80px' }}
-                      />
-                    </>
-                  )}
-            
-                </th>
-                <th style={{ textAlign: 'center' }}>
-                  {showFilters && (
-                    <>
-                      <select
-                        value={fullBuildingFilter}
-                        onChange={(e) =>
-                          setFullBuildingFilter(
-                            e.target.value as 'yes' | 'no' | ''
-                          )
-                        }
-                        style={{ flex: '1', padding: '5px' }}
-                      >
-                        <option value="">Full Building</option>
-                        <option value="yes">Yes</option>
-                        <option value="no">No</option>
-                      </select>
-                      <br />
-                      <input
-                        type="text"
-                        placeholder="Floor"
-                        value={floorSearch}
-                        onChange={(e) => setFloorSearch(e.target.value)}
-                        style={{ flex: '1', padding: '5px', width: '40px' }}
-                      />{' '}
-                      <input
-                        type="text"
-                        placeholder="Room"
-                        value={roomSearch}
-                        onChange={(e) => setRoomSearch(e.target.value)}
-                        style={{ flex: '1', padding: '5px', width: '40px' }}
-                      />
-                    </>
-                  )}
-          
-                </th>
-                <th>
-                  {' '}
-                  {showFilters && (
-                    <>
-                      <select
-                        value={doesReoccurFilter}
-                        onChange={(e) =>
-                          setDoesReoccurFilter(
-                            e.target.value as 'yes' | 'no' | ''
-                          )
-                        }
-                        style={{ flex: '1', padding: '5px' }}
-                      >
-                        <option value="">Does Reoccur</option>
-                        <option value="yes">Yes</option>
-                        <option value="no">No</option>
-                      </select>
-                      <input
-                        type="text"
-                        placeholder="Reoccur every X days"
-                        value={reoccurDays}
-                        onChange={(e) => setReoccurDays(e.target.value)}
-                        style={{ flex: '1', padding: '5px', width: '150px' }}
-                      />
-                    </>
-                  )}
-            
-                </th>
-                <th>
-                  {showFilters && (
-                    <div style={{ display: 'flex', flexDirection: 'row' }}>
-                      <input
-                        type="date"
-                        value={dateFilter}
-                        onChange={(e) => setDateFilter(e.target.value)}
-                        style={{ flex: '1', padding: '5px' }}
-                      />
-                      <button
-                        onClick={() => setDateFilter('')}
-                        style={{
-                          padding: '5px',
-
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '5px',
-                          cursor: 'pointer',
-                          marginLeft: '5px',
-                        }}
-                      >
-                        X
-                      </button>
-                    </div>
-                  )}
-          
-                </th>
-               
-              </tr>
-              <tr>
-                <th style={{ width: '5%' }}>No.</th>
-                <th style={{ width: '30%' }}>Expense</th>
-                <th style={{ width: '10%' }}>
-                 Price
-                </th>
-                <th>
-                  
-                  Room
-                </th>
-                <th>
-                 Reoccur
-                </th>
-                <th>
-                
-                  Date
-                </th>
-                {editingExpenseId !== null && <th>Actions</th>}
-              </tr>
-            </thead>
-
-            <tbody>
-              {filteredExpenses.length === 0 ? (
+            <div
+              style={{
+                marginBottom: '20px',
+                width: '90%',
+                display: 'flex',
+                gap: '10px',
+              }}
+            ></div>
+            {showFilters && (
+              <div
+                style={{
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: '10px',
+                  marginBottom: '20px',
+                }}
+              >
+                <div
+                  style={{ display: 'flex', alignItems: 'center', flex: '1' }}
+                ></div>
+              </div>
+            )}
+            <table className="expense-cards">
+              <thead>
                 <tr>
-                  <td
-                    colSpan={editingExpenseId !== null ? 7 : 6}
-                    style={{ textAlign: 'center' }}
-                  >
-                    There are currently no expenses to display. Please add an expense or adjust your filters to see results.
-                  </td>
-                </tr>
-              ) : (
-                filteredExpenses.map((expense, index) => (
-                  <>
-                    <tr key={expense.id} className="expense-card">
-                      <td
-                        style={{
-                          borderRadius: '10px 0px 0px 10px',
-                          textAlign: 'center',
-                        }}
-                      >
-                        {index + 1}.
-                        <button
-                          className="email-template-buttons-button"
-                          onClick={() => handleEditExpenseClick(expense)}
+                  <th style={{ width: '5%' }}>
+                   
+                  </th>
+                  <th style={{ width: '30%' }}>
+                    {' '}
+                    {showFilters && (
+                      <input
+                        type="text"
+                        placeholder="Search expenses"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        style={{ padding: '5px', width: '60%' }}
+                      />
+                    )}
+              
+                  </th>
+                  <th style={{ width: '10%' }}>
+                    {' '}
+                    {showFilters && (
+                      <>
+                        <input
+                          type="number"
+                          placeholder="Max Price"
+                          value={maxPrice}
+                          onChange={(e) =>
+                            setMaxPrice(
+                              e.target.value ? parseFloat(e.target.value) : ''
+                            )
+                          }
+                          style={{ flex: '1', padding: '5px', width: '80px' }}
+                        />
+                        <input
+                          type="number"
+                          placeholder="Min Price"
+                          value={minPrice}
+                          onChange={(e) =>
+                            setMinPrice(
+                              e.target.value ? parseFloat(e.target.value) : ''
+                            )
+                          }
+                          style={{ flex: '1', padding: '5px', width: '80px' }}
+                        />
+                      </>
+                    )}
+              
+                  </th>
+                  <th style={{ textAlign: 'center' }}>
+                    {showFilters && (
+                      <>
+                        <select
+                          value={fullBuildingFilter}
+                          onChange={(e) =>
+                            setFullBuildingFilter(
+                              e.target.value as 'yes' | 'no' | ''
+                            )
+                          }
+                          style={{ flex: '1', padding: '5px' }}
                         >
-                          {editingExpenseId === expense.id ? 'Save' : 'Edit'}
+                          <option value="">Full Building</option>
+                          <option value="yes">Yes</option>
+                          <option value="no">No</option>
+                        </select>
+                        <br />
+                        <input
+                          type="text"
+                          placeholder="Floor"
+                          value={floorSearch}
+                          onChange={(e) => setFloorSearch(e.target.value)}
+                          style={{ flex: '1', padding: '5px', width: '40px' }}
+                        />{' '}
+                        <input
+                          type="text"
+                          placeholder="Room"
+                          value={roomSearch}
+                          onChange={(e) => setRoomSearch(e.target.value)}
+                          style={{ flex: '1', padding: '5px', width: '40px' }}
+                        />
+                      </>
+                    )}
+            
+                  </th>
+                  <th>
+                    {' '}
+                    {showFilters && (
+                      <>
+                        <select
+                          value={doesReoccurFilter}
+                          onChange={(e) =>
+                            setDoesReoccurFilter(
+                              e.target.value as 'yes' | 'no' | ''
+                            )
+                          }
+                          style={{ flex: '1', padding: '5px' }}
+                        >
+                          <option value="">Does Reoccur</option>
+                          <option value="yes">Yes</option>
+                          <option value="no">No</option>
+                        </select>
+                        <input
+                          type="text"
+                          placeholder="Reoccur every X days"
+                          value={reoccurDays}
+                          onChange={(e) => setReoccurDays(e.target.value)}
+                          style={{ flex: '1', padding: '5px', width: '150px' }}
+                        />
+                      </>
+                    )}
+              
+                  </th>
+                  <th>
+                    {showFilters && (
+                      <div style={{ display: 'flex', flexDirection: 'row' }}>
+                        <input
+                          type="date"
+                          value={dateFilter}
+                          onChange={(e) => setDateFilter(e.target.value)}
+                          style={{ flex: '1', padding: '5px' }}
+                        />
+                        <button
+                          onClick={() => setDateFilter('')}
+                          style={{
+                            padding: '5px',
+  
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '5px',
+                            cursor: 'pointer',
+                            marginLeft: '5px',
+                          }}
+                        >
+                          X
                         </button>
-                      </td>
-                      <td>
-                        {editingExpenseId === expense.id ? (
-                          <textarea
-                            value={editedExpense?.name || ''}
-                            onChange={(e) =>
-                              handleEditExpenseChange('name', e.target.value)
-                            }
-                            style={{
-                              width: '95%',
-                              padding: '5px',
-                              border: '1px solid var(--Secondary-Color)',
-                              backgroundColor: 'var(--Background-Color)',
-                              color: 'var(--Text-Color)',
-                              resize: 'vertical',
-                              maxHeight: '100px',
-                            }}
-                          />
-                        ) : (
-                          expense.name
-                        )}
-                      </td>
-                      <td style={{}}>
-                        {editingExpenseId === expense.id ? (
-                          <>
-                            $
-                            <input
-                              type="number"
-                              value={editedExpense?.price || 0}
-                              onChange={(e) =>
-                                handleEditExpenseChange(
-                                  'price',
-                                  parseFloat(e.target.value)
-                                )
-                              }
-                              style={{ width: '70%' }}
-                            />
-                          </>
-                        ) : (
-                          `$${expense.price.toLocaleString() || 0}`
-                        )}
-                      </td>
-                      <td>
-                        {editingExpenseId === expense.id ? (
-                          <div
-                            style={{ display: 'flex', flexDirection: 'column' }}
+                      </div>
+                    )}
+            
+                  </th>
+                 
+                </tr>
+                <tr>
+                  <th style={{ width: '5%' }}>No.</th>
+                  <th style={{ width: '30%' }}>Expense</th>
+                  <th style={{ width: '10%' }}>
+                   Price
+                  </th>
+                  <th>
+                    
+                    Room
+                  </th>
+                  <th>
+                   Reoccur
+                  </th>
+                  <th>
+                  
+                    Date
+                  </th>
+                  {editingExpenseId !== null && <th>Actions</th>}
+                </tr>
+              </thead>
+  
+              <tbody>
+                {filteredExpenses.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={editingExpenseId !== null ? 7 : 6}
+                      style={{ textAlign: 'center' }}
+                    >
+                      There are currently no expenses to display. Please add an expense or adjust your filters to see results.
+                    </td>
+                  </tr>
+                ) : (
+                  filteredExpenses.map((expense, index) => (
+                    <>
+                      <tr key={expense.id} className="expense-card">
+                        <td
+                          style={{
+                            borderRadius: '10px 0px 0px 10px',
+                            textAlign: 'center',
+                          }}
+                        >
+                          {index + 1}.
+                          <button
+                            className="email-template-buttons-button"
+                            onClick={() => handleEditExpenseClick(expense)}
                           >
-                            <label>
-                              Full building:
+                            {editingExpenseId === expense.id ? 'Save' : 'Edit'}
+                          </button>
+                        </td>
+                        <td>
+                          {editingExpenseId === expense.id ? (
+                            <textarea
+                              value={editedExpense?.name || ''}
+                              onChange={(e) =>
+                                handleEditExpenseChange('name', e.target.value)
+                              }
+                              style={{
+                                width: '95%',
+                                padding: '5px',
+                                border: '1px solid var(--Secondary-Color)',
+                                backgroundColor: 'var(--Background-Color)',
+                                color: 'var(--Text-Color)',
+                                resize: 'vertical',
+                                maxHeight: '100px',
+                              }}
+                            />
+                          ) : (
+                            expense.name
+                          )}
+                        </td>
+                        <td style={{}}>
+                          {editingExpenseId === expense.id ? (
+                            <>
+                              $
                               <input
-                                type="checkbox"
-                                checked={editedExpense?.fullBuilding || false}
+                                type="number"
+                                value={editedExpense?.price || 0}
                                 onChange={(e) =>
                                   handleEditExpenseChange(
-                                    'fullBuilding',
+                                    'price',
+                                    parseFloat(e.target.value)
+                                  )
+                                }
+                                style={{ width: '70%' }}
+                              />
+                            </>
+                          ) : (
+                            `$${expense.price.toLocaleString() || 0}`
+                          )}
+                        </td>
+                        <td>
+                          {editingExpenseId === expense.id ? (
+                            <div
+                              style={{ display: 'flex', flexDirection: 'column' }}
+                            >
+                              <label>
+                                Full building:
+                                <input
+                                  type="checkbox"
+                                  checked={editedExpense?.fullBuilding || false}
+                                  onChange={(e) =>
+                                    handleEditExpenseChange(
+                                      'fullBuilding',
+                                      e.target.checked
+                                    )
+                                  }
+                                />
+                              </label>
+                              {!editedExpense?.fullBuilding && (
+                                <div
+                                  style={{
+                                    display: 'flex',
+                                    flexDirection: 'row',
+                                  }}
+                                >
+                                  <label>
+                                    Floor:
+                                    <input
+                                      type="text"
+                                      value={editedExpense?.floor || ''}
+                                      onChange={(e) =>
+                                        handleEditExpenseChange(
+                                          'floor',
+                                          parseInt(e.target.value, 10)
+                                        )
+                                      }
+                                      style={{
+                                        width: '35px',
+                                        marginRight: '10px',
+                                      }}
+                                    />
+                                  </label>
+                                  <label>
+                                    Room:
+                                    <input
+                                      type="text"
+                                      value={editedExpense?.room || ''}
+                                      onChange={(e) =>
+                                        handleEditExpenseChange(
+                                          'room',
+                                          parseInt(e.target.value)
+                                        )
+                                      }
+                                      style={{ width: '35px' }}
+                                    />
+                                  </label>
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <div
+                              style={{ display: 'flex', flexDirection: 'column' }}
+                            >
+                              <div>
+                                Full building:{' '}
+                                <em>{expense.fullBuilding ? 'Yes' : 'No'}</em>
+                              </div>
+                              {!expense.fullBuilding && (
+                                <div
+                                  style={{
+                                    display: 'flex',
+                                    flexDirection: 'row',
+                                  }}
+                                >
+                                  {' '}
+                                  <div style={{ marginRight: '10px' }}>
+                                    Floor. <em>{expense.floor || 'N/A'}</em>
+                                  </div>
+                                  <div>
+                                    Room. <em>{expense.room || 'N/A'}</em>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </td>
+                        <td>
+                          {editingExpenseId === expense.id ? (
+                            <>
+                              Does reoccur:{' '}
+                              <input
+                                type="checkbox"
+                                checked={editedExpense?.doesReoccur || false}
+                                name=""
+                                id=""
+                                onChange={(e) =>
+                                  handleEditExpenseChange(
+                                    'doesReoccur',
                                     e.target.checked
                                   )
                                 }
                               />
-                            </label>
-                            {!editedExpense?.fullBuilding && (
-                              <div
-                                style={{
-                                  display: 'flex',
-                                  flexDirection: 'row',
-                                }}
-                              >
-                                <label>
-                                  Floor:
-                                  <input
-                                    type="text"
-                                    value={editedExpense?.floor || ''}
-                                    onChange={(e) =>
-                                      handleEditExpenseChange(
-                                        'floor',
-                                        parseInt(e.target.value, 10)
-                                      )
-                                    }
-                                    style={{
-                                      width: '35px',
-                                      marginRight: '10px',
-                                    }}
-                                  />
-                                </label>
-                                <label>
-                                  Room:
-                                  <input
-                                    type="text"
-                                    value={editedExpense?.room || ''}
-                                    onChange={(e) =>
-                                      handleEditExpenseChange(
-                                        'room',
-                                        parseInt(e.target.value)
-                                      )
-                                    }
-                                    style={{ width: '35px' }}
-                                  />
-                                </label>
-                              </div>
-                            )}
-                          </div>
-                        ) : (
-                          <div
-                            style={{ display: 'flex', flexDirection: 'column' }}
-                          >
-                            <div>
-                              Full building:{' '}
-                              <em>{expense.fullBuilding ? 'Yes' : 'No'}</em>
-                            </div>
-                            {!expense.fullBuilding && (
-                              <div
-                                style={{
-                                  display: 'flex',
-                                  flexDirection: 'row',
-                                }}
-                              >
-                                {' '}
-                                <div style={{ marginRight: '10px' }}>
-                                  Floor. <em>{expense.floor || 'N/A'}</em>
-                                </div>
+                              {editedExpense?.doesReoccur && (
                                 <div>
-                                  Room. <em>{expense.room || 'N/A'}</em>
+                                  Every{' '}
+                                  <input
+                                    type="text"
+                                    value={editedExpense?.recurringCycle || ''}
+                                    onChange={(e) =>
+                                      handleEditExpenseChange(
+                                        'recurringCycle',
+                                        e.target.value
+                                      )
+                                    }
+                                    style={{ width: '40px' }}
+                                  />{' '}
+                                  Day
+                                  {editedExpense?.recurringCycle !== 1 ? 's' : ''}
                                 </div>
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </td>
-                      <td>
-                        {editingExpenseId === expense.id ? (
-                          <>
-                            Does reoccur:{' '}
+                              )}
+                            </>
+                          ) : expense.doesReoccur ? (
+                            `Every ${expense.recurringCycle} Day${
+                              expense.recurringCycle !== 1 ? 's' : ''
+                            }`
+                          ) : (
+                            'One Time'
+                          )}
+                        </td>
+                        <td
+                          style={{
+                            borderRadius:
+                              editingExpenseId === expense.id
+                                ? '0px 0px 0px 0px'
+                                : '0px 10px 10px 0px',
+                          }}
+                        >
+                          {editingExpenseId === expense.id ? (
                             <input
-                              type="checkbox"
-                              checked={editedExpense?.doesReoccur || false}
-                              name=""
-                              id=""
+                              type="date"
+                              value={
+                                new Date(editedExpense?.date || Date.now())
+                                  .toISOString()
+                                  .split('T')[0]
+                              }
                               onChange={(e) =>
                                 handleEditExpenseChange(
-                                  'doesReoccur',
-                                  e.target.checked
+                                  'date',
+                                  new Date(e.target.value).getTime()
                                 )
                               }
+                              style={{ width: '100%' }}
                             />
-                            {editedExpense?.doesReoccur && (
-                              <div>
-                                Every{' '}
-                                <input
-                                  type="text"
-                                  value={editedExpense?.recurringCycle || ''}
-                                  onChange={(e) =>
-                                    handleEditExpenseChange(
-                                      'recurringCycle',
-                                      e.target.value
-                                    )
-                                  }
-                                  style={{ width: '40px' }}
-                                />{' '}
-                                Day
-                                {editedExpense?.recurringCycle !== 1 ? 's' : ''}
-                              </div>
-                            )}
-                          </>
-                        ) : expense.doesReoccur ? (
-                          `Every ${expense.recurringCycle} Day${
-                            expense.recurringCycle !== 1 ? 's' : ''
-                          }`
-                        ) : (
-                          'One Time'
-                        )}
-                      </td>
-                      <td
-                        style={{
-                          borderRadius:
-                            editingExpenseId === expense.id
-                              ? '0px 0px 0px 0px'
-                              : '0px 10px 10px 0px',
-                        }}
-                      >
-                        {editingExpenseId === expense.id ? (
-                          <input
-                            type="date"
-                            value={
-                              new Date(editedExpense?.date || Date.now())
-                                .toISOString()
-                                .split('T')[0]
-                            }
-                            onChange={(e) =>
-                              handleEditExpenseChange(
-                                'date',
-                                new Date(e.target.value).getTime()
-                              )
-                            }
-                            style={{ width: '100%' }}
-                          />
-                        ) : (
-                          new Date(expense.date).toDateString()
-                        )}
-                      </td>
-                      {editingExpenseId === expense.id && (
-                        <td style={{ borderRadius: '0px 10px 10px 0px' }}>
-                          <button
-                            style={{
-                              backgroundColor: 'red',
-                              color: 'white',
-                            }}
-                            onClick={() => handleDeleteExpense(expense.id)}
-                          >
-                            Delete
-                          </button>
+                          ) : (
+                            new Date(expense.date).toDateString()
+                          )}
                         </td>
-                      )}
-                    </tr>
-                    <tr style={{ height: '10px' }}></tr>
-                  </>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
+                        {editingExpenseId === expense.id && (
+                          <td style={{ borderRadius: '0px 10px 10px 0px' }}>
+                            <button
+                              style={{
+                                backgroundColor: 'red',
+                                color: 'white',
+                              }}
+                              onClick={() => handleDeleteExpense(expense.id)}
+                            >
+                              Delete
+                            </button>
+                          </td>
+                        )}
+                      </tr>
+                      <tr style={{ height: '10px' }}></tr>
+                    </>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}</>
+      ) : (
+        <>Non of the pages are allowed</>)
+}
     </>
   );
 };

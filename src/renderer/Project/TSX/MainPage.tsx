@@ -1598,27 +1598,28 @@ const MainPage = ({
             </>
           ) : SelectedPage === 'Tools' ? (
             <>
-              <SideBarItem
+              {privileges.editEmailTemplates && <SideBarItem
                 page="EmailTemplates"
                 currentPage={ToolsSelectedPage}
                 onClick={() => setToolsSelectedPage('EmailTemplates')}
               >
                 Email Templates
-              </SideBarItem>
-              <SideBarItem
+              </SideBarItem>}
+              {privileges.editSmsTemplates &&  <SideBarItem
                 page="SMSTemplates"
                 currentPage={ToolsSelectedPage}
                 onClick={() => setToolsSelectedPage('SMSTemplates')}
               >
                 SMS Templates
-              </SideBarItem>
-              <SideBarItem
+              </SideBarItem>}
+             {privileges.editExpenses && <SideBarItem
                 page="Expense Manager"
                 currentPage={ToolsSelectedPage}
                 onClick={() => setToolsSelectedPage('Expense Manager')}
               >
                 Expense Manager
-              </SideBarItem>
+              </SideBarItem>}
+              
             </>
           ) : SelectedPage === 'Dashboard' ? (
             <>
@@ -1992,6 +1993,7 @@ const MainPage = ({
             <ToolsPage
               ToolsSelectedPage={ToolsSelectedPage}
               setToolsSelectedPage={setToolsSelectedPage}
+              SelectedAppUser={SelectedAppUser}
               setChangeMade={setChangeMade}
               SelectedUserId={SelectedUserId}
             />

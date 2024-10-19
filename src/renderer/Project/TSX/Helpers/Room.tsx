@@ -56,7 +56,8 @@ const Room = ({
   updateRoomPropertyLocal,
   agreementApi,
   setChangeMade,
-  SelectedUserId,SelectedAppUser
+  SelectedUserId,
+  SelectedAppUser,
 }: {
   roomType: RoomType;
   updateRoomProperty: any;
@@ -79,12 +80,20 @@ const Room = ({
   agreementApi: any;
   setChangeMade: any;
   SelectedUserId: any;
-  SelectedAppUser:any;
+  SelectedAppUser: any;
 }) => {
   const handleAddTenant = () => {
     turnOffAddTenantStateForAll();
-    updateRoomProperty(roomType.id, 'AddTenantState', !roomType.AddTenantState);
-  };  const privileges = useMemo(() => getUserPrivileges(SelectedAppUser), [SelectedAppUser]);
+    updateRoomPropertyLocal(
+      roomType.id,
+      'AddTenantState',
+      !roomType.AddTenantState
+    );
+  };
+  const privileges = useMemo(
+    () => getUserPrivileges(SelectedAppUser),
+    [SelectedAppUser]
+  );
 
   const [name, setName] = useState('');
   const [tel1, setTel1] = useState('');
@@ -228,7 +237,7 @@ const Room = ({
       'tenantId',
       SelectedTenantIdOnAdding
     );
-    updateRoomProperty(roomType.id, 'AddTenantState', 0);
+    updateRoomPropertyLocal(roomType.id, 'AddTenantState', 0);
 
     if (!roomType.AllRoomPayInfo) {
       roomType.AllRoomPayInfo = {
@@ -381,7 +390,7 @@ const Room = ({
       );
       updateRoomPropertyWithOutRefresh(roomType.id, 'AgreedPrice', agreedPrice);
       updateRoomPropertyWithOutRefresh(roomType.id, 'tenantId', tenantId);
-      updateRoomProperty(roomType.id, 'AddTenantState', 0);
+      updateRoomPropertyLocal(roomType.id, 'AddTenantState', 0);
       updateRoomProperty(
         roomType.id,
         'Price',
@@ -440,46 +449,7 @@ const Room = ({
       }
       console.log('reached1');
 
-      if (selectedAgreement === 'Fixed-Term') {
-        const startDate = new Date(startTime);
-        const endDate = new Date(endTime);
-        let currentDate = new Date(startDate);
-
-        while (currentDate <= endDate) {
-          roomPaymentInfoApi.addRoomPaymentApiWithOutRefresh(
-            uuidv4(),
-            roomType.id,
-            currentDate.getTime(),
-            false,
-            agreedPrice
-          );
-
-          if (paymentCycle === 'monthly') {
-            currentDate.setMonth(currentDate.getMonth() + 1);
-          } else {
-            currentDate.setDate(currentDate.getDate() + interval);
-          }
-        }
-      } else {
-        for (let i = 0; i < 10; i++) {
-          console.log('reached');
-
-          const paymentDay = getPaymentDay(
-            interval,
-            new Date(startTime),
-            i,
-            paymentCycle
-          );
-
-          roomPaymentInfoApi.addRoomPaymentApiWithOutRefresh(
-            uuidv4(),
-            roomType.id,
-            paymentDay.getTime(),
-            false,
-            agreedPrice
-          );
-        }
-      }
+      
 
       if (AddTenantUseBrokerState) {
         brokersRecommendationListApi.AddBrokerRecommendation(
@@ -556,11 +526,10 @@ const Room = ({
     );
   };
   const checkPaymentStatus = (allRoomPayInfo?: any): string => {
-  
     if (roomType.DaysTillNextPayment > 0) {
       return `Payment due in ${roomType.DaysTillNextPayment} days. ${addDays(
         new Date(),
-        roomType.DaysTillNextPayment+1
+        roomType.DaysTillNextPayment + 1
       ).toLocaleDateString('en-US', {
         month: 'short',
         day: 'numeric',
@@ -648,38 +617,50 @@ const Room = ({
   const [SelectedTenantIdOnAdding, setSelectedTenantIdOnAdding] = useState('');
   const handleTenantLeft = async () => {
     try {
-      // Get the current agreement for the room
-      const [currentAgreement] = await getValuesWithSql(
-        'agreements',
-        `WHERE roomId = '${roomType.id}' AND tenantId = '${roomType.tenantId}' ORDER BY startTime DESC LIMIT 1`
+     
+      // Update the room's tenant information
+      await updateValue(
+        'rooms',
+        roomType.id,
+        'tenantId',
+        '',
+        setChangeMade,
+        0
+      );
+      await updateValue(
+        'rooms',
+        roomType.id,
+        'selectedAgreementId',
+        '',
+        setChangeMade,
+        0
       );
 
-      if (currentAgreement) {
-        // Get all payments for this agreement
-        const payments = await getValuesWithSql(
-          'room_pay_info',
-          `WHERE roomId = '${roomType.id}' AND Day >= ${currentAgreement.startTime} AND Day <= ${Date.now()}`
-        );
-
-        // Add these payments to the historical payments table
-        for (const payment of payments) {
-          await addValue('room_pay_info_history', {
-            ...payment,
-            agreementId: currentAgreement.id
-          }, setChangeMade);  await deleteValue('room_pay_info', payment.id,setChangeMade);
-        }
-
-        // Now delete the payments from the room_pay_info table
-      
-      }
-
-      // Update the room's tenant information
-      await updateValue('rooms', roomType.id, 'tenantId', null, setChangeMade, 0);
-      await updateValue('rooms', roomType.id, 'selectedAgreementId', null, setChangeMade, 0);
-
       // Update the tenant's information
-      await updateValue('tenants', roomType.tenantId, 'roomId', null, setChangeMade, 0);
-      await updateValue('tenants', roomType.tenantId, 'SelectedAgreement', null, setChangeMade, 0);
+      await updateValue(
+        'tenants',
+        roomType.tenantId,
+        'roomId',
+        '',
+        setChangeMade,
+        0
+      );
+      await updateValue(
+        'tenants',
+        roomType.tenantId,
+        'RentingOrOut',
+        0,
+        setChangeMade,
+        0
+      );
+      await updateValue(
+        'tenants',
+        roomType.tenantId,
+        'SelectedAgreement',
+        '',
+        setChangeMade,
+        0
+      );
 
       // Additional logic from the original function
       const allPayInfos = await getValuesWithSql(
@@ -765,11 +746,40 @@ const Room = ({
         }
 
       // Reset the room's AddTenantState
-      updateRoomProperty(roomType.id, 'AddTenantState', 0);
-      updateRoomProperty(roomType.id, 'ViewAgreement', 0);
+      updateRoomPropertyLocal(roomType.id, 'AddTenantState', 0);
+      updateRoomPropertyLocal(roomType.id, 'ViewAgreement', 0);
+ // Get the current agreement for the room
+ const [currentAgreement] = await getValuesWithSql(
+  'agreements',
+  `WHERE roomId = '${roomType.id}' AND tenantId = '${roomType.tenantId}' ORDER BY startTime DESC LIMIT 1`
+);
+
+if (currentAgreement) {
+  // Get all payments for this agreement
+  const payments = await getValuesWithSql(
+    'room_pay_info',
+    `WHERE roomId = '${roomType.id}' AND Day >= ${
+      currentAgreement.startTime
+    } AND Day <= ${Date.now()}`
+  );
+
+  // Add these payments to the historical payments table
+  for (const payment of payments) {
+    await addValue(
+      'room_pay_info_history',
+      {
+        ...payment,
+        agreementId: currentAgreement.id,
+      },
+      setChangeMade
+    );
+    await deleteValue('room_pay_info', payment.id, setChangeMade);
+  }
+
+  // Now delete the payments from the room_pay_info table
+}
 
       setTenantLeavePannelState(false);
-
     } catch (error) {
       console.error('Error in handleTenantLeft:', error);
     }
@@ -1112,27 +1122,33 @@ const Room = ({
         <div className="FirstLine">
           <div style={{ display: 'flex' }}>
             <p className="FloorText">Floor {roomType.floor}</p>{' '}
-            {privileges.editRoomData ? <><img
-              onClick={() => {
-                setSelectedEditRoomId(roomType.id);
-              }}
-              src={EditIcon}
-              style={{ width: '23px', height: '23px', marginLeft: '10px' }}
-              alt=""
-            />
-            {roomType.status === 'Empty' && (
-              <button
-                onClick={() => {
-                  updateRoomProperty(
-                    roomType.id,
-                    'Archived',
-                    !roomType.Archived
-                  );
-                }}
-              >
-                {roomType.Archived ? 'Unarchive' : 'Archive'}
-              </button>
-            )}</>:<></>}
+            {privileges.editRoomData ? (
+              <>
+                <img
+                  onClick={() => {
+                    setSelectedEditRoomId(roomType.id);
+                  }}
+                  src={EditIcon}
+                  style={{ width: '23px', height: '23px', marginLeft: '10px' }}
+                  alt=""
+                />
+                {roomType.status === 'Empty' && (
+                  <button
+                    onClick={() => {
+                      updateRoomProperty(
+                        roomType.id,
+                        'Archived',
+                        !roomType.Archived
+                      );
+                    }}
+                  >
+                    {roomType.Archived ? 'Unarchive' : 'Archive'}
+                  </button>
+                )}
+              </>
+            ) : (
+              <></>
+            )}
           </div>
           <p className="RoomText">Room {roomType.roomIndex}</p>
 
@@ -1169,32 +1185,40 @@ const Room = ({
                   <>
                     {roomType.AddTenantState ? (
                       <>
-                        {privileges.addTenant ? <strong
-                          style={{
-                            fontWeight: '600',
-                            fontSize: '17px',
-                            borderBottom: '1px solid white',
-                          }}
-                          onClick={() => {
-                            /* TO DO */ handleAddTenant();
-                          }}
-                        >
-                          Add tenant
-                        </strong>:<></>}
+                        {privileges.addTenant ? (
+                          <strong
+                            style={{
+                              fontWeight: '600',
+                              fontSize: '17px',
+                              borderBottom: '1px solid white',
+                            }}
+                            onClick={() => {
+                              /* TO DO */ handleAddTenant();
+                            }}
+                          >
+                            Add tenant
+                          </strong>
+                        ) : (
+                          <></>
+                        )}
                       </>
                     ) : (
                       <>
-                        {privileges.addTenant ? <em
-                          style={{
-                            fontWeight: '400',
-                            borderBottom: '1px solid white',
-                          }}
-                          onClick={() => {
-                            /* TO DO */ handleAddTenant();
-                          }}
-                        >
-                          Add tenant
-                        </em>:<></>}
+                        {privileges.addTenant ? (
+                          <em
+                            style={{
+                              fontWeight: '400',
+                              borderBottom: '1px solid white',
+                            }}
+                            onClick={() => {
+                              /* TO DO */ handleAddTenant();
+                            }}
+                          >
+                            Add tenant
+                          </em>
+                        ) : (
+                          <></>
+                        )}
                       </>
                     )}
                   </>
@@ -1232,7 +1256,7 @@ const Room = ({
                   </>
                 ) : (
                   <>
-                    {privileges.viewTenantAgreementPanel ? <em
+                    <em
                       style={{
                         fontSize: '16px',
                         display: 'flex',
@@ -1261,7 +1285,7 @@ const Room = ({
                       >
                         View Agreement
                       </button>
-                    </em>:<></>}
+                    </em>
                   </>
                 )
               ) : (
@@ -1338,41 +1362,48 @@ const Room = ({
                 )}
               </p>
               <div style={{ display: 'flex', alignItems: 'center' }}>
-               {privileges.editRoomPayment ? <button
-                  className="PageNavigatorButtonSelected"
-                  ref={hideButtonRef}
-                  style={{ borderBottom: '1px solid grey', width: '100px' }}
-                  onClick={() => {
-                    turnOffViewStateForAll();
-                    updateRoomPropertyLocal(
-                      roomType.id,
-                      'ShowPayTimeLine',
-                      !roomType.ShowPayTimeLine
-                    );
-                  }}
-                >
-                  {roomType.ShowPayTimeLine ? 'Hide' : 'Rent'}
-                </button>:<></>} 
-                {privileges.editUtilityPayments ? <button
-                  style={{
-                    borderBottom: '1px solid grey',
-                    borderTop: '2px solid var(--Primary-Color)',
-                    height: '35px',
-                  }}
-                  ref={utilityShowerRefHider}
-                  onClick={() => {
-                    turnOffViewStateForAll();
+                {privileges.editRoomPayment ? (
+                  <button
+                    className="PageNavigatorButtonSelected"
+                    ref={hideButtonRef}
+                    style={{ borderBottom: '1px solid grey', width: '100px' }}
+                    onClick={() => {
+                      turnOffViewStateForAll();
+                      updateRoomPropertyLocal(
+                        roomType.id,
+                        'ShowPayTimeLine',
+                        !roomType.ShowPayTimeLine
+                      );
+                    }}
+                  >
+                    {roomType.ShowPayTimeLine ? 'Hide' : 'Rent'}
+                  </button>
+                ) : (
+                  <></>
+                )}
+                {privileges.editUtilityPayments ? (
+                  <button
+                    style={{
+                      borderBottom: '1px solid grey',
+                      borderTop: '2px solid var(--Primary-Color)',
+                      height: '35px',
+                    }}
+                    ref={utilityShowerRefHider}
+                    onClick={() => {
+                      turnOffViewStateForAll();
 
-                    updateRoomPropertyLocal(
-                      roomType.id,
-                      'ShowUtilityLine',
-                      !roomType.ShowUtilityLine
-                    );
-                  }}
-                >
-                  {roomType.ShowUtilityLine ? 'Hide' : 'Utility'}
-                </button> : <></>}
-                
+                      updateRoomPropertyLocal(
+                        roomType.id,
+                        'ShowUtilityLine',
+                        !roomType.ShowUtilityLine
+                      );
+                    }}
+                  >
+                    {roomType.ShowUtilityLine ? 'Hide' : 'Utility'}
+                  </button>
+                ) : (
+                  <></>
+                )}
               </div>
             </div>
           )}
@@ -2497,7 +2528,11 @@ const Room = ({
                       setStartTime('');
                       setEndTime('');
                       setAgreedPrice(0);
-                      updateRoomProperty(roomType.id, 'AddTenantState', false);
+                      updateRoomPropertyLocal(
+                        roomType.id,
+                        'AddTenantState',
+                        false
+                      );
                     }}
                   >
                     Cancel
@@ -2544,419 +2579,476 @@ const Room = ({
                   }}
                 >
                   {/* Tenant Information Section */}
-                  <CollapsibleSection
-                    title="Tenant Information"
-                    content={
-                      <>
-                        <InfoItem
-                          label="Name"
-                          value={
-                            TenantList.find(
-                              (tenant: any) => tenant.id === roomType.tenantId
-                            )?.name || ''
-                          }
-                          onSave={(newValue) =>
-                            editTenantInfo('name', newValue)
-                          }
-                        />
-                        <InfoItem2
-                          label="Tel 1"
-                          value={
-                            TenantList.find(
-                              (tenant: any) => tenant.id === roomType.tenantId
-                            )?.phoneNumber || ''
-                          }
-                          onSave={(newValue) =>
-                            editTenantInfo('phoneNumber', newValue)
-                          }
-                        />
-                        <InfoItem2
-                          label="Tel 2"
-                          value={
-                            TenantList.find(
-                              (tenant: any) => tenant.id === roomType.tenantId
-                            )?.phoneNumber2 || ''
-                          }
-                          onSave={(newValue) =>
-                            editTenantInfo('phoneNumber2', newValue)
-                          }
-                        />
-                        <InfoItem2
-                          label="Email"
-                          value={
-                            TenantList.find(
-                              (tenant: any) => tenant.id === roomType.tenantId
-                            )?.email || ''
-                          }
-                          onSave={(newValue) =>
-                            editTenantInfo('email', newValue)
-                          }
-                        />
-                        <InfoItem2
-                          label="TIN"
-                          value={
-                            TenantList.find(
-                              (tenant: any) => tenant.id === roomType.tenantId
-                            )?.TIN || ''
-                          }
-                          onSave={(newValue) => editTenantInfo('TIN', newValue)}
-                        />
-                        <InfoItem2
-                          label="Rent Reason"
-                          value={
-                            TenantList.find(
-                              (tenant: any) => tenant.id === roomType.tenantId
-                            )?.RentReason || ''
-                          }
-                          onSave={(newValue) =>
-                            editTenantInfo('RentReason', newValue)
-                          }
-                        />
-                      </>
-                    }
-                    isOpen={sectionStates.tenantInformation}
-                    onToggle={() =>
-                      setSectionStates((prev) => ({
-                        ...prev,
-                        tenantInformation: !prev.tenantInformation,
-                      }))
-                    }
-                  />
 
-                  {/* Agreement Information Section */}
-                  <div
-                    style={{
-                      width: '93%',
-                      background: 'var(--Secondary-Color30)',
-                      padding: '5px',
-                      marginBottom: '10px',
-                      borderRadius: '5px',
-                    }}
-                  >
-                    <div
-                      style={{
-                        fontSize: '18px',
-                        fontWeight: 'bold',
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        cursor: 'pointer',
-                      }}
-                      onClick={() =>
-                        setSectionStates((prev) => ({
-                          ...prev,
-                          agreementInformation: !prev.agreementInformation,
-                        }))
-                      }
-                    >
-                      <span style={{ marginBottom: '10px' }}>
-                        {sectionStates.agreementInformation ? '▼' : '▶'}{' '}
-                        Agreement Information
-                      </span>
-                    </div>
-                    {sectionStates.agreementInformation && (
-                      <>
-                        {renderInfoItem(
-                          'Agreement type',
-                          TenantList.find(
-                            (tenant: any) => tenant.id === roomType.tenantId
-                          )?.SelectedAgreement
-                        )}
-                        {TenantList.find(
-                          (tenant: any) => tenant.id === roomType.tenantId
-                        )?.SelectedAgreement !== 'Fixed-Term' ? (
+                  {privileges.editTenantRoomTenantInfo ? (
+                    <>
+                      <CollapsibleSection
+                        title="Tenant Information"
+                        content={
                           <>
-                            {renderInfoItem(
-                              'Start time',
-                              new Date(
+                            <InfoItem
+                              label="Name"
+                              value={
                                 TenantList.find(
                                   (tenant: any) =>
                                     tenant.id === roomType.tenantId
-                                )?.startTime
-                              ).toDateString(),
-                              toEthiopianDateString(
-                                new Date(
+                                )?.name || ''
+                              }
+                              onSave={(newValue) =>
+                                editTenantInfo('name', newValue)
+                              }
+                            />
+                            <InfoItem2
+                              label="Tel 1"
+                              value={
+                                TenantList.find(
+                                  (tenant: any) =>
+                                    tenant.id === roomType.tenantId
+                                )?.phoneNumber || ''
+                              }
+                              onSave={(newValue) =>
+                                editTenantInfo('phoneNumber', newValue)
+                              }
+                            />
+                            <InfoItem2
+                              label="Tel 2"
+                              value={
+                                TenantList.find(
+                                  (tenant: any) =>
+                                    tenant.id === roomType.tenantId
+                                )?.phoneNumber2 || ''
+                              }
+                              onSave={(newValue) =>
+                                editTenantInfo('phoneNumber2', newValue)
+                              }
+                            />
+                            <InfoItem2
+                              label="Email"
+                              value={
+                                TenantList.find(
+                                  (tenant: any) =>
+                                    tenant.id === roomType.tenantId
+                                )?.email || ''
+                              }
+                              onSave={(newValue) =>
+                                editTenantInfo('email', newValue)
+                              }
+                            />
+                            <InfoItem2
+                              label="TIN"
+                              value={
+                                TenantList.find(
+                                  (tenant: any) =>
+                                    tenant.id === roomType.tenantId
+                                )?.TIN || ''
+                              }
+                              onSave={(newValue) =>
+                                editTenantInfo('TIN', newValue)
+                              }
+                            />
+                            <InfoItem2
+                              label="Rent Reason"
+                              value={
+                                TenantList.find(
+                                  (tenant: any) =>
+                                    tenant.id === roomType.tenantId
+                                )?.RentReason || ''
+                              }
+                              onSave={(newValue) =>
+                                editTenantInfo('RentReason', newValue)
+                              }
+                            />
+                          </>
+                        }
+                        isOpen={sectionStates.tenantInformation}
+                        onToggle={() =>
+                          setSectionStates((prev) => ({
+                            ...prev,
+                            tenantInformation: !prev.tenantInformation,
+                          }))
+                        }
+                      />
+                    </>
+                  ) : (
+                    <>edit tenant room tenant info LOCKED<br></br></>
+                  )}
+                  {privileges.editTenantRoomAgreementInfo ? (
+                    <>
+                      {/* Agreement Information Section */}
+                      <div
+                        style={{
+                          width: '93%',
+                          background: 'var(--Secondary-Color30)',
+                          padding: '5px',
+                          marginBottom: '10px',
+                          borderRadius: '5px',
+                        }}
+                      >
+                        <div
+                          style={{
+                            fontSize: '18px',
+                            fontWeight: 'bold',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            cursor: 'pointer',
+                          }}
+                          onClick={() =>
+                            setSectionStates((prev) => ({
+                              ...prev,
+                              agreementInformation: !prev.agreementInformation,
+                            }))
+                          }
+                        >
+                          <span style={{ marginBottom: '10px' }}>
+                            {sectionStates.agreementInformation ? '▼' : '▶'}{' '}
+                            Agreement Information
+                          </span>
+                        </div>
+                        {sectionStates.agreementInformation && (
+                          <>
+                            {renderInfoItem(
+                              'Agreement type',
+                              TenantList.find(
+                                (tenant: any) => tenant.id === roomType.tenantId
+                              )?.SelectedAgreement
+                            )}
+                            {TenantList.find(
+                              (tenant: any) => tenant.id === roomType.tenantId
+                            )?.SelectedAgreement !== 'Fixed-Term' ? (
+                              <>
+                                {renderInfoItem(
+                                  'Start time',
+                                  new Date(
+                                    TenantList.find(
+                                      (tenant: any) =>
+                                        tenant.id === roomType.tenantId
+                                    )?.startTime
+                                  ).toDateString(),
+                                  toEthiopianDateString(
+                                    new Date(
+                                      TenantList.find(
+                                        (tenant: any) =>
+                                          tenant.id === roomType.tenantId
+                                      )?.startTime
+                                    )
+                                  )
+                                )}
+                                {renderInfoItem(
+                                  'Agreed Price',
+                                  `${roomType.AgreedPrice}$ per ${roomType.PaymentCycleType} days`
+                                )}
+                                {renderInfoItem(
+                                  'Payment cycle',
+                                  roomType.PaymentCycleType
+                                )}
+                              </>
+                            ) : (
+                              <AgreementViewerForRoom
+                                view={
                                   TenantList.find(
                                     (tenant: any) =>
                                       tenant.id === roomType.tenantId
-                                  )?.startTime
-                                )
-                              )
-                            )}
-                            {renderInfoItem(
-                              'Agreed Price',
-                              `${roomType.AgreedPrice}$ per ${roomType.PaymentCycleType} days`
-                            )}
-                            {renderInfoItem(
-                              'Payment cycle',
-                              roomType.PaymentCycleType
+                                  )?.SelectedAgreement == 'Fixed-Term'
+                                }
+                                updateRoomPropertyLocal={
+                                  updateRoomPropertyLocal
+                                }
+                                getCorrectPaymentStatment={
+                                  getCorrectPaymentStatment
+                                }
+                                TenantList={TenantList}
+                                roomType={roomType}
+                                agreementApi={agreementApi}
+                                ShowState={roomType.ViewAgreement}
+                                calculateDaysDifference={
+                                  calculateDaysDifference
+                                }
+                                roomPaymentInfoApi={roomPaymentInfoApi}
+                                updateRoomProperty={updateRoomProperty}
+                                handlePaymentRefresh={handlePaymentRefresh}
+                                setChangeMade={setChangeMade}
+                              />
                             )}
                           </>
-                        ) : (
-                          <AgreementViewerForRoom
-                            view={
-                              TenantList.find(
-                                (tenant: any) => tenant.id === roomType.tenantId
-                              )?.SelectedAgreement == 'Fixed-Term'
-                            }
-                            updateRoomPropertyLocal={updateRoomPropertyLocal}
-                            getCorrectPaymentStatment={
-                              getCorrectPaymentStatment
-                            }
-                            TenantList={TenantList}
-                            roomType={roomType}
-                            agreementApi={agreementApi}
-                            ShowState={roomType.ViewAgreement}
-                            calculateDaysDifference={calculateDaysDifference}
-                            roomPaymentInfoApi={roomPaymentInfoApi}
-                            updateRoomProperty={updateRoomProperty}
-                            handlePaymentRefresh={handlePaymentRefresh}
-                            setChangeMade={setChangeMade}
-                          />
                         )}
-                      </>
-                    )}
-                  </div>
-                  <div
-                    style={{
-                      width: '93%',
-                      background: 'var(--Secondary-Color30)',
-                      padding: '5px',
-                      marginBottom: '10px',
-                      borderRadius: '5px',
-                    }}
-                  >
-                    <div
-                      style={{
-                        fontSize: '18px',
-                        fontWeight: 'bold',
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        cursor: 'pointer',
-                      }}
-                      onClick={() =>
-                        setSectionStates((prev) => ({
-                          ...prev,
-                          utilitySettings: !prev.utilitySettings,
-                        }))
-                      }
-                    >
-                      <span style={{ marginBottom: '10px' }}>
-                        {sectionStates.utilitySettings ? '▼' : '▶'} Utility
-                        Settings
-                      </span>
-                    </div>
-                    {sectionStates.utilitySettings && (
-                      <div>
-                        <div className="utility-settings">
-                          <label>
-                            Payment:
-                            <select
-                              value={roomType.utilityPaymentEvery}
-                              onChange={(e) =>
-                                updateRoomProperty(
-                                  roomType.id,
-                                  'utilityPaymentEvery',
-                                  e.target.value
-                                )
-                              }
-                            >
-                              <option value="30">Every 30 days</option>
-                              <option value="15">Every 15 days</option>
-                              <option value="7">Every 7 days</option>
-                              <option value="custom">
-                                Custom amount of days
-                              </option>
-                            </select>
-                          </label>
-                          {roomType.utilityPaymentEvery === 'custom' && (
-                            <input
-                              type="number"
-                              value={roomType.utilityPaymentEveryCustom}
-                              onChange={(e) =>
-                                updateRoomProperty(
-                                  roomType.id,
-                                  'utilityPaymentEveryCustom',
-                                  parseInt(e.target.value)
-                                )
-                              }
-                            />
-                          )}
-                        </div>
-                        <div className="utility-settings">
-                          <label>
-                            Use a different start date:
-                            <input
-                              type="checkbox"
-                              checked={
-                                roomType.utilityPaymentUseDifferentStartDate
-                              }
-                              onChange={(e) =>
-                                updateRoomProperty(
-                                  roomType.id,
-                                  'utilityPaymentUseDifferentStartDate',
-                                  e.target.checked
-                                )
-                              }
-                            />
-                          </label>
-                          {roomType.utilityPaymentUseDifferentStartDate && (
-                            <input
-                              type="Date"
-                              value={
-                                new Date(roomType.utilityPaymentStartDate)
-                                  .toISOString()
-                                  .split('T')[0] || '0'
-                              }
-                              onChange={(e) => {
-                                const dateValue = new Date(e.target.value);
-                                if (!isNaN(dateValue.getTime())) {
-                                  updateRoomProperty(
-                                    roomType.id,
-                                    'utilityPaymentStartDate',
-                                    dateValue.getTime()
-                                  );
-                                }
-                              }}
-                            />
-                          )}
-                        </div>
-                        <UtilityPaymentsTable
-                          roomId={roomType.id}
-                          utilityPayments={roomType.utilityPayments}
-                          updateRoomPropertyLocal={updateRoomPropertyLocal}
-                          setChangeMade={setChangeMade}
-                          userId={SelectedUserId}
-                        />
                       </div>
-                    )}
-                  </div>
-
-                  {/* File Attachments Section */}
-                  <div
-                    style={{
-                      width: '93%',
-                      background: 'var(--Secondary-Color30)',
-                      padding: '5px',
-                      marginBottom: '10px',
-                      borderRadius: '5px',
-                    }}
-                  >
-                    <div
-                      style={{
-                        fontSize: '18px',
-                        fontWeight: 'bold',
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        cursor: 'pointer',
-                      }}
-                      onClick={() =>
-                        setSectionStates((prev) => ({
-                          ...prev,
-                          fileAttachments: !prev.fileAttachments,
-                        }))
-                      }
-                    >
-                      <span style={{ marginBottom: '10px' }}>
-                        {sectionStates.fileAttachments ? '▼' : '▶'} File
-                        Attachments
-                      </span>
-                    </div>
-                    {sectionStates.fileAttachments && (
+                    </>
+                  ) : (
+                    <>edit tenant room agreement info LOCKED<br></br></>
+                  )}
+                  {privileges.editTenantRoomUtilitySettings ? (
+                    <>
                       <div
                         style={{
-                          width: '97%',
-                          background: 'var(--Secondary-Color20)',
-                          minHeight: '100px',
+                          width: '93%',
+                          background: 'var(--Secondary-Color30)',
                           padding: '5px',
-                          borderRadius: '10px',
+                          marginBottom: '10px',
+                          borderRadius: '5px',
                         }}
                       >
-                        <DocumentInteractor
-                          room={roomType}
-                          TenantsList={TenantList}
-                        />
+                        <div
+                          style={{
+                            fontSize: '18px',
+                            fontWeight: 'bold',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            cursor: 'pointer',
+                          }}
+                          onClick={() =>
+                            setSectionStates((prev) => ({
+                              ...prev,
+                              utilitySettings: !prev.utilitySettings,
+                            }))
+                          }
+                        >
+                          <span style={{ marginBottom: '10px' }}>
+                            {sectionStates.utilitySettings ? '▼' : '▶'} Utility
+                            Settings
+                          </span>
+                        </div>
+                        {sectionStates.utilitySettings && (
+                          <div>
+                            <div className="utility-settings">
+                              <label>
+                                Payment:
+                                <select
+                                  value={roomType.utilityPaymentEvery}
+                                  onChange={(e) =>
+                                    updateRoomProperty(
+                                      roomType.id,
+                                      'utilityPaymentEvery',
+                                      e.target.value
+                                    )
+                                  }
+                                >
+                                  <option value="30">Every 30 days</option>
+                                  <option value="15">Every 15 days</option>
+                                  <option value="7">Every 7 days</option>
+                                  <option value="custom">
+                                    Custom amount of days
+                                  </option>
+                                </select>
+                              </label>
+                              {roomType.utilityPaymentEvery === 'custom' && (
+                                <input
+                                  type="number"
+                                  value={roomType.utilityPaymentEveryCustom}
+                                  onChange={(e) =>
+                                    updateRoomProperty(
+                                      roomType.id,
+                                      'utilityPaymentEveryCustom',
+                                      parseInt(e.target.value)
+                                    )
+                                  }
+                                />
+                              )}
+                            </div>
+                            <div className="utility-settings">
+                              <label>
+                                Use a different start date:
+                                <input
+                                  type="checkbox"
+                                  checked={
+                                    roomType.utilityPaymentUseDifferentStartDate
+                                  }
+                                  onChange={(e) =>
+                                    updateRoomProperty(
+                                      roomType.id,
+                                      'utilityPaymentUseDifferentStartDate',
+                                      e.target.checked
+                                    )
+                                  }
+                                />
+                              </label>
+                              {roomType.utilityPaymentUseDifferentStartDate && (
+                                <input
+                                  type="Date"
+                                  value={
+                                    new Date(roomType.utilityPaymentStartDate)
+                                      .toISOString()
+                                      .split('T')[0] || '0'
+                                  }
+                                  onChange={(e) => {
+                                    const dateValue = new Date(e.target.value);
+                                    if (!isNaN(dateValue.getTime())) {
+                                      updateRoomProperty(
+                                        roomType.id,
+                                        'utilityPaymentStartDate',
+                                        dateValue.getTime()
+                                      );
+                                    }
+                                  }}
+                                />
+                              )}
+                            </div>
+                            <UtilityPaymentsTable
+                              roomId={roomType.id}
+                              utilityPayments={roomType.utilityPayments}
+                              updateRoomPropertyLocal={updateRoomPropertyLocal}
+                              setChangeMade={setChangeMade}
+                              userId={SelectedUserId}
+                            />
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
+                    </>
+                  ) : (
+                    <>edit tenant room utility settings LOCKED<br></br></>
+                  )}
+                  {privileges.editTenantRoomAttachments ? (
+                    <>
+                      <div
+                        style={{
+                          width: '93%',
+                          background: 'var(--Secondary-Color30)',
+                          padding: '5px',
+                          marginBottom: '10px',
+                          borderRadius: '5px',
+                        }}
+                      >
+                        <div
+                          style={{
+                            fontSize: '18px',
+                            fontWeight: 'bold',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            cursor: 'pointer',
+                          }}
+                          onClick={() =>
+                            setSectionStates((prev) => ({
+                              ...prev,
+                              fileAttachments: !prev.fileAttachments,
+                            }))
+                          }
+                        >
+                          <span style={{ marginBottom: '10px' }}>
+                            {sectionStates.fileAttachments ? '▼' : '▶'} File
+                            Attachments
+                          </span>
+                        </div>
+                        {sectionStates.fileAttachments && (
+                          <div
+                            style={{
+                              width: '97%',
+                              background: 'var(--Secondary-Color20)',
+                              minHeight: '100px',
+                              padding: '5px',
+                              borderRadius: '10px',
+                            }}
+                          >
+                            <DocumentInteractor
+                              room={roomType}
+                              TenantsList={TenantList}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  ) : (
+                    <>edit tenant room attachments LOCKED<br></br></>
+                  )}
+                  {privileges.editTenantRoomNotificationSettings ? (
+                    <>
+                      <div
+                        style={{
+                          width: '93%',
+                          background: 'var(--Secondary-Color30)',
+                          padding: '5px',
+                          marginBottom: '10px',
+                          borderRadius: '5px',
+                        }}
+                      >
+                        <div
+                          style={{
+                            fontSize: '18px',
+                            fontWeight: 'bold',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            cursor: 'pointer',
+                          }}
+                          onClick={() =>
+                            setSectionStates((prev) => ({
+                              ...prev,
+                              remindersAndNotifications:
+                                !prev.remindersAndNotifications,
+                            }))
+                          }
+                        >
+                          <span style={{ marginBottom: '10px' }}>
+                            {sectionStates.remindersAndNotifications
+                              ? '▼'
+                              : '▶'}{' '}
+                            Reminders and Notifications
+                          </span>
+                        </div>
+                        {sectionStates.remindersAndNotifications && (
+                          <NotificationSettingsTable
+                            notificationSettings={roomType.notificationSettings}
+                            setNotificationSettings={(settings: number) =>
+                              updateRoomProperty(
+                                roomType.id,
+                                'notificationSettings',
+                                settings
+                              )
+                            }
+                            userId={SelectedUserId}
+                            setChangeMade={setChangeMade}
+                            roomId={roomType.id}
+                          />
+                        )}
+                      </div>
+                    </>
+                  ) : (
+                    <>edit tenant room notification settings LOCKED <br></br></>
+                  )}
+
+                  {privileges.editTenantRoomTenantStay ? (
+                    <>
+                      {' '}
+                      <div
+                        className="BottomAddTenantContainer"
+                        style={{
+                          height: '55px',
+                          display: 'flex',
+                          justifyContent: 'center',
+                          alignItems: 'center',
+                          marginTop: '20px',
+                        }}
+                      >
+                        <button
+                          onClick={() => {
+                            setTenantLeavePannelState(true);
+                          }}
+                          style={{ marginRight: '20px' }}
+                        >
+                          End Stay
+                        </button>
+                        <button
+                          className="AddTenantButton"
+                          onClick={() =>
+                            updateRoomProperty(
+                              roomType.id,
+                              'ViewAgreement',
+                              false
+                            )
+                          }
+                        >
+                          Close
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <>edit tenant room tenant stay LOCKED<br></br></>
+                  )}
+
+                  {/* File Attachments Section */}
 
                   {/* Reminders and Notifications Section */}
-                  <div
-                    style={{
-                      width: '93%',
-                      background: 'var(--Secondary-Color30)',
-                      padding: '5px',
-                      marginBottom: '10px',
-                      borderRadius: '5px',
-                    }}
-                  >
-                    <div
-                      style={{
-                        fontSize: '18px',
-                        fontWeight: 'bold',
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        cursor: 'pointer',
-                      }}
-                      onClick={() =>
-                        setSectionStates((prev) => ({
-                          ...prev,
-                          remindersAndNotifications:
-                            !prev.remindersAndNotifications,
-                        }))
-                      }
-                    >
-                      <span style={{ marginBottom: '10px' }}>
-                        {sectionStates.remindersAndNotifications ? '▼' : '▶'}{' '}
-                        Reminders and Notifications
-                      </span>
-                    </div>
-                    {sectionStates.remindersAndNotifications && (
-                      <NotificationSettingsTable
-                        notificationSettings={roomType.notificationSettings}
-                        setNotificationSettings={(settings: number) =>
-                          updateRoomProperty(
-                            roomType.id,
-                            'notificationSettings',
-                            settings
-                          )
-                        }
-                        userId={SelectedUserId}
-                        setChangeMade={setChangeMade}
-                        roomId={roomType.id}
-                      />
-                    )}
-                  </div>
-                  <div
-              className="BottomAddTenantContainer"
-              style={{
-                height: '55px',
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                marginTop: '20px',
-              }}
-            >
-              <button
-                onClick={() => {
-                  setTenantLeavePannelState(true);
-                }}
-                style={{ marginRight: '20px' }}
-              >
-                End Stay
-              </button>
-              <button
-                className="AddTenantButton"
-                onClick={() =>
-                  updateRoomProperty(roomType.id, 'ViewAgreement', false)
-                }
-              >
-                Close
-              </button>
-            </div>
                 </div>
               </div>
             </div>
@@ -2997,7 +3089,8 @@ const Room = ({
                 ShowReceipt={ShowReceipt}
                 setShowReceipt={setShowReceipt}
                 setChangeMade={setChangeMade}
-                SelectedUserId={SelectedUserId}updateRoomPropertyLocal={updateRoomPropertyLocal}
+                SelectedUserId={SelectedUserId}
+                updateRoomPropertyLocal={updateRoomPropertyLocal}
               />
             </div>
           </div>

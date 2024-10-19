@@ -153,6 +153,12 @@ const AccountManager = (React.FC<MyComponentProps> = ({
 
         await check();
         setSelectedUserId(allUsers[0].id);
+        if(window.electron.store.get('SelectedAppUserId')) {
+
+        } else {
+          setAppUserManagerShow(true);
+        
+        }
         console.log('Signed in', SelectedUserId);
 
         await appUsersManagement();
@@ -498,7 +504,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
           }
         });
       }
-
+    
       const updatedPrivilegesString = updatedPrivileges.join(',');
 
       // Validate privileges
@@ -557,7 +563,8 @@ const AccountManager = (React.FC<MyComponentProps> = ({
     'edit tenant room agreement info',
     'edit tenant room utility settings',
     'edit tenant room attachments',
-    'edit tenant room notification settings'
+    'edit tenant room notification settings',
+    'edit tenant room tenant stay'
   ];
   interface PrivilegeNode {
     name: string;
@@ -597,6 +604,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
         { name: 'edit tenant room utility settings' },
         { name: 'edit tenant room attachments' },
         { name: 'edit tenant room notification settings' },
+        { name: 'edit tenant room tenant stay' },
       ],
     },
   ];
@@ -853,7 +861,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                     >
                       <div className="appUserItemM appUserItem">
                         <div className="appUserHeader">
-                          <span style={{ fontSize: '25px' }}>admin</span>
+                          <span style={{ fontSize: '25px' }}>Admin</span>
                           <button
                             className="appUserButtons"
                             onClick={() =>
@@ -869,7 +877,9 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                           >
                             Select
                           </button>
-                        </div>
+
+                          
+                        </div><h3>All Privileges are on</h3>
                       </div>
                       {appUsers.map((appUser) => (
                         <div key={appUser.id} className="appUserItem">

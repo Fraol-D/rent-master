@@ -358,7 +358,7 @@
   border-bottom: 1px solid grey;
 }
 .SideBarTopButton {
-  width: 52px;
+  flex:1;
   height: 52px;
   margin: 10px;
 }

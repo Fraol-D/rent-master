@@ -136,7 +136,6 @@ function Hello() {
     return finalPayments;
   };
 
-
   const calculateDaysTillNextPayment = (predictedPayments: Payment[]) => {
     const today = new Date();
 
@@ -234,7 +233,7 @@ function Hello() {
               AddTenantState: room.AddTenantState || false,
               ViewAgreement: room.ViewAgreement || false,
               ShowPayTimeLine: room.ShowPayTimeLine || false,
-              AllRoomPayInfo: { RoomPayInfo: predictedPayments||[] },
+              AllRoomPayInfo: { RoomPayInfo: predictedPayments || [] },
               selectedAgreementId: room.selectedAgreementId || '',
               notificationSettings: room.notificationSettings || 0,
               utilityPaymentEvery: room.utilityPaymentEvery || '30',
@@ -320,7 +319,7 @@ function Hello() {
             utilityPaymentUseDifferentStartDate: 0,
             userId: SelectedUserId || '',
           },
-          setChangeMade,
+          setChangeMade
         );
 
         //Add roomspecfications
@@ -1172,16 +1171,16 @@ function Hello() {
     | 'non'
   >(() => {
     const privileges = getUserPrivileges(SelectedAppUser);
+    if (privileges.viewRoomsPage) return 'Rooms';
     if (privileges.viewDashboard) return 'Dashboard';
     if (privileges.viewPeoplesPage) return 'People';
-    if (privileges.viewRoomsPage) return 'Rooms';
     if (privileges.viewCalendar) return 'Calendar';
     if (privileges.viewDatabase) return 'Database';
     if (privileges.viewToolsPage) return 'Tools';
     return 'non'; // Default fallback
   });
   const privileges = getUserPrivileges(SelectedAppUser);
-     
+
   useEffect(() => {
     const timer = setTimeout(() => {
       setSelectedPage((prevPage) => {
@@ -1279,7 +1278,6 @@ function Hello() {
             agreementApi={agreementApi}
             setChangeMade={setChangeMade}
             SelectedAppUser={SelectedAppUser}
-       
             SelectedUserId={SelectedUserId}
           />
         </>
@@ -1319,7 +1317,9 @@ export const getUserPrivileges = (
   editTenantRoomAgreementInfo: boolean;
   editTenantRoomUtilitySettings: boolean;
   editTenantRoomAttachments: boolean;
-  editTenantRoomNotificationSettings: boolean;addTenant:boolean;
+  editTenantRoomNotificationSettings: boolean;
+  editTenantRoomTenantStay: boolean;
+  addTenant: boolean;
 } => {
   const privilegeObject: { [key: string]: boolean } = {
     viewDashboard: false,
@@ -1341,12 +1341,13 @@ export const getUserPrivileges = (
     editTenantRoomUtilitySettings: false,
     editTenantRoomAttachments: false,
     editTenantRoomNotificationSettings: false,
-    addTenant:false,
+    editTenantRoomTenantStay: false,
+    addTenant: false,
   };
 
   if (selectedAppUser) {
     if (selectedAppUser.id === 'admin') {
-      Object.keys(privilegeObject).forEach(key => {
+      Object.keys(privilegeObject).forEach((key) => {
         privilegeObject[key] = true;
       });
     } else if (selectedAppUser.privileges) {
@@ -1414,7 +1415,9 @@ export const getUserPrivileges = (
           case 'edit tenant room notification settings':
             privilegeObject.editTenantRoomNotificationSettings = true;
             break;
-            
+          case 'edit tenant room tenant stay':
+            privilegeObject.editTenantRoomTenantStay = true;
+            break;
         }
       });
     }

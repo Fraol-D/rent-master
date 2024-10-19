@@ -53,7 +53,8 @@ const NavBar = ({
   setSyncProgress,
   RefreshDataFromSqlite,
   setAppUserManagerShow,
-  setAppUserManagerPromptPassword,SelectedAppUser
+  setAppUserManagerPromptPassword,
+  SelectedAppUser,
 }: Props) => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
@@ -79,7 +80,10 @@ const NavBar = ({
       document.getElementById('image-input')?.click();
     }
   };
-  const privileges = useMemo(() => getUserPrivileges(SelectedAppUser), [SelectedAppUser]);
+  const privileges = useMemo(
+    () => getUserPrivileges(SelectedAppUser),
+    [SelectedAppUser]
+  );
   function calculateDaysDifference(
     startDate: Date | number,
     endDate: Date | number
@@ -169,21 +173,36 @@ const NavBar = ({
                 }
               }}
             >
-              Change App User
+              Switch App User
             </button>
           </p>
           <p
             className="Name-ofShop"
             style={{ fontSize: '14px', color: 'grey', height: 'auto' }}
           >
-            {window.electron.store.get('users')[0].email}
+            {window.electron.store.get('users')[0].email} --- {"  "}
+            {window.electron.store.get('SelectedAppUserId') === 'admin' ? (
+              <>Admin User</>
+            ) : (
+              window.electron.store
+                .get('app_users')
+                .find(
+                  (appUser: appUser) =>
+                    appUser.id ===
+                    window.electron.store.get('SelectedAppUserId')
+                )?.roleName
+            )}
           </p>
         </div>
       </div>
       <div className="TopPageNavigatorContainer">
         {privileges.viewDashboard && (
           <button
-            className={SelectedPage === 'Dashboard' ? 'PageNavigatorButtonSelected' : 'PageNavigatorButton'}
+            className={
+              SelectedPage === 'Dashboard'
+                ? 'PageNavigatorButtonSelected'
+                : 'PageNavigatorButton'
+            }
             onClick={() => setSelectedPage('Dashboard')}
           >
             Dashboard
@@ -191,7 +210,11 @@ const NavBar = ({
         )}
         {privileges.viewPeoplesPage && (
           <button
-            className={SelectedPage === 'People' ? 'PageNavigatorButtonSelected' : 'PageNavigatorButton'}
+            className={
+              SelectedPage === 'People'
+                ? 'PageNavigatorButtonSelected'
+                : 'PageNavigatorButton'
+            }
             onClick={() => setSelectedPage('People')}
           >
             People
@@ -199,7 +222,11 @@ const NavBar = ({
         )}
         {privileges.viewRoomsPage && (
           <button
-            className={SelectedPage === 'Rooms' ? 'PageNavigatorButtonSelected' : 'PageNavigatorButton'}
+            className={
+              SelectedPage === 'Rooms'
+                ? 'PageNavigatorButtonSelected'
+                : 'PageNavigatorButton'
+            }
             onClick={() => setSelectedPage('Rooms')}
           >
             Rooms
@@ -207,7 +234,11 @@ const NavBar = ({
         )}
         {privileges.viewCalendar && (
           <button
-            className={SelectedPage === 'Calendar' ? 'PageNavigatorButtonSelected' : 'PageNavigatorButton'}
+            className={
+              SelectedPage === 'Calendar'
+                ? 'PageNavigatorButtonSelected'
+                : 'PageNavigatorButton'
+            }
             onClick={() => setSelectedPage('Calendar')}
           >
             Calendar
@@ -215,7 +246,11 @@ const NavBar = ({
         )}
         {privileges.viewDatabase && (
           <button
-            className={SelectedPage === 'Database' ? 'PageNavigatorButtonSelected' : 'PageNavigatorButton'}
+            className={
+              SelectedPage === 'Database'
+                ? 'PageNavigatorButtonSelected'
+                : 'PageNavigatorButton'
+            }
             onClick={() => setSelectedPage('Database')}
           >
             Database
@@ -223,7 +258,11 @@ const NavBar = ({
         )}
         {privileges.viewToolsPage && (
           <button
-            className={SelectedPage === 'Tools' ? 'PageNavigatorButtonSelected' : 'PageNavigatorButton'}
+            className={
+              SelectedPage === 'Tools'
+                ? 'PageNavigatorButtonSelected'
+                : 'PageNavigatorButton'
+            }
             onClick={() => setSelectedPage('Tools')}
           >
             Tools

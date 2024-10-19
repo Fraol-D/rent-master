@@ -587,7 +587,7 @@ const tableStructures = [
       'id TEXT PRIMARY KEY',
       'roomId TEXT',
       'brokerId TEXT ',
-
+'recommendedTenantId TEXT ',
       'AddedTime INTEGER ',
       'AgreedCommission INTEGER ',
       'userId TEXT',
@@ -2023,6 +2023,8 @@ export const cleanupOnSignOut = async () => {
   const dbPath = path.join(userDataPath, appname, 'database.db');
   const bmsPath = path.join(userDataPath, appname);
   store.set('users', []);
+  store.set("app_users", []);
+  store.set("SelectedAppUserId", '');
   //So it can be deleted
   // Close the database connection
   db.close((err: Error | null) => {
