@@ -26,11 +26,13 @@ const UtilityPaymentsTable = ({
     value: boolean | string,
     utility: UtilityPaymentSettings
   ) => {
+    console.log(`Starting to handle utility change for index ${index}, field ${field}, and value ${value}`);
     const updatedUtilities = [...utilityPayments];
     updatedUtilities[index] = {
       ...updatedUtilities[index],
       [field]: value,
     };
+    console.log(`Updated utilities locally: ${JSON.stringify(updatedUtilities)}`);
     updateRoomPropertyLocal(
       roomId,
       'utilityPayments',
@@ -44,12 +46,15 @@ const UtilityPaymentsTable = ({
         return u;
       })
     );
+    console.log(`Updated room property locally for utilityPayments`);
 
     const utilityPaymentRaw = await getValuesWithSql(
       'utility_payments_settings',
       `WHERE type = '${utility.type}' AND roomId = '${roomId}'`
     );
-    if (utilityPaymentRaw == 0) {
+    console.log(`Fetched utility payment raw data: ${JSON.stringify(utilityPaymentRaw)}`);
+    if (utilityPaymentRaw.length == 0) {
+      console.log(`No existing utility payment found, adding a new one.`);
       await addValue(
         'utility_payments_settings',
         {
@@ -57,21 +62,24 @@ const UtilityPaymentsTable = ({
           roomId: roomId,
           type: utility.type,
           useThis: field === 'useThis' ? value : utility.useThis,
-          price: field === 'price' ? value : utility.price,
+          price: field === 'price' ? value || 0: utility.price || 0,
           alwaysAsk: field === 'alwaysAsk' ? value : utility.alwaysAsk,
           userId: userId,
         },
         setChangeMade
       );
+      console.log(`Added a new utility payment setting.`);
     } else {
+      console.log(`Existing utility payment found, updating it., id: ${utilityPaymentRaw[0].id}`);
       await updateValue(
         'utility_payments_settings',
-        utility.id,
+        utilityPaymentRaw[0].id,
         field,
         value,
         setChangeMade,
         utility[field]
       );
+      console.log(`Updated utility payment setting.`);
     }
   }, [utilityPayments, roomId, userId, updateRoomPropertyLocal, setChangeMade]);
 
@@ -81,6 +89,7 @@ const UtilityPaymentsTable = ({
 
   const handlePriceUpdate = useCallback((index: number, utility: UtilityPaymentSettings) => {
     const newPrice = tempPrices[utility.id];
+    console.log(`New price: ${newPrice}, old price: ${utility.price}`);
     if (newPrice !== utility.price.toString()) {
       handleUtilityChange(index, 'price', newPrice, utility);
     }

@@ -115,6 +115,7 @@ export const Upload = async (
   setUploadProgress,
   RefreshApp
 ) => {
+  let changeAmount = 0;
   const totalChanges = offline_changes_Array.length;
   const syncProgressWeight = 0.5;
   const uploadProgressWeight = 1 - syncProgressWeight;
@@ -197,6 +198,7 @@ export const Upload = async (
       }
       // If the upload was successful, delete the offline change row
       await deleteValue('offline_changes', change.id);
+      changeAmount++;
       uploadedChanges.push(change);
     } catch (error) {
       console.log(`Error processing ${change.type} change:`, error);
@@ -216,8 +218,17 @@ export const Upload = async (
     // For simplicity, let's assume that the retry mechanism is implemented elsewhere
     // and we're only logging the failed uploads for now
   }
-
-  // Sync online to local and update progress
+  const changeAmountOnline = await getValuesWithSql_Online(
+    'users',
+    `WHERE id = '${SelectedUserId}'`
+  ).changeAmount || 0;
+  await updateValueOnline(
+    'users',
+    SelectedUserId,
+    'changeAmount',
+    changeAmountOnline + changeAmount
+  );
+  window.electron.store.set('changeAmount', changeAmountOnline + changeAmount);
   await syncOnlineToLocalWithCallback(SelectedUserId, (syncProgress) => {
     const totalProgress =
       syncProgress * syncProgressWeight + uploadProgressWeight * 100;
@@ -234,16 +245,6 @@ export const syncOnlineToLocalWithCallback = async (
 ) => {
   console.log(`Starting sync process for user: ${SelectedUserId}`);
 
-  const tables = [
-    'rooms',
-    'room_specifications',
-    'tenants',
-    'room_pay_info',
-    'brokers',
-    'brokersRecommendationList',
-    'PastTenantsForRoom',
-    'agreements',
-  ];
 
   console.log(`Tables to sync: ${tables.join(', ')}`);
 
@@ -314,6 +315,7 @@ export const syncOnlineToLocalWithCallback = async (
     console.log(`Sync progress: ${progress.toFixed(2)}%`);
   }
 
+  setChangeAmount(SelectedUserId)
   console.log('Applying offline changes');
   const offlineChanges = await fetchOfflineChanges();
   console.log(`Found ${offlineChanges.length} offline changes to apply`);
@@ -322,7 +324,14 @@ export const syncOnlineToLocalWithCallback = async (
   console.log('Sync completed');
   return 'Sync completed';
 };
-
+const setChangeAmount = async (SelectedUserId) => {
+  const changeAmountOnline = await getValuesWithSql_Online(
+    'users',
+    `WHERE id = '${SelectedUserId}'`
+  );
+  console.log(`WHERE id = '${SelectedUserId}'`, changeAmountOnline[0],changeAmountOnline[0].changeAmount, '==========================================================================================');
+  window.electron.store.set('changeAmount', changeAmountOnline[0].changeAmount);
+};
 export const RevertOfflineChanges = async () => {
   //make it delete all the rows in the offlinechangestable
   try {
@@ -447,16 +456,7 @@ const fetchDataFromLocalDatabase = async (tableName) => {
 export const syncOnlineToLocal = async (SelectedUserId) => {
   console.log(`Starting sync process for user: ${SelectedUserId}`);
 
-  const tables = [
-    'rooms',
-    'room_specifications',
-    'tenants',
-    'room_pay_info',
-    'brokers',
-    'brokersRecommendationList',
-    'PastTenantsForRoom',
-    'agreements',
-  ];
+ 
 
   console.log(`Tables to sync: ${tables.join(', ')}`);
 
@@ -518,7 +518,8 @@ export const syncOnlineToLocal = async (SelectedUserId) => {
 
     console.log(`Deleted ${deletedRows} rows from table: ${table}`);
   }
-
+ 
+  setChangeAmount(SelectedUserId)
   console.log('Applying offline changes');
   const offlineChanges = await fetchOfflineChanges();
   console.log(`Found ${offlineChanges.length} offline changes to apply`);
@@ -538,16 +539,8 @@ export const syncOnlineToLocalWithBool = async (
   setIsSyncing(true);
   setSyncProgress(0);
 
-  const tables = [
-    'rooms',
-    'room_specifications',
-    'tenants',
-    'room_pay_info',
-    'brokers',
-    'brokersRecommendationList',
-    'PastTenantsForRoom',
-    'agreements',
-  ];
+ 
+
 
   console.log(`Tables to sync: ${tables.join(', ')}`);
   const totalSteps = tables.length + 1; // +1 for offline changes
@@ -615,6 +608,7 @@ export const syncOnlineToLocalWithBool = async (
     setSyncProgress(Math.round((currentStep / totalSteps) * 100));
   }
 
+  setChangeAmount(SelectedUserId)
   console.log('Applying offline changes');
   const offlineChanges = await fetchOfflineChanges();
   console.log(`Found ${offlineChanges.length} offline changes to apply`);
@@ -962,14 +956,28 @@ export const replaceUserData = async (userId, tables) => {
     throw error;
   }
 };
-
+ const tables = [
+    'rooms',
+    'room_specifications',
+    'tenants',
+    'room_pay_info',
+    'room_pay_info_history',
+    'action_history',
+    'email_templates',
+    'sms_templates',
+    'expenses',
+    'notification_template_selections',
+    'utility_payments',
+    'utility_payments_settings',
+    'action_history',
+    'brokers',
+    'brokersRecommendationList',
+    'PastTenantsForRoom',
+    'agreements',
+  ];
 
 export const SetBackUpAsMain = async (userId) => {
-  const tables = [
-    'rooms', 'room_specifications', 'tenants', 'room_pay_info',
-    'brokers', 'brokersRecommendationList', 'PastTenantsForRoom',
-    'agreements', 'email_templates', 'notification_template_selections'
-  ];
+ 
 
   const allData = {};
 

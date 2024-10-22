@@ -34,7 +34,7 @@ interface EmailTemplatesProps {
   handleSendEmail: () => void;
   subjectInputRef: React.RefObject<HTMLInputElement>;
   bodyTextareaRef: React.RefObject<HTMLTextAreaElement>;
-  setSelectedInput: (input: string) => void;
+  setSelectedInput: (input: string) => void;emailSentSuccessstring: string;
 }
 
 const EmailTemplates: React.FC<EmailTemplatesProps> = ({
@@ -65,7 +65,7 @@ const EmailTemplates: React.FC<EmailTemplatesProps> = ({
   handleSendEmail,
   subjectInputRef,
   bodyTextareaRef,
-  setSelectedInput,
+  setSelectedInput,emailSentSuccessstring
 }) => {
   return (
     <div className="tools-page">
@@ -257,7 +257,7 @@ const EmailTemplates: React.FC<EmailTemplatesProps> = ({
                   value={recipientEmail}
                   onChange={(e) => setRecipientEmail(e.target.value)}
                 />
-                <button onClick={handleSendEmail}>Send</button>
+                <button onClick={handleSendEmail}>Send</button>: {emailSentSuccessstring}
               </div>
             </>
           )}

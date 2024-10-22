@@ -1,5 +1,27 @@
 const baseUrl = 'http://localhost:8100';
 const { v4: uuidv4 } = require('uuid');
+export const dropAllRowsInTable = async (tableName) => {
+  try {
+    const response = await fetch(`${baseUrl}/drop-all-rows/${tableName}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': 'HH(CzZuQoW@tB$By)e', // Make sure this matches the apiKey in main.ts
+      },
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.text();
+    console.log(data);
+    return data;
+  } catch (error) {
+    console.error(`Error dropping all rows from ${tableName}:`, error);
+    return null;
+  }
+};
 export const addValueROOM = async (tableName, value, setChangeMade) => {
   try {
     const response = await fetch(`${baseUrl}/${tableName}`, {
@@ -11,7 +33,9 @@ export const addValueROOM = async (tableName, value, setChangeMade) => {
     });
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`);
+      throw new Error(
+        `HTTP error! status: ${response.status}, body: ${errorText}`
+      );
     }
     const data = await response.json();
     await addRowToOfflineChanges(
@@ -22,8 +46,8 @@ export const addValueROOM = async (tableName, value, setChangeMade) => {
       'add',
       value,
       setChangeMade,
-      'Not needed'
-    ); 
+      'Not needed',true
+    );
     return data;
   } catch (error) {
     console.error('Error adding value:', error.message);
@@ -63,7 +87,8 @@ const addRowToOfflineChanges = async (
   typevalue,
   addedJsonData,
   setChangeMade,
-  originalValue
+  originalValue,
+  actionHis
 ) => {
   if (tableName === 'user_images') {
     const RowWithTheSameThing = await getValuesWithSqlL(
@@ -251,51 +276,59 @@ const addRowToOfflineChanges = async (
     setChangeMade((prevValue) => prevValue + 1);
   }
   // User history
-  async function addToActionHistory(
-    actionTable,
-    actionType,
-    description,
-    performedBy,
-    userId
-  ) {
-    const id = uuidv4();
-    const actionDate = Date.now();
+  if (actionHis === true) {
+    console.log('adedded ---------------------------------')
+    async function addToActionHistory(
+      actionTable,
+      actionType,
+      description,
+      performedBy,
+      userId
+    ) {
+      const id = uuidv4();
+      const actionDate = Date.now();
 
-    await addValueWithOutOfflineChange('action_history', {
-      id,
-      action_table: actionTable,
-      action_type: actionType,
-      description,
-      performed_by: performedBy,
-      action_date: actionDate,
-      userId: userId,
-    });
-  }
-  if (originalValue !== columnValueP) {
-    const users = await window.electron.store.get('users');
-    let description = '...';
-    if (typevalue === 'add') {
-      description = 'Added ' + RowIdP + ' to the ' + tableName;
-    } else if (typevalue === 'edit') {
-      description = `edited '${RowIdP}'s ${columnNameP} to ${columnValueP}`;
-      if (originalValue !== null) {
-        description = `edited '${RowIdP}'s ${columnNameP} from ${originalValue} to ${columnValueP}`;
-      }
-    } else if (typevalue === 'delete') {
-      description = 'deleted ' + RowIdP + ' from the ' + tableName;
+      await addValueActionHistory('action_history', {
+        id,
+        action_table: actionTable,
+        action_type: actionType,
+        description,
+        performed_by: performedBy,
+        action_date: actionDate,
+        userId: userId,
+      },setChangeMade);
     }
-    /** window.electron.store
-        .get('app_users')
-        .find(
-          (user) => user.id === window.electron.store.get('SelectedAppUserId')
-        ).roleName || 'Unknown User' */
-    await addToActionHistory(
-      tableName,
-      typevalue,
-      description,
-      'aaaa',
-      users[0].id
-    );
+    if (originalValue !== columnValueP) {
+      const users = await window.electron.store.get('users');
+      let description = '...';
+      if (typevalue === 'add') {
+        description = 'Added ' + RowIdP + ' to the ' + tableName;
+      } else if (typevalue === 'edit') {
+        description = `edited '${RowIdP}'s ${columnNameP} to ${columnValueP}`;
+        if (originalValue !== null) {
+          description = `edited '${RowIdP}'s ${columnNameP} from ${originalValue} to ${columnValueP}`;
+        }
+      } else if (typevalue === 'delete') {
+        description = 'deleted ' + RowIdP + ' from the ' + tableName;
+      }
+      const performedBy =
+        window.electron.store.get('SelectedAppUserId') === 'admin'
+          ? 'Admin'
+          : window.electron.store
+              .get('app_users')
+              .find(
+                (user) =>
+                  user.id === window.electron.store.get('SelectedAppUserId')
+              )?.roleName || 'Unknown User';
+
+      await addToActionHistory(
+        tableName,
+        typevalue,
+        description,
+        performedBy,
+        users[0].id
+      );
+    }
   }
 };
 
@@ -338,7 +371,44 @@ export const addValue = async (tableName, value, setChangeMade) => {
       'add',
       value,
       setChangeMade,
-      'Not needed'
+      'Not needed',true
+    );
+
+    return data;
+  } catch (error) {
+    console.error(
+      'Error adding value:',
+      error,
+      'Body is',
+      JSON.stringify(value)
+    );
+    return null;
+  }
+};
+export const addValueActionHistory = async (
+  tableName,
+  value,
+  setChangeMade
+) => {
+  try {
+    const response = await fetch(`${baseUrl}/${tableName}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(value),
+    });
+    const data = await response.json();
+    await addRowToOfflineChanges(
+      tableName,
+      value.id,
+      'not_needed',
+      'not_needed',
+      'add',
+      value,
+      setChangeMade,
+      'Not needed',
+      false
     );
 
     return data;
@@ -408,7 +478,7 @@ export const updateValue = async (
       'edit',
       'not_needed',
       setChangeMade,
-      originalValue
+      originalValue,true
     );
   } catch (error) {
     console.error('Error updating value:', error);
@@ -428,7 +498,7 @@ export const deleteValue = async (tableName, id, setChangeMade) => {
       'not_needed',
       'delete',
       'not_needed',
-      setChangeMade
+      setChangeMade,true
     );
     return data;
   } catch (error) {

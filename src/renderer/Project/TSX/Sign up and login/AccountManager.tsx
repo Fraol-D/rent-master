@@ -88,7 +88,6 @@ const AccountManager = (React.FC<MyComponentProps> = ({
     const allUsers = window.electron.store.get('users') || [];
 
     if (allUsers.length > 0) {
-      // Check if the user exists in the online database
       const userONLINE = await getValuesWithSql_Online(
         'users',
         `WHERE id = '${allUsers[0].id}' AND password = '${allUsers[0].password}'`
@@ -153,25 +152,25 @@ const AccountManager = (React.FC<MyComponentProps> = ({
 
         await check();
         setSelectedUserId(allUsers[0].id);
-        if(window.electron.store.get('SelectedAppUserId')) {
-
+        if (window.electron.store.get('SelectedAppUserId')) {
         } else {
           setAppUserManagerShow(true);
-        
         }
         console.log('Signed in', SelectedUserId);
 
         await appUsersManagement();
-        // Commented out syncing code
-        // if (navigator.onLine) {
-        //   setIsSyncing(true);
-        //   syncOnlineToLocalWithBool(
-        //     allUsers[0].id,
-        //     setIsSyncing,
-        //     setSyncProgress,
-        //     RefreshDataFromSqlite
-        //   );
-        // }
+  
+      
+           // setIsSyncing(true);
+            // syncOnlineToLocalWithBool(
+            //   allUsers[0].id,
+            //   setIsSyncing,
+            //   setSyncProgress,
+            //   RefreshDataFromSqlite
+            // );console.log("WHAU------------------------------------------------------------------------------------")
+      
+          
+        
       }
     } else {
       // If no users found, set signed in state to false
@@ -205,6 +204,29 @@ const AccountManager = (React.FC<MyComponentProps> = ({
               )
             );
           }
+        }
+      }
+    } else {
+      const appUsers = window.electron.store.get('app_users');
+
+      setAppUsers(appUsers);
+      if (window.electron.store.get('SelectedAppUserId')) {
+        if (window.electron.store.get('SelectedAppUserId') == 'admin') {
+          setSelectedAppUser({
+            id: 'admin',
+            roleName: 'admin',
+            privileges: '',
+            userId: window.electron.store.get('users')[0].id,
+            addedDate: Date.now(),
+          });
+        } else {
+          setSelectedAppUser(
+            appUsers.find(
+              async (user: any) =>
+                (await user.id) ===
+                window.electron.store.get('SelectedAppUserId')
+            )
+          );
         }
       }
     }
@@ -504,7 +526,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
           }
         });
       }
-    
+
       const updatedPrivilegesString = updatedPrivileges.join(',');
 
       // Validate privileges
@@ -544,27 +566,27 @@ const AccountManager = (React.FC<MyComponentProps> = ({
   };
 
   const privileges = [
-    'View dashboard page',//
-    'View peoples page',//
-    'View calendar page',//
-    'View database page',//
-    'edit database data',//
+    'View dashboard page', //
+    'View peoples page', //
+    'View calendar page', //
+    'View database page', //
+    'edit database data', //
     'View tools page',
     'edit email templates',
     'edit sms templates',
     'edit expenses',
     'View rooms page',
-    'Add a room',//
+    'Add a room', //
     'Add a tenant',
-    'edit room data',//
-    'edit rent payments',//
-    'edit utility payments',//
+    'edit room data', //
+    'edit rent payments', //
+    'edit utility payments', //
     'edit tenant room tenant info',
     'edit tenant room agreement info',
     'edit tenant room utility settings',
     'edit tenant room attachments',
     'edit tenant room notification settings',
-    'edit tenant room tenant stay'
+    'edit tenant room tenant stay',
   ];
   interface PrivilegeNode {
     name: string;
@@ -700,7 +722,10 @@ const AccountManager = (React.FC<MyComponentProps> = ({
           'privileges',
           updatedPrivileges.join(',')
         );
-        const updatedUser = { ...user, privileges: updatedPrivileges.join(',') };
+        const updatedUser = {
+          ...user,
+          privileges: updatedPrivileges.join(','),
+        };
         const updatedAppUsers = appUsers.map((u) =>
           u.id === user.id ? updatedUser : u
         );
@@ -802,7 +827,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                       </div>
                       <p
                         style={{
-                          color: 'var(--Text-Color-Grey)',
+                          color: 'var(--Text-Color)',
                           marginBottom: '25px',
                         }}
                       >
@@ -856,10 +881,10 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                       </button>
                     </div>
                     <div
-                      style={{ display: 'flex', flexDirection: 'row' }}
+                      style={{ display: 'flex', flexDirection: 'row',overflowX:'auto' }}
                       className="appUserItemContainer"
                     >
-                      <div className="appUserItemM appUserItem">
+                      <div style={{display: 'flex'}}><div className="appUserItemM appUserItem">
                         <div className="appUserHeader">
                           <span style={{ fontSize: '25px' }}>Admin</span>
                           <button
@@ -877,9 +902,8 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                           >
                             Select
                           </button>
-
-                          
-                        </div><h3>All Privileges are on</h3>
+                        </div>
+                        <h3>All Privileges are on</h3>
                       </div>
                       {appUsers.map((appUser) => (
                         <div key={appUser.id} className="appUserItem">
@@ -983,7 +1007,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                             </button>
                           </div>
                         </div>
-                      ))}
+                      ))}</div>
                     </div>
                     {privilegeError && (
                       <div style={{ color: 'red', marginTop: '10px' }}>

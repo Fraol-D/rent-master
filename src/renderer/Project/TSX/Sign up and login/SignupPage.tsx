@@ -98,14 +98,14 @@ const SignupPage = ({
     setCodeSent(true);
     setCodeExpired(false);
     setErrorMessage('Verification code sent to your email.');
-
-    window.electron.sendMessage('SendVerificationCode', {
+    console.log(code)
+    window.electron.ipcRenderer.send('SendVerificationCode', {
       to: email,
       code: code,
     });
     setTimeout(() => {
       setCodeExpired(true);
-    }, 180000); // 3 minutes
+    }, 360000); // 3 minutes
     setLoading(false);
   };
 

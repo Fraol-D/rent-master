@@ -18,11 +18,11 @@
   --Accent-Color50: hsl(37, 79%, 52%, 50%);
 }
 .DarkTheme {
-  --Text-Color-Grey: rgb(128, 128, 128);
+  --Text-Color-Grey: #505050;
   --Text-Color: #000000;
   --Text-Color-Reverse50: rgba(255, 255, 255, 0.5);
-  --Text-Color-Reverse: rgb(255, 255, 255);
-  --Background-Color: #d0d1d2;
+  --Text-Color-Reverse: rgb(0, 0, 0);
+  --Background-Color: #c0c0c0;
 
   --Primary-Color: #00e1ff;
   --Primary-Color25: hsl(187, 100%, 50%, 25%);
@@ -183,7 +183,7 @@ body {
 }
 
 ::-webkit-scrollbar-corner {
-  background-color: blue;
+
 }
 
 ::-webkit-scrollbar-thumb:hover {

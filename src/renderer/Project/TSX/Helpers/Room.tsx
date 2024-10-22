@@ -33,7 +33,6 @@ import NotificationSettingsTable from './GUIs/NotificationSettingsProps';
 import UtilityPaymentsTable from './UtilityPaymentsTable';
 import UtilityPanel from './GUIs/UtilityPanel';
 import { addDays } from 'date-fns';
-import { getUserPrivileges } from 'renderer/App';
 const Room = ({
   roomType,
   updateRoomProperty,
@@ -57,7 +56,6 @@ const Room = ({
   agreementApi,
   setChangeMade,
   SelectedUserId,
-  SelectedAppUser,
 }: {
   roomType: RoomType;
   updateRoomProperty: any;
@@ -80,21 +78,11 @@ const Room = ({
   agreementApi: any;
   setChangeMade: any;
   SelectedUserId: any;
-  SelectedAppUser: any;
 }) => {
   const handleAddTenant = () => {
     turnOffAddTenantStateForAll();
-    updateRoomPropertyLocal(
-      roomType.id,
-      'AddTenantState',
-      !roomType.AddTenantState
-    );
+    updateRoomProperty(roomType.id, 'AddTenantState', !roomType.AddTenantState);
   };
-  const privileges = useMemo(
-    () => getUserPrivileges(SelectedAppUser),
-    [SelectedAppUser]
-  );
-
   const [name, setName] = useState('');
   const [tel1, setTel1] = useState('');
   const [tel2, setTel2] = useState('');
@@ -146,7 +134,8 @@ const Room = ({
         !(viewAgreementRef.current as HTMLElement).contains(
           event.target as Node
         ) &&
-        roomType.ViewAgreement
+        roomType.ViewAgreement &&
+        !document.activeElement?.closest('.ViewAgreementContainer')
       ) {
         updateRoomPropertyLocal(roomType.id, 'ViewAgreement', 0);
       }
@@ -237,7 +226,7 @@ const Room = ({
       'tenantId',
       SelectedTenantIdOnAdding
     );
-    updateRoomPropertyLocal(roomType.id, 'AddTenantState', 0);
+    updateRoomProperty(roomType.id, 'AddTenantState', 0);
 
     if (!roomType.AllRoomPayInfo) {
       roomType.AllRoomPayInfo = {
@@ -390,7 +379,7 @@ const Room = ({
       );
       updateRoomPropertyWithOutRefresh(roomType.id, 'AgreedPrice', agreedPrice);
       updateRoomPropertyWithOutRefresh(roomType.id, 'tenantId', tenantId);
-      updateRoomPropertyLocal(roomType.id, 'AddTenantState', 0);
+      updateRoomProperty(roomType.id, 'AddTenantState', 0);
       updateRoomProperty(
         roomType.id,
         'Price',
@@ -449,8 +438,7 @@ const Room = ({
       }
       console.log('reached1');
 
-      
-
+  
       if (AddTenantUseBrokerState) {
         brokersRecommendationListApi.AddBrokerRecommendation(
           uuidv4(),
@@ -617,20 +605,70 @@ const Room = ({
   const [SelectedTenantIdOnAdding, setSelectedTenantIdOnAdding] = useState('');
   const handleTenantLeft = async () => {
     try {
-     
+      // Get the current agreement for the room
+      if(TenantList.find((t:tenant)=> t.SelectedAgreement === "Fixed-Term")) {
+        const [currentAgreement] = await getValuesWithSql(
+          "agreements",
+          `WHERE roomId = '${roomType.id}' AND tenantId = '${roomType.tenantId}' ORDER BY startTime DESC LIMIT 1`
+        );
+  
+        if (currentAgreement) {
+          // Get all payments for this agreement
+          const payments = await getValuesWithSql(
+            "room_pay_info",
+            `WHERE roomId = '${roomType.id}' AND tenantId = '${roomType.tenantId}' AND Day >= ${
+              currentAgreement.startTime
+            } AND Day <= ${Date.now()}`
+          );
+  
+          // Add these payments to the historical payments table
+          for (const payment of payments) {
+            await addValue(
+              "room_pay_info_history",
+              {
+                ...payment,
+                agreementId: currentAgreement.id,
+              },
+              setChangeMade
+            );
+            await deleteValue("room_pay_info", payment.id, setChangeMade);
+          }
+  
+          // Now delete the payments from the room_pay_info table
+        }
+  
+      } else {
+        const payments = await getValuesWithSql(
+          "room_pay_info",
+          `WHERE roomId = '${roomType.id}' AND tenantId = '${roomType.tenantId}'`
+        );
+
+        // Add these payments to the historical payments table
+        for (const payment of payments) {
+          await addValue(
+            "room_pay_info_history",
+            {
+              ...payment,
+              agreementId: '',
+            },
+            setChangeMade
+          );
+          await deleteValue("room_pay_info", payment.id, setChangeMade);
+        }
+      }
       // Update the room's tenant information
       await updateValue(
-        'rooms',
+        "rooms",
         roomType.id,
-        'tenantId',
+        "tenantId",
         '',
         setChangeMade,
         0
       );
       await updateValue(
-        'rooms',
+        "rooms",
         roomType.id,
-        'selectedAgreementId',
+        "selectedAgreementId",
         '',
         setChangeMade,
         0
@@ -638,25 +676,17 @@ const Room = ({
 
       // Update the tenant's information
       await updateValue(
-        'tenants',
+        "tenants",
         roomType.tenantId,
-        'roomId',
-        '',
-        setChangeMade,
-        0
-      );
-      await updateValue(
-        'tenants',
-        roomType.tenantId,
-        'RentingOrOut',
+        "RentingOrOut",
         0,
         setChangeMade,
         0
       );
       await updateValue(
-        'tenants',
+        "tenants",
         roomType.tenantId,
-        'SelectedAgreement',
+        "SelectedAgreement",
         '',
         setChangeMade,
         0
@@ -664,7 +694,7 @@ const Room = ({
 
       // Additional logic from the original function
       const allPayInfos = await getValuesWithSql(
-        'room_pay_info',
+        "room_pay_info",
         `WHERE roomId = '${roomType.id}'`
       );
       let totalEarningsFromTenant = 0;
@@ -678,20 +708,20 @@ const Room = ({
       }
       let agreedCommissionForBroker = (
         await getValuesWithSql(
-          'brokersRecommendationList',
+          "brokersRecommendationList",
           `WHERE roomId = '${roomType.id}'`
         )
       ).sort((a: any, b: any) => b.AddedTime - a.AddedTime);
 
       addValue(
-        'PastTenantsForRoom',
+        "PastTenantsForRoom",
         {
           id: uuidv4(),
           roomId: roomType.id,
           brokerId:
             agreedCommissionForBroker.length > 0
               ? agreedCommissionForBroker[0].brokerId
-              : '',
+              : "",
           tenantId: roomType.tenantId,
           enterDate: new Date(
             TenantList.find((t: tenant) => t.id === roomType.tenantId).startTime
@@ -699,8 +729,8 @@ const Room = ({
           exitDate: Date.now(),
           totalEarnings: totalEarningsFromTenant,
           paymentCycleType:
-            roomType.PaymentCycleType === 'custom'
-              ? ('-' + roomType.PaymentCycleCustomeDays).toString()
+            roomType.PaymentCycleType === "custom"
+              ? ("-" + roomType.PaymentCycleCustomeDays).toString()
               : roomType.PaymentCycleType,
           AgreedPrice: roomType.AgreedPrice,
           AgreedCommission:
@@ -715,73 +745,43 @@ const Room = ({
         setChangeMade
       );
 
-      setEndReason('');
-      setTenantDescription('');
+      setEndReason("");
+      setTenantDescription("");
       setTenantRating(0);
 
       // Update the room's status to 'Empty'
-      updateRoomPropertyWithOutRefresh(roomType.id, 'status', 'Empty');
+      updateRoomPropertyWithOutRefresh(roomType.id, "status", "Empty");
 
       // Clear the room's AgreedPrice
-      updateRoomPropertyWithOutRefresh(roomType.id, 'AgreedPrice', 0);
+      updateRoomPropertyWithOutRefresh(roomType.id, "AgreedPrice", 0);
 
       // Clear the room's PaymentCycleType
-      updateRoomPropertyWithOutRefresh(roomType.id, 'PaymentCycleType', '');
+      updateRoomPropertyWithOutRefresh(roomType.id, "PaymentCycleType", "");
 
       // Clear the room's PaymentCycleCustomeDays
       updateRoomPropertyWithOutRefresh(
         roomType.id,
-        'PaymentCycleCustomeDays',
+        "PaymentCycleCustomeDays",
         0
       );
 
       const utilityPayments = await getValuesWithSql(
-        'utility_payments',
+        "utility_payments",
         `WHERE roomId = '${roomType.id}'`
       );
       if (utilityPayments)
         for (let i = 0; i < utilityPayments.length; i++) {
           const element = utilityPayments[i];
-          deleteValue('utility_payments', element.id, setChangeMade);
+          deleteValue("utility_payments", element.id, setChangeMade);
         }
 
       // Reset the room's AddTenantState
-      updateRoomPropertyLocal(roomType.id, 'AddTenantState', 0);
-      updateRoomPropertyLocal(roomType.id, 'ViewAgreement', 0);
- // Get the current agreement for the room
- const [currentAgreement] = await getValuesWithSql(
-  'agreements',
-  `WHERE roomId = '${roomType.id}' AND tenantId = '${roomType.tenantId}' ORDER BY startTime DESC LIMIT 1`
-);
-
-if (currentAgreement) {
-  // Get all payments for this agreement
-  const payments = await getValuesWithSql(
-    'room_pay_info',
-    `WHERE roomId = '${roomType.id}' AND Day >= ${
-      currentAgreement.startTime
-    } AND Day <= ${Date.now()}`
-  );
-
-  // Add these payments to the historical payments table
-  for (const payment of payments) {
-    await addValue(
-      'room_pay_info_history',
-      {
-        ...payment,
-        agreementId: currentAgreement.id,
-      },
-      setChangeMade
-    );
-    await deleteValue('room_pay_info', payment.id, setChangeMade);
-  }
-
-  // Now delete the payments from the room_pay_info table
-}
+      updateRoomProperty(roomType.id, "AddTenantState", 0);
+      updateRoomProperty(roomType.id, "ViewAgreement", 0);
 
       setTenantLeavePannelState(false);
     } catch (error) {
-      console.error('Error in handleTenantLeft:', error);
+      console.error("Error in handleTenantLeft:", error);
     }
   };
 
@@ -865,7 +865,7 @@ if (currentAgreement) {
   const handlePaymentRefresh = async () => {
     const listOfPayments = await getValuesWithSql(
       'room_pay_info',
-      `WHERE roomId = '${roomType.id}'`
+      `WHERE roomId = '${roomType.id}' AND tenantId = '${roomType.tenantId}'`
     );
 
     const updatedRoomPayInfo: RoomPayInfo[] = listOfPayments.map(
@@ -921,7 +921,7 @@ if (currentAgreement) {
         color: 'var(--Text-Color-Grey)',
       }}
     >
-      <span style={{ fontWeight: 'bold' }}>{label}:</span>{' '}
+      <span style={{ fontWeight: '600', color: 'var(--Text-Color)' }}>{label}:</span>{' '}
       <em
         style={{ fontWeight: '600', color: 'var(--Text-Color)' }}
         title={title}
@@ -979,7 +979,7 @@ if (currentAgreement) {
             }}
           >
             <div>
-              <span style={{ fontWeight: 'bold' }}>{label}:</span>{' '}
+              <span style={{ fontWeight: '400', color: 'var(--Text-Color)' }}>{label}:</span>{' '}
               <em style={{ fontWeight: '600', color: 'var(--Accent-Color)' }}>
                 {value}
               </em>
@@ -1014,7 +1014,7 @@ if (currentAgreement) {
         color: 'var(--Text-Color-Grey)',
       }}
     >
-      <span style={{ fontWeight: 'bold' }}>{label}:</span>{' '}
+      <span style={{ fontWeight: '400', color: 'var(--Text-Color)' }}>{label}:</span>{' '}
       <em
         style={{ fontWeight: '600', color: 'var(--Accent-Color)' }}
         title={title}
@@ -1024,6 +1024,10 @@ if (currentAgreement) {
     </div>
   );
   const [editingField, setEditingField] = useState<string | null>(null);
+  const isValidDate = (dateString: string): boolean => {
+    const date = new Date(dateString);
+    return !isNaN(date.getTime());
+  };
 
   const [sectionStates, setSectionStates] = useState({
     tenantInformation: true,
@@ -1112,7 +1116,7 @@ if (currentAgreement) {
         className="MainContainer"
         style={{
           background: roomType.AddTenantState
-            ? '#2C2C30'
+            ? 'var(--Secondary-Color60)'
             : roomType.status === 'Empty'
             ? 'var(--Secondary-Color20)'
             : 'var(--Primary-Color25)',
@@ -1122,32 +1126,26 @@ if (currentAgreement) {
         <div className="FirstLine">
           <div style={{ display: 'flex' }}>
             <p className="FloorText">Floor {roomType.floor}</p>{' '}
-            {privileges.editRoomData ? (
-              <>
-                <img
-                  onClick={() => {
-                    setSelectedEditRoomId(roomType.id);
-                  }}
-                  src={EditIcon}
-                  style={{ width: '23px', height: '23px', marginLeft: '10px' }}
-                  alt=""
-                />
-                {roomType.status === 'Empty' && (
-                  <button
-                    onClick={() => {
-                      updateRoomProperty(
-                        roomType.id,
-                        'Archived',
-                        !roomType.Archived
-                      );
-                    }}
-                  >
-                    {roomType.Archived ? 'Unarchive' : 'Archive'}
-                  </button>
-                )}
-              </>
-            ) : (
-              <></>
+            <img
+              onClick={() => {
+                setSelectedEditRoomId(roomType.id);
+              }}
+              src={EditIcon}
+              style={{ width: '23px', height: '23px', marginLeft: '10px' }}
+              alt=""
+            />
+            {roomType.status === 'Empty' && (
+              <button
+                onClick={() => {
+                  updateRoomProperty(
+                    roomType.id,
+                    'Archived',
+                    !roomType.Archived
+                  );
+                }}
+              >
+                {roomType.Archived ? 'Unarchive' : 'Archive'}
+              </button>
             )}
           </div>
           <p className="RoomText">Room {roomType.roomIndex}</p>
@@ -1185,40 +1183,32 @@ if (currentAgreement) {
                   <>
                     {roomType.AddTenantState ? (
                       <>
-                        {privileges.addTenant ? (
-                          <strong
-                            style={{
-                              fontWeight: '600',
-                              fontSize: '17px',
-                              borderBottom: '1px solid white',
-                            }}
-                            onClick={() => {
-                              /* TO DO */ handleAddTenant();
-                            }}
-                          >
-                            Add tenant
-                          </strong>
-                        ) : (
-                          <></>
-                        )}
+                        <strong
+                          style={{
+                            fontWeight: '600',
+                            fontSize: '17px',
+                            borderBottom: '1px solid white',
+                          }}
+                          onClick={() => {
+                            /* TO DO */ handleAddTenant();
+                          }}
+                        >
+                          Add tenant
+                        </strong>
                       </>
                     ) : (
                       <>
-                        {privileges.addTenant ? (
-                          <em
-                            style={{
-                              fontWeight: '400',
-                              borderBottom: '1px solid white',
-                            }}
-                            onClick={() => {
-                              /* TO DO */ handleAddTenant();
-                            }}
-                          >
-                            Add tenant
-                          </em>
-                        ) : (
-                          <></>
-                        )}
+                        <em
+                          style={{
+                            fontWeight: '400',
+                            borderBottom: '1px solid white',
+                          }}
+                          onClick={() => {
+                            /* TO DO */ handleAddTenant();
+                          }}
+                        >
+                          Add tenant
+                        </em>
                       </>
                     )}
                   </>
@@ -1362,48 +1352,40 @@ if (currentAgreement) {
                 )}
               </p>
               <div style={{ display: 'flex', alignItems: 'center' }}>
-                {privileges.editRoomPayment ? (
-                  <button
-                    className="PageNavigatorButtonSelected"
-                    ref={hideButtonRef}
-                    style={{ borderBottom: '1px solid grey', width: '100px' }}
-                    onClick={() => {
-                      turnOffViewStateForAll();
-                      updateRoomPropertyLocal(
-                        roomType.id,
-                        'ShowPayTimeLine',
-                        !roomType.ShowPayTimeLine
-                      );
-                    }}
-                  >
-                    {roomType.ShowPayTimeLine ? 'Hide' : 'Rent'}
-                  </button>
-                ) : (
-                  <></>
-                )}
-                {privileges.editUtilityPayments ? (
-                  <button
-                    style={{
-                      borderBottom: '1px solid grey',
-                      borderTop: '2px solid var(--Primary-Color)',
-                      height: '35px',
-                    }}
-                    ref={utilityShowerRefHider}
-                    onClick={() => {
-                      turnOffViewStateForAll();
+                <button
+                  className="PageNavigatorButtonSelected"
+                  ref={hideButtonRef}
+                  style={{ borderBottom: '1px solid grey', width: '100px' }}
+                  onClick={() => {
+                    turnOffViewStateForAll();
+                    updateRoomPropertyLocal(
+                      roomType.id,
+                      'ShowPayTimeLine',
+                      !roomType.ShowPayTimeLine
+                    );
+                  }}
+                >
+                  {roomType.ShowPayTimeLine ? 'Hide' : 'Rent'}
+                </button>
+                <button
+                  style={{
+                    borderBottom: '1px solid grey',
+                    borderTop: '2px solid var(--Primary-Color)',
+                    height: '35px',
+                  }}
+                  ref={utilityShowerRefHider}
+                  onClick={() => {
+                    turnOffViewStateForAll();
 
-                      updateRoomPropertyLocal(
-                        roomType.id,
-                        'ShowUtilityLine',
-                        !roomType.ShowUtilityLine
-                      );
-                    }}
-                  >
-                    {roomType.ShowUtilityLine ? 'Hide' : 'Utility'}
-                  </button>
-                ) : (
-                  <></>
-                )}
+                    updateRoomPropertyLocal(
+                      roomType.id,
+                      'ShowUtilityLine',
+                      !roomType.ShowUtilityLine
+                    );
+                  }}
+                >
+                  {roomType.ShowUtilityLine ? 'Hide' : 'Utility'}
+                </button>
               </div>
             </div>
           )}
@@ -1432,11 +1414,12 @@ if (currentAgreement) {
                     <p key={roomSpec.id} className="RoomTypeContainertext">
                       {roomSpec.type === 'number' ? (
                         <>
-                          {roomSpec.Number} - {roomSpec.Detail}
+                          {roomSpec.Number}: {roomSpec.Detail}
                         </>
                       ) : (
                         <>
-                          {roomSpec.Boolean ? 'Yes' : 'No'} {roomSpec.Detail}
+                          {roomSpec.Boolean ? 'Yes: ' : 'No: '}{' '}
+                          {roomSpec.Detail}
                         </>
                       )}
                     </p>
@@ -1542,6 +1525,7 @@ if (currentAgreement) {
                 </div>
                 {TenantPageSelected === 'New' ? (
                   <>
+                    <h3 style={{marginTop:"5px", marginBottom:"5px", textAlign:"center"}}>Tenant Information</h3>
                     <div className="AddTenantContainerinnerElement">
                       Name:{' '}
                       <input
@@ -1600,13 +1584,16 @@ if (currentAgreement) {
                   </>
                 ) : (
                   <>
-                    <input
+                    <h3 style={{marginTop:"5px", marginBottom:"5px", textAlign:"center"}}>
+                      Select Existing Tenant
+                    </h3>
+                    {TenantList.filter((t:tenant) => !t.RentingOrOut).length >=1 ? <input
                       type="text"
                       placeholder="Search tenant"
                       style={{ width: '100%' }}
                       value={SelectTenantSearch}
                       onChange={(e) => setSelectTenantSearch(e.target.value)}
-                    />
+                    /> : <p style={{textAlign:"center"}}>You don't have any tenants that is currently not renting</p>}
                     {SelectedTenantIdOnAdding === '' ? (
                       filteredTenants.map((tenant: any) => (
                         <div className="TenantRow" key={tenant.id}>
@@ -1682,8 +1669,12 @@ if (currentAgreement) {
                   </>
                 )}
                 <hr />
+
                 {TenantPageSelected === 'New' ? (
                   <>
+                    <h3 style={{marginTop:"5px", marginBottom:"5px", textAlign:"center"}}>
+                      Agreement Details
+                    </h3>
                     <div>
                       Agreement type:{' '}
                       <select
@@ -1824,11 +1815,10 @@ if (currentAgreement) {
                         value={paymentCycle}
                         onChange={handlePaymentCycleChange}
                       >
-                        <option value="Every 30 days">30 days</option>
-                        <option value="Every 15 days">15 days</option>
-                        <option value="Every 7 days">7 days</option>
+                        <option value="30">30 days</option>
+                        <option value="15">15 days</option>
+                        <option value="7">7 days</option>
                         <option value="daily">daily</option>
-
                         <option value="monthly">monthly</option>
                         <option value="custom">custom days</option>
                       </select>
@@ -1867,274 +1857,15 @@ if (currentAgreement) {
                         Same
                       </button>
                     </div>
-                    <hr />
-                    <div
-                      className="AddTenantContainerinnerElement"
-                      style={{ display: 'flex', alignItems: 'center' }}
-                    >
-                      Track broker:{' '}
-                      <input
-                        type="checkbox"
-                        style={{ width: '20px' }}
-                        checked={AddTenantUseBrokerState}
-                        onChange={(e) => {
-                          setAddTenantUseBrokerState(e.target.checked);
-                        }}
-                      />
-                      {AddTenantUseBrokerState &&
-                        AddTenantSelectedBrokerId == '' && (
-                          <button
-                            onClick={() => {
-                              setAddTenantAddBrokerState(
-                                !AddTenantAddBrokerState
-                              );
-                            }}
-                          >
-                            {AddTenantAddBrokerState
-                              ? 'Cancel add'
-                              : 'Add new broker'}
-                          </button>
-                        )}
-                    </div>
-                    {AddTenantUseBrokerState && (
-                      <>
-                        {AddTenantAddBrokerState ? (
-                          <>
-                            <input
-                              type="text"
-                              placeholder="Name"
-                              value={AddTenantAddBrokerFormName}
-                              onChange={(e) =>
-                                setAddTenantAddBrokerFormName(e.target.value)
-                              }
-                            />
-                            <input
-                              type="text"
-                              placeholder="Phone Number"
-                              value={AddTenantAddBrokerFormPhoneNumber}
-                              onChange={(e) =>
-                                setAddTenantAddBrokerFormPhoneNumber(
-                                  e.target.value
-                                )
-                              }
-                            />
-                            <input
-                              type="text"
-                              placeholder="Phone Number 2"
-                              value={AddTenantAddBrokerFormPhoneNumber2}
-                              onChange={(e) =>
-                                setAddTenantAddBrokerFormPhoneNumber2(
-                                  e.target.value
-                                )
-                              }
-                            />
-                            <input
-                              type="email"
-                              placeholder="Email"
-                              value={AddTenantAddBrokerFormEmail}
-                              onChange={(e) =>
-                                setAddTenantAddBrokerFormEmail(e.target.value)
-                              }
-                            />
-
-                            <button
-                              onClick={() => {
-                                handleAddBroker();
-                              }}
-                            >
-                              Add
-                            </button>
-                          </>
-                        ) : (
-                          <>
-                            {AddTenantSelectedBrokerId !== '' ? (
-                              <>
-                                {BrokerList.find(
-                                  (broker: BrokerType) =>
-                                    broker.id === AddTenantSelectedBrokerId
-                                ) && (
-                                  <div
-                                    className="TenantRow"
-                                    key={
-                                      BrokerList.find(
-                                        (broker: BrokerType) =>
-                                          broker.id ===
-                                          AddTenantSelectedBrokerId
-                                      )?.id
-                                    }
-                                  >
-                                    <div>
-                                      <button
-                                        onClick={() => {
-                                          setAddTenantSelectedBrokerId(
-                                            BrokerList.find(
-                                              (broker: BrokerType) =>
-                                                broker.id ===
-                                                AddTenantSelectedBrokerId
-                                            )?.id || ''
-                                          );
-                                        }}
-                                      >
-                                        <p>
-                                          {
-                                            BrokerList.find(
-                                              (broker: BrokerType) =>
-                                                broker.id ===
-                                                AddTenantSelectedBrokerId
-                                            )?.name
-                                          }
-                                        </p>
-                                        <p style={{ fontSize: '10px' }}>
-                                          {
-                                            BrokerList.find(
-                                              (broker: BrokerType) =>
-                                                broker.id ===
-                                                AddTenantSelectedBrokerId
-                                            )?.phoneNumber
-                                          }
-                                        </p>
-                                      </button>
-                                    </div>
-                                    {AddTenantSelectedBrokerId !== '' && (
-                                      <button
-                                        onClick={() => {
-                                          setAddTenantSelectedBrokerId('');
-                                        }}
-                                        style={{
-                                          width: '35px',
-                                          height: '35px',
-                                        }}
-                                      >
-                                        X
-                                      </button>
-                                    )}
-                                  </div>
-                                )}
-                                {/* Commission Section */}
-
-                                <div>
-                                  Commission:{' '}
-                                  <input
-                                    type="number"
-                                    style={{
-                                      width: !isPercentCommission
-                                        ? '80px'
-                                        : '40px',
-                                    }}
-                                    value={commissionValue}
-                                    onChange={(e) =>
-                                      setCommissionValue(
-                                        parseFloat(e.target.value)
-                                      )
-                                    }
-                                    className="AddTenantContainerinnerInput"
-                                    placeholder={
-                                      isPercentCommission
-                                        ? 'Enter percent'
-                                        : 'Enter number'
-                                    }
-                                  />
-                                  {isPercentCommission && (
-                                    <>
-                                      %{' '}
-                                      <em
-                                        style={{
-                                          color: 'var(--Text-Color-Grey)',
-                                        }}
-                                      >
-                                        {commissionValue != '' &&
-                                          (commissionValue / 100) * agreedPrice}
-                                      </em>
-                                    </>
-                                  )}
-                                  {!isPercentCommission && '$'}
-                                  <br />{' '}
-                                  <label>
-                                    <input
-                                      type="checkbox"
-                                      checked={isPercentCommission}
-                                      onChange={() =>
-                                        setIsPercentCommission(true)
-                                      }
-                                    />
-                                    Percentage
-                                  </label>
-                                  <label>
-                                    <input
-                                      type="checkbox"
-                                      checked={!isPercentCommission}
-                                      onChange={() =>
-                                        setIsPercentCommission(false)
-                                      }
-                                    />
-                                    Number
-                                  </label>
-                                </div>
-                              </>
-                            ) : (
-                              <>
-                                <input
-                                  type="text"
-                                  placeholder="Search broker"
-                                  value={searchBroker}
-                                  onChange={handleSearchBroker}
-                                />{' '}
-                                {filteredBrokerList.map(
-                                  (broker: BrokerType) => (
-                                    <div className="TenantRow" key={broker.id}>
-                                      <div>
-                                        <button
-                                          onClick={() => {
-                                            setAddTenantSelectedBrokerId(
-                                              broker.id
-                                            );
-                                          }}
-                                        >
-                                          <p>{broker.name}</p>
-                                          <p style={{ fontSize: '10px' }}>
-                                            {broker.phoneNumber}
-                                          </p>
-                                        </button>
-                                      </div>
-                                      <div>
-                                        {[1, 2, 3, 4, 5].map((star) => (
-                                          <span
-                                            key={star}
-                                            style={{
-                                              color:
-                                                broker.rating >= star
-                                                  ? 'gold'
-                                                  : 'grey',
-                                            }}
-                                          >
-                                            ★
-                                          </span>
-                                        ))}
-                                      </div>
-                                    </div>
-                                  )
-                                )}
-                              </>
-                            )}
-                          </>
-                        )}
-                      </>
-                    )}
-                    <hr />
-                    <DocumentInteractor
-                      room={roomType}
-                      TenantsList={TenantList}
-                      AddTenant={true}
-                      isAddRoomDocument={true}
-                      SetRefreshState={SetRefreshState}
-                      refreshState={refreshState}
-                    />
                   </>
                 ) : (
                   <>
                     {TenantPageSelected === 'Select' &&
                       SelectedTenantIdOnAdding != '' && (
                         <>
+                          <h3 style={{marginTop:"5px", marginBottom:"5px", textAlign:"center"}}>
+                            Agreement Details
+                          </h3>
                           <div>
                             Agreement type:{' '}
                             <select
@@ -2195,7 +1926,6 @@ if (currentAgreement) {
                               <option value="Every 15 days">15 days</option>
                               <option value="Every 7 days">7 days</option>
                               <option value="daily">daily</option>
-
                               <option value="monthly">monthly</option>
                               <option value="custom">custom days</option>
                             </select>
@@ -2234,317 +1964,387 @@ if (currentAgreement) {
                               Same
                             </button>
                           </div>
-                          <hr />
-                          <div
-                            className="AddTenantContainerinnerElement"
-                            style={{ display: 'flex', alignItems: 'center' }}
-                          >
-                            Track broker:{' '}
-                            <input
-                              type="checkbox"
-                              style={{ width: '20px' }}
-                              checked={AddTenantUseBrokerState}
-                              onChange={(e) => {
-                                setAddTenantUseBrokerState(e.target.checked);
-                              }}
-                            />
-                            {AddTenantUseBrokerState &&
-                              AddTenantSelectedBrokerId == '' && (
-                                <button
-                                  onClick={() => {
-                                    setAddTenantAddBrokerState(
-                                      !AddTenantAddBrokerState
-                                    );
-                                  }}
-                                >
-                                  {AddTenantAddBrokerState
-                                    ? 'Cancel add'
-                                    : 'Add new broker'}
-                                </button>
-                              )}
-                          </div>
-                          {AddTenantUseBrokerState && (
-                            <>
-                              {AddTenantAddBrokerState ? (
-                                <>
-                                  <input
-                                    type="text"
-                                    placeholder="Name"
-                                    value={AddTenantAddBrokerFormName}
-                                    onChange={(e) =>
-                                      setAddTenantAddBrokerFormName(
-                                        e.target.value
-                                      )
-                                    }
-                                  />
-                                  <input
-                                    type="text"
-                                    placeholder="Phone Number"
-                                    value={AddTenantAddBrokerFormPhoneNumber}
-                                    onChange={(e) =>
-                                      setAddTenantAddBrokerFormPhoneNumber(
-                                        e.target.value
-                                      )
-                                    }
-                                  />
-                                  <input
-                                    type="text"
-                                    placeholder="Phone Number 2"
-                                    value={AddTenantAddBrokerFormPhoneNumber2}
-                                    onChange={(e) =>
-                                      setAddTenantAddBrokerFormPhoneNumber2(
-                                        e.target.value
-                                      )
-                                    }
-                                  />
-                                  <input
-                                    type="email"
-                                    placeholder="Email"
-                                    value={AddTenantAddBrokerFormEmail}
-                                    onChange={(e) =>
-                                      setAddTenantAddBrokerFormEmail(
-                                        e.target.value
-                                      )
-                                    }
-                                  />
-
-                                  <button
-                                    onClick={() => {
-                                      handleAddBroker();
-                                    }}
-                                  >
-                                    Add
-                                  </button>
-                                </>
-                              ) : (
-                                <>
-                                  {AddTenantSelectedBrokerId !== '' ? (
-                                    <>
-                                      {BrokerList.find(
-                                        (broker: BrokerType) =>
-                                          broker.id ===
-                                          AddTenantSelectedBrokerId
-                                      ) && (
-                                        <div
-                                          className="TenantRow"
-                                          key={
-                                            BrokerList.find(
-                                              (broker: BrokerType) =>
-                                                broker.id ===
-                                                AddTenantSelectedBrokerId
-                                            )?.id
-                                          }
-                                        >
-                                          <div>
-                                            <button
-                                              onClick={() => {
-                                                setAddTenantSelectedBrokerId(
-                                                  BrokerList.find(
-                                                    (broker: BrokerType) =>
-                                                      broker.id ===
-                                                      AddTenantSelectedBrokerId
-                                                  )?.id || ''
-                                                );
-                                              }}
-                                            >
-                                              <p>
-                                                {
-                                                  BrokerList.find(
-                                                    (broker: BrokerType) =>
-                                                      broker.id ===
-                                                      AddTenantSelectedBrokerId
-                                                  )?.name
-                                                }
-                                              </p>
-                                              <p style={{ fontSize: '10px' }}>
-                                                {
-                                                  BrokerList.find(
-                                                    (broker: BrokerType) =>
-                                                      broker.id ===
-                                                      AddTenantSelectedBrokerId
-                                                  )?.phoneNumber
-                                                }
-                                              </p>
-                                            </button>
-                                          </div>
-                                          {AddTenantSelectedBrokerId !== '' && (
-                                            <button
-                                              onClick={() => {
-                                                setAddTenantSelectedBrokerId(
-                                                  ''
-                                                );
-                                              }}
-                                              style={{
-                                                width: '35px',
-                                                height: '35px',
-                                              }}
-                                            >
-                                              X
-                                            </button>
-                                          )}
-                                        </div>
-                                      )}
-                                      <div>
-                                        Commission:{' '}
-                                        <input
-                                          type="number"
-                                          style={{
-                                            width: !isPercentCommission
-                                              ? '80px'
-                                              : '40px',
-                                          }}
-                                          value={commissionValue}
-                                          onChange={(e) =>
-                                            setCommissionValue(
-                                              parseFloat(e.target.value)
-                                            )
-                                          }
-                                          className="AddTenantContainerinnerInput"
-                                          placeholder={
-                                            isPercentCommission
-                                              ? 'Enter percent'
-                                              : 'Enter number'
-                                          }
-                                        />
-                                        {isPercentCommission && (
-                                          <>
-                                            %{' '}
-                                            <em
-                                              style={{
-                                                color: 'var(--Text-Color-Grey)',
-                                              }}
-                                            >
-                                              {commissionValue != '' &&
-                                                (commissionValue / 100) *
-                                                  agreedPrice}
-                                            </em>
-                                          </>
-                                        )}
-                                        {!isPercentCommission && '$'}
-                                        <br />{' '}
-                                        <label>
-                                          <input
-                                            type="checkbox"
-                                            checked={isPercentCommission}
-                                            onChange={() =>
-                                              setIsPercentCommission(true)
-                                            }
-                                          />
-                                          Percentage
-                                        </label>
-                                        <label>
-                                          <input
-                                            type="checkbox"
-                                            checked={!isPercentCommission}
-                                            onChange={() =>
-                                              setIsPercentCommission(false)
-                                            }
-                                          />
-                                          Number
-                                        </label>
-                                      </div>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <input
-                                        type="text"
-                                        placeholder="Search broker"
-                                        value={searchBroker}
-                                        onChange={handleSearchBroker}
-                                      />{' '}
-                                      {filteredBrokerList.map(
-                                        (broker: BrokerType) => (
-                                          <div
-                                            className="TenantRow"
-                                            key={broker.id}
-                                          >
-                                            <div>
-                                              <button
-                                                onClick={() => {
-                                                  setAddTenantSelectedBrokerId(
-                                                    broker.id
-                                                  );
-                                                }}
-                                              >
-                                                <p>{broker.name}</p>
-                                                <p style={{ fontSize: '10px' }}>
-                                                  {broker.phoneNumber}
-                                                </p>
-                                              </button>
-                                            </div>
-                                            <div>
-                                              {[1, 2, 3, 4, 5].map((star) => (
-                                                <span
-                                                  key={star}
-                                                  style={{
-                                                    color:
-                                                      broker.rating >= star
-                                                        ? 'gold'
-                                                        : 'grey',
-                                                  }}
-                                                >
-                                                  ★
-                                                </span>
-                                              ))}
-                                            </div>
-                                          </div>
-                                        )
-                                      )}
-                                    </>
-                                  )}
-                                </>
-                              )}
-                            </>
-                          )}
-                          <hr />
-                          <DocumentInteractor
-                            room={roomType}
-                            TenantsList={TenantList}
-                            AddTenant={true}
-                            isAddRoomDocument={true}
-                            SetRefreshState={SetRefreshState}
-                            refreshState={refreshState}
-                          />
                         </>
                       )}
                   </>
                 )}
+                <hr />
+                {TenantPageSelected === 'Select' ? (
+                  SelectedTenantIdOnAdding != '' && (
+                    <>
+                      <h3 style={{marginTop:"5px", marginBottom:"5px", textAlign:"center"}}>Broker Information</h3>
+                      <div
+                        className="AddTenantContainerinnerElement"
+                        style={{ display: 'flex', alignItems: 'center' }}
+                      >
+                        Track broker:{' '}
+                        <input
+                          type="checkbox"
+                          style={{ width: '20px' }}
+                          checked={AddTenantUseBrokerState}
+                          onChange={(e) => {
+                            setAddTenantUseBrokerState(e.target.checked);
+                          }}
+                        />
+                        {AddTenantUseBrokerState &&
+                          AddTenantSelectedBrokerId == '' && (
+                            <button
+                              onClick={() => {
+                                setAddTenantAddBrokerState(
+                                  !AddTenantAddBrokerState
+                                );
+                              }}
+                            >
+                              {AddTenantAddBrokerState
+                                ? 'Cancel add'
+                                : 'Add new broker'}
+                            </button>
+                          )}
+                      </div>
+                    </>
+                  )
+                ) : (
+                  <>
+                    <h3 style={{marginTop:"5px", marginBottom:"5px", textAlign:"center"}}>Broker Information</h3>
+                    <div
+                      className="AddTenantContainerinnerElement"
+                      style={{ display: 'flex', alignItems: 'center' }}
+                    >
+                      Track broker:{' '}
+                      <input
+                        type="checkbox"
+                        style={{ width: '20px' }}
+                        checked={AddTenantUseBrokerState}
+                        onChange={(e) => {
+                          setAddTenantUseBrokerState(e.target.checked);
+                        }}
+                      />
+                      {AddTenantUseBrokerState &&
+                        AddTenantSelectedBrokerId == '' && (
+                          <button
+                            onClick={() => {
+                              setAddTenantAddBrokerState(
+                                !AddTenantAddBrokerState
+                              );
+                            }}
+                          >
+                            {AddTenantAddBrokerState
+                              ? 'Cancel add'
+                              : 'Add new broker'}
+                          </button>
+                        )}
+                    </div>
+                  </>
+                )}
+
+                {AddTenantUseBrokerState && (
+                  <>
+                    {AddTenantAddBrokerState ? (
+                      <>
+                        <h4>Add New Broker</h4>
+                        <input
+                          type="text"
+                          placeholder="Name"
+                          value={AddTenantAddBrokerFormName}
+                          onChange={(e) =>
+                            setAddTenantAddBrokerFormName(e.target.value)
+                          }
+                        />
+                        <input
+                          type="text"
+                          placeholder="Phone Number"
+                          value={AddTenantAddBrokerFormPhoneNumber}
+                          onChange={(e) =>
+                            setAddTenantAddBrokerFormPhoneNumber(e.target.value)
+                          }
+                        />
+                        <input
+                          type="text"
+                          placeholder="Phone Number 2"
+                          value={AddTenantAddBrokerFormPhoneNumber2}
+                          onChange={(e) =>
+                            setAddTenantAddBrokerFormPhoneNumber2(
+                              e.target.value
+                            )
+                          }
+                        />
+                        <input
+                          type="email"
+                          placeholder="Email"
+                          value={AddTenantAddBrokerFormEmail}
+                          onChange={(e) =>
+                            setAddTenantAddBrokerFormEmail(e.target.value)
+                          }
+                        />
+                        <button
+                          onClick={() => {
+                            handleAddBroker();
+                          }}
+                        >
+                          Add
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        {AddTenantSelectedBrokerId !== '' ? (
+                          <>
+                            <h4>Selected Broker</h4>
+                            {BrokerList.find(
+                              (broker: BrokerType) =>
+                                broker.id === AddTenantSelectedBrokerId
+                            ) && (
+                              <div
+                                className="TenantRow"
+                                key={
+                                  BrokerList.find(
+                                    (broker: BrokerType) =>
+                                      broker.id === AddTenantSelectedBrokerId
+                                  )?.id
+                                }
+                              >
+                                <div>
+                                  <button
+                                    onClick={() => {
+                                      setAddTenantSelectedBrokerId(
+                                        BrokerList.find(
+                                          (broker: BrokerType) =>
+                                            broker.id ===
+                                            AddTenantSelectedBrokerId
+                                        )?.id || ''
+                                      );
+                                    }}
+                                  >
+                                    <p>
+                                      {
+                                        BrokerList.find(
+                                          (broker: BrokerType) =>
+                                            broker.id ===
+                                            AddTenantSelectedBrokerId
+                                        )?.name
+                                      }
+                                    </p>
+                                    <p style={{ fontSize: '10px' }}>
+                                      {
+                                        BrokerList.find(
+                                          (broker: BrokerType) =>
+                                            broker.id ===
+                                            AddTenantSelectedBrokerId
+                                        )?.phoneNumber
+                                      }
+                                    </p>
+                                  </button>
+                                </div>
+                                {AddTenantSelectedBrokerId !== '' && (
+                                  <button
+                                    onClick={() => {
+                                      setAddTenantSelectedBrokerId('');
+                                    }}
+                                    style={{
+                                      width: '35px',
+                                      height: '35px',
+                                    }}
+                                  >
+                                    X
+                                  </button>
+                                )}
+                              </div>
+                            )}
+                            <h4>Commission</h4>
+                            <div>
+                              Commission:{' '}
+                              <input
+                                type="number"
+                                style={{
+                                  width: !isPercentCommission ? '80px' : '40px',
+                                }}
+                                value={commissionValue}
+                                onChange={(e) =>
+                                  setCommissionValue(parseFloat(e.target.value))
+                                }
+                                className="AddTenantContainerinnerInput"
+                                placeholder={
+                                  isPercentCommission
+                                    ? 'Enter percent'
+                                    : 'Enter number'
+                                }
+                              />
+                              {isPercentCommission && (
+                                <>
+                                  %{' '}
+                                  <em
+                                    style={{
+                                      color: 'var(--Text-Color-Grey)',
+                                    }}
+                                  >
+                                    {commissionValue != '' &&
+                                      (commissionValue / 100) * agreedPrice}
+                                  </em>
+                                </>
+                              )}
+                              {!isPercentCommission && '$'}
+                              <br />{' '}
+                              <label>
+                                <input
+                                  type="checkbox"
+                                  checked={isPercentCommission}
+                                  onChange={() => setIsPercentCommission(true)}
+                                />
+                                Percentage
+                              </label>
+                              <label>
+                                <input
+                                  type="checkbox"
+                                  checked={!isPercentCommission}
+                                  onChange={() => setIsPercentCommission(false)}
+                                />
+                                Number
+                              </label>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <h4>Select Broker</h4>
+                            <input
+                              type="text"
+                              placeholder="Search broker"
+                              value={searchBroker}
+                              onChange={handleSearchBroker}
+                            />{' '}
+                            {filteredBrokerList.map((broker: BrokerType) => (
+                              <div className="TenantRow" key={broker.id}>
+                                <div>
+                                  <button
+                                    onClick={() => {
+                                      setAddTenantSelectedBrokerId(broker.id);
+                                    }}
+                                  >
+                                    <p>{broker.name}</p>
+                                    <p style={{ fontSize: '10px' }}>
+                                      {broker.phoneNumber}
+                                    </p>
+                                  </button>
+                                </div>
+                                <div>
+                                  {[1, 2, 3, 4, 5].map((star) => (
+                                    <span
+                                      key={star}
+                                      style={{
+                                        color:
+                                          broker.rating >= star
+                                            ? 'gold'
+                                            : 'grey',
+                                      }}
+                                    >
+                                      ★
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            ))}
+                          </>
+                        )}
+                      </>
+                    )}
+                  </>
+                )}
+                <hr />
+
+                {TenantPageSelected == "Select" && SelectedTenantIdOnAdding != ''&& <><h3 style={{marginTop:"5px", marginBottom:"5px", textAlign:"center"}}>Document Attachments</h3>
+                <DocumentInteractor
+                  room={roomType}
+                  TenantsList={TenantList}
+                  AddTenant={true}
+                  isAddRoomDocument={true}
+                  SetRefreshState={SetRefreshState}
+                  refreshState={refreshState}
+                /></>}
+{TenantPageSelected == "New"&& <><h3 style={{marginTop:"5px", marginBottom:"5px", textAlign:"center"}}>Document Attachments</h3>
+                <DocumentInteractor
+                  room={roomType}
+                  TenantsList={TenantList}
+                  AddTenant={true}
+                  isAddRoomDocument={true}
+                  SetRefreshState={SetRefreshState}
+                  refreshState={refreshState}
+                /></>}
                 <div
                   className="BottomAddTenantContainer"
                   style={{
                     display: 'flex',
                     justifyContent: 'space-evenly',
+                    flexDirection: 'column',
                     alignItems: 'center',
+                    height: '70px',
                   }}
                 >
-                  <button
-                    className="AddTenantButton"
-                    onClick={() => {
-                      setName('');
-                      setTel1('');
-                      setTel2('');
-                      setEmail('');
-                      setSelectedAgreement('Open-Ended');
-                      setStartTime('');
-                      setEndTime('');
-                      setAgreedPrice(0);
-                      updateRoomPropertyLocal(
-                        roomType.id,
-                        'AddTenantState',
-                        false
-                      );
+                  {TenantPageSelected === 'New' && name.length <= 3 && (
+                    <p
+                      style={{
+                        color: 'var(--Text-Color-Grey)',
+                        fontSize: '14px',
+                      }}
+                    >
+                      Name has to be longer than 3
+                    </p>
+                  )}
+{TenantPageSelected == "Select" && SelectedTenantIdOnAdding != ''&&  !isValidDate(startTime) && (
+                    <p
+                      style={{
+                        color: 'var(--Text-Color-Grey)',
+                        fontSize: '14px',
+                      }}
+                    >
+                      Start time has to be valid
+                    </p>
+                  )}
+                  {TenantPageSelected === 'New' && !isValidDate(startTime) && (
+                    <p
+                      style={{
+                        color: 'var(--Text-Color-Grey)',
+                        fontSize: '14px',
+                      }}
+                    >
+                      Start time has to be valid
+                    </p>
+                  )}
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-evenly',
+                      alignItems: 'center',
+                      height: '60px',
+                      width: '100%',
                     }}
                   >
-                    Cancel
-                  </button>
-                  <button
-                    className="AddTenantButton"
-                    onClick={() => {
-                      handleAddTenantButton();
-                    }}
-                  >
-                    Add
-                  </button>
+                    <button
+                      className="AddTenantButton"
+                      onClick={() => {
+                        setName('');
+                        setTel1('');
+                        setTel2('');
+                        setEmail('');
+                        setSelectedAgreement('Open-Ended');
+                        setStartTime('');
+                        setEndTime('');
+                        setAgreedPrice(0);
+                        updateRoomProperty(
+                          roomType.id,
+                          'AddTenantState',
+                          false
+                        );
+                      }}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      className="AddTenantButton"
+                      onClick={() => {
+                        handleAddTenantButton();
+                      }}
+                    >
+                      Add
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -2579,476 +2379,420 @@ if (currentAgreement) {
                   }}
                 >
                   {/* Tenant Information Section */}
-
-                  {privileges.editTenantRoomTenantInfo ? (
-                    <>
-                      <CollapsibleSection
-                        title="Tenant Information"
-                        content={
-                          <>
-                            <InfoItem
-                              label="Name"
-                              value={
-                                TenantList.find(
-                                  (tenant: any) =>
-                                    tenant.id === roomType.tenantId
-                                )?.name || ''
-                              }
-                              onSave={(newValue) =>
-                                editTenantInfo('name', newValue)
-                              }
-                            />
-                            <InfoItem2
-                              label="Tel 1"
-                              value={
-                                TenantList.find(
-                                  (tenant: any) =>
-                                    tenant.id === roomType.tenantId
-                                )?.phoneNumber || ''
-                              }
-                              onSave={(newValue) =>
-                                editTenantInfo('phoneNumber', newValue)
-                              }
-                            />
-                            <InfoItem2
-                              label="Tel 2"
-                              value={
-                                TenantList.find(
-                                  (tenant: any) =>
-                                    tenant.id === roomType.tenantId
-                                )?.phoneNumber2 || ''
-                              }
-                              onSave={(newValue) =>
-                                editTenantInfo('phoneNumber2', newValue)
-                              }
-                            />
-                            <InfoItem2
-                              label="Email"
-                              value={
-                                TenantList.find(
-                                  (tenant: any) =>
-                                    tenant.id === roomType.tenantId
-                                )?.email || ''
-                              }
-                              onSave={(newValue) =>
-                                editTenantInfo('email', newValue)
-                              }
-                            />
-                            <InfoItem2
-                              label="TIN"
-                              value={
-                                TenantList.find(
-                                  (tenant: any) =>
-                                    tenant.id === roomType.tenantId
-                                )?.TIN || ''
-                              }
-                              onSave={(newValue) =>
-                                editTenantInfo('TIN', newValue)
-                              }
-                            />
-                            <InfoItem2
-                              label="Rent Reason"
-                              value={
-                                TenantList.find(
-                                  (tenant: any) =>
-                                    tenant.id === roomType.tenantId
-                                )?.RentReason || ''
-                              }
-                              onSave={(newValue) =>
-                                editTenantInfo('RentReason', newValue)
-                              }
-                            />
-                          </>
-                        }
-                        isOpen={sectionStates.tenantInformation}
-                        onToggle={() =>
-                          setSectionStates((prev) => ({
-                            ...prev,
-                            tenantInformation: !prev.tenantInformation,
-                          }))
-                        }
-                      />
-                    </>
-                  ) : (
-                    <>edit tenant room tenant info LOCKED<br></br></>
-                  )}
-                  {privileges.editTenantRoomAgreementInfo ? (
-                    <>
-                      {/* Agreement Information Section */}
-                      <div
-                        style={{
-                          width: '93%',
-                          background: 'var(--Secondary-Color30)',
-                          padding: '5px',
-                          marginBottom: '10px',
-                          borderRadius: '5px',
-                        }}
-                      >
-                        <div
-                          style={{
-                            fontSize: '18px',
-                            fontWeight: 'bold',
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            cursor: 'pointer',
-                          }}
-                          onClick={() =>
-                            setSectionStates((prev) => ({
-                              ...prev,
-                              agreementInformation: !prev.agreementInformation,
-                            }))
+                  <CollapsibleSection
+                    title="Tenant Information"
+                    content={
+                      <>
+                        <InfoItem
+                          label="Name"
+                          value={
+                            TenantList.find(
+                              (tenant: any) => tenant.id === roomType.tenantId
+                            )?.name || ''
                           }
-                        >
-                          <span style={{ marginBottom: '10px' }}>
-                            {sectionStates.agreementInformation ? '▼' : '▶'}{' '}
-                            Agreement Information
-                          </span>
-                        </div>
-                        {sectionStates.agreementInformation && (
+                          onSave={(newValue) =>
+                            editTenantInfo('name', newValue)
+                          }
+                        />
+                        <InfoItem2
+                          label="Tel 1"
+                          value={
+                            TenantList.find(
+                              (tenant: any) => tenant.id === roomType.tenantId
+                            )?.phoneNumber || ''
+                          }
+                          onSave={(newValue) =>
+                            editTenantInfo('phoneNumber', newValue)
+                          }
+                        />
+                        <InfoItem2
+                          label="Tel 2"
+                          value={
+                            TenantList.find(
+                              (tenant: any) => tenant.id === roomType.tenantId
+                            )?.phoneNumber2 || ''
+                          }
+                          onSave={(newValue) =>
+                            editTenantInfo('phoneNumber2', newValue)
+                          }
+                        />
+                        <InfoItem2
+                          label="Email"
+                          value={
+                            TenantList.find(
+                              (tenant: any) => tenant.id === roomType.tenantId
+                            )?.email || ''
+                          }
+                          onSave={(newValue) =>
+                            editTenantInfo('email', newValue)
+                          }
+                        />
+                        <InfoItem2
+                          label="TIN"
+                          value={
+                            TenantList.find(
+                              (tenant: any) => tenant.id === roomType.tenantId
+                            )?.TIN || ''
+                          }
+                          onSave={(newValue) => editTenantInfo('TIN', newValue)}
+                        />
+                        <InfoItem2
+                          label="Rent Reason"
+                          value={
+                            TenantList.find(
+                              (tenant: any) => tenant.id === roomType.tenantId
+                            )?.RentReason || ''
+                          }
+                          onSave={(newValue) =>
+                            editTenantInfo('RentReason', newValue)
+                          }
+                        />
+                      </>
+                    }
+                    isOpen={sectionStates.tenantInformation}
+                    onToggle={() =>
+                      setSectionStates((prev) => ({
+                        ...prev,
+                        tenantInformation: !prev.tenantInformation,
+                      }))
+                    }
+                  />
+
+                  {/* Agreement Information Section */}
+                  <div
+                    style={{
+                      width: '93%',
+                      background: 'var(--Secondary-Color30)',
+                      padding: '5px',
+                      marginBottom: '10px',
+                      borderRadius: '5px',
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: '18px',
+                        fontWeight: 'bold',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        cursor: 'pointer',
+                      }}
+                      onClick={() =>
+                        setSectionStates((prev) => ({
+                          ...prev,
+                          agreementInformation: !prev.agreementInformation,
+                        }))
+                      }
+                    >
+                      <span style={{ marginBottom: '10px' }}>
+                        {sectionStates.agreementInformation ? '▼' : '▶'}{' '}
+                        Agreement Information
+                      </span>
+                    </div>
+                    {sectionStates.agreementInformation && (
+                      <>
+                        {renderInfoItem(
+                          'Agreement type',
+                          TenantList.find(
+                            (tenant: any) => tenant.id === roomType.tenantId
+                          )?.SelectedAgreement
+                        )}
+                        {TenantList.find(
+                          (tenant: any) => tenant.id === roomType.tenantId
+                        )?.SelectedAgreement !== 'Fixed-Term' ? (
                           <>
                             {renderInfoItem(
-                              'Agreement type',
-                              TenantList.find(
-                                (tenant: any) => tenant.id === roomType.tenantId
-                              )?.SelectedAgreement
-                            )}
-                            {TenantList.find(
-                              (tenant: any) => tenant.id === roomType.tenantId
-                            )?.SelectedAgreement !== 'Fixed-Term' ? (
-                              <>
-                                {renderInfoItem(
-                                  'Start time',
-                                  new Date(
-                                    TenantList.find(
-                                      (tenant: any) =>
-                                        tenant.id === roomType.tenantId
-                                    )?.startTime
-                                  ).toDateString(),
-                                  toEthiopianDateString(
-                                    new Date(
-                                      TenantList.find(
-                                        (tenant: any) =>
-                                          tenant.id === roomType.tenantId
-                                      )?.startTime
-                                    )
-                                  )
-                                )}
-                                {renderInfoItem(
-                                  'Agreed Price',
-                                  `${roomType.AgreedPrice}$ per ${roomType.PaymentCycleType} days`
-                                )}
-                                {renderInfoItem(
-                                  'Payment cycle',
-                                  roomType.PaymentCycleType
-                                )}
-                              </>
-                            ) : (
-                              <AgreementViewerForRoom
-                                view={
+                              'Start time',
+                              new Date(
+                                TenantList.find(
+                                  (tenant: any) =>
+                                    tenant.id === roomType.tenantId
+                                )?.startTime
+                              ).toDateString(),
+                              toEthiopianDateString(
+                                new Date(
                                   TenantList.find(
                                     (tenant: any) =>
                                       tenant.id === roomType.tenantId
-                                  )?.SelectedAgreement == 'Fixed-Term'
-                                }
-                                updateRoomPropertyLocal={
-                                  updateRoomPropertyLocal
-                                }
-                                getCorrectPaymentStatment={
-                                  getCorrectPaymentStatment
-                                }
-                                TenantList={TenantList}
-                                roomType={roomType}
-                                agreementApi={agreementApi}
-                                ShowState={roomType.ViewAgreement}
-                                calculateDaysDifference={
-                                  calculateDaysDifference
-                                }
-                                roomPaymentInfoApi={roomPaymentInfoApi}
-                                updateRoomProperty={updateRoomProperty}
-                                handlePaymentRefresh={handlePaymentRefresh}
-                                setChangeMade={setChangeMade}
-                              />
+                                  )?.startTime
+                                )
+                              )
+                            )}
+                            {renderInfoItem(
+                              'Agreed Price',
+                              `${roomType.AgreedPrice}$ per ${roomType.PaymentCycleType} days`
+                            )}
+                            {renderInfoItem(
+                              'Payment cycle',
+                              roomType.PaymentCycleType
                             )}
                           </>
-                        )}
-                      </div>
-                    </>
-                  ) : (
-                    <>edit tenant room agreement info LOCKED<br></br></>
-                  )}
-                  {privileges.editTenantRoomUtilitySettings ? (
-                    <>
-                      <div
-                        style={{
-                          width: '93%',
-                          background: 'var(--Secondary-Color30)',
-                          padding: '5px',
-                          marginBottom: '10px',
-                          borderRadius: '5px',
-                        }}
-                      >
-                        <div
-                          style={{
-                            fontSize: '18px',
-                            fontWeight: 'bold',
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            cursor: 'pointer',
-                          }}
-                          onClick={() =>
-                            setSectionStates((prev) => ({
-                              ...prev,
-                              utilitySettings: !prev.utilitySettings,
-                            }))
-                          }
-                        >
-                          <span style={{ marginBottom: '10px' }}>
-                            {sectionStates.utilitySettings ? '▼' : '▶'} Utility
-                            Settings
-                          </span>
-                        </div>
-                        {sectionStates.utilitySettings && (
-                          <div>
-                            <div className="utility-settings">
-                              <label>
-                                Payment:
-                                <select
-                                  value={roomType.utilityPaymentEvery}
-                                  onChange={(e) =>
-                                    updateRoomProperty(
-                                      roomType.id,
-                                      'utilityPaymentEvery',
-                                      e.target.value
-                                    )
-                                  }
-                                >
-                                  <option value="30">Every 30 days</option>
-                                  <option value="15">Every 15 days</option>
-                                  <option value="7">Every 7 days</option>
-                                  <option value="custom">
-                                    Custom amount of days
-                                  </option>
-                                </select>
-                              </label>
-                              {roomType.utilityPaymentEvery === 'custom' && (
-                                <input
-                                  type="number"
-                                  value={roomType.utilityPaymentEveryCustom}
-                                  onChange={(e) =>
-                                    updateRoomProperty(
-                                      roomType.id,
-                                      'utilityPaymentEveryCustom',
-                                      parseInt(e.target.value)
-                                    )
-                                  }
-                                />
-                              )}
-                            </div>
-                            <div className="utility-settings">
-                              <label>
-                                Use a different start date:
-                                <input
-                                  type="checkbox"
-                                  checked={
-                                    roomType.utilityPaymentUseDifferentStartDate
-                                  }
-                                  onChange={(e) =>
-                                    updateRoomProperty(
-                                      roomType.id,
-                                      'utilityPaymentUseDifferentStartDate',
-                                      e.target.checked
-                                    )
-                                  }
-                                />
-                              </label>
-                              {roomType.utilityPaymentUseDifferentStartDate && (
-                                <input
-                                  type="Date"
-                                  value={
-                                    new Date(roomType.utilityPaymentStartDate)
-                                      .toISOString()
-                                      .split('T')[0] || '0'
-                                  }
-                                  onChange={(e) => {
-                                    const dateValue = new Date(e.target.value);
-                                    if (!isNaN(dateValue.getTime())) {
-                                      updateRoomProperty(
-                                        roomType.id,
-                                        'utilityPaymentStartDate',
-                                        dateValue.getTime()
-                                      );
-                                    }
-                                  }}
-                                />
-                              )}
-                            </div>
-                            <UtilityPaymentsTable
-                              roomId={roomType.id}
-                              utilityPayments={roomType.utilityPayments}
-                              updateRoomPropertyLocal={updateRoomPropertyLocal}
-                              setChangeMade={setChangeMade}
-                              userId={SelectedUserId}
-                            />
-                          </div>
-                        )}
-                      </div>
-                    </>
-                  ) : (
-                    <>edit tenant room utility settings LOCKED<br></br></>
-                  )}
-                  {privileges.editTenantRoomAttachments ? (
-                    <>
-                      <div
-                        style={{
-                          width: '93%',
-                          background: 'var(--Secondary-Color30)',
-                          padding: '5px',
-                          marginBottom: '10px',
-                          borderRadius: '5px',
-                        }}
-                      >
-                        <div
-                          style={{
-                            fontSize: '18px',
-                            fontWeight: 'bold',
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            cursor: 'pointer',
-                          }}
-                          onClick={() =>
-                            setSectionStates((prev) => ({
-                              ...prev,
-                              fileAttachments: !prev.fileAttachments,
-                            }))
-                          }
-                        >
-                          <span style={{ marginBottom: '10px' }}>
-                            {sectionStates.fileAttachments ? '▼' : '▶'} File
-                            Attachments
-                          </span>
-                        </div>
-                        {sectionStates.fileAttachments && (
-                          <div
-                            style={{
-                              width: '97%',
-                              background: 'var(--Secondary-Color20)',
-                              minHeight: '100px',
-                              padding: '5px',
-                              borderRadius: '10px',
-                            }}
-                          >
-                            <DocumentInteractor
-                              room={roomType}
-                              TenantsList={TenantList}
-                            />
-                          </div>
-                        )}
-                      </div>
-                    </>
-                  ) : (
-                    <>edit tenant room attachments LOCKED<br></br></>
-                  )}
-                  {privileges.editTenantRoomNotificationSettings ? (
-                    <>
-                      <div
-                        style={{
-                          width: '93%',
-                          background: 'var(--Secondary-Color30)',
-                          padding: '5px',
-                          marginBottom: '10px',
-                          borderRadius: '5px',
-                        }}
-                      >
-                        <div
-                          style={{
-                            fontSize: '18px',
-                            fontWeight: 'bold',
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            cursor: 'pointer',
-                          }}
-                          onClick={() =>
-                            setSectionStates((prev) => ({
-                              ...prev,
-                              remindersAndNotifications:
-                                !prev.remindersAndNotifications,
-                            }))
-                          }
-                        >
-                          <span style={{ marginBottom: '10px' }}>
-                            {sectionStates.remindersAndNotifications
-                              ? '▼'
-                              : '▶'}{' '}
-                            Reminders and Notifications
-                          </span>
-                        </div>
-                        {sectionStates.remindersAndNotifications && (
-                          <NotificationSettingsTable
-                            notificationSettings={roomType.notificationSettings}
-                            setNotificationSettings={(settings: number) =>
-                              updateRoomProperty(
-                                roomType.id,
-                                'notificationSettings',
-                                settings
-                              )
+                        ) : (
+                          <AgreementViewerForRoom
+                            view={
+                              TenantList.find(
+                                (tenant: any) => tenant.id === roomType.tenantId
+                              )?.SelectedAgreement == 'Fixed-Term'
                             }
-                            userId={SelectedUserId}
+                            updateRoomPropertyLocal={updateRoomPropertyLocal}
+                            getCorrectPaymentStatment={
+                              getCorrectPaymentStatment
+                            }
+                            TenantList={TenantList}
+                            roomType={roomType}
+                            agreementApi={agreementApi}
+                            ShowState={roomType.ViewAgreement}
+                            calculateDaysDifference={calculateDaysDifference}
+                            roomPaymentInfoApi={roomPaymentInfoApi}
+                            updateRoomProperty={updateRoomProperty}
+                            handlePaymentRefresh={handlePaymentRefresh}
                             setChangeMade={setChangeMade}
-                            roomId={roomType.id}
                           />
                         )}
+                      </>
+                    )}
+                  </div>
+                  <div
+                    style={{
+                      width: '93%',
+                      background: 'var(--Secondary-Color30)',
+                      padding: '5px',
+                      marginBottom: '10px',
+                      borderRadius: '5px',
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: '18px',
+                        fontWeight: 'bold',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        cursor: 'pointer',
+                      }}
+                      onClick={() =>
+                        setSectionStates((prev) => ({
+                          ...prev,
+                          utilitySettings: !prev.utilitySettings,
+                        }))
+                      }
+                    >
+                      <span style={{ marginBottom: '10px' }}>
+                        {sectionStates.utilitySettings ? '▼' : '▶'} Utility
+                        Settings
+                      </span>
+                    </div>
+                    {sectionStates.utilitySettings && (
+                      <div>
+                        <div className="utility-settings">
+                          <label>
+                            Payment:
+                            <select
+                              value={roomType.utilityPaymentEvery}
+                              onChange={(e) =>
+                                updateRoomProperty(
+                                  roomType.id,
+                                  'utilityPaymentEvery',
+                                  e.target.value
+                                )
+                              }
+                            >
+                              <option value="30">Every 30 days</option>
+                              <option value="15">Every 15 days</option>
+                              <option value="7">Every 7 days</option>
+                              <option value="monthly">Every 7 days</option>
+                              <option value="custom">
+                                Custom amount of days
+                              </option>
+                            </select>
+                          </label>
+                          {roomType.utilityPaymentEvery === 'custom' && (
+                            <input
+                              type="number"
+                              value={roomType.utilityPaymentEveryCustom}
+                              onChange={(e) =>
+                                updateRoomProperty(
+                                  roomType.id,
+                                  'utilityPaymentEveryCustom',
+                                  parseInt(e.target.value)
+                                )
+                              }
+                            />
+                          )}
+                        </div>
+                        <div className="utility-settings">
+                          <label>
+                            Use a different start date:
+                            <input
+                              type="checkbox"
+                              checked={
+                                roomType.utilityPaymentUseDifferentStartDate
+                              }
+                              onChange={(e) =>
+                                updateRoomProperty(
+                                  roomType.id,
+                                  'utilityPaymentUseDifferentStartDate',
+                                  e.target.checked
+                                )
+                              }
+                            />
+                          </label>
+                          {roomType.utilityPaymentUseDifferentStartDate && (
+                            <input
+                              type="Date"
+                              value={
+                                new Date(roomType.utilityPaymentStartDate)
+                                  .toISOString()
+                                  .split('T')[0] || '0'
+                              }
+                              onChange={(e) => {
+                                const dateValue = new Date(e.target.value);
+                                if (!isNaN(dateValue.getTime())) {
+                                  updateRoomProperty(
+                                    roomType.id,
+                                    'utilityPaymentStartDate',
+                                    dateValue.getTime()
+                                  );
+                                }
+                              }}
+                            />
+                          )}
+                        </div>
+                        <UtilityPaymentsTable
+                          roomId={roomType.id}
+                          utilityPayments={roomType.utilityPayments}
+                          updateRoomPropertyLocal={updateRoomPropertyLocal}
+                          setChangeMade={setChangeMade}
+                          userId={SelectedUserId}
+                        />
                       </div>
-                    </>
-                  ) : (
-                    <>edit tenant room notification settings LOCKED <br></br></>
-                  )}
-
-                  {privileges.editTenantRoomTenantStay ? (
-                    <>
-                      {' '}
-                      <div
-                        className="BottomAddTenantContainer"
-                        style={{
-                          height: '55px',
-                          display: 'flex',
-                          justifyContent: 'center',
-                          alignItems: 'center',
-                          marginTop: '20px',
-                        }}
-                      >
-                        <button
-                          onClick={() => {
-                            setTenantLeavePannelState(true);
-                          }}
-                          style={{ marginRight: '20px' }}
-                        >
-                          End Stay
-                        </button>
-                        <button
-                          className="AddTenantButton"
-                          onClick={() =>
-                            updateRoomProperty(
-                              roomType.id,
-                              'ViewAgreement',
-                              false
-                            )
-                          }
-                        >
-                          Close
-                        </button>
-                      </div>
-                    </>
-                  ) : (
-                    <>edit tenant room tenant stay LOCKED<br></br></>
-                  )}
+                    )}
+                  </div>
 
                   {/* File Attachments Section */}
+                  <div
+                    style={{
+                      width: '93%',
+                      background: 'var(--Secondary-Color30)',
+                      padding: '5px',
+                      marginBottom: '10px',
+                      borderRadius: '5px',
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: '18px',
+                        fontWeight: 'bold',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        cursor: 'pointer',
+                      }}
+                      onClick={() =>
+                        setSectionStates((prev) => ({
+                          ...prev,
+                          fileAttachments: !prev.fileAttachments,
+                        }))
+                      }
+                    >
+                      <span style={{ marginBottom: '10px' }}>
+                        {sectionStates.fileAttachments ? '▼' : '▶'} File
+                        Attachments
+                      </span>
+                    </div>
+                    {sectionStates.fileAttachments && (
+                      <div
+                        style={{
+                          width: '97%',
+                          background: 'var(--Secondary-Color20)',
+                          minHeight: '100px',
+                          padding: '5px',
+                          borderRadius: '10px',
+                        }}
+                      >
+                        <DocumentInteractor
+                          room={roomType}
+                          TenantsList={TenantList}
+                        />
+                      </div>
+                    )}
+                  </div>
 
                   {/* Reminders and Notifications Section */}
+                  <div
+                    style={{
+                      width: '93%',
+                      background: 'var(--Secondary-Color30)',
+                      padding: '5px',
+                      marginBottom: '10px',
+                      borderRadius: '5px',
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: '18px',
+                        fontWeight: 'bold',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        cursor: 'pointer',
+                      }}
+                      onClick={() =>
+                        setSectionStates((prev) => ({
+                          ...prev,
+                          remindersAndNotifications:
+                            !prev.remindersAndNotifications,
+                        }))
+                      }
+                    >
+                      <span style={{ marginBottom: '10px' }}>
+                        {sectionStates.remindersAndNotifications ? '▼' : '▶'}{' '}
+                        Reminders and Notifications
+                      </span>
+                    </div>
+                    {sectionStates.remindersAndNotifications && (
+                      <NotificationSettingsTable
+                        notificationSettings={roomType.notificationSettings}
+                        setNotificationSettings={(settings: number) =>
+                          updateRoomProperty(
+                            roomType.id,
+                            'notificationSettings',
+                            settings
+                          )
+                        }
+                        userId={SelectedUserId}
+                        setChangeMade={setChangeMade}
+                        roomId={roomType.id}
+                      />
+                    )}
+                  </div>
+                  <div
+                    className="BottomAddTenantContainer"
+                    style={{
+                      height: '55px',
+                      display: 'flex',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      marginTop: '20px',
+                    }}
+                  >
+                    <button
+                      onClick={() => {
+                        setTenantLeavePannelState(true);
+                      }}
+                      style={{ marginRight: '20px' }}
+                    >
+                      End Stay
+                    </button>
+                    <button
+                      className="AddTenantButton"
+                      onClick={() =>
+                        updateRoomProperty(roomType.id, 'ViewAgreement', false)
+                      }
+                    >
+                      Close
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

@@ -27,15 +27,15 @@ export type RoomPayInfo = {
 };
 
 interface Props {
-  paymentData: RoomPayInfo[];
-  agreedPrice: number;
-  roomType: RoomType;
-  tenantList: tenant[];
+  paymentData: RoomPayInfo[];//
+  agreedPrice: number;//
+  roomType: RoomType;//
+  tenantList: tenant[];//
   roomPaymentInfoApi: any;
-  refresh: () => void;
-  extendPaymentSchedule: () => void;
-  ShowReceipt: boolean;
-  setShowReceipt: React.Dispatch<React.SetStateAction<boolean>>;
+  refresh: () => void;//
+  extendPaymentSchedule: () => void;//
+  ShowReceipt: boolean;//
+  setShowReceipt: React.Dispatch<React.SetStateAction<boolean>>;//
   setChangeMade: any;
   SelectedUserId: string;
   updateRoomPropertyLocal: any;
@@ -87,7 +87,7 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
       let paymentCount = 0;
       const existingPayments = await getValuesWithSql(
         'room_pay_info',
-        `WHERE roomId = '${roomType.id}'`
+        `WHERE roomId = '${roomType.id}' AND tenantId = '${roomType.tenantId}'`
       );
       while (
         paymentCount < 10 * roomType.paymentShowAmount &&
@@ -216,7 +216,7 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
 
     const actualPayments = await getValuesWithSql(
       'room_pay_info',
-      `WHERE roomId = '${room.id}'`
+      `WHERE roomId = '${room.id}' AND tenantId = '${room.tenantId}'`
     );
 
     const finalPayments = allPayments.map((payment) => {
@@ -295,6 +295,7 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
           ...payment,
           Paid: 1,
           roomId: roomType.id,
+          tenantId: roomType.tenantId,
         },
         setChangeMade
       );

@@ -131,7 +131,11 @@ const UtilityPanel: React.FC<props> = ({
 
         ListOfUtilities.unshift(utilityDateObject); // Add to the start of the list
 
-        currentDate.setDate(currentDate.getDate() - paymentDateType);
+        if (roomType.utilityPaymentEvery === 'monthly') {
+          currentDate.setMonth(currentDate.getMonth() - 1);
+        } else {
+          currentDate.setDate(currentDate.getDate() - paymentDateType);
+        }
         i++;
       }
 
@@ -191,7 +195,11 @@ const UtilityPanel: React.FC<props> = ({
 
         ListOfUtilities.push(utilityDateObject);
 
-        currentDate.setDate(currentDate.getDate() + paymentDateType);
+        if (roomType.utilityPaymentEvery === 'monthly') {
+          currentDate.setMonth(currentDate.getMonth() + 1);
+        } else {
+          currentDate.setDate(currentDate.getDate() + paymentDateType);
+        }
         i++;
       }
       const uniqueUtilities = ListOfUtilities.filter((utility, index, self) =>

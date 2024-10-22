@@ -788,6 +788,7 @@ const MainPage = ({
       { type: 'bool', Detail: '', Boolean: false, Number: 0, id: 'avx' },
     ]);
   };
+
   const handleRenameFolder = async (oldName: string, newName: string) => {
     const result = await renameFolder(oldName, newName);
     if (result && result.message === 'Folder renamed successfully') {
@@ -939,7 +940,7 @@ const MainPage = ({
   }, [SelectedPage]);
 
   const SideBarItem = ({ page, currentPage, onClick, children }: any) => (
-    <div
+    <button
       onClick={onClick}
       className={
         currentPage === page
@@ -949,7 +950,7 @@ const MainPage = ({
     >
       <div>{children}</div>
       {currentPage !== page && <div>{'-▶'}</div>}
-    </div>
+    </button>
   );
   const [tempSquareMeters, setTempSquareMeters] = useState(
     RoomList.find((r: RoomType) => r.id === SelectedEditRoomId)?.squareMeters ||
@@ -1007,11 +1008,7 @@ const MainPage = ({
         >
           {SelectedPage === 'Rooms' ? (
             <>
-              <div
-                className="SideBarRoomPageTopPart"
-                style={{ height: AddARoomState ? '40%' : '100%' }}
-              >
-                <div className="SideBarTopContainer">
+              <div className="SideBarTopContainer">
                   <button
                     className="SideBarTopButton"
                     onClick={handleCloseSideBar}
@@ -1050,6 +1047,11 @@ const MainPage = ({
                     {ShowArchived ? 'Show unarchived' : 'Show archived'}
                   </button>{' '}
                 </div>
+              <div
+                className="SideBarRoomPageTopPart"
+                style={{ height: AddARoomState ? '0%' : '100%' }}
+              >
+                
                 <div
                   className="SearchBarContainer"
                   style={{ height: isSearchOpen ? '115px' : '50px' }}
@@ -1336,7 +1338,7 @@ const MainPage = ({
               </div>
               <div
                 className="SideBarRoomPageBottomPartAddRoom"
-                style={{ height: AddARoomState ? 'calc(60% - 61px)' : '0%' }}
+                style={{ height: AddARoomState ? 'calc(100% - 130px)' : '0%' }}
               >
                 <div>
                   <h1 style={{ display: 'flex', justifyContent: 'center' }}>
@@ -1996,6 +1998,7 @@ const MainPage = ({
               SelectedAppUser={SelectedAppUser}
               setChangeMade={setChangeMade}
               SelectedUserId={SelectedUserId}
+          
             />
           )}
           {SelectedPage === 'Calendar' && (
@@ -2029,7 +2032,7 @@ const MainPage = ({
               BrokerRecommendationList={BrokerRecommendationList}
               DashboardSelectedPage={DashboardSelectedPage}
               SelectedUserId={SelectedUserId}
-              setChangeMade={setChangeMade}
+              setChangeMade={setChangeMade}updateRoomPropertyLocal={updateRoomPropertyLocal}updateRoomProperty={updateRoomProperty}
             />
           )}
           {SelectedPage === 'Database' && (

@@ -113,7 +113,7 @@ function Hello() {
 
     const actualPayments = await getValuesWithSql(
       'room_pay_info',
-      `WHERE roomId = '${room.id}'`
+      `WHERE roomId = '${room.id}' AND tenantId = '${room.tenantId}'`
     );
 
     const finalPayments = allPayments.map((payment) => {
@@ -159,11 +159,7 @@ function Hello() {
     return 0;
   };
   class RoomApi {
-    getPaymentTimelineInfo = async (roomId: string) => {
-      const AllRoomPayInfo =
-        (await roomPaymentInfoApi.getRoomPaymentsApi(roomId)) || [];
-      return AllRoomPayInfo;
-    };
+
 
     getRoomFromApi = async () => {
       const roomsRaw = await getValuesWithSql('rooms', 'WHERE 1');
@@ -175,7 +171,6 @@ function Hello() {
             };
 
             const roomSpecifications = (await getRoomSpecifications()) || [];
-            const AllRoomPayInfo = await this.getPaymentTimelineInfo(room.id);
 
             const utilityPayments = await getValuesWithSql(
               'utility_payments_settings',
@@ -230,9 +225,9 @@ function Hello() {
               RoomSpecifications: roomSpecifications,
               Archived: room.Archived || false,
               tenantId: room.tenantId || '',
-              AddTenantState: room.AddTenantState || false,
-              ViewAgreement: room.ViewAgreement || false,
-              ShowPayTimeLine: room.ShowPayTimeLine || false,
+              AddTenantState:  false,
+              ViewAgreement:  false,
+              ShowPayTimeLine: false,
               AllRoomPayInfo: { RoomPayInfo: predictedPayments || [] },
               selectedAgreementId: room.selectedAgreementId || '',
               notificationSettings: room.notificationSettings || 0,
@@ -546,72 +541,9 @@ function Hello() {
     };
   }
   class RoomPaymentInfoApi {
-    getRoomPaymentsApi = async (roomId: string) => {
-      const roomPaymentsRaw = await getValuesWithSql(
-        'room_pay_info',
-        `WHERE roomId = '${roomId}'`
-      );
-      if (roomPaymentsRaw) {
-        return roomPaymentsRaw.map((roomPayment: RoomPayInfo) => {
-          return {
-            id: roomPayment.id,
-            roomId: roomPayment.roomId,
-            Day: roomPayment.Day,
-            Paid: roomPayment.Paid,
-            Value: roomPayment.Value,
-          };
-        });
-      }
-    };
-    addRoomPaymentApi = async (
-      id: string,
-      roomId: string,
-      Day: string,
-      Paid: string,
-      Value: number
-    ) => {
-      try {
-        await addValue(
-          'room_pay_info',
-          {
-            id: id,
-            roomId: roomId,
-            Day: Day,
-            Paid: Paid,
-            Value: Value,
-            userId: SelectedUserId,
-          },
-          setChangeMade
-        );
-        await roomAPI.getRoomFromApi();
-      } catch (error: any) {
-        console.log(error.message);
-      }
-    };
-    addRoomPaymentApiWithOutRefresh = async (
-      id: string,
-      roomId: string,
-      Day: string,
-      Paid: boolean,
-      Value: number
-    ) => {
-      try {
-        await addValue(
-          'room_pay_info',
-          {
-            id: id,
-            roomId: roomId,
-            Day: Day,
-            Paid: Paid,
-            Value: Value,
-            userId: SelectedUserId,
-          },
-          setChangeMade
-        );
-      } catch (error: any) {
-        console.log(error.message);
-      }
-    };
+    
+ 
+   
     editRoomPaymentApi = async (
       roomPaymentId: string,
       propertyName: string,
@@ -1252,7 +1184,7 @@ function Hello() {
             signOutUserAndRestart={signOutUserAndRestart}
             setAppUserManagerShow={setAppUserManagerShow}
             setAppUserManagerPromptPassword={setAppUserManagerPromptPassword}
-            SelectedAppUser={SelectedAppUser}
+            SelectedAppUser={SelectedAppUser}setChangeMade={setChangeMade}
           ></NavBar>
           <MainPage
             roomSpecificationAPI={roomSpecificationAPI}

@@ -117,6 +117,7 @@ const ToolsPage = ({
       };
       getSMSTemplates();
     } else if (ToolsSelectedPage === 'Expense Manager') {
+      
       const getExpenses = async () => {
         const expenses = await getValuesWithSql('expenses', 'WHERE 1');
         setExpenses(expenses);
@@ -301,42 +302,51 @@ const ToolsPage = ({
   };
   const [recipientEmail, setRecipientEmail] = useState('');
   const [emailSentSuccess, setEmailSentSuccess] = useState(false);
+  const [emailSentSuccessstring, setEmailSentSuccessstring] = useState('');
 
   const handleSendEmail = async () => {
+    setEmailSentSuccessstring('');
     if (navigator.onLine) {
       const template = emailTemplates.find((t) => t.id === tryOutMode);
-      if (template) {
-        const subject = replaceVariables(template.subject);
-        const body = replaceVariables(template.body);
-        const userDATA = await window.electron.store.get('users');
-        const userEmail = userDATA[0].email;
-        const userPass = userDATA[0].password;
-        console.log(userEmail, userPass);
-        if (navigator.onLine) {
-          window.electron.ipcRenderer.send('SendCustomEmail', {
-            to: recipientEmail,
-            subject: subject,
-            body: body,
-            userEmail: userEmail,
-            userPassword: userPass,
-            SelectedUserId: SelectedUserId,
-            templateId: template.id,
-          });
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (recipientEmail && emailRegex.test(recipientEmail)) {
+        if (template) {
+          const subject = replaceVariables(template.subject);
+          const body = replaceVariables(template.body);
+          const userDATA = await window.electron.store.get('users');
+          const userEmail = userDATA[0].email;
+          const userPass = userDATA[0].password;
+          console.log(userEmail, userPass);
+          if (navigator.onLine) {
+            window.electron.ipcRenderer.send('SendCustomEmail', {
+              to: recipientEmail,
+              subject: subject,
+              body: body,
+              userEmail: userEmail,
+              userPassword: userPass,
+              SelectedUserId: SelectedUserId,
+              templateId: template.id,
+            });
 
-          window.electron.ipcRenderer.once(
-            'SendCustomEmailResponse',
-            (response) => {
-              if (response.success) {
-                console.log('Email sent successfully');
-
-                setEmailSentSuccess(true);
-              } else {
-                console.error('Failed to send email:', response.error);
-                setEmailSentSuccess(false);
+            window.electron.ipcRenderer.once(
+              'SendCustomEmailResponse',
+              (response) => {
+                if (response.success) {
+                  setEmailSentSuccessstring('Email sent successfully');
+                  setEmailSentSuccessstring('Sent');
+                  setEmailSentSuccess(true);
+                } else {
+                  setEmailSentSuccessstring('Failed to send email');
+                  setEmailSentSuccessstring('Failed');
+                  setEmailSentSuccess(false);
+                }
               }
-            }
-          );
+            );
+          }
         }
+      } else {
+        setEmailSentSuccessstring('Invalid email address');
+        setEmailSentSuccess(false);
       }
 
       setRecipientEmail('');
@@ -533,80 +543,41 @@ const ToolsPage = ({
           }
         : expense
     );
+  
     setExpenses(updatedExpenses);
-
-    await updateValue(
-      'expenses',
-      id,
-      'name',
-      name,
-      setChangeMade,
-      originalTemplate?.name
-    );
-    await updateValue(
-      'expenses',
-      id,
-      'description',
-      description,
-      setChangeMade,
-      originalTemplate?.description
-    );
-    await updateValue(
-      'expenses',
-      id,
-      'price',
-      price,
-      setChangeMade,
-      originalTemplate?.price
-    );
-    await updateValue(
-      'expenses',
-      id,
-      'fullBuilding',
-      fullBuilding,
-      setChangeMade,
-      originalTemplate?.fullBuilding
-    );
-    await updateValue(
-      'expenses',
-      id,
-      'room',
-      room,
-      setChangeMade,
-      originalTemplate?.room
-    );
-    await updateValue(
-      'expenses',
-      id,
-      'floor',
-      floor,
-      setChangeMade,
-      originalTemplate?.floor
-    );
-    await updateValue(
-      'expenses',
-      id,
-      'doesReoccur',
-      doesReoccur,
-      setChangeMade,
-      originalTemplate?.doesReoccur
-    );
-    await updateValue(
-      'expenses',
-      id,
-      'recurringCycle',
-      recurringCycle,
-      setChangeMade,
-      originalTemplate?.recurringCycle
-    );
-    await updateValue(
-      'expenses',
-      id,
-      'date',
-      date,
-      setChangeMade,
-      originalTemplate?.date
-    );
+  
+    // Update only the fields that have changed
+    const originalExpense = expenses.find(expense => expense.id === id);
+    
+    if (originalExpense) {
+      if (originalExpense.name !== name) {
+        await updateValue('expenses', id, 'name', name, setChangeMade, originalExpense.name);
+      }
+      if (originalExpense.description !== description) {
+        await updateValue('expenses', id, 'description', description, setChangeMade, originalExpense.description);
+      }
+      if (originalExpense.price !== price) {
+        await updateValue('expenses', id, 'price', price, setChangeMade, originalExpense.price);
+      }
+      if (originalExpense.fullBuilding !== fullBuilding) {
+        await updateValue('expenses', id, 'fullBuilding', fullBuilding, setChangeMade, originalExpense.fullBuilding);
+      }
+      if (originalExpense.floor !== floor) {
+        await updateValue('expenses', id, 'floor', floor, setChangeMade, originalExpense.floor);
+      }
+      if (originalExpense.room !== room) {
+        await updateValue('expenses', id, 'room', room, setChangeMade, originalExpense.room);
+      }
+      if (originalExpense.doesReoccur !== doesReoccur) {
+        await updateValue('expenses', id, 'doesReoccur', doesReoccur, setChangeMade, originalExpense.doesReoccur);
+      }
+      if (originalExpense.recurringCycle !== recurringCycle) {
+        await updateValue('expenses', id, 'recurringCycle', recurringCycle, setChangeMade, originalExpense.recurringCycle);
+      }
+      if (originalExpense.date !== date) {
+        await updateValue('expenses', id, 'date', date, setChangeMade, originalExpense.date);
+      }
+    }
   };
 
   const handleDeleteExpense = async (id: string) => {
@@ -649,6 +620,7 @@ const ToolsPage = ({
 
   const filteredExpenses = expenses
     .filter((expense) => {
+
       const matchesName = expense.name
         .toLowerCase()
         .includes(searchTerm.toLowerCase());
@@ -699,6 +671,7 @@ const ToolsPage = ({
 
   const [emailSendingwith, setEmailSendingwith] = useState('');
   useEffect(() => {
+    
     const a = async () => {
       const emaiSendingwith = await getValuesWithSql_Online('users', `WHERE 1`);
       const selectedEmail = emaiSendingwith.find(
@@ -748,7 +721,7 @@ const ToolsPage = ({
             handleSendEmail={handleSendEmail}
             subjectInputRef={subjectInputRef}
             bodyTextareaRef={bodyTextareaRef}
-            setSelectedInput={setSelectedInput}
+            setSelectedInput={setSelectedInput}emailSentSuccessstring={emailSentSuccessstring}
           />
         )}
   

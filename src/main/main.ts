@@ -218,127 +218,14 @@ app
         .catch((error) => console.error(error));
     });
     // Check for backup on app start
-    checkAndCreateBackup();
+    if (store.get('users')[0])
+      if (store.get('users')[0].allowed === 1) checkAndCreateBackup();
     ipcMain.on('reload-app', () => {
       reloadApp();
     });
     // Set up daily check for backup
     setInterval(checkAndCreateBackup, 24 * 60 * 60 * 1000);
-    ipcMain.on('SendVerificationCode', (event, message) => {
-      console.log('Send verfication code:', message.to, message.code);
-      async function sendVerificationEmail(to: any, code: any) {
-        let transporter = nodemailer.createTransport({
-          host: 'mail.markethubet.com',
-          port: 465,
-          secure: true, // true for 465, false for other ports
-          auth: {
-            user: 'verify@markethubet.com',
-            pass: 'Plp5H9:Li(UO#6[y+26E',
-          },
-        });
-
-        let mailOptions = {
-          from: 'verify@markethubet.com',
-          to: to,
-          subject: 'Email Verification',
-          html: `
-            <!DOCTYPE html>
-            <html lang="en">
-            <head>
-              <meta charset="UTF-8">
-              <meta name="viewport" content="width=device-width, initial-scale=1.0">
-              <title>Email Verification</title>
-              <style>
-             
-              body,
-              h1,
-              p {
-                margin: 0;
-                padding: 0;
-              }
-          
-              body {
-                font-family: Arial, sans-serif;
-                line-height: 1.6;
-                background-color: #f5f5f5;
-              }
-          
-              .container {
-                max-width: 600px;
-                margin: 20px auto;
-                padding: 20px;
-                background-color: #ffffff;
-                border-radius: 8px;
-                box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-              }
-          
-              h1 {
-                font-size: 24px;
-                color: #333333;
-                margin-bottom: 10px;
-              }
-          
-              p {
-                font-size: 16px;
-                color: #666666;
-                margin-bottom: 20px;
-              }
-          
-              .verification-code {
-                margin-bottom: 30px;
-              }
-          
-              .btn {
-                display: inline-block;
-                padding: 10px 20px;
-                background-color: #007bff;
-                color: #ffffff;
-                text-decoration: none;
-                border-radius: 4px;
-              }
-          
-              .footer {
-                margin-top: 20px;
-                border-top: 1px solid #cccccc;
-                padding-top: 20px;
-              }
-          
-              .footer p {
-                margin-bottom: 10px;
-              }
-          
-              .footer a {
-                color: #007bff;
-                text-decoration: none;
-                margin-right: 10px;
-              }
-            </style>
-            </head>
-            <body>
-              <div class="container">
-                <h1>Email Verification</h1>
-                <p>Thank you for signing up with RentMaster. Please verify your email address to complete your registration.</p>
-                <p class="verification-code"><strong>Your Verification Code:</strong> <span style="font-weight: bold; font-size: 18px;">${code}</span></p>
-                <a href="#" class="btn">Verify Email</a>
-                <div class="footer">
-                  <p>Contact us at <a href="mailto:support@markethubet.com">support@markethubet.com</a> for assistance.</p>
-                  <p>Visit our website: <a href="https://www.rentmaster.markethubet.com">www.markethubet.com</a></p>
-                </div>
-              </div>
-            </body>
-            </html>
-          `,
-        };
-
-        try {
-          let info = await transporter.sendMail(mailOptions);
-          console.log('Email sent: ' + info.response);
-        } catch (error) {
-          console.error('Error while sending email:', error);
-        }
-      }
-      sendVerificationEmail(message.to, message.code);
-    });
+    
   })
   .catch(console.log);
 const { v4: uuidv4 } = require('uuid');
@@ -432,7 +319,121 @@ ipcMain.on('SendCustomEmail', async (event, message) => {
     });
   }
 });
+ipcMain.on('SendVerificationCode', (event, message) => {
+  console.log('Send verfication code:', message.to, message.code);
+  async function sendVerificationEmail(to: any, code: any) {
+    let transporter = nodemailer.createTransport({
+      host: 'mail.markethubet.com',
+      port: 465,
+      secure: true, // true for 465, false for other ports
+      auth: {
+        user: 'verify@markethubet.com',
+        pass: 'Plp5H9:Li(UO#6[y+26E',
+      },
+    });
 
+    let mailOptions = {
+      from: 'verify@markethubet.com',
+      to: to,
+      subject: 'Email Verification',
+      html: `
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Email Verification</title>
+          <style>
+         
+          body,
+          h1,
+          p {
+            margin: 0;
+            padding: 0;
+          }
+      
+          body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            background-color: #f5f5f5;
+          }
+      
+          .container {
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+          }
+      
+          h1 {
+            font-size: 24px;
+            color: #333333;
+            margin-bottom: 10px;
+          }
+      
+          p {
+            font-size: 16px;
+            color: #666666;
+            margin-bottom: 20px;
+          }
+      
+          .verification-code {
+            margin-bottom: 30px;
+          }
+      
+          .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: #ffffff;
+            text-decoration: none;
+            border-radius: 4px;
+          }
+      
+          .footer {
+            margin-top: 20px;
+            border-top: 1px solid #cccccc;
+            padding-top: 20px;
+          }
+      
+          .footer p {
+            margin-bottom: 10px;
+          }
+      
+          .footer a {
+            color: #007bff;
+            text-decoration: none;
+            margin-right: 10px;
+          }
+        </style>
+        </head>
+        <body>
+          <div class="container">
+            <h1>Email Verification</h1>
+            <p>Thank you for signing up with RentMaster. Please verify your email address to complete your registration.</p>
+            <p class="verification-code"><strong>Your Verification Code:</strong> <span style="font-weight: bold; font-size: 18px;">${code}</span></p>
+            <a href="#" class="btn">Verify Email</a>
+            <div class="footer">
+              <p>Contact us at <a href="mailto:support@markethubet.com">support@markethubet.com</a> for assistance.</p>
+              <p>Visit our website: <a href="https://www.rentmaster.markethubet.com">www.markethubet.com</a></p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `,
+    };
+
+    try {
+      let info = await transporter.sendMail(mailOptions);
+      console.log('Email sent: ' + info.response);
+    } catch (error) {
+      console.error('Error while sending email:', error);
+    }
+  }
+  sendVerificationEmail(message.to, message.code);
+});
 // Server
 const express = require('express');
 const bodyParser = require('body-parser');
@@ -546,6 +547,7 @@ const tableStructures = [
     columns: [
       'id TEXT PRIMARY KEY',
       'roomId TEXT ',
+      'tenantId TEXT ',
       'Day INTEGER ', // Assuming storing as UNIX timestamp
       'Paid BOOLEAN ',
       'Value REAL DEFAULT 0',
@@ -562,7 +564,7 @@ const tableStructures = [
       'Value REAL',
       'Paid INTEGER',
       'userId TEXT',
-      'agreementId TEXT',
+      'agreementId TEXT','tenantId TEXT ',
     ],
   },
   {
@@ -587,7 +589,7 @@ const tableStructures = [
       'id TEXT PRIMARY KEY',
       'roomId TEXT',
       'brokerId TEXT ',
-'recommendedTenantId TEXT ',
+      'recommendedTenantId TEXT ',
       'AddedTime INTEGER ',
       'AgreedCommission INTEGER ',
       'userId TEXT',
@@ -1201,6 +1203,31 @@ appDB.post(
     }
   }
 );
+ 
+appDB.delete('/drop-all-rows/:tableName', (req: { params: { tableName: any; }; headers: { [x: string]: any; }; }, res: { status: (arg0: number) => { (): any; new(): any; send: { (arg0: string): void; new(): any; }; }; send: (arg0: string) => void; }) => {
+  const { tableName } = req.params;
+  
+  // Validate the API key
+  const apiKey = req.headers['x-api-key'];
+  if (apiKey !== 'HH(CzZuQoW@tB$By)e') {
+    return res.status(401).send('Unauthorized');
+  }
+
+  // Validate the table name
+  if (!validateTableName(tableName)) {
+    return res.status(400).send('Invalid table name');
+  }
+
+  const query = `DELETE FROM ${tableName}`;
+  db.run(query, (err: { message: any; }) => {
+    if (err) {
+      console.error(`Error dropping all rows from ${tableName}:`, err);
+      res.status(500).send(`Error dropping all rows from ${tableName}: ${err.message}`);
+    } else {
+      res.send(`All rows dropped from ${tableName} successfully.`);
+    }
+  });
+});
 
 appDB.post(
   '/upload-tenant-documentV2',
@@ -2023,8 +2050,9 @@ export const cleanupOnSignOut = async () => {
   const dbPath = path.join(userDataPath, appname, 'database.db');
   const bmsPath = path.join(userDataPath, appname);
   store.set('users', []);
-  store.set("app_users", []);
-  store.set("SelectedAppUserId", '');
+  store.set('app_users', []);
+  store.set('SelectedAppUserId', '');
+  store.set('changeAmount', 0);
   //So it can be deleted
   // Close the database connection
   db.close((err: Error | null) => {

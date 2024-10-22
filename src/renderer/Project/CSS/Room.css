@@ -9,7 +9,7 @@
   align-items: center;
   padding: 10px;
   border-radius: 10px;
-
+  box-shadow: 0px 0px 4px -1px var(--Text-Color);
   transition: all 0.2s;
   user-select: none;
 }

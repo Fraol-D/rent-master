@@ -4,11 +4,13 @@ import '../../Css/NavBarCss.css';
 import InsertImageIcon from '../../../assets/assets/Dark mode/Insert Image Pic.png';
 import {
   DownloadUserFilesFromOnlineDatabase,
+  getValuesWithSql_Online,
   SetBackUpAsMain,
   syncOnlineToLocalWithBool,
   UploadUserFilesToTheOnlineDatabase,
 } from 'Backend/OnlineServerApis';
 import { getUserPrivileges } from 'renderer/App';
+import { dropAllRowsInTable } from 'Backend/localServerApis';
 
 interface Props {
   Image: string;
@@ -32,6 +34,7 @@ interface Props {
   setAppUserManagerShow: (newval: boolean) => void;
   setAppUserManagerPromptPassword: (newval: boolean) => void;
   SelectedAppUser: appUser | null;
+  setChangeMade: (newval: number) => void;
 }
 
 const NavBar = ({
@@ -55,6 +58,7 @@ const NavBar = ({
   setAppUserManagerShow,
   setAppUserManagerPromptPassword,
   SelectedAppUser,
+  setChangeMade,
 }: Props) => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
@@ -140,6 +144,60 @@ const NavBar = ({
       setSyncProgress(0);
     }
   }, [uploadProgress]);
+  const [OnlineChanges, setOnlineChanges] = useState(0);
+  useEffect(() => {
+    const checkForChanges = async () => {
+      const localChange = window.electron.store.get('changeAmount');
+      const onlineUser = await getValuesWithSql_Online(
+        'users',
+        `WHERE id = '${SelectedUserId}'`
+      );
+      if (onlineUser) {
+        const onlineChange = onlineUser[0].changeAmount;
+
+        if (localChange !== onlineChange) {
+          setOnlineChanges(Math.abs(onlineChange - localChange));
+        } else {
+          setOnlineChanges(0);
+        }
+      }
+    };
+    const intervalId = setInterval(() => {
+      if (navigator.onLine) {
+        fetch('https://www.google.com', { mode: 'no-cors' })
+          .then(() => {
+            checkForChanges();
+          })
+          .catch(() => {
+            console.log('Internet connection is not available');
+          });
+      } else {
+        setOnlineChanges(0);
+      }
+      console.log('This function runs every minute');
+    }, 60000);
+
+    // Clean up the interval when the component unmounts
+    return () => clearInterval(intervalId);
+  }, []);
+  const handleResetOfflineChanges = async () => {
+    if (navigator.onLine) {
+      const confirmDelete = window.confirm(
+        'Are you sure you want to reset offline changes?'
+      );
+      if (confirmDelete) {
+        await dropAllRowsInTable('offline_changes');
+        setChangeMade(0);
+        await syncOnlineToLocalWithBool(
+          SelectedUserId,
+          setIsSyncing,
+          setSyncProgress,
+          RefreshDataFromSqlite
+        );
+      }
+    }
+  };
+
   return (
     <div className="navigation">
       <div className="LeftSide">
@@ -163,7 +221,7 @@ const NavBar = ({
             <p className="Name-ofShop">{ShopName}</p>
           )} */}{' '}
           <p className="Name-ofShop" style={{ height: '28px' }}>
-            Rent Master{' '}
+            Rent <p style={{ color: 'var(--Primary-Color)' }}>Master</p>
             <button
               style={{ marginLeft: '10px' }}
               onClick={() => {
@@ -173,14 +231,14 @@ const NavBar = ({
                 }
               }}
             >
-              Switch App User
+              Switch User
             </button>
           </p>
           <p
             className="Name-ofShop"
             style={{ fontSize: '14px', color: 'grey', height: 'auto' }}
           >
-            {window.electron.store.get('users')[0].email} --- {"  "}
+            {window.electron.store.get('users')[0].email} --- {'  '}
             {window.electron.store.get('SelectedAppUserId') === 'admin' ? (
               <>Admin User</>
             ) : (
@@ -305,6 +363,15 @@ const NavBar = ({
               </p>
             )}
           </button>
+          <style>
+            {`
+                @keyframes blinkingBorder {
+                  0% { border-color: var(--Accent-Color); }
+                  50% { border-color: transparent; }
+                  100% { border-color: var(--Accent-Color); }
+                }
+              `}
+          </style>
           <button
             style={{
               borderRadius: ShowAdvancedUpload
@@ -318,6 +385,19 @@ const NavBar = ({
                     ? '42px'
                     : '42px'
                   : '26px',
+              paddingTop: '7px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderTop:
+                OnlineChanges > 0 ? '3px solid var(--Accent-Color)' : 'none',
+              borderRight:
+                OnlineChanges > 0 ? '3px solid var(--Accent-Color)' : 'none',
+              borderBottom:
+                OnlineChanges > 0 ? '3px solid var(--Accent-Color)' : 'none',
+              borderLeft: 'none',
+              animation:
+                OnlineChanges > 0 ? 'blinkingBorder 1s infinite' : 'none',
             }}
             onClick={() => {
               setShowAdvancedUpload(!ShowAdvancedUpload);
@@ -345,10 +425,30 @@ const NavBar = ({
                     );
                   }
                 }}
-                style={{ width: '100%', marginTop: '10px' }}
+                style={{
+                  width: '100%',
+                  marginTop: '10px',
+                  border:
+                    OnlineChanges > 0 ? '3px solid var(--Accent-Color)' : '',
+                  animation:
+                    OnlineChanges > 0 ? 'blinkingBorder 1s infinite' : '',
+                }}
               >
-                <p>Sync</p>
+                <p>Sync {OnlineChanges} changes</p>
               </button>
+              {ChangeMade >= 1 && (
+                <button
+                  onClick={() => {
+                    handleResetOfflineChanges();
+                }}
+                style={{
+                  width: '50%',
+                  marginTop: '10px',
+                  color: 'red',
+                }}
+              >
+                <p>Reset Offline Changes</p>
+              </button>)}
               <hr style={{ margin: '10px', width: '100%' }} />
               <h3
                 style={{ margin: '0', display: 'flex', alignItems: 'center' }}

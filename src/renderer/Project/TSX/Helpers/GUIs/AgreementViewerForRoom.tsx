@@ -119,7 +119,7 @@ const AgreementViewerForRoom = ({
   ) => {
     const existingPayments = await getValuesWithSql(
       'room_pay_info',
-      `WHERE roomId = '${roomId}'`
+      `WHERE roomId = '${roomId}' AND tenantId = '${roomType.tenantId}'`
     );
 
     for (const payment of existingPayments) {
@@ -143,7 +143,7 @@ const AgreementViewerForRoom = ({
         'room_pay_info',
         `WHERE roomId = '${
           roomType.id
-        }' AND Day >= '${Date.now()}' AND Paid = '0'`
+        }' AND tenantId = '${roomType.tenantId}' AND Day >= '${Date.now()}' AND Paid = '0'`
       );
 
       if (FutruePaymentsRaw.length >= 1) {
@@ -158,7 +158,7 @@ const AgreementViewerForRoom = ({
         'room_pay_info',
         `WHERE roomId = '${
           roomType.id
-        }' AND Day >= '${Date.now()}' AND Paid = '0'`
+        }' AND tenantId = '${roomType.tenantId}' AND Day >= '${Date.now()}' AND Paid = '0'`
       );
       console.log(FutruePaymentsRaw.length, 'length');
       if (FutruePaymentsRaw.length >= 1) {

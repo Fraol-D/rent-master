@@ -14,12 +14,12 @@ interface Payment {
 const DashbPastPayments = ({
   tenantList,
   RoomList,
-  roomPaymentInfoApi,setChangeMade
+  roomPaymentInfoApi,setChangeMade,updateRoomPropertyLocal,updateRoomProperty,SelectedUserId
 }: {
   tenantList: tenant[];
   RoomList: RoomType[];
   roomPaymentInfoApi: any;
-  setChangeMade:any;
+  setChangeMade:any;updateRoomPropertyLocal:any;updateRoomProperty:any;SelectedUserId:string;
 }) => {
   const [PastPaymentList, setPastPaymentList] = useState<
     { tenant: tenant; NumOfPayments: number; PastBy: number }[]
@@ -145,7 +145,38 @@ const DashbPastPayments = ({
 
     setUpcomingPaymentList(newUpcomingPaymentList);
   }, [predictedPayments, RoomList, tenantList]);
+  const [ShowReceipt, setShowReceipt] = useState(false);
+  const handlePaymentRefresh = async () => {
+    const roomType = RoomList.find(
+      (room) => room.tenantId === SelectedTenantViewShow
+    );
+    
+    const listOfPayments = await getValuesWithSql(
+      'room_pay_info',
+      `WHERE roomId = '${roomType.id}'`
+    );
 
+    const updatedRoomPayInfo: RoomPayInfo[] = listOfPayments.map(
+      (payment: any) => ({
+        id: payment.id,
+        roomId: payment.roomId,
+        Day: payment.Day,
+        Paid: payment.Paid,
+        Value: payment.Value,
+      })
+    );
+
+    const updatedAllRoomPayInfo: AllRoomPayInfo = {
+      RoomPayInfo: updatedRoomPayInfo,
+    };
+
+    updateRoomPropertyLocal(
+      roomType.id,
+      'AllRoomPayInfo',
+      updatedAllRoomPayInfo
+    );
+    console.log(updatedAllRoomPayInfo, roomType.AllRoomPayInfo);
+  };
   return (
     <div
       className="DashboardWigetMainContainer"
@@ -195,7 +226,7 @@ const DashbPastPayments = ({
           >
             Past Payments
           </p>
-          <table className="InfoTable" style={{ width: '100%' }}>
+          <div style={{ width: '100%',overflowX:'auto' }}><table className="InfoTable" style={{ width: '100%' }}>
             <thead className="InfoTableThead">
               <tr className="InfoTableHeadTR">
                 <th className="InfoTableHeadTh">Tenants</th>
@@ -279,7 +310,7 @@ const DashbPastPayments = ({
                 </tr>
               )}
             </tbody>
-          </table>
+          </table></div>
         </>
       ) : (
         <>
@@ -399,7 +430,7 @@ const DashbPastPayments = ({
             }}
           >
             <PaymentProgressBarGUI
-              refresh={() => {}}
+              refresh={handlePaymentRefresh}
               paymentData={
                 predictedPayments.filter(
                   (p) =>
@@ -414,12 +445,7 @@ const DashbPastPayments = ({
                 ) || []
               }
               roomPaymentInfoApi={roomPaymentInfoApi}
-              roomType={RoomList.find(
-                (r: RoomType) =>
-                  r.tenantId ===
-                  tenantList.find((t: tenant) => t.id == SelectedTenantViewShow)
-                    ?.id
-              )}
+              
               tenantList={tenantList}
               agreedPrice={
                 RoomList.find(
@@ -430,21 +456,40 @@ const DashbPastPayments = ({
                     )?.id
                 )?.AgreedPrice || 0
               }
-              extendPaymentSchedule={() => {}}
-              tenant={tenantList.find(
-                (t: tenant) => t.id == SelectedTenantViewShow
-              )}
-              roomId={
-                RoomList.find(
+              extendPaymentSchedule={() => {
+                const selectedRoom = RoomList.find(
                   (r: RoomType) =>
                     r.tenantId ===
                     tenantList.find(
                       (t: tenant) => t.id == SelectedTenantViewShow
                     )?.id
-                )?.id || ''
-              }
+                );
+                if (selectedRoom) {
+                  updateRoomProperty(
+                    selectedRoom.id,
+                    'paymentShowAmount',
+                    (selectedRoom.paymentShowAmount ?? 0) + 1
+                  );
+                }
+              }}
+          roomType={RoomList.find(
+            (r: RoomType) =>
+              r.tenantId ===
+              tenantList.find(
+                (t: tenant) => t.id == SelectedTenantViewShow
+              )?.id
+          )}
+          tenantId={RoomList.find(
+            (r: RoomType) =>
+              r.tenantId ===
+              tenantList.find(
+                (t: tenant) => t.id == SelectedTenantViewShow
+              )?.tenantId
+          )}
+             ShowReceipt={ShowReceipt}
+              setShowReceipt={setShowReceipt}
               setChangeMade={setChangeMade}
-              setSelectedTenantViewShow={setSelectedTenantViewShow}
+              SelectedUserId={SelectedUserId}updateRoomPropertyLocal={updateRoomPropertyLocal}
             />
           </div>
         </>

@@ -24,7 +24,7 @@ interface props {
   BrokerRecommendationList: BrokerRecommendationType[];
   DashboardSelectedPage: string;
   SelectedUserId: string;
-  setChangeMade: any;
+  setChangeMade: any;updateRoomPropertyLocal:any;updateRoomProperty:any;
 }
 const DashboardPage: React.FC<props> = ({
   RoomList,
@@ -35,7 +35,7 @@ const DashboardPage: React.FC<props> = ({
   BrokerRecommendationList,
   DashboardSelectedPage,
   SelectedUserId,
-  setChangeMade,
+  setChangeMade,updateRoomPropertyLocal,updateRoomProperty
 }) => {
   const [expenses, setExpenses] = useState<expenses[]>([]);
 
@@ -59,7 +59,8 @@ const DashboardPage: React.FC<props> = ({
             tenantList={tenantList}
             RoomList={RoomList}
             roomPaymentInfoApi={roomPaymentInfoApi}
-            setChangeMade={setChangeMade}
+            setChangeMade={setChangeMade}updateRoomPropertyLocal={updateRoomPropertyLocal}
+            updateRoomProperty={updateRoomProperty}SelectedUserId={SelectedUserId}
           />
           <div>
             <DashbRevenuePerSquareFoot RoomList={RoomList} />

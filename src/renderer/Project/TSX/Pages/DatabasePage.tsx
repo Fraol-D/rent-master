@@ -260,8 +260,8 @@ const DatabasePage = ({ setChangeMade,SelectedAppUser }: any) => {
                         header
                       )}
                     </th>
-                  ))}
-                <th>Actions</th>
+                  ))}{privileges.editDatabaseData ?  <th>Actions</th>:<></>}
+               
               </tr>
             </thead>
             <tbody className="table-body">
@@ -305,14 +305,14 @@ const DatabasePage = ({ setChangeMade,SelectedAppUser }: any) => {
                         )}
                       </td>
                     ))}
-                    <td>
+                    {privileges.editDatabaseData ? <td>
                       <button
                         className="delete-button"
                         onClick={() => handleDelete(row.id)}
                       >
                         Delete
                       </button>
-                    </td>
+                    </td>:<></>}
                   </tr>
                 )
               )}
