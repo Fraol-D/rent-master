@@ -60,6 +60,7 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
   const svgRef = useRef<SVGSVGElement | null>(null);
   const paragraphRef = useRef<HTMLParagraphElement | null>(null);
   const [selectedDates, setSelectedDates] = useState<number[]>([]); // State to track selected dates
+  const currentDateRef = useRef<SVGLineElement | null>(null);
 
   const [showUtilityPanel, setShowUtilityPanel] = useState(false);
   const [payments, setPayments] = useState<RoomPayInfo[]>([]);
@@ -407,14 +408,18 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
         .attr('y2', padding + height / 2 - 18)
         .attr('stroke', 'grey')
         .attr('stroke-width', '5');
-      svg
-        .append('line')
-        .attr('x1', currentDateX + 36.3)
-        .attr('y1', padding + height / 2 - 40)
-        .attr('x2', currentDateX + 36.3)
-        .attr('y2', padding + height / 2 - 18)
-        .attr('stroke', '#00e1f1')
-        .attr('stroke-width', '5');
+// Inside your SVG rendering logic
+svg
+  .append('line')
+  .attr('x1', currentDateX + 36.3)
+  .attr('y1', padding + height / 2 - 40)
+  .attr('x2', currentDateX + 36.3)
+  .attr('y2', padding + height / 2 - 18)
+  .attr('stroke', '#00e1f1')
+  .attr('stroke-width', '5')
+  .each(function() {
+    currentDateRef.current = this; // Attach the ref here
+  });
       svg
         .append('text')
         .attr('x', currentDateX + 36.5)
@@ -953,22 +958,39 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
   };
 
   // Calculate days until or past due date for paragraph message
-  const dueDate = paymentData.find((payment) => !payment.Paid)?.Day;
+  const dueDate = payments.find((payment) => !payment.Paid)?.Day;
   const daysDifference = dueDate
     ? differenceInDays(new Date(dueDate), new Date(today))
     : undefined;
+
   const message =
     daysDifference !== undefined
       ? daysDifference > 0
         ? `Due in ${daysDifference + 1} day${
             daysDifference + 1 !== 1 ? 's' : ''
           }. Earnings: ${(
-            agreedPrice * paymentData.filter((payment) => payment.Paid).length
+            agreedPrice * payments.filter((payment) => payment.Paid).length
           ).toLocaleString()}. ${
-            paymentData.filter((payment) => payment.Paid).length
+            payments.filter((payment) => payment.Paid).length
           } payments.`
         : `Payment is past due by ${Math.abs(daysDifference)} days.`
+      : payments.length > 0
+      ? 'All payments are up to date.'
       : 'No payment information available.';
+      const scrollToCurrentDate = () => {
+        if (currentDateRef.current && svgRef.current) {
+          const parentDiv = svgRef.current.parentElement;
+          if (parentDiv) {
+            const indicatorPosition = currentDateRef.current.getBoundingClientRect().left;
+            const parentPosition = parentDiv.getBoundingClientRect().left;
+            const scrollOffset = indicatorPosition - parentPosition;
+      
+            // Adjust the scrollOffset to scroll a bit more to the left
+            const additionalOffset = 50; // Adjust this value as needed
+            parentDiv.scrollLeft += scrollOffset - additionalOffset;
+          }
+        }
+      };
 
   return (
     <div>
@@ -1005,6 +1027,7 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
         >
           RCT
         </button>
+        <button onClick={scrollToCurrentDate}>Current Date</button>
         {selectedDates.length > 0 ? (
           <>
             {' '}

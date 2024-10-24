@@ -36,6 +36,8 @@ const SignupPage = ({
   const [verificationSuccess, setVerificationSuccess] = useState(false);
   const [subscriptionType, setSubscriptionType] = useState('');
   const [RepeatPassword, setRepeatPassword] = useState('');
+  const [formStage, setFormStage] = useState('initial'); // New state to track form stage
+
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setEmail(e.target.value);
   };
@@ -59,7 +61,7 @@ const SignupPage = ({
   const handleSubmit = async () => {
     setErrorMessage('');
     setLoading(true);
-    //Check online database if email existes
+    // Check online database if email exists
     const users = await getValuesWithSql_Online(
       'users',
       `WHERE email = '${email}'`
@@ -98,7 +100,7 @@ const SignupPage = ({
     setCodeSent(true);
     setCodeExpired(false);
     setErrorMessage('Verification code sent to your email.');
-    console.log(code)
+    console.log(code);
     window.electron.ipcRenderer.send('SendVerificationCode', {
       to: email,
       code: code,
@@ -107,6 +109,7 @@ const SignupPage = ({
       setCodeExpired(true);
     }, 360000); // 3 minutes
     setLoading(false);
+    setFormStage('verification'); // Move to verification stage
   };
 
   const handleVerify = async () => {
@@ -127,6 +130,13 @@ const SignupPage = ({
     }
     setLoading(false);
   };
+
+  const handleBack = () => {
+    setFormStage('initial'); // Go back to initial stage
+    setCodeSent(false); // Reset code sent state
+    setVerificationSuccess(false); // Reset verification success state
+  };
+
   function getEmailTemplates2(userId: string | null) {
     return [
       {
@@ -259,7 +269,6 @@ const SignupPage = ({
       },
     ];
   }
-
   function getSmsTemplates(userId: string | null) {
     return [
       {
@@ -387,6 +396,7 @@ const SignupPage = ({
 
   const handleSignUp = async () => {
     setLoading(true);
+   
     if (!fullName || !companyName || !phoneNumber) {
       setErrorMessage('Please fill out all fields.');
       setLoading(false);
@@ -545,6 +555,8 @@ const SignupPage = ({
           onChange={handleEmailChange}
           placeholder="Email"
           className="userName-input"
+          disabled={formStage !== 'initial'} 
+          style={{color: formStage !== 'initial' ? 'var(--Text-Color-Grey)' : ''}}// Disable if not in initial stage
         />
         <input
           type="password"
@@ -552,6 +564,9 @@ const SignupPage = ({
           onChange={handlePasswordChange}
           className="userName-input"
           placeholder="Password"
+          disabled={formStage !== 'initial'} // Disable if not in initial stage
+          style={{color: formStage !== 'initial' ? 'var(--Text-Color-Grey)' : ''}}// Disable if not in initial stage
+
         />
         <input
           type="password"
@@ -561,17 +576,23 @@ const SignupPage = ({
           }}
           className="userName-input"
           placeholder="Repeat password"
+          disabled={formStage !== 'initial'} // Disable if not in initial stage
+          style={{color: formStage !== 'initial' ? 'var(--Text-Color-Grey)' : ''}}// Disable if not in initial stage
+
         />
 
-        {!verificationSuccess && (
-          <>
-            {!codeSent && (
-              <button onClick={handleSubmit} className="LoginButton">
-                Submit {' ▶'}
-              </button>
-            )}
+        {formStage === 'initial' && (
+          <button onClick={handleSubmit} className="LoginButton">
+            Submit {' ▶'}
+          </button>
+        )}
 
-            {codeSent && (
+        {formStage === 'verification' && (
+          <>
+            <button onClick={handleBack} className="LoginButton">
+              Back
+            </button>
+            {!verificationSuccess && (
               <>
                 <hr style={{ width: '100%', marginBottom: '10px' }} />
                 <p
@@ -607,77 +628,77 @@ const SignupPage = ({
                 </button>
               </>
             )}
-          </>
-        )}
-        {verificationSuccess && (
-          <>
-            <p
-              style={{
-                color: 'var(--Text-Color-Grey)',
-                marginBottom: '5px',
-                marginTop: '5px',
-                textAlign: 'center',
-              }}
-            >
-              Verification successful! <br />
-              Now enter your info.
-            </p>
-            <input
-              type="text"
-              value={fullName}
-              onChange={handleFullNameChange}
-              placeholder="Full Name"
-              className="userName-input"
-            />
-            <input
-              type="text"
-              value={companyName}
-              onChange={handleCompanyNameChange}
-              placeholder="Company Name"
-              className="userName-input"
-            />
-            <input
-              type="text"
-              value={phoneNumber}
-              onChange={handlePhoneNumberChange}
-              placeholder="Phone Number"
-              className="userName-input"
-            />
-            <p
-              style={{
-                color: 'var(--Text-Color-Grey)',
-                marginBottom: '5px',
-                marginTop: '5px',
-                textAlign: 'center',
-              }}
-            >
-              Now select your subscription type.
-            </p>
-            <div style={{ display: 'flex' }}>
-              {' '}
-              <label>
+            {verificationSuccess && (
+              <>
+                <p
+                  style={{
+                    color: 'var(--Text-Color-Grey)',
+                    marginBottom: '5px',
+                    marginTop: '5px',
+                    textAlign: 'center',
+                  }}
+                >
+                  Verification successful! <br />
+                  Now enter your info.
+                </p>
                 <input
-                  type="radio"
-                  name="subscriptionType"
-                  value="7daytrial"
-                  onChange={() => setSubscriptionType('7daytrial')}
+                  type="text"
+                  value={fullName}
+                  onChange={handleFullNameChange}
+                  placeholder="Full Name"
+                  className="userName-input"
                 />
-                7-Day Trial
-              </label>
-              <label>
                 <input
-                  type="radio"
-                  name="subscriptionType"
-                  value="fullpackage"
-                  onChange={() => setSubscriptionType('fullpackage')}
+                  type="text"
+                  value={companyName}
+                  onChange={handleCompanyNameChange}
+                  placeholder="Company Name"
+                  className="userName-input"
                 />
-                Full package
-              </label>
-            </div>
-            <br />
-            <button onClick={handleSignUp} className="LoginButton">
-              Sign Up ▶
-            </button>
+                <input
+                  type="text"
+                  value={phoneNumber}
+                  onChange={handlePhoneNumberChange}
+                  placeholder="Phone Number"
+                  className="userName-input"
+                />
+                <p
+                  style={{
+                    color: 'var(--Text-Color-Grey)',
+                    marginBottom: '5px',
+                    marginTop: '5px',
+                    textAlign: 'center',
+                  }}
+                >
+                  Now select your subscription type.
+                </p>
+                <div style={{ display: 'flex' }}>
+                  {' '}
+                  <label>
+                    <input
+                      type="radio"
+                      name="subscriptionType"
+                      value="7daytrial"
+                      onChange={() => setSubscriptionType('7daytrial')}
+                    />
+                    7-Day Trial
+                  </label>
+                  <label>
+                    <input
+                      type="radio"
+                      name="subscriptionType"
+                      value="fullpackage"
+                      onChange={() => setSubscriptionType('fullpackage')}
+                    />
+                    Full package
+                  </label>
+                </div>
+                <br />
+                <button onClick={handleSignUp} className="LoginButton">
+                  Sign Up ▶
+                </button>
+              </>
+            )}
           </>
         )}
 

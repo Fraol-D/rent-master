@@ -63,7 +63,7 @@ const UpcomingAgreements = ({
           <option value={120}>120 days</option>
           <option value={150}>150 days</option>
           <option value={180}>180 days</option>
-          <option value={360}>360 days</option>
+          <option value={365}>365w days</option>
         </select>
       </div>
       <table className="InfoTable" style={{ width: '100%' }}>

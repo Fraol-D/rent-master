@@ -32,7 +32,7 @@ import { sendEmail } from 'Backend/Cpanel/Telegram bot paymentReminder/server';
 import NotificationSettingsTable from './GUIs/NotificationSettingsProps';
 import UtilityPaymentsTable from './UtilityPaymentsTable';
 import UtilityPanel from './GUIs/UtilityPanel';
-import { addDays } from 'date-fns';
+import { addDays, addMonths, differenceInDays } from 'date-fns';
 const Room = ({
   roomType,
   updateRoomProperty,
@@ -503,7 +503,125 @@ const Room = ({
         updateRoomProperty(roomType.id, 'selectedAgreementId', AgreementId);
       }
     }
+    updateRoomPropertyLocal(roomType.id, 'DaysTillNextPayment', calculateDaysTillNextPayment(await calculatePredictedPayments(roomType)));
     await handlePaymentRefresh();
+  };
+  const calculatePredictedPayments = async (room: RoomType) => {
+    const allPayments = [];
+    const today = new Date();
+    const yearEnd = new Date(today.getFullYear() + 1, 11, 31);
+    const tenant = await getValuesWithSql(
+      'tenants',
+      `WHERE id = '${room.tenantId}'`
+    );
+    let startDate = new Date(tenant[0]?.startTime || Date.now()).getTime();
+
+    let endDate = null;
+    if (room.selectedAgreementId) {
+      const agreements = await getValuesWithSql(
+        'agreements',
+        `WHERE id = '${room.selectedAgreementId}'`
+      );
+      if (agreements.length > 0) {
+        startDate = agreements[0].startTime;
+      }
+      if (tenant[0]?.SelectedAgreement === 'Fixed-Term') {
+        if (agreements.length > 0) {
+          endDate = agreements[0].endTime;
+        }
+      }
+    }
+
+    let currentDate = new Date(startDate);
+    while (
+      currentDate <= yearEnd &&
+      (endDate == null || currentDate <= new Date(endDate))
+    ) {
+      const paymentId = `${room.id}-${currentDate.getTime()}`;
+      allPayments.push({
+        id: paymentId,
+        Day: currentDate.getTime(),
+        Value: room.AgreedPrice,
+        Paid: false,
+        roomId: room.id,
+      });
+
+      switch (room.PaymentCycleType) {
+        case '30':
+          currentDate = addDays(currentDate, 30);
+          break;
+        case '15':
+          currentDate = addDays(currentDate, 15);
+          break;
+        case '7':
+          currentDate = addDays(currentDate, 7);
+          break;
+        case 'daily':
+          currentDate = addDays(currentDate, 1);
+          break;
+        case 'monthly':
+          currentDate = addMonths(currentDate, 1);
+          break;
+        case 'weekly':
+          currentDate = addDays(currentDate, 7);
+          break;
+        case 'custom':
+          currentDate = addDays(
+            currentDate,
+            room.PaymentCycleCustomeDays || 30
+          );
+          break;
+        default:
+          currentDate = addMonths(currentDate, 1);
+      }
+    }
+
+    const actualPayments = await getValuesWithSql(
+      'room_pay_info',
+      `WHERE roomId = '${room.id}' AND tenantId = '${room.tenantId}'`
+    );
+
+    const finalPayments = allPayments.map((payment) => {
+      const actualPayment = actualPayments.find(
+        (p: any) => p.id === payment.id
+      );
+      return actualPayment
+        ? { ...payment, Paid: actualPayment.Paid === 1 }
+        : payment;
+    });
+
+    if (finalPayments.length === 0) {
+      console.log('No payments predicted. Possible reasons:');
+      console.log('- No tenant assigned to the room');
+      console.log('- No valid start date for the tenant');
+      console.log('- No valid payment cycle set for the room');
+      console.log('- End date is before or equal to start date');
+    }
+
+    return finalPayments;
+  };
+
+  const calculateDaysTillNextPayment = (predictedPayments: Payment[]) => {
+    const today = new Date();
+
+    const sortedPayments = predictedPayments.sort((a, b) => a.Day - b.Day);
+
+    for (const payment of sortedPayments) {
+      const paymentDate = new Date(payment.Day);
+      const daysDifference = differenceInDays(paymentDate, today);
+
+      if (!payment.Paid) {
+        if (daysDifference === 0) {
+          return 0;
+        } else if (daysDifference < 0) {
+          return daysDifference;
+        } else {
+          return daysDifference;
+        }
+      }
+    }
+
+    return 0;
   };
   const [refreshState, SetRefreshState] = useState(false);
   const extendPaymentSchedule = async () => {

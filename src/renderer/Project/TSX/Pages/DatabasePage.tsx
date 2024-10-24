@@ -207,7 +207,7 @@ const DatabasePage = ({ setChangeMade,SelectedAppUser }: any) => {
         }}
       >
         <div className="CalenderOptionsMainContainer">
-          <span style={{ color: 'pink', fontWeight: 'bold' }}>
+          <span style={{ color: 'red', fontWeight: 'bold' }}>
             Warning: Modifying database values can cause critical errors. Edit only if certain.
           </span>
           <label htmlFor="monthsFutureInput">Select a table: </label>

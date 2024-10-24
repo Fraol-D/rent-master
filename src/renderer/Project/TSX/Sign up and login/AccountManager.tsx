@@ -159,18 +159,14 @@ const AccountManager = (React.FC<MyComponentProps> = ({
         console.log('Signed in', SelectedUserId);
 
         await appUsersManagement();
-  
-      
-           // setIsSyncing(true);
-            // syncOnlineToLocalWithBool(
-            //   allUsers[0].id,
-            //   setIsSyncing,
-            //   setSyncProgress,
-            //   RefreshDataFromSqlite
-            // );console.log("WHAU------------------------------------------------------------------------------------")
-      
-          
-        
+        if (navigator.onLine && window.electron.store.get('users')[0].Allowed) {
+        setIsSyncing(true);
+        syncOnlineToLocalWithBool(
+          allUsers[0].id,
+          setIsSyncing,
+          setSyncProgress,
+          RefreshDataFromSqlite
+        );}
       }
     } else {
       // If no users found, set signed in state to false
@@ -881,133 +877,141 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                       </button>
                     </div>
                     <div
-                      style={{ display: 'flex', flexDirection: 'row',overflowX:'auto' }}
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'row',
+                        overflowX: 'auto',
+                      }}
                       className="appUserItemContainer"
                     >
-                      <div style={{display: 'flex'}}><div className="appUserItemM appUserItem">
-                        <div className="appUserHeader">
-                          <span style={{ fontSize: '25px' }}>Admin</span>
-                          <button
-                            className="appUserButtons"
-                            onClick={() =>
-                              handleSelectUser({
-                                id: 'admin',
-                                roleName: 'admin',
-                                privileges: '',
-                                userId:
-                                  window.electron.store.get('users')[0].id,
-                                addedDate: Date.now(),
-                              })
-                            }
-                          >
-                            Select
-                          </button>
-                        </div>
-                        <h3>All Privileges are on</h3>
-                      </div>
-                      {appUsers.map((appUser) => (
-                        <div key={appUser.id} className="appUserItem">
+                      <div style={{ display: 'flex' }}>
+                        <div className="appUserItemM appUserItem">
                           <div className="appUserHeader">
-                            {editingUserId === appUser.id ? (
-                              <>
-                                <input
-                                  type="text"
-                                  value={editingUserName}
-                                  onChange={(e) =>
-                                    setEditingUserName(e.target.value)
-                                  }
-                                  style={{
-                                    fontSize: '20px',
-                                    marginRight: '10px',
-                                    width: '50%',
-                                  }}
-                                />
-                                <div>
-                                  <button
-                                    className="appUserButtons"
-                                    onClick={() => handleSaveEdit(appUser.id)}
-                                  >
-                                    Save
-                                  </button>
-                                  <button
-                                    className="appUserButtons"
-                                    onClick={handleCancelEdit}
-                                  >
-                                    Cancel
-                                  </button>
-                                </div>
-                              </>
-                            ) : (
-                              <>
-                                <span style={{ fontSize: '25px' }}>
-                                  {appUser.roleName}
-                                </span>
-                                <div>
-                                  <button
-                                    className="appUserButtons"
-                                    onClick={() => handleSelectUser(appUser)}
-                                  >
-                                    Select
-                                  </button>
-                                  <button
-                                    className="appUserButtons"
-                                    onClick={() => handleEditUser(appUser)}
-                                  >
-                                    Edit
-                                  </button>
-                                  <button
-                                    className="appUserButtons"
-                                    onClick={() => handleDeleteUser(appUser.id)}
-                                  >
-                                    Delete
-                                  </button>
-                                </div>
-                              </>
-                            )}
-                          </div>
-                          <div className="privileges-list">
-                            {privilegeHierarchy.map((privilege) => (
-                              <PrivilegeItem
-                                key={privilege.name}
-                                privilege={privilege}
-                                appUser={appUser}
-                                handleTogglePrivilege={handleTogglePrivilege}
-                                loadingPrivileges={loadingPrivileges}
-                              />
-                            ))}
-                          </div>
-                          <div className="privilege-actions">
+                            <span style={{ fontSize: '25px' }}>Admin</span>
                             <button
-                              onClick={() => handleCheckAll(appUser)}
-                              disabled={isCheckingAll}
+                              className="appUserButtons"
+                              onClick={() =>
+                                handleSelectUser({
+                                  id: 'admin',
+                                  roleName: 'admin',
+                                  privileges: '',
+                                  userId:
+                                    window.electron.store.get('users')[0].id,
+                                  addedDate: Date.now(),
+                                })
+                              }
                             >
-                              {isCheckingAll ? (
-                                <img
-                                  src={loadingGif}
-                                  alt="Loading..."
-                                  style={{ width: '20px', height: '20px' }}
-                                />
-                              ) : (
-                                'Check All'
-                              )}
-                            </button>
-                            <button
-                              onClick={() => handleUncheckAll(appUser)}
-                              disabled={isUncheckingAll}
-                            >
-                              {isUncheckingAll ? (
-                                <img
-                                  src={loadingGif}
-                                  alt="Loading..."
-                                  style={{ width: '20px', height: '20px' }}
-                                />
-                              ) : (
-                                'Uncheck All'
-                              )}
+                              Select
                             </button>
                           </div>
+                          <h3>All Privileges are on</h3>
                         </div>
-                      ))}</div>
+                        {appUsers.map((appUser) => (
+                          <div key={appUser.id} className="appUserItem">
+                            <div className="appUserHeader">
+                              {editingUserId === appUser.id ? (
+                                <>
+                                  <input
+                                    type="text"
+                                    value={editingUserName}
+                                    onChange={(e) =>
+                                      setEditingUserName(e.target.value)
+                                    }
+                                    style={{
+                                      fontSize: '20px',
+                                      marginRight: '10px',
+                                      width: '50%',
+                                    }}
+                                  />
+                                  <div>
+                                    <button
+                                      className="appUserButtons"
+                                      onClick={() => handleSaveEdit(appUser.id)}
+                                    >
+                                      Save
+                                    </button>
+                                    <button
+                                      className="appUserButtons"
+                                      onClick={handleCancelEdit}
+                                    >
+                                      Cancel
+                                    </button>
+                                  </div>
+                                </>
+                              ) : (
+                                <>
+                                  <span style={{ fontSize: '25px' }}>
+                                    {appUser.roleName}
+                                  </span>
+                                  <div>
+                                    <button
+                                      className="appUserButtons"
+                                      onClick={() => handleSelectUser(appUser)}
+                                    >
+                                      Select
+                                    </button>
+                                    <button
+                                      className="appUserButtons"
+                                      onClick={() => handleEditUser(appUser)}
+                                    >
+                                      Edit
+                                    </button>
+                                    <button
+                                      className="appUserButtons"
+                                      onClick={() =>
+                                        handleDeleteUser(appUser.id)
+                                      }
+                                    >
+                                      Delete
+                                    </button>
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                            <div className="privileges-list">
+                              {privilegeHierarchy.map((privilege) => (
+                                <PrivilegeItem
+                                  key={privilege.name}
+                                  privilege={privilege}
+                                  appUser={appUser}
+                                  handleTogglePrivilege={handleTogglePrivilege}
+                                  loadingPrivileges={loadingPrivileges}
+                                />
+                              ))}
+                            </div>
+                            <div className="privilege-actions">
+                              <button
+                                onClick={() => handleCheckAll(appUser)}
+                                disabled={isCheckingAll}
+                              >
+                                {isCheckingAll ? (
+                                  <img
+                                    src={loadingGif}
+                                    alt="Loading..."
+                                    style={{ width: '20px', height: '20px' }}
+                                  />
+                                ) : (
+                                  'Check All'
+                                )}
+                              </button>
+                              <button
+                                onClick={() => handleUncheckAll(appUser)}
+                                disabled={isUncheckingAll}
+                              >
+                                {isUncheckingAll ? (
+                                  <img
+                                    src={loadingGif}
+                                    alt="Loading..."
+                                    style={{ width: '20px', height: '20px' }}
+                                  />
+                                ) : (
+                                  'Uncheck All'
+                                )}
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                     {privilegeError && (
                       <div style={{ color: 'red', marginTop: '10px' }}>

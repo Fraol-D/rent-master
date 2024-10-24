@@ -65,6 +65,8 @@ const installExtensions = async () => {
     )
     .catch(console.log);
 };
+const os = require('os');
+   // Serve static files from the 'src/renderer' directory
 
 const createWindow = async () => {
   if (isDebug) {
@@ -122,7 +124,15 @@ const createWindow = async () => {
   });
 
   mainWindow.loadURL(resolveHtmlPath('index.html'));
-
+// Get the PC name
+const pcName = os.hostname();
+console.log('------------------------------------------------------------------------------------------------------------------------------------------------------------------------PC Name:', pcName);
+console.log('Platform:', os.platform());
+console.log('Architecture:', os.arch());
+console.log('CPU Info:', os.cpus());
+console.log('Total Memory:', os.totalmem());
+console.log('Free Memory:', os.freemem());
+console.log('Home Directory:', os.homedir());
   mainWindow.on('ready-to-show', () => {
     try {
       if (!mainWindow) {
@@ -443,6 +453,8 @@ const sqlite3 = require('sqlite3').verbose();
 const fs = require('fs');
 
 const appDB = express();
+appDB.use(express.static(path.join(__dirname, 'src/renderer')));
+
 const port = 8100;
 const appname = 'BMS';
 appDB.use(
@@ -2045,6 +2057,7 @@ appDB.put(
     );
   }
 );
+
 export const cleanupOnSignOut = async () => {
   const userDataPath = process.env.APPDATA || app.getPath('userData');
   const dbPath = path.join(userDataPath, appname, 'database.db');

@@ -47,7 +47,7 @@ const ImageInteractor2: React.FC<ImageInteractorProps> = ({
   }, []);
 useEffect(() => {
   if (AddRoomState) {
-    if (images.length > 1) {
+    if (images.length > 0) {
       setIsMoreThanOneImage(true)
     } else {
       setIsMoreThanOneImage(false)

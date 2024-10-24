@@ -987,6 +987,7 @@ const MainPage = ({
           className="SideBarShowButton"
           onClick={handleCloseSideBar}
           style={{
+            zIndex: 2,
             visibility: SideBarShowState
               ? 'hidden'
               : HideSideBarForCalendar
@@ -1008,7 +1009,9 @@ const MainPage = ({
         >
           {SelectedPage === 'Rooms' ? (
             <>
-              <div className="SideBarTopContainer">
+              <div className="SideBarTopContainer" style={{
+                borderBottom: SideBarShowState ? '1px solid var(--Text-Color-Grey)' : 'none',
+              }}>
                   <button
                     className="SideBarTopButton"
                     onClick={handleCloseSideBar}
@@ -1030,6 +1033,10 @@ const MainPage = ({
                   <button
                     className="SideBarTopButton"
                     onClick={handleClearFilters}
+                    style={{
+                      visibility: SideBarShowState ? 'visible' : 'hidden',
+
+                    }}
                   >
                     Clear Filters
                   </button>
@@ -1038,7 +1045,8 @@ const MainPage = ({
                     style={{
                       display: 'flex',
                       justifyContent: 'center',
-                      alignItems: 'center',
+                      alignItems: 'center',                      visibility: SideBarShowState ? 'visible' : 'hidden',
+
                     }}
                     onClick={() => {
                       setShowArchived(!ShowArchived);
