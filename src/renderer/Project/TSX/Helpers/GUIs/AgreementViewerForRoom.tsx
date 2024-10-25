@@ -123,15 +123,16 @@ const AgreementViewerForRoom = ({
     );
 
     for (const payment of existingPayments) {
-      if(payment.Paid)await addValue(
-        'room_pay_info_history',
-        {
-          ...payment,
-          agreementId: newAgreementId,
-        },
-        setChangeMade
-      );
-      await deleteValue('room_pay_info', payment.id,setChangeMade);
+      if (payment.Paid)
+        await addValue(
+          'room_pay_info_history',
+          {
+            ...payment,
+            agreementId: newAgreementId,
+          },
+          setChangeMade
+        );
+      await deleteValue('room_pay_info', payment.id, setChangeMade);
     }
 
     // Now delete only the paid payments from room_pay_info
@@ -141,9 +142,9 @@ const AgreementViewerForRoom = ({
     if (paymentOption === 'deleteUnpaid') {
       const FutruePaymentsRaw = await getValuesWithSql(
         'room_pay_info',
-        `WHERE roomId = '${
-          roomType.id
-        }' AND tenantId = '${roomType.tenantId}' AND Day >= '${Date.now()}' AND Paid = '0'`
+        `WHERE roomId = '${roomType.id}' AND tenantId = '${
+          roomType.tenantId
+        }' AND Day >= '${Date.now()}' AND Paid = '0'`
       );
 
       if (FutruePaymentsRaw.length >= 1) {
@@ -156,9 +157,9 @@ const AgreementViewerForRoom = ({
     } else if (paymentOption === 'makeAllPaid') {
       const FutruePaymentsRaw = await getValuesWithSql(
         'room_pay_info',
-        `WHERE roomId = '${
-          roomType.id
-        }' AND tenantId = '${roomType.tenantId}' AND Day >= '${Date.now()}' AND Paid = '0'`
+        `WHERE roomId = '${roomType.id}' AND tenantId = '${
+          roomType.tenantId
+        }' AND Day >= '${Date.now()}' AND Paid = '0'`
       );
       console.log(FutruePaymentsRaw.length, 'length');
       if (FutruePaymentsRaw.length >= 1) {
@@ -642,12 +643,13 @@ const AgreementViewerForRoom = ({
                       value={paymentCycle}
                       onChange={handlePaymentCycleChange}
                     >
-                      <option value="Every 30 days">30 days</option>
-                      <option value="Every 15 days">15 days</option>
-                      <option value="Every 7 days">7 days</option>
+                      <option value="30">30 days</option>
+                      <option value="15">15 days</option>
+                      <option value="7">7 days</option>
                       <option value="daily">daily</option>
-
+                      <option value="weekly">weekly</option>
                       <option value="monthly">monthly</option>
+                      <option value="Annually">annually</option>
                       <option value="custom">custom days</option>
                     </select>
                     {paymentCycle === 'custom' && (

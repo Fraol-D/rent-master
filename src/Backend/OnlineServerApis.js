@@ -221,14 +221,15 @@ export const Upload = async (
   const changeAmountOnline = await getValuesWithSql_Online(
     'users',
     `WHERE id = '${SelectedUserId}'`
-  ).changeAmount || 0;
+  );
   await updateValueOnline(
     'users',
     SelectedUserId,
     'changeAmount',
-    changeAmountOnline + changeAmount
+    changeAmountOnline[0].changeAmount + changeAmount
   );
-  window.electron.store.set('changeAmount', changeAmountOnline + changeAmount);
+  console.log(changeAmountOnline[0].changeAmount + changeAmount, 'changeAmountOnline + changeAmount', changeAmountOnline[0].changeAmount);
+  window.electron.store.set('changeAmount', changeAmountOnline[0].changeAmount + changeAmount);
   await syncOnlineToLocalWithCallback(SelectedUserId, (syncProgress) => {
     const totalProgress =
       syncProgress * syncProgressWeight + uploadProgressWeight * 100;
@@ -456,8 +457,6 @@ const fetchDataFromLocalDatabase = async (tableName) => {
 export const syncOnlineToLocal = async (SelectedUserId) => {
   console.log(`Starting sync process for user: ${SelectedUserId}`);
 
- 
-
   console.log(`Tables to sync: ${tables.join(', ')}`);
 
   for (const table of tables) {
@@ -525,6 +524,9 @@ export const syncOnlineToLocal = async (SelectedUserId) => {
   console.log(`Found ${offlineChanges.length} offline changes to apply`);
   await applyOfflineChangesToLocalDatabase(offlineChanges);
 
+  // Sync action_history separately
+  await syncActionHistory(SelectedUserId);
+
   console.log('Sync completed');
   return 'Sync completed';
 };
@@ -538,9 +540,6 @@ export const syncOnlineToLocalWithBool = async (
   console.log(`Starting sync process for user: ${SelectedUserId}`);
   setIsSyncing(true);
   setSyncProgress(0);
-
- 
-
 
   console.log(`Tables to sync: ${tables.join(', ')}`);
   const totalSteps = tables.length + 1; // +1 for offline changes
@@ -614,6 +613,9 @@ export const syncOnlineToLocalWithBool = async (
   console.log(`Found ${offlineChanges.length} offline changes to apply`);
   await applyOfflineChangesToLocalDatabase(offlineChanges);
 
+  // Sync action_history separately
+  await syncActionHistory(SelectedUserId);
+
   currentStep++;
   setSyncProgress(100);
 
@@ -622,6 +624,24 @@ export const syncOnlineToLocalWithBool = async (
   RefreshDataFromSqlite();
   return 'Sync completed';
 };
+
+// New function to sync action_history
+const syncActionHistory = async (SelectedUserId) => {
+  console.log('Syncing action_history');
+  const onlineActionHistory = await fetchDataFromOnlineDatabase('action_history');
+  const filteredActionHistory = onlineActionHistory.filter(action => action.userId === SelectedUserId);
+  
+  // Clear existing action_history in local database
+  await deleteAllFromTable('action_history');
+  
+  // Add new action_history from online database
+  for (const action of filteredActionHistory) {
+    await addLocalRecord('action_history', action);
+  }
+  
+  console.log('action_history sync completed');
+};
+
 export const getValues = async (tableName) => {
   try {
     const response = await fetch(`${baseUrlLocal}/${tableName}`);
@@ -962,14 +982,12 @@ export const replaceUserData = async (userId, tables) => {
     'tenants',
     'room_pay_info',
     'room_pay_info_history',
-    'action_history',
     'email_templates',
     'sms_templates',
     'expenses',
     'notification_template_selections',
     'utility_payments',
     'utility_payments_settings',
-    'action_history',
     'brokers',
     'brokersRecommendationList',
     'PastTenantsForRoom',
@@ -977,17 +995,16 @@ export const replaceUserData = async (userId, tables) => {
   ];
 
 export const SetBackUpAsMain = async (userId) => {
- 
-
   const allData = {};
 
-  // Fetch data from all tables
+  // Fetch data from all tables except action_history
   for (const table of tables) {
-    const tableData = await getValuesWithSql(table,"WHERE 1");
-    // Ensure tableData is an array
+    const tableData = await getValuesWithSql(table, "WHERE 1");
     allData[table] = Array.isArray(tableData) ? tableData : [];
   }
+  
   console.log(allData);
+  
   // Replace online data with local data
   try {
     const result = await replaceUserData(userId, allData);
@@ -1185,3 +1202,4 @@ export const uploadImage = async (userId, file, newFilename, rowId) => {
   }
 };
 */
+

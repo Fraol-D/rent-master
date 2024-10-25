@@ -7,6 +7,7 @@ import {
   differenceInDays,
   addDays,
   addMonths,
+  addYears,
 } from 'date-fns';
 import * as d3 from 'd3';
 import editIconDark from '../../../../assets/assets/Dark mode/Editicon.png';
@@ -135,6 +136,9 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
               roomType.PaymentCycleCustomeDays || 30
             );
             break;
+          case 'Annually':
+            currentDate = addYears(currentDate, 1);
+            break;
           default:
             currentDate = addMonths(currentDate, 1);
         }
@@ -204,6 +208,9 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
         case 'weekly':
           currentDate = addDays(currentDate, 7);
           break;
+          case 'Annually':
+            currentDate = addYears(currentDate, 1);
+            break;
         case 'custom':
           currentDate = addDays(
             currentDate,

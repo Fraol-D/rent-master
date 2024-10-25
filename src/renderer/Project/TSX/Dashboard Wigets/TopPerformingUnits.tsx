@@ -281,16 +281,19 @@ const calculateAnnualRevenue = (room: RoomType) => {
     case 'monthly':
       annualRevenue = room.AgreedPrice * 12;
       break;
+    case 'monthly':
+      annualRevenue = room.AgreedPrice;
+      break;
     case '30':
-    case 'Every 30 days':
+    case '30':
       annualRevenue = room.AgreedPrice * 12;
       break;
     case '15':
-    case 'Every 15 days':
+    case '15':
       annualRevenue = room.AgreedPrice * 24;
       break;
     case '7':
-    case 'Every 7 days':
+    case '7':
       annualRevenue = room.AgreedPrice * 52;
       break;
     case 'custom':

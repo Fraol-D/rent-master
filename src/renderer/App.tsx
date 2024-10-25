@@ -16,7 +16,7 @@ import {
 } from 'Backend/localServerApis';
 import AccountManager from './Project/TSX/Sign up and login/AccountManager';
 import { SignOutUser, Upload } from 'Backend/OnlineServerApis';
-import { addDays, addMonths, differenceInDays } from 'date-fns';
+import { addDays, addMonths, addYears, differenceInDays } from 'date-fns';
 import { Payment } from 'electron';
 declare global {}
 function Hello() {
@@ -99,6 +99,8 @@ function Hello() {
           break;
         case 'weekly':
           currentDate = addDays(currentDate, 7);
+          break;  case 'Annually':
+          currentDate = addYears(currentDate, 1);
           break;
         case 'custom':
           currentDate = addDays(
@@ -971,10 +973,10 @@ function Hello() {
     setRefresh(Refresh + 1);
     setisSignedIn(false);
   };
-
+  
   const [SelectedUserId, setSelectedUserId] = useState('');
   const [ChangeMade, setChangeMade] = useState(0);
-  useEffect(() => {
+ useEffect(() => {
     const getChanges = async () => {
       const OfflineChanges = await getValuesWithSql(
         'offline_changes',

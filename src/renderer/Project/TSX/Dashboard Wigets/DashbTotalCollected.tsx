@@ -3,7 +3,7 @@ import * as d3 from 'd3';
 import { BarChart, barElementClasses } from '@mui/x-charts/BarChart';
 import { axisClasses } from '@mui/x-charts/ChartsAxis';
 import { getValuesWithSql } from 'Backend/localServerApis';
-import { addDays, addMonths, format, startOfYear, endOfYear } from 'date-fns';
+import { addDays, addMonths, format, startOfYear, endOfYear, addYears } from 'date-fns';
 
 interface Payment {
   id: string;
@@ -120,6 +120,8 @@ const DashbTotalCollected = ({
               break;
             case 'weekly':
               currentDate = addDays(currentDate, 7);
+              break;  case 'Annually':
+              currentDate = addYears(currentDate, 1);
               break;
             case 'custom':
               currentDate = addDays(

@@ -81,9 +81,10 @@ const AccountManager = (React.FC<MyComponentProps> = ({
     ];
     return mainTabs.some((tab) => privileges.includes(tab));
   };
-
+  const [initialLoading, setInitialLoading] = useState(true);
   // Function to check if a user is signed in
   const checkIfSignedIn = async () => {
+    setInitialLoading(true);
     // Get all users from local storage
     const allUsers = window.electron.store.get('users') || [];
 
@@ -166,12 +167,14 @@ const AccountManager = (React.FC<MyComponentProps> = ({
           setIsSyncing,
           setSyncProgress,
           RefreshDataFromSqlite
-        );}
+       );
+       }
       }
     } else {
       // If no users found, set signed in state to false
       setisSignedIn(false);
     }
+    setInitialLoading(false);
   };
   const appUsersManagement = async () => {
     if (navigator.onLine) {
@@ -743,7 +746,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
 
   return (
     <>
-      {loading && (
+      {(loading || initialLoading) && (
         <div
           style={{
             position: 'absolute',
@@ -766,305 +769,309 @@ const AccountManager = (React.FC<MyComponentProps> = ({
         </div>
       )}
       <div style={{ height: '100%' }}>
-        {isSignedIn ? (
-          TrialExpiredState ? (
-            <TrialEndedText />
-          ) : IsAllowedState ? (
-            <>
-              {AppUserManagerShow ? (
-                AppUserManagerPromptPassword ? (
-                  <div
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      height: '100%',
-                    }}
-                  >
-                    <div
-                      className="SignUpMainContainer"
-                      style={{
-                        width: 'auto',
-                        maxWidth: '400px',
-                        height: 'auto',
-                        margin: 'auto',
-                        background: 'var(--Secondary-Color20)',
-                        borderRadius: '8px',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        boxShadow: '0px 4px 4px 0px rgba(0, 0, 0, 0.25)',
-                        padding: '20px',
-                      }}
-                    >
+        {!initialLoading && (
+          <>
+            {isSignedIn ? (
+              TrialExpiredState ? (
+                <TrialEndedText />
+              ) : IsAllowedState ? (
+                <>
+                  {AppUserManagerShow ? (
+                    AppUserManagerPromptPassword ? (
                       <div
                         style={{
                           display: 'flex',
-                          justifyContent: 'space-between',
-                          width: '100%',
+                          justifyContent: 'center',
                           alignItems: 'center',
-                          height: 'auto',
-                          marginBottom: '15px',
+                          height: '100%',
                         }}
                       >
-                        <h1
+                        <div
+                          className="SignUpMainContainer"
                           style={{
-                            marginRight: '10px',
-                            marginTop: '0px',
-                            marginBottom: '0px',
-                            fontSize: '45px',
+                            width: 'auto',
+                            maxWidth: '400px',
+                            height: 'auto',
+                            margin: 'auto',
+                            background: 'var(--Secondary-Color20)',
+                            borderRadius: '8px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            boxShadow: '0px 4px 4px 0px rgba(0, 0, 0, 0.25)',
+                            padding: '20px',
                           }}
                         >
-                          Security Check
-                        </h1>
-                        <button onClick={() => setAppUserManagerShow(false)}>
-                          Back
-                        </button>
-                      </div>
-                      <p
-                        style={{
-                          color: 'var(--Text-Color)',
-                          marginBottom: '25px',
-                        }}
-                      >
-                        Please enter the account password to continue
-                      </p>
-                      <input
-                        type="password"
-                        placeholder="Admin Password"
-                        className="userName-input"
-                        value={PasswordCheckInput}
-                        onChange={(e) => setPasswordCheckInput(e.target.value)}
-                      />
-                      <br />
-                      {passwordError && (
-                        <p style={{ color: 'red', marginBottom: '10px' }}>
-                          {passwordError}
-                        </p>
-                      )}
-                      <button
-                        className="LoginButton"
-                        onClick={handleSubmitAdminPassword}
-                        disabled={isCheckingPassword}
-                      >
-                        {isCheckingPassword ? (
-                          <img
-                            src={loadingGif}
-                            alt="Loading..."
-                            style={{ width: '20px', height: '20px' }}
-                          />
-                        ) : (
-                          <>Submit {' ▶'}</>
-                        )}
-                      </button>
-                    </div>{' '}
-                  </div>
-                ) : (
-                  <>
-                    <h1 style={{ textAlign: 'center' }}>User Selector</h1>
-                    <p style={{ textAlign: 'center' }}>
-                      Select the user this PC will be assigned to. This step is
-                      crucial for proper account management and ensures that the
-                      correct user has access to this device.
-                    </p>
-                    <div style={{ display: 'flex', justifyContent: 'center' }}>
-                      <button
-                        className="appUserButtons"
-                        style={{ marginBottom: 'auto', marginTop: '10px' }}
-                        onClick={handleAddNewAppUser}
-                      >
-                        Add New User
-                      </button>
-                    </div>
-                    <div
-                      style={{
-                        display: 'flex',
-                        flexDirection: 'row',
-                        overflowX: 'auto',
-                      }}
-                      className="appUserItemContainer"
-                    >
-                      <div style={{ display: 'flex' }}>
-                        <div className="appUserItemM appUserItem">
-                          <div className="appUserHeader">
-                            <span style={{ fontSize: '25px' }}>Admin</span>
-                            <button
-                              className="appUserButtons"
-                              onClick={() =>
-                                handleSelectUser({
-                                  id: 'admin',
-                                  roleName: 'admin',
-                                  privileges: '',
-                                  userId:
-                                    window.electron.store.get('users')[0].id,
-                                  addedDate: Date.now(),
-                                })
-                              }
+                          <div
+                            style={{
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              width: '100%',
+                              alignItems: 'center',
+                              height: 'auto',
+                              marginBottom: '15px',
+                            }}
+                          >
+                            <h1
+                              style={{
+                                marginRight: '10px',
+                                marginTop: '0px',
+                                marginBottom: '0px',
+                                fontSize: '45px',
+                              }}
                             >
-                              Select
+                              Security Check
+                            </h1>
+                            <button onClick={() => setAppUserManagerShow(false)}>
+                              Back
                             </button>
                           </div>
-                          <h3>All Privileges are on</h3>
+                          <p
+                            style={{
+                              color: 'var(--Text-Color)',
+                              marginBottom: '25px',
+                            }}
+                          >
+                            Please enter the account password to continue
+                          </p>
+                          <input
+                            type="password"
+                            placeholder="Admin Password"
+                            className="userName-input"
+                            value={PasswordCheckInput}
+                            onChange={(e) => setPasswordCheckInput(e.target.value)}
+                          />
+                          <br />
+                          {passwordError && (
+                            <p style={{ color: 'red', marginBottom: '10px' }}>
+                              {passwordError}
+                            </p>
+                          )}
+                          <button
+                            className="LoginButton"
+                            onClick={handleSubmitAdminPassword}
+                            disabled={isCheckingPassword}
+                          >
+                            {isCheckingPassword ? (
+                              <img
+                                src={loadingGif}
+                                alt="Loading..."
+                                style={{ width: '20px', height: '20px' }}
+                              />
+                            ) : (
+                              <>Submit {' ▶'}</>
+                            )}
+                          </button>
+                        </div>{' '}
+                      </div>
+                    ) : (
+                      <>
+                        <h1 style={{ textAlign: 'center' }}>User Selector</h1>
+                        <p style={{ textAlign: 'center' }}>
+                          Select the user this PC will be assigned to. This step is
+                          crucial for proper account management and ensures that the
+                          correct user has access to this device.
+                        </p>
+                        <div style={{ display: 'flex', justifyContent: 'center' }}>
+                          <button
+                            className="appUserButtons"
+                            style={{ marginBottom: 'auto', marginTop: '10px' }}
+                            onClick={handleAddNewAppUser}
+                          >
+                            Add New User
+                          </button>
                         </div>
-                        {appUsers.map((appUser) => (
-                          <div key={appUser.id} className="appUserItem">
-                            <div className="appUserHeader">
-                              {editingUserId === appUser.id ? (
-                                <>
-                                  <input
-                                    type="text"
-                                    value={editingUserName}
-                                    onChange={(e) =>
-                                      setEditingUserName(e.target.value)
-                                    }
-                                    style={{
-                                      fontSize: '20px',
-                                      marginRight: '10px',
-                                      width: '50%',
-                                    }}
-                                  />
-                                  <div>
-                                    <button
-                                      className="appUserButtons"
-                                      onClick={() => handleSaveEdit(appUser.id)}
-                                    >
-                                      Save
-                                    </button>
-                                    <button
-                                      className="appUserButtons"
-                                      onClick={handleCancelEdit}
-                                    >
-                                      Cancel
-                                    </button>
-                                  </div>
-                                </>
-                              ) : (
-                                <>
-                                  <span style={{ fontSize: '25px' }}>
-                                    {appUser.roleName}
-                                  </span>
-                                  <div>
-                                    <button
-                                      className="appUserButtons"
-                                      onClick={() => handleSelectUser(appUser)}
-                                    >
-                                      Select
-                                    </button>
-                                    <button
-                                      className="appUserButtons"
-                                      onClick={() => handleEditUser(appUser)}
-                                    >
-                                      Edit
-                                    </button>
-                                    <button
-                                      className="appUserButtons"
-                                      onClick={() =>
-                                        handleDeleteUser(appUser.id)
-                                      }
-                                    >
-                                      Delete
-                                    </button>
-                                  </div>
-                                </>
-                              )}
+                        <div
+                          style={{
+                            display: 'flex',
+                            flexDirection: 'row',
+                            overflowX: 'auto',
+                          }}
+                          className="appUserItemContainer"
+                        >
+                          <div style={{ display: 'flex' }}>
+                            <div className="appUserItemM appUserItem">
+                              <div className="appUserHeader">
+                                <span style={{ fontSize: '25px' }}>Admin</span>
+                                <button
+                                  className="appUserButtons"
+                                  onClick={() =>
+                                    handleSelectUser({
+                                      id: 'admin',
+                                      roleName: 'admin',
+                                      privileges: '',
+                                      userId:
+                                        window.electron.store.get('users')[0].id,
+                                      addedDate: Date.now(),
+                                    })
+                                  }
+                                >
+                                  Select
+                                </button>
+                              </div>
+                              <h3>All Privileges are on</h3>
                             </div>
-                            <div className="privileges-list">
-                              {privilegeHierarchy.map((privilege) => (
-                                <PrivilegeItem
-                                  key={privilege.name}
-                                  privilege={privilege}
-                                  appUser={appUser}
-                                  handleTogglePrivilege={handleTogglePrivilege}
-                                  loadingPrivileges={loadingPrivileges}
-                                />
-                              ))}
-                            </div>
-                            <div className="privilege-actions">
-                              <button
-                                onClick={() => handleCheckAll(appUser)}
-                                disabled={isCheckingAll}
-                              >
-                                {isCheckingAll ? (
-                                  <img
-                                    src={loadingGif}
-                                    alt="Loading..."
-                                    style={{ width: '20px', height: '20px' }}
-                                  />
-                                ) : (
-                                  'Check All'
-                                )}
-                              </button>
-                              <button
-                                onClick={() => handleUncheckAll(appUser)}
-                                disabled={isUncheckingAll}
-                              >
-                                {isUncheckingAll ? (
-                                  <img
-                                    src={loadingGif}
-                                    alt="Loading..."
-                                    style={{ width: '20px', height: '20px' }}
-                                  />
-                                ) : (
-                                  'Uncheck All'
-                                )}
-                              </button>
-                            </div>
+                            {appUsers.map((appUser) => (
+                              <div key={appUser.id} className="appUserItem">
+                                <div className="appUserHeader">
+                                  {editingUserId === appUser.id ? (
+                                    <>
+                                      <input
+                                        type="text"
+                                        value={editingUserName}
+                                        onChange={(e) =>
+                                          setEditingUserName(e.target.value)
+                                        }
+                                        style={{
+                                          fontSize: '20px',
+                                          marginRight: '10px',
+                                          width: '50%',
+                                        }}
+                                      />
+                                      <div>
+                                        <button
+                                          className="appUserButtons"
+                                          onClick={() => handleSaveEdit(appUser.id)}
+                                        >
+                                          Save
+                                        </button>
+                                        <button
+                                          className="appUserButtons"
+                                          onClick={handleCancelEdit}
+                                        >
+                                          Cancel
+                                        </button>
+                                      </div>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <span style={{ fontSize: '25px' }}>
+                                        {appUser.roleName}
+                                      </span>
+                                      <div>
+                                        <button
+                                          className="appUserButtons"
+                                          onClick={() => handleSelectUser(appUser)}
+                                        >
+                                          Select
+                                        </button>
+                                        <button
+                                          className="appUserButtons"
+                                          onClick={() => handleEditUser(appUser)}
+                                        >
+                                          Edit
+                                        </button>
+                                        <button
+                                          className="appUserButtons"
+                                          onClick={() =>
+                                            handleDeleteUser(appUser.id)
+                                          }
+                                        >
+                                          Delete
+                                        </button>
+                                      </div>
+                                    </>
+                                  )}
+                                </div>
+                                <div className="privileges-list">
+                                  {privilegeHierarchy.map((privilege) => (
+                                    <PrivilegeItem
+                                      key={privilege.name}
+                                      privilege={privilege}
+                                      appUser={appUser}
+                                      handleTogglePrivilege={handleTogglePrivilege}
+                                      loadingPrivileges={loadingPrivileges}
+                                    />
+                                  ))}
+                                </div>
+                                <div className="privilege-actions">
+                                  <button
+                                    onClick={() => handleCheckAll(appUser)}
+                                    disabled={isCheckingAll}
+                                  >
+                                    {isCheckingAll ? (
+                                      <img
+                                        src={loadingGif}
+                                        alt="Loading..."
+                                        style={{ width: '20px', height: '20px' }}
+                                      />
+                                    ) : (
+                                      'Check All'
+                                    )}
+                                  </button>
+                                  <button
+                                    onClick={() => handleUncheckAll(appUser)}
+                                    disabled={isUncheckingAll}
+                                  >
+                                    {isUncheckingAll ? (
+                                      <img
+                                        src={loadingGif}
+                                        alt="Loading..."
+                                        style={{ width: '20px', height: '20px' }}
+                                      />
+                                    ) : (
+                                      'Uncheck All'
+                                    )}
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
                           </div>
-                        ))}
-                      </div>
-                    </div>
-                    {privilegeError && (
-                      <div style={{ color: 'red', marginTop: '10px' }}>
-                        {privilegeError}
-                      </div>
-                    )}
-                  </>
-                )
+                        </div>
+                        {privilegeError && (
+                          <div style={{ color: 'red', marginTop: '10px' }}>
+                            {privilegeError}
+                          </div>
+                        )}
+                      </>
+                    )
+                  ) : (
+                    children
+                  )}
+                </>
               ) : (
-                children
-              )}
-            </>
-          ) : (
-            <AccountCheck />
-          )
-        ) : isSignUpMode ? (
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              height: '100%',
-            }}
-          >
-            <SignUpPage
-              setisSignUpMode={setisSignUpMode}
-              setisSignedIn={setisSignedIn}
-              setChangeMade={setChangeMade}
-              email={email}
-              password={password}
-              setEmail={setEmail}
-              setPassword={setPassword}
-            />
-          </div>
-        ) : (
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              height: '100%',
-            }}
-          >
-            <LoginPage
-              setisSignUpMode={setisSignUpMode}
-              setisSignedIn={setisSignedIn}
-              setChangeMade={setChangeMade}
-              email={email}
-              password={password}
-              setEmail={setEmail}
-              setPassword={setPassword}
-            />
-          </div>
+                <AccountCheck />
+              )
+            ) : isSignUpMode ? (
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  height: '100%',
+                }}
+              >
+                <SignUpPage
+                  setisSignUpMode={setisSignUpMode}
+                  setisSignedIn={setisSignedIn}
+                  setChangeMade={setChangeMade}
+                  email={email}
+                  password={password}
+                  setEmail={setEmail}
+                  setPassword={setPassword}
+                />
+              </div>
+            ) : (
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  height: '100%',
+                }}
+              >
+                <LoginPage
+                  setisSignUpMode={setisSignUpMode}
+                  setisSignedIn={setisSignedIn}
+                  setChangeMade={setChangeMade}
+                  email={email}
+                  password={password}
+                  setEmail={setEmail}
+                  setPassword={setPassword}
+                />
+              </div>
+            )}
+          </>
         )}
       </div>
     </>

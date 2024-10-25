@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getValuesWithSql } from 'Backend/localServerApis';
-import { addDays, addMonths, startOfYear, endOfYear } from 'date-fns';
+import { addDays, addMonths, startOfYear, endOfYear, addYears } from 'date-fns';
 import PaymentProgressBarGUI from '../Helpers/GUIs/PaymentProgressBarGUI';
 
 interface Payment {
@@ -84,6 +84,8 @@ const DashbPastPayments = ({
               break;
             case 'weekly':
               currentDate = addDays(currentDate, 7);
+              break;  case 'Annually':
+              currentDate = addYears(currentDate, 1);
               break;
             case 'custom':
               currentDate = addDays(currentDate, room.PaymentCycleCustomeDays || 30);

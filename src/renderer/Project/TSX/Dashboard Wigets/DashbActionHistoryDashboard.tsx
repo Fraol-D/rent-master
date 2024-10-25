@@ -420,7 +420,8 @@ const DashbActionHistoryDashboard: React.FC = () => {
                       color: 'var(--Text-Color)',
                     }}
                   >
-                    {item.performed_by}
+                    {item.performed_by}<br></br>
+                   <span style={{fontSize: '12px', color: 'var(--Text-Color-Grey)'}}> {item.userInfo}</span>
                   </td>
                   <td
                     style={{

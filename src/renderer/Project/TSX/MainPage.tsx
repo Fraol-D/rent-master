@@ -56,6 +56,7 @@ declare global {
       | 'monthly'
       | 'weekly'
       | 'daily'
+      | 'Annually'
       | 'custom';
     PaymentCycleCustomeDays: number;
     paymentShowAmount: number;
@@ -1009,57 +1010,60 @@ const MainPage = ({
         >
           {SelectedPage === 'Rooms' ? (
             <>
-              <div className="SideBarTopContainer" style={{
-                borderBottom: SideBarShowState ? '1px solid var(--Text-Color-Grey)' : 'none',
-              }}>
+              <div
+                className="SideBarTopContainer"
+                style={{
+                  borderBottom: SideBarShowState
+                    ? '1px solid var(--Text-Color-Grey)'
+                    : 'none',
+                }}
+              >
+                <button
+                  className="SideBarTopButton"
+                  onClick={handleCloseSideBar}
+                >
+                  <img src={DoubleArrowIconDark} alt="" />
+                </button>
+                {privileges.addRoom ? (
                   <button
                     className="SideBarTopButton"
-                    onClick={handleCloseSideBar}
-                  >
-                    <img src={DoubleArrowIconDark} alt="" />
-                  </button>
-                  {privileges.addRoom ? (
-                    <button
-                      className="SideBarTopButton"
-                      onClick={() => {
-                        handleAddRoomButtonInitial(!AddARoomState);
-                      }}
-                    >
-                      Add room
-                    </button>
-                  ) : (
-                    <></>
-                  )}
-                  <button
-                    className="SideBarTopButton"
-                    onClick={handleClearFilters}
-                    style={{
-                      visibility: SideBarShowState ? 'visible' : 'hidden',
-
-                    }}
-                  >
-                    Clear Filters
-                  </button>
-                  <button
-                    className="SideBarTopButton"
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'center',
-                      alignItems: 'center',                      visibility: SideBarShowState ? 'visible' : 'hidden',
-
-                    }}
                     onClick={() => {
-                      setShowArchived(!ShowArchived);
+                      handleAddRoomButtonInitial(!AddARoomState);
                     }}
                   >
-                    {ShowArchived ? 'Show unarchived' : 'Show archived'}
-                  </button>{' '}
-                </div>
+                    Add room
+                  </button>
+                ) : (
+                  <></>
+                )}
+                <button
+                  className="SideBarTopButton"
+                  onClick={handleClearFilters}
+                  style={{
+                    visibility: SideBarShowState ? 'visible' : 'hidden',
+                  }}
+                >
+                  Clear Filters
+                </button>
+                <button
+                  className="SideBarTopButton"
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    visibility: SideBarShowState ? 'visible' : 'hidden',
+                  }}
+                  onClick={() => {
+                    setShowArchived(!ShowArchived);
+                  }}
+                >
+                  {ShowArchived ? 'Show unarchived' : 'Show archived'}
+                </button>{' '}
+              </div>
               <div
                 className="SideBarRoomPageTopPart"
                 style={{ height: AddARoomState ? '0%' : '100%' }}
               >
-                
                 <div
                   className="SearchBarContainer"
                   style={{ height: isSearchOpen ? '115px' : '50px' }}
@@ -1608,28 +1612,33 @@ const MainPage = ({
             </>
           ) : SelectedPage === 'Tools' ? (
             <>
-              {privileges.editEmailTemplates && <SideBarItem
-                page="EmailTemplates"
-                currentPage={ToolsSelectedPage}
-                onClick={() => setToolsSelectedPage('EmailTemplates')}
-              >
-                Email Templates
-              </SideBarItem>}
-              {privileges.editSmsTemplates &&  <SideBarItem
-                page="SMSTemplates"
-                currentPage={ToolsSelectedPage}
-                onClick={() => setToolsSelectedPage('SMSTemplates')}
-              >
-                SMS Templates
-              </SideBarItem>}
-             {privileges.editExpenses && <SideBarItem
-                page="Expense Manager"
-                currentPage={ToolsSelectedPage}
-                onClick={() => setToolsSelectedPage('Expense Manager')}
-              >
-                Expense Manager
-              </SideBarItem>}
-              
+              {privileges.editEmailTemplates && (
+                <SideBarItem
+                  page="EmailTemplates"
+                  currentPage={ToolsSelectedPage}
+                  onClick={() => setToolsSelectedPage('EmailTemplates')}
+                >
+                  Email Templates
+                </SideBarItem>
+              )}
+              {privileges.editSmsTemplates && (
+                <SideBarItem
+                  page="SMSTemplates"
+                  currentPage={ToolsSelectedPage}
+                  onClick={() => setToolsSelectedPage('SMSTemplates')}
+                >
+                  SMS Templates
+                </SideBarItem>
+              )}
+              {privileges.editExpenses && (
+                <SideBarItem
+                  page="Expense Manager"
+                  currentPage={ToolsSelectedPage}
+                  onClick={() => setToolsSelectedPage('Expense Manager')}
+                >
+                  Expense Manager
+                </SideBarItem>
+              )}
             </>
           ) : SelectedPage === 'Dashboard' ? (
             <>
@@ -2006,7 +2015,6 @@ const MainPage = ({
               SelectedAppUser={SelectedAppUser}
               setChangeMade={setChangeMade}
               SelectedUserId={SelectedUserId}
-          
             />
           )}
           {SelectedPage === 'Calendar' && (
@@ -2040,7 +2048,9 @@ const MainPage = ({
               BrokerRecommendationList={BrokerRecommendationList}
               DashboardSelectedPage={DashboardSelectedPage}
               SelectedUserId={SelectedUserId}
-              setChangeMade={setChangeMade}updateRoomPropertyLocal={updateRoomPropertyLocal}updateRoomProperty={updateRoomProperty}
+              setChangeMade={setChangeMade}
+              updateRoomPropertyLocal={updateRoomPropertyLocal}
+              updateRoomProperty={updateRoomProperty}
             />
           )}
           {SelectedPage === 'Database' && (

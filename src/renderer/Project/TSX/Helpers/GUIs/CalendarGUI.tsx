@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import * as d3 from 'd3';
 import '../../../CSS/Calendar.css';
-import { addDays, addMonths, startOfYear, endOfYear } from 'date-fns';
+import { addDays, addMonths, startOfYear, endOfYear, addYears } from 'date-fns';
 import { getValuesWithSql } from 'Backend/localServerApis';
 
 interface CalendarProps {
@@ -54,7 +54,7 @@ const CalendarGUI: React.FC<CalendarProps> = ({
         const currentYear = new Date().getFullYear();
         let yearStart = startOfYear(new Date(currentYear - 3, 0, 1));
         let yearEnd = endOfYear(new Date(currentYear + 3, 11, 31));
-        
+
         // Get all actual payments for the selected years
         const actualPayments = await getValuesWithSql(
           'room_pay_info',
@@ -71,7 +71,7 @@ const CalendarGUI: React.FC<CalendarProps> = ({
         const combinedPayments = [...actualPayments, ...historicalPayments];
 
         // Process all combined payments
-        combinedPayments.forEach(payment => {
+        combinedPayments.forEach((payment) => {
           allPayments.push({
             id: payment.id,
             Day: payment.Day,
@@ -84,8 +84,8 @@ const CalendarGUI: React.FC<CalendarProps> = ({
         // Generate predicted payments only for future dates or missing payments
         for (const room of rooms) {
           let startDate = new Date(
-            tenantList.find((tenant) => tenant.id === room.tenantId)?.startTime ||
-              Date.now()
+            tenantList.find((tenant) => tenant.id === room.tenantId)
+              ?.startTime || Date.now()
           ).getTime();
           let endDate = yearEnd.getTime();
           if (room.selectedAgreementId) {
@@ -94,7 +94,10 @@ const CalendarGUI: React.FC<CalendarProps> = ({
               `WHERE id = '${room.selectedAgreementId}'`
             );
             if (agreements.length > 0) {
-              startDate = Math.max(agreements[0].startTime, yearStart.getTime());
+              startDate = Math.max(
+                agreements[0].startTime,
+                yearStart.getTime()
+              );
               if (
                 tenantList.find((t: tenant) => t.id === room.tenantId)
                   ?.SelectedAgreement === 'Fixed-Term' &&
@@ -109,7 +112,7 @@ const CalendarGUI: React.FC<CalendarProps> = ({
 
           while (currentDate.getTime() <= endDate) {
             const paymentId = `${room.id}-${currentDate.getTime()}`;
-            const existingPayment = allPayments.find(p => p.id === paymentId);
+            const existingPayment = allPayments.find((p) => p.id === paymentId);
 
             if (!existingPayment) {
               allPayments.push({
@@ -140,6 +143,9 @@ const CalendarGUI: React.FC<CalendarProps> = ({
                 break;
               case 'weekly':
                 currentDate = addDays(currentDate, 7);
+                break;
+              case 'Annually':
+                currentDate = addYears(currentDate, 1);
                 break;
               case 'custom':
                 currentDate = addDays(

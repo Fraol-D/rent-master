@@ -145,8 +145,8 @@ const NavBar = ({
     }
   }, [uploadProgress]);
   const [OnlineChanges, setOnlineChanges] = useState(0);
-  useEffect(() => {
-    const checkForChanges = async () => {
+  const checkForChanges = async () => {
+    try {
       const localChange = window.electron.store.get('changeAmount');
       const onlineUser = await getValuesWithSql_Online(
         'users',
@@ -161,21 +161,19 @@ const NavBar = ({
           setOnlineChanges(0);
         }
       }
-    };
+    } catch (error) {
+      console.log(error);
+    }
+  };
+  useEffect(() => {
     const intervalId = setInterval(() => {
       if (navigator.onLine) {
-        fetch('https://www.google.com', { mode: 'no-cors' })
-          .then(() => {
-            checkForChanges();
-          })
-          .catch(() => {
-            console.log('Internet connection is not available');
-          });
+        checkForChanges();
       } else {
         setOnlineChanges(0);
       }
       console.log('This function runs every minute');
-    }, 60000);
+    }, 30000);
 
     // Clean up the interval when the component unmounts
     return () => clearInterval(intervalId);
@@ -183,7 +181,7 @@ const NavBar = ({
   const handleResetOfflineChanges = async () => {
     if (navigator.onLine) {
       const confirmDelete = window.confirm(
-        'Are you sure you want to reset offline changes?'
+        'Are you sure you want to reset all your offline changes?'
       );
       if (confirmDelete) {
         await dropAllRowsInTable('offline_changes');
@@ -197,7 +195,17 @@ const NavBar = ({
       }
     }
   };
-
+  const handleSyncOnlineToLocal = async () => {
+    const done = await syncOnlineToLocalWithBool(
+      SelectedUserId,
+      setIsSyncing,
+      setSyncProgress,
+      RefreshDataFromSqlite
+    );
+    if (done === 'Sync completed') {
+      setOnlineChanges(0)
+    }
+  };
   return (
     <div className="navigation">
       <div className="LeftSide">
@@ -337,7 +345,7 @@ const NavBar = ({
             onClick={() => {
               if (navigator.onLine) handleUpload();
             }}
-            disabled={ChangeMade <= 0}
+            disabled={ChangeMade <= 0} title="Upload Local Changes to Server"
           >
             <p>
               {ChangeMade >= 1 ? (
@@ -412,17 +420,61 @@ const NavBar = ({
               <h3
                 style={{ margin: '0', display: 'flex', alignItems: 'center' }}
               >
+                Upload{' '}
+              </h3>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  width: '100%',
+                }}
+              >
+                {ChangeMade >= 1 && (
+                  <button
+                    onClick={() => {
+                      handleResetOfflineChanges();
+                    }}
+                    style={{
+                      width: '100%',
+                      marginTop: '10px',
+                      color: 'red',
+                      fontWeight: 'bold',
+                    }}
+                      title="Discard All Local Changes"
+  aria-label="Discard All Local Changes"
+                  >
+                    <p>Reset {ChangeMade} Offline Changes</p>
+                  </button>
+                )}
+              </div>
+              <hr style={{ margin: '10px', width: '100%' }} />
+              <h3
+                style={{ margin: '0', display: 'flex', alignItems: 'center' }}
+              >
                 Complete Sync{' '}
               </h3>
               <button
                 onClick={() => {
                   if (navigator.onLine) {
-                    syncOnlineToLocalWithBool(
-                      SelectedUserId,
-                      setIsSyncing,
-                      setSyncProgress,
-                      RefreshDataFromSqlite
-                    );
+                    handleSyncOnlineToLocal();
+                  }
+                }}
+                style={{
+                  width: '100%',
+                  marginTop: '10px',
+                  border:
+                    OnlineChanges > 0 ? '3px solid var(--Accent-Color)' : '',
+                  animation:
+                    OnlineChanges > 0 ? 'blinkingBorder 1s infinite' : '',
+                }}  title="Download and Apply Server Updates"
+  aria-label="Download and Apply Server Updates"
+              >
+                <p>Sync {OnlineChanges} incoming changes</p>
+              </button>
+              <button
+                onClick={() => {
+                  if (navigator.onLine) {
+                    handleSyncOnlineToLocal();
                   }
                 }}
                 style={{
@@ -433,22 +485,10 @@ const NavBar = ({
                   animation:
                     OnlineChanges > 0 ? 'blinkingBorder 1s infinite' : '',
                 }}
+                title="Synchronizes the local database with the online server, overwriting the server data with the current local data, including any offline changes."
               >
-                <p>Sync {OnlineChanges} changes</p>
+                <p>Set as main</p>
               </button>
-              {ChangeMade >= 1 && (
-                <button
-                  onClick={() => {
-                    handleResetOfflineChanges();
-                }}
-                style={{
-                  width: '50%',
-                  marginTop: '10px',
-                  color: 'red',
-                }}
-              >
-                <p>Reset Offline Changes</p>
-              </button>)}
               <hr style={{ margin: '10px', width: '100%' }} />
               <h3
                 style={{ margin: '0', display: 'flex', alignItems: 'center' }}
@@ -472,6 +512,7 @@ const NavBar = ({
                     position: 'relative',
                     overflow: 'hidden',
                   }}
+                   title="Synchronize Local Room Assets to Server"
                 >
                   <span className="AdvancedUploadButtonsButtonText">
                     Upload Room Assets
@@ -505,7 +546,7 @@ const NavBar = ({
                   style={{
                     position: 'relative',
                     overflow: 'hidden',
-                  }}
+                  }}title="Retrieve Room Assets from Server"
                 >
                   <span className="AdvancedUploadButtonsButtonText">
                     Download Room Assets
@@ -545,6 +586,7 @@ const NavBar = ({
                     marginTop: '10px',
                     marginRight: '10px',
                   }}
+                  title="Create Local Data Backup"
                 >
                   <p>Create Backup</p>
                 </button>
@@ -553,63 +595,47 @@ const NavBar = ({
                     window.electron.ipcRenderer.send('load-backup');
                   }}
                   style={{ width: '100%', marginTop: '10px' }}
+                  title="Restore from Local Backup"
                 >
                   <p>Load Backup</p>
                 </button>
               </div>{' '}
-              {window.electron.store.get('IsOnBackup') ? (
+              {window.electron.store.get('IsOnBackup') && (
                 <>
-                  {' '}
-                  <p
-                    style={{
-                      margin: '0',
-                      marginTop: '5px',
-                      display: 'flex',
-                      fontSize: '14px',
-                      alignItems: 'center',
-                      background: 'var(--Accent-Color)',
-                      textShadow: '2px 2px 4px rgba(0, 0, 0, 0.5)',
-                      textAlign: 'center',
+                  <button
+                    onClick={() => {
+                      window.electron.ipcRenderer.invoke(
+                        'load-specific-backup',
+                        window.electron.store.get('MainBackupPath')
+                      );
                     }}
+                    style={{
+                      width: '100%',
+                      marginTop: '10px',
+                      marginRight: '10px',
+                    }}
+                    title="Return to Current Main Data"
                   >
-                    You have changed to an older backup, do you want to{' '}
-                  </p>
-                  <div style={{ display: 'flex', width: '100%' }}>
-                    <button
-                      onClick={() => {
-                        window.electron.ipcRenderer.invoke(
-                          'load-specific-backup',
-                          window.electron.store.get('MainBackupPath')
-                        );
-                      }}
-                      style={{
-                        width: '100%',
-                        marginTop: '10px',
-                        marginRight: '10px',
-                      }}
-                    >
-                      <p>Revert to old</p>
-                    </button>
-                    <button
-                      onClick={async () => {
-                        try {
-                          const result = await SetBackUpAsMain(SelectedUserId);
-                          console.log('Data sync completed:', result);
-                          window.electron.store.set('MainBackupPath', '');
-                          window.electron.store.set('IsOnBackup', false);
-                        } catch (error) {
-                          console.error('Error during sync:', error);
-                          // Handle sync error (e.g., show an error message)
-                        }
-                      }}
-                      style={{ width: '100%', marginTop: '10px' }}
-                    >
-                      <p>Set as main</p>
-                    </button>
-                  </div>
+                    <p>Revert to old</p>
+                  </button>
+                  <button
+                    onClick={async () => {
+                      try {
+                        const result = await SetBackUpAsMain(SelectedUserId);
+                        console.log('Data sync completed:', result);
+                        window.electron.store.set('MainBackupPath', '');
+                        window.electron.store.set('IsOnBackup', false);
+                      } catch (error) {
+                        console.error('Error during sync:', error);
+                        // Handle sync error (e.g., show an error message)
+                      }
+                    }}
+                    style={{ width: '100%', marginTop: '10px' }}
+                    title="Make This Backup the Main Data"
+                  >
+                    <p>Set as main</p>
+                  </button>
                 </>
-              ) : (
-                <></>
               )}
             </div>
           </>

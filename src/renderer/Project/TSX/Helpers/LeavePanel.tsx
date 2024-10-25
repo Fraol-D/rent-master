@@ -43,6 +43,8 @@ const LeavePanel = ({
         return 'month';
       case 'weekly':
         return 'week';
+      case 'Annually':
+        return 'year';
       case 'daily':
         return 'day';
       case 'custom':

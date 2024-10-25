@@ -1,3 +1,4 @@
+
 const baseUrl = 'http://localhost:8100';
 const { v4: uuidv4 } = require('uuid');
 export const dropAllRowsInTable = async (tableName) => {
@@ -9,11 +10,11 @@ export const dropAllRowsInTable = async (tableName) => {
         'x-api-key': 'HH(CzZuQoW@tB$By)e', // Make sure this matches the apiKey in main.ts
       },
     });
-    
+
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
-    
+
     const data = await response.text();
     console.log(data);
     return data;
@@ -46,7 +47,8 @@ export const addValueROOM = async (tableName, value, setChangeMade) => {
       'add',
       value,
       setChangeMade,
-      'Not needed',true
+      'Not needed',
+      true
     );
     return data;
   } catch (error) {
@@ -277,7 +279,7 @@ const addRowToOfflineChanges = async (
   }
   // User history
   if (actionHis === true) {
-    console.log('adedded ---------------------------------')
+
     async function addToActionHistory(
       actionTable,
       actionType,
@@ -287,16 +289,26 @@ const addRowToOfflineChanges = async (
     ) {
       const id = uuidv4();
       const actionDate = Date.now();
-
-      await addValueActionHistory('action_history', {
-        id,
-        action_table: actionTable,
-        action_type: actionType,
-        description,
-        performed_by: performedBy,
-        action_date: actionDate,
-        userId: userId,
-      },setChangeMade);
+      const userInfos = await window.electron.ipcRenderer.invoke(
+        'os-info'
+      );
+      const platform = userInfos.platform === "win32" ? "Windows" : userInfos.platform;
+      const userInfoString = platform + ' ' + userInfos.pcName + ' ' + userInfos.userInfo.username;
+      console.log(userInfoString, ":----------------------------------------------------------:", userInfos)
+      await addValueActionHistory(
+        'action_history',
+        {
+          id,
+          action_table: actionTable,
+          action_type: actionType,
+          description,
+          performed_by: performedBy,
+          action_date: actionDate,
+          userInfo: userInfoString,
+          userId: userId,
+        },
+        setChangeMade
+      );
     }
     if (originalValue !== columnValueP) {
       const users = await window.electron.store.get('users');
@@ -371,7 +383,8 @@ export const addValue = async (tableName, value, setChangeMade) => {
       'add',
       value,
       setChangeMade,
-      'Not needed',true
+      'Not needed',
+      true
     );
 
     return data;
@@ -478,7 +491,8 @@ export const updateValue = async (
       'edit',
       'not_needed',
       setChangeMade,
-      originalValue,true
+      originalValue,
+      true
     );
   } catch (error) {
     console.error('Error updating value:', error);
@@ -498,7 +512,8 @@ export const deleteValue = async (tableName, id, setChangeMade) => {
       'not_needed',
       'delete',
       'not_needed',
-      setChangeMade,true
+      setChangeMade,
+      true
     );
     return data;
   } catch (error) {
@@ -849,4 +864,100 @@ export const uploadReceiptDocuments = async (
     console.error('Error uploading receipt documents:', error);
     return null;
   }
+};
+export const updateLocalRecordsBatch = async (tableName, records) => {
+  return new Promise((resolve, reject) => {
+    const db = getDatabase();
+    db.serialize(() => {
+      db.run('BEGIN TRANSACTION');
+      
+      const stmt = db.prepare(`UPDATE ${tableName} SET ${Object.keys(records[0]).map(key => `${key} = ?`).join(', ')} WHERE id = ?`);
+      
+      records.forEach(record => {
+        const values = [...Object.values(record), record.id];
+        stmt.run(values, (err) => {
+          if (err) {
+            console.error(`Error updating record in ${tableName}:`, err);
+          }
+        });
+      });
+      
+      stmt.finalize();
+      
+      db.run('COMMIT', (err) => {
+        if (err) {
+          console.error('Error committing transaction:', err);
+          db.run('ROLLBACK');
+          reject(err);
+        } else {
+          resolve();
+        }
+      });
+    });
+  });
+};
+
+export const addLocalRecordsBatch = async (tableName, records) => {
+  return new Promise((resolve, reject) => {
+    const db = getDatabase();
+    db.serialize(() => {
+      db.run('BEGIN TRANSACTION');
+      
+      const columns = Object.keys(records[0]).join(', ');
+      const placeholders = Object.keys(records[0]).map(() => '?').join(', ');
+      const stmt = db.prepare(`INSERT INTO ${tableName} (${columns}) VALUES (${placeholders})`);
+      
+      records.forEach(record => {
+        const values = Object.values(record);
+        stmt.run(values, (err) => {
+          if (err) {
+            console.error(`Error adding record to ${tableName}:`, err);
+          }
+        });
+      });
+      
+      stmt.finalize();
+      
+      db.run('COMMIT', (err) => {
+        if (err) {
+          console.error('Error committing transaction:', err);
+          db.run('ROLLBACK');
+          reject(err);
+        } else {
+          resolve();
+        }
+      });
+    });
+  });
+};
+
+export const deleteLocalRecordsBatch = async (tableName, ids) => {
+  return new Promise((resolve, reject) => {
+    const db = getDatabase();
+    db.serialize(() => {
+      db.run('BEGIN TRANSACTION');
+      
+      const stmt = db.prepare(`DELETE FROM ${tableName} WHERE id = ?`);
+      
+      ids.forEach(id => {
+        stmt.run(id, (err) => {
+          if (err) {
+            console.error(`Error deleting record from ${tableName}:`, err);
+          }
+        });
+      });
+      
+      stmt.finalize();
+      
+      db.run('COMMIT', (err) => {
+        if (err) {
+          console.error('Error committing transaction:', err);
+          db.run('ROLLBACK');
+          reject(err);
+        } else {
+          resolve();
+        }
+      });
+    });
+  });
 };

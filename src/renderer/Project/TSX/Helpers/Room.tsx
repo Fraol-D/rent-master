@@ -332,6 +332,8 @@ const Room = ({
         return 'month';
       case 'weekly':
         return 'week';
+      case 'Annually':
+        return 'year';
       case 'daily':
         return 'day';
       default:
@@ -565,6 +567,9 @@ const Room = ({
         case 'weekly':
           currentDate = addDays(currentDate, 7);
           break;
+          case 'Annually':
+            currentDate = addDays(currentDate, 7);
+            break;
         case 'custom':
           currentDate = addDays(
             currentDate,
@@ -1518,13 +1523,13 @@ const Room = ({
                 >
                   {' '}
                   Type of Room{' '}
-                  <div
+                  <button
                     onClick={() => {
                       setTypeOfRoomState(false);
                     }}
                   >
                     {'▶'}
-                  </div>
+                  </button>
                 </div>
 
                 <div style={{ overflowY: 'auto' }}>
@@ -1937,7 +1942,9 @@ const Room = ({
                         <option value="15">15 days</option>
                         <option value="7">7 days</option>
                         <option value="daily">daily</option>
+                        <option value="weekly">weekly</option>
                         <option value="monthly">monthly</option>
+                        <option value="Annually">annually</option>
                         <option value="custom">custom days</option>
                       </select>
                       {paymentCycle === 'custom' && (
@@ -2159,7 +2166,7 @@ const Room = ({
                   <>
                     {AddTenantAddBrokerState ? (
                       <>
-                        <h4>Add New Broker</h4>
+                        <h4 style={{margin:"0px"}}>Add New Broker</h4>
                         <input
                           type="text"
                           placeholder="Name"
@@ -2167,7 +2174,7 @@ const Room = ({
                           onChange={(e) =>
                             setAddTenantAddBrokerFormName(e.target.value)
                           }
-                        />
+                        /><span style={{color:"var(--Text-Color-Grey)",fontSize:"12px"}}>longer than 3</span>
                         <input
                           type="text"
                           placeholder="Phone Number"
@@ -2175,7 +2182,7 @@ const Room = ({
                           onChange={(e) =>
                             setAddTenantAddBrokerFormPhoneNumber(e.target.value)
                           }
-                        />
+                        /><span style={{color:"var(--Text-Color-Grey)",fontSize:"12px"}}>longer than 8</span>
                         <input
                           type="text"
                           placeholder="Phone Number 2"
@@ -2206,7 +2213,7 @@ const Room = ({
                       <>
                         {AddTenantSelectedBrokerId !== '' ? (
                           <>
-                            <h4>Selected Broker</h4>
+                            <h4 style={{margin:"0px"}}>Selected Broker</h4>
                             {BrokerList.find(
                               (broker: BrokerType) =>
                                 broker.id === AddTenantSelectedBrokerId
@@ -2267,7 +2274,7 @@ const Room = ({
                                 )}
                               </div>
                             )}
-                            <h4>Commission</h4>
+                           
                             <div>
                               Commission:{' '}
                               <input
@@ -2321,7 +2328,7 @@ const Room = ({
                           </>
                         ) : (
                           <>
-                            <h4>Select Broker</h4>
+                            <h4 style={{margin:"0px"}}>Select a Broker</h4>
                             <input
                               type="text"
                               placeholder="Search broker"
@@ -2403,6 +2410,15 @@ const Room = ({
                       }}
                     >
                       Name has to be longer than 3
+                    </p>
+                  )}  {TenantPageSelected === 'New' && tel1.length <= 6 && (
+                    <p
+                      style={{
+                        color: 'var(--Text-Color-Grey)',
+                        fontSize: '14px',
+                      }}
+                    >
+                      Phone number has to be longer than 8
                     </p>
                   )}
 {TenantPageSelected == "Select" && SelectedTenantIdOnAdding != ''&&  !isValidDate(startTime) && (

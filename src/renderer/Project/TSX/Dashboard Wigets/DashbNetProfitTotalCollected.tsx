@@ -13,6 +13,7 @@ import {
   isBefore,
   isAfter,
   addMonths,
+  addYears,
 } from 'date-fns';
 
 const DashbTotalCollected = ({
@@ -141,6 +142,8 @@ const DashbTotalCollected = ({
             break;
           case 'weekly':
             currentDate = addDays(currentDate, 7);
+            break;  case 'Annually':
+            currentDate = addYears(currentDate, 1);
             break;
           case 'custom':
             currentDate = addDays(

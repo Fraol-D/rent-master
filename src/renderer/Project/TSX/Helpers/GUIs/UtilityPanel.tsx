@@ -122,7 +122,7 @@ const UtilityPanel: React.FC<props> = ({
           FullComplete: activeUtilities.every((utility) => {
             const existingUtility = utilityDataFromDatabase.find(
               (u: any) =>
-                u.type === utility.type && u.date === currentDate.getTime()
+                u.type === utility.type && new Date(u.date).toDateString() === currentDate.toDateString()
             );
             return existingUtility?.paid || false;
           }),
@@ -158,7 +158,7 @@ const UtilityPanel: React.FC<props> = ({
           PaymentTypes: activeUtilities.map((utility) => {
             const existingUtility = utilityDataFromDatabase.find(
               (u: any) =>
-                u.type === utility.type && u.date === currentDate.getTime()
+                u.type === utility.type && new Date(u.date).toDateString() === currentDate.toDateString()
             );
 
             const price = existingUtility
@@ -186,7 +186,7 @@ const UtilityPanel: React.FC<props> = ({
           FullComplete: activeUtilities.every((utility) => {
             const existingUtility = utilityDataFromDatabase.find(
               (u: any) =>
-                u.type === utility.type && u.date === currentDate.getTime()
+                u.type === utility.type && new Date(u.date).toDateString() === currentDate.toDateString()
             );
             return existingUtility?.paid || false;
           }),

@@ -63,6 +63,8 @@ export function PeopleComponentPage({
         return 'month';
       case 'weekly':
         return 'week';
+      case 'Annually':
+        return 'year';
       case 'daily':
         return 'day';
       default:

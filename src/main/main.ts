@@ -125,14 +125,7 @@ const createWindow = async () => {
 
   mainWindow.loadURL(resolveHtmlPath('index.html'));
 // Get the PC name
-const pcName = os.hostname();
-console.log('------------------------------------------------------------------------------------------------------------------------------------------------------------------------PC Name:', pcName);
-console.log('Platform:', os.platform());
-console.log('Architecture:', os.arch());
-console.log('CPU Info:', os.cpus());
-console.log('Total Memory:', os.totalmem());
-console.log('Free Memory:', os.freemem());
-console.log('Home Directory:', os.homedir());
+
   mainWindow.on('ready-to-show', () => {
     try {
       if (!mainWindow) {
@@ -181,7 +174,27 @@ app.on('window-all-closed', () => {
     app.quit();
   }
 });
+ipcMain.handle('os-info', () => {
+  const userInfo = os.userInfo();
+  const pcName = os.hostname();
+  const platform = os.platform();
+  const architecture = os.arch();
+  const cpuInfo = os.cpus();
+  const totalMemory = os.totalmem();
+  const freeMemory = os.freemem();
+  const homeDirectory = os.homedir();
 
+  return {
+    userInfo,
+    pcName,
+    platform,
+    architecture,
+    cpuInfo,
+    totalMemory,
+    freeMemory,
+    homeDirectory,
+  };
+});
 app
   .whenReady()
   .then(() => {
@@ -742,7 +755,7 @@ const tableStructures = [
       'description TEXT',
       'performed_by TEXT',
       'action_date INTEGER',
-
+      'userInfo TEXT',
       'userId TEXT',
     ],
   },
