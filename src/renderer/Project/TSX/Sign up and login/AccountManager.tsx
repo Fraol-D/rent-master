@@ -161,14 +161,14 @@ const AccountManager = (React.FC<MyComponentProps> = ({
 
         await appUsersManagement();
         if (navigator.onLine && window.electron.store.get('users')[0].Allowed) {
-        setIsSyncing(true);
-        syncOnlineToLocalWithBool(
-          allUsers[0].id,
-          setIsSyncing,
-          setSyncProgress,
-          RefreshDataFromSqlite
-       );
-       }
+          setIsSyncing(true);
+          syncOnlineToLocalWithBool(
+            allUsers[0].id,
+            setIsSyncing,
+            setSyncProgress,
+            RefreshDataFromSqlite
+          );
+        }
       }
     } else {
       // If no users found, set signed in state to false
@@ -822,7 +822,9 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                             >
                               Security Check
                             </h1>
-                            <button onClick={() => setAppUserManagerShow(false)}>
+                            <button
+                              onClick={() => setAppUserManagerShow(false)}
+                            >
                               Back
                             </button>
                           </div>
@@ -839,7 +841,9 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                             placeholder="Admin Password"
                             className="userName-input"
                             value={PasswordCheckInput}
-                            onChange={(e) => setPasswordCheckInput(e.target.value)}
+                            onChange={(e) =>
+                              setPasswordCheckInput(e.target.value)
+                            }
                           />
                           <br />
                           {passwordError && (
@@ -868,11 +872,13 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                       <>
                         <h1 style={{ textAlign: 'center' }}>User Selector</h1>
                         <p style={{ textAlign: 'center' }}>
-                          Select the user this PC will be assigned to. This step is
-                          crucial for proper account management and ensures that the
-                          correct user has access to this device.
+                          Select the user this PC will be assigned to. This step
+                          is crucial for proper account management and ensures
+                          that the correct user has access to this device.
                         </p>
-                        <div style={{ display: 'flex', justifyContent: 'center' }}>
+                        <div
+                          style={{ display: 'flex', justifyContent: 'center' }}
+                        >
                           <button
                             className="appUserButtons"
                             style={{ marginBottom: 'auto', marginTop: '10px' }}
@@ -901,7 +907,8 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                       roleName: 'admin',
                                       privileges: '',
                                       userId:
-                                        window.electron.store.get('users')[0].id,
+                                        window.electron.store.get('users')[0]
+                                          .id,
                                       addedDate: Date.now(),
                                     })
                                   }
@@ -931,7 +938,9 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                       <div>
                                         <button
                                           className="appUserButtons"
-                                          onClick={() => handleSaveEdit(appUser.id)}
+                                          onClick={() =>
+                                            handleSaveEdit(appUser.id)
+                                          }
                                         >
                                           Save
                                         </button>
@@ -951,13 +960,17 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                       <div>
                                         <button
                                           className="appUserButtons"
-                                          onClick={() => handleSelectUser(appUser)}
+                                          onClick={() =>
+                                            handleSelectUser(appUser)
+                                          }
                                         >
                                           Select
                                         </button>
                                         <button
                                           className="appUserButtons"
-                                          onClick={() => handleEditUser(appUser)}
+                                          onClick={() =>
+                                            handleEditUser(appUser)
+                                          }
                                         >
                                           Edit
                                         </button>
@@ -979,7 +992,9 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                       key={privilege.name}
                                       privilege={privilege}
                                       appUser={appUser}
-                                      handleTogglePrivilege={handleTogglePrivilege}
+                                      handleTogglePrivilege={
+                                        handleTogglePrivilege
+                                      }
                                       loadingPrivileges={loadingPrivileges}
                                     />
                                   ))}
@@ -993,7 +1008,10 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                       <img
                                         src={loadingGif}
                                         alt="Loading..."
-                                        style={{ width: '20px', height: '20px' }}
+                                        style={{
+                                          width: '20px',
+                                          height: '20px',
+                                        }}
                                       />
                                     ) : (
                                       'Check All'
@@ -1007,7 +1025,10 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                       <img
                                         src={loadingGif}
                                         alt="Loading..."
-                                        style={{ width: '20px', height: '20px' }}
+                                        style={{
+                                          width: '20px',
+                                          height: '20px',
+                                        }}
                                       />
                                     ) : (
                                       'Uncheck All'

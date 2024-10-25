@@ -2939,7 +2939,7 @@ const Room = ({
             className="PopOutContainer"
             ref={showPayTimeLineRef}
             style={{
-              top: '179px',
+              top: '200px',
               left: '-567px',
               zIndex: roomType.ShowPayTimeLine ? '1' : '-1',
             }}
@@ -2950,8 +2950,8 @@ const Room = ({
                 width: roomType.ShowPayTimeLine ? '568px' : '0px',
                 height: roomType.ShowPayTimeLine
                   ? !ShowReceipt
-                    ? '200px'
-                    : '246px'
+                    ? 'auto'
+                    : 'auto'
                   : '0px',
                 opacity: roomType.ShowPayTimeLine ? '1' : '0',
               }}

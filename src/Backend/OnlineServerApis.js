@@ -632,7 +632,10 @@ const syncActionHistory = async (SelectedUserId) => {
   const filteredActionHistory = onlineActionHistory.filter(action => action.userId === SelectedUserId);
   
   // Clear existing action_history in local database
-  await deleteAllFromTable('action_history');
+  const existingActionHistory = await getValuesWithSql('action_history', 'WHERE 1');
+  for (const action of existingActionHistory) {
+    await deleteLocalRecord('action_history', action.id);
+  }
   
   // Add new action_history from online database
   for (const action of filteredActionHistory) {

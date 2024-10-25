@@ -469,7 +469,7 @@ const appDB = express();
 appDB.use(express.static(path.join(__dirname, 'src/renderer')));
 
 const port = 8100;
-const appname = 'BMS';
+const appname = 'rent-master';
 appDB.use(
   cors({
     origin: ['http://localhost:1212', 'https://www.rentmaster.markethubet.com'],
@@ -2252,7 +2252,7 @@ export async function loadBackup() {
 
   createBackup(true);
   const bmsPath = path.join(process.env.APPDATA || '', appname);
-  console.log('BMS path:', bmsPath);
+  console.log('rent-master path:', bmsPath);
 
   console.log('Clearing existing data...');
   try {
@@ -2340,7 +2340,7 @@ export async function loadSpecificBackup(backupFileName: string) {
 
   //createBackup(true,2);
   const bmsPath = path.join(process.env.APPDATA || '', appname);
-  console.log('BMS path:', bmsPath);
+  console.log('rent-master path:', bmsPath);
 
   console.log('Clearing existing data...');
   try {
