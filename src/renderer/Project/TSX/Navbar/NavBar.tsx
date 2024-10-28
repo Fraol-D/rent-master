@@ -469,7 +469,7 @@ const NavBar = ({
                 }}  title="Download and Apply Server Updates"
   aria-label="Download and Apply Server Updates"
               >
-                <p>Sync {OnlineChanges} incoming changes</p>
+                <p>Sync {OnlineChanges === 0 ? <></> : <>{OnlineChanges} incoming changes</>}</p>
               </button>
               <button
                 onClick={() => {
@@ -480,11 +480,7 @@ const NavBar = ({
                 style={{
                   width: '100%',
                   marginTop: '10px',
-                  border:
-                    OnlineChanges > 0 ? '3px solid var(--Accent-Color)' : '',
-                  animation:
-                    OnlineChanges > 0 ? 'blinkingBorder 1s infinite' : '',
-                }}
+                   }}
                 title="Synchronizes the local database with the online server, overwriting the server data with the current local data, including any offline changes."
               >
                 <p>Set as main</p>

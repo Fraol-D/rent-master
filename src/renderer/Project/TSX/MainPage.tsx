@@ -1,6 +1,6 @@
 import { RoomListComponent } from './Pages/RoomListComponent';
 import { PeopleComponentPage } from './Pages/PeopleComponentPage';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 const { v4: uuidv4 } = require('uuid');
 import ImageInteractor from './Helpers/GUIs/ImageIntractorGUI';
 import LONGIMAGE from './Helpers/WIN_20240802_19_41_23_Pro.jpg';
@@ -17,6 +17,7 @@ import {
   addValue,
   deleteFolderImages,
   deleteValue,
+  duplicateRoomImagesFolder,
   getValuesWithSql,
   renameFolder,
   updateValue,
@@ -703,93 +704,166 @@ const MainPage = ({
     );
   };
   const [RoomExistsWarning, setRoomExistsWarning] = useState(false);
+  const roomListContainerRef = useRef<HTMLDivElement>(null);
 
-  const handleAddRoom = async (continueAdding: boolean) => {
-    // Check if the room already exists
-    const roomExists = sortedAndFilteredRooms.some(
-      (room: any) =>
-        room.floor === AddRoomFormFloor &&
-        room.roomIndex === AddRoomFormRoomIndex
-    );
+  // Add a loading state
+  const [isAddingRoom, setIsAddingRoom] = useState(false);
+  const newRoomRef = useRef<HTMLDivElement>(null);
 
-    if (roomExists) {
-      // Room already exists, show an error message or handle as needed
-      console.error(
-        `Room ${AddRoomFormRoomIndex} on floor ${AddRoomFormFloor} already exists.`
+  // Modify the handleAddRoom function
+  const handleAddRoom = async (continueAdding = false) => {
+    if (isAddingRoom) return; // Prevent multiple clicks
+    
+    try {
+      setIsAddingRoom(true); // Start loading
+
+      // Check if room exists
+      const roomExists = sortedAndFilteredRooms.some(
+        (room: any) =>
+          room.floor === AddRoomFormFloor &&
+          room.roomIndex === AddRoomFormRoomIndex
       );
-      setRoomExistsWarning(true);
-      return;
-    }
 
-    // If the room doesn't exist, proceed with adding the new room
-    const newRoom: RoomType = {
-      id: uuidv4(),
-      floor: AddRoomFormFloor,
-      roomIndex: AddRoomFormRoomIndex,
-      price: AddRoomFormPrice,
-      PaymentCycleType: AddRoomFormPaymentCycleType as
-        | '30'
-        | '15'
-        | '7'
-        | 'monthly'
-        | 'weekly'
-        | 'daily'
-        | 'custom',
-      PaymentCycleCustomeDays: AddRoomFormPaymentCycleCustomDays,
-      squareMeters: AddRoomFormSquareMeters,
-      RoomSpecifications: AddRoomFormRoomSpecifications,
-      status: 'Empty',
-      AgreedPrice: AddRoomFormPrice,
-      AllRoomPayInfo: { RoomPayInfo: [] },
-      selectedAgreementId: '',
-      Archived: false,
-    };
+      if (roomExists) {
+        console.error(`Room ${AddRoomFormRoomIndex} on floor ${AddRoomFormFloor} already exists.`);
+        setRoomExistsWarning(true);
+        return;
+      }
 
-    // Add to sqlite database
-    await roomAPI.AddRoomApi(
-      newRoom.id,
-      AddRoomFormFloor,
-      AddRoomFormRoomIndex,
-      AddRoomFormPrice,
-      AddRoomFormPaymentCycleType,
-      AddRoomFormPaymentCycleCustomDays,
-      AddRoomFormSquareMeters,
-      AddRoomFormRoomSpecifications
-    );
-    if (isMoreThanOneImage) {
-      handleRenameFolder(
-        'Add a room images',
-        `Room ${AddRoomFormFloor}, Floor ${AddRoomFormRoomIndex} - ${newRoom.id}`
+      // Create and add the new room
+      const newRoom: RoomType = {
+        id: uuidv4(),
+        floor: AddRoomFormFloor,
+        roomIndex: AddRoomFormRoomIndex,
+        price: AddRoomFormPrice,
+        PaymentCycleType: AddRoomFormPaymentCycleType,
+        PaymentCycleCustomeDays: AddRoomFormPaymentCycleCustomDays,
+        squareMeters: AddRoomFormSquareMeters,
+        RoomSpecifications: AddRoomFormRoomSpecifications,
+        status: 'Empty',
+        AgreedPrice: AddRoomFormPrice,
+        AllRoomPayInfo: { RoomPayInfo: [] },
+        selectedAgreementId: '',
+        Archived: false,
+      };
+
+      // Add to database
+      await roomAPI.AddRoomApi(
+        newRoom.id,
+        AddRoomFormFloor,
+        AddRoomFormRoomIndex,
+        AddRoomFormPrice,
+        AddRoomFormPaymentCycleType,
+        AddRoomFormPaymentCycleCustomDays,
+        AddRoomFormSquareMeters,
+        AddRoomFormRoomSpecifications
       );
+
+      // Handle images if needed
+      if (isMoreThanOneImage) {
+       
+       if(!resetRoomImages) {
+        await duplicateRoomImagesFolder('Add a room images', 'New Room Images Folder');
+        await handleRenameFolder(
+          'New Room Images Folder',
+          `Room ${AddRoomFormFloor}, Floor ${AddRoomFormRoomIndex} - ${newRoom.id}`
+        );
+       
+       }  else {
+        await handleRenameFolder(
+          'Add a room images',
+          `Room ${AddRoomFormFloor}, Floor ${AddRoomFormRoomIndex} - ${newRoom.id}`
+        );
+       }
+      }
+   // After room is added successfully
+   setTimeout(() => {
+    const roomElement = document.getElementById(`room-${newRoom.id}`);
+    if (roomElement && roomListContainerRef.current) {
+      roomListContainerRef.current.scrollTo({
+        top: roomElement.offsetTop - roomListContainerRef.current.offsetTop - 100, // 100px offset from top
+        behavior: 'smooth'
+      });
+      
+      roomElement.classList.add('highlight-new-room');
+      setTimeout(() => {
+        roomElement.classList.remove('highlight-new-room');
+      }, 2000);
     }
+  }, 100);
 
-    // Reset the variables
-    ResetAddRoomForumVariables();
-    setRefreshInspectorForAddRoom(true);
-    if (!continueAdding) setAddARoomState(false);
+      // Reset form variables
+      ResetAddRoomForumVariables();
+      setRefreshInspectorForAddRoom(true);
 
-    setRoomExistsWarning(false);
-    setIsMoreThanOneImage(false);
+      // Only close the form if not continuing
+      if (!continueAdding) {
+        setAddARoomState(false);
+      }
+
+      setRoomExistsWarning(false);
+      setIsMoreThanOneImage(false);
+    } finally {
+      setIsAddingRoom(false); // End loading
+    }
   };
+
   const handleCancelAddRoom = () => {
-    ResetAddRoomForumVariables();
+    ResetAddRoomForumVariables2();
+    setAddARoomState(false);
     handleDeleteFolderImages('Add a room images');
   };
+  const [showContinueAddingSettings, setShowContinueAddingSettings] =
+    useState(false);
   const ResetAddRoomForumVariables = () => {
-    setRoomExistsWarning(false);
+    // Handle room number and floor increments
+    if (incrementRoomNumber) {
+      setAddRoomFormRoomIndex(AddRoomFormRoomIndex + 1);
+    } else {
+      setAddRoomFormRoomIndex(1);
+    }
 
-    setAddARoomState(false);
-    setAddRoomFormFloor(1);
+    if (incrementFloor) {
+      setAddRoomFormFloor(AddRoomFormFloor + 1);
+    }
+    // Floor stays the same if !incrementFloor
+
+    // Reset other fields based on settings
+    if (resetPrice) {
+      setAddRoomFormPrice(0);
+    }
+
+    if (resetPaymentCycle) {
+      setAddRoomFormPaymentCycleType('monthly');
+      setAddRoomFormPaymentCycleCustomDays(0);
+    }
+
+    if (resetSquareMeters) {
+      setAddRoomFormSquareMeters(0);
+    }
+
+    if (resetRoomSpecifications) {
+      setAddRoomFormRoomSpecifications([]);
+    }
+    if (resetRoomImages) {
+      handleDeleteFolderImages('Add a room images');
+    }
+   
+  };
+  const ResetAddRoomForumVariables2 = () => {
+    // Handle room number and floor increments
     setAddRoomFormRoomIndex(1);
+    setAddRoomFormFloor(AddRoomFormFloor + 1);
+
+    // Reset other fields based on settings
     setAddRoomFormPrice(0);
     setAddRoomFormPaymentCycleType('monthly');
     setAddRoomFormPaymentCycleCustomDays(0);
     setAddRoomFormSquareMeters(0);
-    setAddRoomFormRoomSpecifications([
-      { type: 'bool', Detail: '', Boolean: false, Number: 0, id: 'avx' },
-    ]);
+    setAddRoomFormRoomSpecifications([]);
+    handleDeleteFolderImages('Add a room images');
+   
   };
-
   const handleRenameFolder = async (oldName: string, newName: string) => {
     const result = await renameFolder(oldName, newName);
     if (result && result.message === 'Folder renamed successfully') {
@@ -975,6 +1049,220 @@ const MainPage = ({
     if (e.key === 'Enter') {
       handleBlur();
     }
+  };
+  const [incrementRoomNumber, setIncrementRoomNumber] = useState(true);
+  const [incrementFloor, setIncrementFloor] = useState(false);
+  const [resetPrice, setResetPrice] = useState(false);
+  const [resetPaymentCycle, setResetPaymentCycle] = useState(false);
+  const [resetSquareMeters, setResetSquareMeters] = useState(false);
+  const [resetRoomSpecifications, setResetRoomSpecifications] = useState(false);
+  const [resetRoomImages, setResetRoomImages] = useState(false);
+
+  const resetAllValuesContinueAddingVariables = () => {
+    setIncrementRoomNumber(true);
+    setIncrementFloor(false);
+    setResetPrice(false);
+    setResetPaymentCycle(false);
+    setResetSquareMeters(false);
+    setResetRoomSpecifications(false);
+    setResetRoomImages(false);
+  };
+
+  const [addMultipleRoomsState, setAddMultipleRoomsState] = useState(false);
+  const [floorCount, setFloorCount] = useState(0);
+  const [roomsPerFloor, setRoomsPerFloor] = useState(0);
+  const [floorRoomData, setFloorRoomData] = useState([]);
+  const AddMultipleRooms = () => {
+    const handleContinue = () => {
+      if (floorCount > 0 && roomsPerFloor > 0) {
+        const newFloorRoomData = Array(floorCount)
+          .fill()
+          .map((_, floorIndex) => ({
+            floor: floorIndex + 1,
+            rooms: Array(roomsPerFloor)
+              .fill()
+              .map((_, roomIndex) => ({
+                roomIndex: roomIndex + 1,
+                paymentCycle: '30',
+                price: 0,
+                squareMeters: 0,
+              })),
+          }));
+        setFloorRoomData(newFloorRoomData);
+      }
+    };
+
+    const updateRoomData = (
+      floorIndex: number,
+      roomIndex: string | number,
+      field: string,
+      value: string | number
+    ) => {
+      setFloorRoomData((prevData) => {
+        const newData = [...prevData];
+        newData[floorIndex].rooms[roomIndex][field] = value;
+        return newData;
+      });
+    };
+
+    const handleAddRooms = () => {
+      floorRoomData.forEach((floor) => {
+        floor.rooms.forEach(
+          (room: {
+            roomIndex: any;
+            price: any;
+            paymentCycle: any;
+            squareMeters: any;
+          }) => {
+            roomAPI.AddRoomApi(
+              uuidv4(),
+              floor.floor,
+              room.roomIndex,
+              room.price,
+              room.paymentCycle,
+              0, // PaymentCycleCustomDays
+              room.squareMeters,
+              [] // RoomSpecifications
+            );
+          }
+        );
+      });
+      setAddMultipleRoomsState(false);
+      setFloorRoomData([]);
+    };
+
+    return (
+      <div>
+        <input
+          type="number"
+          placeholder="Number of floors"
+          value={floorCount}
+          onChange={(e) => setFloorCount(parseInt(e.target.value))}
+        />
+        <input
+          type="number"
+          placeholder="Rooms per floor"
+          value={roomsPerFloor}
+          onChange={(e) => setRoomsPerFloor(parseInt(e.target.value))}
+        />
+        <button onClick={handleContinue}>Continue</button>
+
+        {floorRoomData.map((floor, floorIndex) => (
+          <div key={floorIndex}>
+            <h3>Floor {floor.floor}</h3>
+            <input
+              type="number"
+              value={floor.rooms.length}
+              onChange={(e) => {
+                const newRoomCount = parseInt(e.target.value);
+                setFloorRoomData((prevData) => {
+                  const newData = [...prevData];
+                  newData[floorIndex].rooms = Array(newRoomCount)
+                    .fill()
+                    .map((_, i) => ({
+                      roomIndex: i + 1,
+                      paymentCycle: '30',
+                      price: 0,
+                      squareMeters: 0,
+                    }));
+                  return newData;
+                });
+              }}
+            />
+            <button
+              onClick={() =>
+                setFloorRoomData((prevData) => {
+                  const newData = [...prevData];
+                  newData[floorIndex].showRooms =
+                    !newData[floorIndex].showRooms;
+                  return newData;
+                })
+              }
+            >
+              {floor.showRooms ? 'Hide' : 'Show'}
+            </button>
+            {floor.showRooms &&
+              floor.rooms.map(
+                (
+                  room: {
+                    roomIndex:
+                      | string
+                      | number
+                      | boolean
+                      | React.ReactElement<
+                          any,
+                          string | React.JSXElementConstructor<any>
+                        >
+                      | Iterable<React.ReactNode>
+                      | React.ReactPortal
+                      | null
+                      | undefined;
+                    paymentCycle:
+                      | string
+                      | number
+                      | readonly string[]
+                      | undefined;
+                    price: string | number | readonly string[] | undefined;
+                    squareMeters:
+                      | string
+                      | number
+                      | readonly string[]
+                      | undefined;
+                  },
+                  roomIndex: React.Key | null | undefined
+                ) => (
+                  <div key={roomIndex}>
+                    <span>Room {room.roomIndex}</span>
+                    <select
+                      value={room.paymentCycle}
+                      onChange={(e) =>
+                        updateRoomData(
+                          floorIndex,
+                          roomIndex,
+                          'paymentCycle',
+                          e.target.value
+                        )
+                      }
+                    >
+                      <option value="30">30 days</option>
+                      <option value="15">15 days</option>
+                      <option value="7">7 days</option>
+                      <option value="monthly">Monthly</option>
+                    </select>
+                    <input
+                      type="number"
+                      placeholder="Price"
+                      value={room.price}
+                      onChange={(e) =>
+                        updateRoomData(
+                          floorIndex,
+                          roomIndex,
+                          'price',
+                          parseInt(e.target.value)
+                        )
+                      }
+                    />
+                    <input
+                      type="number"
+                      placeholder="Square Meters"
+                      value={room.squareMeters}
+                      onChange={(e) =>
+                        updateRoomData(
+                          floorIndex,
+                          roomIndex,
+                          'squareMeters',
+                          parseInt(e.target.value)
+                        )
+                      }
+                    />
+                  </div>
+                )
+              )}
+          </div>
+        ))}
+        <button onClick={handleAddRooms}>Add Rooms</button>
+      </div>
+    );
   };
   return (
     <>
@@ -1355,200 +1643,207 @@ const MainPage = ({
                 <div>
                   <h1 style={{ display: 'flex', justifyContent: 'center' }}>
                     Add a room
+                    {/** <button onClick={() => setAddMultipleRoomsState(true)}>
+                      Add Multiple Rooms
+                    </button> */}
                   </h1>
-                  <div>
-                    <div className="AddaNewRoomRowObject">
-                      <input
-                        className="AddANewRoomInputsSmall"
-                        type="number"
-                        placeholder="Floor"
-                        value={AddRoomFormFloor}
-                        onChange={(e) =>
-                          setAddRoomFormFloor(parseInt(e.target.value))
-                        }
-                      />
-                      :Floor number
-                    </div>
-                    <div className="AddaNewRoomRowObject">
-                      <input
-                        className="AddANewRoomInputsSmall"
-                        type="number"
-                        placeholder="Room Index"
-                        value={AddRoomFormRoomIndex}
-                        onChange={(e) =>
-                          setAddRoomFormRoomIndex(parseInt(e.target.value))
-                        }
-                      />
-                      :Room number{' '}
-                      {RoomExistsWarning && (
-                        <em style={{ color: 'red' }}>Already exist</em>
-                      )}{' '}
-                    </div>
-                    <div className="AddaNewRoomRowObject">
-                      Price (month, inc VAT):
-                      <input
-                        className="AddANewRoomInputsSmall"
-                        type="number"
-                        placeholder="Price"
-                        value={AddRoomFormPrice}
-                        onChange={(e) =>
-                          setAddRoomFormPrice(parseInt(e.target.value))
-                        }
-                      />
-                      $
-                    </div>
-                    <div className="AddaNewRoomRowObject">
-                      Payment cycle:{' '}
-                      <select
-                        value={AddRoomFormPaymentCycleType}
-                        onChange={(e) =>
-                          setAddRoomFormPaymentCycleType(e.target.value)
-                        }
-                        className="AddANewRoomSelectMid"
-                      >
-                        <option value="Every 30 days">30 days</option>
-                        <option value="Every 15 days">15 days</option>
-                        <option value="Every 7 days">7 days</option>
-                        <option value="daily">daily</option>
-
-                        <option value="monthly">monthly</option>
-                        <option value="custom">custom days</option>
-                      </select>
-                    </div>
-                    {AddRoomFormPaymentCycleType === 'custom' && (
-                      <div style={{ marginLeft: '10px' }}>
-                        Custom Days:
+                  {addMultipleRoomsState ? (
+                    <AddMultipleRooms />
+                  ) : (
+                    <div>
+                      <div className="AddaNewRoomRowObject">
                         <input
                           className="AddANewRoomInputsSmall"
                           type="number"
-                          placeholder="Custom Days"
-                          value={AddRoomFormPaymentCycleCustomDays}
+                          placeholder="Floor"
+                          value={AddRoomFormFloor}
                           onChange={(e) =>
-                            setAddRoomFormPaymentCycleCustomDays(
-                              parseInt(e.target.value)
-                            )
+                            setAddRoomFormFloor(parseInt(e.target.value))
                           }
                         />
+                        :Floor number
                       </div>
-                    )}
-                    <div className="AddaNewRoomRowObject">
-                      <input
-                        className="AddANewRoomInputsSmall"
-                        type="number"
-                        placeholder="Square Meters"
-                        value={AddRoomFormSquareMeters}
-                        onChange={(e) =>
-                          setAddRoomFormSquareMeters(parseInt(e.target.value))
-                        }
-                      />
-                      : Square Meters
-                    </div>
-
-                    <div className="RoomSpecficationsMainContainer">
-                      <h3>
-                        Room Specifications{' - '}
-                        <button onClick={addAddRoomFormSpecification}>
-                          Add
-                        </button>
-                      </h3>
-                      {AddRoomFormRoomSpecifications.map((spec, index) => (
-                        <div
-                          key={index}
-                          className="AddANewRoomSpecObjectMainContainer"
+                      <div className="AddaNewRoomRowObject">
+                        <input
+                          className="AddANewRoomInputsSmall"
+                          type="number"
+                          placeholder="Room Index"
+                          value={AddRoomFormRoomIndex}
+                          onChange={(e) =>
+                            setAddRoomFormRoomIndex(parseInt(e.target.value))
+                          }
+                        />
+                        :Room number{' '}
+                        {RoomExistsWarning && (
+                          <em style={{ color: 'red' }}>Already exist</em>
+                        )}{' '}
+                      </div>
+                      <div className="AddaNewRoomRowObject">
+                        Price (month, inc VAT):
+                        <input
+                          className="AddANewRoomInputsSmall"
+                          type="number"
+                          placeholder="Price"
+                          value={AddRoomFormPrice}
+                          onChange={(e) =>
+                            setAddRoomFormPrice(parseInt(e.target.value))
+                          }
+                        />
+                        $
+                      </div>
+                      <div className="AddaNewRoomRowObject">
+                        Payment cycle:{' '}
+                        <select
+                          value={AddRoomFormPaymentCycleType}
+                          onChange={(e) =>
+                            setAddRoomFormPaymentCycleType(e.target.value)
+                          }
+                          className="AddANewRoomSelectMid"
                         >
-                          <div>
-                            Name:
-                            <input
-                              className="AddANewRoomInputsMid"
-                              value={spec.Detail}
-                              onChange={(e) =>
-                                handleAddRoomFormSpecificationChange(
-                                  index,
-                                  'Detail',
-                                  e.target.value
-                                )
-                              }
-                            />
-                            {spec.type === 'bool' ? (
-                              <>
-                                <input
-                                  type="checkbox"
-                                  checked={spec.Boolean}
-                                  onChange={(e) =>
-                                    handleAddRoomFormSpecificationChange(
-                                      index,
-                                      'Boolean',
-                                      e.target.checked
-                                    )
-                                  }
-                                />{' '}
-                                {spec.Boolean ? 'Yes' : 'No'}
-                              </>
-                            ) : (
+                          <option value="Every 30 days">30 days</option>
+                          <option value="Every 15 days">15 days</option>
+                          <option value="Every 7 days">7 days</option>
+                          <option value="daily">daily</option>
+
+                          <option value="monthly">monthly</option>
+                          <option value="custom">custom days</option>
+                        </select>
+                      </div>
+                      {AddRoomFormPaymentCycleType === 'custom' && (
+                        <div style={{ marginLeft: '10px' }}>
+                          Custom Days:
+                          <input
+                            className="AddANewRoomInputsSmall"
+                            type="number"
+                            placeholder="Custom Days"
+                            value={AddRoomFormPaymentCycleCustomDays}
+                            onChange={(e) =>
+                              setAddRoomFormPaymentCycleCustomDays(
+                                parseInt(e.target.value)
+                              )
+                            }
+                          />
+                        </div>
+                      )}
+                      <div className="AddaNewRoomRowObject">
+                        <input
+                          className="AddANewRoomInputsSmall"
+                          type="number"
+                          placeholder="Square Meters"
+                          value={AddRoomFormSquareMeters}
+                          onChange={(e) =>
+                            setAddRoomFormSquareMeters(parseInt(e.target.value))
+                          }
+                        />
+                        : Square Meters
+                      </div>
+
+                      <div className="RoomSpecficationsMainContainer">
+                        <h3>
+                          Room Specifications{' - '}
+                          <button onClick={addAddRoomFormSpecification}>
+                            Add
+                          </button>
+                        </h3>
+                        {AddRoomFormRoomSpecifications.map((spec, index) => (
+                          <div
+                            key={index}
+                            className="AddANewRoomSpecObjectMainContainer"
+                          >
+                            <div>
+                              Name:
                               <input
-                                type="number"
-                                className="AddANewRoomInputsSmall"
-                                value={spec.Number}
+                                className="AddANewRoomInputsMid"
+                                value={spec.Detail}
                                 onChange={(e) =>
                                   handleAddRoomFormSpecificationChange(
                                     index,
-                                    'Number',
+                                    'Detail',
                                     e.target.value
                                   )
                                 }
                               />
-                            )}
+                              {spec.type === 'bool' ? (
+                                <>
+                                  <input
+                                    type="checkbox"
+                                    checked={spec.Boolean}
+                                    onChange={(e) =>
+                                      handleAddRoomFormSpecificationChange(
+                                        index,
+                                        'Boolean',
+                                        e.target.checked
+                                      )
+                                    }
+                                  />{' '}
+                                  {spec.Boolean ? 'Yes' : 'No'}
+                                </>
+                              ) : (
+                                <input
+                                  type="number"
+                                  className="AddANewRoomInputsSmall"
+                                  value={spec.Number}
+                                  onChange={(e) =>
+                                    handleAddRoomFormSpecificationChange(
+                                      index,
+                                      'Number',
+                                      e.target.value
+                                    )
+                                  }
+                                />
+                              )}
+                            </div>
+                            <div>
+                              <input
+                                type="radio"
+                                name={`spec-${index}`}
+                                value="bool"
+                                checked={spec.type === 'bool'}
+                                onChange={(e) =>
+                                  handleAddRoomFormSpecificationChange(
+                                    index,
+                                    'type',
+                                    'bool'
+                                  )
+                                }
+                              />{' '}
+                              Yes/No
+                              <input
+                                type="radio"
+                                name={`spec-${index}`}
+                                value="number"
+                                checked={spec.type === 'number'}
+                                onChange={(e) =>
+                                  handleAddRoomFormSpecificationChange(
+                                    index,
+                                    'type',
+                                    'number'
+                                  )
+                                }
+                              />{' '}
+                              Number{' - - '}
+                              <button
+                                onClick={() =>
+                                  removeAddRoomFormSpecification(index)
+                                }
+                              >
+                                Delete
+                              </button>
+                            </div>
                           </div>
-                          <div>
-                            <input
-                              type="radio"
-                              name={`spec-${index}`}
-                              value="bool"
-                              checked={spec.type === 'bool'}
-                              onChange={(e) =>
-                                handleAddRoomFormSpecificationChange(
-                                  index,
-                                  'type',
-                                  'bool'
-                                )
-                              }
-                            />{' '}
-                            Yes/No
-                            <input
-                              type="radio"
-                              name={`spec-${index}`}
-                              value="number"
-                              checked={spec.type === 'number'}
-                              onChange={(e) =>
-                                handleAddRoomFormSpecificationChange(
-                                  index,
-                                  'type',
-                                  'number'
-                                )
-                              }
-                            />{' '}
-                            Number{' - - '}
-                            <button
-                              onClick={() =>
-                                removeAddRoomFormSpecification(index)
-                              }
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
+                      <div className="AddARoomImageMainContainer">
+                        <ImageInteractor2
+                          isAddRoomImage={true}
+                          refreshState={RefreshInspectorForAddRoom}
+                          SetRefreshState={setRefreshInspectorForAddRoom}
+                          AddRoomState={true}
+                          setIsMoreThanOneImage={setIsMoreThanOneImage}
+                        />
+                      </div>
                     </div>
-                    <div className="AddARoomImageMainContainer">
-                      <ImageInteractor2
-                        isAddRoomImage={true}
-                        refreshState={RefreshInspectorForAddRoom}
-                        SetRefreshState={setRefreshInspectorForAddRoom}
-                        AddRoomState={true}
-                        setIsMoreThanOneImage={setIsMoreThanOneImage}
-                      />
-                    </div>
-                  </div>
+                  )}
                 </div>
                 <div className="AddaNewRoomBottomContianer">
                   <button
@@ -1559,25 +1854,166 @@ const MainPage = ({
                   >
                     Cancel
                   </button>{' '}
-                  <button
+                  {showContinueAddingSettings && (
+                    <div
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        background: 'var(--Secondary-Color60)',
+                        padding: '5px',
+                        borderRadius: '10px',
+                        marginBottom: '10px',
+                      }}
+                    >
+                      <div>
+                        <span style={{ fontSize: '12px', color: 'var(--Text-Color-Grey)' }}>
+                          After this room is add the below options will be
+                          applied to the next room
+                        </span>
+                        <br />
+                        <input
+                          type="radio"
+                          name="roomNumberAction"
+                          value="increment"
+                          checked={incrementRoomNumber}
+                          onChange={() => setIncrementRoomNumber(true)}
+                        />{' '}
+                        Increment Room Number <br />
+                        <input
+                          type="radio"
+                          name="roomNumberAction"
+                          value="reset"
+                          checked={!incrementRoomNumber}
+                          onChange={() => setIncrementRoomNumber(false)}
+                        />{' '}
+                        Reset Room Number
+                        <br />
+                      </div>
+                      <div>
+                        <input
+                          type="radio"
+                          name="floorAction"
+                          value="increment"
+                          checked={incrementFloor}
+                          onChange={() => setIncrementFloor(true)}
+                        />{' '}
+                        Increment Floor Number
+                        <br />
+                        <input
+                          type="radio"
+                          name="floorAction"
+                          value="reset"
+                          checked={!incrementFloor}
+                          onChange={() => setIncrementFloor(false)}
+                        />{' '}
+                        Keep Floor Number same
+                        <br />
+                        <hr />
+                      </div>
+                      <div>
+                        <input
+                          type="checkbox"
+                          name="resetPrice"
+                          checked={resetPrice}
+                          onChange={() => setResetPrice(!resetPrice)}
+                        />{' '}
+                        Reset Price
+                        <br />
+                        <input
+                          type="checkbox"
+                          name="resetPaymentCycle"
+                          checked={resetPaymentCycle}
+                          onChange={() =>
+                            setResetPaymentCycle(!resetPaymentCycle)
+                          }
+                        />{' '}
+                        Reset Payment Cycle
+                        <br />
+                        <input
+                          type="checkbox"
+                          name="resetSquareMeters"
+                          checked={resetSquareMeters}
+                          onChange={() =>
+                            setResetSquareMeters(!resetSquareMeters)
+                          }
+                        />{' '}
+                        Reset Square Meters
+                        <br />
+                        <input
+                          type="checkbox"
+                          name="resetRoomSpecifications"
+                          checked={resetRoomSpecifications}
+                          onChange={() =>
+                            setResetRoomSpecifications(!resetRoomSpecifications)
+                          }
+                        />{' '}
+                        Reset Room Specifications
+                        <br />
+                        <input
+                          type="checkbox"
+                          name="resetRoomImages"
+                          checked={resetRoomImages}
+                          onChange={() => setResetRoomImages(!resetRoomImages)}
+                        />{' '}
+                        Reset Room Images
+                        <br />
+                      </div>
+                      <div
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'center',
+                          marginTop: '10px',
+                        }}
+                      >
+                        <button
+                          className="HorizontalButton"
+                          style={{ marginRight: '10px' }}
+                          onClick={() => {
+                            setShowContinueAddingSettings(false);
+                            resetAllValuesContinueAddingVariables();
+                          }}
+                        >
+                          Close
+                        </button>
+                        <button
+                          className="HorizontalButton"  disabled={isAddingRoom}
+                          onClick={() => {
+                            handleAddRoom(true);
+
+                            setAddARoomState(true);
+                          }}
+                        >
+                           {isAddingRoom ? 'Adding...' : 'Add'}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  <div
                     className="HorizontalButton"
-                    onClick={() => {
-                      handleAddRoom(true);
-                      ResetAddRoomForumVariables();
-                      handleAddRoomButtonInitial(true, true);
-                      setAddARoomState(true);
-                    }}
+                    style={{ background: 'none', padding: '0' }}
                   >
-                    Add Room and continue adding
-                  </button>
-                  <button
-                    className="HorizontalButton"
-                    onClick={() => {
-                      handleAddRoom(false);
-                    }}
-                  >
-                    Add Room
-                  </button>
+                    <button
+                      onClick={() => {
+                        setShowContinueAddingSettings(
+                          !showContinueAddingSettings
+                        );
+                      }}
+                      style={{ width: '100%' }}
+                    >
+                      {showContinueAddingSettings
+                        ? 'Close'
+                        : 'Add Another Room'}
+                    </button>
+                  </div>
+                  {!showContinueAddingSettings && (
+                    <button
+                      className="HorizontalButton"
+                      onClick={() => handleAddRoom(false)}
+                      disabled={isAddingRoom}
+                    >
+                      {isAddingRoom ? 'Adding...' : 'Add Room'}
+                    </button>
+                  )}
                 </div>
               </div>
             </>
@@ -1993,7 +2429,7 @@ const MainPage = ({
               setIsUpdatingTenantList={setIsUpdatingTenantList}
               setSelectedEditRoomId={setSelectedEditRoomId}
               brokersRecommendationListApi={brokersRecommendationListApi}
-              setChangeMade={setChangeMade}
+              setChangeMade={setChangeMade}roomListContainerRef={roomListContainerRef}
             />
           )}
           {SelectedPage === 'People' && (
@@ -2021,9 +2457,9 @@ const MainPage = ({
             <CalendarPage
               updateRoomProperty={updateRoomProperty}
               RoomList={RoomList}
-              sortedAndFilteredRooms={sortedAndFilteredRooms}
+              sortedAndFilteredRooms={RoomList}
               removeFilterOption={removeFilterOption}
-              filterOptions={filterOptions}
+              filterOptions={[]}
               tenantList={TenantList}
             />
           )}

@@ -24,16 +24,24 @@ export function RoomListComponent({
   handleAddRoomButtonInitial,
   updateRoomPropertyLocal,
   agreementApi,
-  ShowArchived,setChangeMade,SelectedUserId,SelectedAppUser
+  ShowArchived,setChangeMade,SelectedUserId,SelectedAppUser,roomListContainerRef
 }: any) {
+  // Sort the rooms based on floor and room number
+  const sortedRooms = sortedAndFilteredRooms.sort((a, b) => {
+    if (a.floor === b.floor) {
+      return a.roomIndex - b.roomIndex;
+    }
+    return a.floor - b.floor;
+  });
+
   return (
     <>
       <div className="SecondNavBarContainer" style={{ width: '100%' }}>
         <div className="FilterOptions">
           <strong style={{ marginRight: '10px' }}>
-            Showing {ShowArchived ? sortedAndFilteredRooms.filter((r:RoomType)=>r.Archived).length : sortedAndFilteredRooms.filter((r:RoomType)=>!r.Archived).length} {ShowArchived && 'archived'}{' '}
+            Showing {ShowArchived ? sortedRooms.filter((r:RoomType)=>r.Archived).length : sortedRooms.filter((r:RoomType)=>!r.Archived).length} {ShowArchived && 'archived'}{' '}
             room
-            {ShowArchived ? sortedAndFilteredRooms.filter((r:RoomType)=>r.Archived).length != 1 && 's': sortedAndFilteredRooms.filter((r:RoomType)=>!r.Archived).length != 1 && 's'}
+            {ShowArchived ? sortedRooms.filter((r:RoomType)=>r.Archived).length != 1 && 's': sortedRooms.filter((r:RoomType)=>!r.Archived).length != 1 && 's'}
           </strong>
           {filterOptions.length > 0 && <strong>Filter options:</strong>}
           {filterOptions.map((option: any, index: any) => (
@@ -67,20 +75,20 @@ export function RoomListComponent({
         style={{
           width: '100%',
           height: 'calc(100% - 60px)',
-        }}
+        }}ref={roomListContainerRef}
       >
         <div
           style={{
             height: '25px',
           }}
         ></div>
-        <div className="RoomContainer">
-          {sortedAndFilteredRooms.filter((r: RoomType) => r.Archived == ShowArchived).length === 0 ? (
+        <div className="RoomContainer" >
+          {sortedRooms.filter((r: RoomType) => r.Archived == ShowArchived).length === 0 ? (
             <div style={{ textAlign: 'center', padding: '20px',width:'100%', color:'var(--Text-Color-Grey)'}}>
               <p>There are no rooms. Add a room by clicking the "Add room" button on the left.</p>
             </div>
           ) : (
-            sortedAndFilteredRooms
+            sortedRooms
               .filter((r: RoomType) => r.Archived == ShowArchived)
               .map((room: any, index: any) => (
                 <Room

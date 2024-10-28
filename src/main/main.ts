@@ -1782,6 +1782,56 @@ appDB.get(
     });
   }
 );
+// Add this new endpoint to main.ts
+appDB.post('/duplicate-room-images-folder', (
+  req: { body: { sourceFolderName: string; newFolderName: string } },
+  res: {
+    status: (arg0: number) => {
+      (): any;
+      new (): any;
+      json: { (arg0: { error: string }): void; new (): any };
+    };
+    json: (arg0: { message: string }) => void;
+  }
+) => {
+  try {
+    const { sourceFolderName, newFolderName } = req.body;
+    
+    const sourcePath = path.join(
+      process.env.APPDATA,
+      appname,
+      'Room Pictures',
+      sourceFolderName
+    );
+    
+    const destPath = path.join(
+      process.env.APPDATA,
+      appname,
+      'Room Pictures',
+      newFolderName
+    );
+
+    // Check if source exists
+    if (!fs.existsSync(sourcePath)) {
+      return res.status(404).json({ error: 'Source folder not found' });
+    }
+
+    // Create destination folder
+    fs.mkdirSync(destPath, { recursive: true });
+
+    // Copy all files from source to destination
+    fs.readdirSync(sourcePath).forEach((file) => {
+      const sourceFile = path.join(sourcePath, file);
+      const destFile = path.join(destPath, file);
+      fs.copyFileSync(sourceFile, destFile);
+    });
+
+    res.json({ message: 'Folder duplicated successfully' });
+  } catch (error) {
+    console.error('Error duplicating folder:', error);
+    res.status(500).json({ error: 'Failed to duplicate folder' });
+  }
+});
 appDB.put(
   '/rename-folder',
   (

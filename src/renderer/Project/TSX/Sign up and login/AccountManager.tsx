@@ -161,13 +161,13 @@ const AccountManager = (React.FC<MyComponentProps> = ({
 
         await appUsersManagement();
         if (navigator.onLine && window.electron.store.get('users')[0].Allowed) {
-          setIsSyncing(true);
-          syncOnlineToLocalWithBool(
-            allUsers[0].id,
-            setIsSyncing,
-            setSyncProgress,
-            RefreshDataFromSqlite
-          );
+          // setIsSyncing(true);
+          // syncOnlineToLocalWithBool(
+          //   allUsers[0].id,
+          //   setIsSyncing,
+          //   setSyncProgress,
+          //   RefreshDataFromSqlite
+          // );
         }
       }
     } else {

@@ -183,9 +183,8 @@ body {
 }
 
 ::-webkit-scrollbar-corner {
-
+  background-color: var(--Secondary-Color);
 }
-
 ::-webkit-scrollbar-thumb:hover {
   background-color: var(--Primary-Color50);
   border-radius: 5px;

@@ -627,7 +627,26 @@ export const renameFolder = async (oldName, newName) => {
     return null;
   }
 };
-
+// Add this new function to localServerApis.js
+export const duplicateRoomImagesFolder = async (sourceFolderName, newFolderName) => {
+  try {
+    const response = await fetch(`${baseUrl}/duplicate-room-images-folder`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        sourceFolderName,
+        newFolderName
+      }),
+    });
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error duplicating room images folder:', error);
+    return null;
+  }
+};
 export const AddRoomDocuments = async (
   files,
   roomId,

@@ -44,30 +44,40 @@ const DashbTotalCollected = ({
         'room_pay_info_history',
         `WHERE Day >= ${yearStart.getTime()} AND Day <= ${yearEnd.getTime()}`
       );
-      
-      // Combine actual and historical payments
-      const combinedPayments = [...actualPayments, ...historicalPayments];
 
-      console.log('Combined Payments:', combinedPayments);
-
-      // Process all combined payments
-      combinedPayments.forEach(payment => {
-        allPayments.push({
+      // Only add paid payments from actual and historical
+      const combinedPayments = [...actualPayments, ...historicalPayments]
+        .filter(payment => payment.Paid === 1)
+        .map(payment => ({
           id: payment.id,
           Day: payment.Day,
           Value: payment.Value,
-          Paid: payment.Paid === 1,
+          Paid: true,
           roomId: payment.roomId,
-        });
-      });
+        }));
 
-      // Generate predicted payments only for future dates or missing payments
+      // If we have no payment history, don't add predictions
+      if (actualPayments.length === 0 && historicalPayments.length === 0) {
+        console.log('No payment history found, skipping predictions');
+        setPredictedPayments(allPayments);
+        return;
+      }
+
+      // Add verified payments to allPayments
+      allPayments.push(...combinedPayments);
+
+      // Only generate predictions if we have payment history
       for (const room of RoomList) {
-        let startDate = new Date(
-          tenantList.find((tenant) => tenant.id === room.tenantId)?.startTime ||
-            Date.now()
-        ).getTime();
+        // Skip rooms without tenants
+        if (!room.tenantId) continue;
+
+        const tenant = tenantList.find((t) => t.id === room.tenantId);
+        if (!tenant) continue;
+
+        let startDate = new Date(tenant.startTime || Date.now()).getTime();
         let endDate = yearEnd.getTime();
+
+        // Get agreement details if exists
         if (room.selectedAgreementId) {
           const agreements = await getValuesWithSql(
             'agreements',
@@ -75,11 +85,7 @@ const DashbTotalCollected = ({
           );
           if (agreements.length > 0) {
             startDate = Math.max(agreements[0].startTime, yearStart.getTime());
-            if (
-              tenantList.find((t: tenant) => t.id === room.tenantId)
-                ?.SelectedAgreement === 'Fixed-Term' &&
-              agreements[0].endTime
-            ) {
+            if (tenant.SelectedAgreement === 'Fixed-Term' && agreements[0].endTime) {
               endDate = Math.min(agreements[0].endTime, yearEnd.getTime());
             }
           }
@@ -89,9 +95,10 @@ const DashbTotalCollected = ({
 
         while (currentDate.getTime() <= endDate) {
           const paymentId = `${room.id}-${currentDate.getTime()}`;
-          const existingPayment = allPayments.find(p => p.id === paymentId);
-
-          if (!existingPayment) {
+          
+          // Only add if payment doesn't already exist
+          if (!allPayments.some(p => p.id === paymentId)) {
+            // Add as unpaid prediction
             allPayments.push({
               id: paymentId,
               Day: currentDate.getTime(),
@@ -101,46 +108,31 @@ const DashbTotalCollected = ({
             });
           }
 
-          // Calculate next payment date based on payment cycle
-          switch (room.PaymentCycleType) {
-            case '30':
-              currentDate = addDays(currentDate, 30);
-              break;
-            case '15':
-              currentDate = addDays(currentDate, 15);
-              break;
-            case '7':
-              currentDate = addDays(currentDate, 7);
-              break;
-            case 'daily':
-              currentDate = addDays(currentDate, 1);
-              break;
-            case 'monthly':
-              currentDate = addMonths(currentDate, 1);
-              break;
-            case 'weekly':
-              currentDate = addDays(currentDate, 7);
-              break;  case 'Annually':
-              currentDate = addYears(currentDate, 1);
-              break;
-            case 'custom':
-              currentDate = addDays(
-                currentDate,
-                room.PaymentCycleCustomeDays || 30
-              );
-              break;
-            default:
-              currentDate = addMonths(currentDate, 1);
-          }
+          // Calculate next payment date
+          currentDate = calculateNextPaymentDate(currentDate, room);
         }
       }
 
-      console.log('All Payments:', allPayments);
       setPredictedPayments(allPayments);
     };
 
     calculatePayments();
   }, [RoomList, tenantList, selectedDate, showBy]);
+
+  // Helper function to calculate next payment date
+  const calculateNextPaymentDate = (currentDate: Date, room: any) => {
+    switch (room.PaymentCycleType) {
+      case '30': return addDays(currentDate, 30);
+      case '15': return addDays(currentDate, 15);
+      case '7': return addDays(currentDate, 7);
+      case 'daily': return addDays(currentDate, 1);
+      case 'monthly': return addMonths(currentDate, 1);
+      case 'weekly': return addDays(currentDate, 7);
+      case 'Annually': return addYears(currentDate, 1);
+      case 'custom': return addDays(currentDate, room.PaymentCycleCustomeDays || 30);
+      default: return addMonths(currentDate, 1);
+    }
+  };
 
   const aggregateMonthlyData = useMemo(() => {
     const selectedYear = parseInt(selectedDate);

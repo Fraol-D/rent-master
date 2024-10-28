@@ -100,7 +100,6 @@ const SignupPage = ({
     setCodeSent(true);
     setCodeExpired(false);
     setErrorMessage('Verification code sent to your email.');
-    console.log(code);
     window.electron.ipcRenderer.send('SendVerificationCode', {
       to: email,
       code: code,

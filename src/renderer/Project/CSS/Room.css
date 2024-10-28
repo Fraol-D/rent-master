@@ -314,7 +314,7 @@
 }
 .TenantRow {
   box-shadow: 2px 2px 2px lab(0 0 0 / 0.21);
-  width: 260px;
+  width: 95%;
   height: 40px;
   padding-left: 5px;
   margin-top: 5px;
@@ -365,4 +365,17 @@
 .UtilityPriceInputDisabled:hover {
   background-color: var(--Secondary-Color);
   color: var(--Text-Color-Grey);
+}.highlight-new-room {
+  animation: highlightRoom 2s ease-out;
+}
+
+@keyframes highlightRoom {
+  0% {
+    background-color: var(--Accent-Color);
+    transform: scale(1.02);
+  }
+  100% {
+    background-color: var(--Secondary-Color20);
+    transform: scale(1);
+  }
 }

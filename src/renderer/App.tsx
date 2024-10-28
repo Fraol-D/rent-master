@@ -1080,7 +1080,7 @@ function Hello() {
             }}
           />
           <p style={{ margin: 0 }}>
-            {uploadProgress >= 1 && uploadProgress <= 50
+            {UploadingLoadingEffect 
               ? 'Uploading...'
               : 'Syncing...'}{' '}
             {SyncProgress.toFixed(1)}%
@@ -1095,9 +1095,9 @@ function Hello() {
   const [AppUserManagerPromptPassword, setAppUserManagerPromptPassword] =
     useState(false);
   const [SelectedPage, setSelectedPage] = useState<
-    | 'Dashboard'
-    | 'People'
     | 'Rooms'
+    | 'People'
+    | 'Dashboard'
     | 'Calendar'
     | 'Settings'
     | 'Database'
@@ -1106,11 +1106,11 @@ function Hello() {
   >(() => {
     const privileges = getUserPrivileges(SelectedAppUser);
     if (privileges.viewRoomsPage) return 'Rooms';
-    if (privileges.viewDashboard) return 'Dashboard';
     if (privileges.viewPeoplesPage) return 'People';
     if (privileges.viewCalendar) return 'Calendar';
     if (privileges.viewDatabase) return 'Database';
     if (privileges.viewToolsPage) return 'Tools';
+    if (privileges.viewDashboard) return 'Dashboard';
     return 'non'; // Default fallback
   });
   const privileges = getUserPrivileges(SelectedAppUser);
@@ -1118,9 +1118,9 @@ function Hello() {
   useEffect(() => {
     const timer = setTimeout(() => {
       setSelectedPage((prevPage) => {
-        if (privileges.viewDashboard) return 'Dashboard';
-        if (privileges.viewPeoplesPage) return 'People';
         if (privileges.viewRoomsPage) return 'Rooms';
+        if (privileges.viewPeoplesPage) return 'People';
+        if (privileges.viewDashboard) return 'Dashboard';
         if (privileges.viewCalendar) return 'Calendar';
         if (privileges.viewDatabase) return 'Database';
         if (privileges.viewToolsPage) return 'Tools';

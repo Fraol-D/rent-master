@@ -117,86 +117,77 @@ export const Upload = async (
 ) => {
   let changeAmount = 0;
   const totalChanges = offline_changes_Array.length;
-  const syncProgressWeight = 0.5;
-  const uploadProgressWeight = 1 - syncProgressWeight;
   let failedUploads = [];
   let uploadedChanges = [];
 
+  // Sort changes by type in the desired order
+  const sortedChanges = [...offline_changes_Array].sort((a, b) => {
+    const priority = { 'add': 0, 'edit': 1, 'delete': 2 };
+    return priority[a.type] - priority[b.type];
+  });
+
   for (let i = 0; i < totalChanges; i++) {
-    const change = offline_changes_Array[i];
+    const change = sortedChanges[i];
     try {
       if (change.type === 'edit' && change.tableName === 'settings_table') {
-        // Your existing code for handling settings_table edits
-      } else {
-        switch (change.type) {
-          case 'edit':
-            const editResponse = await fetch(
-              `${baseUrl}/${change.tableName}/${change.rowId}/${change.columnName}`,
-              {
-                method: 'PUT',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'x-api-key': apiKey,
-                },
-                body: JSON.stringify({ [change.columnName]: change.newValue }),
-              }
-            );
-            await editResponse.json();
-            break;
-          case 'delete':
-            const deleteResponse = await fetch(
-              `${baseUrl}/${change.tableName}/${change.rowId}`,
-              {
-                method: 'DELETE',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'x-api-key': apiKey,
-                },
-              }
-            );
-            await deleteResponse.text();
-            break;
-          case 'add':
-            if (change.tableName === 'settings_table') {
-              // Your existing code for handling settings_table additions
-            } else {
-              const addResponse = await fetch(
-                `${baseUrl}/${change.tableName}`,
-                {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                    'x-api-key': 'HH(CzZuQoW@tB$By)e',
-                  },
-                  body: change.addedJsonData,
-                }
-              );
-              await addResponse.json();
-            }
-            break;
-          /*case 'addImage':
-            const userId = JSON.parse(JSON.parse(change.addedJsonData)).user_id;
-            const filename = JSON.parse(
-              JSON.parse(change.addedJsonData),
-            ).filename;
-            let rowID = change.columnName;
-            const fileContent = await getFileContent(filename);
-
-            const fileBlob = new Blob([fileContent], { type: 'image/png' }); // Assuming the file is a PNG image
-            const file = new File([fileBlob], filename, { type: 'image/png' });
-            if (rowID <= 0) {
-              rowID = JSON.parse(
-                JSON.parse(change.addedJsonData),
-              ).id;
-            }
-            await uploadImage(userId, file, filename, change.columnName);
-            break;*/
-
-          default:
-            console.error(`Unknown change type: ${change.type}`);
-        }
+        // Settings table handling remains unchanged
+        continue;
       }
-      // If the upload was successful, delete the offline change row
+
+      switch (change.type) {
+        case 'add':
+          if (change.tableName === 'settings_table') {
+            // Settings table add handling
+          } else {
+            const addResponse = await fetch(
+              `${baseUrl}/${change.tableName}`,
+              {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'x-api-key': 'HH(CzZuQoW@tB$By)e',
+                },
+                body: change.addedJsonData,
+              }
+            );
+            await addResponse.json();
+          }
+          break;
+
+        case 'edit':
+          const editResponse = await fetch(
+            `${baseUrl}/${change.tableName}/${change.rowId}/${change.columnName}`,
+            {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+                'x-api-key': apiKey,
+              },
+              body: JSON.stringify({ [change.columnName]: change.newValue }),
+            }
+          );
+          await editResponse.json();
+          break;
+
+        case 'delete':
+          const deleteResponse = await fetch(
+            `${baseUrl}/${change.tableName}/${change.rowId}`,
+            {
+              method: 'DELETE',
+              headers: {
+                'Content-Type': 'application/json',
+                'x-api-key': apiKey,
+              },
+            }
+          );
+          await deleteResponse.text();
+          break;
+
+        default:
+          console.error(`Unknown change type: ${change.type}`);
+      }
+
+      // Delete the processed offline change
       await deleteValue('offline_changes', change.id);
       changeAmount++;
       uploadedChanges.push(change);
@@ -205,19 +196,13 @@ export const Upload = async (
       failedUploads.push(change);
       continue;
     }
-    // Update upload progress
-    const uploadProgress =
-      ((i + 1) / totalChanges) * uploadProgressWeight * 100;
+
+    // Update progress
+    const uploadProgress = ((i + 1) / totalChanges) * 100;
     setUploadProgress(uploadProgress);
   }
 
-  // Handle failed uploads
-  if (failedUploads.length > 0) {
-    console.log(`Failed to upload ${failedUploads.length} changes.`);
-    // Optionally, you can retry failed uploads here
-    // For simplicity, let's assume that the retry mechanism is implemented elsewhere
-    // and we're only logging the failed uploads for now
-  }
+  // Update change amount
   const changeAmountOnline = await getValuesWithSql_Online(
     'users',
     `WHERE id = '${SelectedUserId}'`
@@ -228,103 +213,54 @@ export const Upload = async (
     'changeAmount',
     changeAmountOnline[0].changeAmount + changeAmount
   );
-  console.log(changeAmountOnline[0].changeAmount + changeAmount, 'changeAmountOnline + changeAmount', changeAmountOnline[0].changeAmount);
+  
   window.electron.store.set('changeAmount', changeAmountOnline[0].changeAmount + changeAmount);
-  await syncOnlineToLocalWithCallback(SelectedUserId, (syncProgress) => {
-    const totalProgress =
-      syncProgress * syncProgressWeight + uploadProgressWeight * 100;
-    setUploadProgress(totalProgress);
-  });
-
   console.log('Uploaded changes:', uploadedChanges);
   RefreshApp();
   return true;
 };
-export const syncOnlineToLocalWithCallback = async (
-  SelectedUserId,
-  setSyncProgress
-) => {
-  console.log(`Starting sync process for user: ${SelectedUserId}`);
-
-
-  console.log(`Tables to sync: ${tables.join(', ')}`);
-
-  let completedTables = 0;
-  const totalTables = tables.length;
-
-  for (const table of tables) {
-    console.log(`Processing table: ${table}`);
-
-    const onlineData = await fetchDataFromOnlineDatabase(table);
-    console.log(
-      `Fetched ${onlineData.length} rows from online database for table: ${table}`
-    );
-
-    const localData = await fetchDataFromLocalDatabase(table);
-    console.log(
-      `Fetched ${localData.length} rows from local database for table: ${table}`
-    );
-
-    const onlineDataMap = new Map(onlineData.map((row) => [row.id, row]));
-    const localDataMap = new Map(localData.map((row) => [row.id, row]));
-
-    console.log(`Processing rows for table: ${table}`);
-    let updatedRows = 0;
-    let addedRows = 0;
-    let skippedRows = 0;
-
-    // Add or update rows in the local database
-    for (const [id, onlineRow] of onlineDataMap.entries()) {
-      if (onlineRow.userId !== SelectedUserId) {
-        skippedRows++;
-        continue;
-      }
-
-      if (localDataMap.has(id)) {
-        const localRow = localDataMap.get(id);
-        if (JSON.stringify(onlineRow) !== JSON.stringify(localRow)) {
-          await updateLocalRecord(table, id, onlineRow);
-          updatedRows++;
-          console.log(`Updated row with id: ${id} in table: ${table}`);
-        }
-      } else {
-        await addLocalRecord(table, onlineRow);
-        addedRows++;
-        console.log(`Added new row with id: ${id} to table: ${table}`);
+function normalizeObject(obj) {
+  // Create a new object with sorted keys
+  return Object.keys(obj).sort().reduce((normalized, key) => {
+    let value = obj[key];
+    
+    // Convert string numbers to actual numbers
+    if (typeof value === 'string') {
+      // Handle decimal strings (e.g., "0.00")
+      const numberValue = Number(value);
+      if (!isNaN(numberValue)) {
+        value = numberValue;
       }
     }
-
-    console.log(
-      `Table ${table} - Updated: ${updatedRows}, Added: ${addedRows}, Skipped: ${skippedRows}`
-    );
-
-    // Optionally delete local rows that do not exist in the online database
-    let deletedRows = 0;
-    for (const id of localDataMap.keys()) {
-      if (!onlineDataMap.has(id)) {
-        await deleteLocalRecord(table, id);
-        deletedRows++;
-        console.log(`Deleted row with id: ${id} from table: ${table}`);
-      }
+    
+    // Handle boolean values that might be 0/1
+    if (key === 'Archived' || key.startsWith('is') || key.includes('State')) {
+      value = Boolean(value);
     }
+    
+    normalized[key] = value;
+    return normalized;
+  }, {});
+}
 
-    console.log(`Deleted ${deletedRows} rows from table: ${table}`);
-
-    completedTables++;
-    const progress = (completedTables / totalTables) * 100;
-    setSyncProgress(progress);
-    console.log(`Sync progress: ${progress.toFixed(2)}%`);
+function areObjectsEqual(obj1, obj2) {
+  const norm1 = normalizeObject(obj1);
+  const norm2 = normalizeObject(obj2);
+  
+  // For debugging
+  const str1 = JSON.stringify(norm1);
+  const str2 = JSON.stringify(norm2);
+  if (str1 !== str2) {
+    console.log('Differences found:', {
+      obj1: norm1,
+      obj2: norm2
+    });
   }
+  
+  return str1 === str2;
+}
 
-  setChangeAmount(SelectedUserId)
-  console.log('Applying offline changes');
-  const offlineChanges = await fetchOfflineChanges();
-  console.log(`Found ${offlineChanges.length} offline changes to apply`);
-  await applyOfflineChangesToLocalDatabase(offlineChanges);
 
-  console.log('Sync completed');
-  return 'Sync completed';
-};
 const setChangeAmount = async (SelectedUserId) => {
   const changeAmountOnline = await getValuesWithSql_Online(
     'users',
@@ -452,25 +388,56 @@ const fetchDataFromOnlineDatabase = async (tableName) => {
 const fetchDataFromLocalDatabase = async (tableName) => {
   return getValuesWithSql(tableName, 'WHERE 1');
 };
+async function syncActionHistory(onlineData, localData, SelectedUserId) {
+  // Create a Set of existing IDs for faster lookup
+  const existingIds = new Set(localData.map(row => row.id));
+  console.log(existingIds, "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000")
+  let addedRows = 0;
+  let skippedRows = 0;
 
-// Sync data from online to local database
+  for (const onlineRow of onlineData) {
+    // Skip if not for current user
+    if (onlineRow.userId !== SelectedUserId) {
+      skippedRows++;
+      continue;
+    }
+
+    // Skip if already exists
+    if (existingIds.has(onlineRow.id)) {
+      skippedRows++;
+      continue;
+    }
+
+    try {
+      await addLocalRecord('action_history', onlineRow);
+      addedRows++;
+    } catch (error) {
+      // If we somehow still get a constraint error, just skip it
+      skippedRows++;
+    }
+  }
+
+  console.log(`Action History Sync - Added: ${addedRows}, Skipped: ${skippedRows}`);
+}
+
+
+// Update the sync functions
 export const syncOnlineToLocal = async (SelectedUserId) => {
   console.log(`Starting sync process for user: ${SelectedUserId}`);
-
   console.log(`Tables to sync: ${tables.join(', ')}`);
 
   for (const table of tables) {
     console.log(`Processing table: ${table}`);
 
-    const onlineData = await fetchDataFromOnlineDatabase(table);
-    console.log(
-      `Fetched ${onlineData.length} rows from online database for table: ${table}`
-    );
+    const onlineData = await getValuesWithSql_Online(table, `WHERE userId = '${SelectedUserId}'`);
+    console.log(`Fetched ${onlineData.length} rows from online database for table: ${table}`);
 
     const localData = await fetchDataFromLocalDatabase(table);
-    console.log(
-      `Fetched ${localData.length} rows from local database for table: ${table}`
-    );
+    console.log(`Fetched ${localData.length} rows from local database for table: ${table}`);
+
+    if (table === 'action_history') {
+      await syncActionHistory(onlineData, localData, SelectedUserId);      continue;
+    }
 
     const onlineDataMap = new Map(onlineData.map((row) => [row.id, row]));
     const localDataMap = new Map(localData.map((row) => [row.id, row]));
@@ -480,19 +447,22 @@ export const syncOnlineToLocal = async (SelectedUserId) => {
     let addedRows = 0;
     let skippedRows = 0;
 
-    // Add or update rows in the local database
     for (const [id, onlineRow] of onlineDataMap.entries()) {
       if (onlineRow.userId !== SelectedUserId) {
         skippedRows++;
+        console.log(`Skipped row with id: ${id} (different user)`);
         continue;
       }
 
       if (localDataMap.has(id)) {
         const localRow = localDataMap.get(id);
-        if (JSON.stringify(onlineRow) !== JSON.stringify(localRow)) {
+        if (!areObjectsEqual(onlineRow, localRow)) {
           await updateLocalRecord(table, id, onlineRow);
           updatedRows++;
-          console.log(`Updated row with id: ${id} in table: ${table}`);
+          console.log(`Updated row with id: ${id} in table: ${table}, ${JSON.stringify(onlineRow)} ${JSON.stringify(localRow)}`);
+        } else {
+          skippedRows++;
+          console.log(`Skipped row with id: ${id} (no changes)`);
         }
       } else {
         await addLocalRecord(table, onlineRow);
@@ -501,31 +471,86 @@ export const syncOnlineToLocal = async (SelectedUserId) => {
       }
     }
 
-    console.log(
-      `Table ${table} - Updated: ${updatedRows}, Added: ${addedRows}, Skipped: ${skippedRows}`
-    );
-
-    // Optionally delete local rows that do not exist in the online database
-    let deletedRows = 0;
-    for (const id of localDataMap.keys()) {
-      if (!onlineDataMap.has(id)) {
-        await deleteLocalRecord(table, id);
-        deletedRows++;
-        console.log(`Deleted row with id: ${id} from table: ${table}`);
-      }
-    }
-
-    console.log(`Deleted ${deletedRows} rows from table: ${table}`);
+    console.log(`Table ${table} - Updated: ${updatedRows}, Added: ${addedRows}, Skipped: ${skippedRows}`);
   }
- 
-  setChangeAmount(SelectedUserId)
+
+  setChangeAmount(SelectedUserId);
   console.log('Applying offline changes');
   const offlineChanges = await fetchOfflineChanges();
   console.log(`Found ${offlineChanges.length} offline changes to apply`);
   await applyOfflineChangesToLocalDatabase(offlineChanges);
 
-  // Sync action_history separately
-  await syncActionHistory(SelectedUserId);
+  console.log('Sync completed');
+  return 'Sync completed';
+};
+
+export const syncOnlineToLocalWithCallback = async (SelectedUserId, setSyncProgress) => {
+  console.log(`Starting sync process for user: ${SelectedUserId}`);
+  console.log(`Tables to sync: ${tables.join(', ')}`);
+
+  let completedTables = 0;
+  const totalTables = tables.length;
+
+  for (const table of tables) {
+    console.log(`Processing table: ${table}`);
+
+    const onlineData = await getValuesWithSql_Online(table, `WHERE userId = '${SelectedUserId}'`);
+    console.log(`Fetched ${onlineData.length} rows from online database for table: ${table}`);
+
+    const localData = await fetchDataFromLocalDatabase(table);
+    console.log(`Fetched ${localData.length} rows from local database for table: ${table}`);
+
+    if (table === 'action_history') {
+      await syncActionHistory(onlineData, localData, SelectedUserId);    } else {
+      const onlineDataMap = new Map(onlineData.map((row) => [row.id, row]));
+      const localDataMap = new Map(localData.map((row) => [row.id, row]));
+
+      console.log(`Processing rows for table: ${table}`);
+      let updatedRows = 0;
+      let addedRows = 0;
+      let skippedRows = 0;
+
+      for (const [id, onlineRow] of onlineDataMap.entries()) {
+        if (onlineRow.userId !== SelectedUserId) {
+          skippedRows++;
+          console.log(`Skipped row with id: ${id} (different user)`);
+          continue;
+        }
+
+        if (localDataMap.has(id)) {
+          const localRow = localDataMap.get(id);
+          if (!areObjectsEqual(onlineRow, localRow)) {
+            console.log(`Updating row due to differences:`, {
+              online: onlineRow,
+              local: localRow
+            });
+            await updateLocalRecord(table, id, onlineRow);
+            updatedRows++;
+          } else {
+            skippedRows++;
+            console.log(`Skipped row with id: ${id} (no changes after normalization)`);
+          }
+        } else {
+          await addLocalRecord(table, onlineRow);
+          addedRows++;
+          console.log(`Added new row with id: ${id} to table: ${table}`);
+        }
+      }
+
+      console.log(`Table ${table} - Updated: ${updatedRows}, Added: ${addedRows}, Skipped: ${skippedRows}`);
+    }
+
+    completedTables++;
+    const progress = (completedTables / totalTables) * 100;
+    setSyncProgress(progress);
+    console.log(`Sync progress: ${progress.toFixed(2)}%`);
+  }
+
+  setChangeAmount(SelectedUserId);
+  console.log('Applying offline changes');
+  const offlineChanges = await fetchOfflineChanges();
+  console.log(`Found ${offlineChanges.length} offline changes to apply`);
+  await applyOfflineChangesToLocalDatabase(offlineChanges);
 
   console.log('Sync completed');
   return 'Sync completed';
@@ -545,105 +570,78 @@ export const syncOnlineToLocalWithBool = async (
   const totalSteps = tables.length + 1; // +1 for offline changes
   let currentStep = 0;
 
-  for (const table of tables) {
-    console.log(`Processing table: ${table}`);
+  try {
+    for (const table of tables) {
+      console.log(`Processing table: ${table}`);
 
-    const onlineData = await fetchDataFromOnlineDatabase(table);
-    console.log(
-      `Fetched ${onlineData.length} rows from online database for table: ${table}`
-    );
+      const onlineData = await  getValuesWithSql_Online(table, `WHERE userId = '${SelectedUserId}'`);
+      console.log(`Fetched ${onlineData.length} rows from online database for table: ${table}`);
 
-    const localData = await fetchDataFromLocalDatabase(table);
-    console.log(
-      `Fetched ${localData.length} rows from local database for table: ${table}`
-    );
+      const localData = await fetchDataFromLocalDatabase(table);
+      console.log(`Fetched ${localData.length} rows from local database for table: ${table}`);
 
-    const onlineDataMap = new Map(onlineData.map((row) => [row.id, row]));
-    const localDataMap = new Map(localData.map((row) => [row.id, row]));
+      if (table === 'action_history') {
+        await syncActionHistory(onlineData, localData, SelectedUserId);      } else {
+        const onlineDataMap = new Map(onlineData.map((row) => [row.id, row]));
+        const localDataMap = new Map(localData.map((row) => [row.id, row]));
 
-    console.log(`Processing rows for table: ${table}`);
-    let updatedRows = 0;
-    let addedRows = 0;
-    let skippedRows = 0;
+        console.log(`Processing rows for table: ${table}`);
+        let updatedRows = 0;
+        let addedRows = 0;
+        let skippedRows = 0;
 
-    // Add or update rows in the local database
-    for (const [id, onlineRow] of onlineDataMap.entries()) {
-      if (onlineRow.userId !== SelectedUserId) {
-        skippedRows++;
-        continue;
-      }
+        for (const [id, onlineRow] of onlineDataMap.entries()) {
+          if (onlineRow.userId !== SelectedUserId) {
+            skippedRows++;
+            console.log(`Skipped row with id: ${id} (different user)`);
+            continue;
+          }
 
-      if (localDataMap.has(id)) {
-        const localRow = localDataMap.get(id);
-        if (JSON.stringify(onlineRow) !== JSON.stringify(localRow)) {
-          await updateLocalRecord(table, id, onlineRow);
-          updatedRows++;
-          console.log(`Updated row with id: ${id} in table: ${table}`);
+          if (localDataMap.has(id)) {
+            const localRow = localDataMap.get(id);
+            if (!areObjectsEqual(onlineRow, localRow)) {
+              await updateLocalRecord(table, id, onlineRow);
+              updatedRows++;
+              console.log(`Updated row with id: ${id} in table: ${table}, ${JSON.stringify(onlineRow)} ${JSON.stringify(localRow)}`);
+            } else {
+              skippedRows++;
+              console.log(`Skipped row with id: ${id} (no changes)`);
+            }
+          } else {
+            await addLocalRecord(table, onlineRow);
+            addedRows++;
+            console.log(`Added new row with id: ${id} to table: ${table}`);
+          }
         }
-      } else {
-        await addLocalRecord(table, onlineRow);
-        addedRows++;
-        console.log(`Added new row with id: ${id} to table: ${table}`);
+
+        console.log(`Table ${table} - Updated: ${updatedRows}, Added: ${addedRows}, Skipped: ${skippedRows}`);
       }
+
+      currentStep++;
+      setSyncProgress((currentStep / totalSteps) * 100);
     }
 
-    console.log(
-      `Table ${table} - Updated: ${updatedRows}, Added: ${addedRows}, Skipped: ${skippedRows}`
-    );
-
-    // Optionally delete local rows that do not exist in the online database
-    let deletedRows = 0;
-    for (const id of localDataMap.keys()) {
-      if (!onlineDataMap.has(id)) {
-        await deleteLocalRecord(table, id);
-        deletedRows++;
-        console.log(`Deleted row with id: ${id} from table: ${table}`);
-      }
-    }
-
-    console.log(`Deleted ${deletedRows} rows from table: ${table}`);
+    setChangeAmount(SelectedUserId);
+    console.log('Applying offline changes');
+    const offlineChanges = await fetchOfflineChanges();
+    console.log(`Found ${offlineChanges.length} offline changes to apply`);
+    await applyOfflineChangesToLocalDatabase(offlineChanges);
 
     currentStep++;
-    setSyncProgress(Math.round((currentStep / totalSteps) * 100));
+    setSyncProgress(100);
+
+    setIsSyncing(false);
+    RefreshDataFromSqlite();
+    console.log('Sync completed');
+    return 'Sync completed';
+  } catch (error) {
+    console.error('Error during sync:', error);
+    setIsSyncing(false);
+    throw error;
   }
-
-  setChangeAmount(SelectedUserId)
-  console.log('Applying offline changes');
-  const offlineChanges = await fetchOfflineChanges();
-  console.log(`Found ${offlineChanges.length} offline changes to apply`);
-  await applyOfflineChangesToLocalDatabase(offlineChanges);
-
-  // Sync action_history separately
-  await syncActionHistory(SelectedUserId);
-
-  currentStep++;
-  setSyncProgress(100);
-
-  console.log('Sync completed');
-  setIsSyncing(false);
-  RefreshDataFromSqlite();
-  return 'Sync completed';
 };
 
-// New function to sync action_history
-const syncActionHistory = async (SelectedUserId) => {
-  console.log('Syncing action_history');
-  const onlineActionHistory = await fetchDataFromOnlineDatabase('action_history');
-  const filteredActionHistory = onlineActionHistory.filter(action => action.userId === SelectedUserId);
-  
-  // Clear existing action_history in local database
-  const existingActionHistory = await getValuesWithSql('action_history', 'WHERE 1');
-  for (const action of existingActionHistory) {
-    await deleteLocalRecord('action_history', action.id);
-  }
-  
-  // Add new action_history from online database
-  for (const action of filteredActionHistory) {
-    await addLocalRecord('action_history', action);
-  }
-  
-  console.log('action_history sync completed');
-};
+
 
 export const getValues = async (tableName) => {
   try {
@@ -668,10 +666,7 @@ const applyOfflineChangesToLocalDatabase = async (changes) => {
         });
         break;
       case 'add':
-        await addLocalRecord(
-          change.tableName,
-          JSON.parse(change.addedJsonData)
-        );
+        //await addLocalRecord(change.tableName, JSON.parse(change.addedJsonData));
         break;
       case 'delete':
         await deleteLocalRecord(change.tableName, change.rowId);
@@ -995,6 +990,7 @@ export const replaceUserData = async (userId, tables) => {
     'brokersRecommendationList',
     'PastTenantsForRoom',
     'agreements',
+    'action_history',
   ];
 
 export const SetBackUpAsMain = async (userId) => {
@@ -1205,4 +1201,7 @@ export const uploadImage = async (userId, file, newFilename, rowId) => {
   }
 };
 */
+
+
+
 

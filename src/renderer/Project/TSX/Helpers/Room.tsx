@@ -81,7 +81,11 @@ const Room = ({
 }) => {
   const handleAddTenant = () => {
     turnOffAddTenantStateForAll();
-    updateRoomProperty(roomType.id, 'AddTenantState', !roomType.AddTenantState);
+    updateRoomPropertyLocal(
+      roomType.id,
+      'AddTenantState',
+      !roomType.AddTenantState
+    );
   };
   const [name, setName] = useState('');
   const [tel1, setTel1] = useState('');
@@ -97,22 +101,19 @@ const Room = ({
   const [signDate, setSignDate] = useState('');
   const [Representative, setRepresentative] = useState('');
   const [agreedPrice, setAgreedPrice] = useState(roomType.price);
-  const [paymentCycle, setPaymentCycle] = useState('30');
+  const [paymentCycle, setPaymentCycle] = useState('monthly');
   const [customDays, setCustomDays] = useState('');
   const [searchTermTenant, setSearchTermTenant] = useState('');
   const filteredTenants =
     TenantList &&
     TenantList.filter(
       (tenant: tenant) =>
-        (tenant.name.toLowerCase().includes(searchTermTenant.toLowerCase()) ||
-          tenant.phoneNumber.includes(searchTermTenant) ||
-          (tenant.phoneNumber2 &&
-            tenant.phoneNumber2.includes(searchTermTenant)) ||
-          (tenant.email &&
-            tenant.email
-              .toLowerCase()
-              .includes(searchTermTenant.toLowerCase()))) &&
-        !tenant.RentingOrOut
+        tenant.name.toLowerCase().includes(searchTermTenant.toLowerCase()) ||
+        tenant.phoneNumber.includes(searchTermTenant) ||
+        (tenant.phoneNumber2 &&
+          tenant.phoneNumber2.includes(searchTermTenant)) ||
+        (tenant.email &&
+          tenant.email.toLowerCase().includes(searchTermTenant.toLowerCase()))
     );
   const addTenantRef = useRef(null);
   const viewAgreementRef = useRef(null);
@@ -185,30 +186,83 @@ const Room = ({
       (tenant: any) => tenant.id === SelectedTenantIdOnAdding
     );
     const tenant = TenantList[tenantIndex];
+
     if (tenantIndex !== -1) {
-      tenantAPI.EditTenantApiWithOutRefresh(
-        SelectedTenantIdOnAdding,
-        'RentingOrOut',
-        true
-      );
-      tenantAPI.EditTenantApiWithOutRefresh(
-        SelectedTenantIdOnAdding,
-        'SelectedAgreement',
-        selectedAgreement
-      );
-      tenantAPI.EditTenantApiWithOutRefresh(
-        SelectedTenantIdOnAdding,
-        'agreedPrice',
-        agreedPrice ? roomType.price : agreedPrice
-      );
-      tenantAPI.EditTenantApiWithOutRefresh(
-        SelectedTenantIdOnAdding,
-        'startTime',
-        new Date(startTime).getTime()
-      );
-      tenantAPI.EditTenantApi(SelectedTenantIdOnAdding, 'endTime', endTime);
+      if (!tenant.RentingOrOut) {
+        // Existing logic for non-renting tenant
+        await handleExistingTenant(tenant);
+      } else {
+        // Handle duplicate tenant case
+        await handleDuplicateTenant(tenant);
+      }
+    }
+    SetRefreshState(true);
+    await handlePaymentRefresh();
+  };
+
+  const handleExistingTenant = async (tenant: any) => {
+    // Original logic for non-renting tenant
+    tenantAPI.EditTenantApiWithOutRefresh(tenant.id, 'RentingOrOut', true);
+    tenantAPI.EditTenantApiWithOutRefresh(
+      tenant.id,
+      'SelectedAgreement',
+      selectedAgreement
+    );
+    tenantAPI.EditTenantApiWithOutRefresh(
+      tenant.id,
+      'agreedPrice',
+      agreedPrice || roomType.price
+    );
+    tenantAPI.EditTenantApiWithOutRefresh(
+      tenant.id,
+      'startTime',
+      new Date(startTime).getTime()
+    );
+    tenantAPI.EditTenantApi(tenant.id, 'endTime', endTime);
+
+    await updateRoomAndPaymentInfo(tenant.id);
+  };
+
+  const handleDuplicateTenant = async (originalTenant: any) => {
+    // Find next available number for duplicate
+    const baseNameMatch = originalTenant.name.match(/(.*?)(?:\s*\((\d+)\))?$/);
+    const baseName = baseNameMatch[1];
+    const currentNumber = baseNameMatch[2] ? parseInt(baseNameMatch[2]) : 0;
+
+    // Find next available number
+    let nextNumber = currentNumber + 1;
+    while (
+      TenantList.some((t: any) => t.name === `${baseName}(${nextNumber})`)
+    ) {
+      nextNumber++;
     }
 
+    // Create new tenant object
+    const newTenant = {
+      id: uuidv4(),
+      name: `${baseName}(${nextNumber})`,
+      phoneNumber: originalTenant.phoneNumber,
+      phoneNumber2: originalTenant.phoneNumber2,
+      email: originalTenant.email,
+      TIN: originalTenant.TIN,
+      RentReason: originalTenant.RentReason,
+      RentingOrOut: true,
+      SelectedAgreement: selectedAgreement,
+      startTime: new Date(startTime).getTime(),
+      endTime: endTime,
+      agreedPrice: agreedPrice || roomType.price,
+      AddedTime: Date.now(),
+      userId: SelectedUserId,
+    };
+
+    // Add new tenant using AddValue
+    await addValue('tenants', newTenant);
+
+    await updateRoomAndPaymentInfo(newTenant.id);
+  };
+
+  const updateRoomAndPaymentInfo = async (tenantId: string) => {
+    // Update room properties
     updateRoomPropertyWithOutRefresh(roomType.id, 'status', 'Taken');
     updateRoomPropertyWithOutRefresh(
       roomType.id,
@@ -221,89 +275,43 @@ const Room = ({
       paymentCycle
     );
     updateRoomPropertyWithOutRefresh(roomType.id, 'AgreedPrice', agreedPrice);
-    updateRoomPropertyWithOutRefresh(
-      roomType.id,
-      'tenantId',
-      SelectedTenantIdOnAdding
-    );
-    updateRoomProperty(roomType.id, 'AddTenantState', 0);
+    updateRoomPropertyWithOutRefresh(roomType.id, 'tenantId', tenantId);
+    updateRoomPropertyLocal(roomType.id, 'AddTenantState', 0);
 
+    // Initialize AllRoomPayInfo if needed
     if (!roomType.AllRoomPayInfo) {
-      roomType.AllRoomPayInfo = {
-        RoomPayInfo: [],
-      };
+      roomType.AllRoomPayInfo = { RoomPayInfo: [] };
     }
 
-    const paymentIntervals = {
-      'Every 30 days': 30,
-      'Every 15 days': 15,
-      'Every 7 days': 7,
-      monthly: 1,
-      daily: 1,
-      custom: parseInt(customDays, 10),
-    };
-
-    let interval: number =
-      paymentIntervals[paymentCycle as keyof typeof paymentIntervals];
-    if (!interval || isNaN(interval)) {
-      console.error(
-        `Invalid payment cycle: ${paymentCycle}. Defaulting to 30 days.`
-      );
-      interval = 30; // Default to 30 days if the payment cycle is invalid
-    }
-
+    // Handle broker if used
     if (AddTenantUseBrokerState) {
-      brokersRecommendationListApi.AddBrokerRecommendation(
+      await brokersRecommendationListApi.AddBrokerRecommendation(
         uuidv4(),
         AddTenantSelectedBrokerId,
         roomType.id,
-        tenant.id,
+        tenantId,
         Date.now(),
         isPercentCommission
           ? (commissionValue / 100) * agreedPrice
           : commissionValue
       );
     }
-    let DocumentFiles = [];
-    const roomDocs = await getRoomDocuments('Add a tenant documents');
-    if (roomDocs && roomDocs.documents) {
-      DocumentFiles = roomDocs.documents;
-      for (let i = 0; i < DocumentFiles.length; i++) {
-        const element = DocumentFiles[i];
-        const fileName = element.split('\\').pop().split('/').pop();
-        const fileContent = await window.electron.ipcRenderer.invoke(
-          'read-file',
-          element
-        );
-        const blob = new Blob([fileContent]);
-        const file = new File([blob], fileName, {
-          type: 'application/octet-stream',
-        });
-        console.log(file);
-        await uploadTenantDocumentsV2(
-          [file],
-          roomType.id,
-          tenant.name,
-          tenant.id,
-          new Date(tenant.startTime).toDateString()
-        );
-      }
-      await deleteTenantDocumentFolder();
-    } else {
-      DocumentFiles = [];
-    }
-    SetRefreshState(true);
-    const paymentCycleType2 =
-      paymentCycle === 'custom'
-        ? ('-' + customDays).toString()
-        : roomType.PaymentCycleType;
-    //fixed term lease
+
+    // Handle documents
+    await handleDocuments(tenantId);
+
+    // Handle agreement for fixed term lease
     if (selectedAgreement === 'Fixed-Term') {
       const AgreementId = uuidv4();
-      agreementApi.addAgreementApi(
+      const paymentCycleType2 =
+        paymentCycle === 'custom'
+          ? `-${customDays}`
+          : roomType.PaymentCycleType;
+
+      await agreementApi.addAgreementApi(
         AgreementId,
         roomType.id,
-        tenant.id,
+        tenantId,
         new Date(startTime).getTime(),
         new Date(endTime).getTime(),
         new Date(signDate).getTime(),
@@ -313,9 +321,37 @@ const Room = ({
         '',
         Representative
       );
-      updateRoomProperty(roomType.id, 'selectedAgreementId', AgreementId);
+      await updateRoomProperty(roomType.id, 'selectedAgreementId', AgreementId);
     }
+
+    SetRefreshState(true);
     await handlePaymentRefresh();
+  };
+
+  const handleDocuments = async (tenantId: string) => {
+    const roomDocs = await getRoomDocuments('Add a tenant documents');
+    if (roomDocs?.documents) {
+      for (const element of roomDocs.documents) {
+        const fileName = element.split('\\').pop().split('/').pop();
+        const fileContent = await window.electron.ipcRenderer.invoke(
+          'read-file',
+          element
+        );
+        const blob = new Blob([fileContent]);
+        const file = new File([blob], fileName, {
+          type: 'application/octet-stream',
+        });
+
+        await uploadTenantDocumentsV2(
+          [file],
+          roomType.id,
+          tenant.name,
+          tenantId,
+          new Date(startTime).toDateString()
+        );
+      }
+      await deleteTenantDocumentFolder();
+    }
   };
   const getCorrectPaymentStatment = (text: string, custom: string) => {
     switch (text) {
@@ -381,7 +417,7 @@ const Room = ({
       );
       updateRoomPropertyWithOutRefresh(roomType.id, 'AgreedPrice', agreedPrice);
       updateRoomPropertyWithOutRefresh(roomType.id, 'tenantId', tenantId);
-      updateRoomProperty(roomType.id, 'AddTenantState', 0);
+      updateRoomPropertyLocal(roomType.id, 'AddTenantState', 0);
       updateRoomProperty(
         roomType.id,
         'Price',
@@ -440,7 +476,6 @@ const Room = ({
       }
       console.log('reached1');
 
-  
       if (AddTenantUseBrokerState) {
         brokersRecommendationListApi.AddBrokerRecommendation(
           uuidv4(),
@@ -505,7 +540,11 @@ const Room = ({
         updateRoomProperty(roomType.id, 'selectedAgreementId', AgreementId);
       }
     }
-    updateRoomPropertyLocal(roomType.id, 'DaysTillNextPayment', calculateDaysTillNextPayment(await calculatePredictedPayments(roomType)));
+    updateRoomPropertyLocal(
+      roomType.id,
+      'DaysTillNextPayment',
+      calculateDaysTillNextPayment(await calculatePredictedPayments(roomType))
+    );
     await handlePaymentRefresh();
   };
   const calculatePredictedPayments = async (room: RoomType) => {
@@ -567,9 +606,9 @@ const Room = ({
         case 'weekly':
           currentDate = addDays(currentDate, 7);
           break;
-          case 'Annually':
-            currentDate = addDays(currentDate, 7);
-            break;
+        case 'Annually':
+          currentDate = addDays(currentDate, 7);
+          break;
         case 'custom':
           currentDate = addDays(
             currentDate,
@@ -724,74 +763,72 @@ const Room = ({
   const [TenantPageSelected, setTenantPageSelected] = useState<
     'Select' | 'New'
   >('New');
+  const [TransferTenantPageSelected, setTransferTenantPageSelected] =
+    useState(false);
   const [SelectTenantSearch, setSelectTenantSearch] = useState('');
   const [SelectedTenantIdOnAdding, setSelectedTenantIdOnAdding] = useState('');
   const handleTenantLeft = async () => {
     try {
       // Get the current agreement for the room
-      if(TenantList.find((t:tenant)=> t.SelectedAgreement === "Fixed-Term")) {
+      if (
+        TenantList.find((t: tenant) => t.SelectedAgreement === 'Fixed-Term')
+      ) {
         const [currentAgreement] = await getValuesWithSql(
-          "agreements",
+          'agreements',
           `WHERE roomId = '${roomType.id}' AND tenantId = '${roomType.tenantId}' ORDER BY startTime DESC LIMIT 1`
         );
-  
+
         if (currentAgreement) {
           // Get all payments for this agreement
           const payments = await getValuesWithSql(
-            "room_pay_info",
-            `WHERE roomId = '${roomType.id}' AND tenantId = '${roomType.tenantId}' AND Day >= ${
+            'room_pay_info',
+            `WHERE roomId = '${roomType.id}' AND tenantId = '${
+              roomType.tenantId
+            }' AND Day >= ${
               currentAgreement.startTime
             } AND Day <= ${Date.now()}`
           );
-  
+
           // Add these payments to the historical payments table
           for (const payment of payments) {
             await addValue(
-              "room_pay_info_history",
+              'room_pay_info_history',
               {
                 ...payment,
                 agreementId: currentAgreement.id,
               },
               setChangeMade
             );
-            await deleteValue("room_pay_info", payment.id, setChangeMade);
+            await deleteValue('room_pay_info', payment.id, setChangeMade);
           }
-  
+
           // Now delete the payments from the room_pay_info table
         }
-  
       } else {
         const payments = await getValuesWithSql(
-          "room_pay_info",
+          'room_pay_info',
           `WHERE roomId = '${roomType.id}' AND tenantId = '${roomType.tenantId}'`
         );
 
         // Add these payments to the historical payments table
         for (const payment of payments) {
           await addValue(
-            "room_pay_info_history",
+            'room_pay_info_history',
             {
               ...payment,
               agreementId: '',
             },
             setChangeMade
           );
-          await deleteValue("room_pay_info", payment.id, setChangeMade);
+          await deleteValue('room_pay_info', payment.id, setChangeMade);
         }
       }
       // Update the room's tenant information
+      await updateValue('rooms', roomType.id, 'tenantId', '', setChangeMade, 0);
       await updateValue(
-        "rooms",
+        'rooms',
         roomType.id,
-        "tenantId",
-        '',
-        setChangeMade,
-        0
-      );
-      await updateValue(
-        "rooms",
-        roomType.id,
-        "selectedAgreementId",
+        'selectedAgreementId',
         '',
         setChangeMade,
         0
@@ -799,17 +836,17 @@ const Room = ({
 
       // Update the tenant's information
       await updateValue(
-        "tenants",
+        'tenants',
         roomType.tenantId,
-        "RentingOrOut",
+        'RentingOrOut',
         0,
         setChangeMade,
         0
       );
       await updateValue(
-        "tenants",
+        'tenants',
         roomType.tenantId,
-        "SelectedAgreement",
+        'SelectedAgreement',
         '',
         setChangeMade,
         0
@@ -817,7 +854,7 @@ const Room = ({
 
       // Additional logic from the original function
       const allPayInfos = await getValuesWithSql(
-        "room_pay_info",
+        'room_pay_info',
         `WHERE roomId = '${roomType.id}'`
       );
       let totalEarningsFromTenant = 0;
@@ -831,20 +868,20 @@ const Room = ({
       }
       let agreedCommissionForBroker = (
         await getValuesWithSql(
-          "brokersRecommendationList",
+          'brokersRecommendationList',
           `WHERE roomId = '${roomType.id}'`
         )
       ).sort((a: any, b: any) => b.AddedTime - a.AddedTime);
 
       addValue(
-        "PastTenantsForRoom",
+        'PastTenantsForRoom',
         {
           id: uuidv4(),
           roomId: roomType.id,
           brokerId:
             agreedCommissionForBroker.length > 0
               ? agreedCommissionForBroker[0].brokerId
-              : "",
+              : '',
           tenantId: roomType.tenantId,
           enterDate: new Date(
             TenantList.find((t: tenant) => t.id === roomType.tenantId).startTime
@@ -852,8 +889,8 @@ const Room = ({
           exitDate: Date.now(),
           totalEarnings: totalEarningsFromTenant,
           paymentCycleType:
-            roomType.PaymentCycleType === "custom"
-              ? ("-" + roomType.PaymentCycleCustomeDays).toString()
+            roomType.PaymentCycleType === 'custom'
+              ? ('-' + roomType.PaymentCycleCustomeDays).toString()
               : roomType.PaymentCycleType,
           AgreedPrice: roomType.AgreedPrice,
           AgreedCommission:
@@ -868,43 +905,43 @@ const Room = ({
         setChangeMade
       );
 
-      setEndReason("");
-      setTenantDescription("");
+      setEndReason('');
+      setTenantDescription('');
       setTenantRating(0);
 
       // Update the room's status to 'Empty'
-      updateRoomPropertyWithOutRefresh(roomType.id, "status", "Empty");
+      updateRoomPropertyWithOutRefresh(roomType.id, 'status', 'Empty');
 
       // Clear the room's AgreedPrice
-      updateRoomPropertyWithOutRefresh(roomType.id, "AgreedPrice", 0);
+      updateRoomPropertyWithOutRefresh(roomType.id, 'AgreedPrice', 0);
 
       // Clear the room's PaymentCycleType
-      updateRoomPropertyWithOutRefresh(roomType.id, "PaymentCycleType", "");
+      updateRoomPropertyWithOutRefresh(roomType.id, 'PaymentCycleType', '');
 
       // Clear the room's PaymentCycleCustomeDays
       updateRoomPropertyWithOutRefresh(
         roomType.id,
-        "PaymentCycleCustomeDays",
+        'PaymentCycleCustomeDays',
         0
       );
 
       const utilityPayments = await getValuesWithSql(
-        "utility_payments",
+        'utility_payments',
         `WHERE roomId = '${roomType.id}'`
       );
       if (utilityPayments)
         for (let i = 0; i < utilityPayments.length; i++) {
           const element = utilityPayments[i];
-          deleteValue("utility_payments", element.id, setChangeMade);
+          deleteValue('utility_payments', element.id, setChangeMade);
         }
 
       // Reset the room's AddTenantState
-      updateRoomProperty(roomType.id, "AddTenantState", 0);
-      updateRoomProperty(roomType.id, "ViewAgreement", 0);
+      updateRoomPropertyLocal(roomType.id, 'AddTenantState', 0);
+      updateRoomPropertyLocal(roomType.id, 'ViewAgreement', 0);
 
       setTenantLeavePannelState(false);
     } catch (error) {
-      console.error("Error in handleTenantLeft:", error);
+      console.error('Error in handleTenantLeft:', error);
     }
   };
 
@@ -1044,7 +1081,9 @@ const Room = ({
         color: 'var(--Text-Color-Grey)',
       }}
     >
-      <span style={{ fontWeight: '600', color: 'var(--Text-Color)' }}>{label}:</span>{' '}
+      <span style={{ fontWeight: '600', color: 'var(--Text-Color)' }}>
+        {label}:
+      </span>{' '}
       <em
         style={{ fontWeight: '600', color: 'var(--Text-Color)' }}
         title={title}
@@ -1102,7 +1141,9 @@ const Room = ({
             }}
           >
             <div>
-              <span style={{ fontWeight: '400', color: 'var(--Text-Color)' }}>{label}:</span>{' '}
+              <span style={{ fontWeight: '400', color: 'var(--Text-Color)' }}>
+                {label}:
+              </span>{' '}
               <em style={{ fontWeight: '600', color: 'var(--Accent-Color)' }}>
                 {value}
               </em>
@@ -1137,7 +1178,9 @@ const Room = ({
         color: 'var(--Text-Color-Grey)',
       }}
     >
-      <span style={{ fontWeight: '400', color: 'var(--Text-Color)' }}>{label}:</span>{' '}
+      <span style={{ fontWeight: '400', color: 'var(--Text-Color)' }}>
+        {label}:
+      </span>{' '}
       <em
         style={{ fontWeight: '600', color: 'var(--Accent-Color)' }}
         title={title}
@@ -1236,6 +1279,7 @@ const Room = ({
   return (
     <>
       <div
+        id={`room-${roomType.id}`}
         className="MainContainer"
         style={{
           background: roomType.AddTenantState
@@ -1598,14 +1642,14 @@ const Room = ({
             ref={addTenantRef}
             style={{
               zIndex: roomType.AddTenantState ? '1' : '-1',
-              top: '216px',
+              top: '286px',
             }}
           >
             <div
               className="AddTenantContainerinner"
               style={{
-                width: roomType.AddTenantState ? '325px' : '0px',
-                height: roomType.AddTenantState ? '345px' : '0px',
+                width: roomType.AddTenantState ? '365px' : '0px',
+                height: roomType.AddTenantState ? '445px' : '0px',
                 opacity: roomType.AddTenantState ? '1' : '0',
                 userSelect: 'text',
                 overflowY: 'auto',
@@ -1616,9 +1660,9 @@ const Room = ({
               <div className="InnerAddtenantTop" style={{ height: '100%' }}>
                 <div className="TabsContainerForTenantAdding">
                   <button
-                    className="ButtonTabsContainerForTenantAdding"
                     onClick={() => {
                       setTenantPageSelected('Select');
+                      setTransferTenantPageSelected(false);
                     }}
                     style={{
                       width: TenantPageSelected === 'Select' ? '60%' : '40%',
@@ -1631,9 +1675,9 @@ const Room = ({
                     Select a tenant
                   </button>
                   <button
-                    className="ButtonTabsContainerForTenantAdding"
                     onClick={() => {
                       setTenantPageSelected('New');
+                      setTransferTenantPageSelected(false);
                     }}
                     style={{
                       width: TenantPageSelected === 'New' ? '60%' : '40%',
@@ -1646,9 +1690,18 @@ const Room = ({
                     New tenant
                   </button>
                 </div>
+
                 {TenantPageSelected === 'New' ? (
                   <>
-                    <h3 style={{marginTop:"5px", marginBottom:"5px", textAlign:"center"}}>Tenant Information</h3>
+                    <h3
+                      style={{
+                        marginTop: '5px',
+                        marginBottom: '5px',
+                        textAlign: 'center',
+                      }}
+                    >
+                      Tenant Information
+                    </h3>
                     <div className="AddTenantContainerinnerElement">
                       Name:{' '}
                       <input
@@ -1707,16 +1760,28 @@ const Room = ({
                   </>
                 ) : (
                   <>
-                    <h3 style={{marginTop:"5px", marginBottom:"5px", textAlign:"center"}}>
+                    <h3
+                      style={{
+                        marginTop: '5px',
+                        marginBottom: '5px',
+                        textAlign: 'center',
+                      }}
+                    >
                       Select Existing Tenant
                     </h3>
-                    {TenantList.filter((t:tenant) => !t.RentingOrOut).length >=1 ? <input
-                      type="text"
-                      placeholder="Search tenant"
-                      style={{ width: '100%' }}
-                      value={SelectTenantSearch}
-                      onChange={(e) => setSelectTenantSearch(e.target.value)}
-                    /> : <p style={{textAlign:"center"}}>You don't have any tenants that is currently not renting</p>}
+                    {TenantList.length >= 1 ? (
+                      <input
+                        type="text"
+                        placeholder="Search tenant"
+                        style={{ width: '95%' }}
+                        value={searchTermTenant}
+                        onChange={(e) => setSearchTermTenant(e.target.value)}
+                      />
+                    ) : (
+                      <p style={{ textAlign: 'center' }}>
+                        You don't have any tenants
+                      </p>
+                    )}
                     {SelectedTenantIdOnAdding === '' ? (
                       filteredTenants.map((tenant: any) => (
                         <div className="TenantRow" key={tenant.id}>
@@ -1732,14 +1797,25 @@ const Room = ({
                               </p>
                             </button>
                           </div>
-                          <button
-                            onClick={() => {
-                              setSelectedTenantIdOnAdding('');
-                            }}
-                            style={{ width: '35px', height: '35px' }}
+                          <span
+                            style={{ fontSize: '12px', marginRight: '10px' }}
                           >
-                            X
-                          </button>
+                            {tenant.RentingOrOut
+                              ? 'Renting, so duplicate here'
+                              : 'Not Renting, add here'}
+                          </span>
+                          {SelectedTenantIdOnAdding === '' ? (
+                            <></>
+                          ) : (
+                            <button
+                              onClick={() => {
+                                setSelectedTenantIdOnAdding('');
+                              }}
+                              style={{ width: '35px', height: '35px' }}
+                            >
+                              X
+                            </button>
+                          )}
                         </div>
                       ))
                     ) : (
@@ -1795,7 +1871,13 @@ const Room = ({
 
                 {TenantPageSelected === 'New' ? (
                   <>
-                    <h3 style={{marginTop:"5px", marginBottom:"5px", textAlign:"center"}}>
+                    <h3
+                      style={{
+                        marginTop: '5px',
+                        marginBottom: '5px',
+                        textAlign: 'center',
+                      }}
+                    >
                       Agreement Details
                     </h3>
                     <div>
@@ -1988,7 +2070,13 @@ const Room = ({
                     {TenantPageSelected === 'Select' &&
                       SelectedTenantIdOnAdding != '' && (
                         <>
-                          <h3 style={{marginTop:"5px", marginBottom:"5px", textAlign:"center"}}>
+                          <h3
+                            style={{
+                              marginTop: '5px',
+                              marginBottom: '5px',
+                              textAlign: 'center',
+                            }}
+                          >
                             Agreement Details
                           </h3>
                           <div>
@@ -2097,7 +2185,15 @@ const Room = ({
                 {TenantPageSelected === 'Select' ? (
                   SelectedTenantIdOnAdding != '' && (
                     <>
-                      <h3 style={{marginTop:"5px", marginBottom:"5px", textAlign:"center"}}>Broker Information</h3>
+                      <h3
+                        style={{
+                          marginTop: '5px',
+                          marginBottom: '5px',
+                          textAlign: 'center',
+                        }}
+                      >
+                        Broker Information
+                      </h3>
                       <div
                         className="AddTenantContainerinnerElement"
                         style={{ display: 'flex', alignItems: 'center' }}
@@ -2130,7 +2226,15 @@ const Room = ({
                   )
                 ) : (
                   <>
-                    <h3 style={{marginTop:"5px", marginBottom:"5px", textAlign:"center"}}>Broker Information</h3>
+                    <h3
+                      style={{
+                        marginTop: '5px',
+                        marginBottom: '5px',
+                        textAlign: 'center',
+                      }}
+                    >
+                      Broker Information
+                    </h3>
                     <div
                       className="AddTenantContainerinnerElement"
                       style={{ display: 'flex', alignItems: 'center' }}
@@ -2166,7 +2270,7 @@ const Room = ({
                   <>
                     {AddTenantAddBrokerState ? (
                       <>
-                        <h4 style={{margin:"0px"}}>Add New Broker</h4>
+                        <h4 style={{ margin: '0px' }}>Add New Broker</h4>
                         <input
                           type="text"
                           placeholder="Name"
@@ -2174,7 +2278,15 @@ const Room = ({
                           onChange={(e) =>
                             setAddTenantAddBrokerFormName(e.target.value)
                           }
-                        /><span style={{color:"var(--Text-Color-Grey)",fontSize:"12px"}}>longer than 3</span>
+                        />
+                        <span
+                          style={{
+                            color: 'var(--Text-Color-Grey)',
+                            fontSize: '12px',
+                          }}
+                        >
+                          longer than 3
+                        </span>
                         <input
                           type="text"
                           placeholder="Phone Number"
@@ -2182,7 +2294,15 @@ const Room = ({
                           onChange={(e) =>
                             setAddTenantAddBrokerFormPhoneNumber(e.target.value)
                           }
-                        /><span style={{color:"var(--Text-Color-Grey)",fontSize:"12px"}}>longer than 8</span>
+                        />
+                        <span
+                          style={{
+                            color: 'var(--Text-Color-Grey)',
+                            fontSize: '12px',
+                          }}
+                        >
+                          longer than 8
+                        </span>
                         <input
                           type="text"
                           placeholder="Phone Number 2"
@@ -2213,7 +2333,7 @@ const Room = ({
                       <>
                         {AddTenantSelectedBrokerId !== '' ? (
                           <>
-                            <h4 style={{margin:"0px"}}>Selected Broker</h4>
+                            <h4 style={{ margin: '0px' }}>Selected Broker</h4>
                             {BrokerList.find(
                               (broker: BrokerType) =>
                                 broker.id === AddTenantSelectedBrokerId
@@ -2274,7 +2394,7 @@ const Room = ({
                                 )}
                               </div>
                             )}
-                           
+
                             <div>
                               Commission:{' '}
                               <input
@@ -2328,7 +2448,7 @@ const Room = ({
                           </>
                         ) : (
                           <>
-                            <h4 style={{margin:"0px"}}>Select a Broker</h4>
+                            <h4 style={{ margin: '0px' }}>Select a Broker</h4>
                             <input
                               type="text"
                               placeholder="Search broker"
@@ -2374,24 +2494,49 @@ const Room = ({
                 )}
                 <hr />
 
-                {TenantPageSelected == "Select" && SelectedTenantIdOnAdding != ''&& <><h3 style={{marginTop:"5px", marginBottom:"5px", textAlign:"center"}}>Document Attachments</h3>
-                <DocumentInteractor
-                  room={roomType}
-                  TenantsList={TenantList}
-                  AddTenant={true}
-                  isAddRoomDocument={true}
-                  SetRefreshState={SetRefreshState}
-                  refreshState={refreshState}
-                /></>}
-{TenantPageSelected == "New"&& <><h3 style={{marginTop:"5px", marginBottom:"5px", textAlign:"center"}}>Document Attachments</h3>
-                <DocumentInteractor
-                  room={roomType}
-                  TenantsList={TenantList}
-                  AddTenant={true}
-                  isAddRoomDocument={true}
-                  SetRefreshState={SetRefreshState}
-                  refreshState={refreshState}
-                /></>}
+                {TenantPageSelected == 'Select' &&
+                  SelectedTenantIdOnAdding != '' && (
+                    <>
+                      <h3
+                        style={{
+                          marginTop: '5px',
+                          marginBottom: '5px',
+                          textAlign: 'center',
+                        }}
+                      >
+                        Document Attachments
+                      </h3>
+                      <DocumentInteractor
+                        room={roomType}
+                        TenantsList={TenantList}
+                        AddTenant={true}
+                        isAddRoomDocument={true}
+                        SetRefreshState={SetRefreshState}
+                        refreshState={refreshState}
+                      />
+                    </>
+                  )}
+                {TenantPageSelected == 'New' && (
+                  <>
+                    <h3
+                      style={{
+                        marginTop: '5px',
+                        marginBottom: '5px',
+                        textAlign: 'center',
+                      }}
+                    >
+                      Document Attachments
+                    </h3>
+                    <DocumentInteractor
+                      room={roomType}
+                      TenantsList={TenantList}
+                      AddTenant={true}
+                      isAddRoomDocument={true}
+                      SetRefreshState={SetRefreshState}
+                      refreshState={refreshState}
+                    />
+                  </>
+                )}
                 <div
                   className="BottomAddTenantContainer"
                   style={{
@@ -2411,7 +2556,8 @@ const Room = ({
                     >
                       Name has to be longer than 3
                     </p>
-                  )}  {TenantPageSelected === 'New' && tel1.length <= 6 && (
+                  )}{' '}
+                  {TenantPageSelected === 'New' && tel1.length <= 6 && (
                     <p
                       style={{
                         color: 'var(--Text-Color-Grey)',
@@ -2421,16 +2567,18 @@ const Room = ({
                       Phone number has to be longer than 8
                     </p>
                   )}
-{TenantPageSelected == "Select" && SelectedTenantIdOnAdding != ''&&  !isValidDate(startTime) && (
-                    <p
-                      style={{
-                        color: 'var(--Text-Color-Grey)',
-                        fontSize: '14px',
-                      }}
-                    >
-                      Start time has to be valid
-                    </p>
-                  )}
+                  {TenantPageSelected == 'Select' &&
+                    SelectedTenantIdOnAdding != '' &&
+                    !isValidDate(startTime) && (
+                      <p
+                        style={{
+                          color: 'var(--Text-Color-Grey)',
+                          fontSize: '14px',
+                        }}
+                      >
+                        Start time has to be valid
+                      </p>
+                    )}
                   {TenantPageSelected === 'New' && !isValidDate(startTime) && (
                     <p
                       style={{
@@ -2461,7 +2609,7 @@ const Room = ({
                         setStartTime('');
                         setEndTime('');
                         setAgreedPrice(0);
-                        updateRoomProperty(
+                        updateRoomPropertyLocal(
                           roomType.id,
                           'AddTenantState',
                           false
@@ -2524,9 +2672,9 @@ const Room = ({
                               (tenant: any) => tenant.id === roomType.tenantId
                             )?.name || ''
                           }
-                          onSave={(newValue) =>
-                            editTenantInfo('name', newValue)
-                          }
+                          onSave={(newValue) => {
+                            editTenantInfo('name', newValue);
+                          }}
                         />
                         <InfoItem2
                           label="Tel 1"
@@ -2734,7 +2882,7 @@ const Room = ({
                               <option value="30">Every 30 days</option>
                               <option value="15">Every 15 days</option>
                               <option value="7">Every 7 days</option>
-                              <option value="monthly">Every 7 days</option>
+                              <option value="monthly">monthly</option>
                               <option value="custom">
                                 Custom amount of days
                               </option>
@@ -2762,13 +2910,21 @@ const Room = ({
                               checked={
                                 roomType.utilityPaymentUseDifferentStartDate
                               }
-                              onChange={(e) =>
+                              onChange={(e) => {
+                                updateRoomProperty(
+                                  roomType.id,
+                                  'utilityPaymentStartDate',
+                                  TenantList.find(
+                                    (tenant: any) =>
+                                      tenant.id === roomType.tenantId
+                                  )?.startTime
+                                );
                                 updateRoomProperty(
                                   roomType.id,
                                   'utilityPaymentUseDifferentStartDate',
                                   e.target.checked
-                                )
-                              }
+                                );
+                              }}
                             />
                           </label>
                           {roomType.utilityPaymentUseDifferentStartDate && (
@@ -2921,7 +3077,11 @@ const Room = ({
                     <button
                       className="AddTenantButton"
                       onClick={() =>
-                        updateRoomProperty(roomType.id, 'ViewAgreement', false)
+                        updateRoomPropertyLocal(
+                          roomType.id,
+                          'ViewAgreement',
+                          false
+                        )
                       }
                     >
                       Close
