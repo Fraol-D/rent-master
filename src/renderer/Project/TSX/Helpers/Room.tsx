@@ -91,12 +91,13 @@ const Room = ({
   const [tel1, setTel1] = useState('');
   const [tel2, setTel2] = useState('');
   const [email, setEmail] = useState('');
+  const [description, setDescription] = useState('');
   const [TIN, setTIN] = useState('');
   const [RentReason, setRentReason] = useState('');
   const [selectedAgreement, setSelectedAgreement] = useState<
     'Open-Ended' | 'Fixed-Term'
   >('Open-Ended');
-  const [startTime, setStartTime] = useState('');
+  const [startTime, setStartTime] = useState(new Date().toISOString().split('T')[0]);
   const [endTime, setEndTime] = useState('');
   const [signDate, setSignDate] = useState('');
   const [Representative, setRepresentative] = useState('');
@@ -196,7 +197,7 @@ const Room = ({
         await handleDuplicateTenant(tenant);
       }
     }
-    SetRefreshState(true);
+    SetRefreshState(true);tenantAPI.getTenantsApi()
     await handlePaymentRefresh();
   };
 
@@ -375,7 +376,7 @@ const Room = ({
       default:
         return custom + ' days';
     }
-    handlePaymentRefresh;
+
   };
   const handleAddTenantButton = async () => {
     if (AddTenantUseBrokerState && AddTenantSelectedBrokerId == '') return;
@@ -394,6 +395,7 @@ const Room = ({
         phoneNumber: tel1,
         phoneNumber2: tel2,
         email,
+        description,
         SelectedAgreement: selectedAgreement,
         startTime: new Date(startTime),
         endTime,
@@ -430,6 +432,7 @@ const Room = ({
         tenant.phoneNumber,
         tenant.phoneNumber2,
         tenant.email,
+        tenant.description,
         tenant.SelectedAgreement,
         tenant.RentingOrOut,
         tenant.startTime,
@@ -676,6 +679,7 @@ const Room = ({
     );
   };
   const checkPaymentStatus = (allRoomPayInfo?: any): string => {
+    
     if (roomType.DaysTillNextPayment > 0) {
       return `Payment due in ${roomType.DaysTillNextPayment} days. ${addDays(
         new Date(),
@@ -685,6 +689,8 @@ const Room = ({
         day: 'numeric',
         year: 'numeric',
       })}`;
+    } else if (roomType.DaysTillNextPayment === -98989898) {
+      return `All payments complete.`;
     } else {
       return `Payment day past by ${Math.abs(
         roomType.DaysTillNextPayment
@@ -748,16 +754,18 @@ const Room = ({
   };
   const getBorderColor = () => {
     const daysUntilPayment = roomType.DaysTillNextPayment;
-    if (daysUntilPayment > 8) {
-      return '1px solid white';
+    if (daysUntilPayment === -98989898) {
+      return '1px solid green';
+    } else if (daysUntilPayment > 8) {
+      return '2px solid white';
     } else if (daysUntilPayment > 5) {
-      return '1px solid lightpink';
+      return '2px solid lightpink';
     } else if (daysUntilPayment > 2) {
-      return '1px solid tomato';
+      return '2px solid tomato';
     } else if (daysUntilPayment > 0) {
-      return '1px solid red';
+      return '2px solid red';
     } else {
-      return '1px solid red'; // Default case if daysUntilPayment is not greater than 0
+      return '2px solid red'; // Default case if daysUntilPayment is not greater than 0
     }
   };
   const [TenantPageSelected, setTenantPageSelected] = useState<
@@ -1097,7 +1105,8 @@ const Room = ({
     label: string;
     value: string;
     onSave: (newValue: string) => void;
-  }> = React.memo(({ label, value, onSave }) => {
+    textArea?: boolean;
+  }> = React.memo(({ label, value, onSave, textArea }) => {
     const isEditing = editingField === label;
     const [editValue, setEditValue] = useState(value);
 
@@ -1122,11 +1131,19 @@ const Room = ({
         {isEditing ? (
           <>
             <span style={{ fontWeight: 'bold' }}>{label}:</span>{' '}
-            <input
-              value={editValue}
-              onChange={(e) => setEditValue(e.target.value)}
-              style={{ marginRight: '5px', width: '50%' }}
-            />
+            {textArea ? (
+              <textarea
+                value={editValue}
+                onChange={(e) => setEditValue(e.target.value)}
+                style={{ marginRight: '5px', width: '50%',height:'100px' }}
+              />
+            ) : (
+              <input
+                value={editValue}
+                onChange={(e) => setEditValue(e.target.value)}
+                style={{ marginRight: '5px', width: '50%' }}
+              />
+            )}
             <button onClick={handleSave} style={{ marginRight: '5px' }}>
               Save
             </button>
@@ -1144,9 +1161,9 @@ const Room = ({
               <span style={{ fontWeight: '400', color: 'var(--Text-Color)' }}>
                 {label}:
               </span>{' '}
-              <em style={{ fontWeight: '600', color: 'var(--Accent-Color)' }}>
+              {!textArea ? <em style={{ fontWeight: '600', color: 'var(--Accent-Color)' }}>
                 {value}
-              </em>
+              </em> : <em style={{ fontWeight: '600', color: 'var(--Accent-Color)',fontSize:'13px' }}>{value}</em>}
             </div>
             <button
               onClick={() => setEditingField(label)}
@@ -1344,7 +1361,7 @@ const Room = ({
                       ? TenantList.find(
                           (tenant: any) => tenant.id === roomType.tenantId
                         ).name
-                      : 'Tenant not found'}
+                      : <><span>Tenant not found, </span><button onClick={()=>{tenantAPI.getTenantsApi()}}>Refresh</button></>}
                   </p>
                 ) : (
                   <>
@@ -1736,6 +1753,16 @@ const Room = ({
                         placeholder="Optional"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
+                      />
+                    </div>
+                    <div className="AddTenantContainerinnerElement" style={{ display: 'flex' }}>
+                      Description:
+                      <textarea
+                        className="AddTenantContainerinnerInput"
+                        placeholder="Optional"
+                        value={description}
+                        onChange={(e) => setDescription(e.target.value)}
+                        style={{ width: '238px', height: '107px' }}
                       />
                     </div>
                     <div className="AddTenantContainerinnerElement">
@@ -2708,6 +2735,18 @@ const Room = ({
                           onSave={(newValue) =>
                             editTenantInfo('email', newValue)
                           }
+                        />
+                        <InfoItem2
+                          label="Description"
+                          value={
+                            TenantList.find(
+                              (tenant: any) => tenant.id === roomType.tenantId
+                            )?.description || ''
+                          }
+                          onSave={(newValue) =>
+                            editTenantInfo('description', newValue)
+                          }
+                          textArea={true}
                         />
                         <InfoItem2
                           label="TIN"

@@ -28,6 +28,7 @@ import DashboardPage from './Pages/DashboardPage';
 import DatabasePage from './Pages/DatabasePage';
 import ToolsPage from './Pages/ToolsPage';
 import { getUserPrivileges } from 'renderer/App';
+import { UpdateButton } from 'renderer/components/UpdateButton';
 type FilterOption = {
   key: string;
   value: any;
@@ -115,6 +116,7 @@ declare global {
     phoneNumber: string;
     phoneNumber2?: string;
     email?: string;
+    description?: string;
     SelectedAgreement: string;
     RentingOrOut: boolean;
     startTime: number;
@@ -713,7 +715,7 @@ const MainPage = ({
   // Modify the handleAddRoom function
   const handleAddRoom = async (continueAdding = false) => {
     if (isAddingRoom) return; // Prevent multiple clicks
-    
+
     try {
       setIsAddingRoom(true); // Start loading
 
@@ -725,7 +727,9 @@ const MainPage = ({
       );
 
       if (roomExists) {
-        console.error(`Room ${AddRoomFormRoomIndex} on floor ${AddRoomFormFloor} already exists.`);
+        console.error(
+          `Room ${AddRoomFormRoomIndex} on floor ${AddRoomFormFloor} already exists.`
+        );
         setRoomExistsWarning(true);
         return;
       }
@@ -761,36 +765,40 @@ const MainPage = ({
 
       // Handle images if needed
       if (isMoreThanOneImage) {
-       
-       if(!resetRoomImages) {
-        await duplicateRoomImagesFolder('Add a room images', 'New Room Images Folder');
-        await handleRenameFolder(
-          'New Room Images Folder',
-          `Room ${AddRoomFormFloor}, Floor ${AddRoomFormRoomIndex} - ${newRoom.id}`
-        );
-       
-       }  else {
-        await handleRenameFolder(
-          'Add a room images',
-          `Room ${AddRoomFormFloor}, Floor ${AddRoomFormRoomIndex} - ${newRoom.id}`
-        );
-       }
+        if (!resetRoomImages) {
+          await duplicateRoomImagesFolder(
+            'Add a room images',
+            'New Room Images Folder'
+          );
+          await handleRenameFolder(
+            'New Room Images Folder',
+            `Room ${AddRoomFormFloor}, Floor ${AddRoomFormRoomIndex} - ${newRoom.id}`
+          );
+        } else {
+          await handleRenameFolder(
+            'Add a room images',
+            `Room ${AddRoomFormFloor}, Floor ${AddRoomFormRoomIndex} - ${newRoom.id}`
+          );
+        }
       }
-   // After room is added successfully
-   setTimeout(() => {
-    const roomElement = document.getElementById(`room-${newRoom.id}`);
-    if (roomElement && roomListContainerRef.current) {
-      roomListContainerRef.current.scrollTo({
-        top: roomElement.offsetTop - roomListContainerRef.current.offsetTop - 100, // 100px offset from top
-        behavior: 'smooth'
-      });
-      
-      roomElement.classList.add('highlight-new-room');
+      // After room is added successfully
       setTimeout(() => {
-        roomElement.classList.remove('highlight-new-room');
-      }, 2000);
-    }
-  }, 100);
+        const roomElement = document.getElementById(`room-${newRoom.id}`);
+        if (roomElement && roomListContainerRef.current) {
+          roomListContainerRef.current.scrollTo({
+            top:
+              roomElement.offsetTop -
+              roomListContainerRef.current.offsetTop -
+              100, // 100px offset from top
+            behavior: 'smooth',
+          });
+
+          roomElement.classList.add('highlight-new-room');
+          setTimeout(() => {
+            roomElement.classList.remove('highlight-new-room');
+          }, 2000);
+        }
+      }, 100);
 
       // Reset form variables
       ResetAddRoomForumVariables();
@@ -848,7 +856,6 @@ const MainPage = ({
     if (resetRoomImages) {
       handleDeleteFolderImages('Add a room images');
     }
-   
   };
   const ResetAddRoomForumVariables2 = () => {
     // Handle room number and floor increments
@@ -862,7 +869,6 @@ const MainPage = ({
     setAddRoomFormSquareMeters(0);
     setAddRoomFormRoomSpecifications([]);
     handleDeleteFolderImages('Add a room images');
-   
   };
   const handleRenameFolder = async (oldName: string, newName: string) => {
     const result = await renameFolder(oldName, newName);
@@ -1350,292 +1356,299 @@ const MainPage = ({
               </div>
               <div
                 className="SideBarRoomPageTopPart"
-                style={{ height: AddARoomState ? '0%' : '100%' }}
+                style={{ height: AddARoomState ? '0%' : 'calc(100% - 135px)',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  flexDirection: 'column' }}
               >
-                <div
-                  className="SearchBarContainer"
-                  style={{ height: isSearchOpen ? '115px' : '50px' }}
-                >
+                <div>
                   <div
-                    onClick={toggleSearch}
-                    style={{
-                      cursor: 'pointer',
-                      fontSize: '22px',
-                      marginLeft: '10px',
-                      color: 'var(--Accent-Color)',
-                    }}
+                    className="SearchBarContainer"
+                    style={{ height: isSearchOpen ? '115px' : '50px' }}
                   >
-                    {isSearchOpen ? '▼' : '▶'} Search rooms
-                  </div>
-                  {isSearchOpen && (
                     <div
+                      onClick={toggleSearch}
                       style={{
-                        width: '100%',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        marginLeft: '30px',
-                        alignItems: 'flex-start',
+                        cursor: 'pointer',
+                        fontSize: '22px',
+                        marginLeft: '10px',
+                        color: 'var(--Accent-Color)',
                       }}
                     >
-                      {' '}
-                      <div className="TenantSearchBarContainer">
-                        {' '}
-                        Tenant name:
-                        <input
-                          type="text1"
-                          className="TenantSearchBar"
-                          placeholder="Search tenant name"
-                          value={TenantNameFilter}
-                          style={{ width: '145px' }}
-                          onChange={(e) => {
-                            setTenantNameFilter(e.target.value);
-                            addFilterOption('tenantName', e.target.value);
-                          }}
-                        />
-                      </div>
-                      <div className="RoomAndFloorContainer">
-                        <div>
-                          Floor:
-                          <input
-                            type="number"
-                            placeholder="0"
-                            className="FloorSearchBar"
-                            value={floorFilter}
-                            onChange={(e) => {
-                              setFloorFilter(e.target.value);
-                              addFilterOption('floor', e.target.value);
-                            }}
-                          />
-                        </div>
-                        <div>
-                          {' '}
-                          Room:
-                          <input
-                            placeholder="0"
-                            type="number"
-                            className="RoomSearchBar"
-                            value={roomFilter}
-                            onChange={(e) => {
-                              setRoomFilter(e.target.value);
-                              addFilterOption('room', e.target.value);
-                            }}
-                          />
-                        </div>
-                      </div>
+                      {isSearchOpen ? '▼' : '▶'} Search rooms
                     </div>
-                  )}
-                </div>
-                <div className="AdvanceRoomFinding">
-                  <div
-                    onClick={toggleFilter}
-                    style={{
-                      cursor: 'pointer',
-                      fontSize: '22px',
-                      marginLeft: '10px',
-                      color: 'var(--Accent-Color)',
-                    }}
-                  >
-                    {isFilterOpen ? '▼' : '▶'} Filter rooms
-                  </div>
-                  {isFilterOpen && (
-                    <div>
+                    {isSearchOpen && (
                       <div
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          marginRight: '10px',
-                          flexDirection: 'row',
-                          justifyContent: 'flex-start',
-                          marginLeft: '30px',
-                          marginTop: '10px',
-                        }}
-                      >
-                        Room status:
-                        <select
-                          value={filterStatus}
-                          onChange={(e) => {
-                            setFilterStatus(
-                              e.target.value as 'all' | 'Taken' | 'Empty'
-                            );
-                            addFilterOption(
-                              'filterstatus',
-                              e.target.value as 'all' | 'Taken' | 'Empty'
-                            );
-                          }}
-                          className="filter-drop"
-                          style={{ width: '90px', height: '30px' }}
-                        >
-                          <option value="Taken">Taken</option>
-                          <option value="Empty">Empty</option>
-                        </select>
-                      </div>
-                      <div
-                        className="AdvanceRoomFindingINPUTCONTAINER"
                         style={{
                           width: '100%',
                           display: 'flex',
                           flexDirection: 'column',
-                          alignItems: 'flex-start',
-                          justifyContent: 'flex-start',
                           marginLeft: '30px',
+                          alignItems: 'flex-start',
                         }}
                       >
-                        <div style={{ marginTop: '10px' }}>
+                        {' '}
+                        <div className="TenantSearchBarContainer">
+                          {' '}
+                          Tenant name:
+                          <input
+                            type="text1"
+                            className="TenantSearchBar"
+                            placeholder="Search tenant name"
+                            value={TenantNameFilter}
+                            style={{ width: '145px' }}
+                            onChange={(e) => {
+                              setTenantNameFilter(e.target.value);
+                              addFilterOption('tenantName', e.target.value);
+                            }}
+                          />
+                        </div>
+                        <div className="RoomAndFloorContainer">
                           <div>
-                            Filter Price:
-                            <select
-                              value={filterPriceOperator}
-                              onChange={(e) => {
-                                setFilterPriceOperator(
-                                  e.target.value as '=' | '<' | '>'
-                                );
-                                addFilterOption(
-                                  'filterPriceOperator',
-                                  e.target.value as '=' | '<' | '>'
-                                );
-                              }}
-                              style={{ width: '30px', height: '30px' }}
-                              className="filter-drop"
-                            >
-                              <option value="=">{'='}</option>
-                              <option value="<">{'<'}</option>
-                              <option value=">">{'>'}</option>
-                              <option value="none">none</option>
-                            </select>
+                            Floor:
                             <input
                               type="number"
-                              className="AdvanceRoomFindingInput"
-                              value={filterPriceValue}
+                              placeholder="0"
+                              className="FloorSearchBar"
+                              value={floorFilter}
                               onChange={(e) => {
-                                setFilterPriceValue(e.target.value);
-                                addFilterOption(
-                                  'filterPriceValue',
-                                  e.target.value
-                                );
+                                setFloorFilter(e.target.value);
+                                addFilterOption('floor', e.target.value);
                               }}
                             />
+                          </div>
+                          <div>
+                            {' '}
+                            Room:
+                            <input
+                              placeholder="0"
+                              type="number"
+                              className="RoomSearchBar"
+                              value={roomFilter}
+                              onChange={(e) => {
+                                setRoomFilter(e.target.value);
+                                addFilterOption('room', e.target.value);
+                              }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <div className="AdvanceRoomFinding">
+                    <div
+                      onClick={toggleFilter}
+                      style={{
+                        cursor: 'pointer',
+                        fontSize: '22px',
+                        marginLeft: '10px',
+                        color: 'var(--Accent-Color)',
+                      }}
+                    >
+                      {isFilterOpen ? '▼' : '▶'} Filter rooms
+                    </div>
+                    {isFilterOpen && (
+                      <div>
+                        <div
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            marginRight: '10px',
+                            flexDirection: 'row',
+                            justifyContent: 'flex-start',
+                            marginLeft: '30px',
+                            marginTop: '10px',
+                          }}
+                        >
+                          Room status:
+                          <select
+                            value={filterStatus}
+                            onChange={(e) => {
+                              setFilterStatus(
+                                e.target.value as 'all' | 'Taken' | 'Empty'
+                              );
+                              addFilterOption(
+                                'filterstatus',
+                                e.target.value as 'all' | 'Taken' | 'Empty'
+                              );
+                            }}
+                            className="filter-drop"
+                            style={{ width: '90px', height: '30px' }}
+                          >
+                            <option value="Taken">Taken</option>
+                            <option value="Empty">Empty</option>
+                          </select>
+                        </div>
+                        <div
+                          className="AdvanceRoomFindingINPUTCONTAINER"
+                          style={{
+                            width: '100%',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'flex-start',
+                            justifyContent: 'flex-start',
+                            marginLeft: '30px',
+                          }}
+                        >
+                          <div style={{ marginTop: '10px' }}>
+                            <div>
+                              Filter Price:
+                              <select
+                                value={filterPriceOperator}
+                                onChange={(e) => {
+                                  setFilterPriceOperator(
+                                    e.target.value as '=' | '<' | '>'
+                                  );
+                                  addFilterOption(
+                                    'filterPriceOperator',
+                                    e.target.value as '=' | '<' | '>'
+                                  );
+                                }}
+                                style={{ width: '30px', height: '30px' }}
+                                className="filter-drop"
+                              >
+                                <option value="=">{'='}</option>
+                                <option value="<">{'<'}</option>
+                                <option value=">">{'>'}</option>
+                                <option value="none">none</option>
+                              </select>
+                              <input
+                                type="number"
+                                className="AdvanceRoomFindingInput"
+                                value={filterPriceValue}
+                                onChange={(e) => {
+                                  setFilterPriceValue(e.target.value);
+                                  addFilterOption(
+                                    'filterPriceValue',
+                                    e.target.value
+                                  );
+                                }}
+                              />
+                            </div>
+                          </div>
+                          <div
+                            style={{ marginBottom: '10px', marginTop: '10px' }}
+                          >
+                            <div>
+                              Filter due dates:
+                              <select
+                                value={FilterDueDateOperator}
+                                onChange={(e) => {
+                                  setFilterDueDateOperator(
+                                    e.target.value as '=' | '<' | '>'
+                                  );
+                                  addFilterOption(
+                                    'filterDueDateOperator',
+                                    e.target.value as '=' | '<' | '>'
+                                  );
+                                }}
+                                style={{ width: '30px', height: '30px' }}
+                                className="filter-drop"
+                              >
+                                <option value="=">{'='}</option>
+                                <option value="<">{'<'}</option>
+                                <option value=">">{'>'}</option>
+                                <option value="none">none</option>
+                              </select>
+                              <input
+                                type="number"
+                                className="AdvanceRoomFindingInput"
+                                value={FilterDueDateValue}
+                                onChange={(e) => {
+                                  setFilterDueDateValue(e.target.value);
+                                  setFilterStatus('Taken');
+                                  addFilterOption('filterstatus', 'Taken');
+                                  addFilterOption(
+                                    'filterDueDateValue',
+                                    e.target.value
+                                  );
+                                }}
+                              />
+                            </div>
+                          </div>
+                          <div>
+                            <div>
+                              Filter SMeters:
+                              <select
+                                value={filterSquareFeetOperator}
+                                onChange={(e) => {
+                                  setFilterSquareFeetOperator(
+                                    e.target.value as '=' | '<' | '>'
+                                  );
+                                  addFilterOption(
+                                    'filterSquareFeetOperator',
+                                    e.target.value as '=' | '<' | '>'
+                                  );
+                                }}
+                                style={{ width: '30px', height: '30px' }}
+                                className="filter-drop"
+                              >
+                                <option value="=">{'='}</option>
+                                <option value="<">{'<'}</option>
+                                <option value=">">{'>'}</option>
+                                <option value="none">none</option>
+                              </select>
+                              <input
+                                type="number"
+                                className="AdvanceRoomFindingInput"
+                                value={filterSquareFeetValue}
+                                onChange={(e) => {
+                                  setFilterSquareFeetValue(e.target.value);
+                                  addFilterOption(
+                                    'filterSquareFeetValue',
+                                    e.target.value
+                                  );
+                                }}
+                              />
+                            </div>
                           </div>
                         </div>
                         <div
-                          style={{ marginBottom: '10px', marginTop: '10px' }}
-                        >
-                          <div>
-                            Filter due dates:
-                            <select
-                              value={FilterDueDateOperator}
-                              onChange={(e) => {
-                                setFilterDueDateOperator(
-                                  e.target.value as '=' | '<' | '>'
-                                );
-                                addFilterOption(
-                                  'filterDueDateOperator',
-                                  e.target.value as '=' | '<' | '>'
-                                );
-                              }}
-                              style={{ width: '30px', height: '30px' }}
-                              className="filter-drop"
-                            >
-                              <option value="=">{'='}</option>
-                              <option value="<">{'<'}</option>
-                              <option value=">">{'>'}</option>
-                              <option value="none">none</option>
-                            </select>
-                            <input
-                              type="number"
-                              className="AdvanceRoomFindingInput"
-                              value={FilterDueDateValue}
-                              onChange={(e) => {
-                                setFilterDueDateValue(e.target.value);
-                                setFilterStatus('Taken');
-                                addFilterOption('filterstatus', 'Taken');
-                                addFilterOption(
-                                  'filterDueDateValue',
-                                  e.target.value
-                                );
-                              }}
-                            />
-                          </div>
-                        </div>
-                        <div>
-                          <div>
-                            Filter SMeters:
-                            <select
-                              value={filterSquareFeetOperator}
-                              onChange={(e) => {
-                                setFilterSquareFeetOperator(
-                                  e.target.value as '=' | '<' | '>'
-                                );
-                                addFilterOption(
-                                  'filterSquareFeetOperator',
-                                  e.target.value as '=' | '<' | '>'
-                                );
-                              }}
-                              style={{ width: '30px', height: '30px' }}
-                              className="filter-drop"
-                            >
-                              <option value="=">{'='}</option>
-                              <option value="<">{'<'}</option>
-                              <option value=">">{'>'}</option>
-                              <option value="none">none</option>
-                            </select>
-                            <input
-                              type="number"
-                              className="AdvanceRoomFindingInput"
-                              value={filterSquareFeetValue}
-                              onChange={(e) => {
-                                setFilterSquareFeetValue(e.target.value);
-                                addFilterOption(
-                                  'filterSquareFeetValue',
-                                  e.target.value
-                                );
-                              }}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                      <div
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          visibility: 'hidden',
-                        }}
-                      >
-                        <button
-                          className="sort-button"
-                          onClick={() => {
-                            if (sortDirection === 'asc') {
-                              setSortDirection('desc');
-                            } else {
-                              setSortDirection('asc');
-                            }
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            visibility: 'hidden',
                           }}
                         >
-                          <img
-                            src={SortIcon}
-                            className={
-                              sortDirection === 'asc'
-                                ? 'sort-button-img'
-                                : 'sort-button-img-Flip'
-                            }
-                          ></img>
-                        </button>
-                        <select
-                          value={sortType}
-                          onChange={(e) => {
-                            setSortType(e.target.value);
-                            addFilterOption('sort', e.target.value);
-                          }}
-                          className="sort-drop"
-                        >
-                          <option value="price">Sort by Price</option>
-                          <option value="floor">Sort by Floor</option>
-                          <option value="room">Sort by Room</option>
-                        </select>
+                          <button
+                            className="sort-button"
+                            onClick={() => {
+                              if (sortDirection === 'asc') {
+                                setSortDirection('desc');
+                              } else {
+                                setSortDirection('asc');
+                              }
+                            }}
+                          >
+                            <img
+                              src={SortIcon}
+                              className={
+                                sortDirection === 'asc'
+                                  ? 'sort-button-img'
+                                  : 'sort-button-img-Flip'
+                              }
+                            ></img>
+                          </button>
+                          <select
+                            value={sortType}
+                            onChange={(e) => {
+                              setSortType(e.target.value);
+                              addFilterOption('sort', e.target.value);
+                            }}
+                            className="sort-drop"
+                          >
+                            <option value="price">Sort by Price</option>
+                            <option value="floor">Sort by Floor</option>
+                            <option value="room">Sort by Room</option>
+                          </select>
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
+                <UpdateButton />
               </div>
+
               <div
                 className="SideBarRoomPageBottomPartAddRoom"
                 style={{ height: AddARoomState ? 'calc(100% - 130px)' : '0%' }}
@@ -1866,7 +1879,12 @@ const MainPage = ({
                       }}
                     >
                       <div>
-                        <span style={{ fontSize: '12px', color: 'var(--Text-Color-Grey)' }}>
+                        <span
+                          style={{
+                            fontSize: '12px',
+                            color: 'var(--Text-Color-Grey)',
+                          }}
+                        >
                           After this room is add the below options will be
                           applied to the next room
                         </span>
@@ -1976,14 +1994,15 @@ const MainPage = ({
                           Close
                         </button>
                         <button
-                          className="HorizontalButton"  disabled={isAddingRoom}
+                          className="HorizontalButton"
+                          disabled={isAddingRoom}
                           onClick={() => {
                             handleAddRoom(true);
 
                             setAddARoomState(true);
                           }}
                         >
-                           {isAddingRoom ? 'Adding...' : 'Add'}
+                          {isAddingRoom ? 'Adding...' : 'Add'}
                         </button>
                       </div>
                     </div>
@@ -2429,7 +2448,8 @@ const MainPage = ({
               setIsUpdatingTenantList={setIsUpdatingTenantList}
               setSelectedEditRoomId={setSelectedEditRoomId}
               brokersRecommendationListApi={brokersRecommendationListApi}
-              setChangeMade={setChangeMade}roomListContainerRef={roomListContainerRef}
+              setChangeMade={setChangeMade}
+              roomListContainerRef={roomListContainerRef}
             />
           )}
           {SelectedPage === 'People' && (

@@ -120,17 +120,11 @@ export const Upload = async (
   let failedUploads = [];
   let uploadedChanges = [];
 
-  // Sort changes by type in the desired order
-  const sortedChanges = [...offline_changes_Array].sort((a, b) => {
-    const priority = { 'add': 0, 'edit': 1, 'delete': 2 };
-    return priority[a.type] - priority[b.type];
-  });
-
+  // Process changes in original order
   for (let i = 0; i < totalChanges; i++) {
-    const change = sortedChanges[i];
+    const change = offline_changes_Array[i];
     try {
       if (change.type === 'edit' && change.tableName === 'settings_table') {
-        // Settings table handling remains unchanged
         continue;
       }
 
@@ -139,18 +133,42 @@ export const Upload = async (
           if (change.tableName === 'settings_table') {
             // Settings table add handling
           } else {
-            const addResponse = await fetch(
-              `${baseUrl}/${change.tableName}`,
-              {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'x-api-key': 'HH(CzZuQoW@tB$By)e',
-                },
-                body: change.addedJsonData,
-              }
+            const rowData = JSON.parse(change.addedJsonData);
+            const existingRows = await getValuesWithSql_Online(
+              change.tableName,
+              `WHERE id = '${rowData.id}'`
             );
-            await addResponse.json();
+            
+            if (existingRows && existingRows.length > 0) {
+              // Row exists, update it
+              console.log(`Row ${rowData.id} exists, updating instead of adding`);
+              const updateResponse = await fetch(
+                `${baseUrl}/${change.tableName}/${rowData.id}`,
+                {
+                  method: 'PUT',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'x-api-key': apiKey,
+                  },
+                  body: change.addedJsonData,
+                }
+              );
+              await updateResponse.json();
+            } else {
+              // Row doesn't exist, add it
+              const addResponse = await fetch(
+                `${baseUrl}/${change.tableName}`,
+                {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'x-api-key': apiKey,
+                  },
+                  body: change.addedJsonData,
+                }
+              );
+              await addResponse.json();
+            }
           }
           break;
 
@@ -182,12 +200,8 @@ export const Upload = async (
           );
           await deleteResponse.text();
           break;
-
-        default:
-          console.error(`Unknown change type: ${change.type}`);
       }
 
-      // Delete the processed offline change
       await deleteValue('offline_changes', change.id);
       changeAmount++;
       uploadedChanges.push(change);
@@ -197,7 +211,6 @@ export const Upload = async (
       continue;
     }
 
-    // Update progress
     const uploadProgress = ((i + 1) / totalChanges) * 100;
     setUploadProgress(uploadProgress);
   }
@@ -207,6 +220,7 @@ export const Upload = async (
     'users',
     `WHERE id = '${SelectedUserId}'`
   );
+  
   await updateValueOnline(
     'users',
     SelectedUserId,

@@ -93,6 +93,7 @@
     "electron-log": "^4.4.8",
     "electron-store": "v8.2.0",
     "electron-updater": "^5.3.0",
+    "electron-updator": "^1.0.1",
     "express": "^4.19.2",
     "gc-to-ethiopian-calendar": "^1.0.1",
     "jszip": "^3.10.1",
@@ -178,14 +179,30 @@
     "webpack-merge": "^5.9.0"
   },
   "build": {
-    "productName": "Rental Managment System",
-    "appId": "org.erb.Rental-Managment-System",
+    "productName": "RentMaster",
+    "appId": "org.erb.RentMaster",
+    "artifactName": "${productName}.Setup.${version}.exe",
     "asar": true,
     "asarUnpack": "**\\*.{node,dll}",
     "files": [
       "dist",
       "node_modules",
-      "package.json"
+      "package.json",
+      "src/renderer/assets/**/*",
+      "dev-app-update.yml"
+    ],
+    "extraResources": [
+      {
+        "from": "src/renderer/assets",
+        "to": "assets",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "dev-app-update.yml",
+        "to": "app-update.yml"
+      }
     ],
     "afterSign": ".erb/scripts/notarize.js",
     "mac": {
@@ -201,6 +218,8 @@
       "entitlements": "assets/entitlements.mac.plist",
       "entitlementsInherit": "assets/entitlements.mac.plist",
       "gatekeeperAssess": false
+    }, "nsis": {
+      "differentialPackage": true
     },
     "dmg": {
       "contents": [
@@ -232,9 +251,14 @@
       "buildResources": "assets",
       "output": "release/build"
     },
-    "extraResources": [
-      "./assets/**"
-    ]
+    "publish": {
+      "provider": "github",
+      "owner": "Doorlock06",
+      "repo": "rentmaster",
+      "private": true,
+      "releaseType": "release",
+      "vPrefixedTagName": true
+    }
   },
   "devEngines": {
     "node": ">=14.x",

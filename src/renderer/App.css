@@ -107,7 +107,7 @@ button:hover {
   transition: transform ease 0.2s;
 }
 select,
-input {
+input,textarea {
   background-color: var(--Secondary-Color);
   color: var(--Text-Color);
   border: 1px solid grey;

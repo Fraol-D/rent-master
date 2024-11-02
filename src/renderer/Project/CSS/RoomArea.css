@@ -499,4 +499,62 @@
 
 .privilege-item input[type="checkbox"] {
   margin-right: 5px;
+}.update-container {
+  background: var(--Secondary-Color);
+  border-radius: 8px;
+  padding: 16px;
+  width: 256px;
+  box-shadow: 0 2px 4px var(--Text-Color-Reverse50);
+}
+
+.update-status {
+  margin-bottom: 16px;
+}
+
+.update-header {
+  font-weight: 500;
+  margin-bottom: 12px;
+  color: var(--Text-Color);
+}
+
+.progress-bar-container {
+  background: var(--Secondary-Color20);
+  height: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.progress-bar {
+  height: 100%;
+  background: var(--Primary-Color);
+  transition: width 0.3s ease;
+}
+
+.progress-details {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.875rem;
+  color: var(--Text-Color-Grey);
+}
+
+.install-button {
+  width: 100%;
+  padding: 8px;
+  background: var(--Secondary-Color);
+  color: var(--Text-Color);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+  box-shadow: 1px 1px 3px -1px var(--Text-Color);
+}
+
+.install-button:hover {
+  background-color: var(--Primary-Color50);
+  box-shadow: 3px 3px 3px -1px var(--Text-Color);
+  color: var(--Text-Color-Reverse);
+  text-shadow: 0px 0px 10px var(--Text-Color);
+  transform: translate(0, -3px);
 }

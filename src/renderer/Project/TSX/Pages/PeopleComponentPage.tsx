@@ -172,6 +172,7 @@ export function PeopleComponentPage({
                       '#',
                       'Name',
                       'Tel',
+                      'Description',
                       'TIN',
                       'Occupancy',
                       'Rent Reason',
@@ -259,7 +260,11 @@ export function PeopleComponentPage({
                         </em>
                                              {' '}
                       </td>
-                                           {' '}
+                                   <td className="InfoTableBodyTD">
+                                               {' '}
+                        {highlightText(tenant.description || 'N/A', mainSearch)}       
+                                     {' '}
+                      </td>        {' '}
                       <td className="InfoTableBodyTD">
                                                {' '}
                         {highlightText(tenant.TIN || 'N/A', mainSearch)}       

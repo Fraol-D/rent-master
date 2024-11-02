@@ -99,7 +99,8 @@ function Hello() {
           break;
         case 'weekly':
           currentDate = addDays(currentDate, 7);
-          break;  case 'Annually':
+          break;
+        case 'Annually':
           currentDate = addYears(currentDate, 1);
           break;
         case 'custom':
@@ -158,11 +159,9 @@ function Hello() {
       }
     }
 
-    return 0;
+    return -98989898;
   };
   class RoomApi {
-
-
     getRoomFromApi = async () => {
       const roomsRaw = await getValuesWithSql('rooms', 'WHERE 1');
       if (roomsRaw) {
@@ -227,8 +226,8 @@ function Hello() {
               RoomSpecifications: roomSpecifications,
               Archived: room.Archived || false,
               tenantId: room.tenantId || '',
-              AddTenantState:  false,
-              ViewAgreement:  false,
+              AddTenantState: false,
+              ViewAgreement: false,
               ShowPayTimeLine: false,
               AllRoomPayInfo: { RoomPayInfo: predictedPayments || [] },
               selectedAgreementId: room.selectedAgreementId || '',
@@ -442,6 +441,7 @@ function Hello() {
                 phoneNumber: tenant.phoneNumber,
                 phoneNumber2: tenant.phoneNumber2 || '',
                 email: tenant.email || '',
+                description: tenant.description || '',
                 SelectedAgreement: tenant.SelectedAgreement,
                 RentingOrOut: tenant.RentingOrOut,
                 startTime: tenant.startTime,
@@ -465,6 +465,7 @@ function Hello() {
       phoneNumber: string,
       phoneNumber2: string,
       email: string,
+      description: string,
       SelectedAgreement: string,
       RentingOrOut: string,
       startTime: number,
@@ -483,6 +484,7 @@ function Hello() {
             phoneNumber: phoneNumber,
             phoneNumber2: phoneNumber2,
             email: email,
+            description: description,
             SelectedAgreement: SelectedAgreement,
             RentingOrOut: RentingOrOut,
             startTime: new Date(startTime).getTime(),
@@ -543,9 +545,6 @@ function Hello() {
     };
   }
   class RoomPaymentInfoApi {
-    
- 
-   
     editRoomPaymentApi = async (
       roomPaymentId: string,
       propertyName: string,
@@ -973,10 +972,10 @@ function Hello() {
     setRefresh(Refresh + 1);
     setisSignedIn(false);
   };
-  
+
   const [SelectedUserId, setSelectedUserId] = useState('');
   const [ChangeMade, setChangeMade] = useState(0);
- useEffect(() => {
+  useEffect(() => {
     const getChanges = async () => {
       const OfflineChanges = await getValuesWithSql(
         'offline_changes',
@@ -992,10 +991,10 @@ function Hello() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const handleUploadChanges = async () => {
     if (!UploadingLoadingEffect) {
-      setUploadingLoadingEffect(true);
       setUploadProgress(0);
+      setUploadingLoadingEffect(true);
       setIsSyncing(true);
-
+      setSyncProgress(0);
       if (navigator.onLine) {
         const offline_changes = await getValuesWithSql(
           'offline_changes',
@@ -1025,13 +1024,19 @@ function Hello() {
       setChangeMade(0);
       setUploadProgress(0);
       setUploadingLoadingEffect(false);
+      
+
     }
   };
   useEffect(() => {
-    if (uploadProgress >= 1 && uploadProgress <= 99) {
-      setSyncProgress(uploadProgress);
-      setIsSyncing(true);
-    }
+    if (UploadingLoadingEffect)
+      if (uploadProgress >= 0 && uploadProgress <= 99) {
+        setSyncProgress(uploadProgress);
+        setIsSyncing(true);
+      } else {
+        setSyncProgress(0);
+        setIsSyncing(false);
+      }
   }, [uploadProgress]);
   //Initial syncing
   const [isSyncing, setIsSyncing] = useState(false);
@@ -1080,9 +1085,7 @@ function Hello() {
             }}
           />
           <p style={{ margin: 0 }}>
-            {UploadingLoadingEffect 
-              ? 'Uploading...'
-              : 'Syncing...'}{' '}
+            {UploadingLoadingEffect ? 'Uploading...' : 'Syncing...'}{' '}
             {SyncProgress.toFixed(1)}%
           </p>
         </div>
@@ -1186,7 +1189,8 @@ function Hello() {
             signOutUserAndRestart={signOutUserAndRestart}
             setAppUserManagerShow={setAppUserManagerShow}
             setAppUserManagerPromptPassword={setAppUserManagerPromptPassword}
-            SelectedAppUser={SelectedAppUser}setChangeMade={setChangeMade}
+            SelectedAppUser={SelectedAppUser}
+            setChangeMade={setChangeMade}
           ></NavBar>
           <MainPage
             roomSpecificationAPI={roomSpecificationAPI}

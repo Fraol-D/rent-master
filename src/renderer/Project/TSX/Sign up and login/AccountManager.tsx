@@ -39,6 +39,14 @@ interface MyComponentProps {
   setSelectedAppUser: (newval: appUser) => void;
 }
 
+const timeoutPromise = (ms: number) => {
+  return new Promise((_, reject) => {
+    setTimeout(() => {
+      reject(new Error('Request timed out'));
+    }, ms);
+  });
+};
+
 const AccountManager = (React.FC<MyComponentProps> = ({
   children,
   Refresh,
@@ -85,95 +93,127 @@ const AccountManager = (React.FC<MyComponentProps> = ({
   // Function to check if a user is signed in
   const checkIfSignedIn = async () => {
     setInitialLoading(true);
-    // Get all users from local storage
     const allUsers = window.electron.store.get('users') || [];
 
     if (allUsers.length > 0) {
-      const userONLINE = await getValuesWithSql_Online(
-        'users',
-        `WHERE id = '${allUsers[0].id}' AND password = '${allUsers[0].password}'`
-      );
-
-      // If user not found online and we have internet connection, return
-      if (userONLINE.length !== 1 && navigator.onLine) {
-        return;
-      } else {
-        // Set signed in state to true
-        setisSignedIn(true);
-
-        // Function to check user details
-        const check = async () => {
-          const userRaw = allUsers[0];
-
-          // Check if user has a trial package
-          if (userRaw.packageType === '7daytrial') {
-            // Check if trial has expired
-            if (userRaw.TrailEndDate < Date.now()) {
-              setTrialExpiredState(true);
-              console.log('Trial expired');
-            }
-
-            // Check if trial end date is set incorrectly (more than 7 days in the future)
-            if (userRaw.TrailEndDate - 7 * 24 * 60 * 60 * 1000 > Date.now()) {
-              setTrialExpiredState(true);
-              console.log('Trial Has expired bc invalid date input');
-            }
-
-            // Check if trial is still active
-            if (
-              userRaw.TrailEndDate > Date.now() &&
-              userRaw.TrailEndDate - 7 * 24 * 60 * 60 * 1000 < Date.now()
-            ) {
-              setTrialExpiredState(false);
-              console.log('Trial is still active');
-            }
-          }
-
-          // If online, update user details from online database
-          if (navigator.onLine) {
-            const OnlineUser = await getValuesWithSql_Online(
-              'users',
-              `WHERE id = '${userRaw.id}'`
-            );
-            setIsAllowedState(OnlineUser[0].Allowed);
-
-            // Update local user data
-            const updatedUsers = allUsers.map((user: any) =>
-              user.id === userRaw.id
-                ? { ...user, Allowed: OnlineUser[0].Allowed }
-                : user
-            );
-            window.electron.store.set('users', updatedUsers);
-            setChangeMade(true);
-          } else {
-            // If offline, use local data
-            setIsAllowedState(userRaw.Allowed);
-          }
+      try {
+        const userCheck = async () => {
+          const userONLINE = await getValuesWithSql_Online(
+            'users',
+            `WHERE id = '${allUsers[0].id}' AND password = '${allUsers[0].password}'`
+          );
+          return userONLINE;
         };
 
-        await check();
-        setSelectedUserId(allUsers[0].id);
-        if (window.electron.store.get('SelectedAppUserId')) {
-        } else {
-          setAppUserManagerShow(true);
-        }
-        console.log('Signed in', SelectedUserId);
+        const userONLINE = await Promise.race([
+          userCheck(),
+          timeoutPromise(10000)
+        ]).catch(error => {
+          console.log('Online check failed or timed out:', error);
+          return null;
+        });
 
-        await appUsersManagement();
-        if (navigator.onLine && window.electron.store.get('users')[0].Allowed) {
-          // setIsSyncing(true);
-          // syncOnlineToLocalWithBool(
-          //   allUsers[0].id,
-          //   setIsSyncing,
-          //   setSyncProgress,
-          //   RefreshDataFromSqlite
-          // );
+        if (!userONLINE && allUsers[0].Allowed) {
+          console.log('Falling back to local data');
+          setisSignedIn(true);
+          setIsAllowedState(allUsers[0].Allowed);
+          setSelectedUserId(allUsers[0].id);
+          
+          if (!window.electron.store.get('SelectedAppUserId')) {
+            setAppUserManagerShow(true);
+          }
+          
+          await appUsersManagement();
+          setInitialLoading(false);
+          return;
+        }
+
+        if (userONLINE?.length === 1 || !navigator.onLine) {
+          setisSignedIn(true);
+          
+          const check = async () => {
+            const userRaw = allUsers[0];
+
+            if (userRaw.packageType === '7daytrial') {
+              if (userRaw.TrailEndDate < Date.now()) {
+                setTrialExpiredState(true);
+                console.log('Trial expired');
+              }
+
+              if (userRaw.TrailEndDate - 7 * 24 * 60 * 60 * 1000 > Date.now()) {
+                setTrialExpiredState(true);
+                console.log('Trial Has expired bc invalid date input');
+              }
+
+              if (
+                userRaw.TrailEndDate > Date.now() &&
+                userRaw.TrailEndDate - 7 * 24 * 60 * 60 * 1000 < Date.now()
+              ) {
+                setTrialExpiredState(false);
+                console.log('Trial is still active');
+              }
+            }
+
+            if (navigator.onLine) {
+              try {
+                const OnlineUser = await getValuesWithSql_Online(
+                  'users',
+                  `WHERE id = '${userRaw.id}'`
+                );
+                setIsAllowedState(OnlineUser[0].Allowed);
+
+                const updatedUsers = allUsers.map((user: any) =>
+                  user.id === userRaw.id
+                    ? { ...user, Allowed: OnlineUser[0].Allowed }
+                    : user
+                );
+                window.electron.store.set('users', updatedUsers);
+                setChangeMade(true);
+              } catch (error) {
+                console.log('Error fetching online user data:', error);
+                setIsAllowedState(userRaw.Allowed);
+              }
+            } else {
+              setIsAllowedState(userRaw.Allowed);
+            }
+          };
+
+          await check();
+          setSelectedUserId(allUsers[0].id);
+
+          if (!window.electron.store.get('SelectedAppUserId')) {
+            setAppUserManagerShow(true);
+          }
+
+          await appUsersManagement();
+          if (navigator.onLine && window.electron.store.get('users')[0].Allowed) {
+            // setIsSyncing(true);
+            // syncOnlineToLocalWithBool(
+            //   allUsers[0].id,
+            //   setIsSyncing,
+            //   setSyncProgress,
+            //   RefreshDataFromSqlite
+            // );
+          }
+        }
+      } catch (error) {
+        console.error('Error in checkIfSignedIn:', error);
+        if (allUsers[0].Allowed) {
+          setisSignedIn(true);
+          setIsAllowedState(allUsers[0].Allowed);
+          setSelectedUserId(allUsers[0].id);
+          
+          if (!window.electron.store.get('SelectedAppUserId')) {
+            setAppUserManagerShow(true);
+          }
+          
+          await appUsersManagement();
         }
       }
     } else {
-      // If no users found, set signed in state to false
       setisSignedIn(false);
     }
+    
     setInitialLoading(false);
   };
   const appUsersManagement = async () => {

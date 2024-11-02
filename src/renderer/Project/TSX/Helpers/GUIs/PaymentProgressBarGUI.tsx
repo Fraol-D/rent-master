@@ -91,8 +91,9 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
         'room_pay_info',
         `WHERE roomId = '${roomType.id}' AND tenantId = '${roomType.tenantId}'`
       );
+      let tenantIsFixedTerm = tenantList.find((t: tenant) => t.id === roomType.tenantId)?.SelectedAgreement === 'Fixed-Term';
       while (
-        paymentCount < 10 * roomType.paymentShowAmount &&
+        (tenantIsFixedTerm || paymentCount < 10 * roomType.paymentShowAmount) &&
         (endDate == null || currentDate < endDate)
       ) {
         const paymentId = `${roomType.id}-${currentDate.getTime()}`;
@@ -259,23 +260,31 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
 
     const sortedPayments = predictedPayments.sort((a, b) => a.Day - b.Day);
 
+    let allPaid = true;
+    let nextPaymentDays = 0;
+
     for (const payment of sortedPayments) {
       const paymentDate = new Date(payment.Day);
       const daysDifference = differenceInDays(paymentDate, today);
 
       if (!payment.Paid) {
+        allPaid = false;
         if (daysDifference === 0) {
           return 0;
         } else if (daysDifference < 0) {
           return daysDifference;
         } else {
-          return daysDifference;
+          nextPaymentDays = daysDifference;
+          break; // Exit the loop once we find the next unpaid payment
         }
       }
     }
 
-    console.log('All predicted payments are marked as paid');
-    return 0;
+    if (allPaid) {
+      return -98989898; // Return the special number if all payments are paid
+    } else {
+      return nextPaymentDays;
+    }
   };
   const handlePayClick = async (payment: RoomPayInfo) => {
     const existingPayment = await getValuesWithSql(
@@ -380,54 +389,53 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
         .attr('stroke-width', '1');
 
       // Draw current date indicator
-      const currentDateX =
-        padding +
-        ((today - sortedPaymentData[0].Day) /
-          (sortedPaymentData[sortedPaymentData.length - 1].Day -
-            sortedPaymentData[0].Day)) *
-          width;
-      const currentDateX2 = width - 80; // Set to the end of the progress bar
-      const currentDateX3 = 0; // Set to the end of the progress bar
+      const calculateCurrentDatePosition = (sortedPayments: any[], width: number, padding: number) => {
+        const today = new Date().getTime();
+        const firstPayment = sortedPayments[0].Day;
+        const lastPayment = sortedPayments[sortedPayments.length - 1].Day;
+        const totalTimespan = lastPayment - firstPayment;
+        
+        // Find the nearest payment dates before and after today
+        const beforeToday = sortedPayments.filter(p => p.Day <= today).slice(-1)[0]?.Day || firstPayment;
+        const afterToday = sortedPayments.find(p => p.Day > today)?.Day || lastPayment;
+        
+        // Calculate position based on nearest payment points
+        const segmentWidth = width / (sortedPayments.length - 1);
+        const beforeIndex = sortedPayments.findIndex(p => p.Day === beforeToday);
+        const afterIndex = sortedPayments.findIndex(p => p.Day === afterToday);
+        
+        const segmentProgress = (today - beforeToday) / (afterToday - beforeToday);
+        const position = padding + (beforeIndex + segmentProgress) * segmentWidth;
+        
+        return Math.min(Math.max(position, padding), width - padding);
+      };
 
-      svg
-        .append('line')
-        .attr('x1', 0)
-        .attr('y1', padding + height / 2 - 30)
-        .attr('x2', currentDateX + 36.5)
-        .attr('y2', padding + height / 2 - 30)
+      const currentDateX = calculateCurrentDatePosition(sortedPaymentData, width - 80, padding);
+ // Draw progress bar background until the current date indicator
+ svg
+ .append('rect')
+ .attr('x', padding)
+ .attr('y', padding + height / 2 - 35)
+ .attr('width', currentDateX + 36)
+ .attr('height', 10)
+ .attr('fill', 'var(--Secondary-Color)')
         .attr('stroke', 'var(--Secondary-Color)')
-        .attr('stroke-width', '10');
-      svg.append('line');
+        .attr('stroke-width', '1');
 
       svg
         .append('line')
-        .attr('x1', currentDateX2)
+        .attr('x1', currentDateX + 36.3)
         .attr('y1', padding + height / 2 - 40)
-        .attr('x2', currentDateX2)
+        .attr('x2', currentDateX + 36.3)
         .attr('y2', padding + height / 2 - 18)
-        .attr('stroke', 'grey')
-        .attr('stroke-width', '5');
-      svg
-        .append('line')
-        .attr('x1', currentDateX3)
-        .attr('y1', padding + height / 2 - 40)
-        .attr('x2', currentDateX3)
-        .attr('y2', padding + height / 2 - 18)
-        .attr('stroke', 'grey')
-        .attr('stroke-width', '5');
-// Inside your SVG rendering logic
-svg
-  .append('line')
-  .attr('x1', currentDateX + 36.3)
-  .attr('y1', padding + height / 2 - 40)
-  .attr('x2', currentDateX + 36.3)
-  .attr('y2', padding + height / 2 - 18)
-  .attr('stroke', '#00e1f1')
-  .attr('stroke-width', '5')
-  .each(function() {
-    currentDateRef.current = this; // Attach the ref here
-  });
-      svg
+        .attr('stroke', '#00e1f1')
+        .attr('stroke-width', '5')
+        .each(function() {
+          currentDateRef.current = this; // Attach the ref here
+        });
+
+      
+        svg
         .append('text')
         .attr('x', currentDateX + 36.5)
         .attr('y', padding + height / 2 - 3)

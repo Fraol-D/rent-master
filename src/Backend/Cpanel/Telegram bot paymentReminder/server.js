@@ -1,79 +1,3 @@
-const express = require('express');
-const mysql = require('mysql2');
-const bodyParser = require('body-parser');
-const nodemailer = require('nodemailer');
-const cron = require('node-cron');
-const path = require('path');
-const fs = require('fs');
-const cors = require('cors');
-const multer = require('multer');
-const extract = require('extract-zip');
-const log4js = require('log4js');
-const JSZip = require('jszip');
-const app = express();
-const PORT = process.env.PORT || 3000;
-const apiKey = 'HH(CzZuQoW@tB$By)e';
-const baseDir = path.join(__dirname, 'User Files');
-const moment = require('moment');
-// Middleware
-app.use(bodyParser.json());
-app.use(cors());
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-api-key');
-  res.header('Access-Control-Allow-Credentials', 'true');
-  next();
-});
-app.use(cors({
-  origin: ['http://localhost:1212', 'https://www.rentmaster.markethubet.com'],
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key'],
-  credentials: true
-}));
-const corsOptions = {
-  origin: 'http://localhost:1212',
-  optionsSuccessStatus: 200
-};
-app.use(cors(corsOptions));
-// API Key Middleware
-const checkApiKey = (req, res, next) => {
-  const providedApiKey = req.headers['x-api-key'];
-  if (providedApiKey === apiKey) {
-    next();
-  } else {
-    res.status(403).send('Forbidden');
-  }
-};
-app.use('/api', checkApiKey);
-
-// Multer configuration
-const upload = multer({ dest: 'temp/' });
-
-// MySQL Pool
-const pool = mysql.createPool({
-  connectionLimit: 10,
-  host: 'localhost',
-  user: 'marketuz_SWB',
-  password: 'Plp5H9:Li(UO#6[y+26E',
-  database: 'marketuz_SWB',
-});
-
-// Logger configuration
-log4js.configure({
-  appenders: { everything: { type: 'file', filename: 'logs.log' } },
-  categories: { default: { appenders: ['everything'], level: 'ALL' } }
-});
-const logger = log4js.getLogger();
-
-// Email sending function
-app.get('/log', (req, res) => {
-  res.sendFile(path.join(__dirname, 'logs.log'));
-});
-
-
-// EMAIL ALLLL
-
 const sendEmail = async (email, subject, text,user) => {
   logger.debug(`Attempting to send email to: ${email}`);
    const users = await new Promise((resolve, reject) => {
@@ -133,6 +57,178 @@ const shouldSendNotification = (paymentDay, notificationSetting) => {
   return { shouldSendEmail: false, shouldSendSMS: false };
 };
 
+app.post('/api/verify-credentials', async (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).json({ error: 'Email and password are required' });
+  }
+
+  try {
+    // Query the database to find the user with the given email
+    const [user] = await new Promise((resolve, reject) => {
+      pool.query(
+        'SELECT * FROM users WHERE email = ?',
+        [email],
+        (error, results) => {
+          if (error) reject(error);
+          else resolve(results);
+        }
+      );
+    });
+
+    if (!user) {
+      return res.json({ isValid: false });
+    }
+
+    // Compare the provided password with the stored hash
+    const isPasswordValid = password === user.password;
+
+    res.json({ isValid: isPasswordValid });
+  } catch (error) {
+    logger.error('Error verifying credentials:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+const calculatePredictedPayments = async (room, currentDate) => {
+  const newPayments = [];
+  const [tenant] = await new Promise((resolve, reject) => {
+    pool.query(
+      'SELECT * FROM tenants WHERE id = ?',
+      [room.tenantId],
+      (error, results) => {
+        if (error) reject(error);
+        else resolve(results);
+      }
+    );
+  });
+
+  let paymentStartDate = moment(tenant?.startTime || Date.now());
+  let paymentEndDate = null;
+
+  if (room.selectedAgreementId) {
+    const [agreement] = await new Promise((resolve, reject) => {
+      pool.query(
+        'SELECT * FROM agreements WHERE id = ?',
+        [room.selectedAgreementId],
+        (error, results) => {
+          if (error) reject(error);
+          else resolve(results);
+        }
+      );
+    });
+
+    if (agreement) {
+      paymentStartDate = moment(agreement.startTime);
+      if (tenant?.SelectedAgreement === 'Fixed-Term') {
+        paymentEndDate = moment(agreement.endTime);
+      }
+    }
+  }
+
+  const existingPayments = await new Promise((resolve, reject) => {
+    pool.query(
+      'SELECT * FROM room_pay_info WHERE roomId = ?',
+      [room.id],
+      (error, results) => {
+        if (error) reject(error);
+        else resolve(results);
+      }
+    );
+  });
+
+  let currentPaymentDate = paymentStartDate.clone();
+
+  // Generate past payments up to the current date
+  while (currentPaymentDate.isSameOrBefore(currentDate)) {
+    const paymentId = `${room.id}-${currentPaymentDate.valueOf()}`;
+    newPayments.push({
+      id: paymentId,
+      Day: currentPaymentDate.valueOf(),
+      Value: room.AgreedPrice,
+      Paid: existingPayments.find((p) => p.id === paymentId)?.Paid || false,
+      roomId: room.id
+    });
+
+    // Calculate next payment date based on payment cycle
+    switch (room.PaymentCycleType) {
+      case '30':
+        currentPaymentDate.add(30, 'days');
+        break;
+      case '15':
+        currentPaymentDate.add(15, 'days');
+        break;
+      case '7':
+        currentPaymentDate.add(7, 'days');
+        break;
+      case 'daily':
+        currentPaymentDate.add(1, 'day');
+        break;
+      case 'monthly':
+        currentPaymentDate.add(1, 'month');
+        break;
+              case 'Annually':
+        currentPaymentDate.add(1, 'year');
+        break;
+      case 'weekly':
+        currentPaymentDate.add(7, 'days');
+        break;
+      case 'custom':
+        currentPaymentDate.add(room.PaymentCycleCustomeDays || 30, 'days');
+        break;
+      default:
+        currentPaymentDate.add(1, 'month');
+    }
+  }
+
+  // Generate future payments (next 10 payments)
+  for (let i = 0; i < 10; i++) {
+    if (paymentEndDate && currentPaymentDate.isAfter(paymentEndDate)) {
+      break;
+    }
+
+    const paymentId = `${room.id}-${currentPaymentDate.valueOf()}`;
+    newPayments.push({
+      id: paymentId,
+      Day: currentPaymentDate.valueOf(),
+      Value: room.AgreedPrice,
+      Paid: false,
+      roomId: room.id
+    });
+
+    // Calculate next payment date based on payment cycle
+    switch (room.PaymentCycleType) {
+      case '30':
+        currentPaymentDate.add(30, 'days');
+        break;
+      case '15':
+        currentPaymentDate.add(15, 'days');
+        break;
+      case '7':
+        currentPaymentDate.add(7, 'days');
+        break;
+      case 'daily':
+        currentPaymentDate.add(1, 'day');
+        break;
+      case 'monthly':
+        currentPaymentDate.add(1, 'month');
+        break;
+      case 'weekly':
+        currentPaymentDate.add(7, 'days');
+        break;
+             case 'Annually':
+            currentPaymentDate = addYears(currentDate, 1);
+            break;
+      case 'custom':
+        currentPaymentDate.add(room.PaymentCycleCustomeDays || 30, 'days');
+        break;
+      default:
+        currentPaymentDate.add(1, 'month');
+    }
+  }
+
+  return newPayments;
+};
 
 const processNotifications = async () => {
   logger.debug('Starting processNotifications');
@@ -148,87 +244,49 @@ const processNotifications = async () => {
 
     for (const user of users) {
       logger.debug(`Processing user: ${user.id}`);
-      const query = `
-        SELECT r.*
-        FROM rooms r
-        WHERE r.userId = ? AND r.notificationSettings != 0
-      `;
-      logger.debug(`Fetching rooms for user: ${user.id}`);
       const rooms = await new Promise((resolve, reject) => {
-        pool.query(query, [user.id], (error, results) => {
-          if (error) reject(error);
-          else resolve(results);
-        });
+        pool.query(
+          'SELECT * FROM rooms WHERE userId = ? AND notificationSettings != 0',
+          [user.id],
+          (error, results) => {
+            if (error) reject(error);
+            else resolve(results);
+          }
+        );
       });
       logger.debug(`Fetched ${rooms.length} rooms for user: ${user.id}`);
 
       for (const room of rooms) {
         logger.debug(`Processing room: ${room.id}`);
         const currentDate = moment();
-        const currentTimestamp = currentDate.valueOf();
-        const roomId = room.id;
-        const userId = user.id;
 
-        const getRoomPayInfoQuery = `
-          (SELECT * FROM room_pay_info
-           WHERE roomId = ? AND userId = ? AND Paid = 0 AND Day < ?
-           ORDER BY Day DESC LIMIT 5)
-          UNION ALL
-          (SELECT * FROM room_pay_info
-           WHERE roomId = ? AND userId = ? AND Paid = 0 AND Day >= ?
-           ORDER BY Day ASC LIMIT 5)
-          ORDER BY Day ASC
-        `;
+        const predictedPayments = await calculatePredictedPayments(room, currentDate);
+        logger.debug(`Generated ${predictedPayments.length} predicted payments for room ${room.id}`);
 
-        const roomPayInfo = await new Promise((resolve, reject) => {
-          pool.query(
-            getRoomPayInfoQuery,
-            [
-              roomId,
-              userId,
-              currentTimestamp,
-              roomId,
-              userId,
-              currentTimestamp,
-            ],
-            (error, results) => {
-              if (error) reject(error);
-              else resolve(results);
-            }
-          );
-        });
+        const nextUnpaidPayment = predictedPayments.find(payment => !payment.Paid);
 
-        logger.debug(
-          `Fetched ${roomPayInfo.length} payment info records for room ${roomId}`
-        );
-
-        if (roomPayInfo.length > 0) {
-          const nextPayment = roomPayInfo[0]; // The first unpaid payment
-          logger.debug(
-            `Room ${room.id} has unpaid payment due on: ${moment(
-              nextPayment.Day
-            ).format('YYYY-MM-DD')}`
-          );
+        if (nextUnpaidPayment) {
+          logger.debug(`Room ${room.id} has unpaid payment due on: ${moment(nextUnpaidPayment.Day).format('YYYY-MM-DD')}`);
 
           // Fetch tenant information
-          const getTenantQuery = `
-            SELECT * FROM tenants
-            WHERE id = ?
-          `;
           const [tenant] = await new Promise((resolve, reject) => {
-            pool.query(getTenantQuery, [room.tenantId], (error, results) => {
-              if (error) reject(error);
-              else resolve(results);
-            });
+            pool.query(
+              'SELECT * FROM tenants WHERE id = ?',
+              [room.tenantId],
+              (error, results) => {
+                if (error) reject(error);
+                else resolve(results);
+              }
+            );
           });
 
           if (!tenant) {
-            logger.debug(`No tenant found for room ${roomId}`);
+            logger.debug(`No tenant found for room ${room.id}`);
             continue;
           }
 
           const { shouldSendEmail, shouldSendSMS } = shouldSendNotification(
-            nextPayment.Day,
+            nextUnpaidPayment.Day,
             room.notificationSettings
           );
 
@@ -250,10 +308,7 @@ const processNotifications = async () => {
             const getEmailTemplateIdQuery = `SELECT * FROM notification_template_selections WHERE id = '${
               room.id
             }_${notificationTypes.find((type) => {
-              const daysBeforeDue = moment(nextPayment.Day).diff(
-                currentDate,
-                'days'
-              );
+              const daysBeforeDue = moment(nextUnpaidPayment.Day).diff(currentDate, 'days');
               return (
                 (type === '5 days before due' && daysBeforeDue === 5) ||
                 (type === '3 days before due' && daysBeforeDue === 3) ||
@@ -325,40 +380,43 @@ const processNotifications = async () => {
             let endOfBillingPeriod;
             switch (room.PaymentCycleType) {
               case '30':
-                endOfBillingPeriod = moment(nextPayment.Day).add(30, 'days');
+                endOfBillingPeriod = moment(nextUnpaidPayment.Day).add(30, 'days');
                 break;
               case '15':
-                endOfBillingPeriod = moment(nextPayment.Day).add(15, 'days');
+                endOfBillingPeriod = moment(nextUnpaidPayment.Day).add(15, 'days');
                 break;
               case '7':
-                endOfBillingPeriod = moment(nextPayment.Day).add(7, 'days');
+                endOfBillingPeriod = moment(nextUnpaidPayment.Day).add(7, 'days');
                 break;
               case 'monthly':
-                endOfBillingPeriod = moment(nextPayment.Day).add(1, 'months');
+                endOfBillingPeriod = moment(nextUnpaidPayment.Day).add(1, 'months');
                 break;
               case 'weekly':
-                endOfBillingPeriod = moment(nextPayment.Day).add(1, 'weeks');
+                endOfBillingPeriod = moment(nextUnpaidPayment.Day).add(1, 'weeks');
+                break;
+                  case 'Annually':
+                endOfBillingPeriod = moment(nextUnpaidPayment.Day).add(1, 'year');
                 break;
               case 'daily':
-                endOfBillingPeriod = moment(nextPayment.Day).add(1, 'days');
+                endOfBillingPeriod = moment(nextUnpaidPayment.Day).add(1, 'days');
                 break;
               case 'custom':
-                endOfBillingPeriod = moment(nextPayment.Day).add(room.PaymentCycleCustomeDays, 'days');
+                endOfBillingPeriod = moment(nextUnpaidPayment.Day).add(room.PaymentCycleCustomeDays, 'days');
                 break;
               default:
-                endOfBillingPeriod = moment(nextPayment.Day).add(1, 'months');
+                endOfBillingPeriod = moment(nextUnpaidPayment.Day).add(1, 'months');
                 break;
             }
 
-            const startOfBillingPeriod = moment(nextPayment.Day)
+            const startOfBillingPeriod = moment(nextUnpaidPayment.Day)
               .subtract(0, 'months')
               .startOf('day');
 
             const replacements = {
               tenant_name: tenant.name,
               landlord_name: user.fullName,
-              due_amount: nextPayment.Value,
-              due_date: moment(nextPayment.Day).format('MMMM D, YYYY'),
+              due_amount: nextUnpaidPayment.Value,
+              due_date: moment(nextUnpaidPayment.Day).format('MMMM D, YYYY'),
               landlord_Email: user.email,
               landlord_Telephone: user.phoneNumber,
               due_duration: `${startOfBillingPeriod.format(
@@ -369,7 +427,7 @@ const processNotifications = async () => {
             let emailSubject = selectedEmailTemplate.subject;
             let emailBody = selectedEmailTemplate.body;
 
-            
+        
 
             variables.forEach((variable) => {
               const regex = new RegExp(`{{${variable}}}`, 'g');
@@ -377,7 +435,10 @@ const processNotifications = async () => {
                 regex,
                 replacements[variable]
               );
-              emailBody = emailBody.replace(regex, replacements[variable]);
+              emailBody = emailBody.replace(
+                regex,
+                replacements[variable]
+              );
             });
 
             const emailResult = await sendEmail(
@@ -389,14 +450,13 @@ const processNotifications = async () => {
             logger.debug(
               `Email sending result: ${JSON.stringify(emailResult)}`
             );
-
             // Add a row to email_history
             const addToEmailHistoryQuery = `
-              INSERT INTO email_history (id, receiver, subject, body, templateId, sentDate, \`from\`, userId)
-              VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            `
+              INSERT INTO email_history (id, receiver, subject, body, templateId, sentDate, \`from\`, mode,userId)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?,?)
+            `;
             const emailHistoryId = `${room.id}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-            const sentDate = currentTimestamp;
+            const sentDate = moment().valueOf();
 
             await new Promise((resolve, reject) => {
               pool.query(
@@ -409,6 +469,7 @@ const processNotifications = async () => {
                   EmailTemplateObject.email_template_id,
                   sentDate,
                   user.selectedEmailToSendWith,
+                  `Automatically`,
                   user.id,
                 ],
                 (error, results) => {
@@ -417,14 +478,13 @@ const processNotifications = async () => {
                 }
               );
             });
-            logger.debug(`Email history added for email sent to: ${tenant.email}`);
           }
           if (shouldSendSMS) {
             logger.debug(
               `Sending SMS notification for room ${room.id} to tenant ${tenant.phoneNumber}`
             );
             // TODO: Implement actual SMS sending here
-            // const smsMessage = `Rent reminder: Your payment of $${nextPayment.Value.toFixed(2)} for ${room.name} is due on ${moment(nextPayment.Day).format('MM/DD/YYYY')}. Please pay on time to avoid late fees.`;
+            // const smsMessage = `Rent reminder: Your payment of $${nextUnpaidPayment.Value.toFixed(2)} for ${room.name} is due on ${moment(nextUnpaidPayment.Day).format('MM/DD/YYYY')}. Please pay on time to avoid late fees.`;
             // const smsResult = await sendSMS(tenant.phoneNumber, smsMessage);
             // logger.debug(`SMS sending result: ${JSON.stringify(smsResult)}`);
           }
@@ -443,12 +503,33 @@ const processNotifications = async () => {
 };
 
 let notificationTask;
+let isProcessing = false; // Add flag to prevent concurrent executions
+
+// Helper function to handle the notification process
+async function handleNotificationProcess() {
+  if (isProcessing) {
+    logger.debug('Notification process already running, skipping...');
+    return;
+  }
+
+  try {
+    isProcessing = true;
+    logger.debug('Starting notification process');
+    await processNotifications();
+    logger.debug('Notification process completed');
+  } catch (error) {
+    logger.error('Error in notification process:', error);
+    throw error;
+  } finally {
+    isProcessing = false;
+  }
+}
 
 // Schedule the cron job
-notificationTask = cron.schedule('0 13 * * *', async () => {
+notificationTask = cron.schedule('0 10 * * *', async () => {
   logger.debug('Cron job triggered: Running daily email check and send at 10:00 AM Ethiopian Time');
   try {
-    await processNotifications();
+    await handleNotificationProcess();
     logger.debug('Daily email check and send completed');
   } catch (error) {
     logger.error('Error in daily email check and send:', error);
@@ -456,26 +537,50 @@ notificationTask = cron.schedule('0 13 * * *', async () => {
 }, {
   scheduled: true,
   timezone: "Africa/Addis_Ababa"
-});app.get('/api/trigger-cron', (req, res) => {
+});
+
+// Manual trigger endpoint
+app.get('/api/trigger-cron', async (req, res) => {
   logger.debug('Manual trigger of cron job');
-  if (notificationTask) {
-    processNotifications()
-      .then(() => {
-        res.status(200).json({ message: 'Cron job triggered manually and completed successfully' });
-      })
-      .catch((error) => {
-        logger.error('Error in manual cron job execution:', error);
-        res.status(500).json({ message: 'Error occurred while executing cron job manually', error: error.message });
+  if (!notificationTask) {
+    return res.status(500).json({ message: 'Cron job is not properly initialized' });
+  }
+
+  try {
+    if (isProcessing) {
+      return res.status(409).json({ 
+        message: 'Notification process is already running',
+        status: 'processing'
       });
-  } else {
-    res.status(500).json({ message: 'Cron job is not properly initialized' });
+    }
+
+    await handleNotificationProcess();
+    res.status(200).json({ 
+      message: 'Cron job triggered manually and completed successfully',
+      status: 'success'
+    });
+  } catch (error) {
+    logger.error('Error in manual cron job execution:', error);
+    res.status(500).json({ 
+      message: 'Error occurred while executing cron job manually', 
+      error: error.message,
+      status: 'error'
+    });
   }
 });
+
+// Test endpoint
 app.get('/api/test-check-and-send', async (req, res) => {
   logger.debug('Manual trigger of check-and-send process');
   try {
-    await processNotifications();
-    logger.debug('Manual check-and-send completed successfully');
+    if (isProcessing) {
+      return res.status(409).json({
+        status: 'processing',
+        message: 'Notification process is already running'
+      });
+    }
+
+    await handleNotificationProcess();
     res.status(200).json({
       status: 'success',
       message: 'Emails checked and sent'
@@ -489,374 +594,23 @@ app.get('/api/test-check-and-send', async (req, res) => {
     });
   }
 });
-// Routes
-app.post('/api/replace-user-data', async (req, res) => {
-  const { userId, tables } = req.body;
-  console.log('Received data:', JSON.stringify({ userId, tables }, null, 2));
 
-  const connection = await pool.promise().getConnection();
-
-  try {
-    await connection.beginTransaction();
-
-    for (const [tableName, newRows] of Object.entries(tables)) {
-      // Check if the table has a userId column
-      const [columns] = await connection.query(`SHOW COLUMNS FROM ${tableName} LIKE 'userId'`);
-      const hasUserId = columns.length > 0;
-
-      if (hasUserId) {
-        // Delete existing rows if userId column exists
-        await connection.query('DELETE FROM ?? WHERE userId = ?', [tableName, userId]);
-      }
-
-      // Insert new rows
-      if (Array.isArray(newRows) && newRows.length > 0) {
-        const columns = Object.keys(newRows[0]).join(', ');
-        const placeholders = Array(Object.keys(newRows[0]).length).fill('?').join(', ');
-        const query = `INSERT INTO ${tableName} (${columns}) VALUES (${placeholders})`;
-
-        for (const row of newRows) {
-          await connection.query(query, Object.values(row));
-        }
-      }
-    }
-
-    await connection.commit();
-    res.json({ message: 'User data replaced successfully' });
-  } catch (error) {
-    await connection.rollback();
-    console.error('Error:', error);
-    res.status(500).json({ error: error.message });
-  } finally {
-    connection.release();
-  }
-});
-
-const getAllFiles = async (dirPath) => {
-  const files = await fs.promises.readdir(dirPath, { withFileTypes: true });
-  const fileList = [];
-
-  for (const file of files) {
-    const filePath = path.join(dirPath, file.name);
-    if (file.isDirectory()) {
-      fileList.push(...await getAllFiles(filePath));
-    } else {
-      fileList.push(filePath);
-    }
-  }
-
-  return fileList;
-};
-
-app.post('/api/check-missing-files', async (req, res) => {
-  const { userId, localDirectory } = req.body;
-  const serverBasePath = path.join(baseDir, userId);
-  const missingFiles = [];
-
-  logger.debug(`Received request to check missing files for user ${userId}`);
-
-  async function checkDirectory(clientDir, serverPath, relativePath = '') {
-    const serverFiles = await fs.promises.readdir(serverPath, { withFileTypes: true });
-    logger.debug(`Checking server directory: ${serverPath}`);
-
-    for (const serverFile of serverFiles) {
-      const serverFilePath = path.join(serverPath, serverFile.name);
-      const relativeFilePath = path.join(relativePath, serverFile.name);
-      
-      if (serverFile.isDirectory()) {
-        logger.debug(`Directory found on server: ${relativeFilePath}`);
-        const clientSubDir = clientDir.children.find(child => child.name === serverFile.name && child.type === 'directory');
-        if (clientSubDir) {
-          await checkDirectory(clientSubDir, serverFilePath, relativeFilePath);
-        } else {
-          logger.debug(`Missing directory in client: ${relativeFilePath}`);
-          missingFiles.push(relativeFilePath);
-        }
-      } else {
-        logger.debug(`File found on server: ${relativeFilePath}`);
-        const clientFile = clientDir.children.find(child => child.name === serverFile.name && child.type === 'file');
-        if (!clientFile) {
-          logger.debug(`Missing file in client: ${relativeFilePath}`);
-          missingFiles.push(relativeFilePath);
-        }
-      }
-    }
-  }
-
-  try {
-    logger.debug(`Initiating directory check for user ${userId}`);
-    await checkDirectory(localDirectory, serverBasePath);
-    logger.debug(`Missing files for user ${userId}: ${JSON.stringify(missingFiles)}`);
-    res.json({ missingFiles });
-  } catch (error) {
-    logger.error('Error checking missing files:', error);
-    res.status(500).json({ error: 'Failed to check missing files', details: error.message });
-  }
-});
-
-app.post('/api/download-missing-files', async (req, res) => {
-  const { userId, missingFiles } = req.body;
-  const serverBasePath = path.join(baseDir, userId);
-  logger.debug(`Received request to download missing files for user ${userId}`);
-
-  try {
-    const zip = new JSZip();
-    
-    async function addToZip(filePath) {
-      const fullPath = path.join(serverBasePath, filePath);
-      const stats = await fs.promises.stat(fullPath);
-      
-      if (stats.isDirectory()) {
-        logger.debug(`Adding directory to zip: ${filePath}`);
-        const files = await fs.promises.readdir(fullPath);
-        for (const file of files) {
-          await addToZip(path.join(filePath, file));
-        }
-      } else {
-        logger.debug(`Adding file to zip: ${filePath}`);
-        const fileContent = await fs.promises.readFile(fullPath);
-        zip.file(filePath, fileContent);
-      }
-    }
-
-    for (const filePath of missingFiles) {
-      await addToZip(filePath);
-    }
-    
-    const zipContent = await zip.generateAsync({ type: 'nodebuffer' });
-    
-    logger.debug(`Sending zip file for user ${userId}`);
-    res.set('Content-Type', 'application/zip');
-    res.set('Content-Disposition', `attachment; filename=missing_files_${userId}.zip`);
-    res.send(zipContent);
-  } catch (error) {
-    logger.error('Error preparing missing files for download:', error);
-    res.status(500).json({ error: 'Failed to prepare missing files for download', details: error.message });
-  }
-});
-
-app.post('/api/check-user-directory', async (req, res) => {
-  const { userId, directory } = req.body;
-  const serverBasePath = path.join(baseDir, userId);
-  const requiredFiles = [];
-
-  async function checkDirectory(clientDir, serverPath, relativePath = '') {
-    for (const item of clientDir.children) {
-      const itemRelativePath = path.join(relativePath, item.name);
-      const itemServerPath = path.join(serverPath, item.name);
-      if (item.type === 'directory') {
-        await checkDirectory(item, itemServerPath, itemRelativePath);
-      } else if (!fs.existsSync(itemServerPath)) {
-        requiredFiles.push(itemRelativePath);
-      }
-    }
-  }
-
-  try {
-    await fs.promises.mkdir(serverBasePath, { recursive: true });
-    await checkDirectory(directory, serverBasePath);
-    res.json({ requiredFiles });
-  } catch (error) {
-    logger.debug('Error checking user directory:', error);
-    res.status(500).json({ error: 'Failed to check user directory', details: error.message });
-  }
-});
-
-app.post('/api/upload-missing-files', upload.single('files'), async (req, res) => {
-  const { userId } = req.body;
-  const zipFilePath = req.file.path;
-  const extractPath = path.join(baseDir, userId);
-
-  try {
-    await extract(zipFilePath, { dir: extractPath });
-    fs.unlinkSync(zipFilePath);
-
-    const extractedFiles = await getAllFiles(extractPath);
-    logger.debug('Extracted files:', extractedFiles);
-
-    res.json({ message: 'Files uploaded and extracted successfully', extractedFiles });
-  } catch (error) {
-    logger.debug('Error processing uploaded files:', error);
-    res.status(500).json({ error: 'Failed to process uploaded files', details: error.message });
-  }
-});
-
-
-
-
-const validateTableName = (tableName) => {
-  const validTables = [
-    'users',
-    'rooms',
-    'room_specifications',
-    'tenants',
-    'room_pay_info',
-    'PastTenantReview',
-    'brokers',
-    'brokersRecommendationList',
-    'PastTenantsForRoom',
-    'agreements','notification_template_selections','email_templates','utility_payments','utility_payments_settings','sms_templates','email_history','expenses'
-  ];
-  return validTables.includes(tableName);
-};
-
-app.get('/api/:tableName', (req, res) => {
-  const { tableName } = req.params;
-  if (!validateTableName(tableName)) {
-    return res.status(400).send('Invalid table name.');
-  }
-
-  pool.getConnection((err, connection) => {
-    if (err) throw err;
-    connection.query(`SELECT * FROM ??`, [tableName], (error, rows) => {
-      connection.release();
-      if (!error) {
-        res.send(rows);
-      } else {
-        logger.debug(error);
-        res.sendStatus(500);
-      }
-    });
+// Add a status endpoint to check if notifications are currently processing
+app.get('/api/notification-status', (req, res) => {
+  res.json({
+    isProcessing,
+    lastProcessed: isProcessing ? null : new Date().toISOString()
   });
 });
 
-app.get('/api/:tableName/:sqlCode', (req, res) => {
-  const { tableName, sqlCode } = req.params;
-  if (!validateTableName(tableName)) {
-    return res.status(400).send('Invalid table name.');
+// Add a cleanup function for proper shutdown
+function cleanup() {
+  if (notificationTask) {
+    notificationTask.stop();
   }
+  isProcessing = false;
+}
 
-  pool.getConnection((err, connection) => {
-    if (err) throw err;
-    const query = `SELECT * FROM ?? ${sqlCode}`;
-    connection.query(query, [tableName], (error, rows) => {
-      connection.release();
-      if (!error) {
-        res.send(rows);
-      } else {
-        logger.debug(error);
-        res.sendStatus(500);
-      }
-    });
-  });
-});
-
-app.get('/api/:tableName/:id', (req, res) => {
-  const { tableName, id } = req.params;
-  if (!validateTableName(tableName)) {
-    return res.status(400).send('Invalid table name.');
-  }
-
-  pool.getConnection((err, connection) => {
-    if (err) throw err;
-    connection.query(
-      `SELECT * FROM ?? WHERE id = ?`,
-      [tableName, id],
-      (error, rows) => {
-        connection.release();
-        if (!error) {
-          res.send(rows);
-        } else {
-          logger.debug(error, 'bruh');
-          res.sendStatus(500);
-        }
-      },
-    );
-  });
-});
-
-app.delete('/api/:tableName/:id', (req, res) => {
-  const { tableName, id } = req.params;
-  if (!validateTableName(tableName)) {
-    return res.status(400).send('Invalid table name.');
-  }
-
-  pool.getConnection((err, connection) => {
-    if (err) throw err;
-    connection.query(
-      `DELETE FROM ?? WHERE id = ?`,
-      [tableName, id],
-      (error, result) => {
-        connection.release();
-        if (!error) {
-          res.json({
-            message: `Record with id ${id} from table ${tableName} has been deleted.`,
-          });
-        } else {
-          logger.debug(error);
-          res.sendStatus(500);
-        }
-      },
-    );
-  });
-});
-
-app.post('/api/:tableName', (req, res) => {
-  const { tableName } = req.params;
-  if (!validateTableName(tableName)) {
-    return res.status(400).send('Invalid table name.');
-  }
-
-  const params = req.body;
-  pool.getConnection((err, connection) => {
-    if (err) throw err;
-    connection.query(
-      `INSERT INTO ?? SET ?`,
-      [tableName, params],
-      (error, result) => {
-        connection.release();
-        if (!error) {
-          res.json({
-            message: `New record added to ${tableName}.`,
-          });
-        } else {
-          logger.debug(error);
-          res.sendStatus(500);
-        }
-      },
-    );
-  });
-});
-
-app.put('/api/:tableName/:id/:columnName', (req, res) => {
-  const { tableName, id, columnName } = req.params;
-  if (!validateTableName(tableName)) {
-    return res.status(400).send('Invalid table name.');
-  }
-
-  const columnValue = req.body[columnName];
-  pool.getConnection((err, connection) => {
-    if (err) throw err;
-    connection.query(
-      `UPDATE ?? SET ?? = ? WHERE id = ?`,
-      [tableName, columnName, columnValue, id],
-      (error, result) => {
-        connection.release();
-        if (!error) {
-          if (result.affectedRows > 0) {
-            res.json({
-              message: `Record with id ${id} in ${tableName} has been updated.`,
-            });
-          } else {
-            res.status(404).json({
-              error: `Record with ID ${id} not found.`,
-            });
-          }
-        } else {
-                  logger.debug(error);
-          res.sendStatus(500);
-        }
-      },
-    );
-  });
-});
-
-// Start server
-app.listen(PORT, () => {
-  logger.debug(`Server is running on port ${PORT}`);
-});
-
-
-
-
-
+// Handle process termination
+process.on('SIGTERM', cleanup);
+process.on('SIGINT', cleanup);

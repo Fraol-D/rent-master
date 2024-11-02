@@ -1,4 +1,3 @@
-
 const baseUrl = 'http://localhost:8100';
 const { v4: uuidv4 } = require('uuid');
 export const dropAllRowsInTable = async (tableName) => {
@@ -513,6 +512,7 @@ export const deleteValue = async (tableName, id, setChangeMade) => {
       'delete',
       'not_needed',
       setChangeMade,
+      'Not needed',
       true
     );
     return data;

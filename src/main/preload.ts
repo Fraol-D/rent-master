@@ -43,6 +43,11 @@ const electronHandler = {
   },
   showContextMenu: () => ipcRenderer.send('show-context-menu'),
   onContextMenuCommand: (callback) => ipcRenderer.on('context-menu-command', callback),
+  update: {
+    checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),
+    install: () => ipcRenderer.invoke('install-update'),
+    isReady: () => ipcRenderer.invoke('is-update-ready'),
+  }
 };
 
 contextBridge.exposeInMainWorld('electron', electronHandler);

@@ -73,7 +73,7 @@ const DashboardPage: React.FC<props> = ({
             />
             <TenantGrowthWidget TenantList={tenantList} />
           </div>
-          <DashbOverAllTax RoomList={RoomList} />
+          <DashbOverAllTax RoomList={RoomList} tenantList={tenantList}/>
           <UpcomingAgreements RoomList={RoomList} TenantList={tenantList} />
         </div>
       ) : DashboardSelectedPage === 'Email History' ? (

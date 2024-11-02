@@ -1,5 +1,5 @@
 import path from 'path';
-import { app, BrowserWindow, shell, ipcMain } from 'electron';
+import { app, BrowserWindow, shell, ipcMain, Menu } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import MenuBuilder from './menu';
@@ -25,12 +25,77 @@ ipcMain.on('electron-store-get', async (event, val) => {
 ipcMain.on('electron-store-set', async (event, key, val) => {
   setStoreValue(key, val);
 });
+
 class AppUpdater {
   constructor() {
     log.transports.file.level = 'info';
+    store.set('updateReady', false);
     autoUpdater.logger = log;
-    autoUpdater.checkForUpdatesAndNotify();
+    
+    // Disable auto downloading
+    autoUpdater.autoDownload = false;
+    
+    // Set the GitHub configuration directly
+    autoUpdater.setFeedURL({
+      provider: 'github',
+      owner: 'Doorlock06',
+      repo: 'rentmaster',
+      private: true,
+      token: process.env.GH_TOKEN, // Make sure you have this set
+    });
+
+    // Add error logging
+    autoUpdater.on('error', (err) => {
+      log.error('Update error:', err);
+    });
+
+    // Handle update available
+    autoUpdater.on('update-available', (info) => {
+      log.info('Update available:', info);
+      autoUpdater.downloadUpdate();
+      mainWindow?.webContents.send('update-available');
+    });
+// In your AppUpdater class or where you handle auto-updates
+autoUpdater.on('update-available', (info) => {
+  mainWindow?.webContents.send('update-available', info);
+});
+
+// Add this IPC handler
+ipcMain.on('restart-app', () => {
+  autoUpdater.quitAndInstall(false, true);
+});
+    // Handle update downloaded
+    autoUpdater.on('update-downloaded', () => {
+      log.info('Update downloaded');
+      store.set('updateReady', true);
+      mainWindow?.webContents.send('update-downloaded');
+    });
+
+    // Handle download progress with detailed info
+    autoUpdater.on('download-progress', (progressObj) => {
+      log.info(`Download progress: ${progressObj.percent}%`);
+      mainWindow?.webContents.send('download-progress', {
+        percent: progressObj.percent,
+        transferred: progressObj.transferred,
+        total: progressObj.total,
+        bytesPerSecond: progressObj.bytesPerSecond
+      });
+    });
+
+    // Check for updates
+    try {
+      autoUpdater.checkForUpdates().catch(err => {
+        log.error('Error checking for updates:', err);
+      });
+    } catch (err) {
+      log.error('Error in update check:', err);
+    }
   }
+}
+
+// Add this helper method to install updates
+export function installUpdate() {
+  autoUpdater.quitAndInstall(false, true);
 }
 
 let mainWindow: BrowserWindow | null = null;
@@ -116,13 +181,18 @@ const createWindow = async () => {
     x: finalX,
     y: finalY,
     icon: getAssetPath('icon.png'),
+    title: `RentMaster v${app.getVersion()}`,
     webPreferences: {
       preload: app.isPackaged
         ? path.join(__dirname, 'preload.js')
         : path.join(__dirname, '../../.erb/dll/preload.js'),
     },
+        // Add these lines
+        autoHideMenuBar: true,  // Hides the menu bar but can be accessed with Alt
+   // Completely hides the menu bar
+     
   });
-
+  Menu.setApplicationMenu(null);
   mainWindow.loadURL(resolveHtmlPath('index.html'));
 // Get the PC name
 
@@ -556,6 +626,7 @@ const tableStructures = [
       'phoneNumber TEXT ',
       'phoneNumber2 TEXT',
       'email TEXT',
+      'description TEXT ',
       'SelectedAgreement TEXT ',
       'RentingOrOut BOOLEAN ',
       'startTime INTEGER ', // Assuming storing as UNIX timestamp
@@ -2505,3 +2576,16 @@ ipcMain.handle('GetReceiptFile', (event, date, roomId, tenant) => {
 function reloadApp() {
   BrowserWindow.getFocusedWindow()?.webContents.reload();
 }
+
+// Add these near other IPC handlers
+ipcMain.handle('check-for-updates', async () => {
+  return autoUpdater.checkForUpdates();
+});
+
+ipcMain.handle('install-update', () => {
+  autoUpdater.quitAndInstall(false, true);
+});
+
+ipcMain.handle('is-update-ready', () => {
+  return store.get('updateReady', false);
+});

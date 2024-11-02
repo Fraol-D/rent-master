@@ -18,6 +18,10 @@ interface EmailTemplate {
   name: string;
 }
 
+interface ValidationState {
+  [key: string]: boolean;
+}
+
 const NotificationSettingsTable: React.FC<NotificationSettingsProps> = ({
   notificationSettings,
   setNotificationSettings,
@@ -29,6 +33,7 @@ const NotificationSettingsTable: React.FC<NotificationSettingsProps> = ({
   const [selectedTemplates, setSelectedTemplates] = useState<
     Record<string, string>
   >({});
+  const [templateValidation, setTemplateValidation] = useState<ValidationState>({});
 
   const notificationTypes = [
     '5 days before due',
@@ -66,8 +71,22 @@ const NotificationSettingsTable: React.FC<NotificationSettingsProps> = ({
     fetchSelectedTemplates();
   }, [userId, roomId]);
 
-  const toggleSetting = (index: number) => {
-    setNotificationSettings(notificationSettings ^ (1 << (index * 2)));
+  const toggleSetting = (index: number, type: string) => {
+    const newSettings = notificationSettings ^ (1 << (index * 2));
+    setNotificationSettings(newSettings);
+    
+    const isEmailEnabled = (newSettings & (1 << (index * 2))) !== 0;
+    if (isEmailEnabled && !selectedTemplates[type]) {
+      setTemplateValidation(prev => ({
+        ...prev,
+        [type]: true
+      }));
+    } else {
+      setTemplateValidation(prev => ({
+        ...prev,
+        [type]: false
+      }));
+    }
   };
 
   const toggleSmsSetting = (index: number) => {
@@ -110,6 +129,12 @@ const NotificationSettingsTable: React.FC<NotificationSettingsProps> = ({
     }
   };
 
+  const getSelectStyle = (type: string) => ({
+    border: templateValidation[type] ? '2px solid red' : '1px solid var(--Border-Color)',
+    borderRadius: '4px',
+    padding: '4px'
+  });
+
   return (
     <table style={{ fontSize: '14px', borderCollapse: 'collapse' }}>
       <thead>
@@ -130,7 +155,7 @@ const NotificationSettingsTable: React.FC<NotificationSettingsProps> = ({
               <input
                 type="checkbox"
                 checked={(notificationSettings & (1 << (index * 2))) !== 0}
-                onChange={() => toggleSetting(index)}
+                onChange={() => toggleSetting(index, type)}
               />
             </td>
             <td style={{ padding: '5px', textAlign: 'center' }}>
@@ -143,7 +168,14 @@ const NotificationSettingsTable: React.FC<NotificationSettingsProps> = ({
             <td style={{ padding: '5px', textAlign: 'center' }}>
               <select
                 value={selectedTemplates[type] || ''}
-                onChange={(e) => handleTemplateChange(type, e.target.value)}
+                onChange={(e) => {
+                  handleTemplateChange(type, e.target.value);
+                  setTemplateValidation(prev => ({
+                    ...prev,
+                    [type]: false
+                  }));
+                }}
+                style={getSelectStyle(type)}
               >
                 <option value="">Select a template</option>
                 {emailTemplates.map((template) => (
@@ -152,6 +184,16 @@ const NotificationSettingsTable: React.FC<NotificationSettingsProps> = ({
                   </option>
                 ))}
               </select>
+              {templateValidation[type] && (
+                <div style={{ 
+                  color: 'red', 
+                  fontSize: '12px', 
+                  position: 'absolute',
+                  marginTop: '2px' 
+                }}>
+                  Template required
+                </div>
+              )}
             </td>
           </tr>
         ))}
