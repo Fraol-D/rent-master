@@ -1108,22 +1108,25 @@ function Hello() {
     | 'non'
   >(() => {
     const privileges = getUserPrivileges(SelectedAppUser);
+    if (privileges.viewDashboard) return 'Dashboard';
     if (privileges.viewRoomsPage) return 'Rooms';
     if (privileges.viewPeoplesPage) return 'People';
     if (privileges.viewCalendar) return 'Calendar';
     if (privileges.viewDatabase) return 'Database';
     if (privileges.viewToolsPage) return 'Tools';
-    if (privileges.viewDashboard) return 'Dashboard';
     return 'non'; // Default fallback
   });
+
+  
+
   const privileges = getUserPrivileges(SelectedAppUser);
 
   useEffect(() => {
     const timer = setTimeout(() => {
       setSelectedPage((prevPage) => {
+        if (privileges.viewDashboard) return 'Dashboard';
         if (privileges.viewRoomsPage) return 'Rooms';
         if (privileges.viewPeoplesPage) return 'People';
-        if (privileges.viewDashboard) return 'Dashboard';
         if (privileges.viewCalendar) return 'Calendar';
         if (privileges.viewDatabase) return 'Database';
         if (privileges.viewToolsPage) return 'Tools';

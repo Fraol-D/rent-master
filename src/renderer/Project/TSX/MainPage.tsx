@@ -999,8 +999,8 @@ const MainPage = ({
     console.log('Show in explorer', path);
   };
   const [isMoreThanOneImage, setIsMoreThanOneImage] = useState<boolean>(false);
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(true);
+  const [isFilterOpen, setIsFilterOpen] = useState(true);
 
   const toggleSearch = () => setIsSearchOpen(!isSearchOpen);
   const toggleFilter = () => setIsFilterOpen(!isFilterOpen);
