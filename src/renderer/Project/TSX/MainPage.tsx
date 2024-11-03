@@ -40,6 +40,39 @@ interface RoomCategory {
   rooms?: string[];
 }
 declare global {
+  type BranchType = {
+    // Primary identifiers
+    id: string;
+    userId: string;
+    
+    // Basic information
+    name: string;
+    location: string;
+    description: string;
+    googleMapPinPoint: string;
+  
+  }
+  type BranchTypeWithData = {
+    // Primary identifiers
+    id: string;
+    userId: string;
+    
+    // Basic information
+    name: string;
+    location: string;
+    description: string;
+    googleMapPinPoint: string;
+
+    totalRooms?: number;
+    totalFloors?: number;
+    totalTenants?: number;
+    occupiedRooms?: number;
+    vacantRooms?: number;
+    monthlyRevenue?: number;
+    unpaidPastPayments?: number;
+    userAccountsWhichHaveAccess?: string[];
+
+  }
   type RoomType = {
     id: string;
     floor: number;

@@ -1117,7 +1117,7 @@ function Hello() {
     return 'non'; // Default fallback
   });
 
-  
+  const [ViewBranchManagementPage, setViewBranchManagementPage] = useState(false);
 
   const privileges = getUserPrivileges(SelectedAppUser);
 
@@ -1169,6 +1169,8 @@ function Hello() {
         AppUserManagerPromptPassword={AppUserManagerPromptPassword}
         setAppUserManagerPromptPassword={setAppUserManagerPromptPassword}
         setSelectedAppUser={setSelectedAppUser}
+        ViewBranchManagementPage={ViewBranchManagementPage}
+        setViewBranchManagementPage={setViewBranchManagementPage}
       >
         <>
           <NavBar
@@ -1193,7 +1195,7 @@ function Hello() {
             setAppUserManagerShow={setAppUserManagerShow}
             setAppUserManagerPromptPassword={setAppUserManagerPromptPassword}
             SelectedAppUser={SelectedAppUser}
-            setChangeMade={setChangeMade}
+            setChangeMade={setChangeMade}setViewBranchManagementPage={setViewBranchManagementPage}
           ></NavBar>
           <MainPage
             roomSpecificationAPI={roomSpecificationAPI}

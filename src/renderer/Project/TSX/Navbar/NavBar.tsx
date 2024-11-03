@@ -35,6 +35,7 @@ interface Props {
   setAppUserManagerPromptPassword: (newval: boolean) => void;
   SelectedAppUser: appUser | null;
   setChangeMade: (newval: number) => void;
+  setViewBranchManagementPage: (newval: boolean) => void;
 }
 
 const NavBar = ({
@@ -58,7 +59,7 @@ const NavBar = ({
   setAppUserManagerShow,
   setAppUserManagerPromptPassword,
   SelectedAppUser,
-  setChangeMade,
+  setChangeMade,setViewBranchManagementPage
 }: Props) => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
@@ -240,6 +241,17 @@ const NavBar = ({
               }}
             >
               Switch User
+            </button>
+            <button
+              style={{ marginLeft: '10px' }}
+              onClick={() => {
+                if (navigator.onLine) {
+                  setViewBranchManagementPage(true);
+                
+                }
+              }}
+            >
+              Switch Branch
             </button>
           </p>
           <p

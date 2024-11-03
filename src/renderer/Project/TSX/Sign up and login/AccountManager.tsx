@@ -37,6 +37,8 @@ interface MyComponentProps {
   AppUserManagerPromptPassword: boolean;
   setAppUserManagerPromptPassword: (newval: boolean) => void;
   setSelectedAppUser: (newval: appUser) => void;
+  ViewBranchManagementPage: boolean;
+  setViewBranchManagementPage: (newval: boolean) => void;
 }
 
 const timeoutPromise = (ms: number) => {
@@ -63,7 +65,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
   AppUserManagerShow,
   AppUserManagerPromptPassword,
   setAppUserManagerPromptPassword,
-  setSelectedAppUser,
+  setSelectedAppUser,setViewBranchManagementPage,ViewBranchManagementPage
 }) => {
   const [TrialExpiredState, setTrialExpiredState] = useState(false);
   const [IsAllowedState, setIsAllowedState] = useState(false);
@@ -784,6 +786,79 @@ const AccountManager = (React.FC<MyComponentProps> = ({
     }
   };
 
+  const [Branches, setBranches] = useState<BranchTypeWithData[]>([]);
+  useEffect(() => {
+    const fetchBranches = async () => {
+      if(ViewBranchManagementPage){
+        const branches = await getValuesWithSql_Online('branches',`WHERE userId = '${SelectedUserId}'`);
+        const branchesWithData = branches.map(async (branch: BranchType) => {
+          const allRooms = await getValuesWithSql_Online('rooms',`WHERE branchId = '${branch.id}'`);
+          const allTenants = await getValuesWithSql_Online('tenants',`WHERE branchId = '${branch.id}'`);
+          const totalRooms = allRooms.length;
+          const totalFloors = Math.max(...allRooms.map((room: { floor: any; }) => room.floor));
+          const totalTenants = allTenants.length;
+          const occupiedRooms = allRooms.filter((room: { tenantId: string; }) => room.tenantId !== '').length;
+          const vacantRooms = totalRooms - occupiedRooms;
+          const unpaidPastPayments = 1000;
+          const userAccountsWhichHaveAccess = ['user1', 'user2'];
+          let monthlyRevenue = 0;
+          const today = new Date();
+          const currentMonth = today.getMonth();
+          const currentYear = today.getFullYear();
+          allTenants.forEach((tenant: tenant) => {
+            const tenantStart = new Date(tenant.startTime * 1000);
+            const room = allRooms.find((room: RoomType) => room.tenantId === tenant.id);
+            if (room && tenantStart <= today) {
+              let paymentsThisMonth = 0;
+              switch (room.PaymentCycleType) {
+                case '30':
+                  paymentsThisMonth = Math.floor((today.getDate() - tenantStart.getDate()) / 30) + 1;
+                  break;
+                case '15':
+                  paymentsThisMonth = Math.floor((today.getDate() - tenantStart.getDate()) / 15) + 1;
+                  break;
+                case '7':
+                  paymentsThisMonth = Math.floor((today.getDate() - tenantStart.getDate()) / 7) + 1;
+                  break;
+                case 'daily':
+                  paymentsThisMonth = today.getDate() - tenantStart.getDate() + 1;
+                  break;
+                case 'monthly':
+                  paymentsThisMonth = currentMonth - tenantStart.getMonth() + 1;
+                  break;
+                case 'weekly':
+                  paymentsThisMonth = Math.floor((today.getDate() - tenantStart.getDate()) / 7) + 1;
+                  break;
+                case 'custom':
+                  paymentsThisMonth = Math.floor((today.getDate() - tenantStart.getDate()) / room.PaymentCycleCustomeDays) + 1;
+                  break;
+                case 'Annually':
+                  paymentsThisMonth = currentYear - tenantStart.getFullYear();
+                  break;
+                default:
+                  paymentsThisMonth = currentMonth - tenantStart.getMonth() + 1;
+              }
+              monthlyRevenue += paymentsThisMonth * parseFloat(tenant.agreedPrice);
+            }
+          });
+          return {
+            ...branch,
+            totalRooms,
+            totalFloors,
+            totalTenants,
+            occupiedRooms,
+            vacantRooms,
+            monthlyRevenue,
+            unpaidPastPayments,
+            userAccountsWhichHaveAccess
+          };
+        });
+        setBranches(branchesWithData);
+      }
+    };
+    fetchBranches();
+  }, [ViewBranchManagementPage]);
+
   return (
     <>
       {(loading || initialLoading) && (
@@ -817,7 +892,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
               ) : IsAllowedState ? (
                 <>
                   {AppUserManagerShow ? (
-                    AppUserManagerPromptPassword ? (
+                    AppUserManagerPromptPassword ? 
                       <div
                         style={{
                           display: 'flex',
@@ -908,25 +983,39 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                           </button>
                         </div>{' '}
                       </div>
-                    ) : (
+                     : (
                       <>
-                        <h1 style={{ textAlign: 'center' }}>User Selector</h1>
-                        <p style={{ textAlign: 'center' }}>
-                          Select the user this PC will be assigned to. This step
-                          is crucial for proper account management and ensures
-                          that the correct user has access to this device.
-                        </p>
-                        <div
-                          style={{ display: 'flex', justifyContent: 'center' }}
-                        >
-                          <button
-                            className="appUserButtons"
-                            style={{ marginBottom: 'auto', marginTop: '10px' }}
-                            onClick={handleAddNewAppUser}
-                          >
-                            Add New User
-                          </button>
-                        </div>
+                          <div style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            marginBottom: '20px',
+                            padding:"20px"
+                          }}>
+                            <div>
+                              <h1 style={{ margin: 0 }}>User Management</h1>
+                              <p style={{ margin: '10px 0 0 0', color: 'var(--Text-Color-60)' }}>
+                                Select the user this PC will be assigned to
+                              </p>
+                            </div>
+                            <div>
+                              <button 
+                                className="appUserButtons"
+                                onClick={() => setAppUserManagerShow(false)}
+                                style={{ marginRight: '10px' }}
+                              >
+                                Back
+                              </button>
+                              <button 
+                                className="appUserButtons"
+                                onClick={handleAddNewAppUser}
+                              >
+                                Add New User
+                              </button>
+                            </div>
+                          </div>
+
+                          
                         <div
                           style={{
                             display: 'flex',
@@ -956,7 +1045,9 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                   Select
                                 </button>
                               </div>
-                              <h3>All Privileges are on</h3>
+                              <p style={{ margin: '5px 0', color: 'var(--Text-Color-60)' }}>
+                                  Full system access with all privileges enabled
+                                </p>
                             </div>
                             {appUsers.map((appUser) => (
                               <div key={appUser.id} className="appUserItem">
@@ -1086,6 +1177,138 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                         )}
                       </>
                     )
+                  ) : ViewBranchManagementPage ? (
+                    <div className="branch-management-container" style={{
+                      padding: '20px',
+                      height: '100%',
+                      display: 'flex',
+                      flexDirection: 'column'
+                    }}>
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        marginBottom: '20px'
+                      }}>
+                        <h1 style={{ margin: 0 }}>Branch Management</h1>
+                        <div>
+                          <button 
+                            className="appUserButtons"
+                            onClick={() => setViewBranchManagementPage(false)}
+                            style={{ marginRight: '10px' }}
+                          >
+                            Back
+                          </button>
+                          <button 
+                            className="appUserButtons"
+                            onClick={() => {/* Add branch handler */}}
+                          >
+                            Add New Branch
+                          </button>
+                        </div>
+                      </div>
+
+                     
+
+<div className="branch-list" style={{
+  display: 'flex',
+  flexWrap: 'wrap',
+  gap: '20px',
+  overflowY: 'auto'
+}}>
+  {Branches.map((branch) => (
+    <div key={branch.id} className="branch-card" style={{
+      backgroundColor: 'var(--Secondary-Color20)',
+      borderRadius: '8px',
+      padding: '20px',
+      width: '300px',
+      boxShadow: '0px 4px 4px rgba(0, 0, 0, 0.1)',
+      marginLeft: '20px'
+    }}>
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: '15px'
+      }}>
+        <h3 style={{ margin: 0 }}>{branch.name}</h3>
+        <div>
+          <button 
+            className="appUserButtons"
+            style={{ marginRight: '5px' }}
+            onClick={() => {/* Edit branch handler */}}
+          >
+            Edit
+          </button>
+          <button 
+            className="appUserButtons"
+            onClick={() => {/* Delete branch handler */}}
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+
+      <div style={{ marginBottom: '10px' }}>
+        <strong>Location:</strong>
+        <p style={{ margin: '5px 0' }}>{branch.location}</p>
+      </div>
+
+      <div style={{ marginBottom: '10px' }}>
+        <strong>Description:</strong>
+        <p style={{ margin: '5px 0' }}>{branch.description}</p>
+      </div>
+
+      <div style={{ marginBottom: '10px' }}>
+        <strong>Building Statistics:</strong>
+        <ul style={{ margin: '5px 0', listStyle: 'none', padding: 0 }}>
+          <li>Total Floors: {branch.totalFloors || 0}</li>
+          <li>Total Rooms: {branch.totalRooms || 0}</li>
+          <li>Total Tenants: {branch.totalTenants || 0}</li>
+          <li>Occupied Rooms: {branch.occupiedRooms || 0}</li>
+          <li>Vacant Rooms: {branch.vacantRooms || 0}</li>
+        </ul>
+      </div>
+
+      <div style={{ marginBottom: '15px' }}>
+        <strong>Financial Overview:</strong>
+        <ul style={{ margin: '5px 0', listStyle: 'none', padding: 0 }}>
+          <li>Monthly Revenue: ${branch.monthlyRevenue?.toLocaleString() || 0}</li>
+          <li>Unpaid Payments: ${branch.unpaidPastPayments?.toLocaleString() || 0}</li>
+        </ul>
+      </div>
+
+      {branch.userAccountsWhichHaveAccess && branch.userAccountsWhichHaveAccess.length > 0 && (
+        <div style={{ marginBottom: '15px' }}>
+          <strong>Shared Access:</strong>
+          <p style={{ margin: '5px 0' }}>
+            {branch.userAccountsWhichHaveAccess.length} user(s) have access
+          </p>
+        </div>
+      )}
+
+      <button 
+        className="appUserButtons"
+        style={{ width: '100%' }}
+        onClick={() => {/* Select branch handler */}}
+      >
+        Select Branch
+      </button>
+    </div>
+  ))}
+  
+  {Branches.length === 0 && (
+    <div style={{
+      width: '100%',
+      textAlign: 'center',
+      padding: '20px',
+      color: 'var(--Text-Color-60)'
+    }}>
+      No branches found. Click "Add New Branch" to create one.
+    </div>
+  )}
+</div>
+                    </div>
                   ) : (
                     children
                   )}

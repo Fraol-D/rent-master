@@ -31,10 +31,10 @@ class AppUpdater {
     log.transports.file.level = 'info';
     store.set('updateReady', false);
     autoUpdater.logger = log;
-    
+
     // Disable auto downloading
     autoUpdater.autoDownload = false;
-    
+
     // Set the GitHub configuration directly
     autoUpdater.setFeedURL({
       provider: 'github',
@@ -55,15 +55,15 @@ class AppUpdater {
       autoUpdater.downloadUpdate();
       mainWindow?.webContents.send('update-available');
     });
-// In your AppUpdater class or where you handle auto-updates
-autoUpdater.on('update-available', (info) => {
-  mainWindow?.webContents.send('update-available', info);
-});
+    // In your AppUpdater class or where you handle auto-updates
+    autoUpdater.on('update-available', (info) => {
+      mainWindow?.webContents.send('update-available', info);
+    });
 
-// Add this IPC handler
-ipcMain.on('restart-app', () => {
-  autoUpdater.quitAndInstall(false, true);
-});
+    // Add this IPC handler
+    ipcMain.on('restart-app', () => {
+      autoUpdater.quitAndInstall(false, true);
+    });
     // Handle update downloaded
     autoUpdater.on('update-downloaded', () => {
       log.info('Update downloaded');
@@ -78,13 +78,13 @@ ipcMain.on('restart-app', () => {
         percent: progressObj.percent,
         transferred: progressObj.transferred,
         total: progressObj.total,
-        bytesPerSecond: progressObj.bytesPerSecond
+        bytesPerSecond: progressObj.bytesPerSecond,
       });
     });
 
     // Check for updates
     try {
-      autoUpdater.checkForUpdates().catch(err => {
+      autoUpdater.checkForUpdates().catch((err) => {
         log.error('Error checking for updates:', err);
       });
     } catch (err) {
@@ -131,7 +131,7 @@ const installExtensions = async () => {
     .catch(console.log);
 };
 const os = require('os');
-   // Serve static files from the 'src/renderer' directory
+// Serve static files from the 'src/renderer' directory
 
 const createWindow = async () => {
   if (isDebug) {
@@ -187,14 +187,13 @@ const createWindow = async () => {
         ? path.join(__dirname, 'preload.js')
         : path.join(__dirname, '../../.erb/dll/preload.js'),
     },
-        // Add these lines
-        autoHideMenuBar: true,  // Hides the menu bar but can be accessed with Alt
-   // Completely hides the menu bar
-     
+    // Add these lines
+    autoHideMenuBar: true, // Hides the menu bar but can be accessed with Alt
+    // Completely hides the menu bar
   });
   Menu.setApplicationMenu(null);
   mainWindow.loadURL(resolveHtmlPath('index.html'));
-// Get the PC name
+  // Get the PC name
 
   mainWindow.on('ready-to-show', () => {
     try {
@@ -318,7 +317,6 @@ app
     });
     // Set up daily check for backup
     setInterval(checkAndCreateBackup, 24 * 60 * 60 * 1000);
-    
   })
   .catch(console.log);
 const { v4: uuidv4 } = require('uuid');
@@ -580,6 +578,17 @@ const tableStructures = [
     ],
   },
   {
+    name: 'branches',
+    columns: [
+      'id TEXT PRIMARY KEY',
+      'name TEXT',
+      'location TEXT',
+      'description TEXT',
+      'googleMapPinPoint TEXT',
+      'userId TEXT',
+    ],
+  },
+  {
     name: 'rooms',
     columns: [
       'id TEXT PRIMARY KEY',
@@ -604,6 +613,7 @@ const tableStructures = [
       'utilityPaymentStartDate INTEGER DEFAULT 0',
       'utilityPaymentUseDifferentStartDate BOOLEAN DEFAULT 0',
       'userId TEXT',
+      'branchId TEXT',  // Added
     ],
   },
   {
@@ -616,6 +626,7 @@ const tableStructures = [
       'type TEXT ',
       'Boolean BOOLEAN',
       'userId TEXT',
+      'branchId TEXT',  // Added
     ],
   },
   {
@@ -636,6 +647,7 @@ const tableStructures = [
       'RentReason TEXT',
       'AddedTime INTEGER',
       'userId TEXT',
+      'branchId TEXT',  // Added
     ],
   },
   {
@@ -648,6 +660,7 @@ const tableStructures = [
       'Paid BOOLEAN ',
       'Value REAL DEFAULT 0',
       'userId TEXT',
+      'branchId TEXT',  // Added
     ],
   },
 
@@ -660,7 +673,9 @@ const tableStructures = [
       'Value REAL',
       'Paid INTEGER',
       'userId TEXT',
-      'agreementId TEXT','tenantId TEXT ',
+      'branchId TEXT',  // Added
+      'agreementId TEXT',
+      'tenantId TEXT ',
     ],
   },
   {
@@ -677,6 +692,7 @@ const tableStructures = [
       'rating REAL DEFAULT 0',
       'notes TEXT',
       'userId TEXT',
+      'branchId TEXT',  // Added
     ],
   },
   {
@@ -689,6 +705,7 @@ const tableStructures = [
       'AddedTime INTEGER ',
       'AgreedCommission INTEGER ',
       'userId TEXT',
+      'branchId TEXT',  // Added
     ],
   },
   {
@@ -708,6 +725,7 @@ const tableStructures = [
       'description TEXT ',
       'endReason TEXT ',
       'userId TEXT',
+      'branchId TEXT',  // Added
     ],
   },
   {
@@ -725,6 +743,7 @@ const tableStructures = [
       'RentReserved REAL DEFAULT 0',
       'representative TEXT',
       'userId TEXT',
+      'branchId TEXT',  // Added
     ],
   },
   {
@@ -770,6 +789,7 @@ const tableStructures = [
       'notification_type TEXT',
       'email_template_id TEXT',
       'userId  TEXT',
+      'branchId TEXT',  // Added
     ],
   },
   {
@@ -782,6 +802,7 @@ const tableStructures = [
       'price REAL DEFAULT 0',
       'alwaysAsk BOOLEAN',
       'userId TEXT',
+      'branchId TEXT',  // Added
     ],
   },
   {
@@ -795,6 +816,7 @@ const tableStructures = [
       'paid BOOLEAN',
       'date INTEGER',
       'userId TEXT',
+      'branchId TEXT',  // Added
     ],
   },
   {
@@ -814,6 +836,7 @@ const tableStructures = [
 
       'date INTEGER',
       'userId TEXT',
+      'branchId TEXT',  // Added
     ],
   },
 
@@ -828,6 +851,7 @@ const tableStructures = [
       'action_date INTEGER',
       'userInfo TEXT',
       'userId TEXT',
+      'branchId TEXT',  // Added
     ],
   },
 ];
@@ -1299,31 +1323,46 @@ appDB.post(
     }
   }
 );
- 
-appDB.delete('/drop-all-rows/:tableName', (req: { params: { tableName: any; }; headers: { [x: string]: any; }; }, res: { status: (arg0: number) => { (): any; new(): any; send: { (arg0: string): void; new(): any; }; }; send: (arg0: string) => void; }) => {
-  const { tableName } = req.params;
-  
-  // Validate the API key
-  const apiKey = req.headers['x-api-key'];
-  if (apiKey !== 'HH(CzZuQoW@tB$By)e') {
-    return res.status(401).send('Unauthorized');
-  }
 
-  // Validate the table name
-  if (!validateTableName(tableName)) {
-    return res.status(400).send('Invalid table name');
-  }
-
-  const query = `DELETE FROM ${tableName}`;
-  db.run(query, (err: { message: any; }) => {
-    if (err) {
-      console.error(`Error dropping all rows from ${tableName}:`, err);
-      res.status(500).send(`Error dropping all rows from ${tableName}: ${err.message}`);
-    } else {
-      res.send(`All rows dropped from ${tableName} successfully.`);
+appDB.delete(
+  '/drop-all-rows/:tableName',
+  (
+    req: { params: { tableName: any }; headers: { [x: string]: any } },
+    res: {
+      status: (arg0: number) => {
+        (): any;
+        new (): any;
+        send: { (arg0: string): void; new (): any };
+      };
+      send: (arg0: string) => void;
     }
-  });
-});
+  ) => {
+    const { tableName } = req.params;
+
+    // Validate the API key
+    const apiKey = req.headers['x-api-key'];
+    if (apiKey !== 'HH(CzZuQoW@tB$By)e') {
+      return res.status(401).send('Unauthorized');
+    }
+
+    // Validate the table name
+    if (!validateTableName(tableName)) {
+      return res.status(400).send('Invalid table name');
+    }
+
+    const query = `DELETE FROM ${tableName}`;
+    db.run(query, (err: { message: any }) => {
+      if (err) {
+        console.error(`Error dropping all rows from ${tableName}:`, err);
+        res
+          .status(500)
+          .send(`Error dropping all rows from ${tableName}: ${err.message}`);
+      } else {
+        res.send(`All rows dropped from ${tableName} successfully.`);
+      }
+    });
+  }
+);
 
 appDB.post(
   '/upload-tenant-documentV2',
@@ -1854,55 +1893,58 @@ appDB.get(
   }
 );
 // Add this new endpoint to main.ts
-appDB.post('/duplicate-room-images-folder', (
-  req: { body: { sourceFolderName: string; newFolderName: string } },
-  res: {
-    status: (arg0: number) => {
-      (): any;
-      new (): any;
-      json: { (arg0: { error: string }): void; new (): any };
-    };
-    json: (arg0: { message: string }) => void;
-  }
-) => {
-  try {
-    const { sourceFolderName, newFolderName } = req.body;
-    
-    const sourcePath = path.join(
-      process.env.APPDATA,
-      appname,
-      'Room Pictures',
-      sourceFolderName
-    );
-    
-    const destPath = path.join(
-      process.env.APPDATA,
-      appname,
-      'Room Pictures',
-      newFolderName
-    );
-
-    // Check if source exists
-    if (!fs.existsSync(sourcePath)) {
-      return res.status(404).json({ error: 'Source folder not found' });
+appDB.post(
+  '/duplicate-room-images-folder',
+  (
+    req: { body: { sourceFolderName: string; newFolderName: string } },
+    res: {
+      status: (arg0: number) => {
+        (): any;
+        new (): any;
+        json: { (arg0: { error: string }): void; new (): any };
+      };
+      json: (arg0: { message: string }) => void;
     }
+  ) => {
+    try {
+      const { sourceFolderName, newFolderName } = req.body;
 
-    // Create destination folder
-    fs.mkdirSync(destPath, { recursive: true });
+      const sourcePath = path.join(
+        process.env.APPDATA,
+        appname,
+        'Room Pictures',
+        sourceFolderName
+      );
 
-    // Copy all files from source to destination
-    fs.readdirSync(sourcePath).forEach((file) => {
-      const sourceFile = path.join(sourcePath, file);
-      const destFile = path.join(destPath, file);
-      fs.copyFileSync(sourceFile, destFile);
-    });
+      const destPath = path.join(
+        process.env.APPDATA,
+        appname,
+        'Room Pictures',
+        newFolderName
+      );
 
-    res.json({ message: 'Folder duplicated successfully' });
-  } catch (error) {
-    console.error('Error duplicating folder:', error);
-    res.status(500).json({ error: 'Failed to duplicate folder' });
+      // Check if source exists
+      if (!fs.existsSync(sourcePath)) {
+        return res.status(404).json({ error: 'Source folder not found' });
+      }
+
+      // Create destination folder
+      fs.mkdirSync(destPath, { recursive: true });
+
+      // Copy all files from source to destination
+      fs.readdirSync(sourcePath).forEach((file) => {
+        const sourceFile = path.join(sourcePath, file);
+        const destFile = path.join(destPath, file);
+        fs.copyFileSync(sourceFile, destFile);
+      });
+
+      res.json({ message: 'Folder duplicated successfully' });
+    } catch (error) {
+      console.error('Error duplicating folder:', error);
+      res.status(500).json({ error: 'Failed to duplicate folder' });
+    }
   }
-});
+);
 appDB.put(
   '/rename-folder',
   (
