@@ -78,13 +78,13 @@ const SMSTemplates: React.FC<SMSTemplatesProps> = ({
           key={template.id}
           className="email-template-container"
           style={{
-            minHeight: openTemplateId === template.id ? '181px' : '',
+            minHeight: openTemplateId === template.id ? 'var(--181px-V)' : '',
           }}
         >
           <div
             className="email-template-header"
             style={{
-              padding: editingTemplateId === template.id ? '10px' : '15px',
+              padding: editingTemplateId === template.id ? 'var(--10px-V)' : 'var(--15px-V)',
             }}
           >
             {editingTemplateId === template.id ? (

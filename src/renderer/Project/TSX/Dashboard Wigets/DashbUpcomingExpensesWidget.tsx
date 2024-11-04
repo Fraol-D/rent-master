@@ -93,26 +93,26 @@ const DashbUpcomingExpensesWidget: React.FC<UpcomingExpensesWidgetProps> = ({ ex
 
   return (
     <div style={{
-      width: '650px',
-      padding: '20px',
-      borderRadius: '8px',
-      boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+      width: 'var(--650px-V)',
+      padding: 'var(--20px-V)',
+      borderRadius: 'var(--8px-V)',
+      boxShadow: '0 var(--2px-V) var(--4px-V) rgba(0,0,0,0.1)',
       backgroundColor: 'var(--Secondary-Color30)',
-      margin: '10px',
-      height: '600px',
+      margin: 'var(--10px-V)',
+      height: 'var(--600px-V)',
       overflowY: 'auto',
     }}>
       <h2 style={{
-        fontSize: '24px',
-        marginBottom: '20px',
+        fontSize: 'var(--24px-V)',
+        marginBottom: 'var(--20px-V)',
         color: 'var(--Text-Color)',
-        marginTop: '0px',
+        marginTop: 'var(--0px-V)',
       }}>
         Upcoming Expenses
       </h2>
-      <div className='DashboardTotalCollectedTopPart' style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' }}>
+      <div className='DashboardTotalCollectedTopPart' style={{ marginBottom: 'var(--20px-V)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' }}>
         <div>
-          <label style={{ marginRight: '10px' }}>Building:</label>
+          <label style={{ marginRight: 'var(--10px-V)' }}>Building:</label>
           <select 
             value={filterFullBuilding === null ? '' : filterFullBuilding.toString()} 
             onChange={e => setFilterFullBuilding(e.target.value === '' ? null : e.target.value === 'true')}
@@ -125,21 +125,21 @@ const DashbUpcomingExpensesWidget: React.FC<UpcomingExpensesWidgetProps> = ({ ex
         {filterFullBuilding === false && (
           <>
             <div>
-              <label style={{ marginRight: '10px' }}>Floor:</label>
+              <label style={{ marginRight: 'var(--10px-V)' }}>Floor:</label>
               <input 
                 type="number" 
                 value={filterFloor} 
-                style={{width: '50px'}}
+                style={{width: 'var(--50px-V)'}}
                 onChange={e => setFilterFloor(e.target.value as number | '')} 
                 placeholder="Floor"
               />
             </div>
             <div>
-              <label style={{ marginRight: '10px' }}>Room:</label>
+              <label style={{ marginRight: 'var(--10px-V)' }}>Room:</label>
               <input 
                 type="number" 
                 value={filterRoom} 
-                style={{width: '50px'}}
+                style={{width: 'var(--50px-V)'}}
                 onChange={e => setFilterRoom(e.target.value as number | '')} 
                 placeholder="Room"
               />
@@ -147,7 +147,7 @@ const DashbUpcomingExpensesWidget: React.FC<UpcomingExpensesWidgetProps> = ({ ex
           </>
         )}
         <div>
-          <label style={{ marginRight: '10px' }}>Max Price:</label>
+          <label style={{ marginRight: 'var(--10px-V)' }}>Max Price:</label>
           <input 
             type="number" 
             value={filterPriceLimit} 
@@ -156,7 +156,7 @@ const DashbUpcomingExpensesWidget: React.FC<UpcomingExpensesWidgetProps> = ({ ex
           />
         </div>
         <div>
-          <label style={{ marginRight: '10px' }}>Months to show:</label>
+          <label style={{ marginRight: 'var(--10px-V)' }}>Months to show:</label>
           <select 
             value={monthsToShow} 
             onChange={e => setMonthsToShow(Number(e.target.value))}
@@ -170,13 +170,13 @@ const DashbUpcomingExpensesWidget: React.FC<UpcomingExpensesWidgetProps> = ({ ex
       <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
         {groupedExpenses.length > 0 ? (
           groupedExpenses.map(([month, monthExpenses]) => (
-            <li key={month} style={{ marginBottom: '20px' }}>
+            <li key={month} style={{ marginBottom: 'var(--20px-V)' }}>
               <h3 
                 onClick={() => toggleMonth(month)} 
                 style={{ 
                   cursor: 'pointer', 
                   color: 'var(--Text-Color)',
-                  marginBottom: '10px'
+                  marginBottom: 'var(--10px-V)'
                 }}
               >
                 {expandedMonths.includes(month) ? ' ▼' : ' ▶'}{" "}
@@ -191,33 +191,33 @@ const DashbUpcomingExpensesWidget: React.FC<UpcomingExpensesWidgetProps> = ({ ex
                         display: 'flex',
                         justifyContent: 'space-between',
                         alignItems: 'center',
-                        padding: '10px',
-                        marginBottom: '10px',
-                        borderBottom: '1px solid var(--Secondary-Color)',
+                        padding: 'var(--10px-V)',
+                        marginBottom: 'var(--10px-V)',
+                        borderBottom: 'var(--1px-V) solid var(--Secondary-Color)',
                         backgroundColor: 'var(--Secondary-Color60)',
-                        borderRadius: '10px',
-                        marginLeft: '10px',
+                        borderRadius: 'var(--10px-V)',
+                        marginLeft: 'var(--10px-V)',
                       }}
                     >
                       <div style={{
-                        flex: '0 0 120px',
-                        fontSize: '14px',
+                        flex: '0 0 var(--120px-V)',
+                        fontSize: 'var(--14px-V)',
                         color: 'var(--Text-Color)',
                       }}>
                         {format(new Date(expense.date), 'MMM dd, yyyy')}
                       </div>
                       <div style={{
                         flex: '1',
-                        fontSize: '16px',
+                        fontSize: 'var(--16px-V)',
                         fontWeight: 'bold',
                         color: 'var(--Text-Color)',
-                        marginLeft: '20px',
+                        marginLeft: 'var(--20px-V)',
                       }}>
                         {expense.name}
                       </div>
                       <div style={{
-                        flex: '0 0 100px',
-                        fontSize: '16px',
+                        flex: '0 0 var(--100px-V)',
+                        fontSize: 'var(--16px-V)',
                         fontWeight: 'bold',
                         color: 'var(--Text-Color-Grey)',
                         textAlign: 'right',
@@ -225,8 +225,8 @@ const DashbUpcomingExpensesWidget: React.FC<UpcomingExpensesWidgetProps> = ({ ex
                         ${expense.price.toLocaleString()}
                       </div>
                       <div style={{
-                        flex: '0 0 120px',
-                        fontSize: '14px',
+                        flex: '0 0 var(--120px-V)',
+                        fontSize: 'var(--14px-V)',
                         color: 'var(--Text-Color)',
                         textAlign: 'center',
                       }}>
@@ -237,11 +237,11 @@ const DashbUpcomingExpensesWidget: React.FC<UpcomingExpensesWidgetProps> = ({ ex
                         )}
                       </div>
                       <div style={{
-                        flex: '0 0 80px',
-                        fontSize: '12px',
+                        flex: '0 0 var(--80px-V)',
+                        fontSize: 'var(--12px-V)',
                         color: 'var(--Accent-Color)',
                         textAlign: 'right',
-                        marginLeft: '20px',
+                        marginLeft: 'var(--20px-V)',
                       }}>
                         {expense.isUtility ? 'Utility' : (expense.doesReoccur ? 'Recurring' : '')}
                       </div>
@@ -252,7 +252,7 @@ const DashbUpcomingExpensesWidget: React.FC<UpcomingExpensesWidgetProps> = ({ ex
             </li>
           ))
         ) : (
-          <li style={{ textAlign: 'center', padding: '20px', color: 'var(--Text-Color)' }}>
+          <li style={{ textAlign: 'center', padding: 'var(--20px-V)', color: 'var(--Text-Color)' }}>
             There are currently no upcoming expenses to display. This could be due to your current filter settings or a lack of recorded expenses for the specified time period.
           </li>
         )}

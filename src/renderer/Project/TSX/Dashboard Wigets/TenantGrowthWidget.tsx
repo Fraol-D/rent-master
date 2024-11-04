@@ -78,12 +78,12 @@ const TenantGrowthWidget = ({ TenantList }: { TenantList: tenant[] }) => {
   return (
     <div
       className="DashboardWigetMainContainer"
-      style={{ width: '400px', height: '165px' }}
+      style={{ width: 'var(--400px-V)', height: 'var(--165px-V)' }}
     >
       <div style={{ display: 'flex', alignItems: 'center' }}>
         <p
           className="DashboardWigetPieChartTextHeader"
-          style={{ width: '209px' }}
+          style={{ width: 'var(--209px-V)' }}
         >
           Tenant Growth
         </p>

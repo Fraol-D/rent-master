@@ -517,7 +517,7 @@ const SignupPage = ({
         >
           <img
             src={loadingGif}
-            style={{ width: '80px', height: '80px' }}
+            style={{ width: 'var(--80px-V)', height: 'var(--80px-V)' }}
             alt="Loading..."
           />
         </div>
@@ -530,22 +530,22 @@ const SignupPage = ({
             width: '100%',
             alignItems: 'center',
             height: 'auto',
-            marginBottom: '15px',
+            marginBottom: 'var(--15px-V)',
           }}
         >
           <h1
             style={{
-              marginRight: '10px',
-              marginTop: '0px',
-              marginBottom: '0px',
-              fontSize: '65px',
+              marginRight: 'var(--10px-V)',
+              marginTop: 'var(--0px-V)',
+              marginBottom: 'var(--0px-V)',
+              fontSize: 'var(--65px-V)',
             }}
           >
             Sign up
           </h1>{' '}
           <button onClick={handleOrLoginButtonClick}>Or login</button>
         </div>
-        <p style={{ color: 'var(--Text-Color-Grey)', marginBottom: '25px' }}>
+        <p style={{ color: 'var(--Text-Color-Grey)', marginBottom: 'var(--25px-V)' }}>
           Sign up with your Email and Password
         </p>
         <input
@@ -593,12 +593,12 @@ const SignupPage = ({
             </button>
             {!verificationSuccess && (
               <>
-                <hr style={{ width: '100%', marginBottom: '10px' }} />
+                <hr style={{ width: '100%', marginBottom: 'var(--10px-V)' }} />
                 <p
                   style={{
                     color: 'var(--Text-Color-Grey)',
-                    marginBottom: '5px',
-                    marginTop: '5px',
+                    marginBottom: 'var(--5px-V)',
+                    marginTop: 'var(--5px-V)',
                   }}
                 >
                   Verification code sent to your email
@@ -616,7 +616,7 @@ const SignupPage = ({
                     onChange={(e) => setUserCode(e.target.value)}
                     placeholder="Enter Code"
                     className="userName-input"
-                    style={{ width: '80px', marginBottom: '0px' }}
+                    style={{ width: 'var(--80px-V)', marginBottom: 'var(--0px-V)' }}
                   />{' '}
                   <button onClick={handleVerify} className="LoginButton">
                     Verify
@@ -632,8 +632,8 @@ const SignupPage = ({
                 <p
                   style={{
                     color: 'var(--Text-Color-Grey)',
-                    marginBottom: '5px',
-                    marginTop: '5px',
+                    marginBottom: 'var(--5px-V)',
+                    marginTop: 'var(--5px-V)',
                     textAlign: 'center',
                   }}
                 >
@@ -664,8 +664,8 @@ const SignupPage = ({
                 <p
                   style={{
                     color: 'var(--Text-Color-Grey)',
-                    marginBottom: '5px',
-                    marginTop: '5px',
+                    marginBottom: 'var(--5px-V)',
+                    marginTop: 'var(--5px-V)',
                     textAlign: 'center',
                   }}
                 >

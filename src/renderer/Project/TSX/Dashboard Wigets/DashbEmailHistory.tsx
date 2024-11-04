@@ -82,13 +82,13 @@ const DashbEmailHistory = ({ SelectedUserId, RoomList, tenantList }: props) => {
         alignItems: 'center',
       }}
     >
-      <h1 style={{ margin: '10px' }}>Email History</h1>
+      <h1 style={{ margin: 'var(--10px-V)' }}>Email History</h1>
       <div
         style={{
           display: 'flex',
           justifyContent: 'space-between',
           width: '90%',
-          marginBottom: '20px',
+          marginBottom: 'var(--20px-V)',
         }}
       >
         <input
@@ -115,12 +115,12 @@ const DashbEmailHistory = ({ SelectedUserId, RoomList, tenantList }: props) => {
           placeholder="Room number..."
           value={roomSearch}
           onChange={(e) => setRoomSearch(e.target.value)}
-          style={{ width: '100px' }}
+          style={{ width: 'var(--100px-V)' }}
         />
         <input
           type="text"
           placeholder="Floor number..."
-          style={{ width: '100px' }}
+          style={{ width: 'var(--100px-V)' }}
           value={floorSearch}
           onChange={(e) => setFloorSearch(e.target.value)}
         />
@@ -142,10 +142,10 @@ const DashbEmailHistory = ({ SelectedUserId, RoomList, tenantList }: props) => {
               style={{
                 cursor: 'pointer',
                 width: '95%',
-                margin: '10px',
-                padding: '10px',
-                borderRadius: '5px',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                margin: 'var(--10px-V)',
+                padding: 'var(--10px-V)',
+                borderRadius: 'var(--5px-V)',
+                boxShadow: '0 var(--2px-V) var(--4px-V) rgba(0,0,0,0.1)',
                 transition: 'all 0.3s ease',
               }}
             >
@@ -207,7 +207,7 @@ const DashbEmailHistory = ({ SelectedUserId, RoomList, tenantList }: props) => {
                     <strong>Mode:</strong> {email.mode || 'Unknown'}
                   </p>
                 </div>
-                <div style={{ fontSize: '24px', marginLeft: '10px' }}>
+                <div style={{ fontSize: 'var(--24px-V)', marginLeft: 'var(--10px-V)' }}>
                   {expandedEmailId === email.id ? '▼' : '▶'}{' '}
                   {/* Show down arrow if expanded, right arrow if not */}
                 </div>

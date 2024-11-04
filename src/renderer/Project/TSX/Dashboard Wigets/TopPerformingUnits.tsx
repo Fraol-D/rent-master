@@ -96,7 +96,7 @@ const TopPerformingUnits = ({
   return (
     <div
       className="DashboardWigetMainContainer"
-      style={{ width: '400px', height: '186px' }}
+      style={{ width: 'var(--400px-V)', height: 'var(--186px-V)' }}
     >
       <div
         style={{
@@ -107,14 +107,14 @@ const TopPerformingUnits = ({
       >
         <p
           className="DashboardWigetPieChartTextHeader"
-          style={{ width: '280px' }}
+          style={{ width: 'var(--280px-V)' }}
         >
           Top Performing Units
         </p>
         <button
           onClick={() => setShowAll(!showAll)}
           style={{
-            padding: '5px',
+            padding: 'var(--5px-V)',
             backgroundColor: 'var(--Secondary-Color)',
             cursor: 'pointer',
           }}
@@ -128,8 +128,8 @@ const TopPerformingUnits = ({
           <button
             onClick={() => setActiveTab('brokers')}
             style={{
-              width: '100px',
-              padding: '5px',
+              width: 'var(--100px-V)',
+              padding: 'var(--5px-V)',
               backgroundColor:
                 activeTab === 'brokers'
                   ? 'var(--Secondary-Color)'
@@ -142,8 +142,8 @@ const TopPerformingUnits = ({
           <button
             onClick={() => setActiveTab('loyal')}
             style={{
-              width: '100px',
-              padding: '5px',
+              width: 'var(--100px-V)',
+              padding: 'var(--5px-V)',
               backgroundColor:
                 activeTab === 'loyal'
                   ? 'var(--Secondary-Color)'
@@ -156,8 +156,8 @@ const TopPerformingUnits = ({
           <button
             onClick={() => setActiveTab('lifetime')}
             style={{
-              width: '100px',
-              padding: '5px',
+              width: 'var(--100px-V)',
+              padding: 'var(--5px-V)',
               backgroundColor:
                 activeTab === 'lifetime'
                   ? 'var(--Secondary-Color)'
@@ -171,11 +171,11 @@ const TopPerformingUnits = ({
         <div
           style={{
             width: '85%',
-            border: '1px solid grey',
-            borderRadius: '10px',
-            paddingLeft: '5px',
+            border: 'var(--1px-V) solid grey',
+            borderRadius: 'var(--10px-V)',
+            paddingLeft: 'var(--5px-V)',
             overflowY: 'auto',
-            height: '145px',
+            height: 'var(--145px-V)',
           }}
         >
           <div>
@@ -232,7 +232,7 @@ const TopList = ({ title, items, valueKey, labelKey, valueFormatter }: any) => (
   <div>
     <ul style={{ listStyleType: 'none', padding: 0 }}>
       {items.map((item: any, index: any) => (
-        <li key={index} style={{ marginBottom: '10px' }}>
+        <li key={index} style={{ marginBottom: 'var(--10px-V)' }}>
           {index + 1}. <strong>{item[labelKey]}</strong>:{' '}
           {valueFormatter
             ? valueFormatter(item[valueKey])
@@ -252,7 +252,7 @@ const TopListRoom = ({ title, items, valueKey }: any) => (
   <div>
     <ul style={{ listStyleType: 'none', padding: 0 }}>
       {items.map((item: any, index: any) => (
-        <li key={index} style={{ marginBottom: '10px' }}>
+        <li key={index} style={{ marginBottom: 'var(--10px-V)' }}>
           {index + 1}.{' '}
           <strong>
             Flr: {item.floor}, Rm: {item.roomIndex}

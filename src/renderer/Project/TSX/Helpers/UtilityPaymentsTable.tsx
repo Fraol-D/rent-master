@@ -96,20 +96,20 @@ const UtilityPaymentsTable = ({
   }, [tempPrices, handleUtilityChange]);
 
   return (
-    <table style={{ fontSize: '14px', borderCollapse: 'collapse' }}>
+    <table style={{ fontSize: 'var(--14px-V)', borderCollapse: 'collapse' }}>
       <thead>
         <tr>
-          <th style={{ padding: '5px', textAlign: 'left' }}>Types</th>
-          <th style={{ padding: '5px', textAlign: 'center' }}>Use</th>
-          <th style={{ padding: '5px', textAlign: 'center' }}>Price</th>
-          <th style={{ padding: '5px', textAlign: 'center' }}>Always Ask</th>
+          <th style={{ padding: 'var(--5px-V)', textAlign: 'left' }}>Types</th>
+          <th style={{ padding: 'var(--5px-V)', textAlign: 'center' }}>Use</th>
+          <th style={{ padding: 'var(--5px-V)', textAlign: 'center' }}>Price</th>
+          <th style={{ padding: 'var(--5px-V)', textAlign: 'center' }}>Always Ask</th>
         </tr>
       </thead>
       <tbody>
         {utilityPayments.map((utility: UtilityPaymentSettings, index: number) => (
           <tr key={index}>
-            <td style={{ padding: '5px' }}>{utility.type}</td>
-            <td style={{ padding: '5px', textAlign: 'center' }}>
+            <td style={{ padding: 'var(--5px-V)' }}>{utility.type}</td>
+            <td style={{ padding: 'var(--5px-V)', textAlign: 'center' }}>
               <input
                 type="checkbox"
                 checked={utility.useThis}
@@ -123,7 +123,7 @@ const UtilityPaymentsTable = ({
                 }
               />
             </td>
-            <td style={{ padding: '5px', textAlign: 'center' }}>
+            <td style={{ padding: 'var(--5px-V)', textAlign: 'center' }}>
               <input
                 type="number"
                 value={tempPrices[utility.id]}
@@ -134,11 +134,11 @@ const UtilityPaymentsTable = ({
                     handlePriceUpdate(index, utility);
                   }
                 }}
-                style={{ width: '70px' }}
+                style={{ width: 'var(--70px-V)' }}
               />
               $
             </td>
-            <td style={{ padding: '5px', textAlign: 'center' }}>
+            <td style={{ padding: 'var(--5px-V)', textAlign: 'center' }}>
               <input
                 type="checkbox"
                 checked={utility.alwaysAsk}

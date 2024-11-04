@@ -35,14 +35,14 @@ const ImageInteractor: React.FC<ImageInteractorProps> = ({
             imageRef.current.style.width = '80vw';
             imageRef.current.style.height = '80vh';
           } else if (aspectRatio > 1) {
-            imageRef.current.style.width = '400px';
+            imageRef.current.style.width = 'var(--400px-V)';
             imageRef.current.style.height = 'auto';
           } else if (aspectRatio < 1) {
             imageRef.current.style.width = 'auto';
-            imageRef.current.style.height = '400px';
+            imageRef.current.style.height = 'var(--400px-V)';
           } else {
-            imageRef.current.style.width = '400px';
-            imageRef.current.style.height = '400px';
+            imageRef.current.style.width = 'var(--400px-V)';
+            imageRef.current.style.height = 'var(--400px-V)';
           }
         }
       };
@@ -141,7 +141,7 @@ const ImageInteractor: React.FC<ImageInteractorProps> = ({
                 className={`DeleteImageOnImageIntercator`}
                 style={
                   isFullScreen
-                    ? { marginLeft: '350px', marginBottom: '85vh' }
+                    ? { marginLeft: 'var(--350px-V)', marginBottom: '85vh' }
                     : {}
                 }
               >
@@ -152,7 +152,7 @@ const ImageInteractor: React.FC<ImageInteractorProps> = ({
   onClick={() => handleShowInExplorer(images[currentIndex])}
   style={
     isFullScreen
-      ? { marginRight: '350px', marginTop: '85vh' }
+      ? { marginRight: 'var(--350px-V)', marginTop: '85vh' }
       : {}
   }
 >
@@ -170,7 +170,7 @@ const ImageInteractor: React.FC<ImageInteractorProps> = ({
                 onClick={toggleFullScreen}
                 className={`FullScreenImageOnImageIntercator`}
                 style={
-                  isFullScreen ? { marginLeft: '305px', marginTop: '85vh' } : {}
+                  isFullScreen ? { marginLeft: 'var(--305px-V)', marginTop: '85vh' } : {}
                 }
               >
                 {isFullScreen ? 'Exit Full Screen' : 'Full Screen'}
@@ -204,7 +204,7 @@ const ImageInteractor: React.FC<ImageInteractorProps> = ({
       ) : (
         <div className="no-images">
           <p>No images available</p>
-          <button onClick={handleOnAddImage} style={{boxShadow: '2px 2px 6px var(--Text-Color-Reverse)'}}>Add Image</button>
+          <button onClick={handleOnAddImage} style={{boxShadow: 'var(--2px-V) var(--2px-V) var(--6px-V) var(--Text-Color-Reverse)'}}>Add Image</button>
         </div>
       )}
     </div>

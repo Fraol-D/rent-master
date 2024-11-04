@@ -50,7 +50,7 @@ declare global {
     location: string;
     description: string;
     googleMapPinPoint: string;
-  
+    lock?: boolean;
   }
   type BranchTypeWithData = {
     // Primary identifiers
@@ -822,7 +822,7 @@ const MainPage = ({
             top:
               roomElement.offsetTop -
               roomListContainerRef.current.offsetTop -
-              100, // 100px offset from top
+              100, // var(--100px-V) offset from top
             behavior: 'smooth',
           });
 
@@ -1308,7 +1308,7 @@ const MainPage = ({
       <div
         className="MainContainerMain"
         style={{
-          height: SelectedPage === 'Dashboard' ? 'calc(100% - 60px)' : '100%',
+          height: SelectedPage === 'Dashboard' ? 'calc(100% - var(--60px-V))' : '100%',
         }}
       >
         <button
@@ -1330,7 +1330,7 @@ const MainPage = ({
         <div
           className="SideBarContainer"
           style={{
-            width: HideSideBarForCalendar ? '0px' : `${SideBarWidth}px`,
+            width: HideSideBarForCalendar ? 'var(--0px-V)' : `var(--${SideBarWidth}px-V)`,
             transition: 'all .2s',
             visibility: HideSideBarForCalendar ? 'hidden' : 'visible',
           }}
@@ -1341,7 +1341,7 @@ const MainPage = ({
                 className="SideBarTopContainer"
                 style={{
                   borderBottom: SideBarShowState
-                    ? '1px solid var(--Text-Color-Grey)'
+                    ? 'var(--1px-V) solid var(--Text-Color-Grey)'
                     : 'none',
                 }}
               >
@@ -1349,7 +1349,7 @@ const MainPage = ({
                   className="SideBarTopButton"
                   onClick={handleCloseSideBar}
                 >
-                  <img src={DoubleArrowIconDark} alt="" />
+                  close sidebar
                 </button>
                 {privileges.addRoom ? (
                   <button
@@ -1389,7 +1389,7 @@ const MainPage = ({
               </div>
               <div
                 className="SideBarRoomPageTopPart"
-                style={{ height: AddARoomState ? '0%' : 'calc(100% - 135px)',
+                style={{ height: AddARoomState ? '0%' : 'calc(100% - var(--135px-V))',
                   display: 'flex',
                   justifyContent: 'space-between',
                   flexDirection: 'column' }}
@@ -1397,14 +1397,14 @@ const MainPage = ({
                 <div>
                   <div
                     className="SearchBarContainer"
-                    style={{ height: isSearchOpen ? '115px' : '50px' }}
+                    style={{ height: isSearchOpen ? 'var(--115px-V)' : 'var(--50px-V)' }}
                   >
                     <div
                       onClick={toggleSearch}
                       style={{
                         cursor: 'pointer',
-                        fontSize: '22px',
-                        marginLeft: '10px',
+                        fontSize: 'var(--22px-V)',
+                        marginLeft: 'var(--10px-V)',
                         color: 'var(--Accent-Color)',
                       }}
                     >
@@ -1416,7 +1416,7 @@ const MainPage = ({
                           width: '100%',
                           display: 'flex',
                           flexDirection: 'column',
-                          marginLeft: '30px',
+                          marginLeft: 'var(--30px-V)',
                           alignItems: 'flex-start',
                         }}
                       >
@@ -1429,7 +1429,7 @@ const MainPage = ({
                             className="TenantSearchBar"
                             placeholder="Search tenant name"
                             value={TenantNameFilter}
-                            style={{ width: '145px' }}
+                            style={{ width: 'var(--145px-V)' }}
                             onChange={(e) => {
                               setTenantNameFilter(e.target.value);
                               addFilterOption('tenantName', e.target.value);
@@ -1473,8 +1473,8 @@ const MainPage = ({
                       onClick={toggleFilter}
                       style={{
                         cursor: 'pointer',
-                        fontSize: '22px',
-                        marginLeft: '10px',
+                        fontSize: 'var(--22px-V)',
+                        marginLeft: 'var(--10px-V)',
                         color: 'var(--Accent-Color)',
                       }}
                     >
@@ -1486,11 +1486,11 @@ const MainPage = ({
                           style={{
                             display: 'flex',
                             alignItems: 'center',
-                            marginRight: '10px',
+                            marginRight: 'var(--10px-V)',
                             flexDirection: 'row',
                             justifyContent: 'flex-start',
-                            marginLeft: '30px',
-                            marginTop: '10px',
+                            marginLeft: 'var(--30px-V)',
+                            marginTop: 'var(--10px-V)',
                           }}
                         >
                           Room status:
@@ -1506,7 +1506,7 @@ const MainPage = ({
                               );
                             }}
                             className="filter-drop"
-                            style={{ width: '90px', height: '30px' }}
+                            style={{ width: 'var(--90px-V)', height: 'var(--30px-V)' }}
                           >
                             <option value="Taken">Taken</option>
                             <option value="Empty">Empty</option>
@@ -1520,10 +1520,10 @@ const MainPage = ({
                             flexDirection: 'column',
                             alignItems: 'flex-start',
                             justifyContent: 'flex-start',
-                            marginLeft: '30px',
+                            marginLeft: 'var(--30px-V)',
                           }}
                         >
-                          <div style={{ marginTop: '10px' }}>
+                          <div style={{ marginTop: 'var(--10px-V)' }}>
                             <div>
                               Filter Price:
                               <select
@@ -1537,7 +1537,7 @@ const MainPage = ({
                                     e.target.value as '=' | '<' | '>'
                                   );
                                 }}
-                                style={{ width: '30px', height: '30px' }}
+                                style={{ width: 'var(--30px-V)', height: 'var(--30px-V)' }}
                                 className="filter-drop"
                               >
                                 <option value="=">{'='}</option>
@@ -1560,7 +1560,7 @@ const MainPage = ({
                             </div>
                           </div>
                           <div
-                            style={{ marginBottom: '10px', marginTop: '10px' }}
+                            style={{ marginBottom: 'var(--10px-V)', marginTop: 'var(--10px-V)' }}
                           >
                             <div>
                               Filter due dates:
@@ -1575,7 +1575,7 @@ const MainPage = ({
                                     e.target.value as '=' | '<' | '>'
                                   );
                                 }}
-                                style={{ width: '30px', height: '30px' }}
+                                style={{ width: 'var(--30px-V)', height: 'var(--30px-V)' }}
                                 className="filter-drop"
                               >
                                 <option value="=">{'='}</option>
@@ -1613,7 +1613,7 @@ const MainPage = ({
                                     e.target.value as '=' | '<' | '>'
                                   );
                                 }}
-                                style={{ width: '30px', height: '30px' }}
+                                style={{ width: 'var(--30px-V)', height: 'var(--30px-V)' }}
                                 className="filter-drop"
                               >
                                 <option value="=">{'='}</option>
@@ -1684,7 +1684,7 @@ const MainPage = ({
 
               <div
                 className="SideBarRoomPageBottomPartAddRoom"
-                style={{ height: AddARoomState ? 'calc(100% - 130px)' : '0%' }}
+                style={{ height: AddARoomState ? 'calc(100% - var(--130px-V))' : '0%' }}
               >
                 <div>
                   <h1 style={{ display: 'flex', justifyContent: 'center' }}>
@@ -1756,7 +1756,7 @@ const MainPage = ({
                         </select>
                       </div>
                       {AddRoomFormPaymentCycleType === 'custom' && (
-                        <div style={{ marginLeft: '10px' }}>
+                        <div style={{ marginLeft: 'var(--10px-V)' }}>
                           Custom Days:
                           <input
                             className="AddANewRoomInputsSmall"
@@ -1906,15 +1906,15 @@ const MainPage = ({
                         display: 'flex',
                         flexDirection: 'column',
                         background: 'var(--Secondary-Color60)',
-                        padding: '5px',
-                        borderRadius: '10px',
-                        marginBottom: '10px',
+                        padding: 'var(--5px-V)',
+                        borderRadius: 'var(--10px-V)',
+                        marginBottom: 'var(--10px-V)',
                       }}
                     >
                       <div>
                         <span
                           style={{
-                            fontSize: '12px',
+                            fontSize: 'var(--12px-V)',
                             color: 'var(--Text-Color-Grey)',
                           }}
                         >
@@ -2013,12 +2013,12 @@ const MainPage = ({
                         style={{
                           display: 'flex',
                           justifyContent: 'center',
-                          marginTop: '10px',
+                          marginTop: 'var(--10px-V)',
                         }}
                       >
                         <button
                           className="HorizontalButton"
-                          style={{ marginRight: '10px' }}
+                          style={{ marginRight: 'var(--10px-V)' }}
                           onClick={() => {
                             setShowContinueAddingSettings(false);
                             resetAllValuesContinueAddingVariables();
@@ -2446,9 +2446,9 @@ const MainPage = ({
           style={{
             width: HideSideBarForCalendar
               ? '100%'
-              : `calc(100% - ${SideBarWidth}px)`,
+              : `calc(100% - var(--${SideBarWidth}px-V))`,
             overflowY: SelectedPage === 'Database' ? 'hidden' : 'auto',
-            height: SelectedPage === 'Database' ? 'calc(100% - 60px)' : '',
+            height: SelectedPage === 'Database' ? 'calc(100% - var(--60px-V))' : '',
           }}
         >
           {SelectedPage === 'Rooms' && (

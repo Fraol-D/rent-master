@@ -65,7 +65,7 @@ const DashbRevenuePerSquareMeter = ({ RoomList }: { RoomList: RoomType[] }) => {
   return (
     <div
       className="DashboardWigetMainContainer"
-      style={{ width: '400px', height: '102px' }}
+      style={{ width: 'var(--400px-V)', height: 'var(--102px-V)' }}
     >
       <p className="DashboardWigetPieChartTextHeader">
         Revenue per Square Meter
@@ -79,23 +79,23 @@ const DashbRevenuePerSquareMeter = ({ RoomList }: { RoomList: RoomType[] }) => {
           height: '70%',
         }}
       >
-        <p style={{ fontSize: '16px', textAlign: 'center' }}>
+        <p style={{ fontSize: 'var(--16px-V)', textAlign: 'center' }}>
           Your current{' '}
           <select
             value={viewBy}
             onChange={(e) => setViewBy(e.target.value as 'month' | 'year')}
-            style={{ marginBottom: '10px' }}
+            style={{ marginBottom: 'var(--10px-V)' }}
           >
             <option value="month">Monthly</option>
             <option value="year">Yearly</option>
           </select>{' '}
           revenue per square meter is:
           <br />
-          <span style={{ fontSize: '14px', color: 'var(--Text-Color-Grey)' }}>
+          <span style={{ fontSize: 'var(--14px-V)', color: 'var(--Text-Color-Grey)' }}>
             (${revenuePerSquareMeter.totalRevenue.toFixed(2)} / {revenuePerSquareMeter.totalSquareMeters.toFixed(2)} m²)
           </span> = {" "}
      
-          <strong style={{ color: 'var(--Accent-Color)', fontSize: '24px' }}>
+          <strong style={{ color: 'var(--Accent-Color)', fontSize: 'var(--24px-V)' }}>
             ${revenuePerSquareMeter.result}
           </strong>
         </p>

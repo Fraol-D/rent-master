@@ -162,7 +162,7 @@ const DashbMonthlyExpenseTrendWidget: React.FC<
   }, [expensesData, selectedDate]);
 
   return (
-    <div className="DashboardWigetMainContainer" style={{width: '800px'}}>
+    <div className="DashboardWigetMainContainer" style={{width: 'var(--800px-V)', height: 'var(--510px-V)',}}>
       <p className="DashboardWigetPieChartTextHeader">Expense Trend</p>
       <div className="DashboardTotalCollectedTopPart">
         <div className="ShowByContainer">
@@ -221,9 +221,9 @@ const DashbMonthlyExpenseTrendWidget: React.FC<
           },
         ]}
         dataset={dataset}
-        width={810}
+       
         grid={{ vertical: true, horizontal: true }}
-        height={400}
+     
         margin={{ left: 70, right: 30, top: 30, bottom: 60 }}
         sx={{
           '.MuiLineElement-root': {
@@ -235,7 +235,7 @@ const DashbMonthlyExpenseTrendWidget: React.FC<
             fillOpacity: 0.1,
           },
           [`.${axisClasses.left} .${axisClasses.label}`]: {
-            transform: 'translate(-35px, 0)',
+            transform: 'translate(var(---35px-V), 0)',
             color: 'red',
           
           },
@@ -256,8 +256,8 @@ const DashbMonthlyExpenseTrendWidget: React.FC<
           display: 'flex',
           flexDirection: 'row',
           position: 'relative',
-          top: '-31px',
-          height: '16px',
+          top: 'var(---31px-V)',
+          height: 'var(--16px-V)',
         }}
       >
         <p className="ExpenseStatItem">

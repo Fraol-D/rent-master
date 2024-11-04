@@ -2,85 +2,85 @@
     width: auto;
     height: auto;
     background: var(--Secondary-Color20);
-    border-radius: 8px;
+    border-radius: var(--8px-V);
    
     display: flex;
     flex-direction: column;
     align-items: center;
-    box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.25);
+    box-shadow: var(--0px-V) var(--4px-V) var(--4px-V) var(--0px-V) rgba(0, 0, 0, 0.25);
 
-    padding: 20px;
+    padding: var(--20px-V);
 }
 .UtitlityButton-Icon-Height {
-  width: 25px;
-  height: 25px;
+  width: var(--25px-V);
+  height: var(--25px-V);
   transition: all 0.2s;
 }
 .UtitlityButton-Icon-Height :active {
-  width: 25px;
+  width: var(--25px-V);
   transition: all 0.2s;
-  height: 20px;
+  height: var(--20px-V);
 }
 .main-Container {
-  width: 400px;
-  /* height: 490px; */
-  padding-bottom: 30px;
-  padding-top: 10px;
-  /* margin-top: -80px; */
+  width: var(--400px-V);
+  /* height: var(--490px-V); */
+  padding-bottom: var(--30px-V);
+  padding-top: var(--10px-V);
+  /* margin-top: var(---80px-V); */
   display: flex;
   align-items: center;
   flex-direction: column;
-  border-radius: 5px;
-  /* border: 1px solid rgba(0, 0, 0, 0.192); */
-  /* box-shadow: 5px 5px 5px rgb(0 0 0 / 20%); */
+  border-radius: var(--5px-V);
+  /* border: var(--1px-V) solid rgba(0, 0, 0, 0.192); */
+  /* box-shadow: var(--5px-V) var(--5px-V) var(--5px-V) rgb(0 0 0 / 20%); */
   transform: scale(1.2);
-  /*box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.25);*/
+  /*box-shadow: var(--0px-V) var(--4px-V) var(--4px-V) var(--0px-V) rgba(0, 0, 0, 0.25);*/
 }
 .image-main-container {
-  margin-bottom: 10px;
+  margin-bottom: var(--10px-V);
   display: flex;
 }
 
 .AccountButtonText {
-  padding-left: 10px;
-  margin-bottom: 0px;
+  padding-left: var(--10px-V);
+  margin-bottom: var(--0px-V);
 }
 .AccountButton {
-  margin-left: 10px;
-  margin-right: 10px;
+  margin-left: var(--10px-V);
+  margin-right: var(--10px-V);
   transition: all 0.2s;
 }
 .AccountButton-Selected {
-  margin-left: 10px;
-  margin-right: 10px;
+  margin-left: var(--10px-V);
+  margin-right: var(--10px-V);
   transition: all 0.2s;
-  border: 1px solid #00e1ff;
+  border: var(--1px-V) solid #00e1ff;
 }
 .login-text {
-  font-size: 40px;
+  font-size: var(--40px-V);
   font-weight: 300;
-  margin-bottom: 0px;
+  margin-bottom: var(--0px-V);
 }
 .login-text2 {
-  font-size: 30px;
+  font-size: var(--30px-V);
   font-weight: 200;
 
-  margin-bottom: 0px;
-  margin-top: 0px;
+  margin-bottom: var(--0px-V);
+  margin-top: var(--0px-V);
 }
 .userName-input {
-  height: 30px;
+  height: var(--30px-V);
 
-  /* border-radius: 35px; */
-  padding-left: 5px;
+  /* border-radius: var(--35px-V); */
+  padding-left: var(--5px-V);
   width: 90%;
-  margin-bottom: 13px;
-  border: 1px solid grey;
+  margin-bottom: var(--13px-V);
+  border: var(--1px-V) solid grey;
   transition: all 0.5s;
   outline: none;
   position: relative;
   left: 0;
-  font-size: 14px;
+  font-size: var(--14px-V);
 }
 .userName-input:hover::placeholder {
     color: var(--Text-Color-Reverse);
@@ -90,32 +90,32 @@
     color: var(--Text-Color-Grey);
   }
 .Password-input {
-  height: 30px;
-  /* border-radius: 35px; */
-  padding-left: 5px;
-  width: 200px;
-  margin-bottom: 13px;
-  border: 1px solid grey;
+  height: var(--30px-V);
+  /* border-radius: var(--35px-V); */
+  padding-left: var(--5px-V);
+  width: var(--200px-V);
+  margin-bottom: var(--13px-V);
+  border: var(--1px-V) solid grey;
   transition: all 0.5s;
   outline: none;
   position: relative;
   left: 0;
-  font-size: 14px;
+  font-size: var(--14px-V);
 }
 .userName-input:focus,
 .Password-input:focus {
-  width: 250px;
+  width: var(--250px-V);
   position: relative;
 }
 .LoginButton {
-  border-radius: 5px;
+  border-radius: var(--5px-V);
   
-  width: 100px;
-  font-size: 16px;
+  width: var(--100px-V);
+  font-size: var(--16px-V);
   font-family: 'Inter';
   font-weight: 400;
   transition: all 0.2s;
-  border: 1px solid #00e1ff;
+  border: var(--1px-V) solid #00e1ff;
   display: flex;
   justify-content: center;
   transition: all .2s;
@@ -123,47 +123,47 @@
 
 .LoginButton:hover {
   flex: '2';
-  border: 1px solid #00e1ff;
-  width: 115px; transition: all .2s;
+  border: var(--1px-V) solid #00e1ff;
+  width: var(--115px-V); transition: all .2s;
 }
 .LoginButton:active {
-  width: 105px;
+  width: var(--105px-V);
   flex: '3';
-  border: 2px solid #00e1ff; transition: all .2s;
+  border: var(--2px-V) solid #00e1ff; transition: all .2s;
 }
 .UsernameMainContainer {
   position: relative;
-  left: -13px;
-  height: 44px;
+  left: var(---13px-V);
+  height: var(--44px-V);
 }
 .ShowHidePasswordButton {
-  width: 25px;
-  height: 23px;
-  padding: 0px;
+  width: var(--25px-V);
+  height: var(--23px-V);
+  padding: var(--0px-V);
   z-index: 2;
   position: relative;
 
-  right: 30px;
+  right: var(--30px-V);
 
-  border-radius: 35px;
+  border-radius: var(--35px-V);
 }
 .ShowHidePasswordImage {
-  width: 20px;
-  height: 20px;
+  width: var(--20px-V);
+  height: var(--20px-V);
   user-select: none;
 }
 .Icon-UsernameAndPassword {
-  width: 40px;
-  height: 40px;
+  width: var(--40px-V);
+  height: var(--40px-V);
   position: relative;
-  right: 0px;
-  margin-right: 5px;
-  top: 17px;
+  right: var(--0px-V);
+  margin-right: var(--5px-V);
+  top: var(--17px-V);
 }
 .SignUp-Button {
-  width: 300px;
-  height: 50px;
-  border-radius: 10px;
+  width: var(--300px-V);
+  height: var(--50px-V);
+  border-radius: var(--10px-V);
   font-size: larger;
 }
 .SignUpSettings-Continer {
@@ -171,179 +171,179 @@
   align-items: center;
   align-content: center;
   justify-content: center;
-  margin: 10px;
-  height: 30px;
+  margin: var(--10px-V);
+  height: var(--30px-V);
 }
 .SignUpSettings-input {
-  height: 35px;
-  width: 160px;
+  height: var(--35px-V);
+  width: var(--160px-V);
 }
 .SignUpSettings-logo {
-  width: 50px;
-  height: 50px;
-  margin: 0px;
-  border-radius: 5px;
+  width: var(--50px-V);
+  height: var(--50px-V);
+  margin: var(--0px-V);
+  border-radius: var(--5px-V);
 }
 .SignUpSettings-radio-container {
   display: flex;
   font-weight: 200;
-  margin-bottom: 10px;
+  margin-bottom: var(--10px-V);
 }
 .SignUpSettings-radio {
-  margin-left: 10px;
+  margin-left: var(--10px-V);
 }
 .forgotPasswordButton {
   background: transparent;
   color: black;
-  margin-top: 14px;
+  margin-top: var(--14px-V);
   /* width: 100%; */
   text-align: left;
-  border-bottom: 1px solid #00e1ff;
-  padding-bottom: 0px;
+  border-bottom: var(--1px-V) solid #00e1ff;
+  padding-bottom: var(--0px-V);
   margin-right: 50%;
-  border-radius: 0px;
-  padding: 0px;
+  border-radius: var(--0px-V);
+  padding: var(--0px-V);
 }
 .ResetPasswordsInput {
-  margin-top: 10px;
-  margin-bottom: 10px;
-  height: 30px;
-  width: 250px;
+  margin-top: var(--10px-V);
+  margin-bottom: var(--10px-V);
+  height: var(--30px-V);
+  width: var(--250px-V);
 }
 .SignUph1Text {
-  font-size: 70px;
+  font-size: var(--70px-V);
 }
 .SignUph2Text {
-  margin-top: 20px;
-  margin-bottom: 20px;
-  font-size: 19.1px;
+  margin-top: var(--20px-V);
+  margin-bottom: var(--20px-V);
+  font-size: var(--19_1px-V);
 }
 .SignUpInputsInfo {
-  width: 284px;
-  height: 35px;
+  width: var(--284px-V);
+  height: var(--35px-V);
 }
 .SignUpInputsInfoContianer {
   display: flex;
   flex-direction: row;
-  margin-top: 10px;
+  margin-top: var(--10px-V);
   justify-content: center;
   align-items: center;
 }
 .SignUpErrorText {
-  width: 300px;
-  height: 5px;
+  width: var(--300px-V);
+  height: var(--5px-V);
   left: 0;
 
-  font-size: 16px;
+  font-size: var(--16px-V);
   right: 0;
   top: 0;
   bottom: 0;
   text-align: center;
 }
 .LoginErrorText {
-  margin-top: 10px;
+  margin-top: var(--10px-V);
   display: flex;
   align-items:center;
   justify-content: center;
 
 }
 .loginbuttonIcon {
-  width: 30px;
-  height: 30px;
-  margin-left: 10px;
+  width: var(--30px-V);
+  height: var(--30px-V);
+  margin-left: var(--10px-V);
 }
 .Option-Buttons {
-  width: 150px;
-  height: 40px;
-  font-size: 20px;
-  margin: 20px;
-  border: 1px dashed #00e1ff;
+  width: var(--150px-V);
+  height: var(--40px-V);
+  font-size: var(--20px-V);
+  margin: var(--20px-V);
+  border: var(--1px-V) dashed #00e1ff;
   font-weight: 200;
-  margin-bottom: 0px;
+  margin-bottom: var(--0px-V);
   font-family: inter;
-  border-radius: 5px;
+  border-radius: var(--5px-V);
   transition: all 0.2s;
 }
 .Option-Buttons-Selected {
-  width: 200px;
-  height: 50px;
-  font-size: 20px;
-  margin: 20px;
-  border: 1px solid #00e1ff;
+  width: var(--200px-V);
+  height: var(--50px-V);
+  font-size: var(--20px-V);
+  margin: var(--20px-V);
+  border: var(--1px-V) solid #00e1ff;
   font-weight: 300;
   font-family: inter;
-  margin-bottom: 0px;
-  border-radius: 5px;
+  margin-bottom: var(--0px-V);
+  border-radius: var(--5px-V);
   transition: all 0.2s;
 }.Option-Info {
-  font-size: 17px;
+  font-size: var(--17px-V);
   text-align: center;
 }
 .inputF {
-  height: 35px;
+  height: var(--35px-V);
 
-  /* border-radius: 35px; */
-  padding-left: 5px;
-  width: 200px;
+  /* border-radius: var(--35px-V); */
+  padding-left: var(--5px-V);
+  width: var(--200px-V);
 
-  border: 1px solid grey;
+  border: var(--1px-V) solid grey;
   transition: all 0.5s;
   outline: none;
   position: relative;
   left: 0;
-  font-size: 16px;
+  font-size: var(--16px-V);
 }
 .image-container-SignUp {
   display: flex;
                         align-items: center;
                         justify-content: center;
-                        font-size: 16px;
+                        font-size: var(--16px-V);
 }
 
 .main-Container-signup {
-  width: 603px;
-  height: 809px;
+  width: var(--603px-V);
+  height: var(--809px-V);
   display: flex;
   align-items: center;
   flex-direction: column;
-  border-radius: 5px;
-  /* border: 1px solid rgba(0, 0, 0, 0.192); */
-  box-shadow: 5px 5px 5px rgb(0, 0, 0);
+  border-radius: var(--5px-V);
+  /* border: var(--1px-V) solid rgba(0, 0, 0, 0.192); */
+  box-shadow: var(--5px-V) var(--5px-V) var(--5px-V) rgb(0, 0, 0);
   transform: scale(1);
-  box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.25);
+  box-shadow: var(--0px-V) var(--4px-V) var(--4px-V) var(--0px-V) rgba(0, 0, 0, 0.25);
 }
 .SignUpSignOutTryAgainContainer {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 400px;
+  width: var(--400px-V);
 }
 .SignUpSignOutTryAgain {
-  margin: 10px;
-  width: 130px;
-  height: 50px;
+  margin: var(--10px-V);
+  width: var(--130px-V);
+  height: var(--50px-V);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 16px;
+  font-size: var(--16px-V);
   transition: all 0.2s;
-  box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.25);
+  box-shadow: var(--0px-V) var(--4px-V) var(--4px-V) var(--0px-V) rgba(0, 0, 0, 0.25);
 }
 .SignUpSignOutTryAgainIcon {
-  width: 30px;
-  height: 30px;
-  margin-left: 10px;
+  width: var(--30px-V);
+  height: var(--30px-V);
+  margin-left: var(--10px-V);
 }
 .SignOutButton {
-  width: 150px;
-  height: 40px;
-  box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.25);
+  width: var(--150px-V);
+  height: var(--40px-V);
+  box-shadow: var(--0px-V) var(--4px-V) var(--4px-V) var(--0px-V) rgba(0, 0, 0, 0.25);
 
-  margin: 0px;
+  margin: var(--0px-V);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 16px;
+  font-size: var(--16px-V);
   transition: all 0.2s;
 }
 
@@ -355,18 +355,18 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.25);
-  border-radius: 5px;
+  box-shadow: var(--0px-V) var(--4px-V) var(--4px-V) var(--0px-V) rgba(0, 0, 0, 0.25);
+  border-radius: var(--5px-V);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
 }
 .SignUpSignOutTryAgain:hover {
-  width: 140px;
+  width: var(--140px-V);
 }
 .SignUpSignOutTryAgain:active {
-  width: 125px;
+  width: var(--125px-V);
 }
 
 
@@ -379,20 +379,20 @@
 
 .AdminNormalText {
   text-align: center;
-  margin: 00px;
+  margin: var(--00px-V);
 }
 
 .usernameandpassicon {
-  width: 50px;
-  height: 50px;
-  margin-right: 10px;
-  margin-left: 10px;
+  width: var(--50px-V);
+  height: var(--50px-V);
+  margin-right: var(--10px-V);
+  margin-left: var(--10px-V);
 }
 .gearicon {
-  width: 20px;
-  height: 20px;
-  margin-right: 10px;
-  margin-left: 10px;
+  width: var(--20px-V);
+  height: var(--20px-V);
+  margin-right: var(--10px-V);
+  margin-left: var(--10px-V);
 }
 .imageandinput {
   display: flex;
@@ -401,20 +401,20 @@
 .SignUp-Button {
 }
 .threelettererrortext {
-  font-size: 12px;
+  font-size: var(--12px-V);
   position: relative;
-  height: 0px;
-  left: 70px;
-  bottom: 20px;
+  height: var(--0px-V);
+  left: var(--70px-V);
+  bottom: var(--20px-V);
   color: red;
   font-weight: 300;
 }
 .threelettererrortextusername {
-  font-size: 12px;
+  font-size: var(--12px-V);
   position: relative;
-  height: 0px;
-  left: -210px;
-  bottom: 20px;
+  height: var(--0px-V);
+  left: var(---210px-V);
+  bottom: var(--20px-V);
   color: red;
   font-weight: 300;
 }

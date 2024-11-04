@@ -230,8 +230,7 @@ const DashbOverAllTax = ({ RoomList, tenantList }: { RoomList: RoomType[], tenan
             color: 'var(--Accent-Color50)',
           },
         ]}
-        width={710}
-        height={400}
+ 
         margin={{
           left: 74,
           right: 30,

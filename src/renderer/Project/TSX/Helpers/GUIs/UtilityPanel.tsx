@@ -658,21 +658,21 @@ const UtilityPanel: React.FC<props> = ({
     <div
       style={{
         position: 'absolute',
-        top: '2px',
-        right: '-845px',
-        width: '310px',
+        top: 'var(--2px-V)',
+        right: 'var(---845px-V)',
+        width: 'var(--310px-V)',
         height: '96%',
         backgroundColor: 'var(--Background-Color)',
-        boxShadow: 'rgba(0, 0, 0, 0.1) -2px 0px 5px',
+        boxShadow: 'rgba(0, 0, 0, 0.1) var(---2px-V) var(--0px-V) var(--5px-V)',
         zIndex: '1000',
-        padding: '5px',
-        borderRadius: '5px',
+        padding: 'var(--5px-V)',
+        borderRadius: 'var(--5px-V)',
         overflowY: 'auto',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'flex-start',
         alignItems: 'center',
-        border: '1px solid grey',
+        border: 'var(--1px-V) solid grey',
       }}
     >
       <h2 style={{ margin: '0', width: '100%', textAlign: 'center' }}>
@@ -691,12 +691,12 @@ const UtilityPanel: React.FC<props> = ({
           <button
             onClick={handleShowMorePast}
             style={{
-              marginBottom: '10px',
-              padding: '5px 10px',
+              marginBottom: 'var(--10px-V)',
+              padding: 'var(--5px-V) var(--10px-V)',
               backgroundColor: 'var(--Secondary-Color)',
               color: 'var(--Text-Color)',
               border: 'none',
-              borderRadius: '5px',
+              borderRadius: 'var(--5px-V)',
               cursor: 'pointer',
             }}
           >
@@ -721,16 +721,16 @@ const UtilityPanel: React.FC<props> = ({
                       <hr
                         style={{
                           width: '100%',
-                          margin: '5px',
-                          border: '1px solid orange',
+                          margin: 'var(--5px-V)',
+                          border: 'var(--1px-V) solid orange',
                         }}
                       />
                       Current Date: {convertUnixToDateString(Date.now())}
                       <hr
                         style={{
                           width: '100%',
-                          margin: '5px',
-                          border: '1px solid orange',
+                          margin: 'var(--5px-V)',
+                          border: 'var(--1px-V) solid orange',
                         }}
                       />
                     </>
@@ -752,15 +752,15 @@ const UtilityPanel: React.FC<props> = ({
                         utility.PaymentTypes.length
                       ? 'var(--Accent-Color50)'
                       : 'var(--Secondary-Color30)',
-                  padding: '5px',
-                  marginTop: '5px',
-                  marginBottom: '5px',
-                  borderRadius: '5px',
+                  padding: 'var(--5px-V)',
+                  marginTop: 'var(--5px-V)',
+                  marginBottom: 'var(--5px-V)',
+                  borderRadius: 'var(--5px-V)',
                 }}
               >
                 <p
                   style={{
-                    fontSize: '16px',
+                    fontSize: 'var(--16px-V)',
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
@@ -786,20 +786,20 @@ const UtilityPanel: React.FC<props> = ({
                       style={{
                         width: '100%',
                         borderCollapse: 'collapse',
-                        fontSize: '14px',
-                        paddingLeft: '10px',
+                        fontSize: 'var(--14px-V)',
+                        paddingLeft: 'var(--10px-V)',
                       }}
                     >
                       <thead
                         style={{
-                          height: '10px',
+                          height: 'var(--10px-V)',
                         }}
                       >
                         <tr
                           style={{
-                            fontSize: '11px',
-                            borderTop: '1px solid var(--Text-Color-Grey)',
-                            height: '10px',
+                            fontSize: 'var(--11px-V)',
+                            borderTop: 'var(--1px-V) solid var(--Text-Color-Grey)',
+                            height: 'var(--10px-V)',
                           }}
                         >
                           <th style={{ textAlign: 'center' }}></th>
@@ -840,7 +840,7 @@ const UtilityPanel: React.FC<props> = ({
                                       ? 0
                                       : paymentType.price
                                   }
-                                  style={{ width: '60px' }}
+                                  style={{ width: 'var(--60px-V)' }}
                                   onChange={(e) =>
                                     handleTempPriceChange(
                                       paymentType.id,
@@ -887,8 +887,8 @@ const UtilityPanel: React.FC<props> = ({
                     </table>
                     <p
                       style={{
-                        marginTop: '5px',
-                        borderTop: '1px solid var(--Text-Color-Grey)',
+                        marginTop: 'var(--5px-V)',
+                        borderTop: 'var(--1px-V) solid var(--Text-Color-Grey)',
                         display: 'flex',
                         justifyContent: 'space-between',
                       }}
@@ -924,12 +924,12 @@ const UtilityPanel: React.FC<props> = ({
           <button
             onClick={handleShowMoreFuture}
             style={{
-              marginTop: '10px',
-              padding: '5px 10px',
+              marginTop: 'var(--10px-V)',
+              padding: 'var(--5px-V) var(--10px-V)',
               backgroundColor: 'var(--Secondary-Color)',
               color: 'var(--Text-Color)',
               border: 'none',
-              borderRadius: '5px',
+              borderRadius: 'var(--5px-V)',
               cursor: 'pointer',
             }}
           >

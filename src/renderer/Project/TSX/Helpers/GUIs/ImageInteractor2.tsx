@@ -222,7 +222,7 @@ useEffect(() => {
                 Files
               </button>
               <div
-                style={{ marginTop: '-15px', flexWrap:"wrap", justifyContent:"flex-start" }}
+                style={{ marginTop: 'var(---15px-V)', flexWrap:"wrap", justifyContent:"flex-start" }}
                 className="CounterImageOnImageIntercator image-counter"
               >
                 {images.map((_, index) => (
@@ -241,7 +241,7 @@ useEffect(() => {
       ) : (
         <div className="no-images">
           <p>No images available</p>
-          <button onClick={handleOnAddImage} style={{boxShadow: '2px 2px 6px var(--Text-Color-Reverse)'}}>Add Image</button>
+          <button onClick={handleOnAddImage} style={{boxShadow: 'var(--2px-V) var(--2px-V) var(--6px-V) var(--Text-Color-Reverse)'}}>Add Image</button>
         </div>
       )}
     </div>

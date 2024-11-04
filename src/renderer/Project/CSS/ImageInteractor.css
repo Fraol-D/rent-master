@@ -1,6 +1,6 @@
 .image-interactor {
   position: relative;
-  width: 480px;
+  width: var(--480px-V);
   margin: 0 auto;
 }
 
@@ -13,54 +13,54 @@
 }
 .DeleteImageOnImageIntercator {
   position: absolute;
-  margin-left: 350px;
-  margin-bottom: 370px;
+  margin-left: var(--350px-V);
+  margin-bottom: var(--370px-V);
 }
 .ExplorerImageOnImageIntercator {
   position: absolute;
-  margin-right: 350px;
-  margin-top: 440px;
+  margin-right: var(--350px-V);
+  margin-top: var(--440px-V);
 }
 .FullScreenImageOnImageIntercator {
   position: absolute;
-  margin-left: 305px;
-  margin-top: 440px;
+  margin-left: var(--305px-V);
+  margin-top: var(--440px-V);
 }
 .AddImageOnImageIntercator {
   position: absolute;
 
-  margin-top: 440px;
+  margin-top: var(--440px-V);
 }
 .CounterImageOnImageIntercator {
   position: absolute;
 
-  margin-top: 390px;
+  margin-top: var(--390px-V);
 }
 .image-wrapper {
-  width: 400px;
-  height: 400px;
+  width: var(--400px-V);
+  height: var(--400px-V);
   display: flex;
   align-items: center;
   justify-content: center;
   background-color: rgba(128 128 128 / 0.12);
-  border-radius: 10px;
+  border-radius: var(--10px-V);
   overflow: hidden;
-  padding: 5px;
-  padding-bottom: 40px;
+  padding: var(--5px-V);
+  padding-bottom: var(--40px-V);
 }
 
 .main-image {
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
-  border-radius: 5px;
+  border-radius: var(--5px-V);
 }
 
 .arrow-button {
   background: rgba(0 0 0 / 0);
   border: none;
   cursor: pointer;
-  padding: 10px;
+  padding: var(--10px-V);
   transition: background 0.3s ease;
 }
 
@@ -70,14 +70,14 @@
 }
 
 .arrow-button img {
-  width: 20px;
-  height: 20px;
+  width: var(--20px-V);
+  height: var(--20px-V);
 }
 
 .controls {
   display: flex;
   justify-content: space-between;
-  margin-top: 10px;
+  margin-top: var(--10px-V);
 }
 
 .image-counter {
@@ -87,10 +87,10 @@
 }
 
 .counter-bar {
-  width: 20px;
-  height: 4px;
+  width: var(--20px-V);
+  height: var(--4px-V);
   background-color: grey;
-  margin: 0 2px;
+  margin: 0 var(--2px-V);
   transition: background-color 0.3s ease;
 }
 
@@ -100,7 +100,7 @@
 
 .no-images {
   text-align: center;
-  padding: 20px;
+  padding: var(--20px-V);
 }
 
 .fullscreen {

@@ -276,8 +276,8 @@ const AgreementViewerForRoom = ({
                       roomType.selectedAgreementId
                         ? 'var(--Primary-Color)'
                         : '',
-                    padding: '5px ',
-                    borderRadius: '5px',
+                    padding: 'var(--5px-V) ',
+                    borderRadius: 'var(--5px-V)',
                   }}
                 >
                   {Agreements[CurrentAgreementIndex].id ===
@@ -417,7 +417,7 @@ const AgreementViewerForRoom = ({
             Rent Reserved:{' '}
             <input
               type="text"
-              style={{ width: '80px' }}
+              style={{ width: 'var(--80px-V)' }}
               className="StartTime"
               value={
                 RentReservedText === 'INITIALLLI'
@@ -503,7 +503,7 @@ const AgreementViewerForRoom = ({
                   </div>
                   <div
                     className="AddTenantContainerinnerElement"
-                    style={{ marginTop: '20px' }}
+                    style={{ marginTop: 'var(--20px-V)' }}
                   >
                     <div>
                       Representative:
@@ -639,7 +639,7 @@ const AgreementViewerForRoom = ({
                     Payment cycle every:{' '}
                     <select
                       className="AddTenantContainerinnerInput"
-                      style={{ width: '100px' }}
+                      style={{ width: 'var(--100px-V)' }}
                       value={paymentCycle}
                       onChange={handlePaymentCycleChange}
                     >
@@ -656,7 +656,7 @@ const AgreementViewerForRoom = ({
                       <input
                         type="number"
                         className="AddTenantContainerinnerInput"
-                        style={{ width: '50px', marginLeft: '10px' }}
+                        style={{ width: 'var(--50px-V)', marginLeft: 'var(--10px-V)' }}
                         placeholder="Enter days"
                         value={customDays}
                         onChange={(e) => setCustomDays(e.target.value)}
@@ -668,7 +668,7 @@ const AgreementViewerForRoom = ({
                     <input
                       type="number"
                       className="AddTenantContainerinnerInput"
-                      style={{ width: '70px' }}
+                      style={{ width: 'var(--70px-V)' }}
                       placeholder="Enter price"
                       value={agreedPrice}
                       onChange={(e) => setAgreedPrice(parseInt(e.target.value))}
@@ -676,7 +676,7 @@ const AgreementViewerForRoom = ({
                     $
                     <button
                       style={{
-                        marginLeft: '10px',
+                        marginLeft: 'var(--10px-V)',
                       }}
                       onClick={() => {
                         setAgreedPrice(roomType.price);

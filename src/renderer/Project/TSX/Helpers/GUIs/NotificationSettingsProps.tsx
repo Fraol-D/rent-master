@@ -130,19 +130,19 @@ const NotificationSettingsTable: React.FC<NotificationSettingsProps> = ({
   };
 
   const getSelectStyle = (type: string) => ({
-    border: templateValidation[type] ? '2px solid red' : '1px solid var(--Border-Color)',
-    borderRadius: '4px',
-    padding: '4px'
+    border: templateValidation[type] ? 'var(--2px-V) solid red' : 'var(--1px-V) solid var(--Border-Color)',
+    borderRadius: 'var(--4px-V)',
+    padding: 'var(--4px-V)'
   });
 
   return (
-    <table style={{ fontSize: '14px', borderCollapse: 'collapse' }}>
+    <table style={{ fontSize: 'var(--14px-V)', borderCollapse: 'collapse' }}>
       <thead>
         <tr>
-          <th style={{ padding: '5px', textAlign: 'left' }}>Notification</th>
-          <th style={{ padding: '5px', textAlign: 'center' }}>Email</th>
-          <th style={{ padding: '5px', textAlign: 'center' }}>SMS</th>
-          <th style={{ padding: '5px', textAlign: 'center' }}>
+          <th style={{ padding: 'var(--5px-V)', textAlign: 'left' }}>Notification</th>
+          <th style={{ padding: 'var(--5px-V)', textAlign: 'center' }}>Email</th>
+          <th style={{ padding: 'var(--5px-V)', textAlign: 'center' }}>SMS</th>
+          <th style={{ padding: 'var(--5px-V)', textAlign: 'center' }}>
             Email Template
           </th>
         </tr>
@@ -150,22 +150,22 @@ const NotificationSettingsTable: React.FC<NotificationSettingsProps> = ({
       <tbody>
         {notificationTypes.map((type, index) => (
           <tr key={index}>
-            <td style={{ padding: '5px' }}>{type}</td>
-            <td style={{ padding: '5px', textAlign: 'center' }}>
+            <td style={{ padding: 'var(--5px-V)' }}>{type}</td>
+            <td style={{ padding: 'var(--5px-V)', textAlign: 'center' }}>
               <input
                 type="checkbox"
                 checked={(notificationSettings & (1 << (index * 2))) !== 0}
                 onChange={() => toggleSetting(index, type)}
               />
             </td>
-            <td style={{ padding: '5px', textAlign: 'center' }}>
+            <td style={{ padding: 'var(--5px-V)', textAlign: 'center' }}>
               <input
                 type="checkbox"
                 checked={(notificationSettings & (1 << (index * 2 + 1))) !== 0}
                 onChange={() => toggleSmsSetting(index)}
               />
             </td>
-            <td style={{ padding: '5px', textAlign: 'center' }}>
+            <td style={{ padding: 'var(--5px-V)', textAlign: 'center' }}>
               <select
                 value={selectedTemplates[type] || ''}
                 onChange={(e) => {
@@ -187,9 +187,9 @@ const NotificationSettingsTable: React.FC<NotificationSettingsProps> = ({
               {templateValidation[type] && (
                 <div style={{ 
                   color: 'red', 
-                  fontSize: '12px', 
+                  fontSize: 'var(--12px-V)', 
                   position: 'absolute',
-                  marginTop: '2px' 
+                  marginTop: 'var(--2px-V)' 
                 }}>
                   Template required
                 </div>

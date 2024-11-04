@@ -15,20 +15,20 @@ const BottomNavBar = ({ SelectedPage, setSelectedPage }: any) => {
             onClick={() => {
               setSelectedPage('Dashboard');
             }}
-            style={{ padding: '1px' }}
+            style={{ padding: 'var(--1px-V)' }}
           >
-            <img src={DashboardDarkIcon} style={{ width: '35px' }} alt="" />
+            <img src={DashboardDarkIcon} style={{ width: 'var(--35px-V)' }} alt="" />
           </button>
           <button
             onClick={() => {
               setSelectedPage('People');
             }}
-            style={{ padding: '1px' }}
+            style={{ padding: 'var(--1px-V)' }}
           >
-            <img src={PeoplesDarkIcon} style={{ width: '35px' }} alt="" />
+            <img src={PeoplesDarkIcon} style={{ width: 'var(--35px-V)' }} alt="" />
           </button>
           <button
-            style={{ padding: '1px' }}
+            style={{ padding: 'var(--1px-V)' }}
             onClick={() => {
               setSelectedPage('Rooms');
             }}
@@ -36,7 +36,7 @@ const BottomNavBar = ({ SelectedPage, setSelectedPage }: any) => {
             Rooms
           </button>
           <button
-            style={{ padding: '1px' }}
+            style={{ padding: 'var(--1px-V)' }}
             onClick={() => {
               setSelectedPage('Calendar');
             }}
@@ -44,12 +44,12 @@ const BottomNavBar = ({ SelectedPage, setSelectedPage }: any) => {
             Calendar
           </button>
           <button
-            style={{ padding: '1px' }}
+            style={{ padding: 'var(--1px-V)' }}
             onClick={() => {
               setSelectedPage('Settings');
             }}
           >
-            <img src={SettingsDarkIcon} style={{ width: '35px' }} alt="" />
+            <img src={SettingsDarkIcon} style={{ width: 'var(--35px-V)' }} alt="" />
           </button>
         </div>
         <button
@@ -59,7 +59,7 @@ const BottomNavBar = ({ SelectedPage, setSelectedPage }: any) => {
           }}
         >
           {' '}
-          <img src={notificationIcon} style={{ width: '25px' }} alt="" />
+          <img src={notificationIcon} style={{ width: 'var(--25px-V)' }} alt="" />
         </button>
       </div>
     </>

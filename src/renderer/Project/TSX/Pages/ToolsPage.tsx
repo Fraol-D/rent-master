@@ -763,7 +763,7 @@ const ToolsPage = ({
               alignItems: 'center',
               flexDirection: 'column',
               width: '100%',
-              maxWidth: '1200px',
+              maxWidth: 'var(--1200px-V)',
               margin: '0 auto',
               height: '100%',
             }}
@@ -774,7 +774,7 @@ const ToolsPage = ({
                 justifyContent: 'space-between',
                 alignItems: 'center',
                 width: '500%',
-                maxWidth: '800px',
+                maxWidth: 'var(--800px-V)',
                 margin: '0 auto',
               }}
             >
@@ -794,10 +794,10 @@ const ToolsPage = ({
             </div>
             <div
               style={{
-                marginBottom: '20px',
+                marginBottom: 'var(--20px-V)',
                 width: '90%',
                 display: 'flex',
-                gap: '10px',
+                gap: 'var(--10px-V)',
               }}
             ></div>
             {showFilters && (
@@ -805,8 +805,8 @@ const ToolsPage = ({
                 style={{
                   display: 'flex',
                   flexWrap: 'wrap',
-                  gap: '10px',
-                  marginBottom: '20px',
+                  gap: 'var(--10px-V)',
+                  marginBottom: 'var(--20px-V)',
                 }}
               >
                 <div
@@ -828,7 +828,7 @@ const ToolsPage = ({
                         placeholder="Search expenses"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        style={{ padding: '5px', width: '60%' }}
+                        style={{ padding: 'var(--5px-V)', width: '60%' }}
                       />
                     )}
               
@@ -846,7 +846,7 @@ const ToolsPage = ({
                               e.target.value ? parseFloat(e.target.value) : ''
                             )
                           }
-                          style={{ flex: '1', padding: '5px', width: '80px' }}
+                          style={{ flex: '1', padding: 'var(--5px-V)', width: 'var(--80px-V)' }}
                         />
                         <input
                           type="number"
@@ -857,7 +857,7 @@ const ToolsPage = ({
                               e.target.value ? parseFloat(e.target.value) : ''
                             )
                           }
-                          style={{ flex: '1', padding: '5px', width: '80px' }}
+                          style={{ flex: '1', padding: 'var(--5px-V)', width: 'var(--80px-V)' }}
                         />
                       </>
                     )}
@@ -873,7 +873,7 @@ const ToolsPage = ({
                               e.target.value as 'yes' | 'no' | ''
                             )
                           }
-                          style={{ flex: '1', padding: '5px' }}
+                          style={{ flex: '1', padding: 'var(--5px-V)' }}
                         >
                           <option value="">Full Building</option>
                           <option value="yes">Yes</option>
@@ -885,14 +885,14 @@ const ToolsPage = ({
                           placeholder="Floor"
                           value={floorSearch}
                           onChange={(e) => setFloorSearch(e.target.value)}
-                          style={{ flex: '1', padding: '5px', width: '40px' }}
+                          style={{ flex: '1', padding: 'var(--5px-V)', width: 'var(--40px-V)' }}
                         />{' '}
                         <input
                           type="text"
                           placeholder="Room"
                           value={roomSearch}
                           onChange={(e) => setRoomSearch(e.target.value)}
-                          style={{ flex: '1', padding: '5px', width: '40px' }}
+                          style={{ flex: '1', padding: 'var(--5px-V)', width: 'var(--40px-V)' }}
                         />
                       </>
                     )}
@@ -909,7 +909,7 @@ const ToolsPage = ({
                               e.target.value as 'yes' | 'no' | ''
                             )
                           }
-                          style={{ flex: '1', padding: '5px' }}
+                          style={{ flex: '1', padding: 'var(--5px-V)' }}
                         >
                           <option value="">Does Reoccur</option>
                           <option value="yes">Yes</option>
@@ -920,7 +920,7 @@ const ToolsPage = ({
                           placeholder="Reoccur every X days"
                           value={reoccurDays}
                           onChange={(e) => setReoccurDays(e.target.value)}
-                          style={{ flex: '1', padding: '5px', width: '150px' }}
+                          style={{ flex: '1', padding: 'var(--5px-V)', width: 'var(--150px-V)' }}
                         />
                       </>
                     )}
@@ -933,18 +933,18 @@ const ToolsPage = ({
                           type="date"
                           value={dateFilter}
                           onChange={(e) => setDateFilter(e.target.value)}
-                          style={{ flex: '1', padding: '5px' }}
+                          style={{ flex: '1', padding: 'var(--5px-V)' }}
                         />
                         <button
                           onClick={() => setDateFilter('')}
                           style={{
-                            padding: '5px',
+                            padding: 'var(--5px-V)',
   
                             color: 'white',
                             border: 'none',
-                            borderRadius: '5px',
+                            borderRadius: 'var(--5px-V)',
                             cursor: 'pointer',
-                            marginLeft: '5px',
+                            marginLeft: 'var(--5px-V)',
                           }}
                         >
                           X
@@ -992,7 +992,7 @@ const ToolsPage = ({
                       <tr key={expense.id} className="expense-card">
                         <td
                           style={{
-                            borderRadius: '10px 0px 0px 10px',
+                            borderRadius: 'var(--10px-V) var(--0px-V) var(--0px-V) var(--10px-V)',
                             textAlign: 'center',
                           }}
                         >
@@ -1013,12 +1013,12 @@ const ToolsPage = ({
                               }
                               style={{
                                 width: '95%',
-                                padding: '5px',
-                                border: '1px solid var(--Secondary-Color)',
+                                padding: 'var(--5px-V)',
+                                border: 'var(--1px-V) solid var(--Secondary-Color)',
                                 backgroundColor: 'var(--Background-Color)',
                                 color: 'var(--Text-Color)',
                                 resize: 'vertical',
-                                maxHeight: '100px',
+                                maxHeight: 'var(--100px-V)',
                               }}
                             />
                           ) : (
@@ -1082,8 +1082,8 @@ const ToolsPage = ({
                                         )
                                       }
                                       style={{
-                                        width: '35px',
-                                        marginRight: '10px',
+                                        width: 'var(--35px-V)',
+                                        marginRight: 'var(--10px-V)',
                                       }}
                                     />
                                   </label>
@@ -1098,7 +1098,7 @@ const ToolsPage = ({
                                           parseInt(e.target.value)
                                         )
                                       }
-                                      style={{ width: '35px' }}
+                                      style={{ width: 'var(--35px-V)' }}
                                     />
                                   </label>
                                 </div>
@@ -1120,7 +1120,7 @@ const ToolsPage = ({
                                   }}
                                 >
                                   {' '}
-                                  <div style={{ marginRight: '10px' }}>
+                                  <div style={{ marginRight: 'var(--10px-V)' }}>
                                     Floor. <em>{expense.floor || 'N/A'}</em>
                                   </div>
                                   <div>
@@ -1159,7 +1159,7 @@ const ToolsPage = ({
                                         e.target.value
                                       )
                                     }
-                                    style={{ width: '40px' }}
+                                    style={{ width: 'var(--40px-V)' }}
                                   />{' '}
                                   Day
                                   {editedExpense?.recurringCycle !== 1 ? 's' : ''}
@@ -1178,8 +1178,8 @@ const ToolsPage = ({
                           style={{
                             borderRadius:
                               editingExpenseId === expense.id
-                                ? '0px 0px 0px 0px'
-                                : '0px 10px 10px 0px',
+                                ? 'var(--0px-V) var(--0px-V) var(--0px-V) var(--0px-V)'
+                                : 'var(--0px-V) var(--10px-V) var(--10px-V) var(--0px-V)',
                           }}
                         >
                           {editingExpenseId === expense.id ? (
@@ -1203,7 +1203,7 @@ const ToolsPage = ({
                           )}
                         </td>
                         {editingExpenseId === expense.id && (
-                          <td style={{ borderRadius: '0px 10px 10px 0px' }}>
+                          <td style={{ borderRadius: 'var(--0px-V) var(--10px-V) var(--10px-V) var(--0px-V)' }}>
                             <button
                               style={{
                                 backgroundColor: 'red',
@@ -1216,7 +1216,7 @@ const ToolsPage = ({
                           </td>
                         )}
                       </tr>
-                      <tr style={{ height: '10px' }}></tr>
+                      <tr style={{ height: 'var(--10px-V)' }}></tr>
                     </>
                   ))
                 )}

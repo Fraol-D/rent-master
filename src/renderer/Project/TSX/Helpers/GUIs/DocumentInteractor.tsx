@@ -220,18 +220,18 @@ const DocumentInteractor: React.FC<DocumentInteractorProps> = ({
         AddTenant
           ? {
               width: '100%',
-              height: '160px',
-              maxHeight: '230px',
+              height: 'var(--160px-V)',
+              maxHeight: 'var(--230px-V)',
               display: 'flex',
               background: 'var(--Secondary-Color20)',
               flexDirection: 'column',
-              borderRadius: '10px',
-              marginBottom: '20px',
+              borderRadius: 'var(--10px-V)',
+              marginBottom: 'var(--20px-V)',
             }
           : {
               width: '100%',
-              height: AddTenant ? '160px' : '100%',
-              maxHeight: AddTenant ? '230px' : '',
+              height: AddTenant ? 'var(--160px-V)' : '100%',
+              maxHeight: AddTenant ? 'var(--230px-V)' : '',
               display: 'flex',
               flexDirection: 'column',
             }
@@ -239,7 +239,7 @@ const DocumentInteractor: React.FC<DocumentInteractorProps> = ({
     >
       <div
         className="document-list"
-        style={{ flex: 1, overflowY: 'auto', maxHeight: '183px' }}
+        style={{ flex: 1, overflowY: 'auto', maxHeight: 'var(--183px-V)' }}
       >
         {documents.length > 0 ? (
           documents.map((doc) => (
@@ -265,7 +265,7 @@ const DocumentInteractor: React.FC<DocumentInteractorProps> = ({
         style={{
           display: 'flex',
           justifyContent: 'space-around',
-          padding: '10px',
+          padding: 'var(--10px-V)',
         }}
       >
         <button onClick={handleOnAddDocument}>Add Document</button>

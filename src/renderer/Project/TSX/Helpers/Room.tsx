@@ -755,17 +755,17 @@ const Room = ({
   const getBorderColor = () => {
     const daysUntilPayment = roomType.DaysTillNextPayment;
     if (daysUntilPayment === -98989898) {
-      return '1px solid green';
+      return 'var(--1px-V) solid green';
     } else if (daysUntilPayment > 8) {
-      return '2px solid white';
+      return 'var(--2px-V) solid white';
     } else if (daysUntilPayment > 5) {
-      return '2px solid lightpink';
+      return 'var(--2px-V) solid lightpink';
     } else if (daysUntilPayment > 2) {
-      return '2px solid tomato';
+      return 'var(--2px-V) solid tomato';
     } else if (daysUntilPayment > 0) {
-      return '2px solid red';
+      return 'var(--2px-V) solid red';
     } else {
-      return '2px solid red'; // Default case if daysUntilPayment is not greater than 0
+      return 'var(--2px-V) solid red'; // Default case if daysUntilPayment is not greater than 0
     }
   };
   const [TenantPageSelected, setTenantPageSelected] = useState<
@@ -1084,8 +1084,8 @@ const Room = ({
   }> = React.memo(({ label, value, title }) => (
     <div
       style={{
-        marginBottom: '10px',
-        fontSize: '16px',
+        marginBottom: 'var(--10px-V)',
+        fontSize: 'var(--16px-V)',
         color: 'var(--Text-Color-Grey)',
       }}
     >
@@ -1123,8 +1123,8 @@ const Room = ({
     return (
       <div
         style={{
-          marginBottom: '10px',
-          fontSize: '16px',
+          marginBottom: 'var(--10px-V)',
+          fontSize: 'var(--16px-V)',
           color: 'var(--Text-Color-Grey)',
         }}
       >
@@ -1135,16 +1135,16 @@ const Room = ({
               <textarea
                 value={editValue}
                 onChange={(e) => setEditValue(e.target.value)}
-                style={{ marginRight: '5px', width: '50%',height:'100px' }}
+                style={{ marginRight: 'var(--5px-V)', width: '50%',height:'var(--100px-V)' }}
               />
             ) : (
               <input
                 value={editValue}
                 onChange={(e) => setEditValue(e.target.value)}
-                style={{ marginRight: '5px', width: '50%' }}
+                style={{ marginRight: 'var(--5px-V)', width: '50%' }}
               />
             )}
-            <button onClick={handleSave} style={{ marginRight: '5px' }}>
+            <button onClick={handleSave} style={{ marginRight: 'var(--5px-V)' }}>
               Save
             </button>
             <button onClick={handleCancel}>Cancel</button>
@@ -1163,11 +1163,11 @@ const Room = ({
               </span>{' '}
               {!textArea ? <em style={{ fontWeight: '600', color: 'var(--Accent-Color)' }}>
                 {value}
-              </em> : <em style={{ fontWeight: '600', color: 'var(--Accent-Color)',fontSize:'13px' }}>{value}</em>}
+              </em> : <em style={{ fontWeight: '600', color: 'var(--Accent-Color)',fontSize:'var(--13px-V)' }}>{value}</em>}
             </div>
             <button
               onClick={() => setEditingField(label)}
-              style={{ marginLeft: '5px' }}
+              style={{ marginLeft: 'var(--5px-V)' }}
             >
               Edit
             </button>
@@ -1190,8 +1190,8 @@ const Room = ({
   const renderInfoItem = (label: string, value: string, title?: string) => (
     <div
       style={{
-        marginBottom: '10px',
-        fontSize: '16px',
+        marginBottom: 'var(--10px-V)',
+        fontSize: 'var(--16px-V)',
         color: 'var(--Text-Color-Grey)',
       }}
     >
@@ -1231,14 +1231,14 @@ const Room = ({
         style={{
           width: '93%',
           background: 'var(--Secondary-Color30)',
-          padding: '5px',
-          marginBottom: '10px',
-          borderRadius: '5px',
+          padding: 'var(--5px-V)',
+          marginBottom: 'var(--10px-V)',
+          borderRadius: 'var(--5px-V)',
         }}
       >
         <div
           style={{
-            fontSize: '18px',
+            fontSize: 'var(--18px-V)',
             fontWeight: 'bold',
             display: 'flex',
             justifyContent: 'space-between',
@@ -1247,7 +1247,7 @@ const Room = ({
           }}
           onClick={onToggle}
         >
-          <span style={{ marginBottom: '10px' }}>
+          <span style={{ marginBottom: 'var(--10px-V)' }}>
             {isOpen ? '▼' : '▶'} {title}
           </span>
         </div>
@@ -1268,14 +1268,14 @@ const Room = ({
         style={{
           width: '93%',
           background: 'var(--Secondary-Color30)',
-          padding: '5px',
-          marginBottom: '10px',
-          borderRadius: '5px',
+          padding: 'var(--5px-V)',
+          marginBottom: 'var(--10px-V)',
+          borderRadius: 'var(--5px-V)',
         }}
       >
         <div
           style={{
-            fontSize: '18px',
+            fontSize: 'var(--18px-V)',
             fontWeight: 'bold',
             display: 'flex',
             justifyContent: 'space-between',
@@ -1283,13 +1283,13 @@ const Room = ({
           }}
         >
           <span
-            style={{ cursor: 'pointer', marginBottom: '10px' }}
+            style={{ cursor: 'pointer', marginBottom: 'var(--10px-V)' }}
             onClick={() => setIsOpen(!isOpen)}
           >
             {isOpen ? '▼' : '▶'} {title}
           </span>
         </div>
-        {isOpen && <div style={{ paddingLeft: '20px' }}>{content}</div>}
+        {isOpen && <div style={{ paddingLeft: 'var(--20px-V)' }}>{content}</div>}
       </div>
     );
   };
@@ -1304,7 +1304,7 @@ const Room = ({
             : roomType.status === 'Empty'
             ? 'var(--Secondary-Color20)'
             : 'var(--Primary-Color25)',
-          border: roomType.AddTenantState ? '1px solid #00e1f1' : '',
+          border: roomType.AddTenantState ? 'var(--1px-V) solid #00e1f1' : '',
         }}
       >
         <div className="FirstLine">
@@ -1315,7 +1315,7 @@ const Room = ({
                 setSelectedEditRoomId(roomType.id);
               }}
               src={EditIcon}
-              style={{ width: '23px', height: '23px', marginLeft: '10px' }}
+              style={{ width: 'var(--23px-V)', height: 'var(--23px-V)', marginLeft: 'var(--10px-V)' }}
               alt=""
             />
             {roomType.status === 'Empty' && (
@@ -1344,14 +1344,14 @@ const Room = ({
                   <>Empty</>
                 )}
               </p>
-              <strong style={{ fontSize: '15px', fontWeight: '600' }}>
+              <strong style={{ fontSize: 'var(--15px-V)', fontWeight: '600' }}>
                 {roomType.status === 'Taken' ? (
                   <p
                     style={{
-                      fontSize: '15px',
-                      height: '20px',
-                      margin: '0px',
-                      marginTop: '5px',
+                      fontSize: 'var(--15px-V)',
+                      height: 'var(--20px-V)',
+                      margin: 'var(--0px-V)',
+                      marginTop: 'var(--5px-V)',
                       fontWeight: '400',
                     }}
                   >
@@ -1370,8 +1370,8 @@ const Room = ({
                         <strong
                           style={{
                             fontWeight: '600',
-                            fontSize: '17px',
-                            borderBottom: '1px solid white',
+                            fontSize: 'var(--17px-V)',
+                            borderBottom: 'var(--1px-V) solid white',
                           }}
                           onClick={() => {
                             /* TO DO */ handleAddTenant();
@@ -1385,7 +1385,7 @@ const Room = ({
                         <em
                           style={{
                             fontWeight: '400',
-                            borderBottom: '1px solid white',
+                            borderBottom: 'var(--1px-V) solid white',
                           }}
                           onClick={() => {
                             /* TO DO */ handleAddTenant();
@@ -1404,10 +1404,10 @@ const Room = ({
                     <strong
                       style={{
                         fontWeight: '600',
-                        fontSize: '17px',
+                        fontSize: 'var(--17px-V)',
                         display: 'flex',
                         justifyContent: 'center',
-                        marginTop: '5px',
+                        marginTop: 'var(--5px-V)',
                       }}
                       onClick={() => {
                         turnOffViewStateForAll();
@@ -1420,8 +1420,8 @@ const Room = ({
                     >
                       <p
                         style={{
-                          borderBottom: '1px solid white',
-                          width: '140px',
+                          borderBottom: 'var(--1px-V) solid white',
+                          width: 'var(--140px-V)',
                         }}
                       >
                         View Agreement
@@ -1432,10 +1432,10 @@ const Room = ({
                   <>
                     <em
                       style={{
-                        fontSize: '16px',
+                        fontSize: 'var(--16px-V)',
                         display: 'flex',
                         justifyContent: 'center',
-                        marginTop: '5px',
+                        marginTop: 'var(--5px-V)',
                         fontWeight: '400',
                       }}
                       onClick={() => {
@@ -1451,10 +1451,10 @@ const Room = ({
                         className="PageNavigatorButtonSelected"
                         style={{
                           width: '77%',
-                          height: '22px',
-                          borderBottom: '1px solid grey',
-                          marginTop: '0px',
-                          paddingTop: '0px',
+                          height: 'var(--22px-V)',
+                          borderBottom: 'var(--1px-V) solid grey',
+                          marginTop: 'var(--0px-V)',
+                          paddingTop: 'var(--0px-V)',
                         }}
                       >
                         View Agreement
@@ -1484,7 +1484,7 @@ const Room = ({
                     <div>
                       Price: <strong>{roomType.price.toLocaleString()}$</strong>
                     </div>{' '}
-                    <p style={{ fontSize: '12px' }}>
+                    <p style={{ fontSize: 'var(--12px-V)' }}>
                       Every{' '}
                       {getCorrectPaymentStatment(
                         roomType.PaymentCycleType,
@@ -1498,7 +1498,7 @@ const Room = ({
                       Price:{' '}
                       <strong>{roomType.AgreedPrice.toLocaleString()}$</strong>
                     </div>{' '}
-                    <p style={{ fontSize: '12px' }}>
+                    <p style={{ fontSize: 'var(--12px-V)' }}>
                       Every{' '}
                       {getCorrectPaymentStatment(
                         roomType.PaymentCycleType,
@@ -1526,7 +1526,7 @@ const Room = ({
                       onClick={() => {
                         extendPaymentSchedule();
                       }}
-                      style={{ borderBottom: '1px solid white', width: '30px' }}
+                      style={{ borderBottom: 'var(--1px-V) solid white', width: 'var(--30px-V)' }}
                     >
                       Extend?
                     </em>
@@ -1539,7 +1539,7 @@ const Room = ({
                 <button
                   className="PageNavigatorButtonSelected"
                   ref={hideButtonRef}
-                  style={{ borderBottom: '1px solid grey', width: '100px' }}
+                  style={{ borderBottom: 'var(--1px-V) solid grey', width: 'var(--100px-V)' }}
                   onClick={() => {
                     turnOffViewStateForAll();
                     updateRoomPropertyLocal(
@@ -1553,9 +1553,9 @@ const Room = ({
                 </button>
                 <button
                   style={{
-                    borderBottom: '1px solid grey',
-                    borderTop: '2px solid var(--Primary-Color)',
-                    height: '35px',
+                    borderBottom: 'var(--1px-V) solid grey',
+                    borderTop: 'var(--2px-V) solid var(--Primary-Color)',
+                    height: 'var(--35px-V)',
                   }}
                   ref={utilityShowerRefHider}
                   onClick={() => {
@@ -1616,7 +1616,7 @@ const Room = ({
                   style={{
                     textAlign: 'center',
                     paddingLeft: 0,
-                    fontSize: '17px',
+                    fontSize: 'var(--17px-V)',
                   }}
                 >
                   {roomType.squareMeters} square meters
@@ -1643,7 +1643,7 @@ const Room = ({
                   Images{' '}
                 </div>
                 <div
-                  style={{ width: '95%', height: '81%', borderRadius: '5px' }}
+                  style={{ width: '95%', height: '81%', borderRadius: 'var(--5px-V)' }}
                 >
                   {' '}
                   <ImageInteractor2 room={roomType} />
@@ -1659,19 +1659,19 @@ const Room = ({
             ref={addTenantRef}
             style={{
               zIndex: roomType.AddTenantState ? '1' : '-1',
-              top: '286px',
+              top: 'var(--286px-V)',
             }}
           >
             <div
               className="AddTenantContainerinner"
               style={{
-                width: roomType.AddTenantState ? '365px' : '0px',
-                height: roomType.AddTenantState ? '445px' : '0px',
+                width: roomType.AddTenantState ? 'var(--365px-V)' : 'var(--0px-V)',
+                height: roomType.AddTenantState ? 'var(--445px-V)' : 'var(--0px-V)',
                 opacity: roomType.AddTenantState ? '1' : '0',
                 userSelect: 'text',
                 overflowY: 'auto',
-                fontSize: '17px',
-                paddingBottom: '15px',
+                fontSize: 'var(--17px-V)',
+                paddingBottom: 'var(--15px-V)',
               }}
             >
               <div className="InnerAddtenantTop" style={{ height: '100%' }}>
@@ -1685,8 +1685,8 @@ const Room = ({
                       width: TenantPageSelected === 'Select' ? '60%' : '40%',
                       borderBottom:
                         TenantPageSelected === 'Select'
-                          ? '1px solid var(--Primary-Color)'
-                          : '1px solid grey',
+                          ? 'var(--1px-V) solid var(--Primary-Color)'
+                          : 'var(--1px-V) solid grey',
                     }}
                   >
                     Select a tenant
@@ -1700,8 +1700,8 @@ const Room = ({
                       width: TenantPageSelected === 'New' ? '60%' : '40%',
                       borderBottom:
                         TenantPageSelected === 'New'
-                          ? '1px solid var(--Primary-Color)'
-                          : '1px solid grey',
+                          ? 'var(--1px-V) solid var(--Primary-Color)'
+                          : 'var(--1px-V) solid grey',
                     }}
                   >
                     New tenant
@@ -1712,8 +1712,8 @@ const Room = ({
                   <>
                     <h3
                       style={{
-                        marginTop: '5px',
-                        marginBottom: '5px',
+                        marginTop: 'var(--5px-V)',
+                        marginBottom: 'var(--5px-V)',
                         textAlign: 'center',
                       }}
                     >
@@ -1762,7 +1762,7 @@ const Room = ({
                         placeholder="Optional"
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
-                        style={{ width: '238px', height: '107px' }}
+                        style={{ width: 'var(--238px-V)', height: 'var(--107px-V)' }}
                       />
                     </div>
                     <div className="AddTenantContainerinnerElement">
@@ -1789,8 +1789,8 @@ const Room = ({
                   <>
                     <h3
                       style={{
-                        marginTop: '5px',
-                        marginBottom: '5px',
+                        marginTop: 'var(--5px-V)',
+                        marginBottom: 'var(--5px-V)',
                         textAlign: 'center',
                       }}
                     >
@@ -1819,13 +1819,13 @@ const Room = ({
                               }}
                             >
                               <p>{tenant.name}</p>
-                              <p style={{ fontSize: '10px' }}>
+                              <p style={{ fontSize: 'var(--10px-V)' }}>
                                 {tenant.phoneNumber}
                               </p>
                             </button>
                           </div>
                           <span
-                            style={{ fontSize: '12px', marginRight: '10px' }}
+                            style={{ fontSize: 'var(--12px-V)', marginRight: 'var(--10px-V)' }}
                           >
                             {tenant.RentingOrOut
                               ? 'Renting, so duplicate here'
@@ -1838,7 +1838,7 @@ const Room = ({
                               onClick={() => {
                                 setSelectedTenantIdOnAdding('');
                               }}
-                              style={{ width: '35px', height: '35px' }}
+                              style={{ width: 'var(--35px-V)', height: 'var(--35px-V)' }}
                             >
                               X
                             </button>
@@ -1873,7 +1873,7 @@ const Room = ({
                               ).name
                             }
                           </p>
-                          <p style={{ fontSize: '10px' }}>
+                          <p style={{ fontSize: 'var(--10px-V)' }}>
                             {
                               TenantList.find(
                                 (tenant: any) =>
@@ -1886,7 +1886,7 @@ const Room = ({
                           onClick={() => {
                             setSelectedTenantIdOnAdding('');
                           }}
-                          style={{ width: '35px', height: '35px' }}
+                          style={{ width: 'var(--35px-V)', height: 'var(--35px-V)' }}
                         >
                           X
                         </button>
@@ -1900,8 +1900,8 @@ const Room = ({
                   <>
                     <h3
                       style={{
-                        marginTop: '5px',
-                        marginBottom: '5px',
+                        marginTop: 'var(--5px-V)',
+                        marginBottom: 'var(--5px-V)',
                         textAlign: 'center',
                       }}
                     >
@@ -2043,7 +2043,7 @@ const Room = ({
                       Payment cycle every:{' '}
                       <select
                         className="AddTenantContainerinnerInput"
-                        style={{ width: '100px' }}
+                        style={{ width: 'var(--100px-V)' }}
                         value={paymentCycle}
                         onChange={handlePaymentCycleChange}
                       >
@@ -2060,7 +2060,7 @@ const Room = ({
                         <input
                           type="number"
                           className="AddTenantContainerinnerInput"
-                          style={{ width: '50px', marginLeft: '10px' }}
+                          style={{ width: 'var(--50px-V)', marginLeft: 'var(--10px-V)' }}
                           placeholder="Enter days"
                           value={customDays}
                           onChange={(e) => setCustomDays(e.target.value)}
@@ -2072,7 +2072,7 @@ const Room = ({
                       <input
                         type="number"
                         className="AddTenantContainerinnerInput"
-                        style={{ width: '70px' }}
+                        style={{ width: 'var(--70px-V)' }}
                         placeholder="Enter price"
                         value={agreedPrice}
                         onChange={(e) =>
@@ -2082,7 +2082,7 @@ const Room = ({
                       $
                       <button
                         style={{
-                          marginLeft: '10px',
+                          marginLeft: 'var(--10px-V)',
                         }}
                         onClick={() => {
                           setAgreedPrice(roomType.price);
@@ -2099,8 +2099,8 @@ const Room = ({
                         <>
                           <h3
                             style={{
-                              marginTop: '5px',
-                              marginBottom: '5px',
+                              marginTop: 'var(--5px-V)',
+                              marginBottom: 'var(--5px-V)',
                               textAlign: 'center',
                             }}
                           >
@@ -2158,7 +2158,7 @@ const Room = ({
                             Payment cycle every:{' '}
                             <select
                               className="AddTenantContainerinnerInput"
-                              style={{ width: '100px' }}
+                              style={{ width: 'var(--100px-V)' }}
                               value={paymentCycle}
                               onChange={handlePaymentCycleChange}
                             >
@@ -2173,7 +2173,7 @@ const Room = ({
                               <input
                                 type="number"
                                 className="AddTenantContainerinnerInput"
-                                style={{ width: '50px', marginLeft: '10px' }}
+                                style={{ width: 'var(--50px-V)', marginLeft: 'var(--10px-V)' }}
                                 placeholder="Enter days"
                                 value={customDays}
                                 onChange={(e) => setCustomDays(e.target.value)}
@@ -2185,7 +2185,7 @@ const Room = ({
                             <input
                               type="number"
                               className="AddTenantContainerinnerInput"
-                              style={{ width: '70px' }}
+                              style={{ width: 'var(--70px-V)' }}
                               placeholder="Enter price"
                               value={agreedPrice}
                               onChange={(e) =>
@@ -2195,7 +2195,7 @@ const Room = ({
                             $
                             <button
                               style={{
-                                marginLeft: '10px',
+                                marginLeft: 'var(--10px-V)',
                               }}
                               onClick={() => {
                                 setAgreedPrice(roomType.price);
@@ -2214,8 +2214,8 @@ const Room = ({
                     <>
                       <h3
                         style={{
-                          marginTop: '5px',
-                          marginBottom: '5px',
+                          marginTop: 'var(--5px-V)',
+                          marginBottom: 'var(--5px-V)',
                           textAlign: 'center',
                         }}
                       >
@@ -2228,7 +2228,7 @@ const Room = ({
                         Track broker:{' '}
                         <input
                           type="checkbox"
-                          style={{ width: '20px' }}
+                          style={{ width: 'var(--20px-V)' }}
                           checked={AddTenantUseBrokerState}
                           onChange={(e) => {
                             setAddTenantUseBrokerState(e.target.checked);
@@ -2255,8 +2255,8 @@ const Room = ({
                   <>
                     <h3
                       style={{
-                        marginTop: '5px',
-                        marginBottom: '5px',
+                        marginTop: 'var(--5px-V)',
+                        marginBottom: 'var(--5px-V)',
                         textAlign: 'center',
                       }}
                     >
@@ -2269,7 +2269,7 @@ const Room = ({
                       Track broker:{' '}
                       <input
                         type="checkbox"
-                        style={{ width: '20px' }}
+                        style={{ width: 'var(--20px-V)' }}
                         checked={AddTenantUseBrokerState}
                         onChange={(e) => {
                           setAddTenantUseBrokerState(e.target.checked);
@@ -2297,7 +2297,7 @@ const Room = ({
                   <>
                     {AddTenantAddBrokerState ? (
                       <>
-                        <h4 style={{ margin: '0px' }}>Add New Broker</h4>
+                        <h4 style={{ margin: 'var(--0px-V)' }}>Add New Broker</h4>
                         <input
                           type="text"
                           placeholder="Name"
@@ -2309,7 +2309,7 @@ const Room = ({
                         <span
                           style={{
                             color: 'var(--Text-Color-Grey)',
-                            fontSize: '12px',
+                            fontSize: 'var(--12px-V)',
                           }}
                         >
                           longer than 3
@@ -2325,7 +2325,7 @@ const Room = ({
                         <span
                           style={{
                             color: 'var(--Text-Color-Grey)',
-                            fontSize: '12px',
+                            fontSize: 'var(--12px-V)',
                           }}
                         >
                           longer than 8
@@ -2360,7 +2360,7 @@ const Room = ({
                       <>
                         {AddTenantSelectedBrokerId !== '' ? (
                           <>
-                            <h4 style={{ margin: '0px' }}>Selected Broker</h4>
+                            <h4 style={{ margin: 'var(--0px-V)' }}>Selected Broker</h4>
                             {BrokerList.find(
                               (broker: BrokerType) =>
                                 broker.id === AddTenantSelectedBrokerId
@@ -2395,7 +2395,7 @@ const Room = ({
                                         )?.name
                                       }
                                     </p>
-                                    <p style={{ fontSize: '10px' }}>
+                                    <p style={{ fontSize: 'var(--10px-V)' }}>
                                       {
                                         BrokerList.find(
                                           (broker: BrokerType) =>
@@ -2412,8 +2412,8 @@ const Room = ({
                                       setAddTenantSelectedBrokerId('');
                                     }}
                                     style={{
-                                      width: '35px',
-                                      height: '35px',
+                                      width: 'var(--35px-V)',
+                                      height: 'var(--35px-V)',
                                     }}
                                   >
                                     X
@@ -2427,7 +2427,7 @@ const Room = ({
                               <input
                                 type="number"
                                 style={{
-                                  width: !isPercentCommission ? '80px' : '40px',
+                                  width: !isPercentCommission ? 'var(--80px-V)' : 'var(--40px-V)',
                                 }}
                                 value={commissionValue}
                                 onChange={(e) =>
@@ -2475,7 +2475,7 @@ const Room = ({
                           </>
                         ) : (
                           <>
-                            <h4 style={{ margin: '0px' }}>Select a Broker</h4>
+                            <h4 style={{ margin: 'var(--0px-V)' }}>Select a Broker</h4>
                             <input
                               type="text"
                               placeholder="Search broker"
@@ -2491,7 +2491,7 @@ const Room = ({
                                     }}
                                   >
                                     <p>{broker.name}</p>
-                                    <p style={{ fontSize: '10px' }}>
+                                    <p style={{ fontSize: 'var(--10px-V)' }}>
                                       {broker.phoneNumber}
                                     </p>
                                   </button>
@@ -2526,8 +2526,8 @@ const Room = ({
                     <>
                       <h3
                         style={{
-                          marginTop: '5px',
-                          marginBottom: '5px',
+                          marginTop: 'var(--5px-V)',
+                          marginBottom: 'var(--5px-V)',
                           textAlign: 'center',
                         }}
                       >
@@ -2547,8 +2547,8 @@ const Room = ({
                   <>
                     <h3
                       style={{
-                        marginTop: '5px',
-                        marginBottom: '5px',
+                        marginTop: 'var(--5px-V)',
+                        marginBottom: 'var(--5px-V)',
                         textAlign: 'center',
                       }}
                     >
@@ -2571,14 +2571,14 @@ const Room = ({
                     justifyContent: 'space-evenly',
                     flexDirection: 'column',
                     alignItems: 'center',
-                    height: '70px',
+                    height: 'var(--70px-V)',
                   }}
                 >
                   {TenantPageSelected === 'New' && name.length <= 3 && (
                     <p
                       style={{
                         color: 'var(--Text-Color-Grey)',
-                        fontSize: '14px',
+                        fontSize: 'var(--14px-V)',
                       }}
                     >
                       Name has to be longer than 3
@@ -2588,7 +2588,7 @@ const Room = ({
                     <p
                       style={{
                         color: 'var(--Text-Color-Grey)',
-                        fontSize: '14px',
+                        fontSize: 'var(--14px-V)',
                       }}
                     >
                       Phone number has to be longer than 8
@@ -2600,7 +2600,7 @@ const Room = ({
                       <p
                         style={{
                           color: 'var(--Text-Color-Grey)',
-                          fontSize: '14px',
+                          fontSize: 'var(--14px-V)',
                         }}
                       >
                         Start time has to be valid
@@ -2610,7 +2610,7 @@ const Room = ({
                     <p
                       style={{
                         color: 'var(--Text-Color-Grey)',
-                        fontSize: '14px',
+                        fontSize: 'var(--14px-V)',
                       }}
                     >
                       Start time has to be valid
@@ -2621,7 +2621,7 @@ const Room = ({
                       display: 'flex',
                       justifyContent: 'space-evenly',
                       alignItems: 'center',
-                      height: '60px',
+                      height: 'var(--60px-V)',
                       width: '100%',
                     }}
                   >
@@ -2666,15 +2666,15 @@ const Room = ({
             className="PopOutContainer"
             ref={viewAgreementRef}
             style={{
-              top: '310px',
+              top: 'var(--310px-V)',
               zIndex: roomType.ViewAgreement ? '1' : '-1',
             }}
           >
             <div
               className="ViewAgreementContainer"
               style={{
-                width: roomType.ViewAgreement ? '400px' : '0px',
-                height: roomType.ViewAgreement ? '470px' : '0px',
+                width: roomType.ViewAgreement ? 'var(--400px-V)' : 'var(--0px-V)',
+                height: roomType.ViewAgreement ? 'var(--470px-V)' : 'var(--0px-V)',
                 opacity: roomType.ViewAgreement ? '1' : '0',
               }}
             >
@@ -2684,7 +2684,7 @@ const Room = ({
                     display: 'flex',
                     flexDirection: 'column',
                     width: '100%',
-                    padding: '10px',
+                    padding: 'var(--10px-V)',
                   }}
                 >
                   {/* Tenant Information Section */}
@@ -2784,14 +2784,14 @@ const Room = ({
                     style={{
                       width: '93%',
                       background: 'var(--Secondary-Color30)',
-                      padding: '5px',
-                      marginBottom: '10px',
-                      borderRadius: '5px',
+                      padding: 'var(--5px-V)',
+                      marginBottom: 'var(--10px-V)',
+                      borderRadius: 'var(--5px-V)',
                     }}
                   >
                     <div
                       style={{
-                        fontSize: '18px',
+                        fontSize: 'var(--18px-V)',
                         fontWeight: 'bold',
                         display: 'flex',
                         justifyContent: 'space-between',
@@ -2805,7 +2805,7 @@ const Room = ({
                         }))
                       }
                     >
-                      <span style={{ marginBottom: '10px' }}>
+                      <span style={{ marginBottom: 'var(--10px-V)' }}>
                         {sectionStates.agreementInformation ? '▼' : '▶'}{' '}
                         Agreement Information
                       </span>
@@ -2877,14 +2877,14 @@ const Room = ({
                     style={{
                       width: '93%',
                       background: 'var(--Secondary-Color30)',
-                      padding: '5px',
-                      marginBottom: '10px',
-                      borderRadius: '5px',
+                      padding: 'var(--5px-V)',
+                      marginBottom: 'var(--10px-V)',
+                      borderRadius: 'var(--5px-V)',
                     }}
                   >
                     <div
                       style={{
-                        fontSize: '18px',
+                        fontSize: 'var(--18px-V)',
                         fontWeight: 'bold',
                         display: 'flex',
                         justifyContent: 'space-between',
@@ -2898,7 +2898,7 @@ const Room = ({
                         }))
                       }
                     >
-                      <span style={{ marginBottom: '10px' }}>
+                      <span style={{ marginBottom: 'var(--10px-V)' }}>
                         {sectionStates.utilitySettings ? '▼' : '▶'} Utility
                         Settings
                       </span>
@@ -3003,14 +3003,14 @@ const Room = ({
                     style={{
                       width: '93%',
                       background: 'var(--Secondary-Color30)',
-                      padding: '5px',
-                      marginBottom: '10px',
-                      borderRadius: '5px',
+                      padding: 'var(--5px-V)',
+                      marginBottom: 'var(--10px-V)',
+                      borderRadius: 'var(--5px-V)',
                     }}
                   >
                     <div
                       style={{
-                        fontSize: '18px',
+                        fontSize: 'var(--18px-V)',
                         fontWeight: 'bold',
                         display: 'flex',
                         justifyContent: 'space-between',
@@ -3024,7 +3024,7 @@ const Room = ({
                         }))
                       }
                     >
-                      <span style={{ marginBottom: '10px' }}>
+                      <span style={{ marginBottom: 'var(--10px-V)' }}>
                         {sectionStates.fileAttachments ? '▼' : '▶'} File
                         Attachments
                       </span>
@@ -3034,9 +3034,9 @@ const Room = ({
                         style={{
                           width: '97%',
                           background: 'var(--Secondary-Color20)',
-                          minHeight: '100px',
-                          padding: '5px',
-                          borderRadius: '10px',
+                          minHeight: 'var(--100px-V)',
+                          padding: 'var(--5px-V)',
+                          borderRadius: 'var(--10px-V)',
                         }}
                       >
                         <DocumentInteractor
@@ -3052,14 +3052,14 @@ const Room = ({
                     style={{
                       width: '93%',
                       background: 'var(--Secondary-Color30)',
-                      padding: '5px',
-                      marginBottom: '10px',
-                      borderRadius: '5px',
+                      padding: 'var(--5px-V)',
+                      marginBottom: 'var(--10px-V)',
+                      borderRadius: 'var(--5px-V)',
                     }}
                   >
                     <div
                       style={{
-                        fontSize: '18px',
+                        fontSize: 'var(--18px-V)',
                         fontWeight: 'bold',
                         display: 'flex',
                         justifyContent: 'space-between',
@@ -3074,7 +3074,7 @@ const Room = ({
                         }))
                       }
                     >
-                      <span style={{ marginBottom: '10px' }}>
+                      <span style={{ marginBottom: 'var(--10px-V)' }}>
                         {sectionStates.remindersAndNotifications ? '▼' : '▶'}{' '}
                         Reminders and Notifications
                       </span>
@@ -3098,18 +3098,18 @@ const Room = ({
                   <div
                     className="BottomAddTenantContainer"
                     style={{
-                      height: '55px',
+                      height: 'var(--55px-V)',
                       display: 'flex',
                       justifyContent: 'center',
                       alignItems: 'center',
-                      marginTop: '20px',
+                      marginTop: 'var(--20px-V)',
                     }}
                   >
                     <button
                       onClick={() => {
                         setTenantLeavePannelState(true);
                       }}
-                      style={{ marginRight: '20px' }}
+                      style={{ marginRight: 'var(--20px-V)' }}
                     >
                       End Stay
                     </button>
@@ -3138,20 +3138,20 @@ const Room = ({
             className="PopOutContainer"
             ref={showPayTimeLineRef}
             style={{
-              top: '200px',
-              left: '-567px',
+              top: 'var(--200px-V)',
+              left: 'var(---567px-V)',
               zIndex: roomType.ShowPayTimeLine ? '1' : '-1',
             }}
           >
             <div
               className="TimeLineMainContaner"
               style={{
-                width: roomType.ShowPayTimeLine ? '568px' : '0px',
+                width: roomType.ShowPayTimeLine ? 'var(--568px-V)' : 'var(--0px-V)',
                 height: roomType.ShowPayTimeLine
                   ? !ShowReceipt
                     ? 'auto'
                     : 'auto'
-                  : '0px',
+                  : 'var(--0px-V)',
                 opacity: roomType.ShowPayTimeLine ? '1' : '0',
               }}
             >
@@ -3176,11 +3176,11 @@ const Room = ({
             className="PopOutContainer"
             ref={utilityShowerRef}
             style={{
-              top: '104px',
+              top: 'var(--104px-V)',
 
-              left: '-757px',
+              left: 'var(---757px-V)',
 
-              height: '383px',
+              height: 'var(--383px-V)',
               zIndex: '3',
             }}
           >
@@ -3243,7 +3243,7 @@ const Room = ({
                 onClick={() => {
                   handleTenantLeft();
                 }}
-                style={{ marginLeft: '20px' }}
+                style={{ marginLeft: 'var(--20px-V)' }}
               >
                 Tenant done
               </button>

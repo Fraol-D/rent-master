@@ -1067,21 +1067,21 @@ function Hello() {
           style={{
             backgroundColor: colors.background,
             color: colors.text,
-            padding: '20px',
-            borderRadius: '10px',
-            boxShadow: '0 0 10px rgba(0, 0, 0, 0.3)',
+            padding: 'var(--20px-V)',
+            borderRadius: 'var(--10px-V)',
+            boxShadow: '0 0 var(--10px-V) rgba(0, 0, 0, 0.3)',
             textAlign: 'center',
           }}
         >
           <div
             style={{
-              border: `4px solid ${colors.secondary}`,
-              borderTop: `4px solid ${colors.primary}`,
+              border: `var(--4px-V) solid ${colors.secondary}`,
+              borderTop: `var(--4px-V) solid ${colors.primary}`,
               borderRadius: '50%',
-              width: '40px',
-              height: '40px',
+              width: 'var(--40px-V)',
+              height: 'var(--40px-V)',
               animation: 'spin 1s linear infinite',
-              margin: '0 auto 10px',
+              margin: '0 auto var(--10px-V)',
             }}
           />
           <p style={{ margin: 0 }}>
@@ -1118,6 +1118,7 @@ function Hello() {
   });
 
   const [ViewBranchManagementPage, setViewBranchManagementPage] = useState(false);
+  const [SelectedBranchId, setSelectedBranchId] = useState('');
 
   const privileges = getUserPrivileges(SelectedAppUser);
 
@@ -1171,6 +1172,8 @@ function Hello() {
         setSelectedAppUser={setSelectedAppUser}
         ViewBranchManagementPage={ViewBranchManagementPage}
         setViewBranchManagementPage={setViewBranchManagementPage}
+        SelectedBranchId={SelectedBranchId}
+        setSelectedBranchId={setSelectedBranchId}
       >
         <>
           <NavBar

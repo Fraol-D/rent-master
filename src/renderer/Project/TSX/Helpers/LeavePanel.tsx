@@ -58,12 +58,12 @@ const LeavePanel = ({
     <div
       style={{
         width: '90%',
-        padding: '10px',
-        borderRadius: '10px',
+        padding: 'var(--10px-V)',
+        borderRadius: 'var(--10px-V)',
         color: '#fff',
       }}
     >
-      <section style={{ marginBottom: '20px' }}>
+      <section style={{ marginBottom: 'var(--20px-V)' }}>
         <h3>Tenant Information</h3>
         <p>Name: {tenant.name}</p>
         <p>Telephone 1: {tenant.phoneNumber}</p>
@@ -71,7 +71,7 @@ const LeavePanel = ({
         <p>Email: {tenant.email || 'N/A'}</p>
       </section>
 
-      <section style={{ marginBottom: '20px' }}>
+      <section style={{ marginBottom: 'var(--20px-V)' }}>
         <h3>Agreed Terms</h3>
         <p>
           Payment cycle: {tenant.agreedPrice} per {getCycle()}
@@ -82,7 +82,7 @@ const LeavePanel = ({
         </p>
       </section>
 
-      <section style={{ marginBottom: '20px' }}>
+      <section style={{ marginBottom: 'var(--20px-V)' }}>
         <h3>Payments</h3>
         <p>Total payments till now: {paymentNumbers}</p>
         <p>Total Income till now: ${totalIncome}</p>
@@ -98,7 +98,7 @@ const LeavePanel = ({
         </label>
       </section>
 
-      <section style={{ marginBottom: '20px' }}>
+      <section style={{ marginBottom: 'var(--20px-V)' }}>
         <h3>Tenant Details</h3>
         <label>
           Rate the tenant:
@@ -115,7 +115,7 @@ const LeavePanel = ({
             </span>
           ))}
         </label>
-        <div style={{ marginTop: '10px' }}>
+        <div style={{ marginTop: 'var(--10px-V)' }}>
           <label>
             Description of tenant's stay:
             <textarea
@@ -123,15 +123,15 @@ const LeavePanel = ({
               onChange={(e) => setTenantDescription(e.target.value)}
               style={{
                 width: '100%',
-                height: '80px',
-                borderRadius: '10px',
+                height: 'var(--80px-V)',
+                borderRadius: 'var(--10px-V)',
                 backgroundColor: 'var(--Secondary-Color)',
                 color: 'white',
               }}
             />
           </label>
         </div>
-        <div style={{ marginTop: '10px' }}>
+        <div style={{ marginTop: 'var(--10px-V)' }}>
           <label>
             End Reason:
             <input

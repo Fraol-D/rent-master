@@ -3,66 +3,66 @@
   /* display: flex; */
   align-items: center;
   flex-direction: column;
-  border-radius: 10px;
-  box-shadow: 2px 2px 6px 2px rgba(104, 104, 104, 0.2);
-  border: 1px solid grey;
-  padding: 5px;
-  margin: 10px;
+  border-radius: var(--10px-V);
+  box-shadow: var(--2px-V) var(--2px-V) var(--6px-V) var(--2px-V) rgba(104, 104, 104, 0.2);
+  border: var(--1px-V) solid grey;
+  padding: var(--5px-V);
+  margin: var(--10px-V);
   color: var(--Text-Color);
-  height: calc(100% - 34px);
+  height: calc(100% - var(--34px-V));
 }
 .CalenderOptionsMainContainer {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px;
+  gap: var(--10px-V);
+  padding: var(--10px-V);
   background-color: var(--Secondary-Color20);
-  border-radius: 5px;
+  border-radius: var(--5px-V);
   justify-content: center;
 }
 .CalenderContainer {
   height: 100%;
 }
 .DashboardWigetMainContainer {
-  width: 710px;
+  width: var(--710px-V);
   align-items: flex-start;
   color: var(--Text-Color);
 }
 
 .DashboardWigetPieChartTextHeader {
-  width: 710px;
+  width: var(--710px-V);
   color: var(--Text-Color);
 }
 
 .DashboardTotalCollectedTopPart {
-  margin-bottom: 20px;
+  margin-bottom: var(--20px-V);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px;
+  padding: var(--10px-V);
   background-color: var(--Secondary-Color20);
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border-radius: var(--8px-V);
+  box-shadow: 0 var(--2px-V) var(--4px-V) rgba(0, 0, 0, 0.1);
 }
 
 .ShowByContainer {
-  margin-right: 20px;
+  margin-right: var(--20px-V);
   color: var(--Text-Color);
   display: flex;
   align-items: center;
 }
 
 .ShowByLabel {
-  margin-right: 10px;
+  margin-right: var(--10px-V);
 }
 
 .ShowBySelect {
   color: var(--Text-Color);
   background-color: var(--Secondary-Color);
-  padding: 5px 10px;
-  border-radius: 4px;
-  margin-right: 20px;
-  border: 1px solid grey;
+  padding: var(--5px-V) var(--10px-V);
+  border-radius: var(--4px-V);
+  margin-right: var(--20px-V);
+  border: var(--1px-V) solid grey;
 }
 
 .YearInputContainer {
@@ -72,29 +72,29 @@
 }
 
 .YearLabel {
-  margin-right: 10px;
+  margin-right: var(--10px-V);
 }
 
 .YearInput {
   color: var(--Text-Color);
   background-color: var(--Secondary-Color);
-  padding: 5px 10px;
-  border-radius: 4px;
-  margin-right: 20px;
-  border: 1px solid grey;
-  width: 80px;
+  padding: var(--5px-V) var(--10px-V);
+  border-radius: var(--4px-V);
+  margin-right: var(--20px-V);
+  border: var(--1px-V) solid grey;
+  width: var(--80px-V);
 }
 
 .TotalLabel {
-  margin-right: 10px;
+  margin-right: var(--10px-V);
 }
 
 .TotalValue {
-  margin-right: 20px;
+  margin-right: var(--20px-V);
 }
 
 .DifferenceLabel {
-  margin-right: 10px;
+  margin-right: var(--10px-V);
 }
 
 .DifferenceValue {

@@ -230,19 +230,19 @@ const DashbPastPayments = ({
     <div
       className="DashboardWigetMainContainer"
       style={{
-        width: '400px',
+        width: 'var(--400px-V)',
         alignItems: 'flex-start',
-        height: '500px',
+        height: 'var(--500px-V)',
         overflowY: 'auto',
         overflowX: 'hidden',
       }}
     >
-      <div style={{ display: 'flex', width: '100%', marginBottom: '10px' }}>
+      <div style={{ display: 'flex', width: '100%', marginBottom: 'var(--10px-V)' }}>
         <button
           onClick={() => setActiveTab('past')}
           style={{
             flex: 1,
-            padding: '10px',
+            padding: 'var(--10px-V)',
             backgroundColor:
               activeTab === 'past'
                 ? 'var(--Secondary-Color)'
@@ -256,7 +256,7 @@ const DashbPastPayments = ({
           onClick={() => setActiveTab('upcoming')}
           style={{
             flex: 1,
-            padding: '10px',
+            padding: 'var(--10px-V)',
             backgroundColor:
               activeTab === 'upcoming'
                 ? 'var(--Secondary-Color)'
@@ -271,7 +271,7 @@ const DashbPastPayments = ({
         <>
           <p
             className="DashboardWigetPieChartTextHeader"
-            style={{ width: '400px' }}
+            style={{ width: 'var(--400px-V)' }}
           >
             Past Payments
           </p>
@@ -279,14 +279,14 @@ const DashbPastPayments = ({
             <thead className="InfoTableThead">
               <tr className="InfoTableHeadTR">
                 <th className="InfoTableHeadTh">Tenants</th>
-                <th className="InfoTableHeadTh" style={{ width: '40px' }}>
+                <th className="InfoTableHeadTh" style={{ width: 'var(--40px-V)' }}>
                   Num of <br />
                   payment
                 </th>
-                <th className="InfoTableHeadTh" style={{ width: '50px' }}>
+                <th className="InfoTableHeadTh" style={{ width: 'var(--50px-V)' }}>
                   Past By
                 </th>
-                <th className="InfoTableHeadTh" style={{ width: '40px' }}>
+                <th className="InfoTableHeadTh" style={{ width: 'var(--40px-V)' }}>
                   Action
                 </th>
               </tr>
@@ -302,13 +302,13 @@ const DashbPastPayments = ({
                     >
                       <td className="InfoTableBodyTD">
                         <span
-                          style={{ fontSize: '16px', overflowX: 'auto' }}
+                          style={{ fontSize: 'var(--16px-V)', overflowX: 'auto' }}
                           title={tenant.tenant.name}
                         >
                           {tenant.tenant.name.slice(0, 20)}
                         </span>{' '}
                         <br />{' '}
-                        <span style={{ fontSize: '12px' }}>
+                        <span style={{ fontSize: 'var(--12px-V)' }}>
                           Flr:
                           {
                             RoomList.find(
@@ -332,7 +332,7 @@ const DashbPastPayments = ({
                         style={{
                           display: 'flex',
                           justifyContent: 'center',
-                          width: '46px',
+                          width: 'var(--46px-V)',
                         }}
                       >
                         <button
@@ -352,7 +352,7 @@ const DashbPastPayments = ({
                 <tr>
                   <td
                     colSpan={4}
-                    style={{ textAlign: 'center', padding: '10px' }}
+                    style={{ textAlign: 'center', padding: 'var(--10px-V)' }}
                   >
                     No unpaid payments available
                   </td>
@@ -365,7 +365,7 @@ const DashbPastPayments = ({
         <>
           <p
             className="DashboardWigetPieChartTextHeader"
-            style={{ width: '400px' }}
+            style={{ width: 'var(--400px-V)' }}
           >
             Upcoming Payments (Next 10 Days)
           </p>
@@ -373,10 +373,10 @@ const DashbPastPayments = ({
             <thead className="InfoTableThead">
               <tr className="InfoTableHeadTR">
                 <th className="InfoTableHeadTh">Tenants</th>
-                <th className="InfoTableHeadTh" style={{ width: '80px' }}>
+                <th className="InfoTableHeadTh" style={{ width: 'var(--80px-V)' }}>
                   Due Date
                 </th>
-                <th className="InfoTableHeadTh" style={{ width: '70px' }}>
+                <th className="InfoTableHeadTh" style={{ width: 'var(--70px-V)' }}>
                   Amount
                 </th>
               </tr>
@@ -391,13 +391,13 @@ const DashbPastPayments = ({
                   >
                     <td className="InfoTableBodyTD">
                       <span
-                        style={{ fontSize: '16px', overflowX: 'auto' }}
+                        style={{ fontSize: 'var(--16px-V)', overflowX: 'auto' }}
                         title={payment.tenant.name}
                       >
                         {payment.tenant.name.slice(0, 20)}
                       </span>{' '}
                       <br />{' '}
-                      <span style={{ fontSize: '12px' }}>
+                      <span style={{ fontSize: 'var(--12px-V)' }}>
                         Flr:
                         {
                           RoomList.find(
@@ -430,7 +430,7 @@ const DashbPastPayments = ({
                         days
                       </span>
 
-                      <span style={{ fontSize: '11px' }}>
+                      <span style={{ fontSize: 'var(--11px-V)' }}>
                         {payment.DueDate.toDateString()}
                       </span>
                     </td>
@@ -443,7 +443,7 @@ const DashbPastPayments = ({
                 <tr>
                   <td
                     colSpan={3}
-                    style={{ textAlign: 'center', padding: '10px' }}
+                    style={{ textAlign: 'center', padding: 'var(--10px-V)' }}
                   >
                     No upcoming payments in the next 10 days
                   </td>
@@ -459,8 +459,8 @@ const DashbPastPayments = ({
             style={{
               width: '100%',
               textAlign: 'center',
-              fontSize: '20px',
-              marginTop: '10px',
+              fontSize: 'var(--20px-V)',
+              marginTop: 'var(--10px-V)',
             }}
           >
             {
@@ -471,11 +471,11 @@ const DashbPastPayments = ({
           <div
             style={{
               position: 'relative',
-              width: '390px',
+              width: 'var(--390px-V)',
               background: 'var(--Background-Color)',
-              padding: '5px',
-              borderRadius: '5px',
-              border: '1px solid grey',
+              padding: 'var(--5px-V)',
+              borderRadius: 'var(--5px-V)',
+              border: 'var(--1px-V) solid grey',
             }}
           >
             <PaymentProgressBarGUI

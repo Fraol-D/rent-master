@@ -19,7 +19,7 @@ export function CalendarPage({
         className="RoomContainerContainer"
         style={{
           width: '100%',
-          height: 'calc(100% - 60px)',
+          height: 'calc(100% - var(--60px-V))',
 
           overflowY: 'hidden',
         }}

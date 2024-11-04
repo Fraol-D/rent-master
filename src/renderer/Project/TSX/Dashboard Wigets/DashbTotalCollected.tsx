@@ -223,7 +223,13 @@ const DashbTotalCollected = ({
       : 'N/A';
 
   return (
-    <div className="DashboardWigetMainContainer">
+    <div 
+      className="DashboardWigetMainContainer"
+      style={{
+        width: 'var(--710px-V)',
+        height: 'var(--510px-V)',
+      }}
+    >
       <p className="DashboardWigetPieChartTextHeader">Total Collected</p>
 
       <div className="DashboardTotalCollectedTopPart">
@@ -293,8 +299,7 @@ const DashbTotalCollected = ({
           },
         ]}
         grid={{ vertical: true, horizontal: true }}
-        width={710}
-        height={400}
+  
         margin={{
           left: 74,
           right: 30,
@@ -309,7 +314,14 @@ const DashbTotalCollected = ({
             },
             [`.${axisClasses.tickLabel}`]: {
               fill: 'var(--Text-Color)',
+          
             },
+          },
+          '.MuiChartsLegend-label': {
+      
+          },
+          '.MuiBarElement-root': {
+        
           },
         })}
       />

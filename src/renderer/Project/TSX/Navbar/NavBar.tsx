@@ -229,10 +229,10 @@ const NavBar = ({
           ) : (
             <p className="Name-ofShop">{ShopName}</p>
           )} */}{' '}
-          <p className="Name-ofShop" style={{ height: '28px' }}>
-            Rent <p style={{ color: 'var(--Primary-Color)' }}>Master</p>
+          <p className="Name-ofShop" style={{ height: 'var(--28px-V)' }}>
+            Rent <p style={{ color: 'var(--Primary-Color)', fontSize: 'var(--30px-V)' }}>Master</p>
             <button
-              style={{ marginLeft: '10px' }}
+              style={{ marginLeft: 'var(--10px-V)' }}
               onClick={() => {
                 if (navigator.onLine) {
                   setAppUserManagerShow(true);
@@ -243,7 +243,7 @@ const NavBar = ({
               Switch User
             </button>
             <button
-              style={{ marginLeft: '10px' }}
+              style={{ marginLeft: 'var(--10px-V)' }}
               onClick={() => {
                 if (navigator.onLine) {
                   setViewBranchManagementPage(true);
@@ -256,7 +256,7 @@ const NavBar = ({
           </p>
           <p
             className="Name-ofShop"
-            style={{ fontSize: '14px', color: 'grey', height: 'auto' }}
+            style={{ fontSize: 'var(--14px-V)', color: 'grey', height: 'auto' }}
           >
             {window.electron.store.get('users')[0].email} --- {'  '}
             {window.electron.store.get('SelectedAppUserId') === 'admin' ? (
@@ -353,7 +353,7 @@ const NavBar = ({
         <div style={{ display: 'flex', alignItems: 'center' }}>
           {' '}
           <button
-            style={{ marginLeft: '10px', borderRadius: '10px 0px 0px 10px' }}
+            style={{ marginLeft: 'var(--10px-V)', borderRadius: 'var(--10px-V) var(--0px-V) var(--0px-V) var(--10px-V)' }}
             onClick={() => {
               if (navigator.onLine) handleUpload();
             }}
@@ -364,7 +364,7 @@ const NavBar = ({
                 uploadProgress === 100 || uploadProgress === 0 ? (
                   <>
                     Upload <br />
-                    <span style={{ fontSize: '10px' }}>
+                    <span style={{ fontSize: 'var(--10px-V)' }}>
                       {ChangeMade} change
                     </span>
                   </>
@@ -378,7 +378,7 @@ const NavBar = ({
               )}
             </p>
             {UploadingLoadingEffect && (
-              <p style={{ fontSize: '20px', marginLeft: '10px' }}>
+              <p style={{ fontSize: 'var(--20px-V)', marginLeft: 'var(--10px-V)' }}>
                 {uploadProgress.toString().slice(0, 5)}%
               </p>
             )}
@@ -395,26 +395,26 @@ const NavBar = ({
           <button
             style={{
               borderRadius: ShowAdvancedUpload
-                ? '0px 10px 0px 0px'
-                : '0px 10px 10px 0px',
+                ? 'var(--0px-V) var(--10px-V) var(--0px-V) var(--0px-V)'
+                : 'var(--0px-V) var(--10px-V) var(--10px-V) var(--0px-V)',
               height:
                 ChangeMade >= 1
                   ? uploadProgress === 100 || uploadProgress === 0
-                    ? '42px'
+                    ? 'var(--42px-V)'
                     : uploadProgress >= 50
-                    ? '42px'
-                    : '42px'
-                  : '26px',
-              paddingTop: '7px',
+                    ? 'var(--42px-V)'
+                    : 'var(--42px-V)'
+                  : 'var(--26px-V)',
+              paddingTop: 'var(--7px-V)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               borderTop:
-                OnlineChanges > 0 ? '3px solid var(--Accent-Color)' : 'none',
+                OnlineChanges > 0 ? 'var(--3px-V) solid var(--Accent-Color)' : 'none',
               borderRight:
-                OnlineChanges > 0 ? '3px solid var(--Accent-Color)' : 'none',
+                OnlineChanges > 0 ? 'var(--3px-V) solid var(--Accent-Color)' : 'none',
               borderBottom:
-                OnlineChanges > 0 ? '3px solid var(--Accent-Color)' : 'none',
+                OnlineChanges > 0 ? 'var(--3px-V) solid var(--Accent-Color)' : 'none',
               borderLeft: 'none',
               animation:
                 OnlineChanges > 0 ? 'blinkingBorder 1s infinite' : 'none',
@@ -448,7 +448,7 @@ const NavBar = ({
                     }}
                     style={{
                       width: '100%',
-                      marginTop: '10px',
+                      marginTop: 'var(--10px-V)',
                       color: 'red',
                       fontWeight: 'bold',
                     }}
@@ -459,7 +459,7 @@ const NavBar = ({
                   </button>
                 )}
               </div>
-              <hr style={{ margin: '10px', width: '100%' }} />
+              <hr style={{ margin: 'var(--10px-V)', width: '100%' }} />
               <h3
                 style={{ margin: '0', display: 'flex', alignItems: 'center' }}
               >
@@ -473,9 +473,9 @@ const NavBar = ({
                 }}
                 style={{
                   width: '100%',
-                  marginTop: '10px',
+                  marginTop: 'var(--10px-V)',
                   border:
-                    OnlineChanges > 0 ? '3px solid var(--Accent-Color)' : '',
+                    OnlineChanges > 0 ? 'var(--3px-V) solid var(--Accent-Color)' : '',
                   animation:
                     OnlineChanges > 0 ? 'blinkingBorder 1s infinite' : '',
                 }}  title="Download and Apply Server Updates"
@@ -491,18 +491,18 @@ const NavBar = ({
                 }}
                 style={{
                   width: '100%',
-                  marginTop: '10px',
+                  marginTop: 'var(--10px-V)',
                    }}
                 title="Synchronizes the local database with the online server, overwriting the server data with the current local data, including any offline changes."
               >
                 <p>Set as main</p>
               </button>
-              <hr style={{ margin: '10px', width: '100%' }} />
+              <hr style={{ margin: 'var(--10px-V)', width: '100%' }} />
               <h3
                 style={{ margin: '0', display: 'flex', alignItems: 'center' }}
               >
                 Assets{' '}
-                <span style={{ fontSize: '12px' }}>
+                <span style={{ fontSize: 'var(--12px-V)' }}>
                   (Room Pictures,Documents)
                 </span>
               </h3>
@@ -536,7 +536,7 @@ const NavBar = ({
                       bottom: 0,
                       left: 0,
                       width: `${UploadAssetsProgress}%`,
-                      height: '3px',
+                      height: 'var(--3px-V)',
                       backgroundColor: 'var(--Primary-Color)',
                       transition: 'width 0.3s ease-in-out',
                     }}
@@ -571,14 +571,14 @@ const NavBar = ({
                       bottom: 0,
                       left: 0,
                       width: `${DownloadAssetsProgress}%`,
-                      height: '3px',
+                      height: 'var(--3px-V)',
                       backgroundColor: 'var(--Primary-Color)',
                       transition: 'width 0.3s ease-in-out',
                     }}
                   />
                 </button>
               </div>
-              <hr style={{ margin: '10px', width: '100%' }} />
+              <hr style={{ margin: 'var(--10px-V)', width: '100%' }} />
               <h3
                 style={{ margin: '0', display: 'flex', alignItems: 'center' }}
               >
@@ -591,8 +591,8 @@ const NavBar = ({
                   }}
                   style={{
                     width: '100%',
-                    marginTop: '10px',
-                    marginRight: '10px',
+                    marginTop: 'var(--10px-V)',
+                    marginRight: 'var(--10px-V)',
                   }}
                   title="Create Local Data Backup"
                 >
@@ -602,7 +602,7 @@ const NavBar = ({
                   onClick={() => {
                     window.electron.ipcRenderer.send('load-backup');
                   }}
-                  style={{ width: '100%', marginTop: '10px' }}
+                  style={{ width: '100%', marginTop: 'var(--10px-V)' }}
                   title="Restore from Local Backup"
                 >
                   <p>Load Backup</p>
@@ -619,8 +619,8 @@ const NavBar = ({
                     }}
                     style={{
                       width: '100%',
-                      marginTop: '10px',
-                      marginRight: '10px',
+                      marginTop: 'var(--10px-V)',
+                      marginRight: 'var(--10px-V)',
                     }}
                     title="Return to Current Main Data"
                   >
@@ -638,7 +638,7 @@ const NavBar = ({
                         // Handle sync error (e.g., show an error message)
                       }
                     }}
-                    style={{ width: '100%', marginTop: '10px' }}
+                    style={{ width: '100%', marginTop: 'var(--10px-V)' }}
                     title="Make This Backup the Main Data"
                   >
                     <p>Set as main</p>
@@ -651,7 +651,7 @@ const NavBar = ({
           <></>
         )}
         <button
-          style={{ marginLeft: '10px', marginRight: '10px' }}
+          style={{ marginLeft: 'var(--10px-V)', marginRight: 'var(--10px-V)' }}
           onClick={() => {
             ChangeTheme(ThemeMode === 'light' ? 'dark' : 'light');
           }}

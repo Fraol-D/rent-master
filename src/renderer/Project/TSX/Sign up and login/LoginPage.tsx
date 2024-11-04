@@ -90,7 +90,7 @@ const LoginPage = ({ setisSignUpMode, setisSignedIn, setChangeMade, email,
         >
           <img
             src={loadingGif}
-            style={{ width: '80px', height: '80px' }}
+            style={{ width: 'var(--80px-V)', height: 'var(--80px-V)' }}
             alt="Loading..."
           />
         </div>
@@ -102,20 +102,20 @@ const LoginPage = ({ setisSignUpMode, setisSignedIn, setChangeMade, email,
             width: '100%',
             alignItems: 'center',
             height: 'auto',
-            marginBottom: '15px' 
+            marginBottom: 'var(--15px-V)' 
         }}>
             <h1 style={{ 
-                marginRight: '10px',
-                marginTop: '0px',
-                marginBottom: '0px',
-                fontSize: '65px' 
+                marginRight: 'var(--10px-V)',
+                marginTop: 'var(--0px-V)',
+                marginBottom: 'var(--0px-V)',
+                fontSize: 'var(--65px-V)' 
             }}>
                 Login
             </h1> 
             <button onClick={handleOrLoginButtonClick}>Or Sign up</button>
         </div>
 
-        <p style={{ color: 'var(--Text-Color-Grey)', marginBottom: '25px' }}>
+        <p style={{ color: 'var(--Text-Color-Grey)', marginBottom: 'var(--25px-V)' }}>
             Login with your Email and Password
         </p>
 

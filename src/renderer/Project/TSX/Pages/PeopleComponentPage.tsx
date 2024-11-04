@@ -135,9 +135,9 @@ export function PeopleComponentPage({
       </div>
       <div
         className="RoomContainerContainer"
-        style={{ width: '100%', height: 'calc(100% - 60px)' }}
+        style={{ width: '100%', height: 'calc(100% - var(--60px-V))' }}
       >
-        <div style={{ marginBottom: '20px' }}>
+        <div style={{ marginBottom: 'var(--20px-V)' }}>
           Search:
           <input
             type="text"
@@ -145,18 +145,18 @@ export function PeopleComponentPage({
             onChange={handleMainSearch}
             placeholder="Search all fields"
             style={{
-              width: '200px',
-              padding: '5px',
-              fontSize: '16px',
-              borderRadius: '5px',
-              border: '1px solid #ccc',
+              width: 'var(--200px-V)',
+              padding: 'var(--5px-V)',
+              fontSize: 'var(--16px-V)',
+              borderRadius: 'var(--5px-V)',
+              border: 'var(--1px-V) solid #ccc',
             }}
           />
         </div>
         {PeopleSelectedPage === 'TenantsList' ? (
           <>
                        {' '}
-            <div style={{ marginBottom: '20px' }}>
+            <div style={{ marginBottom: 'var(--20px-V)' }}>
                                        {' '}
             </div>
                        {' '}
@@ -420,7 +420,7 @@ export function PeopleComponentPage({
               {Agreements.length >= 1 && (
                 <div
                   className="InfoTableContainer"
-                  style={{ marginTop: '40px' }}
+                  style={{ marginTop: 'var(--40px-V)' }}
                 >
                  Tenant Name:{' '}
                   {
@@ -443,7 +443,7 @@ export function PeopleComponentPage({
                     ).roomIndex
                   }
                                                      {' '}
-                  <table className="InfoTable" style={{ width: '1100px' }}>
+                  <table className="InfoTable" style={{ width: 'var(--1100px-V)' }}>
                                        {' '}
                     <thead className="InfoTableThead">
                                            {' '}
@@ -622,7 +622,7 @@ export function PeopleComponentPage({
           </>
         ) : PeopleSelectedPage === 'BrokersList' ? (
           <div className="InfoTableContainer">
-            <table className="InfoTable" style={{ width: '1000px' }}>
+            <table className="InfoTable" style={{ width: 'var(--1000px-V)' }}>
               <thead className="InfoTableThead">
                 <tr className="InfoTableHeadTR">
                   {[
@@ -710,14 +710,14 @@ export function PeopleComponentPage({
                         </em>
                       )}
                     </td>
-                    <td className="InfoTableBodyTD" style={{ height: '50px' }}>
+                    <td className="InfoTableBodyTD" style={{ height: 'var(--50px-V)' }}>
                       <div
                         style={{
-                          maxHeight: '65px',
+                          maxHeight: 'var(--65px-V)',
                           overflowY: 'auto',
-                          padding: '5px',
-                          border: '1px solid grey',
-                          borderRadius: '4px',
+                          padding: 'var(--5px-V)',
+                          border: 'var(--1px-V) solid grey',
+                          borderRadius: 'var(--4px-V)',
                         }}
                       >
                         {BrokerRecommendationList.filter(
@@ -731,8 +731,8 @@ export function PeopleComponentPage({
                             <div
                               key={index}
                               style={{
-                                marginBottom: '5px',
-                                fontSize: '12px',
+                                marginBottom: 'var(--5px-V)',
+                                fontSize: 'var(--12px-V)',
                                 lineHeight: '1.4',
                               }}
                             >
@@ -766,7 +766,7 @@ export function PeopleComponentPage({
                                 )}
                               </span>
                               <span
-                                style={{ marginLeft: '10px', color: 'var(--Accent-Color)' }}
+                                style={{ marginLeft: 'var(--10px-V)', color: 'var(--Accent-Color)' }}
                               >
                                 Floor:{' '}
                                 {highlightText(
@@ -908,7 +908,7 @@ export function PeopleComponentPage({
                       <em
                         style={{
                           color: 'var(--Text-Color-Grey)',
-                          fontSize: '12px',
+                          fontSize: 'var(--12px-V)',
                         }}
                       >
                         {highlightText(

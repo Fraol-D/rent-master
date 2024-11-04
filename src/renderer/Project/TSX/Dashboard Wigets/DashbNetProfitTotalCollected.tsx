@@ -318,10 +318,10 @@ const DashbTotalCollected = ({
       : 'N/A';
 
   return (
-    <div className="DashboardWigetMainContainer">
+    <div className="DashboardWigetMainContainer" style={{height: 'var(--510px-V)',}}>
       <p
         className="DashboardWigetPieChartTextHeader"
-        style={{ width: '458px' }}
+        style={{ width: 'var(--458px-V)',    }}
       >
         Net Profit (Total Collected - Expenses)
       </p>
@@ -400,8 +400,7 @@ const DashbTotalCollected = ({
             color: 'var(--Accent-Color50)',
           }, 
         ]}
-        width={710}
-        height={400}
+      
         margin={{
           left: 74,
           right: 30,
@@ -411,7 +410,7 @@ const DashbTotalCollected = ({
         grid={{ vertical: true, horizontal: true }}
         sx={{
           [`.${axisClasses.left} .${axisClasses.label}`]: {
-            transform: 'translate(-35px, 0)',
+            transform: 'translate(var(---35px-V), 0)',
             color: 'var(--Text-Color)',
             fill: 'var(--Text-Color)',
           },

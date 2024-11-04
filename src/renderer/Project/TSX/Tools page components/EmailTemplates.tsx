@@ -84,13 +84,13 @@ const EmailTemplates: React.FC<EmailTemplatesProps> = ({
           key={template.id}
           className="email-template-container"
           style={{
-            minHeight: openTemplateId === template.id ? '181px' : '',
+            minHeight: openTemplateId === template.id ? 'var(--181px-V)' : '',
           }}
         >
           <div
             className="email-template-header"
             style={{
-              padding: editingTemplateId === template.id ? '10px' : '15px',
+              padding: editingTemplateId === template.id ? 'var(--10px-V)' : 'var(--15px-V)',
             }}
           >
             {editingTemplateId === template.id ? (
@@ -123,12 +123,12 @@ const EmailTemplates: React.FC<EmailTemplatesProps> = ({
               <div className="email-template-body">
                 <h4
                   style={{
-                    margin: editingTemplateId === template.id ? '0px,' : '',
-                    marginTop: editingTemplateId === template.id ? '12px' : '',
+                    margin: editingTemplateId === template.id ? 'var(--0px-V),' : '',
+                    marginTop: editingTemplateId === template.id ? 'var(--12px-V)' : '',
                     marginBottom:
-                      editingTemplateId === template.id ? '14px' : '',
+                      editingTemplateId === template.id ? 'var(--14px-V)' : '',
                     width: editingTemplateId === template.id ? '100%' : '',
-                    fontSize: '20px',
+                    fontSize: 'var(--20px-V)',
                   }}
                 >
                   {editingTemplateId === template.id ? (
@@ -266,11 +266,11 @@ const EmailTemplates: React.FC<EmailTemplatesProps> = ({
       <p
         style={{
           fontFamily: 'Arial, sans-serif',
-          fontSize: '16px',
+          fontSize: 'var(--16px-V)',
           lineHeight: '1.5',
-          padding: '10px',
-          borderRadius: '5px',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+          padding: 'var(--10px-V)',
+          borderRadius: 'var(--5px-V)',
+          boxShadow: '0 var(--2px-V) var(--4px-V) rgba(0,0,0,0.1)',
         }}
       >
         Sending emails with:{' '}

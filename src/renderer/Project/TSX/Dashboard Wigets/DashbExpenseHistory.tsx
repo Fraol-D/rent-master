@@ -77,27 +77,27 @@ const DashbExpenseHistory: React.FC<DashbExpenseHistoryProps> = ({
   return (
     <div
       style={{
-        width: '800px',
-        padding: '20px',
-        borderRadius: '8px',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+        width: 'var(--800px-V)',
+        padding: 'var(--20px-V)',
+        borderRadius: 'var(--8px-V)',
+        boxShadow: '0 var(--2px-V) var(--4px-V) rgba(0,0,0,0.1)',
         backgroundColor: 'var(--Secondary-Color30)',
-        margin: '10px',  height: '600px',    overflowY: 'auto',
+        margin: 'var(--10px-V)',  height: 'var(--600px-V)',    overflowY: 'auto',
       }}
     >
       <h2
         style={{
-          fontSize: '24px',
-          marginBottom: '20px',
+          fontSize: 'var(--24px-V)',
+          marginBottom: 'var(--20px-V)',
           color: 'var(--Text-Color)',
-          marginTop: '0px',
+          marginTop: 'var(--0px-V)',
         }}
       >
         Recent Expense History
       </h2>
-      <div className='DashboardTotalCollectedTopPart' style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' }}>
+      <div className='DashboardTotalCollectedTopPart' style={{ marginBottom: 'var(--20px-V)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' }}>
         <div>
-          <label style={{ marginRight: '10px' }}>Sort by:</label>
+          <label style={{ marginRight: 'var(--10px-V)' }}>Sort by:</label>
           <select value={sortBy} onChange={(e) => setSortBy(e.target.value as 'date' | 'price')}>
             <option value="date">Date</option>
             <option value="price">Price</option>
@@ -108,7 +108,7 @@ const DashbExpenseHistory: React.FC<DashbExpenseHistoryProps> = ({
           </select>
         </div>
         <div>
-          <label style={{ marginRight: '10px' }}>Show:</label>
+          <label style={{ marginRight: 'var(--10px-V)' }}>Show:</label>
           <select value={showRecurring} onChange={(e) => setShowRecurring(e.target.value as 'all' | 'recurring' | 'non-recurring')}>
             <option value="all">All</option>
             <option value="recurring">Recurring Only</option>
@@ -116,7 +116,7 @@ const DashbExpenseHistory: React.FC<DashbExpenseHistoryProps> = ({
           </select>
         </div>
         <div>
-          <label style={{ marginRight: '10px' }}>Max Price:</label>
+          <label style={{ marginRight: 'var(--10px-V)' }}>Max Price:</label>
           <input
             type="number"
             value={priceFilter}
@@ -125,7 +125,7 @@ const DashbExpenseHistory: React.FC<DashbExpenseHistoryProps> = ({
           />
         </div>
         <div>
-          <label style={{ marginRight: '10px' }}>Months to show:</label>
+          <label style={{ marginRight: 'var(--10px-V)' }}>Months to show:</label>
           <input
             type="number"
             value={monthsToShow}
@@ -135,7 +135,7 @@ const DashbExpenseHistory: React.FC<DashbExpenseHistoryProps> = ({
           />
         </div>
         <div>
-          <label style={{ marginRight: '10px' }}>Limit:</label>
+          <label style={{ marginRight: 'var(--10px-V)' }}>Limit:</label>
           <select value={limit} onChange={(e) => setLimit(Number(e.target.value))}>
             <option value="10">10</option>
             <option value="25">25</option>
@@ -146,19 +146,19 @@ const DashbExpenseHistory: React.FC<DashbExpenseHistoryProps> = ({
           </select>
         </div>
         <div>
-          <label style={{ marginRight: '10px' }}>Floor:</label>
+          <label style={{ marginRight: 'var(--10px-V)' }}>Floor:</label>
           <input
             type="number"
             value={floorFilter}
-            style={{width: '50px'}}
+            style={{width: 'var(--50px-V)'}}
             onChange={(e) => setFloorFilter(e.target.value as number | '')}
             placeholder="Enter floor"
           />
         </div>
         <div>
-          <label style={{ marginRight: '10px' }}>Room:</label>
+          <label style={{ marginRight: 'var(--10px-V)' }}>Room:</label>
           <input
-            style={{width: '50px'}}
+            style={{width: 'var(--50px-V)'}}
 
             type="number"
             value={roomFilter}
@@ -176,18 +176,18 @@ const DashbExpenseHistory: React.FC<DashbExpenseHistoryProps> = ({
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                padding: '10px',
-                marginBottom: '10px',
-                borderBottom: '1px solid var(--Secondary-Color)',
+                padding: 'var(--10px-V)',
+                marginBottom: 'var(--10px-V)',
+                borderBottom: 'var(--1px-V) solid var(--Secondary-Color)',
                 backgroundColor: 'var(--Secondary-Color60)',
-                borderRadius: '10px',
-                marginLeft: '10px',
+                borderRadius: 'var(--10px-V)',
+                marginLeft: 'var(--10px-V)',
               }}
             >
               <div
                 style={{
-                  flex: '0 0 120px',
-                  fontSize: '14px',
+                  flex: '0 0 var(--120px-V)',
+                  fontSize: 'var(--14px-V)',
                   color: 'var(--Text-Color)',
                 }}
               >
@@ -196,18 +196,18 @@ const DashbExpenseHistory: React.FC<DashbExpenseHistoryProps> = ({
               <div
                 style={{
                   flex: '1',
-                  fontSize: '16px',
+                  fontSize: 'var(--16px-V)',
                   fontWeight: 'bold',
                   color: 'var(--Text-Color)',
-                  marginLeft: '20px',
+                  marginLeft: 'var(--20px-V)',
                 }}
               >
                 {expense.name}
               </div>
               <div
                 style={{
-                  flex: '0 0 100px',
-                  fontSize: '16px',
+                  flex: '0 0 var(--100px-V)',
+                  fontSize: 'var(--16px-V)',
                   fontWeight: 'bold',
                   color: 'var(--Text-Color-Grey)',
                   textAlign: 'right',
@@ -217,8 +217,8 @@ const DashbExpenseHistory: React.FC<DashbExpenseHistoryProps> = ({
               </div>
               <div
                 style={{
-                  flex: '0 0 120px',
-                  fontSize: '14px',
+                  flex: '0 0 var(--120px-V)',
+                  fontSize: 'var(--14px-V)',
                   color: 'var(--Text-Color)',
                   textAlign: 'center',
                 }}
@@ -232,26 +232,26 @@ const DashbExpenseHistory: React.FC<DashbExpenseHistoryProps> = ({
               {expense.doesReoccur ? (
                 <div
                   style={{
-                    flex: '0 0 80px',
-                    fontSize: '12px',
+                    flex: '0 0 var(--80px-V)',
+                    fontSize: 'var(--12px-V)',
                     color: 'var(--Accent-Color)',
                     textAlign: 'right',
-                    marginLeft: '20px',
+                    marginLeft: 'var(--20px-V)',
                   }}
                 >
                   Recurring
                 </div>
               ) : (
-                <div style={{ flex: '0 0 80px',
-                  fontSize: '12px',
+                <div style={{ flex: '0 0 var(--80px-V)',
+                  fontSize: 'var(--12px-V)',
                   color: 'var(--Accent-Color)',
                   textAlign: 'right',
-                  marginLeft: '20px' }}></div>
+                  marginLeft: 'var(--20px-V)' }}></div>
               )}
             </li>
           ))
         ) : (
-          <li style={{ textAlign: 'center', padding: '20px', color: 'var(--Text-Color)' }}>
+          <li style={{ textAlign: 'center', padding: 'var(--20px-V)', color: 'var(--Text-Color)' }}>
             There are currently no expenses to display. Please adjust your filters or add new expenses to see them here.
           </li>
         )}

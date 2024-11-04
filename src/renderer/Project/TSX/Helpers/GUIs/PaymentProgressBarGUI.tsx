@@ -65,6 +65,25 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
 
   const [showUtilityPanel, setShowUtilityPanel] = useState(false);
   const [payments, setPayments] = useState<RoomPayInfo[]>([]);
+
+  // Add window width state
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+
+  // Add window resize listener
+  useEffect(() => {
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Calculate scale factor based on window width
+  const getScaleFactor = () => {
+    if (windowWidth <= 1280) return 1280/1920;
+    if (windowWidth <= 1366) return 1366/1920;
+    if (windowWidth >= 2560) return 3840/1920;
+    return 1;
+  };
+
   useEffect(() => {
     const calculatePayments = async () => {
       const newPayments: Payment[] = [];
@@ -331,24 +350,29 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
   };
   useEffect(() => {
     if (payments.length > 0 && svgRef.current) {
-      const sortedPaymentData = [...payments].sort((a, b) => a.Day - b.Day);
+      const scaleFactor = getScaleFactor();const sortedPaymentData = [...payments].sort((a, b) => a.Day - b.Day);
       const svg = d3.select(svgRef.current);
 
       // Clear existing SVG content
       svg.selectAll('*').remove();
 
-      // Calculate the width and height based on the number of payments
-      const paymentWidth = 75; // Width of each payment section
-      const width = sortedPaymentData.length * paymentWidth + 70; // Total width based on number of payments
-      const height = ShowReceipt ? 200 : 180; // Increased height to accommodate dates
+      // Scale all measurements
+      const basePaymentWidth = 75;
+      const paymentWidth = basePaymentWidth * scaleFactor;
+      const width = (sortedPaymentData.length * paymentWidth + (70 * scaleFactor));
+      const height = (ShowReceipt ? 200 : 180) * scaleFactor;
       const padding = 0;
+      const fontSize = 14 * scaleFactor;
+      const circleRadius = 3 * scaleFactor;
+      const strokeWidth = 1 * scaleFactor;
 
       // Set SVG dimensions
       svg
         .attr('width', width + 2 * padding)
         .attr('height', height + 2 * padding);
 
-      // Draw payment lines
+      // Update all existing measurements with scaled values
+      // Payment lines
       const paymentLines = svg
         .selectAll('line.payment-line')
         .data(sortedPaymentData)
@@ -360,7 +384,7 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
           (d: { Day: number }, i: number) =>
             padding + i * paymentWidth + paymentWidth / 2
         )
-        .attr('y1', padding + height / 2 - 55) // Moved line start position up
+        .attr('y1', padding + height / 2 - 55 * scaleFactor)
         .attr(
           'x2',
           (d: { Day: number }, i: number) =>
@@ -381,9 +405,9 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
       svg
         .append('rect')
         .attr('x', padding)
-        .attr('y', padding + height / 2 - 35)
-        .attr('width', width - 80)
-        .attr('height', 10)
+        .attr('y', padding + height / 2 - 35 * scaleFactor)
+        .attr('width', width - 80 * scaleFactor)
+        .attr('height', 10 * scaleFactor)
         .attr('fill', '#f0f0f0')
         .attr('stroke', '#aaa')
         .attr('stroke-width', '1');
@@ -410,24 +434,24 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
         return Math.min(Math.max(position, padding), width - padding);
       };
 
-      const currentDateX = calculateCurrentDatePosition(sortedPaymentData, width - 80, padding);
+      const currentDateX = calculateCurrentDatePosition(sortedPaymentData, width - 80 * scaleFactor, padding);
  // Draw progress bar background until the current date indicator
  svg
  .append('rect')
  .attr('x', padding)
- .attr('y', padding + height / 2 - 35)
- .attr('width', currentDateX + 36)
- .attr('height', 10)
+ .attr('y', padding + height / 2 - 35 * scaleFactor)
+ .attr('width', currentDateX + 36 * scaleFactor)
+ .attr('height', 10 * scaleFactor)
  .attr('fill', 'var(--Secondary-Color)')
         .attr('stroke', 'var(--Secondary-Color)')
         .attr('stroke-width', '1');
 
       svg
         .append('line')
-        .attr('x1', currentDateX + 36.3)
-        .attr('y1', padding + height / 2 - 40)
-        .attr('x2', currentDateX + 36.3)
-        .attr('y2', padding + height / 2 - 18)
+        .attr('x1', currentDateX + 36.3 * scaleFactor)
+        .attr('y1', padding + height / 2 - 40 * scaleFactor)
+        .attr('x2', currentDateX + 36.3 * scaleFactor)
+        .attr('y2', padding + height / 2 - 18 * scaleFactor)
         .attr('stroke', '#00e1f1')
         .attr('stroke-width', '5')
         .each(function() {
@@ -437,11 +461,11 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
       
         svg
         .append('text')
-        .attr('x', currentDateX + 36.5)
-        .attr('y', padding + height / 2 - 3)
+        .attr('x', currentDateX + 36.5 * scaleFactor)
+        .attr('y', padding + height / 2 - 3 * scaleFactor)
         .attr('text-anchor', 'middle')
         .style('fill', 'var(--Text-Color)')
-        .style('font-size', '14')
+        .style('font-size', `${fontSize}px`)
         .text(format(today, 'MMMM d'));
 
       // Draw payment dates
@@ -452,12 +476,13 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
         .append('text')
         .attr('class', 'payment-date')
         .style('fill', 'var(--Text-Color)')
+        .style('font-size', `${fontSize}px`)
         .attr(
           'x',
           (d: { Day: number }, i: number) =>
             padding + i * paymentWidth + paymentWidth / 2
         )
-        .attr('y', padding + height / 2 - 75) // Moved dates above the progress bar
+        .attr('y', padding + height / 2 - 75 * scaleFactor)
         .attr('text-anchor', 'middle')
         .text((d: { Day: number }) => format(d.Day, 'MMM d'));
 
@@ -468,13 +493,13 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
         .append('text')
         .attr('class', 'payment-date')
         .style('fill', 'var(--Text-Color)')
-        .style('font-size', '10')
+        .style('font-size', `${fontSize}px`)
         .attr(
           'x',
           (d: { Day: number }, i: number) =>
             padding + i * paymentWidth + paymentWidth / 2
         )
-        .attr('y', padding + height / 2 - 62) // Moved dates above the progress bar
+        .attr('y', padding + height / 2 - 62 * scaleFactor)
         .attr('text-anchor', 'middle')
         .text((d: { Day: number }) => format(d.Day, 'yyyy'));
 
@@ -490,8 +515,8 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
           (d: { Day: number }, i: number) =>
             padding + i * paymentWidth + paymentWidth / 2
         )
-        .attr('cy', padding + height / 2 - 30) // Moved circles below the progress bar
-        .attr('r', 3)
+        .attr('cy', padding + height / 2 - 30 * scaleFactor)
+        .attr('r', circleRadius)
         .attr('fill', (d: { Day: number; Paid: boolean }) => {
           if (isBefore(d.Day, today) && !d.Paid) return 'red';
           if (d.Paid) return 'var(--Accent-Color)';
@@ -512,7 +537,7 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
           (d: { Day: number }, i: number) =>
             padding + i * paymentWidth + paymentWidth / 2
         )
-        .attr('y', padding + height / 2 + 45) // Adjusted position below payment circles
+        .attr('y', padding + height / 2 + 45 * scaleFactor)
         .attr('text-anchor', 'middle')
         .attr('fill', (d: { Day: number; Paid: boolean }) => {
           if (isBefore(d.Day, today) && !d.Paid) return 'red';
@@ -520,7 +545,7 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
 
           return 'var(--Text-Color)';
         })
-        .style('font-size', '14')
+        .style('font-size', `${fontSize}px`)
         .style('cursor', 'pointer')
         .text((d: { Paid: boolean }) => (d.Paid ? 'Paid' : 'Pay'))
         .on('click', (event, d) => handlePayClick(d));
@@ -533,11 +558,11 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
         .attr(
           'x',
           (d: { Day: number }, i: number) =>
-            padding + i * paymentWidth + paymentWidth / 2 + 5
+            padding + i * paymentWidth + paymentWidth / 2 + 5 * scaleFactor
         )
-        .attr('y', padding + height / 2 - 55)
-        .attr('width', 10)
-        .attr('height', 10)
+        .attr('y', padding + height / 2 - 55 * scaleFactor)
+        .attr('width', 10 * scaleFactor)
+        .attr('height', 10 * scaleFactor)
         .attr('fill', (d: { Day: number }) =>
           selectedDates.includes(d.Day) ? 'var(--Accent-Color)' : 'transparent'
         )
@@ -579,14 +604,14 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
           (d: { Day: number }, i: number) =>
             padding + i * paymentWidth + paymentWidth / 2
         )
-        .attr('y', padding + height / 2 + 60) // Adjusted position below payment circles
+        .attr('y', padding + height / 2 + 60 * scaleFactor)
         .attr('text-anchor', 'middle')
         .attr('fill', (d: { Day: number; Paid: boolean }) => {
           if (isBefore(d.Day, today) && !d.Paid) return 'red';
           if (d.Paid) return 'var(--Accent-Color)';
           return 'var(--Text-Color)';
         })
-        .style('font-size', '14')
+        .style('font-size', `${fontSize}px`)
         .text((d: any) => {
           return d.Value === null
             ? '$' + agreedPrice.toLocaleString() + ' X'
@@ -605,17 +630,17 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
 
         receiptGroup
           .append('rect')
-          .attr('width', 35)
-          .attr('height', 35)
+          .attr('width', 35 * scaleFactor)
+          .attr('height', 35 * scaleFactor)
           .attr(
             'x',
             (d: { Day: number }, i: number) =>
-              padding + i * paymentWidth + paymentWidth / 2 - 17
+              padding + i * paymentWidth + paymentWidth / 2 - 17 * scaleFactor
           )
-          .attr('y', padding + height / 2 + 65)
+          .attr('y', padding + height / 2 + 65 * scaleFactor)
           .attr('fill', 'none')
           .attr('stroke', 'var(--Text-Color)')
-          .attr('stroke-width', 1);
+          .attr('stroke-width', 1 * scaleFactor);
         const contextMenuGroup = svg
           .append('g')
           .attr('class', 'context-menu-group')
@@ -623,8 +648,8 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
 
         contextMenuGroup
           .append('rect')
-          .attr('width', 120)
-          .attr('height', 70)
+          .attr('width', 120 * scaleFactor)
+          .attr('height', 70 * scaleFactor)
           .attr('fill', 'var(--Secondary-Color)')
           .attr('stroke', 'var(--Text-Color)');
 
@@ -637,20 +662,20 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
           .attr('class', 'menu-item')
           .attr('fill', 'var(--Text-Color)')
 
-          .attr('x', 5)
-          .attr('y', (d, i) => 20 + i * 20)
+          .attr('x', 5 * scaleFactor)
+          .attr('y', (d, i) => 20 * scaleFactor + i * 20 * scaleFactor)
           .text((d) => d);
 
         receiptGroup
           .append('foreignObject')
-          .attr('width', 34)
-          .attr('height', 34)
+          .attr('width', 34 * scaleFactor)
+          .attr('height', 34 * scaleFactor)
           .attr(
             'x',
             (d: { Day: number }, i: number) =>
-              padding + i * paymentWidth + paymentWidth / 2 - 17
+              padding + i * paymentWidth + paymentWidth / 2 - 17 * scaleFactor
           )
-          .attr('y', padding + height / 2 + 65)
+          .attr('y', padding + height / 2 + 65 * scaleFactor)
           .append('xhtml:div')
           .style('width', '100%')
           .style('height', '100%')
@@ -658,7 +683,7 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
           .style('flex-direction', 'column')
           .style('align-items', 'center')
           .style('justify-content', 'center')
-          .style('font-size', '10px')
+          .style('font-size', 'var(--10px-V)')
           .style('text-align', 'center')
           .html((d: any) => {
             // Return a placeholder initially
@@ -721,8 +746,8 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
             currentContextData = d;
             const [x, y] = d3.pointer(event, svg.node());
             const svgBounds = svg.node()?.getBoundingClientRect();
-            const menuHeight = 100; // Adjust based on your menu's actual height
-            const menuWidth = 120; // Adjust based on your menu's actual width
+            const menuHeight = 100 * scaleFactor; // Adjust based on your menu's actual height
+            const menuWidth = 120 * scaleFactor; // Adjust based on your menu's actual width
 
             let menuX = x;
             let menuY = y;
@@ -902,12 +927,12 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
       ) {
         svg
           .append('rect')
-          .attr('x', width + padding - 70)
-          .attr('y', padding + height / 2 - 44)
-          .attr('width', 60)
-          .attr('height', 30)
-          .attr('rx', 5)
-          .attr('ry', 5)
+          .attr('x', width + padding - 70 * scaleFactor)
+          .attr('y', padding + height / 2 - 44 * scaleFactor)
+          .attr('width', 60 * scaleFactor)
+          .attr('height', 30 * scaleFactor)
+          .attr('rx', 5 * scaleFactor)
+          .attr('ry', 5 * scaleFactor)
           .attr('fill', 'var(--Secondary-Color)')
           .style('cursor', 'pointer')
           .on('click', () => {
@@ -917,12 +942,12 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
 
         svg
           .append('text')
-          .attr('x', width + padding - 40)
-          .attr('y', padding + height / 2 - 29)
+          .attr('x', width + padding - 40 * scaleFactor)
+          .attr('y', padding + height / 2 - 29 * scaleFactor)
           .attr('text-anchor', 'middle')
           .attr('dominant-baseline', 'middle')
           .attr('fill', 'lab(100 0 -0.03)')
-          .style('font-size', '14')
+          .style('font-size', '14 * scaleFactor')
           .style('cursor', 'pointer')
           .text('Extend?')
           .on('click', () => {
@@ -931,7 +956,7 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
           });
       }
     }
-  }, [payments, today]);
+  }, [payments, today, windowWidth]);
   // Function to handle multi-pay
 
   const handleMultiPay = async () => {
@@ -1021,7 +1046,7 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
           style={{
             textAlign: 'center',
             fontWeight: 'bold',
-            marginBottom: '10px',
+            marginBottom: 'var(--10px-V)',
             display: 'flex',
           }}
         >
@@ -1070,7 +1095,7 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
           overflowX: 'auto',
           maxWidth: '100%',
           overflowY: 'hidden',
-          height: ShowReceipt ? '220px' : '174px',
+          height: ShowReceipt ? 'var(--220px-V)' : 'var(--174px-V)',
           transition: 'all .2s',
         }}
       >

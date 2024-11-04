@@ -203,7 +203,7 @@ const DatabasePage = ({ setChangeMade,SelectedAppUser }: any) => {
       <div
         className="CalanderMainContainer"
         style={{
-          height: 'calc(100% - 30px)',
+          height: 'calc(100% - var(--30px-V))',
         }}
       >
         <div className="CalenderOptionsMainContainer">
@@ -214,7 +214,7 @@ const DatabasePage = ({ setChangeMade,SelectedAppUser }: any) => {
           <select
             value={SelectedTable}
             onChange={OnChangeSelect}
-            style={{ height: '30px' }}
+            style={{ height: 'var(--30px-V)' }}
           >
             {validTables.map((val, index) => (
               <option key={index} value={val}>
@@ -226,9 +226,9 @@ const DatabasePage = ({ setChangeMade,SelectedAppUser }: any) => {
           <input
             type="text"
             style={{
-              padding: '5px',
-              borderRadius: '3px',
-              border: '1px solid rgb(204, 204, 204)',
+              padding: 'var(--5px-V)',
+              borderRadius: 'var(--3px-V)',
+              border: 'var(--1px-V) solid rgb(204, 204, 204)',
             }}
             value={mainSearch}
             onChange={(e) => setMainSearch(e.target.value)}
@@ -238,8 +238,8 @@ const DatabasePage = ({ setChangeMade,SelectedAppUser }: any) => {
         <div
           style={{
             overflowX: 'auto',
-            height: 'calc(100% - 55px)',
-            marginTop: '5px',
+            height: 'calc(100% - var(--55px-V))',
+            marginTop: 'var(--5px-V)',
           }}
         >
           <table className="table-container">
@@ -296,7 +296,7 @@ const DatabasePage = ({ setChangeMade,SelectedAppUser }: any) => {
                             {['roomId', 'tenantId', 'brokerId', 'agreementId', 'email_template_id', 'selectedAgreementId'].includes(key) && value && (
                               <button
                                 onClick={() => handleGoTo(key, String(value))}
-                                style={{ marginLeft: '5px' }}
+                                style={{ marginLeft: 'var(--5px-V)' }}
                               >
                                 Go to
                               </button>

@@ -34,6 +34,20 @@ const CalendarGUI: React.FC<CalendarProps> = ({
   const [predictedPayments, setPredictedPayments] = useState<Payment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const ref = useRef<SVGSVGElement | null>(null);
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+
+  useEffect(() => {
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const getScaleFactor = () => {
+    if (windowWidth <= 1280) return 1280 / 1920;
+    if (windowWidth <= 1366) return 1366 / 1920;
+    if (windowWidth >= 2560) return 3840 / 1920;
+    return 1;
+  };
 
   useEffect(() => {
     const filtered = rooms.filter((room) =>
@@ -162,22 +176,24 @@ const CalendarGUI: React.FC<CalendarProps> = ({
         setIsLoading(false);
         return allPayments;
       };
+      const scaleFactor = getScaleFactor();
 
-      const payments = await calculatePayments();
-      setPredictedPayments(payments);
+      const baseWidth = 1500 * scaleFactor;
+      const additionalMonthWidth = 750 * scaleFactor;
+      const width =
+        baseWidth +
+        (numberOfMonthsFuture + numberOfMonthsPast - 2) * additionalMonthWidth;
+      const height = filteredRooms.length * (70 * scaleFactor);
+      const cellSize = 25 * scaleFactor;
+      const margin = {
+        top: 70  ,
+        right: 30 * 1,
+        bottom: 30 * 1,
+        left: 200 * 1,
+      };
 
       if (ref.current) {
         d3.select(ref.current).selectAll('*').remove();
-
-        const baseWidth = 1500;
-        const additionalMonthWidth = 750;
-        const width =
-          baseWidth +
-          (numberOfMonthsFuture + numberOfMonthsPast - 2) *
-            additionalMonthWidth;
-        const height = filteredRooms.length * 70;
-        const cellSize = 25;
-        const margin = { top: 70, right: 30, bottom: 30, left: 200 };
 
         const svg = d3
           .select(ref.current)
@@ -229,8 +245,10 @@ const CalendarGUI: React.FC<CalendarProps> = ({
         svg
           .append('g')
           .call(monthAxis)
-          .attr('transform', `translate(0, -20)`)
-          .style('font-size', '18px');
+          .attr('transform', `translate(0, ${-25})`)
+          .selectAll('text')
+          .style('font-size', `${15 * scaleFactor}px`);
+
         svg.append('g').call(xAxis).attr('transform', `translate(0, -0)`);
 
         const yAxis = d3
@@ -246,8 +264,8 @@ const CalendarGUI: React.FC<CalendarProps> = ({
                   } Room. ${room.roomIndex}`
               : '';
           })
-          .tickSize(10)
-          .tickPadding(5);
+          .tickSize(10 * scaleFactor)
+          .tickPadding(5 * scaleFactor);
 
         svg
           .append('g')
@@ -261,27 +279,27 @@ const CalendarGUI: React.FC<CalendarProps> = ({
               text.text('');
               text
                 .append('tspan')
-                .attr('x', -10)
-                .attr('dy', '-0.5em')
-                .style('font-size', '14px')
+                .attr('x', -10 * scaleFactor)
+                .attr('dy', `-${0.5 * scaleFactor}em`)
+                .style('font-size', `${14 * scaleFactor}px`)
                 .text(words[0]);
               text
                 .append('tspan')
-                .attr('x', -15)
-                .attr('dy', '1.2em')
-                .style('font-size', '11.3px')
+                .attr('x', -15 * scaleFactor)
+                .attr('dy', `${1.2 * scaleFactor}em`)
+                .style('font-size', `${11.3 * scaleFactor}px`)
                 .text(words[1]);
 
               var parentNode = this.parentNode;
               if (parentNode) {
                 d3.select(parentNode)
                   .append('line')
-                  .attr('x1', -0)
-                  .attr('x2', -100)
-                  .attr('y1', 15)
-                  .attr('y2', 15)
+                  .attr('x1', 0)
+                  .attr('x2', -100 * scaleFactor)
+                  .attr('y1', 15 * scaleFactor)
+                  .attr('y2', 15 * scaleFactor)
                   .attr('stroke', '#DDDDDD')
-                  .attr('stroke-width', 1);
+                  .attr('stroke-width', 1 * scaleFactor);
               }
             });
           });
@@ -294,9 +312,10 @@ const CalendarGUI: React.FC<CalendarProps> = ({
           .attr('class', 'x-grid')
           .attr('x1', 0)
           .attr('x2', width)
-          .attr('y1', (d: any) => yScale(d) - 5 || 0)
-          .attr('y2', (d: any) => yScale(d) - 5 || 0)
-          .attr('stroke', 'grey');
+          .attr('y1', (d: any) => yScale(d) - 5 * scaleFactor || 0)
+          .attr('y2', (d: any) => yScale(d) - 5 * scaleFactor || 0)
+          .attr('stroke', 'grey')
+          .attr('stroke-width', 1 * scaleFactor);
 
         svg
           .selectAll('.x-grid-bottom')
@@ -320,25 +339,25 @@ const CalendarGUI: React.FC<CalendarProps> = ({
           .attr('x1', (d: any) => xScale(d))
           .attr('x2', (d: any) => xScale(d))
           .attr('y1', 0 - 0)
-          .attr('y2', height - 65)
+          .attr('y2', height - 62)
           .attr('stroke', 'grey');
         const currentDateRect = svg
           .append('rect')
           .attr('x', xScale(today))
-          .attr('y', 0 - 0)
-          .attr('width', 2)
-          .attr('height', height - 65)
-          .attr('fill', '#db911a')
-          .attr('opacity', 1);
+          .attr('y', 0)
+          .attr('width', 2 * scaleFactor)
+          .attr('height', height - 62)
+          .attr('fill', '#db911a');
 
         const currentdatehight =
-          today.getDate() >= 26 || today.getDate() <= 6 ? 40 : 25;
+          today.getDate() >= 26 || today.getDate() <= 6 ? 40  : 25;
         svg
           .append('text')
           .attr('x', xScale(today))
           .attr('y', -currentdatehight)
           .attr('text-anchor', 'middle')
           .attr('fill', '#db911a')
+          .style('font-size', `${18 * scaleFactor}px`)
           .text(today.toDateString());
 
         const monthStarts = d3.timeMonths(startDate, endDate);
@@ -351,9 +370,9 @@ const CalendarGUI: React.FC<CalendarProps> = ({
           .attr('x1', (d: any) => xScale(d))
           .attr('x2', (d: any) => xScale(d))
           .attr('y1', -0)
-          .attr('y2', height - 65)
+          .attr('y2', height - 62)
           .attr('stroke', 'blue')
-          .attr('stroke-width', 1);
+          .attr('stroke-width', 1 * scaleFactor);
 
         const tooltip = d3
           .select('body')
@@ -363,10 +382,9 @@ const CalendarGUI: React.FC<CalendarProps> = ({
           .style('visibility', 'hidden')
           .style('background-color', 'rgba(0,0,0,0.8)')
           .style('color', 'white')
-          .style('padding', '10px')
-          .style('border-radius', '5px')
-          .style('font-size', '12px')
-          .style('pointer-events', 'none');
+          .style('padding', `${10 * scaleFactor}px`)
+          .style('border-radius', `${5 * scaleFactor}px`)
+          .style('font-size', `${12 * scaleFactor}px`);
 
         // Add empty squares for all dates and rooms
         filteredRooms.forEach((room) => {
@@ -420,7 +438,7 @@ const CalendarGUI: React.FC<CalendarProps> = ({
                     .html(
                       `
                     <div style="font-family: Arial, sans-serif; line-height: 1.6;">
-                      <h3 style="color: #4a4a4a; margin-bottom: 5px;">Room Details</h3>
+                      <h3 style="color: #4a4a4a; margin-bottom: var(--5px-V);">Room Details</h3>
                       <p><em>Date:</em> <span style="color: #0066cc;">${paymentDate.toDateString()}</span></p>
                       <p><strong style="font-size: 1.1em;">Tenant:</strong> ${
                         tenantList.find((t) => t.id === room.tenantId)?.name ||
@@ -436,7 +454,7 @@ const CalendarGUI: React.FC<CalendarProps> = ({
                           : '<span style="color: red; font-weight: bold;">Unpaid</span>'
                       }</p>
                       <p><em style="font-style: italic;">Agreed Price:</em> <span style="font-weight: bold; color: #e67e22;">${payment.Value.toLocaleString()}$</span></p>
-                      <p>Payment Cycle: <span style="background-color: #f1c40f; padding: 2px 5px; border-radius: 3px;">${
+                      <p>Payment Cycle: <span style="background-color: #f1c40f; padding: var(--2px-V) var(--5px-V); border-radius: var(--3px-V);">${
                         room.PaymentCycleType
                       }</span></p>
                       <p style="font-size: 0.9em; color: #7f8c8d;">Days until payment: ${daysUntil}</p>
@@ -467,7 +485,13 @@ const CalendarGUI: React.FC<CalendarProps> = ({
       }
     };
     makeTable();
-  }, [filteredRooms, numberOfMonthsFuture, numberOfMonthsPast, tenantList]);
+  }, [
+    filteredRooms,
+    numberOfMonthsFuture,
+    numberOfMonthsPast,
+    tenantList,
+    windowWidth,
+  ]);
 
   const handleMonthsFutureChange = (
     event: React.ChangeEvent<HTMLInputElement>
@@ -511,9 +535,9 @@ const CalendarGUI: React.FC<CalendarProps> = ({
             value={searchTerm}
             onChange={handleSearchChange}
             style={{
-              padding: '5px',
-              borderRadius: '3px',
-              border: '1px solid #ccc',
+              padding: 'var(--5px-V)',
+              borderRadius: 'var(--3px-V)',
+              border: 'var(--1px-V) solid #ccc',
             }}
           />
 
@@ -525,10 +549,10 @@ const CalendarGUI: React.FC<CalendarProps> = ({
             value={numberOfMonthsPast}
             onChange={handleMonthsPastChange}
             style={{
-              width: '50px',
-              padding: '5px',
-              borderRadius: '3px',
-              border: '1px solid #ccc',
+              width: 'var(--50px-V)',
+              padding: 'var(--5px-V)',
+              borderRadius: 'var(--3px-V)',
+              border: 'var(--1px-V) solid #ccc',
             }}
           />
           <label htmlFor="monthsFutureInput">Months to show in future: </label>
@@ -539,27 +563,29 @@ const CalendarGUI: React.FC<CalendarProps> = ({
             value={numberOfMonthsFuture}
             onChange={handleMonthsFutureChange}
             style={{
-              width: '50px',
-              padding: '5px',
-              borderRadius: '3px',
-              border: '1px solid #ccc',
+              width: 'var(--50px-V)',
+              padding: 'var(--5px-V)',
+              borderRadius: 'var(--3px-V)',
+              border: 'var(--1px-V) solid #ccc',
             }}
           />
           <button
             onClick={scrollToCurrentDate}
             style={{
-              padding: '5px 10px',
+              padding: 'var(--5px-V) var(--10px-V)',
               backgroundColor: '#4CAF50',
 
               border: 'none',
-              borderRadius: '3px',
+              borderRadius: 'var(--3px-V)',
               cursor: 'pointer',
             }}
           >
             Go to Current Date
           </button>
         </div>
-        <div style={{ overflowX: 'auto', height: 'calc(100% - 44px)' }}>
+        <div
+          style={{ overflowX: 'auto', height: 'calc(100% - var(--44px-V))' }}
+        >
           <svg ref={ref}></svg>
         </div>
       </div>

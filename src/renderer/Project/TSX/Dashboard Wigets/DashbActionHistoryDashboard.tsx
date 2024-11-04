@@ -160,32 +160,32 @@ const DashbActionHistoryDashboard: React.FC = () => {
   return (
     <div
       style={{
-        padding: '30px',
-        marginBottom: '30px',
-        boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)',
-        borderRadius: '15px',
+        padding: 'var(--30px-V)',
+        marginBottom: 'var(--30px-V)',
+        boxShadow: '0 var(--10px-V) var(--30px-V) rgba(0, 0, 0, 0.1)',
+        borderRadius: 'var(--15px-V)',
         transition: 'all 0.3s ease',
       }}
     >
       <h2
         style={{
-          marginBottom: '24px',
+          marginBottom: 'var(--24px-V)',
           width: '100%',
-          fontSize: '28px',
+          fontSize: 'var(--28px-V)',
           color: 'var(--Text-Color)',
-          borderBottom: '2px solid var(--Secondary-Color)',
-          paddingBottom: '10px',
+          borderBottom: 'var(--2px-V) solid var(--Secondary-Color)',
+          paddingBottom: 'var(--10px-V)',
         }}
       >
         Action History{' '}
         <button
           onClick={() => setShowFilters(!showFilters)}
           style={{
-            padding: '8px 16px',
+            padding: 'var(--8px-V) var(--16px-V)',
             backgroundColor: 'var(--Secondary-Color)',
             color: 'var(--Text-Color)',
             border: 'none',
-            borderRadius: '5px',
+            borderRadius: 'var(--5px-V)',
             cursor: 'pointer',
             transition: 'all 0.3s ease',
           }}
@@ -193,15 +193,15 @@ const DashbActionHistoryDashboard: React.FC = () => {
           {showFilters ? 'Hide Filters' : 'Show Filters'}
         </button>
         {showFilters && (
-          <div style={{ marginTop: '15px', marginBottom: '15px' }}>
+          <div style={{ marginTop: 'var(--15px-V)', marginBottom: 'var(--15px-V)' }}>
             <button
               onClick={clearFilters}
               style={{
-                padding: '8px 16px',
+                padding: 'var(--8px-V) var(--16px-V)',
                 backgroundColor: 'var(--Accent-Color)',
                 color: 'var(--Text-Color)',
                 border: 'none',
-                borderRadius: '5px',
+                borderRadius: 'var(--5px-V)',
                 cursor: 'pointer',
                 transition: 'all 0.3s ease',
               }}
@@ -216,9 +216,9 @@ const DashbActionHistoryDashboard: React.FC = () => {
         style={{
           display: 'flex',
           flexDirection: 'row',
-          gap: '15px',
+          gap: 'var(--15px-V)',
           alignItems: 'center',
-          marginBottom: '20px',
+          marginBottom: 'var(--20px-V)',
         }}
       >
         {showFilters && (
@@ -230,9 +230,9 @@ const DashbActionHistoryDashboard: React.FC = () => {
               value={dateRange}
               onChange={handleDateRangeChange}
               style={{
-                padding: '8px',
-                borderRadius: '5px',
-                border: '1px solid var(--Secondary-Color)',
+                padding: 'var(--8px-V)',
+                borderRadius: 'var(--5px-V)',
+                border: 'var(--1px-V) solid var(--Secondary-Color)',
               }}
             >
               <option value="month">Month</option>
@@ -244,22 +244,22 @@ const DashbActionHistoryDashboard: React.FC = () => {
               onChange={handleDateChange}
               placeholder={dateRange === 'month' ? 'YYYY-MM' : 'YYYY'}
               style={{
-                padding: '8px',
-                borderRadius: '5px',
-                border: `1px solid ${
+                padding: 'var(--8px-V)',
+                borderRadius: 'var(--5px-V)',
+                border: `var(--1px-V) solid ${
                   isValidDate ? 'var(--Secondary-Color)' : 'red'
                 }`,
-                width: dateRange === 'month' ? '150px' : '80px',
+                width: dateRange === 'month' ? 'var(--150px-V)' : 'var(--80px-V)',
               }}
             />
             <button
               onClick={handleFindClick}
               style={{
-                padding: '8px 16px',
+                padding: 'var(--8px-V) var(--16px-V)',
                 backgroundColor: 'var(--Accent-Color)',
                 color: 'var(--Text-Color)',
                 border: 'none',
-                borderRadius: '5px',
+                borderRadius: 'var(--5px-V)',
                 cursor: 'pointer',
                 transition: 'all 0.3s ease',
               }}
@@ -280,9 +280,9 @@ const DashbActionHistoryDashboard: React.FC = () => {
           value={limit}
           onChange={handleLimitChange}
           style={{
-            padding: '8px',
-            borderRadius: '5px',
-            border: '1px solid var(--Secondary-Color)',
+            padding: 'var(--8px-V)',
+            borderRadius: 'var(--5px-V)',
+            border: 'var(--1px-V) solid var(--Secondary-Color)',
           }}
         >
           <option value={25}>25</option>
@@ -297,7 +297,7 @@ const DashbActionHistoryDashboard: React.FC = () => {
           style={{
             width: '100%',
             borderCollapse: 'separate',
-            borderSpacing: '0 10px',
+            borderSpacing: '0 var(--10px-V)',
           }}
         >
           <thead>
@@ -312,14 +312,14 @@ const DashbActionHistoryDashboard: React.FC = () => {
                 <th
                   key={header}
                   style={{
-                    padding: '5px',
+                    padding: 'var(--5px-V)',
                     textAlign: 'left',
-                    borderBottom: '2px solid var(--Secondary-Color)',
+                    borderBottom: 'var(--2px-V) solid var(--Secondary-Color)',
                     color: 'var(--Text-Color)',
                     fontWeight: 'bold',
                   }}
                 >
-                  <div style={{ marginBottom: '10px' }}>
+                  <div style={{ marginBottom: 'var(--10px-V)' }}>
                     {header}{' '}
                     {header !== 'Date' && showFilters && (
                       <button
@@ -332,7 +332,7 @@ const DashbActionHistoryDashboard: React.FC = () => {
                         }
                         style={{
                           cursor: 'pointer',
-                          marginLeft: '5px',
+                          marginLeft: 'var(--5px-V)',
                           backgroundColor: 'transparent',
                           border: 'none',
                           color: 'var(--Accent-Color)',
@@ -360,12 +360,12 @@ const DashbActionHistoryDashboard: React.FC = () => {
                       }
                       onChange={handleFilterChange}
                       style={{
-                        width: '150px',
-                        padding: '8px',
-                        borderRadius: '5px',
-                        border: '1px solid var(--Secondary-Color)',
+                        width: 'var(--150px-V)',
+                        padding: 'var(--8px-V)',
+                        borderRadius: 'var(--5px-V)',
+                        border: 'var(--1px-V) solid var(--Secondary-Color)',
                         backgroundColor: 'var(--Secondary-Color)',
-                        color: 'var(--Text-Color)',minWidth: '90px'
+                        color: 'var(--Text-Color)',minWidth: 'var(--90px-V)'
                       }}
                     />
                   )}
@@ -380,15 +380,15 @@ const DashbActionHistoryDashboard: React.FC = () => {
                   key={`${item.id}-${index}`}
                   style={{
                     background: 'var(--Secondary-Color60)',
-                    borderRadius: '10px',
+                    borderRadius: 'var(--10px-V)',
                     transition: 'all 0.3s ease',
                   }}
                 >
                   <td
                     style={{
-                      padding: '5px',
-                      borderRadius: '10px 0px 0px 10px',
-                      fontSize: '14px',
+                      padding: 'var(--5px-V)',
+                      borderRadius: 'var(--10px-V) var(--0px-V) var(--0px-V) var(--10px-V)',
+                      fontSize: 'var(--14px-V)',
                       color: 'var(--Text-Color)',
                     }}
                   >
@@ -396,8 +396,8 @@ const DashbActionHistoryDashboard: React.FC = () => {
                   </td>
                   <td
                     style={{
-                      padding: '5px',
-                      fontSize: '16px',
+                      padding: 'var(--5px-V)',
+                      fontSize: 'var(--16px-V)',
                       fontWeight: 'bold',
                       color: 'var(--Text-Color)',
                     }}
@@ -406,8 +406,8 @@ const DashbActionHistoryDashboard: React.FC = () => {
                   </td>
                   <td
                     style={{
-                      padding: '5px',
-                      fontSize: '14px',
+                      padding: 'var(--5px-V)',
+                      fontSize: 'var(--14px-V)',
                       color: 'var(--Text-Color)',
                     }}
                   >
@@ -415,19 +415,19 @@ const DashbActionHistoryDashboard: React.FC = () => {
                   </td>
                   <td
                     style={{
-                      padding: '5px',
-                      fontSize: '14px',
+                      padding: 'var(--5px-V)',
+                      fontSize: 'var(--14px-V)',
                       color: 'var(--Text-Color)',
                     }}
                   >
                     {item.performed_by}<br></br>
-                   <span style={{fontSize: '12px', color: 'var(--Text-Color-Grey)'}}> {item.userInfo}</span>
+                   <span style={{fontSize: 'var(--12px-V)', color: 'var(--Text-Color-Grey)'}}> {item.userInfo}</span>
                   </td>
                   <td
                     style={{
-                      padding: '5px',
-                      borderRadius: '0px 10px 10px 0px',
-                      fontSize: '14px',
+                      padding: 'var(--5px-V)',
+                      borderRadius: 'var(--0px-V) var(--10px-V) var(--10px-V) var(--0px-V)',
+                      fontSize: 'var(--14px-V)',
                       color: 'var(--Text-Color)',
                       textAlign: 'right',
                     }}
@@ -444,9 +444,9 @@ const DashbActionHistoryDashboard: React.FC = () => {
                   colSpan={5}
                   style={{
                     textAlign: 'center',
-                    padding: '30px',
+                    padding: 'var(--30px-V)',
                     color: 'var(--Text-Color)',
-                    fontSize: '16px',
+                    fontSize: 'var(--16px-V)',
                     fontStyle: 'italic',
                   }}
                 >

@@ -53,9 +53,9 @@ const EthiopianCalanderConverterMenu: React.FC<
 
   const converterStyle: React.CSSProperties = {
     backgroundColor: 'var(--Background-Color)',
-    padding: '20px',
-    borderRadius: '8px',
-    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+    padding: 'var(--20px-V)',
+    borderRadius: 'var(--8px-V)',
+    boxShadow: '0 var(--4px-V) var(--6px-V) rgba(0, 0, 0, 0.1)',
   };
 
   return (

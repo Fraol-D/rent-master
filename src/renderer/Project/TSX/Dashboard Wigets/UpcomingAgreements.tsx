@@ -35,21 +35,21 @@ const UpcomingAgreements = ({
     <div
       className="DashboardWigetMainContainer"
       style={{
-        width: '400px',
+        width: 'var(--400px-V)',
         alignItems: 'flex-start',
 
-        height: '500px',
+        height: 'var(--500px-V)',
         overflowY: 'auto',
         overflowX: 'hidden',
       }}
     >
       <p
         className="DashboardWigetPieChartTextHeader"
-        style={{ width: '400px' }}
+        style={{ width: 'var(--400px-V)' }}
       >
         Upcoming Agreement Expirations
       </p>
-      <div style={{ marginBottom: '10px' }}>
+      <div style={{ marginBottom: 'var(--10px-V)' }}>
         <label htmlFor="daysThreshold">Show agreements ending within: </label>
         <select
           id="daysThreshold"
@@ -71,7 +71,7 @@ const UpcomingAgreements = ({
           <tr className="InfoTableHeadTR">
             <th className="InfoTableHeadTh">Tenants</th>
 
-            <th className="InfoTableHeadTh" style={{ width: '90px' }}>
+            <th className="InfoTableHeadTh" style={{ width: 'var(--90px-V)' }}>
               Days Left
             </th>
           </tr>
@@ -96,13 +96,13 @@ const UpcomingAgreements = ({
                 >
                   <td className="InfoTableBodyTD">
                     <span
-                      style={{ fontSize: '16px', overflowX: 'auto' }}
+                      style={{ fontSize: 'var(--16px-V)', overflowX: 'auto' }}
                       title={tenant?.name}
                     >
                       {tenant?.name.slice(0, 20)}
                     </span>{' '}
                     <br />{' '}
-                    <span style={{ fontSize: '12px' }}>
+                    <span style={{ fontSize: 'var(--12px-V)' }}>
                       Flr: {room?.floor} Rm: {room?.roomIndex}
                     </span>
                   </td>
@@ -116,7 +116,7 @@ const UpcomingAgreements = ({
                     }}
                   >
                     <span>In {daysLeft} days</span>
-                    <span style={{ fontSize: '11px' }}>
+                    <span style={{ fontSize: 'var(--11px-V)' }}>
                       {new Date(agreement.endTime).toDateString()}
                     </span>
                   </td>{' '}
@@ -125,7 +125,7 @@ const UpcomingAgreements = ({
             })
           ) : (
             <tr>
-              <td colSpan={3} style={{ textAlign: 'center', padding: '10px' }}>
+              <td colSpan={3} style={{ textAlign: 'center', padding: 'var(--10px-V)' }}>
                 No upcoming agreement expirations within {daysThreshold} days
               </td>
             </tr>

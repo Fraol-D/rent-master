@@ -8,14 +8,14 @@
   overflow-y: auto;
 }
 .SideBarContainer {
-  width: 290px;
-  border-top: 1px solid grey;
+  width: var(--290px-V);
+  border-top: var(--1px-V) solid grey;
   background-color: var(--Secondary-Color20);
   color: var(--Text-Color);
   display: flex;
   flex-direction: column;
   align-items: center;
-  box-shadow: 1px 1px 3px -1px var(--Text-Color);
+  box-shadow: var(--1px-V) var(--1px-V) var(--3px-V) var(---1px-V) var(--Text-Color);
 }
 .MainContainerMain {
   width: 100%;
@@ -25,8 +25,8 @@
 .SecondNavBarContainer {
   background-color: var(--Background-Color);
 
-  border-radius: 5px;
-  height: 0px;
+  border-radius: var(--5px-V);
+  height: var(--0px-V);
 
   display: flex;
   align-items: center;
@@ -39,7 +39,7 @@
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  height: 136px;
+  height: var(--136px-V);
   color: var(--Text-Color);
   width: 100%;
   flex-direction: column;
@@ -47,73 +47,73 @@
 .RoomAndFloorContainer {
   display: flex;
   flex-direction: row;
-  margin-top: 10px;
+  margin-top: var(--10px-V);
   width: 100%;
   justify-content: flex-start;
 }
 .FloorSearchBar {
-  width: 50px;
-  height: 25px;
-  margin-right: 20px;
-  border-radius: 5px;
+  width: var(--50px-V);
+  height: var(--25px-V);
+  margin-right: var(--20px-V);
+  border-radius: var(--5px-V);
   background-color: var(--Secondary-Color);
-  font-size: 15px;
+  font-size: var(--15px-V);
   color: var(--Text-Color);
-  border: 1px solid grey;
+  border: var(--1px-V) solid grey;
 }
 .TenantSearchBar {
-  width: 140px;
-  height: 25px;
+  width: var(--140px-V);
+  height: var(--25px-V);
   background-color: var(--Secondary-Color);
-  font-size: 15px;
-  border-radius: 5px;
-  border: 1px solid grey;
+  font-size: var(--15px-V);
+  border-radius: var(--5px-V);
+  border: var(--1px-V) solid grey;
   color: var(--Text-Color);
 }
 .RoomSearchBar {
-  width: 50px;
-  height: 25px;
-  border-radius: 5px;
+  width: var(--50px-V);
+  height: var(--25px-V);
+  border-radius: var(--5px-V);
   background-color: var(--Secondary-Color);
-  font-size: 15px;
+  font-size: var(--15px-V);
   color: var(--Text-Color);
-  border: 1px solid grey;
+  border: var(--1px-V) solid grey;
 }
 .sort-button-img {
-  width: 35px;
+  width: var(--35px-V);
   transition: all 0.2s;
 
-  border-radius: 10px;
+  border-radius: var(--10px-V);
 }
 
 .sort-button-img-Flip {
-  width: 35px;
+  width: var(--35px-V);
   transform: scaleY(-1);
   transition: all 0.2s;
   background-color: black;
-  border-radius: 10px;
+  border-radius: var(--10px-V);
 }
 .sort-drop {
   margin: 0;
-  width: 107px;
-  height: 35px;
-  left: -10px;
+  width: var(--107px-V);
+  height: var(--35px-V);
+  left: var(---10px-V);
   position: relative;
-  padding-right: 0px;
-  border-radius: 5px;
+  padding-right: var(--0px-V);
+  border-radius: var(--5px-V);
   background: lightgrey;
-  padding-left: 1px;
+  padding-left: var(--1px-V);
   background-color: var(--Secondary-Color);
   border: none;
   border-left: none;
   color: lab(100 0 -0.03);
 }
 .sort-button {
-  margin-left: 10px;
-  width: 50px;
-  height: 50px;
+  margin-left: var(--10px-V);
+  width: var(--50px-V);
+  height: var(--50px-V);
 
-  border-radius: 5px;
+  border-radius: var(--5px-V);
   background-color: var(--Secondary-Color) 00;
   font-weight: bolder;
 
@@ -121,9 +121,9 @@
 }
 .filter-drop {
   background-color: var(--Secondary-Color);
-  border: 1px solid grey;
+  border: var(--1px-V) solid grey;
   color: var(--Text-Color);
-  border-radius: 5px;
+  border-radius: var(--5px-V);
 }
 .AdvanceRoomFinding {
   width: 100%;
@@ -132,11 +132,11 @@
   flex-direction: column;
 }
 .AdvanceRoomFindingInput {
-  width: 70px;
-  height: 30px;
+  width: var(--70px-V);
+  height: var(--30px-V);
   background-color: var(--Secondary-Color);
-  border: 1px solid grey;
-  border-radius: 5px;
+  border: var(--1px-V) solid grey;
+  border-radius: var(--5px-V);
   color: var(--Text-Color);
 }
 .AdvanceRoomFindingINPUTCONTAINER {
@@ -147,27 +147,27 @@
 .FilterOptions {
   display: flex;
   position: absolute;
-  top: 67px;
-  width: 1300px;
+  top: var(--67px-V);
+  width: var(--1300px-V);
   align-items: center;
   color: var(--Text-Color);
-  font-size: 14px;
+  font-size: var(--14px-V);
   justify-content: center;
 }
 .BottomNavBarMain {
   width: 100%;
 
-  height: 1px;
+  height: var(--1px-V);
   display: flex;
   justify-content: center;
 }
 .BottomNavBar {
-  height: 45px;
+  height: var(--45px-V);
   position: relative;
-  bottom: 125px;
-  border-radius: 5px;
-  box-shadow: 3px 3px 0px 0px #00000073;
-  width: 320px;
+  bottom: var(--125px-V);
+  border-radius: var(--5px-V);
+  box-shadow: var(--3px-V) var(--3px-V) var(--0px-V) var(--0px-V) #00000073;
+  width: var(--320px-V);
   background-color: var(--Secondary-Color);
   display: flex;
   flex-direction: row;
@@ -180,10 +180,10 @@
 }
 .SideBarRoomPageBottomPartAddRoom {
   background-color: var(--Background-Color);
-  box-shadow: 3px 3px 0px 0px rgba(0, 0, 0, 0.4509803922);
+  box-shadow: var(--3px-V) var(--3px-V) var(--0px-V) var(--0px-V) rgba(0, 0, 0, 0.4509803922);
   
   width: 100%;
-  border-radius: 5px;
+  border-radius: var(--5px-V);
   display: flex;
   align-items: center;
   flex-direction: column;
@@ -192,56 +192,56 @@
   transition: all .2s;
 }
 .AddANewRoomInputsSmall {
-  width: 60px;
+  width: var(--60px-V);
   background-color: var(--Secondary-Color);
-  border: 1px solid grey;
+  border: var(--1px-V) solid grey;
   color: var(--Text-Color);
-  border-radius: 5px;
+  border-radius: var(--5px-V);
 }
 .AddANewRoomSelectMid {
   background-color: var(--Secondary-Color);
-  border: 1px solid grey;
+  border: var(--1px-V) solid grey;
   color: var(--Text-Color);
-  border-radius: 5px;
+  border-radius: var(--5px-V);
 }
 .AddANewRoomInputsMid {
-  width: 120px;
+  width: var(--120px-V);
   background-color: var(--Secondary-Color);
-  border: 1px solid grey;
+  border: var(--1px-V) solid grey;
   color: var(--Text-Color);
-  border-radius: 5px;
+  border-radius: var(--5px-V);
 }
 .AddANewRoomSpecObjectMainContainer {
   background-color: var(--Secondary-Color);
-  padding: 5px;
-  border: 1px solid grey;
-  border-radius: 5px;
-  margin-bottom: 5px;
+  padding: var(--5px-V);
+  border: var(--1px-V) solid grey;
+  border-radius: var(--5px-V);
+  margin-bottom: var(--5px-V);
 }
 .RoomSpecficationsMainContainer {
   background-color: rgba(128, 128, 128, 0.12);
-  padding: 10px;
-  padding-top: 5px;
-  border-radius: 5px;
+  padding: var(--10px-V);
+  padding-top: var(--5px-V);
+  border-radius: var(--5px-V);
 }
 .AddARoomImageMainContainer {
   background-color: rgba(128, 128, 128, 0.12);
-  padding: 10px;
-  padding-top: 5px;
-  border-radius: 5px;
-  margin-top: 10px;
-  height: 200px;
+  padding: var(--10px-V);
+  padding-top: var(--5px-V);
+  border-radius: var(--5px-V);
+  margin-top: var(--10px-V);
+  height: var(--200px-V);
 }
 .HorizontalButton {
-  border-radius: 5px;
-  padding: 5px;
+  border-radius: var(--5px-V);
+  padding: var(--5px-V);
   background-color: var(--Secondary-Color);
   color: var(--Text-Color);
 
-  margin-bottom: 5px;
+  margin-bottom: var(--5px-V);
   transition: all 0.2s;
   width: 90%;
-  height: 25px;
+  height: var(--25px-V);
   display: flex;
   justify-content: center;
 }
@@ -249,31 +249,31 @@
   display: flex;
   flex-direction: column-reverse;
   align-items: center;
-  border-top: 1px solid white;
-  border-radius: 5px;
-  padding-top: 5px;
+  border-top: var(--1px-V) solid white;
+  border-radius: var(--5px-V);
+  padding-top: var(--5px-V);
   width: 100%;
-  /* height: 100px; */
-  padding-top: 15px;
-  /* margin-top: 30px; */
+  /* height: var(--100px-V); */
+  padding-top: var(--15px-V);
+  /* margin-top: var(--30px-V); */
   justify-content: flex-end;
 }
 .AddaNewRoomRowObject {
-  margin-bottom: 10px;
+  margin-bottom: var(--10px-V);
   display: flex;
 }
 
 /**/
 .EditRoomScreenMainContainer {
-  width: 750px;
-  height: 540px;
+  width: var(--800px-V);
+  height: var(--540px-V);
   background-color: var(--Background-Color);
   position: absolute;
   left: 50%;
   top: 50%;
-  border: 1px solid white;
-  border-radius: 10px;
-  padding: 10px;
+  border: var(--1px-V) solid white;
+  border-radius: var(--10px-V);
+  padding: var(--10px-V);
   display: flex;
   flex-direction: column;
 
@@ -296,42 +296,42 @@
   width: 95%;
 
   background-color: var(--Secondary-Color);
-  margin: 5px;
+  margin: var(--5px-V);
   display: flex;
 
   justify-content: space-between;
   align-items: center;
-  padding: 5px;
+  padding: var(--5px-V);
   transition: all 0.2s;
-  border-radius: 5px;    padding: 8px;
-  font-size: 18px;
+  border-radius: var(--5px-V);    padding: var(--8px-V);
+  font-size: var(--18px-V);
 }
 .sideBarItemComponentMainSelected {
   width: 95%;
 
   background-color: var(--Primary-Color25);
-  margin: 5px;
+  margin: var(--5px-V);
   display: flex;
 
   justify-content: space-between;
   align-items: center;
-  padding: 5px;
-  border-radius: 5px;
-  transition: all 0.2s;    padding: 8px;
-  font-size: 18px;
+  padding: var(--5px-V);
+  border-radius: var(--5px-V);
+  transition: all 0.2s;    padding: var(--8px-V);
+  font-size: var(--18px-V);
 }
 .sideBarItemComponentMain:hover {
-  border: 1px solid white;
+  border: var(--1px-V) solid white;
 }
 .NotificationButton {
-  height: 35px;
+  height: var(--35px-V);
   position: relative;
-  bottom: 125px;
-  border-radius: 5px;
-  box-shadow: 3px 3px 0px 0px rgba(0, 0, 0, 0.4509803922);
-  margin-top: 5px;
-  margin-left: 5px;
-  width: 35px;
+  bottom: var(--125px-V);
+  border-radius: var(--5px-V);
+  box-shadow: var(--3px-V) var(--3px-V) var(--0px-V) var(--0px-V) rgba(0, 0, 0, 0.4509803922);
+  margin-top: var(--5px-V);
+  margin-left: var(--5px-V);
+  width: var(--35px-V);
   background-color: var(--Secondary-Color);
   display: flex;
   flex-direction: row;
@@ -339,37 +339,37 @@
   align-items: center;
 }
 .notification-panel {
-  height: 555px;
+  height: var(--555px-V);
   color: var(--Text-Color);
   position: absolute;
-  bottom: 60px;
-  left: 472px;
-  border-radius: 5px 5px 0px 0px;
-  box-shadow: 3px 3px 0px 0px rgba(0, 0, 0, 0.4509803922);
-  width: 320px;
+  bottom: var(--60px-V);
+  left: var(--472px-V);
+  border-radius: var(--5px-V) var(--5px-V) var(--0px-V) var(--0px-V);
+  box-shadow: var(--3px-V) var(--3px-V) var(--0px-V) var(--0px-V) rgba(0, 0, 0, 0.4509803922);
+  width: var(--320px-V);
   background-color: var(--Secondary-Color);
   display: flex;
   flex-direction: column;
   align-items: center;
-  border: 1px solid grey;
-  border-bottom: 1px dashed grey;
+  border: var(--1px-V) solid grey;
+  border-bottom: var(--1px-V) dashed grey;
   justify-content: flex-start;
 }
 .SideBarTopContainer {
   display: flex;
   flex-direction: row;
-  border-bottom: 1px solid grey;
+  border-bottom: var(--1px-V) solid grey;
 }
 .SideBarTopButton {
   flex:1;
-  height: 52px;
-  margin: 10px;
+  height: var(--52px-V);
+  margin: var(--5px-V);
 }
 .SideBarShowButton {
-  height: 25px;
+  height: var(--25px-V);
   position: absolute;
-  margin-top: 3px;
-  margin-left: 3px;
+  margin-top: var(--3px-V);
+  margin-left: var(--3px-V);
   transition: all 0.2s;
   visibility: visible;
 }
@@ -380,8 +380,8 @@
 
   color: var(--Text-Color);
   font-family: Arial, sans-serif;
-  font-size: 14px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  font-size: var(--14px-V);
+  box-shadow: 0 var(--4px-V) var(--6px-V) rgba(0, 0, 0, 0.1);
 }
 
 .table-header {
@@ -390,7 +390,7 @@
 }
 
 .table-header th {
-  padding: 12px 15px;
+  padding: var(--12px-V) var(--15px-V);
   text-align: left;
   font-weight: bold;
   cursor: pointer;
@@ -401,8 +401,8 @@
   background-color: #3c3c3c;
   color: #e0e0e0;
   border: none;
-  padding: 5px;
-  border-radius: 3px;
+  padding: var(--5px-V);
+  border-radius: var(--3px-V);
   width: 100%;
 }
 
@@ -415,66 +415,66 @@
 }
 
 .table-body td {
-  padding: 10px 15px;
-  border-bottom: 1px solid #3c3c3c;
+  padding: var(--10px-V) var(--15px-V);
+  border-bottom: var(--1px-V) solid #3c3c3c;
 }
 
 .table-body input {
   background-color: #3c3c3c;
   color: #e0e0e0;
   border: none;
-  padding: 5px;
-  border-radius: 3px;
+  padding: var(--5px-V);
+  border-radius: var(--3px-V);
   width: 100%;
 }
 
 .delete-button {
   background-color: #d32f2f;
   border: none;
-  padding: 5px 10px;
-  border-radius: 3px;
+  padding: var(--5px-V) var(--10px-V);
+  border-radius: var(--3px-V);
   cursor: pointer;
   color: white;
 }
 .appUserItemContainer{
   background-color: var(--Secondary-Color30);
-  margin: 10px;
-  border-radius: 10px;
-  padding: 10px;
+  margin: var(--10px-V);
+  border-radius: var(--10px-V);
+  padding: var(--10px-V);
 }
 .appUserItem {
-  width: 350px;
+  width: var(--350px-V);
   background-color: var(--Secondary-Color30);
-  border-radius: 5px;
-  margin: 10px;
-  box-shadow: 1px 1px 3px -1px var(--Text-Color);
-  padding: 5px;
+  border-radius: var(--5px-V);
+  margin: var(--10px-V);
+  box-shadow: var(--1px-V) var(--1px-V) var(--3px-V) var(---1px-V) var(--Text-Color);
+  padding: var(--5px-V);
 }
 .appUserItemM {
   background-color: var(--Secondary-Color60);
 
 }.appUserItem {
-  margin-bottom: 20px;
+  margin-bottom: var(--20px-V);
 
-  padding: 10px;
+  padding: var(--10px-V);
 }
 .appUserButtons {
-  margin-left: 10px;
-  padding: 5px 10px;
+  margin-left: var(--10px-V);
+  padding: var(--5px-V) var(--10px-V);
   background-color: var(--Primary-Color);
   color: var(--Text-Color-Reverse);
   border: none;
-  border-radius: 4px;
+  border-radius: var(--4px-V);
   cursor: pointer;
   transition: background-color 0.3s;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  text-shadow: var(--2px-V) var(--2px-V) var(--4px-V) rgba(0, 0, 0, 0.5);
   
 }
 .appUserHeader {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 10px;
+  margin-bottom: var(--10px-V);
 }
 
 .appUserHeader span {
@@ -483,11 +483,11 @@
   display: flex;
   flex-direction: row;
   justify-content: space-evenly;
-  margin-top: 10px;
+  margin-top: var(--10px-V);
 }
 .privileges-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(var(--200px-V), 1fr));
 
 }
 
@@ -498,31 +498,31 @@
 }
 
 .privilege-item input[type="checkbox"] {
-  margin-right: 5px;
+  margin-right: var(--5px-V);
 }.update-container {
   background: var(--Secondary-Color);
-  border-radius: 8px;
-  padding: 16px;
-  width: 256px;
-  box-shadow: 0 2px 4px var(--Text-Color-Reverse50);
+  border-radius: var(--8px-V);
+  padding: var(--16px-V);
+  width: var(--256px-V);
+  box-shadow: 0 var(--2px-V) var(--4px-V) var(--Text-Color-Reverse50);
 }
 
 .update-status {
-  margin-bottom: 16px;
+  margin-bottom: var(--16px-V);
 }
 
 .update-header {
   font-weight: 500;
-  margin-bottom: 12px;
+  margin-bottom: var(--12px-V);
   color: var(--Text-Color);
 }
 
 .progress-bar-container {
   background: var(--Secondary-Color20);
-  height: 8px;
-  border-radius: 4px;
+  height: var(--8px-V);
+  border-radius: var(--4px-V);
   overflow: hidden;
-  margin-bottom: 8px;
+  margin-bottom: var(--8px-V);
 }
 
 .progress-bar {
@@ -540,21 +540,21 @@
 
 .install-button {
   width: 100%;
-  padding: 8px;
+  padding: var(--8px-V);
   background: var(--Secondary-Color);
   color: var(--Text-Color);
   border: none;
-  border-radius: 4px;
+  border-radius: var(--4px-V);
   cursor: pointer;
   font-weight: 500;
   transition: all 0.2s;
-  box-shadow: 1px 1px 3px -1px var(--Text-Color);
+  box-shadow: var(--1px-V) var(--1px-V) var(--3px-V) var(---1px-V) var(--Text-Color);
 }
 
 .install-button:hover {
   background-color: var(--Primary-Color50);
-  box-shadow: 3px 3px 3px -1px var(--Text-Color);
+  box-shadow: var(--3px-V) var(--3px-V) var(--3px-V) var(---1px-V) var(--Text-Color);
   color: var(--Text-Color-Reverse);
-  text-shadow: 0px 0px 10px var(--Text-Color);
-  transform: translate(0, -3px);
+  text-shadow: var(--0px-V) var(--0px-V) var(--10px-V) var(--Text-Color);
+  transform: translate(0, var(---3px-V));
 }
