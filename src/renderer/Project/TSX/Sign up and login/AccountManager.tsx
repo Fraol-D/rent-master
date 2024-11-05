@@ -10,14 +10,15 @@ import {
   getAllUsers,
   getValuesFromOnlineDatabase,
   getValuesWithSql_Online,
-  syncOnlineToLocal,
-  syncOnlineToLocalWithBool,
+  syncOnlineToLocalBranch,
+  syncOnlineToLocalBranchWithBool,
   updateValueOnline,
   verifyCredentials,
 } from 'Backend/OnlineServerApis';
 import NotAllowedScreen from './NotAllowedScreen';
 import TrialEndedText from './TrialEndedText';
 import loadingGif from '../../../assets/assets/Loading/Rolling-1s-200px.gif';
+import DashboardPage from '../Pages/DashboardPage';
 
 interface MyComponentProps {
   children: React.ReactNode;
@@ -41,6 +42,12 @@ interface MyComponentProps {
   setViewBranchManagementPage: (newval: boolean) => void;
   SelectedBranchId: string;
   setSelectedBranchId: (newval: string) => void;
+  ViewBranchManagementPageNONAdm: boolean;
+  setViewBranchManagementPageNONAdm: (newval: boolean) => void;
+  fetchBranches: () => void;
+  Branches: BranchTypeWithData[];
+  setBranches: (newval: BranchTypeWithData[]) => void;
+  setBranchName: (newval: string) => void;
 }
 
 const timeoutPromise = (ms: number) => {
@@ -72,6 +79,11 @@ const AccountManager = (React.FC<MyComponentProps> = ({
   ViewBranchManagementPage,
   SelectedBranchId,
   setSelectedBranchId,
+  ViewBranchManagementPageNONAdm,
+  setViewBranchManagementPageNONAdm,
+  fetchBranches,
+  Branches,
+  setBranches,setBranchName
 }) => {
   const [TrialExpiredState, setTrialExpiredState] = useState(false);
   const [IsAllowedState, setIsAllowedState] = useState(false);
@@ -196,15 +208,10 @@ const AccountManager = (React.FC<MyComponentProps> = ({
           await appUsersManagement();
           if (
             navigator.onLine &&
-            window.electron.store.get('users')[0].Allowed
+            window.electron.store.get('users')[0].Allowed &&
+            !ViewBranchManagementPage && window.electron.store.get('SelectedBranchId') !== ''
           ) {
-            // setIsSyncing(true);
-            // syncOnlineToLocalWithBool(
-            //   allUsers[0].id,
-            //   setIsSyncing,
-            //   setSyncProgress,
-            //   RefreshDataFromSqlite
-            // );
+            syncWithOnline(allUsers[0].id);
           }
         }
       } catch (error) {
@@ -308,7 +315,16 @@ const AccountManager = (React.FC<MyComponentProps> = ({
   useEffect(() => {
     checkIfSignedIn();
   }, [isSignedIn, Refresh]);
-
+  const syncWithOnline = async (selectedUserId: string) => {
+    setIsSyncing(true);
+    syncOnlineToLocalBranchWithBool(
+      selectedUserId,
+      window.electron.store.get('SelectedBranchId'),
+      setIsSyncing,
+      setSyncProgress,
+      RefreshDataFromSqlite
+    );
+  };
   // Effect to check trial status when signed in
   useEffect(() => {
     if (isSignedIn === true) {
@@ -421,6 +437,39 @@ const AccountManager = (React.FC<MyComponentProps> = ({
 
         if (isValid) {
           setAppUserManagerPromptPassword(false);
+        } else {
+          setPasswordError('Incorrect password. Please try again.');
+        }
+      } catch (error) {
+        console.error('Error verifying credentials:', error);
+        setPasswordError(
+          'An error occurred while verifying credentials. Please try again.'
+        );
+      } finally {
+        setIsCheckingPassword(false);
+        setPasswordCheckInput('');
+      }
+    } else {
+      setPasswordError(
+        'No internet connection. Please check your network and try again.'
+      );
+    }
+    setPasswordCheckInput('');
+  };
+  const handleSubmitAdminPasswordBranch = async () => {
+    if (navigator.onLine) {
+      setIsCheckingPassword(true);
+      setPasswordError('');
+      const localUser = window.electron.store.get('users')[0];
+
+      try {
+        const isValid = await verifyCredentials(
+          localUser.email,
+          PasswordCheckInput
+        );
+
+        if (isValid) {
+          setViewBranchManagementPageNONAdm(false);
         } else {
           setPasswordError('Incorrect password. Please try again.');
         }
@@ -799,153 +848,83 @@ const AccountManager = (React.FC<MyComponentProps> = ({
     }
   };
 
-  const [Branches, setBranches] = useState<BranchTypeWithData[]>([]);
   useEffect(() => {
-    fetchBranches();
+    handleFetchBranches();
   }, [ViewBranchManagementPage]);
-  const fetchBranches = async () => {
-    if (ViewBranchManagementPage) {
-      const branches = await getValuesWithSql_Online(
-        'branches',
-        `WHERE userId = '${SelectedUserId}'`
-      );
-      const branchesWithData = await Promise.all(
-        branches.map(async (branch: BranchType) => {
-          const allRooms = await getValuesWithSql_Online(
-            'rooms',
-            `WHERE branchId = '${branch.id}'`
-          );
-          const allTenants = await getValuesWithSql_Online(
-            'tenants',
-            `WHERE branchId = '${branch.id}'`
-          );
-          const totalRooms = allRooms.length;
-          const totalFloors =
-            Math.max(...allRooms.map((room: { floor: any }) => room.floor)) ===
-            -Infinity
-              ? 0
-              : Math.max(...allRooms.map((room: { floor: any }) => room.floor));
-          const totalTenants = allTenants.length;
-          const occupiedRooms = allRooms.filter(
-            (room: { tenantId: string }) => room.tenantId !== ''
-          ).length;
-          const vacantRooms = totalRooms - occupiedRooms;
-          const unpaidPastPayments = 1000;
-          const userAccountsWhichHaveAccess = ['user1', 'user2'];
-          let monthlyRevenue = 0;
-          const today = new Date();
-          const currentMonth = today.getMonth();
-          const currentYear = today.getFullYear();
-          allTenants.forEach((tenant: tenant) => {
-            const tenantStart = new Date(tenant.startTime * 1000);
-            const room = allRooms.find(
-              (room: RoomType) => room.tenantId === tenant.id
-            );
-            if (room && tenantStart <= today) {
-              let paymentsThisMonth = 0;
-              switch (room.PaymentCycleType) {
-                case '30':
-                  paymentsThisMonth =
-                    Math.floor((today.getDate() - tenantStart.getDate()) / 30) +
-                    1;
-                  break;
-                case '15':
-                  paymentsThisMonth =
-                    Math.floor((today.getDate() - tenantStart.getDate()) / 15) +
-                    1;
-                  break;
-                case '7':
-                  paymentsThisMonth =
-                    Math.floor((today.getDate() - tenantStart.getDate()) / 7) +
-                    1;
-                  break;
-                case 'daily':
-                  paymentsThisMonth =
-                    today.getDate() - tenantStart.getDate() + 1;
-                  break;
-                case 'monthly':
-                  paymentsThisMonth = currentMonth - tenantStart.getMonth() + 1;
-                  break;
-                case 'weekly':
-                  paymentsThisMonth =
-                    Math.floor((today.getDate() - tenantStart.getDate()) / 7) +
-                    1;
-                  break;
-                case 'custom':
-                  paymentsThisMonth =
-                    Math.floor(
-                      (today.getDate() - tenantStart.getDate()) /
-                        room.PaymentCycleCustomeDays
-                    ) + 1;
-                  break;
-                case 'Annually':
-                  paymentsThisMonth = currentYear - tenantStart.getFullYear();
-                  break;
-                default:
-                  paymentsThisMonth = currentMonth - tenantStart.getMonth() + 1;
-              }
-              monthlyRevenue +=
-                paymentsThisMonth * parseFloat(tenant.agreedPrice);
-            }
-          });
-          return {
-            ...branch,
-            totalRooms,
-            totalFloors,
-            totalTenants,
-            occupiedRooms,
-            vacantRooms,
-            monthlyRevenue,
-            unpaidPastPayments,
-            userAccountsWhichHaveAccess,
-          };
-        })
-      );
-      console.log(branchesWithData);
-      setBranches(branchesWithData);
-    }
-  };
+
   const [showAddBranchModal, setShowAddBranchModal] = useState(false);
   const [isAddingBranch, setIsAddingBranch] = useState(false);
   const [newBranchData, setNewBranchData] = useState<BranchType>({
     id: '',
-    userId: '',
     name: '',
     location: '',
     description: '',
     googleMapPinPoint: '',
+    userId: ''
   });
 
   const handleAddBranch = async () => {
     try {
       setIsAddingBranch(true);
 
-      const branchToAdd: BranchType = {
-        ...newBranchData,
+      // Validate required fields
+      if (!newBranchData.name?.trim()) {
+        alert('Branch name is required');
+        return;
+      }
+
+      // Log the data being sent
+      console.log('Adding branch with data:', {
         id: uuidv4(),
-        userId: SelectedUserId,
+        name: newBranchData.name,
+        location: newBranchData.location || null,
+        description: newBranchData.description || null,
+        googleMapPinPoint: newBranchData.googleMapPinPoint || null,
+        userId: SelectedUserId
+      });
+
+      // First, check if we have a valid SelectedUserId
+      if (!SelectedUserId) {
+        throw new Error('No user ID selected');
+      }
+
+      const branchToAdd = {
+        id: uuidv4(),
+        name: newBranchData.name.trim(),
+        location: newBranchData.location?.trim() || null,
+        description: newBranchData.description?.trim() || null,
+        googleMapPinPoint: newBranchData.googleMapPinPoint?.trim() || null,
+        userId: SelectedUserId
       };
 
+      // Add to online database
       const result = await addValueOnline('branches', branchToAdd);
+      console.log('Add branch result:', result); // Log the result
 
-      if (result.success) {
-        fetchBranches();
-        // Reset form and close modal
-        setNewBranchData({
-          id: '',
-          userId: '',
-          name: '',
-          location: '',
-          description: '',
-          googleMapPinPoint: '',
-        });
-        setShowAddBranchModal(false);
-      } else {
-        alert('Failed to add branch');
-      }
+    
+
+      // If successful, refresh the branches list
+      await fetchBranches();
+
+      // Reset form
+      setNewBranchData({
+        id: '',
+        name: '',
+        location: '',
+        description: '',
+        googleMapPinPoint: '',
+        userId: ''
+      });
+
+      // Close modal
+      setShowAddBranchModal(false);
+
+      // Show success message
+      alert('Branch added successfully!');
+
     } catch (error) {
-      console.error('Error adding branch:', error);
-      alert('Error adding branch. Please check your connection.');
+      console.error('Detailed error adding branch:', error);
+      alert(`Failed to add branch: ${error.message}`);
     } finally {
       setIsAddingBranch(false);
     }
@@ -954,91 +933,54 @@ const AccountManager = (React.FC<MyComponentProps> = ({
   const [editingBranch, setEditingBranch] = useState<BranchTypeWithData | null>(
     null
   );
+  const handleSelectBranch = (branchId: string) => {
+    setSelectedBranchId(branchId);
+    setBranchName(Branches.find((branch) => branch.id === branchId)?.name || '');
+    window.electron.store.set('BranchName', Branches.find((branch) => branch.id === branchId)?.name || '');
+    window.electron.store.set('SelectedBranchId', branchId);
+    if (Branches.find((branch) => branch.id === branchId)?.lock)
+      window.electron.store.set('LockBranchToPc', true);
+    else window.electron.store.set('LockBranchToPc', false);
+
+    setViewBranchManagementPage(false);
+    RefreshDataFromSqlite();
+    syncWithOnline(SelectedUserId);
+  };
   const [isEditingBranch, setIsEditingBranch] = useState(false);
   const [showEditBranchModal, setShowEditBranchModal] = useState(false);
   const handleEditBranch = async () => {
-    if (!editingBranch) return;
+    if (!editingBranch?.id) return;
 
     try {
       setIsEditingBranch(true);
 
-      const originalBranch = Branches.find(
-        (branch) => branch.id === editingBranch.id
-      );
-      if (!originalBranch) {
-        throw new Error('Branch not found');
+      // Validate required fields
+      if (!editingBranch.name?.trim()) {
+        alert('Branch name is required');
+        return;
       }
 
       const updates = {
         name: editingBranch.name,
-        location: editingBranch.location,
-        description: editingBranch.description,
-        googleMapPinPoint: editingBranch.googleMapPinPoint,
+        location: editingBranch.location || null,
+        description: editingBranch.description || null,
+        googleMapPinPoint: editingBranch.googleMapPinPoint || null
       };
-      console.log('branches', editingBranch.id, 'name', updates.name);
-      console.log('branches', editingBranch.id, 'location', updates.location);
-      console.log('branches', editingBranch.id, 'description', updates.description);
-      console.log('branches', editingBranch.id, 'googleMapPinPoint', updates.googleMapPinPoint);
-      
-      // Only update if values have changed
-      if (originalBranch.name !== updates.name) {
-        const result = await updateValueOnline(
-          'branches',
-          editingBranch.id,
-          'name',
-          updates.name
-        );
-        if (!result.success) throw new Error('Failed to update branch name');
-      }
 
-      if (originalBranch.location !== updates.location) {
-        const result = await updateValueOnline(
-          'branches',
-          editingBranch.id,
-          'location',
-          updates.location
-        );
-
-        if (!result.success)
-          throw new Error('Failed to update branch location');
-      }
-
-      if (originalBranch.description !== updates.description) {
-        const result = await updateValueOnline(
-          'branches',
-          editingBranch.id,
-          'description',
-          updates.description
-        );
-        if (!result.success)
-          throw new Error('Failed to update branch description');
-      }
-
-      if (originalBranch.googleMapPinPoint !== updates.googleMapPinPoint) {
-        const result = await updateValueOnline(
-          'branches',
-          editingBranch.id,
-          'googleMapPinPoint',
-          updates.googleMapPinPoint
-        );
-        if (!result.success)
-          throw new Error('Failed to update branch googleMapPinPoint');
-      }
-
-      // Update local state
-      setBranches(
-        Branches.map((branch) =>
-          branch.id === editingBranch.id ? { ...branch, ...updates } : branch
-        )
+      // Update in database
+      const updatePromises = Object.entries(updates).map(([field, value]) => 
+        updateValueOnline('branches', editingBranch.id, field, value)
       );
+
+      await Promise.all(updatePromises);
+      await fetchBranches(); // Refresh the branches list
 
       setShowEditBranchModal(false);
       setEditingBranch(null);
+
     } catch (error) {
       console.error('Error updating branch:', error);
-      alert(
-        'Error updating branch. Please check your connection and try again.'
-      );
+      alert('Failed to update branch. Please try again.');
     } finally {
       setIsEditingBranch(false);
     }
@@ -1054,6 +996,24 @@ const AccountManager = (React.FC<MyComponentProps> = ({
         'Failed to delete branch. Please check your connection and try again.'
       );
     }
+  };
+  const [isBranchesLoading, setIsBranchesLoading] = useState(false);
+
+  const handleFetchBranches = async () => {
+    setIsBranchesLoading(true);
+    try {
+      await fetchBranches();
+    } finally {
+      setIsBranchesLoading(false);
+    }
+  };
+
+  const [showFinancialDetails, setShowFinancialDetails] = useState(false);
+
+  // Add this helper function to handle branch selection for editing
+  const handleStartEdit = (branch: BranchTypeWithData) => {
+    setEditingBranch(branch);
+    setShowEditBranchModal(true);
   };
 
   return (
@@ -1401,330 +1361,360 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                       </>
                     )
                   ) : ViewBranchManagementPage ? (
-                    <div
-                      className="branch-management-container"
-                      style={{
-                        padding: 'var(--20px-V)',
-                        height: '100%',
-                        display: 'flex',
-                        flexDirection: 'column',
-                      }}
-                    >
-                      <div
-                        style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                          marginBottom: 'var(--20px-V)',
-                        }}
-                      >
-                        <h1 style={{ margin: 0 }}>Branch Management</h1>
-                        <div>
-                          <button
-                            className="appUserButtons"
-                            style={{ marginRight: 'var(--20px-V)' }}
-                            onClick={() => setShowAddBranchModal(true)}
-                          >
-                            Add New Branch
-                          </button>
-                          <button
-                            onClick={() => setViewBranchManagementPage(false)}
-                          >
-                            Back
-                          </button>
-                        </div>
-                      </div>
-
-                      <div
-                        className="branch-list"
-                        style={{
-                          display: 'flex',
-                          flexWrap: 'wrap',
-                          gap: 'var(--20px-V)',
-                          overflowY: 'auto',
-                        }}
-                      >
-                        {Branches.map((branch) => (
+                    ViewBranchManagementPageNONAdm ? (
+                      <>
+                        <div
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            height: '100%',
+                          }}
+                        >
                           <div
-                            key={branch.id}
-                            className="branch-card"
+                            className="SignUpMainContainer"
                             style={{
-                              backgroundColor: 'var(--Secondary-Color20)',
+                              width: 'auto',
+                              maxWidth: 'var(--400px-V)',
+                              height: 'auto',
+                              margin: 'auto',
+                              background: 'var(--Secondary-Color20)',
                               borderRadius: 'var(--8px-V)',
-                              padding: 'var(--20px-V)',
-                              width: 'var(--321px-V)',
-                              boxShadow:
-                                'var(--0px-V) var(--4px-V) var(--4px-V) rgba(0, 0, 0, 0.1)',
                               display: 'flex',
                               flexDirection: 'column',
-                              justifyContent: 'space-between',
+                              alignItems: 'center',
+                              boxShadow:
+                                'var(--0px-V) var(--4px-V) var(--4px-V) var(--0px-V) rgba(0, 0, 0, 0.25)',
+                              padding: 'var(--20px-V)',
                             }}
                           >
                             <div
                               style={{
                                 display: 'flex',
                                 justifyContent: 'space-between',
-                                
+                                width: '100%',
+                                alignItems: 'center',
+                                height: 'auto',
                                 marginBottom: 'var(--15px-V)',
                               }}
                             >
-                              <h3
-                                style={{ margin: 0, fontSize: 'var(--24px-V)' }}
-                              >
-                                {branch.name}
-                              </h3>
-                              <div>
-                                <button
-                                  className="appUserButtons"
-                                  style={{ marginRight: 'var(--10px-V)' }}
-                                  onClick={() => {
-                                    setEditingBranch(branch);
-                                    setShowEditBranchModal(true);
-                                  }}
-                                >
-                                  Edit
-                                </button>
-                                <button
-                                  className="appUserButtons"
-                                  onClick={() => {
-                                    handleDeleteBranch(branch.id);
-                                  }}
-                                >
-                                  Delete
-                                </button>
-                              </div>
-                            </div>
-
-                            <div
-                              style={{
-                                display: 'flex',
-                                flexDirection: 'column',
-                                
-                                marginBottom: 'var(--20px-V)',
-                              }}
-                            >
-                              <h4
+                              <h1
                                 style={{
-                                  margin: 0,
-                                  fontSize: 'var(--18px-V)',
-                                  
+                                  marginRight: 'var(--10px-V)',
+                                  marginTop: 'var(--0px-V)',
+                                  marginBottom: 'var(--0px-V)',
+                                  fontSize: 'var(--45px-V)',
                                 }}
                               >
-                                Location
-                              </h4>
+                                Security Check
+                              </h1>
+                              <button
+                                onClick={() =>
+                                  setViewBranchManagementPage(false)
+                                }
+                              >
+                                Back
+                              </button>
+                            </div>
+                            <p
+                              style={{
+                                color: 'var(--Text-Color)',
+                                marginBottom: 'var(--25px-V)',
+                              }}
+                            >
+                              Please enter the account password to continue
+                            </p>
+                            <input
+                              type="password"
+                              placeholder="Admin Password"
+                              className="userName-input"
+                              value={PasswordCheckInput}
+                              onChange={(e) =>
+                                setPasswordCheckInput(e.target.value)
+                              }
+                            />
+                            <br />
+                            {passwordError && (
                               <p
                                 style={{
-                                  fontSize: 'var(--16px-V)',
-                                  color: 'var(--Text-Color-60)',
+                                  color: 'red',
+                                  marginBottom: 'var(--10px-V)',
                                 }}
                               >
-                                {branch.location}
+                                {passwordError}
                               </p>
-                            </div>
-
-                            <div
-                              style={{
-                                display: 'flex',
-                                flexDirection: 'column',
-                                
-                                marginBottom: 'var(--20px-V)',
-                              }}
+                            )}
+                            <button
+                              className="LoginButton"
+                              onClick={handleSubmitAdminPasswordBranch}
+                              disabled={isCheckingPassword}
                             >
-                              <h4
-                                style={{
-                                  margin: 0,
-                                  fontSize: 'var(--18px-V)',
-                           
-                                }}
-                              >
-                                Description
-                              </h4>
-                              <p
-                                style={{
-                                  fontSize: 'var(--16px-V)',
-                                  color: 'var(--Text-Color-60)',
-                                }}
-                              >
-                                {branch.description}
-                              </p>
-                            </div>
-
-                            <div
-                              style={{
-                                display: 'flex',
-                                flexDirection: 'column',
-                                
-                                marginBottom: 'var(--20px-V)',
-                              }}
-                            >
-                              <h4
-                                style={{
-                                  margin: 0,
-                                  fontSize: 'var(--18px-V)',
-                                 
-                                }}
-                              >
-                                Building Statistics
-                              </h4>
-                              <ul
-                                style={{
-                                  margin: 'var(--5px-V) 0',
-                                  listStyle: 'none',
-                                  padding: 0,
-                            
-                                }}
-                              >
-                                <li
+                              {isCheckingPassword ? (
+                                <img
+                                  src={loadingGif}
+                                  alt="Loading..."
                                   style={{
-                                    fontSize: 'var(--16px-V)',
-                                    color: 'var(--Text-Color-60)',
+                                    width: 'var(--20px-V)',
+                                    height: 'var(--20px-V)',
                                   }}
-                                >
-                                  Total Floors: {branch.totalFloors || 0}
-                                </li>
-                                <li
-                                  style={{
-                                    fontSize: 'var(--16px-V)',
-                                    color: 'var(--Text-Color-60)',
-                                  }}
-                                >
-                                  Total Rooms: {branch.totalRooms || 0}
-                                </li>
-                                <li
-                                  style={{
-                                    fontSize: 'var(--16px-V)',
-                                    color: 'var(--Text-Color-60)',
-                                  }}
-                                >
-                                  Total Tenants: {branch.totalTenants || 0}
-                                </li>
-                                <li
-                                  style={{
-                                    fontSize: 'var(--16px-V)',
-                                    color: 'var(--Text-Color-60)',
-                                  }}
-                                >
-                                  Occupied Rooms: {branch.occupiedRooms || 0}
-                                </li>
-                                <li
-                                  style={{
-                                    fontSize: 'var(--16px-V)',
-                                    color: 'var(--Text-Color-60)',
-                                  }}
-                                >
-                                  Vacant Rooms: {branch.vacantRooms || 0}
-                                </li>
-                              </ul>
-                            </div>
-
-                            <div
-                              style={{
-                                display: 'flex',
-                                flexDirection: 'column',
-                                
-                                marginBottom: 'var(--20px-V)',
-                              }}
-                            >
-                              <h4
-                                style={{
-                                  margin: 0,
-                                  fontSize: 'var(--18px-V)',
-                              
-                                }}
-                              >
-                                Financial Overview
-                              </h4>
-                              <ul
-                                style={{
-                                  margin: 'var(--5px-V) 0',
-                                  listStyle: 'none',
-                                  padding: 0,
-                 
-                                }}
-                              >
-                                <li
-                                  style={{
-                                    fontSize: 'var(--16px-V)',
-                                    color: 'var(--Text-Color-60)',
-                                  }}
-                                >
-                                  Monthly Revenue: $
-                                  {branch.monthlyRevenue?.toLocaleString() || 0}
-                                </li>
-                                <li
-                                  style={{
-                                    fontSize: 'var(--16px-V)',
-                                    color: 'var(--Text-Color-60)',
-                                  }}
-                                >
-                                  Unpaid Payments: $
-                                  {branch.unpaidPastPayments?.toLocaleString() ||
-                                    0}
-                                </li>
-                              </ul>
-                            </div>
-
-                            {branch.userAccountsWhichHaveAccess &&
-                              branch.userAccountsWhichHaveAccess.length > 0 && (
-                                <div
-                                  style={{
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    
-                                    marginBottom: 'var(--20px-V)',
-                                  }}
-                                >
-                                  <h4
-                                    style={{
-                                      margin: 0,
-                                      fontSize: 'var(--18px-V)',
-                                      
-                                    }}
-                                  >
-                                    Shared Access
-                                  </h4>
-                                  <p
-                                    style={{
-                                      fontSize: 'var(--16px-V)',
-                                      color: 'var(--Text-Color-60)',
-                                    }}
-                                  >
-                                    {branch.userAccountsWhichHaveAccess.length}{' '}
-                                    user(s) have access
-                                  </p>
-                                </div>
+                                />
+                              ) : (
+                                <>Submit {' ▶'}</>
                               )}
-
+                            </button>
+                          </div>{' '}
+                        </div>
+                      </>
+                    ) : (
+                      <div
+                        className="branch-management-container"
+                        style={{
+                          padding: 'var(--20px-V)',
+                          height: '100%',
+                          display: 'flex',
+                          flexDirection: 'column',
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            marginBottom: 'var(--20px-V)',
+                          }}
+                        >
+                          <h1 style={{ margin: 0 }}>Branch Management</h1>
+                          <div>
                             <button
                               className="appUserButtons"
-                              style={{ width: '100%' }}
-                              onClick={() => {
-                                setSelectedBranchId(branch.id);
-                              }}
+                              style={{ marginRight: 'var(--20px-V)' }}
+                              onClick={() => setShowAddBranchModal(true)}
                             >
-                              Select Branch
+                              Add New Branch
                             </button>
-                           <div style={{display:"flex", justifyContent:"center", marginTop:"10px"}}> <input type="checkbox" name="Lock to branch" id="" checked={branch?.lock || false}  onChange={(e)=>{
-                            setBranches((prev)=>prev.map((branch)=>branch.id===branch.id?{...branch, lock: e.target.checked}:branch))
-                           }} /> Lock this pc to this branch</div>
+                            {Branches.length > 0 && (
+                              <button
+                                onClick={() =>
+                                  setViewBranchManagementPage(false)
+                                }
+                              >
+                                Back
+                              </button>
+                            )}
                           </div>
-                        ))}
+                        </div>
 
-                        {Branches.length === 0 && (
-                          <div
-                            style={{
-                              width: '100%',
-                              textAlign: 'center',
-                              padding: 'var(--20px-V)',
-                              color: 'var(--Text-Color-60)',
-                            }}
-                          >
-                            No branches found. Click "Add New Branch" to create
-                            one.
+                        {isBranchesLoading ? (
+                          <div style={{
+                            display: 'flex',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            minHeight: '200px'
+                          }}>
+                            <img
+                              src={loadingGif}
+                              style={{ width: 'var(--50px-V)', height: 'var(--50px-V)' }}
+                              alt="Loading branches..."
+                            />
+                          </div>
+                        ) : (
+                          <div className="branch-list" style={{
+                            display: 'flex',
+                            flexWrap: 'wrap',
+                            gap: 'var(--20px-V)',
+                            overflowY: 'auto',
+                          }}>
+                            {Branches.map((branch) => (
+                              <div
+                                key={branch.id}
+                                className="branch-card"
+                                style={{
+                                  backgroundColor: 'var(--Secondary-Color20)',
+                                  borderRadius: 'var(--12px-V)',
+                                  padding: 'var(--25px-V)',
+                                  width: 'var(--390px-V)',
+                                  boxShadow: '0 var(--2px-V) var(--15px-V) rgba(0, 0, 0, 0.08)',
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                  gap: 'var(--20px-V)',
+                                  transition: 'transform 0.2s, box-shadow 0.2s',
+                                  cursor: 'default',
+                                  border: '1px solid var(--Border-Color)',
+                                  position: 'relative',
+                                }}
+                              >
+                                {/* Header Section */}
+                                <div style={{
+                                  display: 'flex',
+                                  justifyContent: 'space-between',
+                                  alignItems: 'center',
+                                  borderBottom: '1px solid var(--Border-Color)',
+                                  paddingBottom: 'var(--15px-V)'
+                                }}>
+                                  <h3 style={{
+                                    margin: 0,
+                                    fontSize: 'var(--24px-V)',
+                                    fontWeight: '600',
+                                    color: 'var(--Text-Color)'
+                                  }}>
+                                    {branch.name}
+                                  </h3>
+                                  <div style={{ display: 'flex', gap: 'var(--8px-V)' }}>
+                                    <button
+                                      className="appUserButtons"
+                                      onClick={() => handleStartEdit(branch)}
+                                      style={{
+                                        padding: 'var(--8px-V) var(--12px-V)',
+                                        fontSize: 'var(--14px-V)'
+                                      }}
+                                    >
+                                      Edit
+                                    </button>
+                                    <button
+                                      className="appUserButtons"
+                                      onClick={() => handleDeleteBranch(branch.id)}
+                                      style={{
+                                        padding: 'var(--8px-V) var(--12px-V)',
+                                        fontSize: 'var(--14px-V)'
+                                      }}
+                                    >
+                                      Delete
+                                    </button>
+                                  </div>
+                                </div>
+
+                                {/* Info Sections */}
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--20px-V)' }}>
+                                  {/* Location Section */}
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--5px-V)' }}>
+                                    <h4 style={{
+                                      margin: 0,
+                                      fontSize: 'var(--16px-V)',
+                                      color: 'var(--Text-Color-80)',
+                                      fontWeight: '600'
+                                    }}>
+                                      Location
+                                    </h4>
+                                    <p style={{
+                                      margin: 0,
+                                      fontSize: 'var(--15px-V)',
+                                      color: 'var(--Text-Color-60)',
+                                      lineHeight: '1.4'
+                                    }}>
+                                      {branch.location}
+                                    </p>
+                                  </div>
+
+                                  {/* Building Stats Section */}
+                                  <div style={{
+                                    display: 'grid',
+                                    gridTemplateColumns: 'repeat(2, 1fr)',
+                                    gap: 'var(--15px-V)',
+                                    backgroundColor: 'var(--Background-Color)',
+                                    padding: 'var(--15px-V)',
+                                    borderRadius: 'var(--8px-V)',
+                                    border: '1px solid var(--Border-Color)'
+                                  }}>
+                                    <StatItem label="Total Floors" value={branch.totalFloors || 0} />
+                                    <StatItem label="Total Rooms" value={branch.totalRooms || 0} />
+                                    <StatItem label="Total Tenants" value={branch.totalTenants || 0} />
+                                    <StatItem label="Occupied Rooms" value={branch.occupiedRooms || 0} />
+                                    <StatItem label="Vacant Rooms" value={branch.vacantRooms || 0} />
+                                  </div>
+
+                                  {/* Financial Section */}
+                                  <div style={{
+                                    backgroundColor: 'var(--Background-Color)',
+                                    padding: 'var(--15px-V)',
+                                    borderRadius: 'var(--8px-V)',
+                                    border: '1px solid var(--Border-Color)'
+                                  }}>
+                                    <h4 style={{
+                                      margin: 0,
+                                      marginBottom: 'var(--10px-V)',
+                                      fontSize: 'var(--16px-V)',
+                                      color: 'var(--Text-Color-80)',
+                                      fontWeight: '600'
+                                    }}>
+                                      Financial Overview
+                                    </h4>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                      <FinancialItem label="This Month Revenue" value={branch.monthlyRevenue?.toLocaleString() || 0} />
+                                      <FinancialItem label="This Month Expenses" value={branch.monthlyExpenses?.toLocaleString() || 0} />
+                                      <FinancialItem label="This Month Profit" value={branch.monthlyProfit?.toLocaleString() || 0} />
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Actions Section */}
+                                <div style={{
+                                  marginTop: 'auto',
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                  gap: 'var(--10px-V)',
+                                  borderTop: '1px solid var(--Border-Color)',
+                                  paddingTop: 'var(--15px-V)'
+                                }}>
+                                  <button
+                                    className="appUserButtons"
+                                    onClick={() => handleSelectBranch(branch.id)}
+                                    style={{
+                                      width: '100%',
+                                      padding: 'var(--12px-V)',
+                                      fontSize: 'var(--16px-V)',
+                                      fontWeight: '500',
+                                      background:"var(--Primary-Color)",
+                                      color:"var(--Text-Color-Reverse)"
+                                    }}
+                                  >
+                                    Select Branch
+                                  </button>
+                                  
+                                  <label style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 'var(--8px-V)',
+                                    fontSize: 'var(--14px-V)',
+                                    color: 'var(--Text-Color-60)',
+                                    justifyContent: 'center'
+                                  }}>
+                                    <input
+                                      type="checkbox"
+                                      checked={branch?.lock || false}
+                                      onChange={(e) => {
+                                        setBranches(prev =>
+                                          prev.map(brancha =>
+                                            brancha.id === branch.id
+                                              ? { ...brancha, lock: e.target.checked }
+                                              : brancha
+                                          )
+                                        );
+                                      }}
+                                      style={{ margin: 0 }}
+                                    />
+                                    Lock this PC to this branch
+                                  </label>
+                                </div>
+                              </div>
+                            ))}
+
+                            {Branches.length === 0 && (
+                              <div
+                                style={{
+                                  width: '100%',
+                                  textAlign: 'center',
+                                  padding: 'var(--20px-V)',
+                                  color: 'var(--Text-Color-60)',
+                                }}
+                              >
+                                No branches found. Click "Add New Branch" to
+                                create one.
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
-                    </div>
+                    )
                   ) : (
                     children
                   )}
@@ -1793,7 +1783,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
           >
             <div
               style={{
-                backgroundColor: 'var(--Secondary-Color20)',
+                backgroundColor: 'var(--Background-Color)',
                 padding: 'var(--20px-V)',
                 borderRadius: 'var(--8px-V)',
                 width: 'var(--400px-V)',
@@ -1832,6 +1822,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                       name: e.target.value,
                     }))
                   }
+                  placeholder="Enter Branch Name"
                   style={{
                     width: '100%',
                     padding: 'var(--8px-V)',
@@ -1856,6 +1847,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                       location: e.target.value,
                     }))
                   }
+                  placeholder="Enter Branch Location"
                   style={{
                     width: '100%',
                     padding: 'var(--8px-V)',
@@ -1879,39 +1871,37 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                       description: e.target.value,
                     }))
                   }
+                  placeholder="Enter Branch Description"
                   style={{
                     width: '100%',
                     padding: 'var(--8px-V)',
                     borderRadius: 'var(--4px-V)',
                     border: '1px solid var(--Text-Color-30)',
                     minHeight: '100px',
+                    resize: 'none',
                   }}
                 />
               </div>
-
-              <div style={{ marginBottom: 'var(--20px-V)' }}>
+             {/** <div style={{ marginBottom: 'var(--20px-V)' }}>
                 <label
                   style={{ display: 'block', marginBottom: 'var(--5px-V)' }}
                 >
                   Google Map Pin Point:
                 </label>
-                <input
-                  type="text"
-                  value={newBranchData.googleMapPinPoint}
-                  onChange={(e) =>
-                    setNewBranchData((prev) => ({
-                      ...prev,
-                      googleMapPinPoint: e.target.value,
-                    }))
-                  }
+                <iframe
+                  width="100%"
+                  height="450"
                   style={{
-                    width: '100%',
-                    padding: 'var(--8px-V)',
-                    borderRadius: 'var(--4px-V)',
                     border: '1px solid var(--Text-Color-30)',
+                    borderRadius: 'var(--4px-V)',
                   }}
-                />
-              </div>
+                  referrerPolicy="no-referrer-when-downgrade"
+                  src={`https://www.google.com/maps/embed/v1/place?key=YOUR_API_KEY
+                    &q=Space+Needle,Seattle+WA`}
+                  allowFullScreen
+                  loading="lazy"
+                ></iframe>
+              </div> */}
 
               <div
                 style={{
@@ -2075,7 +2065,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                 />
               </div>
 
-              <div style={{ marginBottom: 'var(--20px-V)' }}>
+              {/** <div style={{ marginBottom: 'var(--20px-V)' }}>
                 <label
                   style={{ display: 'block', marginBottom: 'var(--5px-V)' }}
                 >
@@ -2101,7 +2091,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                     border: '1px solid var(--Text-Color-30)',
                   }}
                 />
-              </div>
+              </div>*/}
 
               <div
                 style={{
@@ -2144,3 +2134,49 @@ const AccountManager = (React.FC<MyComponentProps> = ({
 });
 
 export default React.memo(AccountManager);
+// Helper components for consistent styling
+const StatItem = ({ label, value }) => (
+  <div style={{
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 'var(--2px-V)'
+  }}>
+    <span style={{
+      fontSize: 'var(--13px-V)',
+      color: 'var(--Text-Color-60)',
+      fontWeight: '500'
+    }}>
+      {label}
+    </span>
+    <span style={{
+      fontSize: 'var(--15px-V)',
+      color: 'var(--Text-Color)',
+      fontWeight: '600'
+    }}>
+      {value}
+    </span>
+  </div>
+);
+
+const FinancialItem = ({ label, value }) => (
+  <div style={{
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 'var(--2px-V)'
+  }}>
+    <span style={{
+      fontSize: 'var(--13px-V)',
+      color: 'var(--Text-Color-60)',
+      fontWeight: '500'
+    }}>
+      {label}
+    </span>
+    <span style={{
+      fontSize: 'var(--16px-V)',
+      color: 'var(--Text-Color)',
+      fontWeight: '600'
+    }}>
+      ${value}
+    </span>
+  </div>
+);

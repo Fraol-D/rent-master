@@ -6,7 +6,7 @@ import {
 import React, { useEffect, useMemo, useState } from 'react';
 import { getUserPrivileges } from 'renderer/App';
 
-const DatabasePage = ({ setChangeMade,SelectedAppUser }: any) => {
+const DatabasePage = ({ setChangeMade,SelectedAppUser,SelectedBranchId }: any) => {
   const [Data, setData] = useState<any[]>([]);
   const [searchConfig, setSearchConfig] = useState({ key: '', query: '' });
   const [mainSearch, setMainSearch] = useState('');
@@ -19,7 +19,7 @@ const DatabasePage = ({ setChangeMade,SelectedAppUser }: any) => {
   const privileges = useMemo(() => getUserPrivileges(SelectedAppUser), [SelectedAppUser]);
   const GetDataBaseData = async (TableName: string) => {
     try {
-      const DataRaw = await getValuesWithSql(TableName, 'WHERE 1');
+      const DataRaw = await getValuesWithSql(TableName, `WHERE 1 AND branchId = '${SelectedBranchId}'`);
       console.log(DataRaw);
       setData(DataRaw);
     } catch (error) {

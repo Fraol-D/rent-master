@@ -24,7 +24,7 @@ interface props {
   BrokerRecommendationList: BrokerRecommendationType[];
   DashboardSelectedPage: string;
   SelectedUserId: string;
-  setChangeMade: any;updateRoomPropertyLocal:any;updateRoomProperty:any;
+  setChangeMade: any;updateRoomPropertyLocal:any;updateRoomProperty:any;SelectedBranchId:any;
 }
 const DashboardPage: React.FC<props> = ({
   RoomList,
@@ -35,13 +35,13 @@ const DashboardPage: React.FC<props> = ({
   BrokerRecommendationList,
   DashboardSelectedPage,
   SelectedUserId,
-  setChangeMade,updateRoomPropertyLocal,updateRoomProperty
+  setChangeMade,updateRoomPropertyLocal,updateRoomProperty,SelectedBranchId
 }) => {
   const [expenses, setExpenses] = useState<expenses[]>([]);
 
   useEffect(() => {
     const fetchExpenses = async () => {
-      const expensesData = await getValuesWithSql('expenses', 'WHERE 1');
+      const expensesData = await getValuesWithSql('expenses', `WHERE 1 AND branchId = '${SelectedBranchId}'`);
       setExpenses(expensesData);
     };
     fetchExpenses();
@@ -54,11 +54,11 @@ const DashboardPage: React.FC<props> = ({
           style={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap' }}
         >
           <DashbRoomSummary RoomList={RoomList} />
-          <DashbTotalCollected RoomList={RoomList} tenantList={tenantList} />
+          <DashbTotalCollected RoomList={RoomList} tenantList={tenantList}SelectedBranchId={SelectedBranchId}/>
           <DashbPastPayments
             tenantList={tenantList}
             RoomList={RoomList}
-            roomPaymentInfoApi={roomPaymentInfoApi}
+            roomPaymentInfoApi={roomPaymentInfoApi}SelectedBranchId={SelectedBranchId}
             setChangeMade={setChangeMade}updateRoomPropertyLocal={updateRoomPropertyLocal}
             updateRoomProperty={updateRoomProperty}SelectedUserId={SelectedUserId}
           />
@@ -69,12 +69,12 @@ const DashboardPage: React.FC<props> = ({
               TenantList={tenantList}
               BrokerList={BrokerList}
               PastTenantReviews={PastTenantReviews}
-              BrokerRecommendationList={BrokerRecommendationList}
+              BrokerRecommendationList={BrokerRecommendationList}SelectedBranchId={SelectedBranchId}
             />
             <TenantGrowthWidget TenantList={tenantList} />
           </div>
-          <DashbOverAllTax RoomList={RoomList} tenantList={tenantList}/>
-          <UpcomingAgreements RoomList={RoomList} TenantList={tenantList} />
+          <DashbOverAllTax RoomList={RoomList} tenantList={tenantList}SelectedBranchId={SelectedBranchId}/>
+          <UpcomingAgreements RoomList={RoomList} TenantList={tenantList}SelectedBranchId={SelectedBranchId}/>
         </div>
       ) : DashboardSelectedPage === 'Email History' ? (
         <>
@@ -87,7 +87,7 @@ const DashboardPage: React.FC<props> = ({
       ) : DashboardSelectedPage === 'SMS History' ? (
         <></>
       ) : DashboardSelectedPage === 'Action History' ? (
-        <DashbActionHistoryDashboard />
+        <DashbActionHistoryDashboard SelectedBranchId={SelectedBranchId} />
       ) : DashboardSelectedPage === 'Expenses' ? (
         <div
           style={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap' }}
@@ -95,9 +95,9 @@ const DashboardPage: React.FC<props> = ({
           <DashbNetProfitTotalCollected
             RoomList={RoomList}
             expenses2={expenses}
-            tenantList={tenantList}
+            tenantList={tenantList}SelectedBranchId={SelectedBranchId}
           ></DashbNetProfitTotalCollected>
-          <DashbMonthlyExpenseTrendWidget expenses={expenses} />
+          <DashbMonthlyExpenseTrendWidget expenses={expenses} SelectedBranchId={SelectedBranchId}/>
           <DashbExpenseHistory expenses={expenses} />
           <DashbUpcomingExpensesWidget expenses={expenses} />
         </div>

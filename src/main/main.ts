@@ -44,26 +44,46 @@ class AppUpdater {
       token: process.env.GH_TOKEN, // Make sure you have this set
     });
 
+    // Handle update available with more info
+    autoUpdater.on('update-available', (info) => {
+      log.info('Update available:', info);
+      // Store update info
+      store.set('updateInfo', {
+        available: true,
+        version: info.version,
+        releaseNotes: info.releaseNotes,
+        releaseDate: info.releaseDate
+      });
+      mainWindow?.webContents.send('update-available', {
+        version: info.version,
+        releaseNotes: info.releaseNotes,
+        releaseDate: info.releaseDate,
+        path: info.path
+      });
+      autoUpdater.downloadUpdate();
+    });
+
     // Add error logging
     autoUpdater.on('error', (err) => {
       log.error('Update error:', err);
     });
 
-    // Handle update available
-    autoUpdater.on('update-available', (info) => {
-      log.info('Update available:', info);
-      autoUpdater.downloadUpdate();
-      mainWindow?.webContents.send('update-available');
-    });
-    // In your AppUpdater class or where you handle auto-updates
-    autoUpdater.on('update-available', (info) => {
-      mainWindow?.webContents.send('update-available', info);
+    autoUpdater.on('download-progress', (progressObj) => {
+      log.info(`Download progress: ${progressObj.percent}%`);
+      // Store progress
+      store.set('updateProgress', {
+        percent: progressObj.percent,
+        transferred: progressObj.transferred,
+        total: progressObj.total
+      });
+      mainWindow?.webContents.send('download-progress', {
+        percent: progressObj.percent,
+        transferred: progressObj.transferred,
+        total: progressObj.total,
+        bytesPerSecond: progressObj.bytesPerSecond,
+      });
     });
 
-    // Add this IPC handler
-    ipcMain.on('restart-app', () => {
-      autoUpdater.quitAndInstall(false, true);
-    });
     // Handle update downloaded
     autoUpdater.on('update-downloaded', () => {
       log.info('Update downloaded');
@@ -71,15 +91,9 @@ class AppUpdater {
       mainWindow?.webContents.send('update-downloaded');
     });
 
-    // Handle download progress with detailed info
-    autoUpdater.on('download-progress', (progressObj) => {
-      log.info(`Download progress: ${progressObj.percent}%`);
-      mainWindow?.webContents.send('download-progress', {
-        percent: progressObj.percent,
-        transferred: progressObj.transferred,
-        total: progressObj.total,
-        bytesPerSecond: progressObj.bytesPerSecond,
-      });
+    // Add this IPC handler
+    ipcMain.on('restart-app', () => {
+      autoUpdater.quitAndInstall(false, true);
     });
 
     // Check for updates
@@ -373,6 +387,7 @@ ipcMain.on('SendCustomEmail', async (event, message) => {
           templateId: message.templateId,
           mode: 'Manually',
           userId: user[0].id,
+          branchId: message.branchId,
         });
         return { success: true };
       } catch (error) {

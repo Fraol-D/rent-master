@@ -27,7 +27,7 @@ const AgreementViewerForRoom = ({
   roomPaymentInfoApi,
   handlePaymentRefresh,
   setChangeMade,
-  view,
+  view,SelectedBranchId
 }: any) => {
   const [Agreements, setAgreements] = useState<agreements[]>([]);
   const [CurrentAgreementIndex, setCurrentAgreementIndex] = useState(0);
@@ -128,7 +128,7 @@ const AgreementViewerForRoom = ({
           'room_pay_info_history',
           {
             ...payment,
-            agreementId: newAgreementId,
+            agreementId: newAgreementId, branchId: SelectedBranchId,
           },
           setChangeMade
         );

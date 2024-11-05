@@ -8,7 +8,7 @@ interface CalendarProps {
   rooms: RoomType[];
   initialMonths: number;
   initialMonthsPast: number;
-  tenantList: tenant[];
+  tenantList: tenant[];SelectedBranchId:any
 }
 
 interface Payment {
@@ -23,7 +23,7 @@ const CalendarGUI: React.FC<CalendarProps> = ({
   rooms,
   initialMonths,
   initialMonthsPast,
-  tenantList,
+  tenantList,SelectedBranchId
 }: CalendarProps) => {
   const [numberOfMonthsFuture, setNumberOfMonthsFuture] =
     useState(initialMonths);
@@ -72,13 +72,13 @@ const CalendarGUI: React.FC<CalendarProps> = ({
         // Get all actual payments for the selected years
         const actualPayments = await getValuesWithSql(
           'room_pay_info',
-          `WHERE Day >= ${yearStart.getTime()} AND Day <= ${yearEnd.getTime()}`
+          `WHERE Day >= ${yearStart.getTime()} AND Day <= ${yearEnd.getTime()} AND branchId = '${SelectedBranchId}'`
         );
 
         // Get historical payments
         const historicalPayments = await getValuesWithSql(
           'room_pay_info_history',
-          `WHERE Day >= ${yearStart.getTime()} AND Day <= ${yearEnd.getTime()}`
+          `WHERE Day >= ${yearStart.getTime()} AND Day <= ${yearEnd.getTime()} AND branchId = '${SelectedBranchId}'`
         );
 
         // Combine actual and historical payments
@@ -183,7 +183,9 @@ const CalendarGUI: React.FC<CalendarProps> = ({
       const width =
         baseWidth +
         (numberOfMonthsFuture + numberOfMonthsPast - 2) * additionalMonthWidth;
-      const height = filteredRooms.length * (70 * scaleFactor);
+      const minimumHeight = 100;
+      const calculatedHeight = filteredRooms.length * (70 * scaleFactor);
+      const height = Math.max(minimumHeight, calculatedHeight);
       const cellSize = 25 * scaleFactor;
       const margin = {
         top: 70  ,
@@ -249,7 +251,12 @@ const CalendarGUI: React.FC<CalendarProps> = ({
           .selectAll('text')
           .style('font-size', `${15 * scaleFactor}px`);
 
-        svg.append('g').call(xAxis).attr('transform', `translate(0, -0)`);
+        svg
+          .append('g')
+          .call(xAxis)
+          .attr('transform', `translate(0, -3)`)
+          .selectAll('text')
+          .style('font-size', `${14 * scaleFactor}px`);
 
         const yAxis = d3
           .axisLeft(yScale)

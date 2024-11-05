@@ -12,7 +12,7 @@ interface ActionHistoryItem {
   userId: string;
 }
 
-const DashbActionHistoryDashboard: React.FC = () => {
+const DashbActionHistoryDashboard: React.FC = ({SelectedBranchId}:any) => {
   const [history, setHistory] = useState<ActionHistoryItem[]>([]);
   const [filteredHistory, setFilteredHistory] = useState<ActionHistoryItem[]>(
     []
@@ -39,7 +39,7 @@ const DashbActionHistoryDashboard: React.FC = () => {
       try {
         const result = await getValuesWithSql(
           'action_history',
-          'ORDER BY action_date DESC'
+          `WHERE branchId = '${SelectedBranchId}' ORDER BY action_date DESC`
         );
         setHistory(result);
         setFilteredHistory(result.slice(0, limit));

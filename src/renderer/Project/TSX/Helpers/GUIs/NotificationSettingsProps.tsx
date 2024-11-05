@@ -10,7 +10,7 @@ interface NotificationSettingsProps {
   setNotificationSettings: (settings: number) => void;
   userId: string;
   setChangeMade: any;
-  roomId: string;
+  roomId: string;SelectedBranchId:any
 }
 
 interface EmailTemplate {
@@ -27,7 +27,7 @@ const NotificationSettingsTable: React.FC<NotificationSettingsProps> = ({
   setNotificationSettings,
   userId,
   setChangeMade,
-  roomId,
+  roomId,SelectedBranchId
 }) => {
   const [emailTemplates, setEmailTemplates] = useState<EmailTemplate[]>([]);
   const [selectedTemplates, setSelectedTemplates] = useState<
@@ -55,7 +55,7 @@ const NotificationSettingsTable: React.FC<NotificationSettingsProps> = ({
     const fetchSelectedTemplates = async () => {
       const selections = await getValuesWithSql(
         'notification_template_selections',
-        `WHERE userId = '${userId}'`
+        `WHERE userId = '${userId}' AND branchId = '${SelectedBranchId}'`
       );
       const selectionsMap = selections.reduce((acc, selection) => {
         const expectedId = `${roomId}_${selection.notification_type}`;
@@ -112,7 +112,7 @@ const NotificationSettingsTable: React.FC<NotificationSettingsProps> = ({
           id: `${roomId}_${notificationType}`,
           notification_type: notificationType,
           email_template_id: templateId,
-          userId: userId,
+          userId: userId, branchId: SelectedBranchId,
         },
         setChangeMade
       );

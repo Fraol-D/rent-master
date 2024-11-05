@@ -24,7 +24,7 @@ export function RoomListComponent({
   handleAddRoomButtonInitial,
   updateRoomPropertyLocal,
   agreementApi,
-  ShowArchived,setChangeMade,SelectedUserId,SelectedAppUser,roomListContainerRef
+  ShowArchived,setChangeMade,SelectedUserId,SelectedAppUser,roomListContainerRef,SelectedBranchId
 }: any) {
   // Sort the rooms based on floor and room number
   const sortedRooms = sortedAndFilteredRooms.sort((a, b) => {
@@ -152,7 +152,7 @@ export function RoomListComponent({
                   key={room.id}
                   setTenantList={setTenantList}
                   TenantList={TenantList}
-                  tenantAPI={tenantAPI}
+                  tenantAPI={tenantAPI}SelectedBranchId={SelectedBranchId}
                   pastTenantReviewApi={pastTenantReviewApi}SelectedAppUser={SelectedAppUser}
                 />
               ))

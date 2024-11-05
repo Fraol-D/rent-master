@@ -27,14 +27,14 @@ interface props {
   roomType: RoomType;
   TenantList: tenant[];
   setChangeMade: React.Dispatch<React.SetStateAction<number>>;
-  selectedUserId: string;
+  selectedUserId: string;SelectedBranchId:any;
 }
 
 const UtilityPanel: React.FC<props> = ({
   roomType,
   TenantList,
   setChangeMade,
-  selectedUserId,
+  selectedUserId,SelectedBranchId
 }) => {
   const [utilityData, setUtilityData] = useState<UtilityDateObject[]>([]);
   const [visiblePastUtilities, setVisiblePastUtilities] = useState(10);
@@ -316,6 +316,7 @@ const UtilityPanel: React.FC<props> = ({
             date: updatedPayment.ParentDate,
             roomId: roomType.id,
             userId: selectedUserId,
+            branchId: SelectedBranchId,
           },
           setChangeMade
         );
@@ -395,7 +396,7 @@ const UtilityPanel: React.FC<props> = ({
             paid: updatedPayment.paid ? 1 : 0,
             date: updatedPayment.ParentDate,
             roomId: roomType.id,
-            userId: selectedUserId,
+            userId: selectedUserId, branchId: SelectedBranchId,
           },
           setChangeMade
         );
@@ -482,7 +483,7 @@ const UtilityPanel: React.FC<props> = ({
             custom: updatedPayment.custom ? 1 : 0,
             paid: updatedPayment.paid ? 1 : 0,
             date: updatedPayment.ParentDate,
-            roomId: roomType.id,
+            roomId: roomType.id, branchId: SelectedBranchId,
             userId: selectedUserId,
           },
           setChangeMade
@@ -560,7 +561,7 @@ const UtilityPanel: React.FC<props> = ({
             custom: updatedPayment.custom ? 1 : 0,
             paid: updatedPayment.paid ? 1 : 0,
             date: updatedPayment.ParentDate,
-            roomId: roomType.id,
+            roomId: roomType.id, branchId: SelectedBranchId,
             userId: selectedUserId,
           },
           setChangeMade

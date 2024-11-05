@@ -6,13 +6,13 @@ const TopPerformingUnits = ({
   TenantList,
   BrokerList,
   PastTenantReviews,
-  BrokerRecommendationList,
+  BrokerRecommendationList,SelectedBranchId
 }: {
   RoomList: RoomType[];
   TenantList: tenant[];
   BrokerList: BrokerType[];
   PastTenantReviews: PastTenantReviewType[];
-  BrokerRecommendationList: BrokerRecommendationType[];
+  BrokerRecommendationList: BrokerRecommendationType[];SelectedBranchId:any
 }) => {
   const [activeTab, setActiveTab] = useState('brokers');
   const [showAll, setShowAll] = useState(false);
@@ -62,7 +62,7 @@ const TopPerformingUnits = ({
   useEffect(() => {
     const GetRoomPayment = async () => {
       try {
-        const rawPayment = await getValuesWithSql('room_pay_info');
+        const rawPayment = await getValuesWithSql('room_pay_info',`WHERE branchId = '${SelectedBranchId}'`);
         if (rawPayment.length > 0) {
           setRoomPayInfo(rawPayment);
         }

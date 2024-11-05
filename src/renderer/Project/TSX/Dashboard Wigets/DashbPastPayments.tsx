@@ -14,11 +14,11 @@ interface Payment {
 const DashbPastPayments = ({
   tenantList,
   RoomList,
-  roomPaymentInfoApi,setChangeMade,updateRoomPropertyLocal,updateRoomProperty,SelectedUserId
+  roomPaymentInfoApi,setChangeMade,updateRoomPropertyLocal,updateRoomProperty,SelectedUserId,SelectedBranchId
 }: {
   tenantList: tenant[];
   RoomList: RoomType[];
-  roomPaymentInfoApi: any;
+  roomPaymentInfoApi: any;SelectedBranchId:any;
   setChangeMade:any;updateRoomPropertyLocal:any;updateRoomProperty:any;SelectedUserId:string;
 }) => {
   const [PastPaymentList, setPastPaymentList] = useState<
@@ -41,7 +41,7 @@ const DashbPastPayments = ({
       // Get all actual payments for the current year
       const actualPayments = await getValuesWithSql(
         'room_pay_info',
-        `WHERE Day >= ${yearStart.getTime()} AND Day <= ${yearEnd.getTime()}`
+        `WHERE Day >= ${yearStart.getTime()} AND Day <= ${yearEnd.getTime()} AND branchId = '${SelectedBranchId}'`
       );
 
       for (const room of RoomList) {
@@ -479,6 +479,7 @@ const DashbPastPayments = ({
             }}
           >
             <PaymentProgressBarGUI
+            SelectedBranchId={SelectedBranchId}
               refresh={handlePaymentRefresh}
               paymentData={
                 predictedPayments.filter(

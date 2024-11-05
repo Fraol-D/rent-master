@@ -304,6 +304,7 @@ const addRowToOfflineChanges = async (
           performed_by: performedBy,
           action_date: actionDate,
           userInfo: userInfoString,
+          branchId: window.electron.store.get('SelectedBranchId'),
           userId: userId,
         },
         setChangeMade

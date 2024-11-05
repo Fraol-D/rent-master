@@ -7,7 +7,7 @@ export function CalendarPage({
   RoomList,
   filterOptions,
   removeFilterOption,
-  tenantList,
+  tenantList,SelectedBranchId
 }: any) {
   useEffect(() => {
     console.log(sortedAndFilteredRooms);
@@ -30,7 +30,7 @@ export function CalendarPage({
           )}
           initialMonths={1}
           initialMonthsPast={1}
-          tenantList={tenantList}
+          tenantList={tenantList}SelectedBranchId={SelectedBranchId}
         ></CalendarGUI>
       </div>
     </>

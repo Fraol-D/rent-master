@@ -3,10 +3,10 @@ import React, { useEffect, useState } from 'react';
 
 const UpcomingAgreements = ({
   RoomList,
-  TenantList,
+  TenantList,SelectedBranchId
 }: {
   RoomList: RoomType[];
-  TenantList: tenant[];
+  TenantList: tenant[];SelectedBranchId:any
 }) => {
   const [upcomingAgreements, setUpcomingAgreements] = useState<agreements[]>(
     []
@@ -19,7 +19,7 @@ const UpcomingAgreements = ({
 
       const agreementsData = await getValuesWithSql(
         'agreements',
-        `WHERE endTime > ${currentTime} AND endTime <= ${thresholdTime}`
+        `WHERE endTime > ${currentTime} AND endTime <= ${thresholdTime} AND branchId = '${SelectedBranchId}'`
       );
       // Filter out agreements that are not currently selected for any room
       const filteredAgreements = agreementsData.filter((agreement) => {

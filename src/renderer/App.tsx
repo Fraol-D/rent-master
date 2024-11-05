@@ -15,8 +15,12 @@ import {
   updateValue,
 } from 'Backend/localServerApis';
 import AccountManager from './Project/TSX/Sign up and login/AccountManager';
-import { SignOutUser, Upload } from 'Backend/OnlineServerApis';
-import { addDays, addMonths, addYears, differenceInDays } from 'date-fns';
+import {
+  getValuesWithSql_Online,
+  SignOutUser,
+  Upload,
+} from 'Backend/OnlineServerApis';
+import { addDays, addMonths, addYears, differenceInDays, isAfter, isBefore } from 'date-fns';
 import { Payment } from 'electron';
 declare global {}
 function Hello() {
@@ -163,7 +167,12 @@ function Hello() {
   };
   class RoomApi {
     getRoomFromApi = async () => {
-      const roomsRaw = await getValuesWithSql('rooms', 'WHERE 1');
+      let useBranchId = window.electron.store.get('SelectedBranchId');
+      const roomsRaw = await getValuesWithSql(
+        'rooms',
+        `WHERE 1 AND branchId = '${useBranchId}'`
+      );
+
       if (roomsRaw) {
         const rooms = await Promise.all(
           roomsRaw.map(async (room: RoomType) => {
@@ -314,6 +323,7 @@ function Hello() {
             utilityPaymentStartDate: 0,
             utilityPaymentUseDifferentStartDate: 0,
             userId: SelectedUserId || '',
+            branchId: SelectedBranchId,
           },
           setChangeMade
         );
@@ -358,7 +368,7 @@ function Hello() {
     getRoomSpecificationApi = async (roomID: string) => {
       const roomSpecificationsRaw = await getValuesWithSql(
         'room_specifications',
-        `WHERE roomId = '${roomID}'`
+        `WHERE roomId = '${roomID}' AND branchId = '${SelectedBranchId}'`
       );
       if (roomSpecificationsRaw) {
         return roomSpecificationsRaw.map(
@@ -394,6 +404,7 @@ function Hello() {
             type: type,
             Boolean: Boolean,
             userId: SelectedUserId,
+            branchId: SelectedBranchId,
           },
           setChangeMade
         );
@@ -431,7 +442,12 @@ function Hello() {
   class TenantApi {
     getTenantsApi = async () => {
       try {
-        const tenantsRaw = await getValuesWithSql('tenants', 'WHERE 1');
+        let useBranchId = window.electron.store.get('SelectedBranchId');
+
+        const tenantsRaw = await getValuesWithSql(
+          'tenants',
+          `WHERE 1 AND branchId = '${useBranchId}'`
+        );
         if (tenantsRaw) {
           const tenants = await Promise.all(
             tenantsRaw.map(async (tenant: tenant) => {
@@ -495,6 +511,7 @@ function Hello() {
             RentReason: RentReason,
             AddedTime: AddedTime,
             userId: SelectedUserId,
+            branchId: SelectedBranchId,
           },
           setChangeMade
         );
@@ -622,7 +639,7 @@ function Hello() {
       try {
         const pastTenantReviewRaw = await getValuesWithSql(
           'PastTenantsForRoom',
-          `WHERE 1`
+          `WHERE 1 AND branchId = '${SelectedBranchId}'`
         );
 
         if (pastTenantReviewRaw) {
@@ -658,7 +675,12 @@ function Hello() {
   class BrokerApi {
     getBrokersApi = async () => {
       try {
-        const brokersRaw = await getValuesWithSql('brokers', 'WHERE 1');
+        let useBranchId = window.electron.store.get('SelectedBranchId');
+
+        const brokersRaw = await getValuesWithSql(
+          'brokers',
+          `WHERE 1 AND branchId = '${useBranchId}'`
+        );
         if (brokersRaw) {
           const brokers = brokersRaw.map((broker: BrokerType) => {
             return {
@@ -684,7 +706,7 @@ function Hello() {
       try {
         await addValue(
           'brokers',
-          { ...broker, userId: SelectedUserId },
+          { ...broker, userId: SelectedUserId, branchId: SelectedBranchId },
           setChangeMade
         );
         await this.getBrokersApi();
@@ -739,6 +761,7 @@ function Hello() {
             recommendedTenantId,
             AddedTime,
             AgreedCommission,
+            branchId: SelectedBranchId,
             userId: SelectedUserId,
           },
           setChangeMade
@@ -751,7 +774,7 @@ function Hello() {
       try {
         const brokerRecommendationsRaw = await getValuesWithSql(
           'brokersRecommendationList',
-          'WHERE 1'
+          `WHERE 1 AND branchId = '${SelectedBranchId}'`
         );
         if (brokerRecommendationsRaw) {
           const brokerRecommendations = brokerRecommendationsRaw.map(
@@ -774,7 +797,10 @@ function Hello() {
   class AgreementApi {
     getAgreementsApi = async () => {
       try {
-        const agreementsRaw = await getValuesWithSql('agreements', 'WHERE 1');
+        const agreementsRaw = await getValuesWithSql(
+          'agreements',
+          `WHERE 1 AND branchId = '${SelectedBranchId}'`
+        );
         if (agreementsRaw) {
           return agreementsRaw.map((agreement: agreements) => ({
             id: agreement.id,
@@ -905,6 +931,7 @@ function Hello() {
             RentReserved,
             representative,
             userId: SelectedUserId,
+            branchId: SelectedBranchId,
           },
           setChangeMade
         );
@@ -923,14 +950,34 @@ function Hello() {
   const agreementApi = new AgreementApi();
   // On start
   useEffect(() => {
+    const branchId = window.electron.store.get('SelectedBranchId');
+    setSelectedBranchId(branchId);
     RefreshDataFromSqlite();
   }, []);
   const RefreshDataFromSqlite = () => {
-    roomAPI.getRoomFromApi();
-    brokerApi.getBrokersApi();
-    tenantAPI.getTenantsApi();
-    pastTenantReviewApi.getPastTenantReviewLatestApi();
-    brokersRecommendationListApi.getBrokerRecommendationsFromApi();
+    const branchId = window.electron.store.get('SelectedBranchId');
+    setSelectedBranchId(branchId);
+
+    if (branchId) {
+      roomAPI.getRoomFromApi();
+      brokerApi.getBrokersApi();
+      tenantAPI.getTenantsApi();
+      pastTenantReviewApi.getPastTenantReviewLatestApi();
+      brokersRecommendationListApi.getBrokerRecommendationsFromApi();
+    } else {
+      if (!window.electron.store.get('LockBranchToPc'))
+        setViewBranchManagementPage(true);
+      else {
+        alert(
+          'Please select a branch to continue, user is not allowed to switch branches.'
+        );
+        setViewBranchManagementPage(true);
+        setViewBranchManagementPageNONAdm(true);
+      }
+    }
+   
+      getBranchName(branchId);
+    
   };
 
   const [ThemeMode, setThemeMode] = useState<'light' | 'dark'>('light');
@@ -967,7 +1014,9 @@ function Hello() {
   const signOutUserAndRestart = async () => {
     await SignOutUser();
     window.electron.store.set('MainBackupPath', '');
-    window.electron.store.set('IsOnBackup', false);
+    window.electron.store.set('SelectedBranchId', '');
+    window.electron.store.set('MainBackupPath', '');
+    window.electron.store.set('LockBranchToPc', false);
     window.electron.store.set('users', []);
     setRefresh(Refresh + 1);
     setisSignedIn(false);
@@ -1024,8 +1073,6 @@ function Hello() {
       setChangeMade(0);
       setUploadProgress(0);
       setUploadingLoadingEffect(false);
-      
-
     }
   };
   useEffect(() => {
@@ -1117,7 +1164,10 @@ function Hello() {
     return 'non'; // Default fallback
   });
 
-  const [ViewBranchManagementPage, setViewBranchManagementPage] = useState(false);
+  const [ViewBranchManagementPage, setViewBranchManagementPage] =
+    useState(false);
+  const [ViewBranchManagementPageNONAdm, setViewBranchManagementPageNONAdm] =
+    useState(false);
   const [SelectedBranchId, setSelectedBranchId] = useState('');
 
   const privileges = getUserPrivileges(SelectedAppUser);
@@ -1137,6 +1187,144 @@ function Hello() {
 
     return () => clearTimeout(timer);
   }, [SelectedAppUser]);
+  const [branchName, setBranchName] = useState('');
+
+  const getBranchName = async (branchId: string) => {
+    if (navigator.onLine) {
+      try {
+        const branch = await getValuesWithSql_Online(
+          'branches',
+        `WHERE id = '${branchId}'`
+      );
+      if (branch && branch.length > 0) {
+        setBranchName(branch[0].name);
+      } else {
+        console.error('Branch not found');
+      }
+    } catch (error) {
+        console.error('Error fetching branch name:', error);setBranchName(window.electron.store.get('BranchName'));
+      }
+    } else {
+      setBranchName(window.electron.store.get('BranchName'));
+    }
+  };
+  const generateRecurringExpenses = (
+    expenses: expenses[],
+    startDate: Date,
+    endDate: Date
+  ): expenses[] => {
+    let allExpenses: expenses[] = [];
+
+    expenses.forEach((expense) => {
+      if (expense.doesReoccur) {
+        let currentDate = new Date(expense.date);
+        while (isBefore(currentDate, endDate)) {
+          if (isAfter(currentDate, startDate)) {
+            allExpenses.push({
+              ...expense,
+              date: currentDate.getTime(),
+            });
+          }
+          currentDate = addDays(currentDate, expense.recurringCycle);
+        }
+      } else {
+        allExpenses.push(expense);
+      }
+    });
+
+    return allExpenses;
+  };
+  const fetchBranches = async () => {
+    if (ViewBranchManagementPage) {
+      const branches = await getValuesWithSql_Online(
+        'branches',
+        `WHERE userId = '${SelectedUserId}'`
+      );
+
+      const branchesWithData = await Promise.all(
+        branches.map(async (branch: BranchType) => {
+          const allRooms = await getValuesWithSql_Online(
+            'rooms',
+            `WHERE branchId = '${branch.id}'`
+          ) || [];
+          
+          const allTenants = await getValuesWithSql_Online(
+            'tenants',
+            `WHERE branchId = '${branch.id}'`
+          ) || [];
+
+          // Get all actual payments for the current month
+          const today = new Date();
+          const currentMonth = today.getMonth();
+          const currentYear = today.getFullYear();
+          const monthStart = new Date(currentYear, currentMonth, 1);
+          const monthEnd = new Date(currentYear, currentMonth + 1, 0);
+
+          const actualPayments = await getValuesWithSql_Online(
+            'room_pay_info',
+            `WHERE Day >= ${monthStart.getTime()} 
+             AND Day <= ${monthEnd.getTime()} 
+             AND branchId = '${branch.id}'
+             AND Paid = 1`
+          );
+
+          // Get historical payments for the current month
+          const historicalPayments = await getValuesWithSql_Online(
+            'room_pay_info_history',
+            `WHERE Day >= ${monthStart.getTime()} 
+             AND Day <= ${monthEnd.getTime()} 
+             AND branchId = '${branch.id}'
+             AND Paid = 1`
+          );
+
+          // Calculate monthly revenue from actual collected payments
+          const monthlyRevenue = [...actualPayments, ...historicalPayments]
+            .reduce((sum, payment) => parseFloat(sum) + parseFloat(payment.Value), 0);
+
+          // Calculate other branch statistics
+          const totalRooms = allRooms.length;
+          const totalFloors = Math.max(...allRooms.map(room => room.floor)) === -Infinity
+            ? 0
+            : Math.max(...allRooms.map(room => room.floor));
+          const totalTenants = allTenants.length;
+          const occupiedRooms = allRooms.filter(room => room.tenantId !== '').length;
+          const vacantRooms = totalRooms - occupiedRooms;
+
+          // Calculate expenses and profit
+          const branchExpenses = await getValuesWithSql_Online(
+            'expenses',
+            `WHERE branchId = '${branch.id}'`
+          ) || [];
+
+          const allMonthExpenses = generateRecurringExpenses(branchExpenses, monthStart, monthEnd);
+          const monthlyExpenses = allMonthExpenses
+            .filter(e => new Date(e.date) >= monthStart && new Date(e.date) <= monthEnd)
+            .reduce((sum, e) => sum + parseFloat(e.price), 0);
+
+          const monthlyProfit = monthlyRevenue - monthlyExpenses;
+
+          return {
+            ...branch,
+            totalRooms,
+            totalFloors,
+            totalTenants,
+            occupiedRooms,
+            vacantRooms,
+            monthlyRevenue,
+            monthlyExpenses,
+            monthlyProfit,
+            unpaidPastPayments: 0, // This should be calculated if needed
+            userAccountsWhichHaveAccess: [], // This should be populated if needed
+          };
+        })
+      );
+
+      console.log(branchesWithData);
+      setBranches(branchesWithData);
+    }
+  };
+  const [Branches, setBranches] = useState<BranchTypeWithData[]>([]);
+
   return (
     <>
       {SyncProgress >= 1 && SyncProgress <= 99 && (
@@ -1174,6 +1362,11 @@ function Hello() {
         setViewBranchManagementPage={setViewBranchManagementPage}
         SelectedBranchId={SelectedBranchId}
         setSelectedBranchId={setSelectedBranchId}
+        setViewBranchManagementPageNONAdm={setViewBranchManagementPageNONAdm}
+        ViewBranchManagementPageNONAdm={ViewBranchManagementPageNONAdm}
+        fetchBranches={fetchBranches}
+        Branches={Branches}
+        setBranches={setBranches}setBranchName={setBranchName}
       >
         <>
           <NavBar
@@ -1192,13 +1385,17 @@ function Hello() {
             Image={''}
             ShopName={'The company'}
             ThemeMode={ThemeMode}
+            setViewBranchManagementPageNONAdm={
+              setViewBranchManagementPageNONAdm
+            }branchName={branchName}
             setThemeMode={ChangeTheme}
             ChangeTheme={ChangeTheme}
             signOutUserAndRestart={signOutUserAndRestart}
             setAppUserManagerShow={setAppUserManagerShow}
             setAppUserManagerPromptPassword={setAppUserManagerPromptPassword}
             SelectedAppUser={SelectedAppUser}
-            setChangeMade={setChangeMade}setViewBranchManagementPage={setViewBranchManagementPage}
+            setChangeMade={setChangeMade}
+            setViewBranchManagementPage={setViewBranchManagementPage}
           ></NavBar>
           <MainPage
             roomSpecificationAPI={roomSpecificationAPI}
@@ -1225,6 +1422,7 @@ function Hello() {
             setChangeMade={setChangeMade}
             SelectedAppUser={SelectedAppUser}
             SelectedUserId={SelectedUserId}
+            SelectedBranchId={SelectedBranchId}
           />
         </>
       </AccountManager>

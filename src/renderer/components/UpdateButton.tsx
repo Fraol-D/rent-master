@@ -7,25 +7,40 @@ interface UpdateStatus {
   downloadedSize: number;
   ready: boolean;
   updateAvailable: boolean;
+  newVersion: string;
+  releaseNotes: string;
 }
 
 export const UpdateButton = () => {
-  const [status, setStatus] = useState<UpdateStatus>({
-    downloading: false,
-    progress: 0,
-    totalSize: 0,
-    downloadedSize: 0,
-    ready: false,
-    updateAvailable: false
+  const [status, setStatus] = useState<UpdateStatus>(() => {
+    // Initialize from electron-store
+    const updateInfo = window.electron.store.get('updateInfo') || {};
+    const updateProgress = window.electron.store.get('updateProgress') || {};
+    const updateReady = window.electron.store.get('updateReady') || false;
+
+    return {
+      downloading: !!updateProgress.percent,
+      progress: updateProgress.percent || 0,
+      totalSize: updateProgress.total || 0,
+      downloadedSize: updateProgress.transferred || 0,
+      ready: updateReady,
+      updateAvailable: updateInfo.available || false,
+      newVersion: updateInfo.version || '',
+      releaseNotes: updateInfo.releaseNotes || ''
+    };
   });
   
   const listenersSet = useRef(false);
 
   useEffect(() => {
     if (!listenersSet.current) {
-      // Check if update is available
-      window.electron.ipcRenderer.on('update-available', () => {
-        setStatus(prev => ({ ...prev, updateAvailable: true }));
+      window.electron.ipcRenderer.on('update-available', (info: any) => {
+        setStatus(prev => ({ 
+          ...prev, 
+          updateAvailable: true,
+          newVersion: info.version,
+          releaseNotes: info.releaseNotes
+        }));
       });
 
       window.electron.ipcRenderer.on('download-progress', (progressObj: any) => {
@@ -50,10 +65,19 @@ export const UpdateButton = () => {
 
       listenersSet.current = true;
     }
+
+    // Cleanup function
+    return () => {
+      // We don't remove listeners, but we can clean up other resources if needed
+    };
   }, []);
 
   const handleUpdate = () => {
     if (status.ready) {
+      // Clear stored update info
+      window.electron.store.set('updateInfo', null);
+      window.electron.store.set('updateProgress', null);
+      window.electron.store.set('updateReady', false);
       window.electron.ipcRenderer.send('restart-app');
     }
   };
@@ -75,10 +99,17 @@ export const UpdateButton = () => {
     <div className="update-container">
       <div className="update-status">
         <div className="update-header">
-          {status.downloading ? 'Downloading Update...' : 
-           status.ready ? 'Update Ready to Install' : 
+          {status.downloading ? `Downloading v${status.newVersion}...` : 
+           status.ready ? `Ready to Install v${status.newVersion}` : 
            'Checking for Updates...'}
         </div>
+        
+        {status.releaseNotes && (
+          <div className="release-notes">
+            <h4>What's New in v{status.newVersion}:</h4>
+            <div dangerouslySetInnerHTML={{ __html: status.releaseNotes }} />
+          </div>
+        )}
         
         {(status.downloading || status.ready) && (
           <>

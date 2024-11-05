@@ -13,7 +13,7 @@ interface Payment {
   roomId: string;
 }
 
-const DashbOverAllTax = ({ RoomList, tenantList }: { RoomList: RoomType[], tenantList: tenant[] }) => {
+const DashbOverAllTax = ({ RoomList, tenantList,SelectedBranchId }: { RoomList: RoomType[], tenantList: tenant[],SelectedBranchId:any }) => {
   const [showBy, setShowBy] = useState<'Monthly' | 'Yearly'>('Monthly');
   const [selectedDate, setSelectedDate] = useState(
     new Date().getFullYear().toString()
@@ -30,13 +30,13 @@ const DashbOverAllTax = ({ RoomList, tenantList }: { RoomList: RoomType[], tenan
       // Get all actual payments for the selected year range
       const actualPayments = await getValuesWithSql(
         'room_pay_info',
-        `WHERE Day >= ${yearStart.getTime()} AND Day <= ${yearEnd.getTime()}`
+        `WHERE Day >= ${yearStart.getTime()} AND Day <= ${yearEnd.getTime()} AND branchId = '${SelectedBranchId}'`
       );
 
       // Get historical payments
       const historicalPayments = await getValuesWithSql(
         'room_pay_info_history',
-        `WHERE Day >= ${yearStart.getTime()} AND Day <= ${yearEnd.getTime()}`
+        `WHERE Day >= ${yearStart.getTime()} AND Day <= ${yearEnd.getTime()} AND branchId = '${SelectedBranchId}'`
       );
 
       // Map all payments (including unpaid ones for tax calculation)

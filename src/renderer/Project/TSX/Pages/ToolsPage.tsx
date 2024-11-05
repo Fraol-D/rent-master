@@ -31,7 +31,7 @@ const ToolsPage = ({
   setToolsSelectedPage,
   ToolsSelectedPage,
   setChangeMade,
-  SelectedUserId,SelectedAppUser
+  SelectedUserId,SelectedAppUser,SelectedBranchId
 }: any) => {
   const [emailTemplates, setEmailTemplates] = useState<EmailTemplate[]>([]);
   const [smsTemplates, setSMSTemplates] = useState<SMSTemplate[]>([]);
@@ -119,7 +119,7 @@ const ToolsPage = ({
     } else if (ToolsSelectedPage === 'Expense Manager') {
       
       const getExpenses = async () => {
-        const expenses = await getValuesWithSql('expenses', 'WHERE 1');
+        const expenses = await getValuesWithSql('expenses', `WHERE 1 AND branchId = '${SelectedBranchId}'`);
         setExpenses(expenses);
       };
       getExpenses();
@@ -325,6 +325,7 @@ const ToolsPage = ({
               userEmail: userEmail,
               userPassword: userPass,
               SelectedUserId: SelectedUserId,
+              branchId: SelectedBranchId,
               templateId: template.id,
             });
 
@@ -470,6 +471,7 @@ const ToolsPage = ({
         roomId: newExpense.roomId,
         doesReoccur: newExpense.doesReoccur,
         recurringCycle: newExpense.recurringCycle,
+        branchId: SelectedBranchId,
       },
       setChangeMade
     );

@@ -15,12 +15,12 @@ import {
 import { axisClasses } from '@mui/x-charts/ChartsAxis';
 
 interface MonthlyExpenseTrendWidgetProps {
-  expenses: expenses[];
+  expenses: expenses[];SelectedBranchId:any
 }
 
 const DashbMonthlyExpenseTrendWidget: React.FC<
   MonthlyExpenseTrendWidgetProps
-> = () => {
+> = ({SelectedBranchId}) => {
   const [showBy, setShowBy] = useState<'Monthly' | 'Yearly'>('Monthly');
   const [selectedDate, setSelectedDate] = useState(
     new Date().getFullYear().toString()
@@ -29,7 +29,7 @@ const DashbMonthlyExpenseTrendWidget: React.FC<
 
   useEffect(() => {
     const fetchExpenses = async () => {
-      const expensesData = await getValuesWithSql('expenses', 'WHERE 1');
+      const expensesData = await getValuesWithSql('expenses', `WHERE 1 AND branchId = '${SelectedBranchId}'`);
       setExpensesData(expensesData);
     };
     fetchExpenses();

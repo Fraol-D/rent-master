@@ -655,7 +655,165 @@ export const syncOnlineToLocalWithBool = async (
   }
 };
 
+// Version 1: Basic branch sync
+export const syncOnlineToLocalBranch = async (SelectedUserId, BranchId) => {
+  console.log(`Starting branch sync process for user: ${SelectedUserId}, branch: ${BranchId}`);
 
+  for (const table of tables) {
+    console.log(`Processing table: ${table}`);
+
+    const onlineData = await getValuesWithSql_Online(
+      table, 
+      `WHERE userId = '${SelectedUserId}'`
+    );
+
+    const localData = await fetchDataFromLocalDatabase(table);
+
+    if (table === 'action_history') {
+      await syncActionHistory(onlineData, localData, SelectedUserId);
+      continue;
+    }
+
+    const onlineDataMap = new Map(onlineData.map((row) => [row.id, row]));
+    const localDataMap = new Map(localData.map((row) => [row.id, row]));
+
+    let updatedRows = 0;
+    let addedRows = 0;
+    let skippedRows = 0;
+
+    for (const [id, onlineRow] of onlineDataMap.entries()) {
+      // Skip if wrong user or branch
+      if (onlineRow.userId !== SelectedUserId || 
+          (onlineRow.branchId && onlineRow.branchId !== BranchId)) {
+        skippedRows++;
+        continue;
+      }
+
+      if (localDataMap.has(id)) {
+        const localRow = localDataMap.get(id);
+        if (!areObjectsEqual(onlineRow, localRow)) {
+          await updateLocalRecord(table, id, onlineRow);
+          updatedRows++;
+        }
+      } else {
+        await addLocalRecord(table, onlineRow);
+        addedRows++;
+      }
+    }
+  }
+
+  return 'Branch sync completed';
+};
+
+// Version 2: With progress callback
+export const syncOnlineToLocalBranchWithCallback = async (
+  SelectedUserId,
+  BranchId,
+  setSyncProgress
+) => {
+  let completedTables = 0;
+  const totalTables = tables.length;
+
+  for (const table of tables) {
+    const onlineData = await getValuesWithSql_Online(
+      table,
+      `WHERE userId = '${SelectedUserId}'`
+    );
+    const localData = await fetchDataFromLocalDatabase(table);
+
+    if (table === 'action_history') {
+      await syncActionHistory(onlineData, localData, SelectedUserId);
+    } else {
+      const onlineDataMap = new Map(onlineData.map((row) => [row.id, row]));
+      const localDataMap = new Map(localData.map((row) => [row.id, row]));
+
+      for (const [id, onlineRow] of onlineDataMap.entries()) {
+        // Skip if wrong user or branch
+        if (onlineRow.userId !== SelectedUserId || 
+            (onlineRow.branchId && onlineRow.branchId !== BranchId)) {
+          continue;
+        }
+
+        if (localDataMap.has(id)) {
+          const localRow = localDataMap.get(id);
+          if (!areObjectsEqual(onlineRow, localRow)) {
+            await updateLocalRecord(table, id, onlineRow);
+          }
+        } else {
+          await addLocalRecord(table, onlineRow);
+        }
+      }
+    }
+
+    completedTables++;
+    const progress = (completedTables / totalTables) * 100;
+    setSyncProgress(progress);
+  }
+
+  return 'Branch sync completed';
+};
+
+// Version 3: With full state management
+export const syncOnlineToLocalBranchWithBool = async (
+  SelectedUserId,
+  BranchId,
+  setIsSyncing,
+  setSyncProgress,
+  RefreshDataFromSqlite
+) => {
+  try {
+    setIsSyncing(true);
+    setSyncProgress(0);
+
+    const totalSteps = tables.length;
+    let currentStep = 0;
+
+    for (const table of tables) {
+      const onlineData = await getValuesWithSql_Online(
+        table,
+        `WHERE userId = '${SelectedUserId}'`
+      );
+      const localData = await fetchDataFromLocalDatabase(table);
+
+      if (table === 'action_history') {
+        await syncActionHistory(onlineData, localData, SelectedUserId);
+      } else {
+        const onlineDataMap = new Map(onlineData.map((row) => [row.id, row]));
+        const localDataMap = new Map(localData.map((row) => [row.id, row]));
+
+        for (const [id, onlineRow] of onlineDataMap.entries()) {
+          // Skip if wrong user or branch
+          if (onlineRow.userId !== SelectedUserId || 
+              (onlineRow.branchId && onlineRow.branchId !== BranchId)) {
+            continue;
+          }
+
+          if (localDataMap.has(id)) {
+            const localRow = localDataMap.get(id);
+            if (!areObjectsEqual(onlineRow, localRow)) {
+              await updateLocalRecord(table, id, onlineRow);
+            }
+          } else {
+            await addLocalRecord(table, onlineRow);
+          }
+        }
+      }
+
+      currentStep++;
+      setSyncProgress((currentStep / totalSteps) * 100);
+    }
+
+    setSyncProgress(100);
+    setIsSyncing(false);
+    RefreshDataFromSqlite();
+    return 'Branch sync completed';
+
+  } catch (error) {
+    console.error('Error during branch sync:', error);
+    setIsSyncing(false);
+    throw error;
+  }
+};
 
 export const getValues = async (tableName) => {
   try {

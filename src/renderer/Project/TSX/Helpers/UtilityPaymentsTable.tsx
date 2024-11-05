@@ -11,7 +11,7 @@ const UtilityPaymentsTable = ({
   userId,
   utilityPayments,
   updateRoomPropertyLocal,
-  setChangeMade,
+  setChangeMade,SelectedBranchId
 }: any) => {
   const [tempPrices, setTempPrices] = useState<{ [key: string]: string }>(
     utilityPayments.reduce((acc: any, utility: UtilityPaymentSettings) => {
@@ -64,7 +64,7 @@ const UtilityPaymentsTable = ({
           useThis: field === 'useThis' ? value : utility.useThis,
           price: field === 'price' ? value || 0: utility.price || 0,
           alwaysAsk: field === 'alwaysAsk' ? value : utility.alwaysAsk,
-          userId: userId,
+          userId: userId, branchId: SelectedBranchId,
         },
         setChangeMade
       );

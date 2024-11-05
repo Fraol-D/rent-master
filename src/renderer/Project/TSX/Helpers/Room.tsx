@@ -55,7 +55,7 @@ const Room = ({
   updateRoomPropertyLocal,
   agreementApi,
   setChangeMade,
-  SelectedUserId,
+  SelectedUserId,SelectedBranchId
 }: {
   roomType: RoomType;
   updateRoomProperty: any;
@@ -77,7 +77,7 @@ const Room = ({
   updateRoomPropertyLocal: any;
   agreementApi: any;
   setChangeMade: any;
-  SelectedUserId: any;
+  SelectedUserId: any;SelectedBranchId:any
 }) => {
   const handleAddTenant = () => {
     turnOffAddTenantStateForAll();
@@ -253,7 +253,7 @@ const Room = ({
       endTime: endTime,
       agreedPrice: agreedPrice || roomType.price,
       AddedTime: Date.now(),
-      userId: SelectedUserId,
+      userId: SelectedUserId, branchId: SelectedBranchId,
     };
 
     // Add new tenant using AddValue
@@ -556,7 +556,7 @@ const Room = ({
     const yearEnd = new Date(today.getFullYear() + 1, 11, 31);
     const tenant = await getValuesWithSql(
       'tenants',
-      `WHERE id = '${room.tenantId}'`
+      `WHERE id = '${room.tenantId}' AND branchId = '${SelectedBranchId}'`
     );
     let startDate = new Date(tenant[0]?.startTime || Date.now()).getTime();
 
@@ -803,7 +803,7 @@ const Room = ({
               'room_pay_info_history',
               {
                 ...payment,
-                agreementId: currentAgreement.id,
+                agreementId: currentAgreement.id, branchId: SelectedBranchId,
               },
               setChangeMade
             );
@@ -824,7 +824,7 @@ const Room = ({
             'room_pay_info_history',
             {
               ...payment,
-              agreementId: '',
+              agreementId: '', branchId: SelectedBranchId,
             },
             setChangeMade
           );
@@ -908,7 +908,7 @@ const Room = ({
           Stars: tenantRating,
           description: tenantDescription,
           endReason: endReason,
-          userId: SelectedUserId,
+          userId: SelectedUserId, branchId: SelectedBranchId,
         },
         setChangeMade
       );
@@ -2859,7 +2859,7 @@ const Room = ({
                             getCorrectPaymentStatment={
                               getCorrectPaymentStatment
                             }
-                            TenantList={TenantList}
+                            TenantList={TenantList}SelectedBranchId={SelectedBranchId}
                             roomType={roomType}
                             agreementApi={agreementApi}
                             ShowState={roomType.ViewAgreement}
@@ -2992,7 +2992,7 @@ const Room = ({
                           utilityPayments={roomType.utilityPayments}
                           updateRoomPropertyLocal={updateRoomPropertyLocal}
                           setChangeMade={setChangeMade}
-                          userId={SelectedUserId}
+                          userId={SelectedUserId}SelectedBranchId={SelectedBranchId}
                         />
                       </div>
                     )}
@@ -3091,7 +3091,7 @@ const Room = ({
                         }
                         userId={SelectedUserId}
                         setChangeMade={setChangeMade}
-                        roomId={roomType.id}
+                        roomId={roomType.id}SelectedBranchId={SelectedBranchId}
                       />
                     )}
                   </div>
@@ -3165,7 +3165,7 @@ const Room = ({
                 tenantList={TenantList}
                 ShowReceipt={ShowReceipt}
                 setShowReceipt={setShowReceipt}
-                setChangeMade={setChangeMade}
+                setChangeMade={setChangeMade}SelectedBranchId={SelectedBranchId}
                 SelectedUserId={SelectedUserId}
                 updateRoomPropertyLocal={updateRoomPropertyLocal}
               />
@@ -3187,7 +3187,7 @@ const Room = ({
             <UtilityPanel
               roomType={roomType}
               TenantList={TenantList}
-              selectedUserId={SelectedUserId}
+              selectedUserId={SelectedUserId}SelectedBranchId={SelectedBranchId}
               setChangeMade={setChangeMade}
             />
           </div>

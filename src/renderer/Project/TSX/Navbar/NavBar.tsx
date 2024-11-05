@@ -6,7 +6,7 @@ import {
   DownloadUserFilesFromOnlineDatabase,
   getValuesWithSql_Online,
   SetBackUpAsMain,
-  syncOnlineToLocalWithBool,
+  syncOnlineToLocalBranchWithBool,
   UploadUserFilesToTheOnlineDatabase,
 } from 'Backend/OnlineServerApis';
 import { getUserPrivileges } from 'renderer/App';
@@ -36,6 +36,8 @@ interface Props {
   SelectedAppUser: appUser | null;
   setChangeMade: (newval: number) => void;
   setViewBranchManagementPage: (newval: boolean) => void;
+  setViewBranchManagementPageNONAdm: (newval: boolean) => void;
+  branchName: string;
 }
 
 const NavBar = ({
@@ -59,7 +61,10 @@ const NavBar = ({
   setAppUserManagerShow,
   setAppUserManagerPromptPassword,
   SelectedAppUser,
-  setChangeMade,setViewBranchManagementPage
+  setChangeMade,
+  setViewBranchManagementPage,
+  setViewBranchManagementPageNONAdm,
+  branchName,
 }: Props) => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
@@ -187,8 +192,9 @@ const NavBar = ({
       if (confirmDelete) {
         await dropAllRowsInTable('offline_changes');
         setChangeMade(0);
-        await syncOnlineToLocalWithBool(
+        await syncOnlineToLocalBranchWithBool(
           SelectedUserId,
+          window.electron.store.get('SelectedBranchId'),
           setIsSyncing,
           setSyncProgress,
           RefreshDataFromSqlite
@@ -197,16 +203,18 @@ const NavBar = ({
     }
   };
   const handleSyncOnlineToLocal = async () => {
-    const done = await syncOnlineToLocalWithBool(
+    const done = await syncOnlineToLocalBranchWithBool(
       SelectedUserId,
+      window.electron.store.get('SelectedBranchId'),
       setIsSyncing,
       setSyncProgress,
       RefreshDataFromSqlite
     );
     if (done === 'Sync completed') {
-      setOnlineChanges(0)
+      setOnlineChanges(0);
     }
   };
+  
   return (
     <div className="navigation">
       <div className="LeftSide">
@@ -230,24 +238,25 @@ const NavBar = ({
             <p className="Name-ofShop">{ShopName}</p>
           )} */}{' '}
           <p className="Name-ofShop" style={{ height: 'var(--28px-V)' }}>
-            Rent <p style={{ color: 'var(--Primary-Color)', fontSize: 'var(--30px-V)' }}>Master</p>
-            <button
-              style={{ marginLeft: 'var(--10px-V)' }}
-              onClick={() => {
-                if (navigator.onLine) {
-                  setAppUserManagerShow(true);
-                  setAppUserManagerPromptPassword(true);
-                }
+            Rent{' '}
+            <p
+              style={{
+                color: 'var(--Primary-Color)',
+                fontSize: 'var(--30px-V)',
               }}
             >
-              Switch User
-            </button>
+              Master
+            </p>
+            <span style={{ color: '', fontSize: 'var(--16px-V)', marginLeft: 'var(--10px-V)' }}>
+             {branchName} 
+            </span> 
             <button
               style={{ marginLeft: 'var(--10px-V)' }}
               onClick={() => {
                 if (navigator.onLine) {
                   setViewBranchManagementPage(true);
-                
+                  if (window.electron.store.get('LockBranchToPc'))
+                    setViewBranchManagementPageNONAdm(true);
                 }
               }}
             >
@@ -256,11 +265,13 @@ const NavBar = ({
           </p>
           <p
             className="Name-ofShop"
-            style={{ fontSize: 'var(--14px-V)', color: 'grey', height: 'auto' }}
+            style={{ fontSize: 'var(--14px-V)', height: 'auto' }}
           >
-            {window.electron.store.get('users')[0].email} --- {'  '}
+            <span style={{ color: 'grey' }}>
+              {window.electron.store.get('users')[0].email} -{' '}
+            </span>
             {window.electron.store.get('SelectedAppUserId') === 'admin' ? (
-              <>Admin User</>
+              <>{' '}Admin User</>
             ) : (
               window.electron.store
                 .get('app_users')
@@ -269,7 +280,23 @@ const NavBar = ({
                     appUser.id ===
                     window.electron.store.get('SelectedAppUserId')
                 )?.roleName
-            )}
+            )}{' '}
+            <p
+              style={{
+                marginLeft: 'var(--10px-V)',
+                cursor: 'pointer',
+                borderBottom: 'var(--1px-V) solid var(--Accent-Color)',
+                color: 'var(--Accent-Color)',
+              }}
+              onClick={() => {
+                if (navigator.onLine) {
+                  setAppUserManagerShow(true);
+                  setAppUserManagerPromptPassword(true);
+                }
+              }}
+            >
+              Switch
+            </p>
           </p>
         </div>
       </div>
@@ -353,11 +380,16 @@ const NavBar = ({
         <div style={{ display: 'flex', alignItems: 'center' }}>
           {' '}
           <button
-            style={{ marginLeft: 'var(--10px-V)', borderRadius: 'var(--10px-V) var(--0px-V) var(--0px-V) var(--10px-V)' }}
+            style={{
+              marginLeft: 'var(--10px-V)',
+              borderRadius:
+                'var(--10px-V) var(--0px-V) var(--0px-V) var(--10px-V)',
+            }}
             onClick={() => {
               if (navigator.onLine) handleUpload();
             }}
-            disabled={ChangeMade <= 0} title="Upload Local Changes to Server"
+            disabled={ChangeMade <= 0}
+            title="Upload Local Changes to Server"
           >
             <p>
               {ChangeMade >= 1 ? (
@@ -378,7 +410,12 @@ const NavBar = ({
               )}
             </p>
             {UploadingLoadingEffect && (
-              <p style={{ fontSize: 'var(--20px-V)', marginLeft: 'var(--10px-V)' }}>
+              <p
+                style={{
+                  fontSize: 'var(--20px-V)',
+                  marginLeft: 'var(--10px-V)',
+                }}
+              >
                 {uploadProgress.toString().slice(0, 5)}%
               </p>
             )}
@@ -410,11 +447,17 @@ const NavBar = ({
               alignItems: 'center',
               justifyContent: 'center',
               borderTop:
-                OnlineChanges > 0 ? 'var(--3px-V) solid var(--Accent-Color)' : 'none',
+                OnlineChanges > 0
+                  ? 'var(--3px-V) solid var(--Accent-Color)'
+                  : 'none',
               borderRight:
-                OnlineChanges > 0 ? 'var(--3px-V) solid var(--Accent-Color)' : 'none',
+                OnlineChanges > 0
+                  ? 'var(--3px-V) solid var(--Accent-Color)'
+                  : 'none',
               borderBottom:
-                OnlineChanges > 0 ? 'var(--3px-V) solid var(--Accent-Color)' : 'none',
+                OnlineChanges > 0
+                  ? 'var(--3px-V) solid var(--Accent-Color)'
+                  : 'none',
               borderLeft: 'none',
               animation:
                 OnlineChanges > 0 ? 'blinkingBorder 1s infinite' : 'none',
@@ -429,37 +472,35 @@ const NavBar = ({
         {ShowAdvancedUpload ? (
           <>
             <div className="AdvancedUploadPanel">
-              <h3
+              {ChangeMade >= 1 && (<><h3
                 style={{ margin: '0', display: 'flex', alignItems: 'center' }}
               >
                 Upload{' '}
-              </h3>
-              <div
+              </h3><div
                 style={{
                   display: 'flex',
                   justifyContent: 'space-between',
                   width: '100%',
                 }}
               >
-                {ChangeMade >= 1 && (
+
                   <button
                     onClick={() => {
                       handleResetOfflineChanges();
-                    }}
+                    } }
                     style={{
                       width: '100%',
                       marginTop: 'var(--10px-V)',
                       color: 'red',
                       fontWeight: 'bold',
                     }}
-                      title="Discard All Local Changes"
-  aria-label="Discard All Local Changes"
+                    title="Discard All Local Changes"
+                    aria-label="Discard All Local Changes"
                   >
                     <p>Reset {ChangeMade} Offline Changes</p>
                   </button>
-                )}
-              </div>
-              <hr style={{ margin: 'var(--10px-V)', width: '100%' }} />
+
+                </div><hr style={{ margin: 'var(--10px-V)', width: '100%' }} /></> )}
               <h3
                 style={{ margin: '0', display: 'flex', alignItems: 'center' }}
               >
@@ -475,15 +516,25 @@ const NavBar = ({
                   width: '100%',
                   marginTop: 'var(--10px-V)',
                   border:
-                    OnlineChanges > 0 ? 'var(--3px-V) solid var(--Accent-Color)' : '',
+                    OnlineChanges > 0
+                      ? 'var(--3px-V) solid var(--Accent-Color)'
+                      : '',
                   animation:
                     OnlineChanges > 0 ? 'blinkingBorder 1s infinite' : '',
-                }}  title="Download and Apply Server Updates"
-  aria-label="Download and Apply Server Updates"
+                }}
+                title="Download and Apply Server Updates"
+                aria-label="Download and Apply Server Updates"
               >
-                <p>Sync {OnlineChanges === 0 ? <></> : <>{OnlineChanges} incoming changes</>}</p>
+                <p>
+                  Sync{' '}
+                  {OnlineChanges === 0 ? (
+                    <></>
+                  ) : (
+                    <>{OnlineChanges} incoming changes</>
+                  )}
+                </p>
               </button>
-              <button
+              {ChangeMade >= 1 && (<button
                 onClick={() => {
                   if (navigator.onLine) {
                     handleSyncOnlineToLocal();
@@ -492,11 +543,12 @@ const NavBar = ({
                 style={{
                   width: '100%',
                   marginTop: 'var(--10px-V)',
-                   }}
+                }}
                 title="Synchronizes the local database with the online server, overwriting the server data with the current local data, including any offline changes."
-              >
-                <p>Set as main</p>
-              </button>
+                >
+                  <p>Set as main</p>
+                </button>
+              )}
               <hr style={{ margin: 'var(--10px-V)', width: '100%' }} />
               <h3
                 style={{ margin: '0', display: 'flex', alignItems: 'center' }}
@@ -520,7 +572,7 @@ const NavBar = ({
                     position: 'relative',
                     overflow: 'hidden',
                   }}
-                   title="Synchronize Local Room Assets to Server"
+                  title="Synchronize Local Room Assets to Server"
                 >
                   <span className="AdvancedUploadButtonsButtonText">
                     Upload Room Assets
@@ -554,7 +606,8 @@ const NavBar = ({
                   style={{
                     position: 'relative',
                     overflow: 'hidden',
-                  }}title="Retrieve Room Assets from Server"
+                  }}
+                  title="Retrieve Room Assets from Server"
                 >
                   <span className="AdvancedUploadButtonsButtonText">
                     Download Room Assets

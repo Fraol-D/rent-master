@@ -461,8 +461,8 @@
 .appUserButtons {
   margin-left: var(--10px-V);
   padding: var(--5px-V) var(--10px-V);
-  background-color: var(--Primary-Color);
-  color: var(--Text-Color-Reverse);
+
+  color: var(--Text-Color);
   border: none;
   border-radius: var(--4px-V);
   cursor: pointer;
@@ -557,4 +557,26 @@
   color: var(--Text-Color-Reverse);
   text-shadow: var(--0px-V) var(--0px-V) var(--10px-V) var(--Text-Color);
   transform: translate(0, var(---3px-V));
+}.release-notes {
+  margin: var(--10px-V) 0;
+  padding: var(--10px-V);
+  background: var(--Secondary-Color20);
+  border-radius: 4px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.release-notes h4 {
+  color: var(--Primary-Color);
+  margin-bottom: var(--8px-V);
+}
+
+.release-notes ul {
+  margin: 0;
+  padding-left: var(--20px-V);
+}
+
+.release-notes li {
+  color: var(--Text-Color);
+  margin-bottom: var(--4px-V);
 }

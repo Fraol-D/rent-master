@@ -44,18 +44,20 @@ declare global {
     // Primary identifiers
     id: string;
     userId: string;
+    // Added
     
     // Basic information
     name: string;
     location: string;
     description: string;
-    googleMapPinPoint: string;
     lock?: boolean;
+    googleMapPinPoint: string;
   }
   type BranchTypeWithData = {
     // Primary identifiers
     id: string;
     userId: string;
+   
     
     // Basic information
     name: string;
@@ -69,8 +71,10 @@ declare global {
     occupiedRooms?: number;
     vacantRooms?: number;
     monthlyRevenue?: number;
-    unpaidPastPayments?: number;
+    monthlyExpenses?: number;
+    monthlyProfit?: number;
     userAccountsWhichHaveAccess?: string[];
+    lock?: boolean;
 
   }
   type RoomType = {
@@ -108,12 +112,14 @@ declare global {
     notificationSettings: number;
     utilityPayments: UtilityPaymentSettings[];
     DaysTillNextPayment: number;
+    branchId: string; // Added
   };
   type RoomSpecificationType = {
     id: string;
     Detail: string;
     Number: number;
     type: 'bool' | 'number';
+    branchId: string; // Added
     Boolean: boolean;
   };
   type UtilityPaymentSettings = {
@@ -122,6 +128,7 @@ declare global {
     price: string;
     alwaysAsk: boolean;
     id: string;
+    branchId: string; // Added
     userId: string;
   };
   type UtilityPayment = {
@@ -130,6 +137,7 @@ declare global {
     type: string;
     price: string;
     custom: boolean;
+    branchId: string; // Added
 
     userId: string;
   };
@@ -139,6 +147,7 @@ declare global {
     roomId: string;
     brokerId: string;
     recommendedTenantId: string;
+    branchId: string; // Added
     AddedTime: number;
     AgreedCommission: number;
   };
@@ -158,6 +167,7 @@ declare global {
     TIN: string;
     RentReason: string;
     AddedTime: number;
+    branchId: string; // Added
   };
   type BrokerType = {
     id: string;
@@ -165,6 +175,7 @@ declare global {
     phoneNumber: string;
     phoneNumber2?: string;
     email?: string;
+    branchId: string; // Added
 
     AddedTime: number;
     AgreedCommission: string;
@@ -177,6 +188,7 @@ declare global {
   type RoomPayInfo = {
     id: string;
     roomId: string;
+    branchId: string; // Added
     Day: number;
     Paid: boolean;
     Value: number;
@@ -194,6 +206,7 @@ declare global {
     AgreedCommission: number;
     AgreedPrice: number;
     Stars: number;
+    branchId: string; // Added
     description: string;
     endReason: string;
   };
@@ -206,6 +219,7 @@ declare global {
     signTime: number;
     agreedPrice: number;
     paymentCycleType: string;
+    branchId: string; // Added
     Memo: string;
     RentReserved: number;
     representative: string;
@@ -224,6 +238,7 @@ declare global {
     fullBuilding: boolean;
     floor: number;
     room: number;
+    branchId: string; // Added
     name: string;
     description: string;
     doesReoccur: boolean;
@@ -264,7 +279,7 @@ const MainPage = ({
   roomSpecificationAPI,
   setChangeMade,
   SelectedUserId,
-  SelectedAppUser,
+  SelectedAppUser,SelectedBranchId
 }: any) => {
   const [floorFilter, setFloorFilter] = useState<string>('');
   const [TenantNameFilter, setTenantNameFilter] = useState<string>('');
@@ -2458,6 +2473,7 @@ const MainPage = ({
               updateRoomPropertyWithOutRefresh={
                 updateRoomPropertyWithOutRefresh
               }
+              SelectedBranchId={SelectedBranchId}
               SelectedUserId={SelectedUserId}
               ShowArchived={ShowArchived}
               agreementApi={agreementApi}
@@ -2503,7 +2519,7 @@ const MainPage = ({
               setToolsSelectedPage={setToolsSelectedPage}
               SelectedAppUser={SelectedAppUser}
               setChangeMade={setChangeMade}
-              SelectedUserId={SelectedUserId}
+              SelectedUserId={SelectedUserId}SelectedBranchId={SelectedBranchId}
             />
           )}
           {SelectedPage === 'Calendar' && (
@@ -2513,7 +2529,7 @@ const MainPage = ({
               sortedAndFilteredRooms={RoomList}
               removeFilterOption={removeFilterOption}
               filterOptions={[]}
-              tenantList={TenantList}
+              tenantList={TenantList}SelectedBranchId={SelectedBranchId}
             />
           )}
           {SelectedPage === 'Settings' && (
@@ -2539,13 +2555,13 @@ const MainPage = ({
               SelectedUserId={SelectedUserId}
               setChangeMade={setChangeMade}
               updateRoomPropertyLocal={updateRoomPropertyLocal}
-              updateRoomProperty={updateRoomProperty}
+              updateRoomProperty={updateRoomProperty}SelectedBranchId={SelectedBranchId}
             />
           )}
           {SelectedPage === 'Database' && (
             <DatabasePage
               setChangeMade={setChangeMade}
-              SelectedAppUser={SelectedAppUser}
+              SelectedAppUser={SelectedAppUser}SelectedBranchId={SelectedBranchId}
             />
           )}
         </div>

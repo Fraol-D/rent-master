@@ -261,10 +261,10 @@ export function PeopleComponentPage({
                                              {' '}
                       </td>
                                    <td className="InfoTableBodyTD">
-                                               {' '}
+                                        
                         {highlightText(tenant.description || 'N/A', mainSearch)}       
-                                     {' '}
-                      </td>        {' '}
+                              
+                      </td>      
                       <td className="InfoTableBodyTD">
                                                {' '}
                         {highlightText(tenant.TIN || 'N/A', mainSearch)}       

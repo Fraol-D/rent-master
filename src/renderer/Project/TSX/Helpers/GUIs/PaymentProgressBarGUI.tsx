@@ -39,7 +39,7 @@ interface Props {
   setShowReceipt: React.Dispatch<React.SetStateAction<boolean>>;//
   setChangeMade: any;
   SelectedUserId: string;
-  updateRoomPropertyLocal: any;
+  updateRoomPropertyLocal: any;SelectedBranchId:any
 }
 const { v4: uuidv4 } = require('uuid');
 
@@ -55,7 +55,7 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
   setShowReceipt,
   setChangeMade,
   SelectedUserId,
-  updateRoomPropertyLocal,
+  updateRoomPropertyLocal,SelectedBranchId
 }) => {
   const today = new Date().getTime();
   const svgRef = useRef<SVGSVGElement | null>(null);
@@ -331,7 +331,7 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
           ...payment,
           Paid: 1,
           roomId: roomType.id,
-          tenantId: roomType.tenantId,
+          tenantId: roomType.tenantId, branchId: SelectedBranchId,
         },
         setChangeMade
       );

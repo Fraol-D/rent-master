@@ -15,10 +15,10 @@ interface Payment {
 
 const DashbTotalCollected = ({
   RoomList,
-  tenantList,
+  tenantList,SelectedBranchId
 }: {
   RoomList: RoomType[];
-  tenantList: tenant[];
+  tenantList: tenant[];SelectedBranchId:any
 }) => {
   const [showBy, setShowBy] = useState<'Monthly' | 'Yearly'>('Monthly');
   const [selectedDate, setSelectedDate] = useState(
@@ -36,13 +36,13 @@ const DashbTotalCollected = ({
       // Get all actual payments for the selected year range
       const actualPayments = await getValuesWithSql(
         'room_pay_info',
-        `WHERE Day >= ${yearStart.getTime()} AND Day <= ${yearEnd.getTime()}`
+        `WHERE Day >= ${yearStart.getTime()} AND Day <= ${yearEnd.getTime()} AND branchId = '${SelectedBranchId}'`
       );
 
       // Get historical payments
       const historicalPayments = await getValuesWithSql(
         'room_pay_info_history',
-        `WHERE Day >= ${yearStart.getTime()} AND Day <= ${yearEnd.getTime()}`
+        `WHERE Day >= ${yearStart.getTime()} AND Day <= ${yearEnd.getTime()} AND branchId = '${SelectedBranchId}'`
       );
 
       // Only add paid payments from actual and historical
