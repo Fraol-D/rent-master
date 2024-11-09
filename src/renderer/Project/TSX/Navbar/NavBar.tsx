@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import '../../Css/NavBarCss.css';
+import { Input } from '../Helpers/CustomReactComponents';
 
 import InsertImageIcon from '../../../assets/assets/Dark mode/Insert Image Pic.png';
 import {
+  checkFileSystemSync,
   DownloadUserFilesFromOnlineDatabase,
   getValuesWithSql_Online,
   SetBackUpAsMain,
@@ -38,6 +40,10 @@ interface Props {
   setViewBranchManagementPage: (newval: boolean) => void;
   setViewBranchManagementPageNONAdm: (newval: boolean) => void;
   branchName: string;
+  ShowAdvancedUpload: boolean;
+  setShowAdvancedUpload: (newval: boolean) => void;
+  UploadAssetsProgress: number;
+  setUploadAssetsProgress: (newval: number) => void;
 }
 
 const NavBar = ({
@@ -65,6 +71,10 @@ const NavBar = ({
   setViewBranchManagementPage,
   setViewBranchManagementPageNONAdm,
   branchName,
+  ShowAdvancedUpload,
+  setShowAdvancedUpload,
+  UploadAssetsProgress,
+  setUploadAssetsProgress,
 }: Props) => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
@@ -135,10 +145,7 @@ const NavBar = ({
   const cancelSignOut = () => {
     setShowSignOutConfirm(false);
   };
-  const [UploadAssetsProgress, setUploadAssetsProgress] = useState(0);
   const [DownloadAssetsProgress, setDownloadAssetsProgress] = useState(0);
-
-  const [ShowAdvancedUpload, setShowAdvancedUpload] = useState(false);
 
   useEffect(() => {
     if (uploadProgress >= 50) {
@@ -179,7 +186,7 @@ const NavBar = ({
         setOnlineChanges(0);
       }
       console.log('This function runs every minute');
-    }, 30000);
+    }, 10000);
 
     // Clean up the interval when the component unmounts
     return () => clearInterval(intervalId);
@@ -214,7 +221,7 @@ const NavBar = ({
       setOnlineChanges(0);
     }
   };
-  
+
   return (
     <div className="navigation">
       <div className="LeftSide">
@@ -247,9 +254,15 @@ const NavBar = ({
             >
               Master
             </p>
-            <span style={{ color: '', fontSize: 'var(--16px-V)', marginLeft: 'var(--10px-V)' }}>
-             {branchName} 
-            </span> 
+            <span
+              style={{
+                color: '',
+                fontSize: 'var(--16px-V)',
+                marginLeft: 'var(--10px-V)',
+              }}
+            >
+              {branchName}
+            </span>
             <button
               style={{ marginLeft: 'var(--10px-V)' }}
               onClick={() => {
@@ -271,7 +284,7 @@ const NavBar = ({
               {window.electron.store.get('users')[0].email} -{' '}
             </span>
             {window.electron.store.get('SelectedAppUserId') === 'admin' ? (
-              <>{' '}Admin User</>
+              <> Admin User</>
             ) : (
               window.electron.store
                 .get('app_users')
@@ -437,11 +450,11 @@ const NavBar = ({
               height:
                 ChangeMade >= 1
                   ? uploadProgress === 100 || uploadProgress === 0
-                    ? 'var(--42px-V)'
+                    ? 'var(--48px-V)'
                     : uploadProgress >= 50
-                    ? 'var(--42px-V)'
-                    : 'var(--42px-V)'
-                  : 'var(--26px-V)',
+                    ? 'var(--48px-V)'
+                    : 'var(--48px-V)'
+                  : 'var(--28px-V)',
               paddingTop: 'var(--7px-V)',
               display: 'flex',
               alignItems: 'center',
@@ -472,35 +485,43 @@ const NavBar = ({
         {ShowAdvancedUpload ? (
           <>
             <div className="AdvancedUploadPanel">
-              {ChangeMade >= 1 && (<><h3
-                style={{ margin: '0', display: 'flex', alignItems: 'center' }}
-              >
-                Upload{' '}
-              </h3><div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  width: '100%',
-                }}
-              >
-
-                  <button
-                    onClick={() => {
-                      handleResetOfflineChanges();
-                    } }
+              {ChangeMade >= 1 && (
+                <>
+                  <h3
                     style={{
-                      width: '100%',
-                      marginTop: 'var(--10px-V)',
-                      color: 'red',
-                      fontWeight: 'bold',
+                      margin: '0',
+                      display: 'flex',
+                      alignItems: 'center',
                     }}
-                    title="Discard All Local Changes"
-                    aria-label="Discard All Local Changes"
                   >
-                    <p>Reset {ChangeMade} Offline Changes</p>
-                  </button>
-
-                </div><hr style={{ margin: 'var(--10px-V)', width: '100%' }} /></> )}
+                    Upload{' '}
+                  </h3>
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      width: '100%',
+                    }}
+                  >
+                    <button
+                      onClick={() => {
+                        handleResetOfflineChanges();
+                      }}
+                      style={{
+                        width: '100%',
+                        marginTop: 'var(--10px-V)',
+                        color: 'red',
+                        fontWeight: 'bold',
+                      }}
+                      title="Discard All Local Changes"
+                      aria-label="Discard All Local Changes"
+                    >
+                      <p>Reset {ChangeMade} Offline Changes</p>
+                    </button>
+                  </div>
+                  <hr style={{ margin: 'var(--10px-V)', width: '100%' }} />
+                </>
+              )}
               <h3
                 style={{ margin: '0', display: 'flex', alignItems: 'center' }}
               >
@@ -527,24 +548,28 @@ const NavBar = ({
               >
                 <p>
                   Sync{' '}
-                  {OnlineChanges === 0 ? (
+                  {OnlineChanges === 0 &&
+                  ChangeMade == null &&
+                  ChangeMade == undefined &&
+                  Number.isNaN(ChangeMade) ? (
                     <></>
                   ) : (
                     <>{OnlineChanges} incoming changes</>
                   )}
                 </p>
               </button>
-              {ChangeMade >= 1 && (<button
-                onClick={() => {
-                  if (navigator.onLine) {
-                    handleSyncOnlineToLocal();
-                  }
-                }}
-                style={{
-                  width: '100%',
-                  marginTop: 'var(--10px-V)',
-                }}
-                title="Synchronizes the local database with the online server, overwriting the server data with the current local data, including any offline changes."
+              {ChangeMade >= 1 && (
+                <button
+                  onClick={() => {
+                    if (navigator.onLine) {
+                      handleSyncOnlineToLocal();
+                    }
+                  }}
+                  style={{
+                    width: '100%',
+                    marginTop: 'var(--10px-V)',
+                  }}
+                  title="Synchronizes the local database with the online server, overwriting the server data with the current local data, including any offline changes."
                 >
                   <p>Set as main</p>
                 </button>

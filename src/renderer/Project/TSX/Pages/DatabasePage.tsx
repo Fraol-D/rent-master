@@ -1,3 +1,4 @@
+import { Input } from '../Helpers/CustomReactComponents';
 import {
   getValuesWithSql,
   updateValue,
@@ -6,7 +7,11 @@ import {
 import React, { useEffect, useMemo, useState } from 'react';
 import { getUserPrivileges } from 'renderer/App';
 
-const DatabasePage = ({ setChangeMade,SelectedAppUser,SelectedBranchId }: any) => {
+const DatabasePage = ({
+  setChangeMade,
+  SelectedAppUser,
+  SelectedBranchId,
+}: any) => {
   const [Data, setData] = useState<any[]>([]);
   const [searchConfig, setSearchConfig] = useState({ key: '', query: '' });
   const [mainSearch, setMainSearch] = useState('');
@@ -16,10 +21,16 @@ const DatabasePage = ({ setChangeMade,SelectedAppUser,SelectedBranchId }: any) =
   } | null>(null);
   const [editValue, setEditValue] = useState('');
   const [highlightedRow, setHighlightedRow] = useState<string | null>(null);
-  const privileges = useMemo(() => getUserPrivileges(SelectedAppUser), [SelectedAppUser]);
+  const privileges = useMemo(
+    () => getUserPrivileges(SelectedAppUser),
+    [SelectedAppUser]
+  );
   const GetDataBaseData = async (TableName: string) => {
     try {
-      const DataRaw = await getValuesWithSql(TableName, `WHERE 1 AND branchId = '${SelectedBranchId}'`);
+      const DataRaw = await getValuesWithSql(
+        TableName,
+        `WHERE 1 AND branchId = '${SelectedBranchId}'`
+      );
       console.log(DataRaw);
       setData(DataRaw);
     } catch (error) {
@@ -40,7 +51,7 @@ const DatabasePage = ({ setChangeMade,SelectedAppUser,SelectedBranchId }: any) =
     | 'room_specifications'
     | 'tenants'
     | 'room_pay_info'
-    | 'PastTenantReview'
+ 
     | 'brokers'
     | 'brokersRecommendationList'
     | 'PastTenantsForRoom'
@@ -52,7 +63,7 @@ const DatabasePage = ({ setChangeMade,SelectedAppUser,SelectedBranchId }: any) =
     | 'sms_templates'
     | 'expenses'
     | 'room_pay_info_history'
-
+ 
   >('rooms');
 
   const validTables = [
@@ -61,7 +72,7 @@ const DatabasePage = ({ setChangeMade,SelectedAppUser,SelectedBranchId }: any) =
     'tenants',
     'room_pay_info',
     'room_pay_info_history',
-    'PastTenantReview',
+ 
     'brokers',
     'brokersRecommendationList',
     'PastTenantsForRoom',
@@ -72,7 +83,6 @@ const DatabasePage = ({ setChangeMade,SelectedAppUser,SelectedBranchId }: any) =
     'utility_payments_settings',
     'sms_templates',
     'expenses',
-   
   ];
 
   const OnChangeSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -153,7 +163,7 @@ const DatabasePage = ({ setChangeMade,SelectedAppUser,SelectedBranchId }: any) =
 
   const handleDelete = async (id: string) => {
     try {
-      await deleteValue(SelectedTable, id,setChangeMade);
+      await deleteValue(SelectedTable, id, setChangeMade);
       const updatedData = Data.filter((item) => item.id !== id);
       setData(updatedData);
     } catch (error) {
@@ -176,7 +186,7 @@ const DatabasePage = ({ setChangeMade,SelectedAppUser,SelectedBranchId }: any) =
       case 'agreementId':
         targetTable = 'agreements';
         break;
-      
+
       case 'email_template_id':
         targetTable = 'email_templates';
         break;
@@ -208,7 +218,8 @@ const DatabasePage = ({ setChangeMade,SelectedAppUser,SelectedBranchId }: any) =
       >
         <div className="CalenderOptionsMainContainer">
           <span style={{ color: 'red', fontWeight: 'bold' }}>
-            Warning: Modifying database values can cause critical errors. Edit only if certain.
+            Warning: Modifying database values can cause critical errors. Edit
+            only if certain.
           </span>
           <label htmlFor="monthsFutureInput">Select a table: </label>
           <select
@@ -260,20 +271,29 @@ const DatabasePage = ({ setChangeMade,SelectedAppUser,SelectedBranchId }: any) =
                         header
                       )}
                     </th>
-                  ))}{privileges.editDatabaseData ?  <th>Actions</th>:<></>}
-               
+                  ))}
+                {privileges.editDatabaseData ? <th>Actions</th> : <></>}
               </tr>
             </thead>
             <tbody className="table-body">
               {filteredData(Data, searchConfig.key, searchConfig.query).map(
                 (row, rowIndex) => (
-                  <tr key={rowIndex} style={row.id === highlightedRow ? {backgroundColor: 'var(--Accent-Color50)'} : {}}>
+                  <tr
+                    key={rowIndex}
+                    style={
+                      row.id === highlightedRow
+                        ? { backgroundColor: 'var(--Accent-Color50)' }
+                        : {}
+                    }
+                  >
                     {Object.entries(row).map(([key, value], cellIndex) => (
                       <td
                         key={cellIndex}
-                        onDoubleClick={() =>
-                          {if(privileges.editDatabaseData){handleCellDoubleClick(rowIndex, key, String(value));}}
-                        }
+                        onDoubleClick={() => {
+                          if (privileges.editDatabaseData) {
+                            handleCellDoubleClick(rowIndex, key, String(value));
+                          }
+                        }}
                       >
                         {editCell &&
                         editCell.rowIndex === rowIndex &&
@@ -293,26 +313,38 @@ const DatabasePage = ({ setChangeMade,SelectedAppUser,SelectedBranchId }: any) =
                         ) : (
                           <>
                             {highlightText(String(value), mainSearch)}
-                            {['roomId', 'tenantId', 'brokerId', 'agreementId', 'email_template_id', 'selectedAgreementId'].includes(key) && value && (
-                              <button
-                                onClick={() => handleGoTo(key, String(value))}
-                                style={{ marginLeft: 'var(--5px-V)' }}
-                              >
-                                Go to
-                              </button>
-                            )}
+                            {[
+                              'roomId',
+                              'tenantId',
+                              'brokerId',
+                              'agreementId',
+                              'email_template_id',
+                              'selectedAgreementId',
+                            ].includes(key) &&
+                              value && (
+                                <button
+                                  onClick={() => handleGoTo(key, String(value))}
+                                  style={{ marginLeft: 'var(--5px-V)' }}
+                                >
+                                  Go to
+                                </button>
+                              )}
                           </>
                         )}
                       </td>
                     ))}
-                    {privileges.editDatabaseData ? <td>
-                      <button
-                        className="delete-button"
-                        onClick={() => handleDelete(row.id)}
-                      >
-                        Delete
-                      </button>
-                    </td>:<></>}
+                    {privileges.editDatabaseData ? (
+                      <td>
+                        <button
+                          className="delete-button"
+                          onClick={() => handleDelete(row.id)}
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    ) : (
+                      <></>
+                    )}
                   </tr>
                 )
               )}

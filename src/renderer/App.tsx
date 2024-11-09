@@ -5,6 +5,8 @@ import MainPage from './Project/TSX/MainPage';
 import { useEffect, useState } from 'react';
 import NavBar from './Project/TSX/Navbar/NavBar';
 import LogoImage from './assets/Insert Image Pic.png';
+import { initializeInputBehavior } from './Project/TSX/Helpers/initializeInputs';
+
 const { v4: uuidv4 } = require('uuid');
 import {
   addValue,
@@ -19,11 +21,27 @@ import {
   getValuesWithSql_Online,
   SignOutUser,
   Upload,
+  UploadUserFilesToTheOnlineDatabase,
 } from 'Backend/OnlineServerApis';
-import { addDays, addMonths, addYears, differenceInDays, isAfter, isBefore } from 'date-fns';
+import {
+  addDays,
+  addMonths,
+  addYears,
+  differenceInDays,
+  isAfter,
+  isBefore,
+} from 'date-fns';
 import { Payment } from 'electron';
+import { GetDefaultCurrency } from './Project/TSX/Helpers/CurrencySign';
 declare global {}
 function Hello() {
+  useEffect(() => {
+    // Initialize input behavior
+    const cleanup = initializeInputBehavior();
+
+    // Cleanup on unmount
+    return cleanup;
+  }, []);
   const [RoomList, setRoomList] = useState<RoomType[]>([]);
   const [TenantList, setTenantList] = useState<tenant[]>([]);
   const [BrokerList, setBrokerList] = useState<BrokerType[]>([]);
@@ -210,6 +228,9 @@ function Hello() {
                 alwaysAsk: existingUtility
                   ? existingUtility.alwaysAsk === 1
                   : false,
+                Currency: existingUtility
+                  ? existingUtility.Currency
+                  : GetDefaultCurrency(),
                 id: existingUtility ? existingUtility.id : uuidv4(),
                 userId: existingUtility ? existingUtility.userId : uuidv4(),
               };
@@ -249,6 +270,7 @@ function Hello() {
               utilityPayments: formattedUtilityPayments || [],
               paymentShowAmount: room.paymentShowAmount || 10,
               DaysTillNextPayment: DaysTillNextPayment || 0,
+              Currency: room.Currency || '',
             };
           })
         );
@@ -293,7 +315,8 @@ function Hello() {
       AddRoomFormPaymentCycleCustomDays: number,
       AddRoomFormSquareMeters: number,
 
-      AddRoomFormRoomSpecifications: RoomSpecificationType[]
+      AddRoomFormRoomSpecifications: RoomSpecificationType[],
+      AddRoomFormCurrency: string
     ) => {
       try {
         //Add room
@@ -324,6 +347,7 @@ function Hello() {
             utilityPaymentUseDifferentStartDate: 0,
             userId: SelectedUserId || '',
             branchId: SelectedBranchId,
+            Currency: AddRoomFormCurrency || GetDefaultCurrency(),
           },
           setChangeMade
         );
@@ -466,6 +490,7 @@ function Hello() {
                 TIN: tenant.TIN || '',
                 RentReason: tenant.RentReason || '',
                 AddedTime: tenant.AddedTime,
+                Currency: tenant.Currency || GetDefaultCurrency(),
               };
             })
           );
@@ -489,7 +514,8 @@ function Hello() {
       agreedPrice: string,
       TIN: string,
       RentReason: string,
-      AddedTime: number
+      AddedTime: number,
+      Currency: string
     ) => {
       try {
         await addValue(
@@ -512,6 +538,7 @@ function Hello() {
             AddedTime: AddedTime,
             userId: SelectedUserId,
             branchId: SelectedBranchId,
+            Currency: Currency || GetDefaultCurrency(),
           },
           setChangeMade
         );
@@ -659,6 +686,7 @@ function Hello() {
                 Stars: pastTenantReview.Stars,
                 description: pastTenantReview.description,
                 endReason: pastTenantReview.endReason,
+                Currency: pastTenantReview.Currency,
               };
             }
           );
@@ -866,6 +894,7 @@ function Hello() {
             Memo: agreement.Memo,
             RentReserved: agreement.RentReserved,
             representative: agreement.representative,
+            Currency: agreement.Currency,
           }));
         }
         return [];
@@ -913,7 +942,8 @@ function Hello() {
       paymentCycleType: string,
       Memo: string,
       RentReserved: number,
-      representative: string
+      representative: string,
+      Currency: string
     ) => {
       try {
         await addValue(
@@ -932,6 +962,7 @@ function Hello() {
             representative,
             userId: SelectedUserId,
             branchId: SelectedBranchId,
+            Currency,
           },
           setChangeMade
         );
@@ -950,14 +981,24 @@ function Hello() {
   const agreementApi = new AgreementApi();
   // On start
   useEffect(() => {
-    const branchId = window.electron.store.get('SelectedBranchId');
-    setSelectedBranchId(branchId);
-    RefreshDataFromSqlite();
-  }, []);
-  const RefreshDataFromSqlite = () => {
-    const branchId = window.electron.store.get('SelectedBranchId');
-    setSelectedBranchId(branchId);
+    const init = async () => {
+      const branchId = window.electron.store.get('SelectedBranchId');
+      setSelectedBranchId(branchId);
+      setBranches(window.electron.store.get('Branches'));
 
+      RefreshDataFromSqlite();
+    };
+    init();
+  }, []);
+  const RefreshDataFromSqlite = async () => {
+    if (!navigator.onLine) {
+      setBranches(window.electron.store.get('Branches'));
+    } else {
+      await fetchBranches();
+    }
+
+    const branchId = window.electron.store.get('SelectedBranchId');
+    setSelectedBranchId(branchId);
     if (branchId) {
       roomAPI.getRoomFromApi();
       brokerApi.getBrokersApi();
@@ -975,9 +1016,8 @@ function Hello() {
         setViewBranchManagementPageNONAdm(true);
       }
     }
-   
-      getBranchName(branchId);
-    
+
+    getBranchName(branchId);
   };
 
   const [ThemeMode, setThemeMode] = useState<'light' | 'dark'>('light');
@@ -1038,13 +1078,20 @@ function Hello() {
   }, [ChangeMade]);
   const [UploadingLoadingEffect, setUploadingLoadingEffect] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [UploadAssetsProgress, setUploadAssetsProgress] = useState(0);
+
   const handleUploadChanges = async () => {
     if (!UploadingLoadingEffect) {
       setUploadProgress(0);
       setUploadingLoadingEffect(true);
       setIsSyncing(true);
       setSyncProgress(0);
+      setShowAdvancedUpload(true);
       if (navigator.onLine) {
+        await UploadUserFilesToTheOnlineDatabase(
+          SelectedUserId,
+          setUploadAssetsProgress
+        );
         const offline_changes = await getValuesWithSql(
           'offline_changes',
           'WHERE 1'
@@ -1075,6 +1122,10 @@ function Hello() {
       setUploadingLoadingEffect(false);
     }
   };
+  useEffect(() => {
+    // @ts-ignore
+    window.handleUploadChanges = handleUploadChanges;
+  }, [handleUploadChanges]);
   useEffect(() => {
     if (UploadingLoadingEffect)
       if (uploadProgress >= 0 && uploadProgress <= 99) {
@@ -1194,15 +1245,16 @@ function Hello() {
       try {
         const branch = await getValuesWithSql_Online(
           'branches',
-        `WHERE id = '${branchId}'`
-      );
-      if (branch && branch.length > 0) {
-        setBranchName(branch[0].name);
-      } else {
-        console.error('Branch not found');
-      }
-    } catch (error) {
-        console.error('Error fetching branch name:', error);setBranchName(window.electron.store.get('BranchName'));
+          `WHERE id = '${branchId}'`
+        );
+        if (branch && branch.length > 0) {
+          setBranchName(branch[0].name);
+        } else {
+          console.error('Branch not found');
+        }
+      } catch (error) {
+        console.error('Error fetching branch name:', error);
+        setBranchName(window.electron.store.get('BranchName'));
       }
     } else {
       setBranchName(window.electron.store.get('BranchName'));
@@ -1217,25 +1269,90 @@ function Hello() {
 
     expenses.forEach((expense) => {
       if (expense.doesReoccur) {
-        let currentDate = new Date(expense.date);
-        while (isBefore(currentDate, endDate)) {
-          if (isAfter(currentDate, startDate)) {
+        const StartExpenseDate = new Date(expense.date);
+        StartExpenseDate.setHours(0, 0, 0, 0);
+
+        // Get the actual start date (either expense start date or period start date)
+        const effectiveStartDate = new Date(StartExpenseDate.getTime());
+
+        let currentDate = effectiveStartDate;
+        let expenseCount = 0;
+
+        // Calculate end date based on expense settings
+        const finalEndDate = expense.HasEndDate
+          ? new Date(Math.min(expense.EndDate, endDate.getTime()))
+          : endDate;
+
+        while (currentDate <= finalEndDate && expenseCount < 100) {
+          const expenseId = `${expense.id}-${currentDate.getTime()}`;
+
+          // Only add if the expense date falls within our range
+          if (
+            currentDate >= startDate &&
+            (currentDate <= endDate || expense.HasEndDate)
+          ) {
             allExpenses.push({
               ...expense,
+              id: expenseId,
               date: currentDate.getTime(),
             });
           }
-          currentDate = addDays(currentDate, expense.recurringCycle);
+
+          // Calculate next expense date based on recurring type
+          switch (expense.recurringType) {
+            case 'Day':
+              // Add days based on recurringCycle
+              currentDate = addDays(currentDate, expense.recurringCycle);
+              break;
+            case 'Monthly':
+              // Add one month to current date
+              const nextMonthDate = new Date(currentDate);
+              nextMonthDate.setMonth(nextMonthDate.getMonth() + 1);
+              currentDate = nextMonthDate;
+              break;
+
+            case 'Yearly':
+              // Preserve month and day when adding years
+              const nextYearDate = new Date(currentDate);
+              const originalMonth = nextYearDate.getMonth();
+              const originalDay = nextYearDate.getDate();
+              nextYearDate.setFullYear(nextYearDate.getFullYear() + 1);
+              // Ensure we keep the same month and day
+              nextYearDate.setMonth(originalMonth);
+              nextYearDate.setDate(originalDay);
+              currentDate = nextYearDate;
+              console.log(currentDate, 'lllllllllll');
+              break;
+
+            default:
+              console.warn(
+                `Unknown recurring type: ${expense.recurringType}, defaulting to monthly`
+              );
+              const defaultNextDate = new Date(currentDate);
+              defaultNextDate.setMonth(defaultNextDate.getMonth() + 1);
+          }
+
+          expenseCount++;
         }
       } else {
-        allExpenses.push(expense);
+        // For non-recurring expenses, only include if within date range
+        const expenseDate = new Date(expense.date);
+        expenseDate.setHours(0, 0, 0, 0);
+
+        if (expenseDate >= startDate && expenseDate <= endDate) {
+          allExpenses.push({
+            ...expense,
+            date: expenseDate.getTime(),
+          });
+        }
       }
     });
 
-    return allExpenses;
+    // Sort expenses by date
+    return allExpenses.sort((a, b) => a.date - b.date);
   };
   const fetchBranches = async () => {
-    if (ViewBranchManagementPage) {
+    if (navigator.onLine) {
       const branches = await getValuesWithSql_Online(
         'branches',
         `WHERE userId = '${SelectedUserId}'`
@@ -1243,15 +1360,17 @@ function Hello() {
 
       const branchesWithData = await Promise.all(
         branches.map(async (branch: BranchType) => {
-          const allRooms = await getValuesWithSql_Online(
-            'rooms',
-            `WHERE branchId = '${branch.id}'`
-          ) || [];
-          
-          const allTenants = await getValuesWithSql_Online(
-            'tenants',
-            `WHERE branchId = '${branch.id}'`
-          ) || [];
+          const allRooms =
+            (await getValuesWithSql_Online(
+              'rooms',
+              `WHERE branchId = '${branch.id}'`
+            )) || [];
+
+          const allTenants =
+            (await getValuesWithSql_Online(
+              'tenants',
+              `WHERE branchId = '${branch.id}'`
+            )) || [];
 
           // Get all actual payments for the current month
           const today = new Date();
@@ -1278,27 +1397,43 @@ function Hello() {
           );
 
           // Calculate monthly revenue from actual collected payments
-          const monthlyRevenue = [...actualPayments, ...historicalPayments]
-            .reduce((sum, payment) => parseFloat(sum) + parseFloat(payment.Value), 0);
+          const monthlyRevenue = [
+            ...actualPayments,
+            ...historicalPayments,
+          ].reduce(
+            (sum, payment) => parseFloat(sum) + parseFloat(payment.Value),
+            0
+          );
 
           // Calculate other branch statistics
           const totalRooms = allRooms.length;
-          const totalFloors = Math.max(...allRooms.map(room => room.floor)) === -Infinity
-            ? 0
-            : Math.max(...allRooms.map(room => room.floor));
+          const totalFloors =
+            Math.max(...allRooms.map((room) => room.floor)) === -Infinity
+              ? 0
+              : Math.max(...allRooms.map((room) => room.floor));
           const totalTenants = allTenants.length;
-          const occupiedRooms = allRooms.filter(room => room.tenantId !== '').length;
+          const occupiedRooms = allRooms.filter(
+            (room) => room.tenantId !== ''
+          ).length;
           const vacantRooms = totalRooms - occupiedRooms;
 
           // Calculate expenses and profit
-          const branchExpenses = await getValuesWithSql_Online(
-            'expenses',
-            `WHERE branchId = '${branch.id}'`
-          ) || [];
+          const branchExpenses =
+            (await getValuesWithSql_Online(
+              'expenses',
+              `WHERE branchId = '${branch.id}'`
+            )) || [];
 
-          const allMonthExpenses = generateRecurringExpenses(branchExpenses, monthStart, monthEnd);
+          const allMonthExpenses = generateRecurringExpenses(
+            branchExpenses,
+            monthStart,
+            monthEnd
+          );
           const monthlyExpenses = allMonthExpenses
-            .filter(e => new Date(e.date) >= monthStart && new Date(e.date) <= monthEnd)
+            .filter(
+              (e) =>
+                new Date(e.date) >= monthStart && new Date(e.date) <= monthEnd
+            )
             .reduce((sum, e) => sum + parseFloat(e.price), 0);
 
           const monthlyProfit = monthlyRevenue - monthlyExpenses;
@@ -1319,14 +1454,74 @@ function Hello() {
         })
       );
 
-      console.log(branchesWithData);
       setBranches(branchesWithData);
+      window.electron.store.set('Branches', branchesWithData);
+    } else {
+      if (window.electron.store.get('Branches')) {
+        setBranches(window.electron.store.get('Branches'));
+      }
     }
   };
   const [Branches, setBranches] = useState<BranchTypeWithData[]>([]);
+  const [isConnected, setIsConnected] = useState(true);
+
+  useEffect(() => {
+    // Start heartbeat
+    window.electron.connectionMonitor.startHeartbeat();
+
+    // Listen for connection losses
+    window.electron.connectionMonitor.onConnectionLost(() => {
+      setIsConnected(false);
+
+      // Show disconnection alert
+      notification.error({
+        message: 'Connection Lost',
+        description:
+          'Lost connection to the main process. Attempting to reconnect...',
+        duration: 0, // Keep showing until connection is restored
+      });
+
+      // Optional: Attempt to reload the page after a delay
+      setTimeout(() => {
+        window.location.reload();
+      }, 5000);
+    });
+  }, []); // Add this to your App component
+  useEffect(() => {
+    const perfObserver = new PerformanceObserver((list) => {
+      for (const entry of list.getEntries()) {
+        if (entry.duration > 100) {
+          // Log slow renders
+          console.warn('Slow render:', entry);
+        }
+      }
+    });
+
+    perfObserver.observe({ entryTypes: ['measure'] });
+
+    return () => perfObserver.disconnect();
+  }, []);
+  const [ShowAdvancedUpload, setShowAdvancedUpload] = useState(false);
 
   return (
     <>
+      {!isConnected && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            backgroundColor: '#ff4d4f',
+            color: 'white',
+            padding: '8px',
+            textAlign: 'center',
+            zIndex: 9999,
+          }}
+        >
+          Connection Lost - Attempting to reconnect...
+        </div>
+      )}
       {SyncProgress >= 1 && SyncProgress <= 99 && (
         <>
           <div className="progress-container">
@@ -1366,11 +1561,14 @@ function Hello() {
         ViewBranchManagementPageNONAdm={ViewBranchManagementPageNONAdm}
         fetchBranches={fetchBranches}
         Branches={Branches}
-        setBranches={setBranches}setBranchName={setBranchName}
+        setBranches={setBranches}
+        setBranchName={setBranchName}
       >
         <>
           <NavBar
             RefreshDataFromSqlite={RefreshDataFromSqlite}
+            UploadAssetsProgress={UploadAssetsProgress}
+            setUploadAssetsProgress={setUploadAssetsProgress}
             setIsSyncing={setIsSyncing}
             SelectedUserId={SelectedUserId}
             isSyncing={isSyncing}
@@ -1382,12 +1580,15 @@ function Hello() {
             ProfileState={false}
             SelectedPage={SelectedPage}
             setSelectedPage={setSelectedPage}
+            ShowAdvancedUpload={ShowAdvancedUpload}
+            setShowAdvancedUpload={setShowAdvancedUpload}
             Image={''}
             ShopName={'The company'}
             ThemeMode={ThemeMode}
             setViewBranchManagementPageNONAdm={
               setViewBranchManagementPageNONAdm
-            }branchName={branchName}
+            }
+            branchName={branchName}
             setThemeMode={ChangeTheme}
             ChangeTheme={ChangeTheme}
             signOutUserAndRestart={signOutUserAndRestart}
@@ -1464,6 +1665,7 @@ export const getUserPrivileges = (
   editTenantRoomNotificationSettings: boolean;
   editTenantRoomTenantStay: boolean;
   addTenant: boolean;
+  addBranch: boolean;
 } => {
   const privilegeObject: { [key: string]: boolean } = {
     viewDashboard: false,
@@ -1487,6 +1689,7 @@ export const getUserPrivileges = (
     editTenantRoomNotificationSettings: false,
     editTenantRoomTenantStay: false,
     addTenant: false,
+    addBranch: false,
   };
 
   if (selectedAppUser) {
@@ -1561,6 +1764,9 @@ export const getUserPrivileges = (
             break;
           case 'edit tenant room tenant stay':
             privilegeObject.editTenantRoomTenantStay = true;
+            break;
+          case 'add a branch':
+            privilegeObject.addBranch = true;
             break;
         }
       });

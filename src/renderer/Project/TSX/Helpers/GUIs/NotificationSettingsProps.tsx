@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Input } from '../CustomReactComponents';
 import {
   addValue,
   getValuesWithSql,
@@ -10,7 +11,8 @@ interface NotificationSettingsProps {
   setNotificationSettings: (settings: number) => void;
   userId: string;
   setChangeMade: any;
-  roomId: string;SelectedBranchId:any
+  roomId: string;
+  SelectedBranchId: any;
 }
 
 interface EmailTemplate {
@@ -27,13 +29,16 @@ const NotificationSettingsTable: React.FC<NotificationSettingsProps> = ({
   setNotificationSettings,
   userId,
   setChangeMade,
-  roomId,SelectedBranchId
+  roomId,
+  SelectedBranchId,
 }) => {
   const [emailTemplates, setEmailTemplates] = useState<EmailTemplate[]>([]);
   const [selectedTemplates, setSelectedTemplates] = useState<
     Record<string, string>
   >({});
-  const [templateValidation, setTemplateValidation] = useState<ValidationState>({});
+  const [templateValidation, setTemplateValidation] = useState<ValidationState>(
+    {}
+  );
 
   const notificationTypes = [
     '5 days before due',
@@ -74,17 +79,17 @@ const NotificationSettingsTable: React.FC<NotificationSettingsProps> = ({
   const toggleSetting = (index: number, type: string) => {
     const newSettings = notificationSettings ^ (1 << (index * 2));
     setNotificationSettings(newSettings);
-    
+
     const isEmailEnabled = (newSettings & (1 << (index * 2))) !== 0;
     if (isEmailEnabled && !selectedTemplates[type]) {
-      setTemplateValidation(prev => ({
+      setTemplateValidation((prev) => ({
         ...prev,
-        [type]: true
+        [type]: true,
       }));
     } else {
-      setTemplateValidation(prev => ({
+      setTemplateValidation((prev) => ({
         ...prev,
-        [type]: false
+        [type]: false,
       }));
     }
   };
@@ -112,7 +117,8 @@ const NotificationSettingsTable: React.FC<NotificationSettingsProps> = ({
           id: `${roomId}_${notificationType}`,
           notification_type: notificationType,
           email_template_id: templateId,
-          userId: userId, branchId: SelectedBranchId,
+          userId: userId,
+          branchId: SelectedBranchId,
         },
         setChangeMade
       );
@@ -130,17 +136,23 @@ const NotificationSettingsTable: React.FC<NotificationSettingsProps> = ({
   };
 
   const getSelectStyle = (type: string) => ({
-    border: templateValidation[type] ? 'var(--2px-V) solid red' : 'var(--1px-V) solid var(--Border-Color)',
+    border: templateValidation[type]
+      ? 'var(--2px-V) solid red'
+      : 'var(--1px-V) solid var(--Border-Color)',
     borderRadius: 'var(--4px-V)',
-    padding: 'var(--4px-V)'
+    padding: 'var(--4px-V)',
   });
 
   return (
     <table style={{ fontSize: 'var(--14px-V)', borderCollapse: 'collapse' }}>
       <thead>
         <tr>
-          <th style={{ padding: 'var(--5px-V)', textAlign: 'left' }}>Notification</th>
-          <th style={{ padding: 'var(--5px-V)', textAlign: 'center' }}>Email</th>
+          <th style={{ padding: 'var(--5px-V)', textAlign: 'left' }}>
+            Notification
+          </th>
+          <th style={{ padding: 'var(--5px-V)', textAlign: 'center' }}>
+            Email
+          </th>
           <th style={{ padding: 'var(--5px-V)', textAlign: 'center' }}>SMS</th>
           <th style={{ padding: 'var(--5px-V)', textAlign: 'center' }}>
             Email Template
@@ -170,9 +182,9 @@ const NotificationSettingsTable: React.FC<NotificationSettingsProps> = ({
                 value={selectedTemplates[type] || ''}
                 onChange={(e) => {
                   handleTemplateChange(type, e.target.value);
-                  setTemplateValidation(prev => ({
+                  setTemplateValidation((prev) => ({
                     ...prev,
-                    [type]: false
+                    [type]: false,
                   }));
                 }}
                 style={getSelectStyle(type)}
@@ -185,12 +197,14 @@ const NotificationSettingsTable: React.FC<NotificationSettingsProps> = ({
                 ))}
               </select>
               {templateValidation[type] && (
-                <div style={{ 
-                  color: 'red', 
-                  fontSize: 'var(--12px-V)', 
-                  position: 'absolute',
-                  marginTop: 'var(--2px-V)' 
-                }}>
+                <div
+                  style={{
+                    color: 'red',
+                    fontSize: 'var(--12px-V)',
+                    position: 'absolute',
+                    marginTop: 'var(--2px-V)',
+                  }}
+                >
                   Template required
                 </div>
               )}

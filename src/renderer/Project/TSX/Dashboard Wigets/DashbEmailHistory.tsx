@@ -1,11 +1,12 @@
 import { getValuesWithSql_Online } from 'Backend/OnlineServerApis';
 import React, { useEffect, useState } from 'react';
 import '../../CSS/ToolsPage.css';
+import { Input } from '../Helpers/CustomReactComponents';
 
 interface props {
   SelectedUserId: string;
   RoomList: RoomType[];
-  tenantList: TenantType[];
+  tenantList: tenant[];
 }
 type emailHistoryType = {
   id: string;
@@ -207,7 +208,12 @@ const DashbEmailHistory = ({ SelectedUserId, RoomList, tenantList }: props) => {
                     <strong>Mode:</strong> {email.mode || 'Unknown'}
                   </p>
                 </div>
-                <div style={{ fontSize: 'var(--24px-V)', marginLeft: 'var(--10px-V)' }}>
+                <div
+                  style={{
+                    fontSize: 'var(--24px-V)',
+                    marginLeft: 'var(--10px-V)',
+                  }}
+                >
                   {expandedEmailId === email.id ? '▼' : '▶'}{' '}
                   {/* Show down arrow if expanded, right arrow if not */}
                 </div>

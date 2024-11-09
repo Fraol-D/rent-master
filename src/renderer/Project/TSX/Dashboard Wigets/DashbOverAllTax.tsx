@@ -4,6 +4,7 @@ import { BarChart } from '@mui/x-charts/BarChart';
 import { axisClasses } from '@mui/x-charts/ChartsAxis';
 import { getValuesWithSql } from 'Backend/localServerApis';
 import { addDays, addMonths, addYears, startOfYear, endOfYear } from 'date-fns';
+import { Input } from '../Helpers/CustomReactComponents';
 
 interface Payment {
   id: string;
@@ -13,7 +14,15 @@ interface Payment {
   roomId: string;
 }
 
-const DashbOverAllTax = ({ RoomList, tenantList,SelectedBranchId }: { RoomList: RoomType[], tenantList: tenant[],SelectedBranchId:any }) => {
+const DashbOverAllTax = ({
+  RoomList,
+  tenantList,
+  SelectedBranchId,
+}: {
+  RoomList: RoomType[];
+  tenantList: tenant[];
+  SelectedBranchId: any;
+}) => {
   const [showBy, setShowBy] = useState<'Monthly' | 'Yearly'>('Monthly');
   const [selectedDate, setSelectedDate] = useState(
     new Date().getFullYear().toString()
@@ -26,7 +35,7 @@ const DashbOverAllTax = ({ RoomList, tenantList,SelectedBranchId }: { RoomList: 
       const selectedYear = parseInt(selectedDate);
       let yearStart = startOfYear(new Date(selectedYear - 2, 0, 1));
       let yearEnd = endOfYear(new Date(selectedYear + 2, 11, 31));
-      
+
       // Get all actual payments for the selected year range
       const actualPayments = await getValuesWithSql(
         'room_pay_info',
@@ -40,14 +49,15 @@ const DashbOverAllTax = ({ RoomList, tenantList,SelectedBranchId }: { RoomList: 
       );
 
       // Map all payments (including unpaid ones for tax calculation)
-      const combinedPayments = [...actualPayments, ...historicalPayments]
-        .map(payment => ({
+      const combinedPayments = [...actualPayments, ...historicalPayments].map(
+        (payment) => ({
           id: payment.id,
           Day: payment.Day,
           Value: payment.Value,
           Paid: payment.Paid === 1,
           roomId: payment.roomId,
-        }));
+        })
+      );
 
       // Add all payments to allPayments
       allPayments.push(...combinedPayments);
@@ -69,7 +79,10 @@ const DashbOverAllTax = ({ RoomList, tenantList,SelectedBranchId }: { RoomList: 
           );
           if (agreements.length > 0) {
             startDate = Math.max(agreements[0].startTime, yearStart.getTime());
-            if (tenant.SelectedAgreement === 'Fixed-Term' && agreements[0].endTime) {
+            if (
+              tenant.SelectedAgreement === 'Fixed-Term' &&
+              agreements[0].endTime
+            ) {
               endDate = Math.min(agreements[0].endTime, yearEnd.getTime());
             }
           }
@@ -79,8 +92,8 @@ const DashbOverAllTax = ({ RoomList, tenantList,SelectedBranchId }: { RoomList: 
 
         while (currentDate.getTime() <= endDate) {
           const paymentId = `${room.id}-${currentDate.getTime()}`;
-          
-          if (!allPayments.some(p => p.id === paymentId)) {
+
+          if (!allPayments.some((p) => p.id === paymentId)) {
             allPayments.push({
               id: paymentId,
               Day: currentDate.getTime(),
@@ -102,15 +115,24 @@ const DashbOverAllTax = ({ RoomList, tenantList,SelectedBranchId }: { RoomList: 
 
   const calculateNextPaymentDate = (currentDate: Date, room: any) => {
     switch (room.PaymentCycleType) {
-      case '30': return addDays(currentDate, 30);
-      case '15': return addDays(currentDate, 15);
-      case '7': return addDays(currentDate, 7);
-      case 'daily': return addDays(currentDate, 1);
-      case 'monthly': return addMonths(currentDate, 1);
-      case 'weekly': return addDays(currentDate, 7);
-      case 'Annually': return addYears(currentDate, 1);
-      case 'custom': return addDays(currentDate, room.PaymentCycleCustomeDays || 30);
-      default: return addMonths(currentDate, 1);
+      case '30':
+        return addDays(currentDate, 30);
+      case '15':
+        return addDays(currentDate, 15);
+      case '7':
+        return addDays(currentDate, 7);
+      case 'daily':
+        return addDays(currentDate, 1);
+      case 'monthly':
+        return addMonths(currentDate, 1);
+      case 'weekly':
+        return addDays(currentDate, 7);
+      case 'Annually':
+        return addYears(currentDate, 1);
+      case 'custom':
+        return addDays(currentDate, room.PaymentCycleCustomeDays || 30);
+      default:
+        return addMonths(currentDate, 1);
     }
   };
 
@@ -169,13 +191,14 @@ const DashbOverAllTax = ({ RoomList, tenantList,SelectedBranchId }: { RoomList: 
     return yearRange;
   }, [selectedDate, predictedPayments]);
 
-  const dataset = showBy === 'Monthly' ? aggregateMonthlyData : aggregateYearlyData;
+  const dataset =
+    showBy === 'Monthly' ? aggregateMonthlyData : aggregateYearlyData;
 
   const totalExpected = useMemo(() => {
     const selectedYear = parseInt(selectedDate);
-    return predictedPayments.filter(
-      (d) => new Date(d.Day).getFullYear() === selectedYear
-    ).reduce((sum, item) => sum + item.Value, 0);
+    return predictedPayments
+      .filter((d) => new Date(d.Day).getFullYear() === selectedYear)
+      .reduce((sum, item) => sum + item.Value, 0);
   }, [selectedDate, predictedPayments]);
 
   const totalTax = calculateTax(totalExpected);
@@ -230,7 +253,6 @@ const DashbOverAllTax = ({ RoomList, tenantList,SelectedBranchId }: { RoomList: 
             color: 'var(--Accent-Color50)',
           },
         ]}
- 
         margin={{
           left: 74,
           right: 30,

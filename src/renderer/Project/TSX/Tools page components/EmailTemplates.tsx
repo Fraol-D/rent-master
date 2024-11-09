@@ -1,13 +1,16 @@
 import React from 'react';
+import { Input } from '../Helpers/CustomReactComponents';
 interface EmailTemplate {
   id: string;
   name: string;
   subject: string;
   body: string;
 }
+import loadingGif from '../../../assets/assets/Loading/Rolling-1s-200px.gif';
 
 interface EmailTemplatesProps {
   emailTemplates: EmailTemplate[];
+  handleReplaceWithDefault: () => void;
   openTemplateId: string | null;
   editingTemplateId: string | null;
   editedTemplate: EmailTemplate | null;
@@ -34,7 +37,9 @@ interface EmailTemplatesProps {
   handleSendEmail: () => void;
   subjectInputRef: React.RefObject<HTMLInputElement>;
   bodyTextareaRef: React.RefObject<HTMLTextAreaElement>;
-  setSelectedInput: (input: string) => void;emailSentSuccessstring: string;
+  setSelectedInput: (input: string) => void;
+  emailSentSuccessstring: string;
+  isSending: boolean;
 }
 
 const EmailTemplates: React.FC<EmailTemplatesProps> = ({
@@ -52,6 +57,7 @@ const EmailTemplates: React.FC<EmailTemplatesProps> = ({
   saveChanges,
   cancelEditing,
   deleteEmailTemplate,
+  handleReplaceWithDefault,
   handleEditChange,
   insertVariable,
   extractVariables,
@@ -65,7 +71,9 @@ const EmailTemplates: React.FC<EmailTemplatesProps> = ({
   handleSendEmail,
   subjectInputRef,
   bodyTextareaRef,
-  setSelectedInput,emailSentSuccessstring
+  setSelectedInput,
+  emailSentSuccessstring,
+  isSending,
 }) => {
   return (
     <div className="tools-page">
@@ -76,7 +84,19 @@ const EmailTemplates: React.FC<EmailTemplatesProps> = ({
           alignItems: 'center',
         }}
       >
-        <h2>Your Email Templates</h2>
+        <h2>Your Email Templates</h2>{' '}
+        <button
+          onClick={() => {
+            if (navigator.onLine) handleReplaceWithDefault();
+            else alert('You are offline, cannot reset to default');
+          }}
+          style={{
+            fontSize: 'var(--10px-V)',
+            border: 'var(--1px-V) dashed red',
+          }}
+        >
+          Reset to Default
+        </button>
         <button onClick={handleAddEmailTemplate}>Add an email template</button>
       </div>
       {emailTemplates.map((template) => (
@@ -90,7 +110,10 @@ const EmailTemplates: React.FC<EmailTemplatesProps> = ({
           <div
             className="email-template-header"
             style={{
-              padding: editingTemplateId === template.id ? 'var(--10px-V)' : 'var(--15px-V)',
+              padding:
+                editingTemplateId === template.id
+                  ? 'var(--10px-V)'
+                  : 'var(--15px-V)',
             }}
           >
             {editingTemplateId === template.id ? (
@@ -123,8 +146,10 @@ const EmailTemplates: React.FC<EmailTemplatesProps> = ({
               <div className="email-template-body">
                 <h4
                   style={{
-                    margin: editingTemplateId === template.id ? 'var(--0px-V),' : '',
-                    marginTop: editingTemplateId === template.id ? 'var(--12px-V)' : '',
+                    margin:
+                      editingTemplateId === template.id ? 'var(--0px-V),' : '',
+                    marginTop:
+                      editingTemplateId === template.id ? 'var(--12px-V)' : '',
                     marginBottom:
                       editingTemplateId === template.id ? 'var(--14px-V)' : '',
                     width: editingTemplateId === template.id ? '100%' : '',
@@ -257,7 +282,28 @@ const EmailTemplates: React.FC<EmailTemplatesProps> = ({
                   value={recipientEmail}
                   onChange={(e) => setRecipientEmail(e.target.value)}
                 />
-                <button onClick={handleSendEmail}>Send</button>: {emailSentSuccessstring}
+                <button
+                  onClick={handleSendEmail}
+                  disabled={isSending}
+                  style={{ opacity: isSending ? 0.7 : 1 }}
+                >
+                  {isSending ? 'Sending...' : 'Send'}
+                </button>
+                {isSending && (
+                  <img
+                    src={loadingGif}
+                    alt="Sending..."
+                    style={{
+                      width: 'var(--30px-V)',
+                      height: 'var(--30px-V)',
+                    }}
+                  />
+                )}
+                {!isSending && emailSentSuccessstring && (
+                  <span style={{ color: 'var(--Success-Color)' }}>
+                    {emailSentSuccessstring}
+                  </span>
+                )}
               </div>
             </>
           )}

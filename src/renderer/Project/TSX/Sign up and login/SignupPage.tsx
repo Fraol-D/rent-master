@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Input } from '../Helpers/CustomReactComponents';
 import {
   AddUserOnline,
   addValueOnline,
@@ -143,13 +144,13 @@ const SignupPage = ({
         name: '5 days before due',
         subject: 'Rent Payment Reminder: Due in 5 Days',
         body: `Dear {{tenant_name}},
-  
-  This is a friendly reminder that your rent payment of {{due_amount}} is due in 5 days ({{due_duration}}) on {{due_date}}.
-  
-  If you have any questions, please contact {{landlord_name}} at {{landlord_Email}} or {{landlord_Telephone}}.
-  
-  Best regards,
-  {{landlord_name}}`,
+    
+    This is a friendly reminder that your rent payment of {{currency}}{{due_amount}} is due in 5 days ({{due_duration}}) on {{due_date}}.
+    
+    If you have any questions, please contact {{landlord_name}} at {{landlord_Email}} or {{landlord_Telephone}}.
+    
+    Best regards,
+    {{landlord_name}}`,
         created_at: Date.now(),
         updated_at: Date.now(),
         userId: userId,
@@ -159,13 +160,13 @@ const SignupPage = ({
         name: '3 days before due',
         subject: 'Rent Payment Reminder: Due in 3 Days',
         body: `Dear {{tenant_name}},
-  
-  Your rent payment of {{due_amount}} is due in 3 days ({{due_duration}}) on {{due_date}}. Please ensure timely payment.
-  
-  For any inquiries, contact {{landlord_name}} at {{landlord_Email}} or {{landlord_Telephone}}.
-  
-  Thank you,
-  {{landlord_name}}`,
+    
+    Your rent payment of {{currency}}{{due_amount}} is due in 3 days ({{due_duration}}) on {{due_date}}. Please ensure timely payment.
+    
+    For any inquiries, contact {{landlord_name}} at {{landlord_Email}} or {{landlord_Telephone}}.
+    
+    Thank you,
+    {{landlord_name}}`,
         created_at: Date.now(),
         updated_at: Date.now(),
         userId: userId,
@@ -175,13 +176,13 @@ const SignupPage = ({
         name: '1 day before due',
         subject: 'Urgent: Rent Payment Due Tomorrow',
         body: `Dear {{tenant_name}},
-  
-  This is an urgent reminder that your rent payment of {{due_amount}} is due tomorrow ({{due_duration}}), {{due_date}}.
-  
-  If you have any concerns, please contact {{landlord_name}} immediately at {{landlord_Email}} or {{landlord_Telephone}}.
-  
-  Best regards,
-  {{landlord_name}}`,
+    
+    This is an urgent reminder that your rent payment of {{currency}}{{due_amount}} is due tomorrow ({{due_duration}}), {{due_date}}.
+    
+    If you have any concerns, please contact {{landlord_name}} immediately at {{landlord_Email}} or {{landlord_Telephone}}.
+    
+    Best regards,
+    {{landlord_name}}`,
         created_at: Date.now(),
         updated_at: Date.now(),
         userId: userId,
@@ -191,13 +192,13 @@ const SignupPage = ({
         name: 'On due date',
         subject: 'Rent Payment Due Today',
         body: `Dear {{tenant_name}},
-  
-  Your rent payment of {{due_amount}} is due today ({{due_duration}}), {{due_date}}. Please make the payment as soon as possible.
-  
-  For any questions, contact {{landlord_name}} at {{landlord_Email}} or {{landlord_Telephone}}.
-  
-  Thank you for your prompt attention to this matter.
-  {{landlord_name}}`,
+    
+    Your rent payment of {{currency}}{{due_amount}} is due today ({{due_duration}}), {{due_date}}. Please make the payment as soon as possible.
+    
+    For any questions, contact {{landlord_name}} at {{landlord_Email}} or {{landlord_Telephone}}.
+    
+    Thank you for your prompt attention to this matter.
+    {{landlord_name}}`,
         created_at: Date.now(),
         updated_at: Date.now(),
         userId: userId,
@@ -207,13 +208,13 @@ const SignupPage = ({
         name: '1 day after due',
         subject: 'Overdue Rent Payment Notice',
         body: `Dear {{tenant_name}},
-  
-  Your rent payment of {{due_amount}} was due yesterday ({{due_duration}}), {{due_date}}. If you have already made the payment, please disregard this notice.
-  
-  If not, please make the payment immediately or contact {{landlord_name}} at {{landlord_Email}} or {{landlord_Telephone}} to discuss the situation.
-  
-  Regards,
-  {{landlord_name}}`,
+    
+    Your rent payment of {{currency}}{{due_amount}} was due yesterday ({{due_duration}}), {{due_date}}. If you have already made the payment, please disregard this notice.
+    
+    If not, please make the payment immediately or contact {{landlord_name}} at {{landlord_Email}} or {{landlord_Telephone}} to discuss the situation.
+    
+    Regards,
+    {{landlord_name}}`,
         created_at: Date.now(),
         updated_at: Date.now(),
         userId: userId,
@@ -223,13 +224,13 @@ const SignupPage = ({
         name: '3 days after due',
         subject: 'Urgent: Rent Payment 3 Days Overdue',
         body: `Dear {{tenant_name}},
-  
-  Your rent payment of {{due_amount}} is now 3 days overdue ({{due_duration}}). The due date was {{due_date}}.
-  
-  Please make the payment immediately or contact {{landlord_name}} at {{landlord_Email}} or {{landlord_Telephone}} to discuss any issues you may be facing.
-  
-  Sincerely,
-  {{landlord_name}}`,
+    
+    Your rent payment of {{currency}}{{due_amount}} is now 3 days overdue ({{due_duration}}). The due date was {{due_date}}.
+    
+    Please make the payment immediately or contact {{landlord_name}} at {{landlord_Email}} or {{landlord_Telephone}} to discuss any issues you may be facing.
+    
+    Sincerely,
+    {{landlord_name}}`,
         created_at: Date.now(),
         updated_at: Date.now(),
         userId: userId,
@@ -239,13 +240,13 @@ const SignupPage = ({
         name: '5 days after due',
         subject: 'Critical Notice: Rent Payment 5 Days Overdue',
         body: `Dear {{tenant_name}},
-  
-  This is a critical notice regarding your rent payment of {{due_amount}}, which is now 5 days overdue ({{due_duration}}). The original due date was {{due_date}}.
-  
-  Immediate action is required. Please make the payment or contact {{landlord_name}} at {{landlord_Email}} or {{landlord_Telephone}} to discuss this urgent matter.
-  
-  Regards,
-  {{landlord_name}}`,
+    
+    This is a critical notice regarding your rent payment of {{currency}}{{due_amount}}, which is now 5 days overdue ({{due_duration}}). The original due date was {{due_date}}.
+    
+    Immediate action is required. Please make the payment or contact {{landlord_name}} at {{landlord_Email}} or {{landlord_Telephone}} to discuss this urgent matter.
+    
+    Regards,
+    {{landlord_name}}`,
         created_at: Date.now(),
         updated_at: Date.now(),
         userId: userId,
@@ -255,13 +256,141 @@ const SignupPage = ({
         name: '7 days after due',
         subject: 'Final Notice: Rent Payment 7 Days Overdue',
         body: `Dear {{tenant_name}},
-  
-  This is a final notice regarding your rent payment of {{due_amount}}, which is now 7 days overdue ({{due_duration}}). The original due date was {{due_date}}.
-  
-  Failure to address this matter may result in further action. Please make the payment immediately or contact {{landlord_name}} at {{landlord_Email}} or {{landlord_Telephone}} to resolve this issue.
-  
-  Sincerely,
-  {{landlord_name}}`,
+    
+    This is a final notice regarding your rent payment of {{currency}}{{due_amount}}, which is now 7 days overdue ({{due_duration}}). The original due date was {{due_date}}.
+    
+    Failure to address this matter may result in further action. Please make the payment immediately or contact {{landlord_name}} at {{landlord_Email}} or {{landlord_Telephone}} to resolve this issue.
+    
+    Sincerely,
+    {{landlord_name}}`,
+        created_at: Date.now(),
+        updated_at: Date.now(),
+        userId: userId,
+      },
+      {
+        id: uuidv4(),
+        name: 'በ5 ቀናት ውስጥ የሚከፈል',
+        subject: 'የኪራይ ክፍያ ማሳሰቢያ፡ በ5 ቀናት ውስጥ የሚከፈል',
+        body: `ውድ {{tenant_name}},
+    
+    ይህ ደብዳቤ የ{{currency}}{{due_amount}} የኪራይ ክፍያዎ በ5 ቀናት ውስጥ ({{due_duration}}) በ{{due_date}} እንደሚከፈል የሚያሳስብ ደብዳቤ ነው።
+    
+    ማንኛውም ጥያቄ ካለዎት፣ እባክዎን {{landlord_name}}ን በ{{landlord_Email}} ወይም በ{{landlord_Telephone}} ያግኙ።
+    
+    ከሰላምታ ጋር፣
+    {{landlord_name}}`,
+        created_at: Date.now(),
+        updated_at: Date.now(),
+        userId: userId,
+      },
+      {
+        id: uuidv4(),
+        name: 'በ3 ቀናት ውስጥ የሚከፈል',
+        subject: 'የኪራይ ክፍያ ማሳሰቢያ፡ በ3 ቀናት ውስጥ የሚከፈል',
+        body: `ውድ {{tenant_name}},
+    
+    የ{{currency}}{{due_amount}} የኪራይ ክፍያዎ በ3 ቀናት ውስጥ ({{due_duration}}) በ{{due_date}} ይከፈላል። እባክዎን በጊዜው እንዲከፍሉ።
+    
+    ለማንኛውም ጥያቄ፣ {{landlord_name}}ን በ{{landlord_Email}} ወይም በ{{landlord_Telephone}} ያግኙ።
+    
+    እናመሰግናለን፣
+    {{landlord_name}}`,
+        created_at: Date.now(),
+        updated_at: Date.now(),
+        userId: userId,
+      },
+      {
+        id: uuidv4(),
+        name: 'በ1 ቀን ውስጥ የሚከፈል',
+        subject: 'አስቸኳይ፡ የኪራይ ክፍያ ነገ የሚከፈል',
+        body: `ውድ {{tenant_name}},
+    
+    ይህ የ{{currency}}{{due_amount}} የኪራይ ክፍያዎ ነገ ({{due_duration}})፣ {{due_date}} እንደሚከፈል የሚያሳስብ አስቸኳይ ማሳሰቢያ ነው።
+    
+    ማንኛውም ችግር ካለ፣ እባክዎን {{landlord_name}}ን በአስቸኳይ በ{{landlord_Email}} ወይም በ{{landlord_Telephone}} ያግኙ።
+    
+    ከሰላምታ ጋር፣
+    {{landlord_name}}`,
+        created_at: Date.now(),
+        updated_at: Date.now(),
+        userId: userId,
+      },
+      {
+        id: uuidv4(),
+        name: 'በመክፈያ ቀን',
+        subject: 'የኪራይ ክፍያ ዛሬ የሚከፈል',
+        body: `ውድ {{tenant_name}},
+    
+    የ{{currency}}{{due_amount}} የኪራይ ክፍያዎ ዛሬ ({{due_duration}})፣ {{due_date}} መከፈል አለበት። እባክዎን በተቻለ ፍጥነት ይክፈሉ።
+    
+    ለማንኛውም ጥያቄ፣ {{landlord_name}}ን በ{{landlord_Email}} ወይም በ{{landlord_Telephone}} ያግኙ።
+    
+    ለፈጣን ምላሽዎ እናመሰግናለን።
+    {{landlord_name}}`,
+        created_at: Date.now(),
+        updated_at: Date.now(),
+        userId: userId,
+      },
+      {
+        id: uuidv4(),
+        name: 'ከቀኑ በኋላ 1 ቀን',
+        subject: 'የዘገየ የኪራይ ክፍያ ማሳሰቢያ',
+        body: `ውድ {{tenant_name}},
+    
+    የ{{currency}}{{due_amount}} የኪራይ ክፍያዎ ትላንት ({{due_duration}})፣ {{due_date}} መከፈል ነበረበት። ክፍያውን ከፍለው ከሆነ፣ እባክዎን ይህንን ማሳሰቢያ ይተዉት።
+    
+    ካልከፈሉ፣ እባክዎን በአስቸኳይ ይክፈሉ ወይም ሁኔታውን ለመወያየት {{landlord_name}}ን በ{{landlord_Email}} ወይም በ{{landlord_Telephone}} ያግኙ።
+    
+    ከሰላምታ ጋር፣
+    {{landlord_name}}`,
+        created_at: Date.now(),
+        updated_at: Date.now(),
+        userId: userId,
+      },
+      {
+        id: uuidv4(),
+        name: 'ከቀኑ በኋላ 3 ቀናት',
+        subject: 'አስቸኳይ፡ የኪራይ ክፍያ በ3 ቀናት ዘግይቷል',
+        body: `ውድ {{tenant_name}},
+    
+    የ{{currency}}{{due_amount}} የኪራይ ክፍያዎ አሁን በ3 ቀናት ዘግይቷል ({{due_duration}})። የመክፈያ ቀኑ {{due_date}} ነበር።
+    
+    እባክዎን በአስቸኳይ ይክፈሉ ወይም ማንኛውም ችግር ካለ {{landlord_name}}ን በ{{landlord_Email}} ወይም በ{{landlord_Telephone}} ያግኙ።
+    
+    ከሰላምታ ጋር፣
+    {{landlord_name}}`,
+        created_at: Date.now(),
+        updated_at: Date.now(),
+        userId: userId,
+      },
+      {
+        id: uuidv4(),
+        name: 'ከቀኑ በኋላ 5 ቀናት',
+        subject: 'አስቸኳይ ማሳሰቢያ፡ የኪራይ ክፍያ በ5 ቀናት ዘግይቷል',
+        body: `ውድ {{tenant_name}},
+    
+    ይህ የ{{currency}}{{due_amount}} የኪራይ ክፍያዎ አሁን በ5 ቀናት መዘግየቱን ({{due_duration}}) የሚያሳውቅ አስቸኳይ ማሳሰቢያ ነው። የመጀመሪያው የመክፈያ ቀን {{due_date}} ነበር።
+    
+    አስቸኳይ እርምጃ ያስፈልጋል። እባክዎን ይክፈሉ ወይም ይህንን አስቸኳይ ጉዳይ ለመወያየት {{landlord_name}}ን በ{{landlord_Email}} ወይም በ{{landlord_Telephone}} ያግኙ።
+    
+    ከሰላምታ ጋር፣
+    {{landlord_name}}`,
+        created_at: Date.now(),
+        updated_at: Date.now(),
+        userId: userId,
+      },
+      {
+        id: uuidv4(),
+        name: 'ከቀኑ በኋላ 7 ቀናት',
+        subject: 'የመጨረሻ ማሳሰቢያ፡ የኪራይ ክፍያ በ7 ቀናት ዘግይቷል',
+        body: `ውድ {{tenant_name}},
+    
+    ይህ የ{{currency}}{{due_amount}} የኪራይ ክፍያዎ አሁን በ7 ቀናት መዘግየቱን ({{due_duration}}) የሚያሳውቅ የመጨረሻ ማሳሰቢያ ነው። የመጀመሪያው የመክፈያ ቀን {{due_date}} ነበር።
+    
+    ይህንን ጉዳይ ካልፈቱት ተጨማሪ እርምጃ ሊወሰድ ይችላል። እባክዎን በአስቸኳይ ይክፈሉ ወይም ይህንን ጉዳይ ለመፍታት {{landlord_name}}ን በ{{landlord_Email}} ወይም በ{{landlord_Telephone}} ያግኙ።
+    
+    ከሰላምታ ጋር፣
+    {{landlord_name}}`,
         created_at: Date.now(),
         updated_at: Date.now(),
         userId: userId,
@@ -275,7 +404,7 @@ const SignupPage = ({
         name: '5 days before due',
         body: `Dear {{tenant_name}},
   
-  This is a friendly reminder that your rent payment of {{due_amount}} is due in 5 days ({{due_duration}}) on {{due_date}}.
+  Your rent payment of {{currency}}{{due_amount}} is due in 5 days ({{due_duration}}) on {{due_date}}.
   
   If you have any questions, please contact {{landlord_name}} at {{landlord_Telephone}}.
   
@@ -290,7 +419,7 @@ const SignupPage = ({
         name: '3 days before due',
         body: `Dear {{tenant_name}},
   
-  Your rent payment of {{due_amount}} is due in 3 days ({{due_duration}}) on {{due_date}}. Please ensure timely payment.
+  Your rent payment of {{currency}}{{due_amount}} is due in 3 days ({{due_duration}}) on {{due_date}}. Please ensure timely payment.
   
   For any inquiries, contact {{landlord_name}} at {{landlord_Telephone}}.
   
@@ -305,9 +434,9 @@ const SignupPage = ({
         name: '1 day before due',
         body: `Dear {{tenant_name}},
   
-  This is an urgent reminder that your rent payment of {{due_amount}} is due tomorrow ({{due_duration}}), {{due_date}}.
+  This is an urgent reminder that your rent payment of {{currency}}{{due_amount}} is due tomorrow ({{due_duration}}), {{due_date}}.
   
-  If you have any concerns, please contact {{landlord_name}} immediately at {{landlord_Telephone}}.
+  If you have any concerns, please contact {{landlord_name}} at {{landlord_Telephone}}.
   
   Best regards,
   {{landlord_name}}`,
@@ -320,11 +449,11 @@ const SignupPage = ({
         name: 'On due date',
         body: `Dear {{tenant_name}},
   
-  Your rent payment of {{due_amount}} is due today ({{due_duration}}), {{due_date}}. Please make the payment as soon as possible.
+  Your rent payment of {{currency}}{{due_amount}} is due today ({{due_duration}}), {{due_date}}. Please make the payment as soon as possible.
   
   For any questions, contact {{landlord_name}} at {{landlord_Telephone}}.
   
-  Thank you for your prompt attention to this matter.
+  Thank you,
   {{landlord_name}}`,
         created_at: Date.now(),
         updated_at: Date.now(),
@@ -335,9 +464,9 @@ const SignupPage = ({
         name: '1 day after due',
         body: `Dear {{tenant_name}},
   
-  Your rent payment of {{due_amount}} was due yesterday ({{due_duration}}), {{due_date}}. If you have already made the payment, please disregard this notice.
+  Your rent payment of {{currency}}{{due_amount}} was due yesterday ({{due_duration}}), {{due_date}}. If you have already made the payment, please disregard this message.
   
-  If not, please make the payment immediately or contact {{landlord_name}} at {{landlord_Telephone}} to discuss the situation.
+  If not, please make the payment immediately or contact {{landlord_name}} at {{landlord_Telephone}}.
   
   Regards,
   {{landlord_name}}`,
@@ -350,9 +479,9 @@ const SignupPage = ({
         name: '3 days after due',
         body: `Dear {{tenant_name}},
   
-  Your rent payment of {{due_amount}} is now 3 days overdue ({{due_duration}}). The due date was {{due_date}}.
+  Your rent payment of {{currency}}{{due_amount}} is now 3 days overdue ({{due_duration}}). The due date was {{due_date}}.
   
-  Please make the payment immediately or contact {{landlord_name}} at {{landlord_Telephone}} to discuss any issues you may be facing.
+  Please make the payment immediately or contact {{landlord_name}} at {{landlord_Telephone}}.
   
   Sincerely,
   {{landlord_name}}`,
@@ -365,9 +494,9 @@ const SignupPage = ({
         name: '5 days after due',
         body: `Dear {{tenant_name}},
   
-  This is a critical notice regarding your rent payment of {{due_amount}}, which is now 5 days overdue ({{due_duration}}). The original due date was {{due_date}}.
+  Your rent payment of {{currency}}{{due_amount}} is now 5 days overdue ({{due_duration}}). Due date was {{due_date}}.
   
-  Immediate action is required. Please make the payment or contact {{landlord_name}} at {{landlord_Telephone}} to discuss this urgent matter.
+  Please make the payment immediately or contact {{landlord_name}} at {{landlord_Telephone}}.
   
   Regards,
   {{landlord_name}}`,
@@ -380,11 +509,132 @@ const SignupPage = ({
         name: '7 days after due',
         body: `Dear {{tenant_name}},
   
-  This is a final notice regarding your rent payment of {{due_amount}}, which is now 7 days overdue ({{due_duration}}). The original due date was {{due_date}}.
+  Your rent payment of {{currency}}{{due_amount}} is now 7 days overdue ({{due_duration}}). Due date was {{due_date}}.
   
-  Failure to address this matter may result in further action. Please make the payment immediately or contact {{landlord_name}} at {{landlord_Telephone}} to resolve this issue.
+  Please make immediate payment or contact {{landlord_name}} at {{landlord_Telephone}}.
   
   Sincerely,
+  {{landlord_name}}`,
+        created_at: Date.now(),
+        updated_at: Date.now(),
+        userId: userId,
+      },
+      // Amharic versions
+      {
+        id: uuidv4(),
+        name: 'በ5 ቀናት ውስጥ የሚከፈል',
+        body: `ውድ {{tenant_name}},
+  
+  የ{{currency}}{{due_amount}} የኪራይ ክፍያዎ በ5 ቀናት ውስጥ ({{due_duration}}) በ{{due_date}} መከፈል አለበት።
+  
+  ጥያቄ ካለዎት {{landlord_name}}ን በ{{landlord_Telephone}} ያግኙ።
+  
+  ከሰላምታ ጋር፣
+  {{landlord_name}}`,
+        created_at: Date.now(),
+        updated_at: Date.now(),
+        userId: userId,
+      },
+      {
+        id: uuidv4(),
+        name: 'በ3 ቀናት ውስጥ የሚከፈል',
+        body: `ውድ {{tenant_name}},
+  
+  የ{{currency}}{{due_amount}} የኪራይ ክፍያዎ በ3 ቀናት ውስጥ ({{due_duration}}) በ{{due_date}} መከፈል አለበት። በጊዜው እንዲከፍሉ እናሳስባለን።
+  
+  ጥያቄ ካለዎት {{landlord_name}}ን በ{{landlord_Telephone}} ያግኙ።
+  
+  እናመሰግናለን፣
+  {{landlord_name}}`,
+        created_at: Date.now(),
+        updated_at: Date.now(),
+        userId: userId,
+      },
+      {
+        id: uuidv4(),
+        name: 'በ1 ቀን ውስጥ የሚከፈል',
+        body: `ውድ {{tenant_name}},
+  
+  የ{{currency}}{{due_amount}} የኪራይ ክፍያዎ ነገ ({{due_duration}}) በ{{due_date}} መከፈል አለበት።
+  
+  ጥያቄ ካለዎት {{landlord_name}}ን በ{{landlord_Telephone}} ያግኙ።
+  
+  ከሰላምታ ጋር፣
+  {{landlord_name}}`,
+        created_at: Date.now(),
+        updated_at: Date.now(),
+        userId: userId,
+      },
+      {
+        id: uuidv4(),
+        name: 'በመክፈያ ቀን',
+        body: `ውድ {{tenant_name}},
+  
+  የ{{currency}}{{due_amount}} የኪራይ ክፍያዎ ዛሬ ({{due_duration}}) በ{{due_date}} መከፈል አለበት። በአስቸኳይ እንዲከፍሉ እናሳስባለን።
+  
+  ጥያቄ ካለዎት {{landlord_name}}ን በ{{landlord_Telephone}} ያግኙ።
+  
+  እናመሰግናለን፣
+  {{landlord_name}}`,
+        created_at: Date.now(),
+        updated_at: Date.now(),
+        userId: userId,
+      },
+      {
+        id: uuidv4(),
+        name: 'ከቀኑ በኋላ 1 ቀን',
+        body: `ውድ {{tenant_name}},
+  
+  የ{{currency}}{{due_amount}} የኪራይ ክፍያዎ ትላንት ({{due_duration}}) በ{{due_date}} መከፈል ነበረበት። ከፍለው ከሆነ ይህን መልእክት ይተዉት።
+  
+  ካልከፈሉ፣ እባክዎ በአስቸኳይ ይክፈሉ ወይም {{landlord_name}}ን በ{{landlord_Telephone}} ያግኙ።
+  
+  ከሰላምታ ጋር፣
+  {{landlord_name}}`,
+        created_at: Date.now(),
+        updated_at: Date.now(),
+        userId: userId,
+      },
+      {
+        id: uuidv4(),
+        name: 'ከቀኑ በኋላ 3 ቀናት',
+        body: `ውድ {{tenant_name}},
+  
+  የ{{currency}}{{due_amount}} የኪራይ ክፍያዎ በ3 ቀናት ዘግይቷል ({{due_duration}})። የመክፈያ ቀኑ {{due_date}} ነበር።
+  
+  እባክዎ በአስቸኳይ ይክፈሉ ወይም {{landlord_name}}ን በ{{landlord_Telephone}} ያግኙ።
+  
+  ከሰላምታ ጋር፣
+  {{landlord_name}}`,
+        created_at: Date.now(),
+        updated_at: Date.now(),
+        userId: userId,
+      },
+      {
+        id: uuidv4(),
+        name: 'ከቀኑ በኋላ 5 ቀናት',
+        body: `ውድ {{tenant_name}},
+  
+  የ{{currency}}{{due_amount}} የኪራይ ክፍያዎ በ5 ቀናት ዘግይቷል ({{due_duration}})። የመክፈያ ቀኑ {{due_date}} ነበር።
+  
+  እባክዎ በአስቸኳይ ይክፈሉ ወይም {{landlord_name}}ን በ{{landlord_Telephone}} ያግኙ።
+  
+  ከሰላምታ ጋር፣
+  {{landlord_name}}`,
+        created_at: Date.now(),
+        updated_at: Date.now(),
+        userId: userId,
+      },
+      {
+        id: uuidv4(),
+        name: 'ከቀኑ በኋላ 7 ቀናት',
+        body: `ውድ {{tenant_name}},
+  
+  የ{{currency}}{{due_amount}} የኪራይ ክፍያዎ በ7 ቀናት ዘግይቷል ({{due_duration}})። የመክፈያ ቀኑ {{due_date}} ነበር።
+  
+  እባክዎ በአስቸኳይ ይክፈሉ ወይም {{landlord_name}}ን በ{{landlord_Telephone}} ያግኙ።
+  
+  ከሰላምታ ጋር፣
   {{landlord_name}}`,
         created_at: Date.now(),
         updated_at: Date.now(),
@@ -395,7 +645,7 @@ const SignupPage = ({
 
   const handleSignUp = async () => {
     setLoading(true);
-   
+
     if (!fullName || !companyName || !phoneNumber) {
       setErrorMessage('Please fill out all fields.');
       setLoading(false);
@@ -545,7 +795,12 @@ const SignupPage = ({
           </h1>{' '}
           <button onClick={handleOrLoginButtonClick}>Or login</button>
         </div>
-        <p style={{ color: 'var(--Text-Color-Grey)', marginBottom: 'var(--25px-V)' }}>
+        <p
+          style={{
+            color: 'var(--Text-Color-Grey)',
+            marginBottom: 'var(--25px-V)',
+          }}
+        >
           Sign up with your Email and Password
         </p>
         <input
@@ -554,8 +809,10 @@ const SignupPage = ({
           onChange={handleEmailChange}
           placeholder="Email"
           className="userName-input"
-          disabled={formStage !== 'initial'} 
-          style={{color: formStage !== 'initial' ? 'var(--Text-Color-Grey)' : ''}}// Disable if not in initial stage
+          disabled={formStage !== 'initial'}
+          style={{
+            color: formStage !== 'initial' ? 'var(--Text-Color-Grey)' : '',
+          }} // Disable if not in initial stage
         />
         <input
           type="password"
@@ -564,8 +821,9 @@ const SignupPage = ({
           className="userName-input"
           placeholder="Password"
           disabled={formStage !== 'initial'} // Disable if not in initial stage
-          style={{color: formStage !== 'initial' ? 'var(--Text-Color-Grey)' : ''}}// Disable if not in initial stage
-
+          style={{
+            color: formStage !== 'initial' ? 'var(--Text-Color-Grey)' : '',
+          }} // Disable if not in initial stage
         />
         <input
           type="password"
@@ -576,8 +834,9 @@ const SignupPage = ({
           className="userName-input"
           placeholder="Repeat password"
           disabled={formStage !== 'initial'} // Disable if not in initial stage
-          style={{color: formStage !== 'initial' ? 'var(--Text-Color-Grey)' : ''}}// Disable if not in initial stage
-
+          style={{
+            color: formStage !== 'initial' ? 'var(--Text-Color-Grey)' : '',
+          }} // Disable if not in initial stage
         />
 
         {formStage === 'initial' && (
@@ -616,7 +875,10 @@ const SignupPage = ({
                     onChange={(e) => setUserCode(e.target.value)}
                     placeholder="Enter Code"
                     className="userName-input"
-                    style={{ width: 'var(--80px-V)', marginBottom: 'var(--0px-V)' }}
+                    style={{
+                      width: 'var(--80px-V)',
+                      marginBottom: 'var(--0px-V)',
+                    }}
                   />{' '}
                   <button onClick={handleVerify} className="LoginButton">
                     Verify

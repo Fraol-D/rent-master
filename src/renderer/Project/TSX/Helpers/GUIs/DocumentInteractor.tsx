@@ -20,6 +20,18 @@ interface DocumentInteractorProps {
   AddTenant?: boolean;
 }
 
+const formatTenantName = (name: string) => {
+  const spaceMatch = name.match(/^(.*?)\s+(\d+)$/);
+  const parenthesesMatch = name.match(/^(.*?)\((\d+)\)$/);
+  
+  if (spaceMatch) {
+    return `${spaceMatch[1]}(${spaceMatch[2]})`;
+  } else if (parenthesesMatch) {
+    return name;
+  }
+  return name;
+};
+
 const DocumentInteractor: React.FC<DocumentInteractorProps> = ({
   room,
   isAddRoomDocument = false,
@@ -77,17 +89,14 @@ const DocumentInteractor: React.FC<DocumentInteractorProps> = ({
           month: 'short',
           day: '2-digit',
         };
+        const formattedName = formatTenantName(tenant.name);
+        const formattedDate = date.toLocaleDateString('en-US', options).replace(/,/g, '');
+        
         const roomDocs = await getTenantRoomDocuments(
           room.id,
-          `${tenant.name}, ${date
-            .toLocaleDateString('en-US', options)
-            .replace(/,/g, '')}, ${tenant.id}`
+          `${formattedName}, ${formattedDate}, ${tenant.id}`
         );
-        console.log(
-          tenant.name,
-          date.toLocaleDateString('en-US', options).replace(/,/g, ''),
-          tenant.id
-        );
+        
         if (roomDocs && roomDocs.documents) {
           setDocuments(roomDocs.documents);
         }
@@ -125,14 +134,11 @@ const DocumentInteractor: React.FC<DocumentInteractorProps> = ({
               console.error('Failed to upload some tenant documents');
             }
           } else {
-            // Existing code for non-isAddRoomDocument case
             const roomId = room?.id || 'default-room-id';
             const tenantId = room?.tenantId || '';
-            const tenantName =
-              TenantsList.find((t: tenant) => t.id === tenantId)?.name || '';
-            const AddedTimeReal = new Date(
-              TenantsList.find((t: tenant) => t.id === tenantId)?.startTime || 0
-            ).toDateString();
+            const tenant = TenantsList.find((t: tenant) => t.id === tenantId);
+            const tenantName = tenant ? formatTenantName(tenant.name) : '';
+            const AddedTimeReal = tenant ? new Date(tenant.startTime).toDateString() : '';
 
             if (!roomId || !tenantName || !tenantId) {
               console.error('Missing required room or tenant information');
@@ -146,6 +152,7 @@ const DocumentInteractor: React.FC<DocumentInteractorProps> = ({
               tenantId,
               AddedTimeReal
             );
+            
             if (results) {
               console.log('Documents uploaded successfully:', results);
               fetchRoomDocuments();

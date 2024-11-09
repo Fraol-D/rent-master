@@ -82,6 +82,7 @@
     "@mui/material": "^6.1.4",
     "@mui/x-charts": "^7.21.0",
     "adm-zip": "^0.5.15",
+    "afrotranslate": "^1.0.0",
     "body-parser": "^1.20.2",
     "chart.js": "^4.4.3",
     "clamscan": "^2.3.1",
@@ -218,7 +219,8 @@
       "entitlements": "assets/entitlements.mac.plist",
       "entitlementsInherit": "assets/entitlements.mac.plist",
       "gatekeeperAssess": false
-    }, "nsis": {
+    },
+    "nsis": {
       "differentialPackage": true
     },
     "dmg": {

@@ -1,6 +1,7 @@
 import { RoomListComponent } from './Pages/RoomListComponent';
 import { PeopleComponentPage } from './Pages/PeopleComponentPage';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Input } from './Helpers/CustomReactComponents';
 const { v4: uuidv4 } = require('uuid');
 import ImageInteractor from './Helpers/GUIs/ImageIntractorGUI';
 import LONGIMAGE from './Helpers/WIN_20240802_19_41_23_Pro.jpg';
@@ -29,6 +30,10 @@ import DatabasePage from './Pages/DatabasePage';
 import ToolsPage from './Pages/ToolsPage';
 import { getUserPrivileges } from 'renderer/App';
 import { UpdateButton } from 'renderer/components/UpdateButton';
+import CurrencySign, {
+  GetCurrencyAsOptionsOnSelect,
+  GetDefaultCurrency,
+} from './Helpers/CurrencySign';
 type FilterOption = {
   key: string;
   value: any;
@@ -45,20 +50,19 @@ declare global {
     id: string;
     userId: string;
     // Added
-    
+
     // Basic information
     name: string;
     location: string;
     description: string;
     lock?: boolean;
     googleMapPinPoint: string;
-  }
+  };
   type BranchTypeWithData = {
     // Primary identifiers
     id: string;
     userId: string;
-   
-    
+
     // Basic information
     name: string;
     location: string;
@@ -75,8 +79,7 @@ declare global {
     monthlyProfit?: number;
     userAccountsWhichHaveAccess?: string[];
     lock?: boolean;
-
-  }
+  };
   type RoomType = {
     id: string;
     floor: number;
@@ -85,6 +88,7 @@ declare global {
     price: number;
     AgreedPrice: number;
     utilityPaymentEvery: string;
+    Currency: string;
     utilityPaymentStartDate: number;
     utilityPaymentUseDifferentStartDate: boolean;
     utilityPaymentEveryCustom: number;
@@ -130,6 +134,7 @@ declare global {
     id: string;
     branchId: string; // Added
     userId: string;
+    Currency: string;
   };
   type UtilityPayment = {
     id: string;
@@ -138,7 +143,7 @@ declare global {
     price: string;
     custom: boolean;
     branchId: string; // Added
-
+    Currency: string;
     userId: string;
   };
 
@@ -167,6 +172,7 @@ declare global {
     TIN: string;
     RentReason: string;
     AddedTime: number;
+    Currency: string;
     branchId: string; // Added
   };
   type BrokerType = {
@@ -208,6 +214,7 @@ declare global {
     Stars: number;
     branchId: string; // Added
     description: string;
+    Currency: string;
     endReason: string;
   };
   type agreements = {
@@ -223,6 +230,7 @@ declare global {
     Memo: string;
     RentReserved: number;
     representative: string;
+    Currency: string;
   };
   type email_templates = {
     id: string;
@@ -238,14 +246,27 @@ declare global {
     fullBuilding: boolean;
     floor: number;
     room: number;
-    branchId: string; // Added
+    branchId: string;
     name: string;
     description: string;
     doesReoccur: boolean;
     recurringCycle: number;
+    recurringType: 'Day' | 'Monthly' | 'Yearly';
+    showNotifySettings: boolean;
+    EndDate: number;
+    HasEndDate: boolean;
     price: number;
     date: number;
     userId: string;
+
+    // New notification fields
+    sendEmail: boolean;
+    emailDaysBefore: number;
+    sendSms: boolean;
+    smsDaysBefore: number;
+    emailTo: string | null;
+    smsTo: string | null;
+    Currency: string;
   };
   type appUser = {
     id: string;
@@ -253,6 +274,8 @@ declare global {
     privileges: string;
     userId: string;
     addedDate: number;
+    AllowedBranches: string;
+    password: string;
   };
 }
 const MainPage = ({
@@ -279,7 +302,8 @@ const MainPage = ({
   roomSpecificationAPI,
   setChangeMade,
   SelectedUserId,
-  SelectedAppUser,SelectedBranchId
+  SelectedAppUser,
+  SelectedBranchId,
 }: any) => {
   const [floorFilter, setFloorFilter] = useState<string>('');
   const [TenantNameFilter, setTenantNameFilter] = useState<string>('');
@@ -308,6 +332,7 @@ const MainPage = ({
   >('None');
   const [filterSquareFeetValue, setFilterSquareFeetValue] =
     useState<string>('');
+  const [selectedCurrency, setSelectedCurrency] = useState<string>('all');
   const [filterOptions, setFilterOptions] = useState<FilterOption[]>([]);
   const getOriginlPropertyValue = (
     list: any[],
@@ -441,6 +466,8 @@ const MainPage = ({
         setFilterDueDateValue(''); // Reset the filter price value
       } else if (removedOption.key === 'filterSquareFeetValue') {
         setFilterSquareFeetValue(''); // Reset the filter square feet value
+      } else if (removedOption.key === 'selectedCurrency') {
+        setSelectedCurrency('all');
       }
       // If none of the above conditions are met, it will handle unknown keys by doing nothing
 
@@ -499,6 +526,7 @@ const MainPage = ({
                 ?.name.toLowerCase()
                 .includes(value.toLowerCase())
             );
+          
           break;
         case 'room':
           filteredRooms = filteredRooms.filter(
@@ -614,6 +642,12 @@ const MainPage = ({
             }
           }
           break;
+        case 'selectedCurrency':
+          if (value !== 'all')
+            filteredRooms = filteredRooms.filter(
+              (room: { Currency: string }) => room.Currency === value
+            );
+          break;
         case 'sort':
           // You can decide how to handle sorting here
           break;
@@ -676,6 +710,9 @@ const MainPage = ({
         case 'filterSquareFeetValue':
           setFilterSquareFeetValue(''); // Reset the filter square feet value
           break;
+        case 'selectedCurrency':
+          setSelectedCurrency('all');
+          break;
         default:
           // Handle unknown key
           break;
@@ -693,6 +730,8 @@ const MainPage = ({
       removeFilterOptionByName('filterPriceValue');
     if (filterSquareFeetValue == '' || filterSquareFeetValue == '0')
       removeFilterOptionByName('filterSquareFeetValue');
+    if (selectedCurrency == 'all')
+      removeFilterOptionByName('selectedCurrency');
     if (FilterDueDateValue == '' || FilterDueDateValue == '0')
       removeFilterOptionByName('filterDueDateValue');
   }, [
@@ -701,6 +740,7 @@ const MainPage = ({
     roomFilter,
     filterPriceValue,
     filterSquareFeetValue,
+    selectedCurrency,
     FilterDueDateValue,
   ]);
 
@@ -718,6 +758,9 @@ const MainPage = ({
   const [AddARoomState, setAddARoomState] = useState(false);
   const [AddRoomFormFloor, setAddRoomFormFloor] = useState(1);
   const [AddRoomFormRoomIndex, setAddRoomFormRoomIndex] = useState(1);
+  const [AddRoomFormCurrency, setAddRoomFormCurrency] = useState(
+    GetDefaultCurrency()
+  );
   const [AddRoomFormPrice, setAddRoomFormPrice] = useState(0);
   const [AddRoomFormPaymentCycleType, setAddRoomFormPaymentCycleType] =
     useState('monthly');
@@ -797,6 +840,7 @@ const MainPage = ({
         AllRoomPayInfo: { RoomPayInfo: [] },
         selectedAgreementId: '',
         Archived: false,
+        Currency: AddRoomFormCurrency || GetDefaultCurrency(),
       };
 
       // Add to database
@@ -808,7 +852,8 @@ const MainPage = ({
         AddRoomFormPaymentCycleType,
         AddRoomFormPaymentCycleCustomDays,
         AddRoomFormSquareMeters,
-        AddRoomFormRoomSpecifications
+        AddRoomFormRoomSpecifications,
+        AddRoomFormCurrency || GetDefaultCurrency()
       );
 
       // Handle images if needed
@@ -849,7 +894,7 @@ const MainPage = ({
       }, 100);
 
       // Reset form variables
-      ResetAddRoomForumVariables();
+      ResetAddRoomForumVariables(continueAdding);
       setRefreshInspectorForAddRoom(true);
 
       // Only close the form if not continuing
@@ -869,9 +914,10 @@ const MainPage = ({
     setAddARoomState(false);
     handleDeleteFolderImages('Add a room images');
   };
+
   const [showContinueAddingSettings, setShowContinueAddingSettings] =
     useState(false);
-  const ResetAddRoomForumVariables = () => {
+  const ResetAddRoomForumVariables = (continueAdding?: boolean) => {
     // Handle room number and floor increments
     if (incrementRoomNumber) {
       setAddRoomFormRoomIndex(AddRoomFormRoomIndex + 1);
@@ -885,16 +931,19 @@ const MainPage = ({
     // Floor stays the same if !incrementFloor
 
     // Reset other fields based on settings
-    if (resetPrice) {
+    if (resetPrice || !continueAdding) {
       setAddRoomFormPrice(0);
     }
+    if (resetCurrency || !continueAdding) {
+      setAddRoomFormCurrency(GetDefaultCurrency());
+    }
 
-    if (resetPaymentCycle) {
+    if (resetPaymentCycle || !continueAdding) {
       setAddRoomFormPaymentCycleType('monthly');
       setAddRoomFormPaymentCycleCustomDays(0);
     }
 
-    if (resetSquareMeters) {
+    if (resetSquareMeters || !continueAdding) {
       setAddRoomFormSquareMeters(0);
     }
 
@@ -908,7 +957,7 @@ const MainPage = ({
   const ResetAddRoomForumVariables2 = () => {
     // Handle room number and floor increments
     setAddRoomFormRoomIndex(1);
-    setAddRoomFormFloor(AddRoomFormFloor + 1);
+    setAddRoomFormFloor(AddRoomFormFloor);
 
     // Reset other fields based on settings
     setAddRoomFormPrice(0);
@@ -1026,6 +1075,7 @@ const MainPage = ({
     setFilterDueDateValue('');
     setFilterSquareFeetOperator('None');
     setFilterSquareFeetValue('');
+    setSelectedCurrency('all');
     setSortType('name');
     setSortDirection('asc');
   }
@@ -1107,6 +1157,7 @@ const MainPage = ({
   const [incrementRoomNumber, setIncrementRoomNumber] = useState(true);
   const [incrementFloor, setIncrementFloor] = useState(false);
   const [resetPrice, setResetPrice] = useState(false);
+  const [resetCurrency, setResetCurrency] = useState(false);
   const [resetPaymentCycle, setResetPaymentCycle] = useState(false);
   const [resetSquareMeters, setResetSquareMeters] = useState(false);
   const [resetRoomSpecifications, setResetRoomSpecifications] = useState(false);
@@ -1116,6 +1167,7 @@ const MainPage = ({
     setIncrementRoomNumber(true);
     setIncrementFloor(false);
     setResetPrice(false);
+    setResetCurrency(false);
     setResetPaymentCycle(false);
     setResetSquareMeters(false);
     setResetRoomSpecifications(false);
@@ -1323,7 +1375,10 @@ const MainPage = ({
       <div
         className="MainContainerMain"
         style={{
-          height: SelectedPage === 'Dashboard' ? 'calc(100% - var(--60px-V))' : '100%',
+          height:
+            SelectedPage === 'Dashboard'
+              ? 'calc(100% - var(--60px-V))'
+              : '100%',
         }}
       >
         <button
@@ -1345,7 +1400,9 @@ const MainPage = ({
         <div
           className="SideBarContainer"
           style={{
-            width: HideSideBarForCalendar ? 'var(--0px-V)' : `var(--${SideBarWidth}px-V)`,
+            width: HideSideBarForCalendar
+              ? 'var(--0px-V)'
+              : `var(--${SideBarWidth}px-V)`,
             transition: 'all .2s',
             visibility: HideSideBarForCalendar ? 'hidden' : 'visible',
           }}
@@ -1404,15 +1461,19 @@ const MainPage = ({
               </div>
               <div
                 className="SideBarRoomPageTopPart"
-                style={{ height: AddARoomState ? '0%' : 'calc(100% - var(--135px-V))',
+                style={{
+                  height: AddARoomState ? '0%' : 'calc(100% - var(--135px-V))',
                   display: 'flex',
                   justifyContent: 'space-between',
-                  flexDirection: 'column' }}
+                  flexDirection: 'column',
+                }}
               >
                 <div>
                   <div
                     className="SearchBarContainer"
-                    style={{ height: isSearchOpen ? 'var(--115px-V)' : 'var(--50px-V)' }}
+                    style={{
+                      height: isSearchOpen ? 'var(--115px-V)' : 'var(--50px-V)',
+                    }}
                   >
                     <div
                       onClick={toggleSearch}
@@ -1521,7 +1582,10 @@ const MainPage = ({
                               );
                             }}
                             className="filter-drop"
-                            style={{ width: 'var(--90px-V)', height: 'var(--30px-V)' }}
+                            style={{
+                              width: 'var(--90px-V)',
+                              height: 'var(--30px-V)',
+                            }}
                           >
                             <option value="Taken">Taken</option>
                             <option value="Empty">Empty</option>
@@ -1552,7 +1616,10 @@ const MainPage = ({
                                     e.target.value as '=' | '<' | '>'
                                   );
                                 }}
-                                style={{ width: 'var(--30px-V)', height: 'var(--30px-V)' }}
+                                style={{
+                                  width: 'var(--30px-V)',
+                                  height: 'var(--30px-V)',
+                                }}
                                 className="filter-drop"
                               >
                                 <option value="=">{'='}</option>
@@ -1575,7 +1642,10 @@ const MainPage = ({
                             </div>
                           </div>
                           <div
-                            style={{ marginBottom: 'var(--10px-V)', marginTop: 'var(--10px-V)' }}
+                            style={{
+                              marginBottom: 'var(--10px-V)',
+                              marginTop: 'var(--10px-V)',
+                            }}
                           >
                             <div>
                               Filter due dates:
@@ -1590,7 +1660,10 @@ const MainPage = ({
                                     e.target.value as '=' | '<' | '>'
                                   );
                                 }}
-                                style={{ width: 'var(--30px-V)', height: 'var(--30px-V)' }}
+                                style={{
+                                  width: 'var(--30px-V)',
+                                  height: 'var(--30px-V)',
+                                }}
                                 className="filter-drop"
                               >
                                 <option value="=">{'='}</option>
@@ -1628,7 +1701,10 @@ const MainPage = ({
                                     e.target.value as '=' | '<' | '>'
                                   );
                                 }}
-                                style={{ width: 'var(--30px-V)', height: 'var(--30px-V)' }}
+                                style={{
+                                  width: 'var(--30px-V)',
+                                  height: 'var(--30px-V)',
+                                }}
                                 className="filter-drop"
                               >
                                 <option value="=">{'='}</option>
@@ -1648,6 +1724,28 @@ const MainPage = ({
                                   );
                                 }}
                               />
+                            </div>
+                          </div>
+                          <div>
+                            <div style={{display:'flex',alignItems:'center'}}>
+                              Filter Currency:
+                              <div className="FilterSection">
+                               
+                                <select
+                                  value={selectedCurrency}
+                                  onChange={(e) => {
+                                    setSelectedCurrency(e.target.value);
+                                    addFilterOption(
+                                      'selectedCurrency',
+                                      e.target.value
+                                    );
+                                  }}
+                                  className="FilterSelect"
+                                >
+                                  <option value="all">All Currencies</option>
+                                 { GetCurrencyAsOptionsOnSelect()}
+                                </select>
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -1699,7 +1797,9 @@ const MainPage = ({
 
               <div
                 className="SideBarRoomPageBottomPartAddRoom"
-                style={{ height: AddARoomState ? 'calc(100% - var(--130px-V))' : '0%' }}
+                style={{
+                  height: AddARoomState ? 'calc(100% - var(--130px-V))' : '0%',
+                }}
               >
                 <div>
                   <h1 style={{ display: 'flex', justifyContent: 'center' }}>
@@ -1740,7 +1840,19 @@ const MainPage = ({
                         )}{' '}
                       </div>
                       <div className="AddaNewRoomRowObject">
-                        Price (month, inc VAT):
+                        Currency:
+                        <select
+                          value={AddRoomFormCurrency}
+                          onChange={(e) =>
+                            setAddRoomFormCurrency(e.target.value)
+                          }
+                          className="AddANewRoomSelectMid"
+                        >
+                          {GetCurrencyAsOptionsOnSelect()}
+                        </select>
+                      </div>
+                      <div className="AddaNewRoomRowObject">
+                        Price (inc. VAT):
                         <input
                           className="AddANewRoomInputsSmall"
                           type="number"
@@ -1750,7 +1862,7 @@ const MainPage = ({
                             setAddRoomFormPrice(parseInt(e.target.value))
                           }
                         />
-                        $
+                        {CurrencySign(AddRoomFormCurrency)}
                       </div>
                       <div className="AddaNewRoomRowObject">
                         Payment cycle:{' '}
@@ -1787,6 +1899,7 @@ const MainPage = ({
                         </div>
                       )}
                       <div className="AddaNewRoomRowObject">
+                        Square Meters:
                         <input
                           className="AddANewRoomInputsSmall"
                           type="number"
@@ -1796,7 +1909,6 @@ const MainPage = ({
                             setAddRoomFormSquareMeters(parseInt(e.target.value))
                           }
                         />
-                        : Square Meters
                       </div>
 
                       <div className="RoomSpecficationsMainContainer">
@@ -1979,6 +2091,14 @@ const MainPage = ({
                       <div>
                         <input
                           type="checkbox"
+                          name="resetCurrency"
+                          checked={resetCurrency}
+                          onChange={() => setResetCurrency(!resetCurrency)}
+                        />{' '}
+                        Reset Currency
+                        <br />
+                        <input
+                          type="checkbox"
                           name="resetPrice"
                           checked={resetPrice}
                           onChange={() => setResetPrice(!resetPrice)}
@@ -2153,18 +2273,18 @@ const MainPage = ({
                 Overview
               </SideBarItem>
               <SideBarItem
-                page="Email History"
-                currentPage={DashboardSelectedPage}
-                onClick={() => setDashboardSelectedPage('Email History')}
-              >
-                Email History
-              </SideBarItem>
-              <SideBarItem
                 page="Expenses"
                 currentPage={DashboardSelectedPage}
                 onClick={() => setDashboardSelectedPage('Expenses')}
               >
                 Expenses
+              </SideBarItem>
+              <SideBarItem
+                page="Email History"
+                currentPage={DashboardSelectedPage}
+                onClick={() => setDashboardSelectedPage('Email History')}
+              >
+                Email History
               </SideBarItem>
               <SideBarItem
                 page="Action History"
@@ -2463,7 +2583,8 @@ const MainPage = ({
               ? '100%'
               : `calc(100% - var(--${SideBarWidth}px-V))`,
             overflowY: SelectedPage === 'Database' ? 'hidden' : 'auto',
-            height: SelectedPage === 'Database' ? 'calc(100% - var(--60px-V))' : '',
+            height:
+              SelectedPage === 'Database' ? 'calc(100% - var(--60px-V))' : '',
           }}
         >
           {SelectedPage === 'Rooms' && (
@@ -2473,6 +2594,7 @@ const MainPage = ({
               updateRoomPropertyWithOutRefresh={
                 updateRoomPropertyWithOutRefresh
               }
+              SelectedAppUser={SelectedAppUser}
               SelectedBranchId={SelectedBranchId}
               SelectedUserId={SelectedUserId}
               ShowArchived={ShowArchived}
@@ -2519,7 +2641,8 @@ const MainPage = ({
               setToolsSelectedPage={setToolsSelectedPage}
               SelectedAppUser={SelectedAppUser}
               setChangeMade={setChangeMade}
-              SelectedUserId={SelectedUserId}SelectedBranchId={SelectedBranchId}
+              SelectedUserId={SelectedUserId}
+              SelectedBranchId={SelectedBranchId}
             />
           )}
           {SelectedPage === 'Calendar' && (
@@ -2529,7 +2652,8 @@ const MainPage = ({
               sortedAndFilteredRooms={RoomList}
               removeFilterOption={removeFilterOption}
               filterOptions={[]}
-              tenantList={TenantList}SelectedBranchId={SelectedBranchId}
+              tenantList={TenantList}
+              SelectedBranchId={SelectedBranchId}
             />
           )}
           {SelectedPage === 'Settings' && (
@@ -2555,13 +2679,15 @@ const MainPage = ({
               SelectedUserId={SelectedUserId}
               setChangeMade={setChangeMade}
               updateRoomPropertyLocal={updateRoomPropertyLocal}
-              updateRoomProperty={updateRoomProperty}SelectedBranchId={SelectedBranchId}
+              updateRoomProperty={updateRoomProperty}
+              SelectedBranchId={SelectedBranchId}
             />
           )}
           {SelectedPage === 'Database' && (
             <DatabasePage
               setChangeMade={setChangeMade}
-              SelectedAppUser={SelectedAppUser}SelectedBranchId={SelectedBranchId}
+              SelectedAppUser={SelectedAppUser}
+              SelectedBranchId={SelectedBranchId}
             />
           )}
         </div>

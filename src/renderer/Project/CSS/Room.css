@@ -213,7 +213,7 @@
   box-shadow: var(--2px-V) var(--2px-V) var(--6px-V) var(--2px-V) #68686833;
 }
 .AddTenantContainerinnerInput {
-  width: var(--140px-V);
+  width: var(--180px-V);
   background-color: var(--Secondary-Color);
   border: var(--1px-V) solid grey;
   box-shadow: var(--2px-V) var(--2px-V) var(--2px-V) lab(0 0 0 / 0.21);
@@ -341,11 +341,12 @@
 }
 .TenantLeavePannelScreen {
   width: 50%;
-  height: 95%;
+  height: auto;
+  padding-bottom: var(--10px-V);
   background-color: var(--Background-Color);
   position: absolute;
   left: 50%;
-  top: 50%;
+  top: 50%;border-radius: var(--10px-V);
   z-index: 2;
   transform: translate(-50%, -50%);
   overflow-y: auto;

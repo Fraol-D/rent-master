@@ -1,6 +1,8 @@
 import { builtinModules } from 'module';
 import React, { useState } from 'react';
 import { toEthiopianDateString } from 'renderer/Project/JS/Calendar Converter';
+import { Input } from '../Helpers/CustomReactComponents';
+import CurrencySign from '../Helpers/CurrencySign';
 
 export function PeopleComponentPage({
   TenantList,
@@ -99,7 +101,7 @@ export function PeopleComponentPage({
 
   const [Agreements, setAgreements] = useState<agreements[]>([]);
   const [AgreementsId, setAgreementsId] = useState<>('');
-  
+
   const HandleOpenClicked = (tenantId: string) => {
     const roomType = RoomList.find((r: RoomType) => r.tenantId === tenantId);
     getAgreements(roomType);
@@ -260,11 +262,13 @@ export function PeopleComponentPage({
                         </em>
                                              {' '}
                       </td>
-                                   <td className="InfoTableBodyTD">
-                                        
-                        {highlightText(tenant.description || 'N/A', mainSearch)}       
-                              
-                      </td>      
+                                   
+                      <td className="InfoTableBodyTD">
+                                       
+                        {highlightText(tenant.description || 'N/A', mainSearch)}
+                                     
+                      </td>{' '}
+                           
                       <td className="InfoTableBodyTD">
                                                {' '}
                         {highlightText(tenant.TIN || 'N/A', mainSearch)}       
@@ -388,7 +392,7 @@ export function PeopleComponentPage({
                         <div>
                                                    {' '}
                           {highlightText(
-                            tenant.agreedPrice.toLocaleString() + '$',
+                            tenant.agreedPrice.toLocaleString() + CurrencySign(tenant.Currency),
                             mainSearch
                           )}
                                                  {' '}
@@ -422,28 +426,30 @@ export function PeopleComponentPage({
                   className="InfoTableContainer"
                   style={{ marginTop: 'var(--40px-V)' }}
                 >
-                 Tenant Name:{' '}
-                  {
-                    TenantList.find(
-                      (t: tenant) => t.id === Agreements[Agreements.length-1].tenantId
-                    )?.name || "Deleted"
-                  }
+                  Tenant Name:{' '}
+                  {TenantList.find(
+                    (t: tenant) =>
+                      t.id === Agreements[Agreements.length - 1].tenantId
+                  )?.name || 'Deleted'}
                   {' --- '}Occupancy: Floor:{' '}
-              {' '}
                   {
                     RoomList.find(
-                      (r: RoomType) => r.id === Agreements[Agreements.length-1].roomId
+                      (r: RoomType) =>
+                        r.id === Agreements[Agreements.length - 1].roomId
                     ).floor
                   }
-            {' - '}Room:
-                     {' '}
+                  {' - '}Room:    {' '}
                   {
                     RoomList.find(
-                      (r: RoomType) => r.id === Agreements[Agreements.length-1].roomId
+                      (r: RoomType) =>
+                        r.id === Agreements[Agreements.length - 1].roomId
                     ).roomIndex
                   }
                                                      {' '}
-                  <table className="InfoTable" style={{ width: 'var(--1100px-V)' }}>
+                  <table
+                    className="InfoTable"
+                    style={{ width: 'var(--1100px-V)' }}
+                  >
                                        {' '}
                     <thead className="InfoTableThead">
                                            {' '}
@@ -473,142 +479,143 @@ export function PeopleComponentPage({
                                        {' '}
                     <tbody>
                                            {' '}
-                      {Agreements.filter((agr:agreements)=>agr.tenantId === AgreementsId).map(
-                        (agreement: agreements, index: number) => (
-                          <tr
-                            key={agreement.id}
-                            className="InfoTableBodyTr"
-                            style={{
-                              backgroundColor:
-                                index % 2 === 0
-                                  ? '#FFFFFF1C'
-                                  : 'rgba(224 224 224 / 0.06)',
-                            }}
+                      {Agreements.filter(
+                        (agr: agreements) => agr.tenantId === AgreementsId
+                      ).map((agreement: agreements, index: number) => (
+                        <tr
+                          key={agreement.id}
+                          className="InfoTableBodyTr"
+                          style={{
+                            backgroundColor:
+                              index % 2 === 0
+                                ? '#FFFFFF1C'
+                                : 'rgba(224 224 224 / 0.06)',
+                          }}
+                        >
+                                                     {' '}
+                          <td className="InfoTableBodyTD">
+                                                         {' '}
+                            {highlightText(index, mainSearch)}                 
+                                     {' '}
+                          </td>
+                                                     {' '}
+                          <td
+                            className="InfoTableBodyTD"
+                            title={toEthiopianDateString(
+                              new Date(agreement.startTime)
+                            )}
                           >
-                                                       {' '}
-                            <td className="InfoTableBodyTD">
-                                                           {' '}
-                              {highlightText(index, mainSearch)}               
-                                         {' '}
-                            </td>
-                                                       {' '}
-                            <td
-                              className="InfoTableBodyTD"
-                              title={toEthiopianDateString(
-                                new Date(agreement.startTime)
-                              )}
-                            >
-                                                           {' '}
-                              {highlightText(
-                                new Date(
-                                  agreement.startTime
-                                ).toLocaleDateString('en-US', {
+                                                         {' '}
+                            {highlightText(
+                              new Date(agreement.startTime).toLocaleDateString(
+                                'en-US',
+                                {
                                   month: 'short',
                                   day: 'numeric',
                                   year: 'numeric',
-                                }),
-                                mainSearch
-                              )}
-                                                         {' '}
-                            </td>
+                                }
+                              ),
+                              mainSearch
+                            )}
                                                        {' '}
-                            <td
-                              className="InfoTableBodyTD"
-                              title={toEthiopianDateString(
-                                new Date(agreement.endTime)
-                              )}
-                            >
-                                                           {' '}
-                              {highlightText(
-                                new Date(agreement.endTime).toLocaleDateString(
-                                  'en-US',
-                                  {
-                                    month: 'short',
-                                    day: 'numeric',
-                                    year: 'numeric',
-                                  }
-                                ),
-                                mainSearch
-                              )}
-                                                         {' '}
-                            </td>
+                          </td>
+                                                     {' '}
+                          <td
+                            className="InfoTableBodyTD"
+                            title={toEthiopianDateString(
+                              new Date(agreement.endTime)
+                            )}
+                          >
+                                                         {' '}
+                            {highlightText(
+                              new Date(agreement.endTime).toLocaleDateString(
+                                'en-US',
+                                {
+                                  month: 'short',
+                                  day: 'numeric',
+                                  year: 'numeric',
+                                }
+                              ),
+                              mainSearch
+                            )}
                                                        {' '}
-                            <td
-                              className="InfoTableBodyTD"
-                              title={toEthiopianDateString(
-                                new Date(agreement.signTime)
-                              )}
-                            >
-                                                           {' '}
-                              {highlightText(
-                                new Date(agreement.signTime).toLocaleDateString(
-                                  'en-US',
-                                  {
-                                    month: 'short',
-                                    day: 'numeric',
-                                    year: 'numeric',
-                                  }
-                                ),
-                                mainSearch
-                              )}
-                                                         {' '}
-                            </td>
+                          </td>
+                                                     {' '}
+                          <td
+                            className="InfoTableBodyTD"
+                            title={toEthiopianDateString(
+                              new Date(agreement.signTime)
+                            )}
+                          >
+                                                         {' '}
+                            {highlightText(
+                              new Date(agreement.signTime).toLocaleDateString(
+                                'en-US',
+                                {
+                                  month: 'short',
+                                  day: 'numeric',
+                                  year: 'numeric',
+                                }
+                              ),
+                              mainSearch
+                            )}
                                                        {' '}
-                            <td className="InfoTableBodyTD">
-                                                           {' '}
-                              {highlightText(
-                                agreement.agreedPrice.toLocaleString() + '$',
-                                mainSearch
-                              )}
-                                                         {' '}
-                            </td>
+                          </td>
+                                                     {' '}
+                          <td className="InfoTableBodyTD">
+                                                         {' '}
+                            {highlightText(
+                              agreement.agreedPrice.toLocaleString() + CurrencySign(agreement.Currency),
+                              mainSearch
+                            )}
                                                        {' '}
-                            <td className="InfoTableBodyTD">
-                                                           {' '}
-                              {highlightText(
-                                agreement.paymentCycleType,
-                                mainSearch
-                              )}
-                                                         {' '}
-                            </td>
+                          </td>
+                                                     {' '}
+                          <td className="InfoTableBodyTD">
+                                                         {' '}
+                            {highlightText(
+                              agreement.paymentCycleType,
+                              mainSearch
+                            )}
                                                        {' '}
-                            <td className="InfoTableBodyTD">
-                                                           {' '}
-                              {highlightText(agreement.Memo, mainSearch)}       
-                                                 {' '}
-                            </td>
+                          </td>
+                                                     {' '}
+                          <td className="InfoTableBodyTD">
+                                                         {' '}
+                            {highlightText(agreement.Memo, mainSearch)}         
+                                             {' '}
+                          </td>
+                                                     {' '}
+                          <td className="InfoTableBodyTD">
+                                                         {' '}
+                            {highlightText(
+                              agreement.RentReserved.toLocaleString() + CurrencySign(agreement.Currency),
+                              mainSearch
+                            )}
                                                        {' '}
-                            <td className="InfoTableBodyTD">
-                                                           {' '}
-                              {highlightText(
-                                agreement.RentReserved.toLocaleString() + '$',
-                                mainSearch
-                              )}
-                                                         {' '}
-                            </td>
+                          </td>
+                                                     {' '}
+                          <td className="InfoTableBodyTD">
+                                                         {' '}
+                            {highlightText(
+                              agreement.representative,
+                              mainSearch
+                            )}
                                                        {' '}
-                            <td className="InfoTableBodyTD">
-                                                           {' '}
-                              {highlightText(
-                                agreement.representative,
-                                mainSearch
-                              )}
-                                                         {' '}
-                            </td>
+                          </td>
+                                                     {' '}
+                          <td className="InfoTableBodyTD">
+                                                         {' '}
+                            {RoomList.find(
+                              (r: RoomType) => r.id === agreement.roomId
+                            ).selectedAgreementId === agreement.id
+                              ? 'Current'
+                              : 'Expired'}
                                                        {' '}
-                            <td className="InfoTableBodyTD">
-                                                           {' '}
-                              {RoomList.find(
-                                (r: RoomType) => r.id === agreement.roomId
-                              ).selectedAgreementId === agreement.id
-                                ? 'Current'
-                                : 'Expired'}
-                                                         {' '}
-                            </td>
-                                                     {' '}
-                          </tr>
-                        )
-                      )}
+                          </td>
+                                                   {' '}
+                        </tr>
+                      ))}
                                          {' '}
                     </tbody>
                                      {' '}
@@ -710,7 +717,10 @@ export function PeopleComponentPage({
                         </em>
                       )}
                     </td>
-                    <td className="InfoTableBodyTD" style={{ height: 'var(--50px-V)' }}>
+                    <td
+                      className="InfoTableBodyTD"
+                      style={{ height: 'var(--50px-V)' }}
+                    >
                       <div
                         style={{
                           maxHeight: 'var(--65px-V)',
@@ -766,7 +776,10 @@ export function PeopleComponentPage({
                                 )}
                               </span>
                               <span
-                                style={{ marginLeft: 'var(--10px-V)', color: 'var(--Accent-Color)' }}
+                                style={{
+                                  marginLeft: 'var(--10px-V)',
+                                  color: 'var(--Accent-Color)',
+                                }}
                               >
                                 Floor:{' '}
                                 {highlightText(
@@ -915,7 +928,7 @@ export function PeopleComponentPage({
                           review.AgreedCommission.toLocaleString() || '',
                           mainSearch
                         )}
-                        $
+                        {CurrencySign(review.Currency)}
                       </em>
                     </td>
                     <td className="InfoTableBodyTD">
@@ -923,7 +936,7 @@ export function PeopleComponentPage({
                         review.AgreedPrice.toLocaleString(),
                         mainSearch
                       )}
-                      $ per{' '}
+                      {CurrencySign(review.Currency)} per{' '}
                       {highlightText(
                         getCorrectPaymentStatment(review.paymentCycleType),
                         mainSearch
@@ -934,7 +947,7 @@ export function PeopleComponentPage({
                         review.totalEarnings.toLocaleString(),
                         mainSearch
                       )}
-                      ${' '}
+                      {CurrencySign(review.Currency)}
                     </td>
                     <td className="InfoTableBodyTD">
                       {[...Array(5)].map((_, index) => (

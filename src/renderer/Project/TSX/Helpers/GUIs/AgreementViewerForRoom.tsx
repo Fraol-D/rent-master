@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import '../../../CSS/AgreementViewerForRoom.css';
+import { Input } from '../CustomReactComponents';
 const { v4: uuidv4 } = require('uuid');
 
 import {
@@ -14,6 +15,7 @@ import {
   updateValue,
 } from 'Backend/localServerApis';
 import { addDays } from 'date-fns'; // Add this import
+import CurrencySign, { GetCurrencyAsOptionsOnSelect, GetDefaultCurrency } from '../CurrencySign';
 
 const AgreementViewerForRoom = ({
   TenantList,
@@ -27,7 +29,8 @@ const AgreementViewerForRoom = ({
   roomPaymentInfoApi,
   handlePaymentRefresh,
   setChangeMade,
-  view,SelectedBranchId
+  view,
+  SelectedBranchId,
 }: any) => {
   const [Agreements, setAgreements] = useState<agreements[]>([]);
   const [CurrentAgreementIndex, setCurrentAgreementIndex] = useState(0);
@@ -128,7 +131,8 @@ const AgreementViewerForRoom = ({
           'room_pay_info_history',
           {
             ...payment,
-            agreementId: newAgreementId, branchId: SelectedBranchId,
+            agreementId: newAgreementId,
+            branchId: SelectedBranchId,
           },
           setChangeMade
         );
@@ -213,7 +217,8 @@ const AgreementViewerForRoom = ({
       paymentCycle === 'custom' ? '-' + customDays : paymentCycle,
       '',
       '',
-      Representative
+      Representative,
+      AddAgreementFormCurrency
     );
     // Set the roomType.SelectedAgreementId to the new agreement Id
     updateRoomProperty(roomType.id, 'selectedAgreementId', agreementId);
@@ -233,6 +238,7 @@ const AgreementViewerForRoom = ({
     setPaymentCycle('Every 30 days');
     setCustomDays('');
     setAgreedPrice(0);
+    setAddAgreementFormCurrency(GetDefaultCurrency());
     setShowAddAgreementPannal(false);
     console.log('Show add agreement form');
   };
@@ -246,6 +252,7 @@ const AgreementViewerForRoom = ({
     setPaymentCycle('Every 30 days');
     setCustomDays('');
     setAgreedPrice(0);
+    setAddAgreementFormCurrency(GetDefaultCurrency());
 
     // Hide the add agreement form or modal
     // This is a placeholder, you might want to implement a state to control the visibility of the form
@@ -254,7 +261,9 @@ const AgreementViewerForRoom = ({
   };
   const [MemoText, setMemoText] = useState('INITIALLLI');
   const [RentReservedText, setRentReservedText] = useState('INITIALLLI');
-
+  const [AddAgreementFormCurrency, setAddAgreementFormCurrency] = useState(
+    GetDefaultCurrency()
+  );
   return (
     ShowState &&
     Agreements.length >= 1 && (
@@ -364,7 +373,7 @@ const AgreementViewerForRoom = ({
             <em style={{ fontWeight: '600' }}>
               {Agreements[CurrentAgreementIndex].agreedPrice.toLocaleString()}
             </em>
-            $ Every{' '}
+            {CurrencySign(Agreements[CurrentAgreementIndex].Currency)} Every{' '}
             {getCorrectPaymentStatment(
               Agreements[CurrentAgreementIndex].paymentCycleType,
               Agreements[CurrentAgreementIndex].paymentCycleType.slice(1)
@@ -656,7 +665,10 @@ const AgreementViewerForRoom = ({
                       <input
                         type="number"
                         className="AddTenantContainerinnerInput"
-                        style={{ width: 'var(--50px-V)', marginLeft: 'var(--10px-V)' }}
+                        style={{
+                          width: 'var(--50px-V)',
+                          marginLeft: 'var(--10px-V)',
+                        }}
                         placeholder="Enter days"
                         value={customDays}
                         onChange={(e) => setCustomDays(e.target.value)}
@@ -664,6 +676,16 @@ const AgreementViewerForRoom = ({
                     )}
                   </div>
                   <div className="AddTenantContainerinnerElement">
+                  Currency:
+                      <select
+                        value={AddAgreementFormCurrency}
+                        onChange={(e) =>
+                          setAddAgreementFormCurrency(e.target.value)
+                        }
+                        className="AddANewRoomSelectMid"
+                      >
+                        {GetCurrencyAsOptionsOnSelect()}
+                      </select>
                     Agreed Price:{' '}
                     <input
                       type="number"
@@ -673,7 +695,7 @@ const AgreementViewerForRoom = ({
                       value={agreedPrice}
                       onChange={(e) => setAgreedPrice(parseInt(e.target.value))}
                     />
-                    $
+                    {CurrencySign(AddAgreementFormCurrency)}
                     <button
                       style={{
                         marginLeft: 'var(--10px-V)',

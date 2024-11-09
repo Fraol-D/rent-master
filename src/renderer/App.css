@@ -70,6 +70,9 @@
   --44px-V: 44px;
   --45px-V: 45px;
   --46px-V: 46px;
+  --47px-V: 47px;
+  --48px-V: 48px;
+  --49px-V: 49px;
   --50px-V: 50px;
   --52px-V: 52px;
   --55px-V: 55px;
@@ -557,7 +560,10 @@ input[type='checkbox'] {
     --320px-V: 213.3px;
     --321px-V: 214px;
     --350px-V: 233.3px;
-    --365px-V: 243.3px;
+    --365px-V: 243.3px;    --46px-V: 30.7px;
+    --47px-V: 31.3px;
+    --48px-V: 32px;
+    --49px-V: 32.7px;
     --370px-V: 246.7px;
     --383px-V: 255.3px;
     --390px-V: 260px;
@@ -597,7 +603,10 @@ input[type='checkbox'] {
     ---845px-V: -596.3px;
     ---757px-V: -534.2px;
     ---567px-V: -400.1px;
-    ---536px-V: -378.3px;
+    ---536px-V: -378.3px;   --46px-V: 32.5px;
+    --47px-V: 33.2px;
+    --48px-V: 33.9px;
+    --49px-V: 34.6px;
     ---210px-V: -148.2px;
     ---200px-V: -141.1px;
     ---80px-V: -56.5px;
@@ -744,7 +753,10 @@ input[type='checkbox'] {
     ---757px-V: -1514px;
     ---567px-V: -1134px;
     ---536px-V: -1072px;
-    ---210px-V: -420px;
+    ---210px-V: -420px;    --46px-V: 92px;
+    --47px-V: 94px;
+    --48px-V: 96px;
+    --49px-V: 98px;
     ---200px-V: -400px;
     ---80px-V: -160px;
     ---35px-V: -70px;

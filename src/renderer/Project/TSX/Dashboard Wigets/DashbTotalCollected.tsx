@@ -3,7 +3,15 @@ import * as d3 from 'd3';
 import { BarChart, barElementClasses } from '@mui/x-charts/BarChart';
 import { axisClasses } from '@mui/x-charts/ChartsAxis';
 import { getValuesWithSql } from 'Backend/localServerApis';
-import { addDays, addMonths, format, startOfYear, endOfYear, addYears } from 'date-fns';
+import { Input } from '../Helpers/CustomReactComponents';
+import {
+  addDays,
+  addMonths,
+  format,
+  startOfYear,
+  endOfYear,
+  addYears,
+} from 'date-fns';
 
 interface Payment {
   id: string;
@@ -15,10 +23,12 @@ interface Payment {
 
 const DashbTotalCollected = ({
   RoomList,
-  tenantList,SelectedBranchId
+  tenantList,
+  SelectedBranchId,
 }: {
   RoomList: RoomType[];
-  tenantList: tenant[];SelectedBranchId:any
+  tenantList: tenant[];
+  SelectedBranchId: any;
 }) => {
   const [showBy, setShowBy] = useState<'Monthly' | 'Yearly'>('Monthly');
   const [selectedDate, setSelectedDate] = useState(
@@ -32,7 +42,7 @@ const DashbTotalCollected = ({
       const selectedYear = parseInt(selectedDate);
       let yearStart = startOfYear(new Date(selectedYear - 2, 0, 1));
       let yearEnd = endOfYear(new Date(selectedYear + 2, 11, 31));
-      
+
       // Get all actual payments for the selected year range
       const actualPayments = await getValuesWithSql(
         'room_pay_info',
@@ -47,8 +57,8 @@ const DashbTotalCollected = ({
 
       // Only add paid payments from actual and historical
       const combinedPayments = [...actualPayments, ...historicalPayments]
-        .filter(payment => payment.Paid === 1)
-        .map(payment => ({
+        .filter((payment) => payment.Paid === 1)
+        .map((payment) => ({
           id: payment.id,
           Day: payment.Day,
           Value: payment.Value,
@@ -85,7 +95,10 @@ const DashbTotalCollected = ({
           );
           if (agreements.length > 0) {
             startDate = Math.max(agreements[0].startTime, yearStart.getTime());
-            if (tenant.SelectedAgreement === 'Fixed-Term' && agreements[0].endTime) {
+            if (
+              tenant.SelectedAgreement === 'Fixed-Term' &&
+              agreements[0].endTime
+            ) {
               endDate = Math.min(agreements[0].endTime, yearEnd.getTime());
             }
           }
@@ -95,9 +108,9 @@ const DashbTotalCollected = ({
 
         while (currentDate.getTime() <= endDate) {
           const paymentId = `${room.id}-${currentDate.getTime()}`;
-          
+
           // Only add if payment doesn't already exist
-          if (!allPayments.some(p => p.id === paymentId)) {
+          if (!allPayments.some((p) => p.id === paymentId)) {
             // Add as unpaid prediction
             allPayments.push({
               id: paymentId,
@@ -122,15 +135,24 @@ const DashbTotalCollected = ({
   // Helper function to calculate next payment date
   const calculateNextPaymentDate = (currentDate: Date, room: any) => {
     switch (room.PaymentCycleType) {
-      case '30': return addDays(currentDate, 30);
-      case '15': return addDays(currentDate, 15);
-      case '7': return addDays(currentDate, 7);
-      case 'daily': return addDays(currentDate, 1);
-      case 'monthly': return addMonths(currentDate, 1);
-      case 'weekly': return addDays(currentDate, 7);
-      case 'Annually': return addYears(currentDate, 1);
-      case 'custom': return addDays(currentDate, room.PaymentCycleCustomeDays || 30);
-      default: return addMonths(currentDate, 1);
+      case '30':
+        return addDays(currentDate, 30);
+      case '15':
+        return addDays(currentDate, 15);
+      case '7':
+        return addDays(currentDate, 7);
+      case 'daily':
+        return addDays(currentDate, 1);
+      case 'monthly':
+        return addMonths(currentDate, 1);
+      case 'weekly':
+        return addDays(currentDate, 7);
+      case 'Annually':
+        return addYears(currentDate, 1);
+      case 'custom':
+        return addDays(currentDate, room.PaymentCycleCustomeDays || 30);
+      default:
+        return addMonths(currentDate, 1);
     }
   };
 
@@ -223,7 +245,7 @@ const DashbTotalCollected = ({
       : 'N/A';
 
   return (
-    <div 
+    <div
       className="DashboardWigetMainContainer"
       style={{
         width: 'var(--710px-V)',
@@ -299,7 +321,6 @@ const DashbTotalCollected = ({
           },
         ]}
         grid={{ vertical: true, horizontal: true }}
-  
         margin={{
           left: 74,
           right: 30,
@@ -314,15 +335,10 @@ const DashbTotalCollected = ({
             },
             [`.${axisClasses.tickLabel}`]: {
               fill: 'var(--Text-Color)',
-          
             },
           },
-          '.MuiChartsLegend-label': {
-      
-          },
-          '.MuiBarElement-root': {
-        
-          },
+          '.MuiChartsLegend-label': {},
+          '.MuiBarElement-root': {},
         })}
       />
     </div>

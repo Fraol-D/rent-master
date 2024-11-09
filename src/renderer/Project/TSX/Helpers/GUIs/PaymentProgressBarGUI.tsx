@@ -22,6 +22,7 @@ import {
 } from 'Backend/localServerApis';
 import UtilityPanel from './UtilityPanel';
 import { Payment } from 'electron';
+import CurrencySign from '../CurrencySign';
 export type RoomPayInfo = {
   Day: number; // milliseconds since January 1, 1970, 00:00:00 UTC
   Paid: boolean;
@@ -39,7 +40,7 @@ interface Props {
   setShowReceipt: React.Dispatch<React.SetStateAction<boolean>>;//
   setChangeMade: any;
   SelectedUserId: string;
-  updateRoomPropertyLocal: any;SelectedBranchId:any
+  updateRoomPropertyLocal: any;SelectedBranchId:any,Currency:string
 }
 const { v4: uuidv4 } = require('uuid');
 
@@ -55,7 +56,7 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
   setShowReceipt,
   setChangeMade,
   SelectedUserId,
-  updateRoomPropertyLocal,SelectedBranchId
+  updateRoomPropertyLocal,SelectedBranchId,Currency
 }) => {
   const today = new Date().getTime();
   const svgRef = useRef<SVGSVGElement | null>(null);
@@ -612,10 +613,15 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
           return 'var(--Text-Color)';
         })
         .style('font-size', `${fontSize}px`)
+        .append('tspan')
+        .style('font-size', `${fontSize - 3}px`)
+        .text((d: any) => CurrencySign(Currency))
+        .append('tspan')
+        .style('font-size', `${fontSize}px`)
         .text((d: any) => {
           return d.Value === null
-            ? '$' + agreedPrice.toLocaleString() + ' X'
-            : '$' + d.Value.toLocaleString() + ' X';
+            ? `${agreedPrice.toLocaleString()} X`
+            : `${d.Value.toLocaleString()} X`;
         })
         .on('click', (event, d) => handlePayClick(d));
       /////////////////////////////////////////////

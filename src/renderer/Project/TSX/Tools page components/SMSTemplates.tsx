@@ -1,9 +1,10 @@
 import React from 'react';
+import { Input } from '../Helpers/CustomReactComponents';
 interface SMSTemplate {
-    id: string;
-    name: string;
-    body: string;
-  }
+  id: string;
+  name: string;
+  body: string;
+}
 interface SMSTemplatesProps {
   smsTemplates: SMSTemplate[];
   openTemplateId: string | null;
@@ -84,7 +85,10 @@ const SMSTemplates: React.FC<SMSTemplatesProps> = ({
           <div
             className="email-template-header"
             style={{
-              padding: editingTemplateId === template.id ? 'var(--10px-V)' : 'var(--15px-V)',
+              padding:
+                editingTemplateId === template.id
+                  ? 'var(--10px-V)'
+                  : 'var(--15px-V)',
             }}
           >
             {editingTemplateId === template.id ? (

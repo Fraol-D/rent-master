@@ -3,6 +3,7 @@ import SignUpPage from './SignupPage';
 import { getValuesWithSql, updateValue } from 'Backend/localServerApis';
 import LoginPage from './LoginPage';
 import TrialExpiredPage from './TrialExpiredPage';
+import { Input } from '../Helpers/CustomReactComponents';
 const { v4: uuidv4 } = require('uuid');
 import {
   addValueOnline,
@@ -83,8 +84,9 @@ const AccountManager = (React.FC<MyComponentProps> = ({
   setViewBranchManagementPageNONAdm,
   fetchBranches,
   Branches,
-  setBranches,setBranchName
-}) => {
+  setBranches,
+  setBranchName,
+}: any) => {
   const [TrialExpiredState, setTrialExpiredState] = useState(false);
   const [IsAllowedState, setIsAllowedState] = useState(false);
   const [isSignUpMode, setisSignUpMode] = useState(true);
@@ -142,7 +144,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
           if (!window.electron.store.get('SelectedAppUserId')) {
             setAppUserManagerShow(true);
           }
-
+          await handleFetchBranches();
           await appUsersManagement();
           setInitialLoading(false);
           return;
@@ -204,14 +206,15 @@ const AccountManager = (React.FC<MyComponentProps> = ({
           if (!window.electron.store.get('SelectedAppUserId')) {
             setAppUserManagerShow(true);
           }
-
+          await handleFetchBranches();
           await appUsersManagement();
           if (
             navigator.onLine &&
             window.electron.store.get('users')[0].Allowed &&
-            !ViewBranchManagementPage && window.electron.store.get('SelectedBranchId') !== ''
+            !ViewBranchManagementPage &&
+            window.electron.store.get('SelectedBranchId') !== ''
           ) {
-            syncWithOnline(allUsers[0].id);
+            //syncWithOnline(allUsers[0].id);
           }
         }
       } catch (error) {
@@ -224,7 +227,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
           if (!window.electron.store.get('SelectedAppUserId')) {
             setAppUserManagerShow(true);
           }
-
+          await handleFetchBranches();
           await appUsersManagement();
         }
       }
@@ -251,6 +254,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
               privileges: '',
               userId: window.electron.store.get('users')[0].id,
               addedDate: Date.now(),
+              AllowedBranches: 'ALL',
             });
           } else {
             setSelectedAppUser(
@@ -275,6 +279,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
             privileges: '',
             userId: window.electron.store.get('users')[0].id,
             addedDate: Date.now(),
+            AllowedBranches: 'ALL',
           });
         } else {
           setSelectedAppUser(
@@ -290,16 +295,60 @@ const AccountManager = (React.FC<MyComponentProps> = ({
   };
   const handleAddNewAppUser = async () => {
     if (navigator.onLine) {
+      const existingUsers = appUsers.filter((user: any) =>
+        user.roleName.startsWith('New User')
+      );
+
+      let newUserName = 'New User';
+      if (existingUsers.length > 0) {
+        const numbers = existingUsers.map((user: any) => {
+          const match = user.roleName.match(/New User \((\d+)\)/);
+          return match ? parseInt(match[1]) : 0;
+        });
+        const maxNum = Math.max(...numbers, 0);
+        newUserName = `New User (${maxNum + 1})`;
+      }
+      const accountId = uuidv4();
       const newAppUser = {
-        id: uuidv4(),
-        roleName: 'New User',
-        privileges: privileges.join(','), // Set all privileges by default
+        id: accountId,
+        roleName: newUserName,
+        privileges: privileges.join(','),
         userId: window.electron.store.get('users')[0].id,
         addedDate: Date.now(),
+        AllowedBranches: Branches.map((branch) => branch.id).join(','),
       };
+
       try {
         await addValueOnline('app_users', newAppUser);
         await appUsersManagement();
+        setTimeout(() => {
+          // Wait for the next render cycle
+          requestAnimationFrame(() => {
+            // Find the container and the new element
+            const container = document.querySelector('.abcScroll');
+            const newUserElement = document.getElementById(
+              `app-user-${accountId}`
+            );
+            console.log(container);
+            console.log(newUserElement);
+            if (container && newUserElement) {
+              // Scroll the container
+              container.scrollTo({
+                left:
+                  (newUserElement as HTMLElement).offsetLeft -
+                  (container as HTMLElement).offsetLeft,
+                behavior: 'smooth',
+              });
+
+              // Add highlight effect
+              newUserElement.style.transition = 'background-color 0.3s ease';
+              newUserElement.style.backgroundColor = 'var(--Highlight-Color)';
+              setTimeout(() => {
+                newUserElement.style.backgroundColor = '';
+              }, 1500);
+            }
+          });
+        }, 500);
       } catch (error) {
         console.error('Error adding new user:', error);
         alert(
@@ -359,6 +408,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
     }
   }, [isSignedIn, Refresh]);
   const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const handleFullSignOutAndDeleteUser = async () => {
     const usersId = await window.electron.store.get('users')[0].id;
@@ -456,6 +506,41 @@ const AccountManager = (React.FC<MyComponentProps> = ({
     }
     setPasswordCheckInput('');
   };
+  const handleSubmitAdminPasswordTrueAdmin = async () => {
+    if (navigator.onLine) {
+      setIsCheckingPassword(true);
+      setPasswordError('');
+      const localUser = window.electron.store.get('users')[0];
+
+      try {
+        const isValid = await verifyCredentials(
+          localUser.email,
+          PasswordCheckInput
+        );
+
+        if (isValid) {
+          setIsTrueAdmin(true);
+          setCheckIfTureAdmin(false);
+        } else {
+          setPasswordError('Incorrect password. Please try again.');
+        }
+      } catch (error) {
+        console.error('Error verifying credentials:', error);
+        setPasswordError(
+          'An error occurred while verifying credentials. Please try again.'
+        );
+      } finally {
+        setIsCheckingPassword(false);
+        setPasswordCheckInput('');
+        setCheckIfTureAdmin(false);
+      }
+    } else {
+      setPasswordError(
+        'No internet connection. Please check your network and try again.'
+      );
+    }
+    setPasswordCheckInput('');
+  };
   const handleSubmitAdminPasswordBranch = async () => {
     if (navigator.onLine) {
       setIsCheckingPassword(true);
@@ -470,6 +555,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
 
         if (isValid) {
           setViewBranchManagementPageNONAdm(false);
+          window.electron.store.set('LockBranchToPc', false);
         } else {
           setPasswordError('Incorrect password. Please try again.');
         }
@@ -686,6 +772,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
     'edit tenant room attachments',
     'edit tenant room notification settings',
     'edit tenant room tenant stay',
+    'add a branch',
   ];
   interface PrivilegeNode {
     name: string;
@@ -728,7 +815,15 @@ const AccountManager = (React.FC<MyComponentProps> = ({
         { name: 'edit tenant room tenant stay' },
       ],
     },
+    {
+      name: 'add a branch',
+    }
   ];
+  const [IsTrueAdmin, setIsTrueAdmin] = useState(false);
+  const [CheckIfTureAdmin, setCheckIfTureAdmin] = useState(false);
+  const [ChangingPasswordId, setChangingPasswordId] = useState('false');
+  const [NewAdminPassword, setNewAdminPassword] = useState('');
+  const [ShowPassword, setShowPassword] = useState(false);
   const PrivilegeItem: React.FC<{
     privilege: PrivilegeNode;
     appUser: appUser;
@@ -776,6 +871,19 @@ const AccountManager = (React.FC<MyComponentProps> = ({
         )}
       </div>
     );
+  };
+  const handleApplyPASSWORD = async () => {
+    if (navigator.onLine) {
+      await updateValueOnline(
+        'app_users',
+        ChangingPasswordId,
+        'password',
+        NewAdminPassword
+      );
+      setChangingPasswordId('');
+      setNewAdminPassword('');
+      await appUsersManagement();
+    }
   };
   const handleCheckAll = async (user: appUser) => {
     if (navigator.onLine) {
@@ -860,7 +968,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
     location: '',
     description: '',
     googleMapPinPoint: '',
-    userId: ''
+    userId: '',
   });
 
   const handleAddBranch = async () => {
@@ -873,6 +981,15 @@ const AccountManager = (React.FC<MyComponentProps> = ({
         return;
       }
 
+      // Check if a branch with the same name already exists
+      const existingBranch = Branches.find(
+        (branch) => branch.name === newBranchData.name.trim()
+      );
+      if (existingBranch) {
+        alert('A branch with the same name already exists');
+        return;
+      }
+
       // Log the data being sent
       console.log('Adding branch with data:', {
         id: uuidv4(),
@@ -880,7 +997,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
         location: newBranchData.location || null,
         description: newBranchData.description || null,
         googleMapPinPoint: newBranchData.googleMapPinPoint || null,
-        userId: SelectedUserId
+        userId: SelectedUserId,
       });
 
       // First, check if we have a valid SelectedUserId
@@ -894,17 +1011,15 @@ const AccountManager = (React.FC<MyComponentProps> = ({
         location: newBranchData.location?.trim() || null,
         description: newBranchData.description?.trim() || null,
         googleMapPinPoint: newBranchData.googleMapPinPoint?.trim() || null,
-        userId: SelectedUserId
+        userId: SelectedUserId,
       };
 
       // Add to online database
       const result = await addValueOnline('branches', branchToAdd);
       console.log('Add branch result:', result); // Log the result
 
-    
-
       // If successful, refresh the branches list
-      await fetchBranches();
+      await handleFetchBranches();
 
       // Reset form
       setNewBranchData({
@@ -913,7 +1028,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
         location: '',
         description: '',
         googleMapPinPoint: '',
-        userId: ''
+        userId: '',
       });
 
       // Close modal
@@ -921,7 +1036,6 @@ const AccountManager = (React.FC<MyComponentProps> = ({
 
       // Show success message
       alert('Branch added successfully!');
-
     } catch (error) {
       console.error('Detailed error adding branch:', error);
       alert(`Failed to add branch: ${error.message}`);
@@ -935,8 +1049,13 @@ const AccountManager = (React.FC<MyComponentProps> = ({
   );
   const handleSelectBranch = (branchId: string) => {
     setSelectedBranchId(branchId);
-    setBranchName(Branches.find((branch) => branch.id === branchId)?.name || '');
-    window.electron.store.set('BranchName', Branches.find((branch) => branch.id === branchId)?.name || '');
+    setBranchName(
+      Branches.find((branch) => branch.id === branchId)?.name || ''
+    );
+    window.electron.store.set(
+      'BranchName',
+      Branches.find((branch) => branch.id === branchId)?.name || ''
+    );
     window.electron.store.set('SelectedBranchId', branchId);
     if (Branches.find((branch) => branch.id === branchId)?.lock)
       window.electron.store.set('LockBranchToPc', true);
@@ -964,20 +1083,19 @@ const AccountManager = (React.FC<MyComponentProps> = ({
         name: editingBranch.name,
         location: editingBranch.location || null,
         description: editingBranch.description || null,
-        googleMapPinPoint: editingBranch.googleMapPinPoint || null
+        googleMapPinPoint: editingBranch.googleMapPinPoint || null,
       };
 
       // Update in database
-      const updatePromises = Object.entries(updates).map(([field, value]) => 
+      const updatePromises = Object.entries(updates).map(([field, value]) =>
         updateValueOnline('branches', editingBranch.id, field, value)
       );
 
       await Promise.all(updatePromises);
-      await fetchBranches(); // Refresh the branches list
+      await handleFetchBranches(); // Refresh the branches list
 
       setShowEditBranchModal(false);
       setEditingBranch(null);
-
     } catch (error) {
       console.error('Error updating branch:', error);
       alert('Failed to update branch. Please try again.');
@@ -990,7 +1108,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
     try {
       await deleteValueOnline('branches', branchId);
 
-      fetchBranches();
+      handleFetchBranches();
     } catch (error) {
       alert(
         'Failed to delete branch. Please check your connection and try again.'
@@ -1007,15 +1125,66 @@ const AccountManager = (React.FC<MyComponentProps> = ({
       setIsBranchesLoading(false);
     }
   };
-
-  const [showFinancialDetails, setShowFinancialDetails] = useState(false);
+  const handleShowBranches = async () => {
+    setViewBranchManagementPage(true);
+    setIsBranchesLoading(true);
+    try {
+      await fetchBranches();
+    } finally {
+      setIsBranchesLoading(false);
+    }
+  };
 
   // Add this helper function to handle branch selection for editing
   const handleStartEdit = (branch: BranchTypeWithData) => {
     setEditingBranch(branch);
     setShowEditBranchModal(true);
   };
-
+  const [SelectedBranchIdADD, setSelectedBranchIdADD] = useState('');
+  const [AddBranchToUserIsAdding, setAddBranchToUserIsAdding] = useState(false);
+  const handleAddBranchToUser = async (appUser: appUser) => {
+    if (
+      !AddBranchToUserIsAdding &&
+      SelectedBranchIdADD !== 'Select NON SELECTED PLEASE SELECT OKOK'
+    ) {
+      setAddBranchToUserIsAdding(true);
+      const cleanedBranches = appUser.AllowedBranches.split(',')
+        .filter((branch) => branch.length === 36)
+        .join(',');
+      const updatedBranches = cleanedBranches + ',' + SelectedBranchIdADD;
+      await updateValueOnline(
+        'app_users',
+        appUser.id,
+        'AllowedBranches',
+        updatedBranches
+      );
+      await appUsersManagement();
+      setSelectedBranchIdADD('Select NON SELECTED PLEASE SELECT OKOK');
+      setAddBranchToUserIsAdding(false);
+    }
+  };
+  const handleRemoveBranchFromUser = async (
+    appUser: appUser,
+    branchId: string
+  ) => {
+    const cleanedBranches = appUser.AllowedBranches.split(',')
+      .filter((branch) => branch.length === 36)
+      .join(',')
+      .split(',')
+      .filter((branch) => branch !== branchId)
+      .join(',');
+    await updateValueOnline(
+      'app_users',
+      appUser.id,
+      'AllowedBranches',
+      cleanedBranches
+    );
+    await appUsersManagement();
+  }; // Add this with other state declarations
+  const RefreshComponent = () => {
+    setCount(count + 1);
+  };
+  const [count, setCount] = useState(0);
   return (
     <>
       {(loading || initialLoading) && (
@@ -1049,7 +1218,111 @@ const AccountManager = (React.FC<MyComponentProps> = ({
               ) : IsAllowedState ? (
                 <>
                   {AppUserManagerShow ? (
-                    AppUserManagerPromptPassword ? (
+                    CheckIfTureAdmin ? (
+                      <div
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'center',
+                          alignItems: 'center',
+                          height: '100%',
+                        }}
+                      >
+                        <div
+                          className="SignUpMainContainer"
+                          style={{
+                            width: 'auto',
+                            maxWidth: 'var(--400px-V)',
+                            height: 'auto',
+                            margin: 'auto',
+                            background: 'var(--Secondary-Color20)',
+                            borderRadius: 'var(--8px-V)',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            boxShadow:
+                              'var(--0px-V) var(--4px-V) var(--4px-V) var(--0px-V) rgba(0, 0, 0, 0.25)',
+                            padding: 'var(--20px-V)',
+                          }}
+                        >
+                          <div
+                            style={{
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              width: '100%',
+                              alignItems: 'center',
+                              height: 'auto',
+                              marginBottom: 'var(--15px-V)',
+                            }}
+                          >
+                            <h1
+                              style={{
+                                marginRight: 'var(--10px-V)',
+                                marginTop: 'var(--0px-V)',
+                                marginBottom: 'var(--0px-V)',
+                                fontSize: 'var(--45px-V)',
+                              }}
+                            >
+                              Security Check Extra
+                            </h1>
+                            <button
+                              onClick={() => {
+                                setCheckIfTureAdmin(false);
+                                setIsTrueAdmin(false);
+                              }}
+                            >
+                              Back
+                            </button>
+                          </div>
+                          <p
+                            style={{
+                              color: 'var(--Text-Color)',
+                              marginBottom: 'var(--25px-V)',
+                            }}
+                          >
+                            Please enter the account password to see App user
+                            passwords
+                          </p>
+                          <input
+                            type="password"
+                            placeholder="Admin Password"
+                            className="userName-input"
+                            value={PasswordCheckInput}
+                            onChange={(e) =>
+                              setPasswordCheckInput(e.target.value)
+                            }
+                          />
+                          <br />
+                          {passwordError && (
+                            <p
+                              style={{
+                                color: 'red',
+                                marginBottom: 'var(--10px-V)',
+                              }}
+                            >
+                              {passwordError}
+                            </p>
+                          )}
+                          <button
+                            className="LoginButton"
+                            onClick={handleSubmitAdminPasswordTrueAdmin}
+                            disabled={isCheckingPassword}
+                          >
+                            {isCheckingPassword ? (
+                              <img
+                                src={loadingGif}
+                                alt="Loading..."
+                                style={{
+                                  width: 'var(--20px-V)',
+                                  height: 'var(--20px-V)',
+                                }}
+                              />
+                            ) : (
+                              <>Submit {' ▶'}</>
+                            )}
+                          </button>
+                        </div>{' '}
+                      </div>
+                    ) : AppUserManagerPromptPassword ? (
                       <div
                         style={{
                           display: 'flex',
@@ -1107,7 +1380,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                               marginBottom: 'var(--25px-V)',
                             }}
                           >
-                            Please enter the account password to continue
+                            Please enter the account password to open appusers
                           </p>
                           <input
                             type="password"
@@ -1173,12 +1446,25 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                           </div>
                           <div>
                             <button
-                              className="appUserButtons"
-                              onClick={() => setAppUserManagerShow(false)}
-                              style={{ marginRight: 'var(--10px-V)' }}
+                              onClick={() => {
+                                handleFetchBranches();
+                                appUsersManagement();
+                              }}
                             >
-                              Back
+                              Refresh
                             </button>
+                            {window.electron.store.get('SelectedAppUserId') ===
+                            '' ? (
+                              <></>
+                            ) : (
+                              <button
+                                className="appUserButtons"
+                                onClick={() => setAppUserManagerShow(false)}
+                                style={{ marginRight: 'var(--10px-V)' }}
+                              >
+                                Back
+                              </button>
+                            )}
                             <button
                               className="appUserButtons"
                               onClick={handleAddNewAppUser}
@@ -1187,177 +1473,402 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                             </button>
                           </div>
                         </div>
-
                         <div
                           style={{
-                            display: 'flex',
-                            flexDirection: 'row',
-                            overflowX: 'auto',
+                            height: 'calc(100% - var(--105px-V))',
+                            overflowY: 'auto',
                           }}
-                          className="appUserItemContainer"
                         >
-                          <div style={{ display: 'flex' }}>
-                            <div className="appUserItemM appUserItem">
-                              <div className="appUserHeader">
-                                <span style={{ fontSize: 'var(--25px-V)' }}>
-                                  Admin
-                                </span>
-                                <button
-                                  className="appUserButtons"
-                                  onClick={() =>
-                                    handleSelectUser({
-                                      id: 'admin',
-                                      roleName: 'admin',
-                                      privileges: '',
-                                      userId:
-                                        window.electron.store.get('users')[0]
-                                          .id,
-                                      addedDate: Date.now(),
-                                    })
-                                  }
-                                >
-                                  Select
-                                </button>
-                              </div>
-                              <p
-                                style={{
-                                  margin: 'var(--5px-V) 0',
-                                  color: 'var(--Text-Color-60)',
-                                }}
-                              >
-                                Full system access with all privileges enabled
-                              </p>
-                            </div>
-                            {appUsers.map((appUser) => (
-                              <div key={appUser.id} className="appUserItem">
-                                <div className="appUserHeader">
-                                  {editingUserId === appUser.id ? (
-                                    <>
-                                      <input
-                                        type="text"
-                                        value={editingUserName}
-                                        onChange={(e) =>
-                                          setEditingUserName(e.target.value)
-                                        }
-                                        style={{
-                                          fontSize: 'var(--20px-V)',
-                                          marginRight: 'var(--10px-V)',
-                                          width: '50%',
-                                        }}
-                                      />
-                                      <div>
-                                        <button
-                                          className="appUserButtons"
-                                          onClick={() =>
-                                            handleSaveEdit(appUser.id)
-                                          }
-                                        >
-                                          Save
-                                        </button>
-                                        <button
-                                          className="appUserButtons"
-                                          onClick={handleCancelEdit}
-                                        >
-                                          Cancel
-                                        </button>
-                                      </div>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <span
-                                        style={{ fontSize: 'var(--25px-V)' }}
-                                      >
-                                        {appUser.roleName}
-                                      </span>
-                                      <div>
-                                        <button
-                                          className="appUserButtons"
-                                          onClick={() =>
-                                            handleSelectUser(appUser)
-                                          }
-                                        >
-                                          Select
-                                        </button>
-                                        <button
-                                          className="appUserButtons"
-                                          onClick={() =>
-                                            handleEditUser(appUser)
-                                          }
-                                        >
-                                          Edit
-                                        </button>
-                                        <button
-                                          className="appUserButtons"
-                                          onClick={() =>
-                                            handleDeleteUser(appUser.id)
-                                          }
-                                        >
-                                          Delete
-                                        </button>
-                                      </div>
-                                    </>
-                                  )}
-                                </div>
-                                <div className="privileges-list">
-                                  {privilegeHierarchy.map((privilege) => (
-                                    <PrivilegeItem
-                                      key={privilege.name}
-                                      privilege={privilege}
-                                      appUser={appUser}
-                                      handleTogglePrivilege={
-                                        handleTogglePrivilege
-                                      }
-                                      loadingPrivileges={loadingPrivileges}
-                                    />
-                                  ))}
-                                </div>
-                                <div className="privilege-actions">
-                                  <button
-                                    onClick={() => handleCheckAll(appUser)}
-                                    disabled={isCheckingAll}
-                                  >
-                                    {isCheckingAll ? (
-                                      <img
-                                        src={loadingGif}
-                                        alt="Loading..."
-                                        style={{
-                                          width: 'var(--20px-V)',
-                                          height: 'var(--20px-V)',
-                                        }}
-                                      />
-                                    ) : (
-                                      'Check All'
-                                    )}
-                                  </button>
-                                  <button
-                                    onClick={() => handleUncheckAll(appUser)}
-                                    disabled={isUncheckingAll}
-                                  >
-                                    {isUncheckingAll ? (
-                                      <img
-                                        src={loadingGif}
-                                        alt="Loading..."
-                                        style={{
-                                          width: 'var(--20px-V)',
-                                          height: 'var(--20px-V)',
-                                        }}
-                                      />
-                                    ) : (
-                                      'Uncheck All'
-                                    )}
-                                  </button>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                        {privilegeError && (
                           <div
-                            style={{ color: 'red', marginTop: 'var(--10px-V)' }}
+                            style={{
+                              display: 'flex',
+                              flexDirection: 'row',
+                              overflowX: 'auto',
+                            }}
+                            className="appUserItemContainer"
                           >
-                            {privilegeError}
+                            <div
+                              style={{ display: 'flex' }}
+                              className="abcScroll"
+                            >
+                              <div className="appUserItemM appUserItem">
+                                <div>
+                                  <div className="appUserHeader">
+                                    <span style={{ fontSize: 'var(--25px-V)' }}>
+                                      Admin
+                                    </span>
+                                    <button
+                                      className="appUserButtons"
+                                      onClick={() =>
+                                        handleSelectUser({
+                                          id: 'admin',
+                                          roleName: 'admin',
+                                          privileges: '',
+                                          userId:
+                                            window.electron.store.get(
+                                              'users'
+                                            )[0].id,
+                                          addedDate: Date.now(),
+                                          AllowedBranches: 'ALL',
+                                        })
+                                      }
+                                    >
+                                      Select
+                                    </button>
+                                  </div>
+                                  <p
+                                    style={{
+                                      margin: 'var(--5px-V) 0',
+                                      color: 'var(--Text-Color-60)',
+                                    }}
+                                  >
+                                    Full system access with all privileges
+                                    enabled.
+                                  </p>
+                                  <p
+                                    style={{
+                                      margin: 'var(--5px-V) 0',
+                                      color: 'var(--Text-Color-60)',
+                                    }}
+                                  >
+                                    Full access to all branches.
+                                  </p>
+                                </div>
+                              </div>
+                              {appUsers
+                                .sort((a, b) =>
+                                  a.roleName.localeCompare(b.roleName)
+                                )
+                                .map((appUser) => (
+                                  <div
+                                    id={`app-user-${appUser.id}`}
+                                    className="appUserItem"
+                                  >
+                                    <div>
+                                      <div className="appUserHeader">
+                                        {editingUserId === appUser.id ? (
+                                          <>
+                                            <input
+                                              type="text"
+                                              value={editingUserName}
+                                              onChange={(e) =>
+                                                setEditingUserName(
+                                                  e.target.value
+                                                )
+                                              }
+                                              style={{
+                                                fontSize: 'var(--20px-V)',
+                                                marginRight: 'var(--10px-V)',
+                                                width: '50%',
+                                              }}
+                                            />
+                                            <div>
+                                              <button
+                                                className="appUserButtons"
+                                                onClick={() =>
+                                                  handleSaveEdit(appUser.id)
+                                                }
+                                              >
+                                                Save
+                                              </button>
+                                              <button
+                                                className="appUserButtons"
+                                                onClick={handleCancelEdit}
+                                              >
+                                                Cancel
+                                              </button>
+                                            </div>
+                                          </>
+                                        ) : (
+                                          <>
+                                            <span
+                                              style={{
+                                                fontSize: 'var(--25px-V)',
+                                              }}
+                                            >
+                                              {appUser.roleName}
+                                            </span>
+                                            <div>
+                                              <button
+                                                className="appUserButtons"
+                                                onClick={() =>
+                                                  handleSelectUser(appUser)
+                                                }
+                                              >
+                                                Select
+                                              </button>
+                                              <button
+                                                className="appUserButtons"
+                                                onClick={() =>
+                                                  handleEditUser(appUser)
+                                                }
+                                              >
+                                                Edit
+                                              </button>
+                                              <button
+                                                className="appUserButtons"
+                                                onClick={() =>
+                                                  handleDeleteUser(appUser.id)
+                                                }
+                                              >
+                                                Delete
+                                              </button>
+                                            </div>
+                                          </>
+                                        )}
+                                      </div>
+                                      <div className="privileges-list">
+                                        {privilegeHierarchy.map((privilege) => (
+                                          <PrivilegeItem
+                                            key={privilege.name}
+                                            privilege={privilege}
+                                            appUser={appUser}
+                                            handleTogglePrivilege={
+                                              handleTogglePrivilege
+                                            }
+                                            loadingPrivileges={
+                                              loadingPrivileges
+                                            }
+                                          />
+                                        ))}
+                                      </div>
+                                      <div className="privilege-actions">
+                                        <button
+                                          onClick={() =>
+                                            handleCheckAll(appUser)
+                                          }
+                                          disabled={isCheckingAll}
+                                        >
+                                          {isCheckingAll ? (
+                                            <img
+                                              src={loadingGif}
+                                              alt="Loading..."
+                                              style={{
+                                                width: 'var(--20px-V)',
+                                                height: 'var(--20px-V)',
+                                              }}
+                                            />
+                                          ) : (
+                                            'Check All'
+                                          )}
+                                        </button>
+                                        <button
+                                          onClick={() =>
+                                            handleUncheckAll(appUser)
+                                          }
+                                          disabled={isUncheckingAll}
+                                        >
+                                          {isUncheckingAll ? (
+                                            <img
+                                              src={loadingGif}
+                                              alt="Loading..."
+                                              style={{
+                                                width: 'var(--20px-V)',
+                                                height: 'var(--20px-V)',
+                                              }}
+                                            />
+                                          ) : (
+                                            'Uncheck All'
+                                          )}
+                                        </button>
+                                      </div>
+                                      <hr />
+                                    </div>
+                                    <div>
+                                      <h2
+                                        style={{
+                                          textAlign: 'center',
+                                          width: '100%',
+                                          marginBottom: 'var(--10px-V)',
+                                        }}
+                                      >
+                                        Allowed branchs{' '}
+                                        <select
+                                          name=""
+                                          id=""
+                                          onChange={(e) => {
+                                            setSelectedBranchIdADD(
+                                              e.target.value
+                                            );
+                                          }}
+                                          value={SelectedBranchIdADD}
+                                        >
+                                          <option
+                                            value={
+                                              'Select NON SELECTED PLEASE SELECT OKOK'
+                                            }
+                                          >
+                                            Select
+                                          </option>
+                                          {Branches.filter(
+                                            (branch: any) =>
+                                              !appUser.AllowedBranches.includes(
+                                                branch.id
+                                              )
+                                          ).map((branch: any) => (
+                                            <>
+                                              <option value={branch.id}>
+                                                {branch.name}
+                                              </option>
+                                            </>
+                                          ))}
+                                        </select>
+                                        <button
+                                          onClick={() => {
+                                            handleAddBranchToUser(appUser);
+                                          }}
+                                        >
+                                          {!AddBranchToUserIsAdding && 'Add'}
+                                        </button>
+                                      </h2>
+                                      <div
+                                        style={{
+                                          display: 'flex',
+                                          justifyContent: 'center',
+                                        }}
+                                      >
+                                        {AddBranchToUserIsAdding ? (
+                                          <img
+                                            src={loadingGif}
+                                            alt="Loading..."
+                                            style={{
+                                              width: 'var(--30px-V)',
+                                              height: 'var(--30px-V)',
+                                            }}
+                                          />
+                                        ) : (
+                                          ''
+                                        )}
+                                      </div>
+
+                                      {appUser.AllowedBranches.split(',').map(
+                                        (branchId: string) => (
+                                          <span
+                                            key={branchId}
+                                            style={{
+                                              display: 'flex',
+                                              justifyContent: 'space-between',
+                                              alignItems: 'center',
+                                              width: '60%',
+                                              backgroundColor:
+                                                'var(--Secondary-Color60)',
+                                              marginTop: 'auto',
+                                              marginRight: 'auto',
+                                              marginBottom: 'var(--5px-V)',
+                                              marginLeft: 'auto',
+                                              paddingLeft: 'var(--5px-V)',
+                                              borderRadius: 'var(--5px-V)',
+                                            }}
+                                          >
+                                            {Branches.find(
+                                              (branch: any) =>
+                                                branch.id === branchId
+                                            )?.name || 'Unknown'}{' '}
+                                            <button
+                                              onClick={() => {
+                                                handleRemoveBranchFromUser(
+                                                  appUser,
+                                                  branchId
+                                                );
+                                              }}
+                                            >
+                                              x
+                                            </button>
+                                          </span>
+                                        )
+                                      )}
+                                      <hr />
+                                      {window.electron.store.get(
+                                        'SelectedAppUserId'
+                                      ) === 'admin' && (
+                                        <div>
+                                          <button
+                                            onClick={() => {
+                                              if (IsTrueAdmin) {
+                                                setIsTrueAdmin(false);
+                                              } else {
+                                                setCheckIfTureAdmin(true);
+                                              }
+                                            }}
+                                            style={{
+                                              marginRight: 'var(--10px-V)',
+                                            }}
+                                          >
+                                            {IsTrueAdmin ? 'Hide' : 'Show'}
+                                          </button>
+                                          User password:{' '}
+                                          {IsTrueAdmin
+                                            ? appUser.password
+                                            : '********'}
+                                          <div style={{ display: 'flex' }}>
+                                            {IsTrueAdmin &&
+                                              ChangingPasswordId !==
+                                                appUser.id && (
+                                                <button
+                                                  onClick={() =>
+                                                    setChangingPasswordId(
+                                                      appUser.id
+                                                    )
+                                                  }
+                                                >
+                                                  Change Password
+                                                </button>
+                                              )}
+                                            {ChangingPasswordId ===
+                                              appUser.id && (
+                                              <>
+                                                <input
+                                                  type={'text'}
+                                                  placeholder="New Password"
+                                                  style={{
+                                                    width: 'var(--180px-V)',
+                                                  }}
+                                                  value={NewAdminPassword}
+                                                  onChange={(e) =>
+                                                    setNewAdminPassword(
+                                                      e.target.value
+                                                    )
+                                                  }
+                                                />
+                                                <button
+                                                  onClick={() => {
+                                                    handleApplyPASSWORD();
+                                                  }}
+                                                  style={{
+                                                    marginRight:
+                                                      'var(--10px-V)',
+                                                  }}
+                                                >
+                                                  Done
+                                                </button>
+                                                <button
+                                                  onClick={() => {
+                                                    setChangingPasswordId('');
+                                                  }}
+                                                >
+                                                  Cancel
+                                                </button>
+                                              </>
+                                            )}
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                ))}
+                            </div>
                           </div>
-                        )}
+                          {privilegeError && (
+                            <div
+                              style={{
+                                color: 'red',
+                                marginTop: 'var(--10px-V)',
+                              }}
+                            >
+                              {privilegeError}
+                            </div>
+                          )}
+                        </div>
                       </>
                     )
                   ) : ViewBranchManagementPage ? (
@@ -1422,7 +1933,8 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                 marginBottom: 'var(--25px-V)',
                               }}
                             >
-                              Please enter the account password to continue
+                              Please enter the account password to see the
+                              branch list as admin
                             </p>
                             <input
                               type="password"
@@ -1483,48 +1995,105 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                             marginBottom: 'var(--20px-V)',
                           }}
                         >
-                          <h1 style={{ margin: 0 }}>Branch Management</h1>
+                          <div
+                            style={{
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: 'var(--5px-V)',
+                            }}
+                          >
+                            {' '}
+                            <h1 style={{ margin: 0 }}>Branch Management</h1>
+                            <p style={{ margin: 0 }}>{appUsers.find(appUser => appUser.id === window.electron.store.get('SelectedAppUserId'))?.roleName}</p>
+                          </div>
+                          <p style={{ width: '40%' }}>
+                            {window.electron.store.get('SelectedAppUserId') !==
+                              'admin' && (
+                              <>
+                                You are only able to view the branches selected
+                                for your user account. If this is incorrect,
+                                please contact the administrator to enable
+                                access to more branches.
+                              </>
+                            )}
+                          </p>{' '}
                           <div>
                             <button
                               className="appUserButtons"
                               style={{ marginRight: 'var(--20px-V)' }}
-                              onClick={() => setShowAddBranchModal(true)}
+                              onClick={() => {
+                                handleFetchBranches();
+                              }}
                             >
-                              Add New Branch
+                              Refresh
                             </button>
-                            {Branches.length > 0 && (
+                            {appUsers.find(appUser => appUser.id === 'admin' || appUser.id === window.electron.store.get('SelectedAppUserId'))?.privileges.includes('add a branch') && (
                               <button
-                                onClick={() =>
-                                  setViewBranchManagementPage(false)
-                                }
-                              >
-                                Back
+                                className="appUserButtons"
+                                style={{ marginRight: 'var(--20px-V)' }}
+                                onClick={() => setShowAddBranchModal(true)}
+                            >
+                                Add New Branch
                               </button>
                             )}
+                            {Branches.length > 0 &&
+                              window.electron.store.get('SelectedBranchId') !==
+                                '' &&
+                              window.electron.store.get('SelectedBranchId') && (
+                                <button
+                                  onClick={() =>
+                                    setViewBranchManagementPage(false)
+                                  }
+                                >
+                                  Back
+                                </button>
+                              )}
                           </div>
                         </div>
 
                         {isBranchesLoading ? (
-                          <div style={{
-                            display: 'flex',
-                            justifyContent: 'center',
-                            alignItems: 'center',
-                            minHeight: '200px'
-                          }}>
+                          <div
+                            style={{
+                              display: 'flex',
+                              justifyContent: 'center',
+                              alignItems: 'center',
+                              minHeight: '200px',
+                            }}
+                          >
                             <img
                               src={loadingGif}
-                              style={{ width: 'var(--50px-V)', height: 'var(--50px-V)' }}
+                              style={{
+                                width: 'var(--50px-V)',
+                                height: 'var(--50px-V)',
+                              }}
                               alt="Loading branches..."
                             />
                           </div>
                         ) : (
-                          <div className="branch-list" style={{
-                            display: 'flex',
-                            flexWrap: 'wrap',
-                            gap: 'var(--20px-V)',
-                            overflowY: 'auto',
-                          }}>
-                            {Branches.map((branch) => (
+                          <div
+                            className="branch-list"
+                            style={{
+                              display: 'flex',
+                              flexWrap: 'wrap',
+                              gap: 'var(--20px-V)',
+                              overflowY: 'auto',
+                            }}
+                          >
+                            {(window.electron.store.get('SelectedAppUserId') ===
+                            'admin'
+                              ? Branches
+                              : Branches.filter((branch: any) =>
+                                  appUsers
+                                    .find(
+                                      (appUser) =>
+                                        appUser.id ===
+                                        window.electron.store.get(
+                                          'SelectedAppUserId'
+                                        )
+                                    )
+                                    ?.AllowedBranches.includes(branch.id)
+                                )
+                            ).map((branch: any) => (
                               <div
                                 key={branch.id}
                                 className="branch-card"
@@ -1533,7 +2102,8 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                   borderRadius: 'var(--12px-V)',
                                   padding: 'var(--25px-V)',
                                   width: 'var(--390px-V)',
-                                  boxShadow: '0 var(--2px-V) var(--15px-V) rgba(0, 0, 0, 0.08)',
+                                  boxShadow:
+                                    '0 var(--2px-V) var(--15px-V) rgba(0, 0, 0, 0.08)',
                                   display: 'flex',
                                   flexDirection: 'column',
                                   gap: 'var(--20px-V)',
@@ -1544,38 +2114,50 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                 }}
                               >
                                 {/* Header Section */}
-                                <div style={{
-                                  display: 'flex',
-                                  justifyContent: 'space-between',
-                                  alignItems: 'center',
-                                  borderBottom: '1px solid var(--Border-Color)',
-                                  paddingBottom: 'var(--15px-V)'
-                                }}>
-                                  <h3 style={{
-                                    margin: 0,
-                                    fontSize: 'var(--24px-V)',
-                                    fontWeight: '600',
-                                    color: 'var(--Text-Color)'
-                                  }}>
+                                <div
+                                  style={{
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center',
+                                    borderBottom:
+                                      '1px solid var(--Border-Color)',
+                                    paddingBottom: 'var(--15px-V)',
+                                  }}
+                                >
+                                  <h3
+                                    style={{
+                                      margin: 0,
+                                      fontSize: 'var(--24px-V)',
+                                      fontWeight: '600',
+                                      color: 'var(--Text-Color)',
+                                    }}
+                                  >
                                     {branch.name}
                                   </h3>
-                                  <div style={{ display: 'flex', gap: 'var(--8px-V)' }}>
+                                  <div
+                                    style={{
+                                      display: 'flex',
+                                      gap: 'var(--8px-V)',
+                                    }}
+                                  >
                                     <button
                                       className="appUserButtons"
                                       onClick={() => handleStartEdit(branch)}
                                       style={{
                                         padding: 'var(--8px-V) var(--12px-V)',
-                                        fontSize: 'var(--14px-V)'
+                                        fontSize: 'var(--14px-V)',
                                       }}
                                     >
                                       Edit
                                     </button>
                                     <button
                                       className="appUserButtons"
-                                      onClick={() => handleDeleteBranch(branch.id)}
+                                      onClick={() =>
+                                        handleDeleteBranch(branch.id)
+                                      }
                                       style={{
                                         padding: 'var(--8px-V) var(--12px-V)',
-                                        fontSize: 'var(--14px-V)'
+                                        fontSize: 'var(--14px-V)',
                                       }}
                                     >
                                       Delete
@@ -1584,108 +2166,179 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                 </div>
 
                                 {/* Info Sections */}
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--20px-V)' }}>
+                                <div
+                                  style={{
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    gap: 'var(--20px-V)',
+                                  }}
+                                >
                                   {/* Location Section */}
-                                  <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--5px-V)' }}>
-                                    <h4 style={{
-                                      margin: 0,
-                                      fontSize: 'var(--16px-V)',
-                                      color: 'var(--Text-Color-80)',
-                                      fontWeight: '600'
-                                    }}>
+                                  <div
+                                    style={{
+                                      display: 'flex',
+                                      flexDirection: 'column',
+                                      gap: 'var(--5px-V)',
+                                    }}
+                                  >
+                                    <h4
+                                      style={{
+                                        margin: 0,
+                                        fontSize: 'var(--16px-V)',
+                                        color: 'var(--Text-Color-80)',
+                                        fontWeight: '600',
+                                      }}
+                                    >
                                       Location
                                     </h4>
-                                    <p style={{
-                                      margin: 0,
-                                      fontSize: 'var(--15px-V)',
-                                      color: 'var(--Text-Color-60)',
-                                      lineHeight: '1.4'
-                                    }}>
+                                    <p
+                                      style={{
+                                        margin: 0,
+                                        fontSize: 'var(--15px-V)',
+                                        color: 'var(--Text-Color-60)',
+                                        lineHeight: '1.4',
+                                      }}
+                                    >
                                       {branch.location}
                                     </p>
                                   </div>
 
                                   {/* Building Stats Section */}
-                                  <div style={{
-                                    display: 'grid',
-                                    gridTemplateColumns: 'repeat(2, 1fr)',
-                                    gap: 'var(--15px-V)',
-                                    backgroundColor: 'var(--Background-Color)',
-                                    padding: 'var(--15px-V)',
-                                    borderRadius: 'var(--8px-V)',
-                                    border: '1px solid var(--Border-Color)'
-                                  }}>
-                                    <StatItem label="Total Floors" value={branch.totalFloors || 0} />
-                                    <StatItem label="Total Rooms" value={branch.totalRooms || 0} />
-                                    <StatItem label="Total Tenants" value={branch.totalTenants || 0} />
-                                    <StatItem label="Occupied Rooms" value={branch.occupiedRooms || 0} />
-                                    <StatItem label="Vacant Rooms" value={branch.vacantRooms || 0} />
+                                  <div
+                                    style={{
+                                      display: 'grid',
+                                      gridTemplateColumns: 'repeat(2, 1fr)',
+                                      gap: 'var(--15px-V)',
+                                      backgroundColor:
+                                        'var(--Background-Color)',
+                                      padding: 'var(--15px-V)',
+                                      borderRadius: 'var(--8px-V)',
+                                      border: '1px solid var(--Border-Color)',
+                                    }}
+                                  >
+                                    <StatItem
+                                      label="Total Floors"
+                                      value={branch.totalFloors || 0}
+                                    />
+                                    <StatItem
+                                      label="Total Rooms"
+                                      value={branch.totalRooms || 0}
+                                    />
+                                    <StatItem
+                                      label="Total Tenants"
+                                      value={branch.totalTenants || 0}
+                                    />
+                                    <StatItem
+                                      label="Occupied Rooms"
+                                      value={branch.occupiedRooms || 0}
+                                    />
+                                    <StatItem
+                                      label="Vacant Rooms"
+                                      value={branch.vacantRooms || 0}
+                                    />
                                   </div>
 
                                   {/* Financial Section */}
-                                  <div style={{
-                                    backgroundColor: 'var(--Background-Color)',
-                                    padding: 'var(--15px-V)',
-                                    borderRadius: 'var(--8px-V)',
-                                    border: '1px solid var(--Border-Color)'
-                                  }}>
-                                    <h4 style={{
-                                      margin: 0,
-                                      marginBottom: 'var(--10px-V)',
-                                      fontSize: 'var(--16px-V)',
-                                      color: 'var(--Text-Color-80)',
-                                      fontWeight: '600'
-                                    }}>
+                                  <div
+                                    style={{
+                                      backgroundColor:
+                                        'var(--Background-Color)',
+                                      padding: 'var(--15px-V)',
+                                      borderRadius: 'var(--8px-V)',
+                                      border: '1px solid var(--Border-Color)',
+                                    }}
+                                  >
+                                    <h4
+                                      style={{
+                                        margin: 0,
+                                        marginBottom: 'var(--10px-V)',
+                                        fontSize: 'var(--16px-V)',
+                                        color: 'var(--Text-Color-80)',
+                                        fontWeight: '600',
+                                      }}
+                                    >
                                       Financial Overview
                                     </h4>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                      <FinancialItem label="This Month Revenue" value={branch.monthlyRevenue?.toLocaleString() || 0} />
-                                      <FinancialItem label="This Month Expenses" value={branch.monthlyExpenses?.toLocaleString() || 0} />
-                                      <FinancialItem label="This Month Profit" value={branch.monthlyProfit?.toLocaleString() || 0} />
+                                    <div
+                                      style={{
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                      }}
+                                    >
+                                      <FinancialItem
+                                        label="This Month Revenue"
+                                        value={
+                                          branch.monthlyRevenue?.toLocaleString() ||
+                                          0
+                                        }
+                                      />
+                                      <FinancialItem
+                                        label="This Month Expenses"
+                                        value={
+                                          branch.monthlyExpenses?.toLocaleString() ||
+                                          0
+                                        }
+                                      />
+                                      <FinancialItem
+                                        label="This Month Profit"
+                                        value={
+                                          branch.monthlyProfit?.toLocaleString() ||
+                                          0
+                                        }
+                                      />
                                     </div>
                                   </div>
                                 </div>
 
                                 {/* Actions Section */}
-                                <div style={{
-                                  marginTop: 'auto',
-                                  display: 'flex',
-                                  flexDirection: 'column',
-                                  gap: 'var(--10px-V)',
-                                  borderTop: '1px solid var(--Border-Color)',
-                                  paddingTop: 'var(--15px-V)'
-                                }}>
+                                <div
+                                  style={{
+                                    marginTop: 'auto',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    gap: 'var(--10px-V)',
+                                    borderTop: '1px solid var(--Border-Color)',
+                                    paddingTop: 'var(--15px-V)',
+                                  }}
+                                >
                                   <button
                                     className="appUserButtons"
-                                    onClick={() => handleSelectBranch(branch.id)}
+                                    onClick={() =>
+                                      handleSelectBranch(branch.id)
+                                    }
                                     style={{
                                       width: '100%',
                                       padding: 'var(--12px-V)',
                                       fontSize: 'var(--16px-V)',
                                       fontWeight: '500',
-                                      background:"var(--Primary-Color)",
-                                      color:"var(--Text-Color-Reverse)"
+                                      background: 'var(--Primary-Color)',
+                                      color: 'var(--Text-Color-Reverse)',
                                     }}
                                   >
                                     Select Branch
                                   </button>
-                                  
-                                  <label style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: 'var(--8px-V)',
-                                    fontSize: 'var(--14px-V)',
-                                    color: 'var(--Text-Color-60)',
-                                    justifyContent: 'center'
-                                  }}>
+
+                                  <label
+                                    style={{
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: 'var(--8px-V)',
+                                      fontSize: 'var(--14px-V)',
+                                      color: 'var(--Text-Color-60)',
+                                      justifyContent: 'center',
+                                    }}
+                                  >
                                     <input
                                       type="checkbox"
                                       checked={branch?.lock || false}
                                       onChange={(e) => {
-                                        setBranches(prev =>
-                                          prev.map(brancha =>
+                                        setBranches((prev) =>
+                                          prev.map((brancha) =>
                                             brancha.id === branch.id
-                                              ? { ...brancha, lock: e.target.checked }
+                                              ? {
+                                                  ...brancha,
+                                                  lock: e.target.checked,
+                                                }
                                               : brancha
                                           )
                                         );
@@ -1757,7 +2410,14 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                   email={email}
                   password={password}
                   setEmail={setEmail}
+                  username={username}
+                  setUsername={setUsername}
                   setPassword={setPassword}
+                  setSelectedAppUser={setSelectedAppUser}
+                  setAppUserManagerShow={setAppUserManagerShow}
+                  fetchBranches={handleShowBranches}
+                  RefreshComponent={RefreshComponent}
+                  setViewBranchManagementPage={setViewBranchManagementPage}
                 />
               </div>
             )}
@@ -1824,7 +2484,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                   }
                   placeholder="Enter Branch Name"
                   style={{
-                    width: '100%',
+                    width: '95%',
                     padding: 'var(--8px-V)',
                     borderRadius: 'var(--4px-V)',
                     border: '1px solid var(--Text-Color-30)',
@@ -1849,7 +2509,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                   }
                   placeholder="Enter Branch Location"
                   style={{
-                    width: '100%',
+                    width: '95%',
                     padding: 'var(--8px-V)',
                     borderRadius: 'var(--4px-V)',
                     border: '1px solid var(--Text-Color-30)',
@@ -1873,7 +2533,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                   }
                   placeholder="Enter Branch Description"
                   style={{
-                    width: '100%',
+                    width: '95%',
                     padding: 'var(--8px-V)',
                     borderRadius: 'var(--4px-V)',
                     border: '1px solid var(--Text-Color-30)',
@@ -1882,7 +2542,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                   }}
                 />
               </div>
-             {/** <div style={{ marginBottom: 'var(--20px-V)' }}>
+              {/** <div style={{ marginBottom: 'var(--20px-V)' }}>
                 <label
                   style={{ display: 'block', marginBottom: 'var(--5px-V)' }}
                 >
@@ -2136,46 +2796,58 @@ const AccountManager = (React.FC<MyComponentProps> = ({
 export default React.memo(AccountManager);
 // Helper components for consistent styling
 const StatItem = ({ label, value }) => (
-  <div style={{
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 'var(--2px-V)'
-  }}>
-    <span style={{
-      fontSize: 'var(--13px-V)',
-      color: 'var(--Text-Color-60)',
-      fontWeight: '500'
-    }}>
+  <div
+    style={{
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 'var(--2px-V)',
+    }}
+  >
+    <span
+      style={{
+        fontSize: 'var(--13px-V)',
+        color: 'var(--Text-Color-60)',
+        fontWeight: '500',
+      }}
+    >
       {label}
     </span>
-    <span style={{
-      fontSize: 'var(--15px-V)',
-      color: 'var(--Text-Color)',
-      fontWeight: '600'
-    }}>
+    <span
+      style={{
+        fontSize: 'var(--15px-V)',
+        color: 'var(--Text-Color)',
+        fontWeight: '600',
+      }}
+    >
       {value}
     </span>
   </div>
 );
 
 const FinancialItem = ({ label, value }) => (
-  <div style={{
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 'var(--2px-V)'
-  }}>
-    <span style={{
-      fontSize: 'var(--13px-V)',
-      color: 'var(--Text-Color-60)',
-      fontWeight: '500'
-    }}>
+  <div
+    style={{
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 'var(--2px-V)',
+    }}
+  >
+    <span
+      style={{
+        fontSize: 'var(--13px-V)',
+        color: 'var(--Text-Color-60)',
+        fontWeight: '500',
+      }}
+    >
       {label}
     </span>
-    <span style={{
-      fontSize: 'var(--16px-V)',
-      color: 'var(--Text-Color)',
-      fontWeight: '600'
-    }}>
+    <span
+      style={{
+        fontSize: 'var(--16px-V)',
+        color: 'var(--Text-Color)',
+        fontWeight: '600',
+      }}
+    >
       ${value}
     </span>
   </div>

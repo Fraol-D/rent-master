@@ -1,4 +1,8 @@
-import { deleteAllFromTable, getLocalUserDirectory , getValuesWithSql } from './localServerApis';
+import {
+  deleteAllFromTable,
+  getLocalUserDirectory,
+  getValuesWithSql,
+} from './localServerApis';
 
 //import { downloadImageFromLocalEndpoint, getFileContent, getListOfFiles } from './localServerApis';
 const baseUrl = 'https://www.rentmaster.markethubet.com/api';
@@ -18,7 +22,12 @@ const deleteValue = async (tableName, id) => {
     return null;
   }
 };
-export const updateValueOnline = async (tableName, id, columnName, columnValue) => {
+export const updateValueOnline = async (
+  tableName,
+  id,
+  columnName,
+  columnValue
+) => {
   try {
     const response = await fetch(
       `${baseUrl}/${tableName}/${id}/${columnName}`,
@@ -31,13 +40,15 @@ export const updateValueOnline = async (tableName, id, columnName, columnValue) 
         body: JSON.stringify({ [columnName]: columnValue }),
       }
     );
-    
+
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
-    
+
     const data = await response.json();
-    console.log(`Successfully updated ${columnName} for ${tableName} with id ${id}`);
+    console.log(
+      `Successfully updated ${columnName} for ${tableName} with id ${id}`
+    );
     return data;
   } catch (error) {
     console.error('Error updating value online:', error);
@@ -55,7 +66,7 @@ export const deleteValueOnline = async (tableName, id) => {
       },
     });
     const data = await response.text();
-   
+
     return data;
   } catch (error) {
     console.error('Error deleting value:', error);
@@ -138,10 +149,12 @@ export const Upload = async (
               change.tableName,
               `WHERE id = '${rowData.id}'`
             );
-            
+
             if (existingRows && existingRows.length > 0) {
               // Row exists, update it
-              console.log(`Row ${rowData.id} exists, updating instead of adding`);
+              console.log(
+                `Row ${rowData.id} exists, updating instead of adding`
+              );
               const updateResponse = await fetch(
                 `${baseUrl}/${change.tableName}/${rowData.id}`,
                 {
@@ -220,67 +233,76 @@ export const Upload = async (
     'users',
     `WHERE id = '${SelectedUserId}'`
   );
-  
+
   await updateValueOnline(
     'users',
     SelectedUserId,
     'changeAmount',
     changeAmountOnline[0].changeAmount + changeAmount
   );
-  
-  window.electron.store.set('changeAmount', changeAmountOnline[0].changeAmount + changeAmount);
+
+  window.electron.store.set(
+    'changeAmount',
+    changeAmountOnline[0].changeAmount + changeAmount
+  );
   console.log('Uploaded changes:', uploadedChanges);
   RefreshApp();
   return true;
 };
 function normalizeObject(obj) {
   // Create a new object with sorted keys
-  return Object.keys(obj).sort().reduce((normalized, key) => {
-    let value = obj[key];
-    
-    // Convert string numbers to actual numbers
-    if (typeof value === 'string') {
-      // Handle decimal strings (e.g., "0.00")
-      const numberValue = Number(value);
-      if (!isNaN(numberValue)) {
-        value = numberValue;
+  return Object.keys(obj)
+    .sort()
+    .reduce((normalized, key) => {
+      let value = obj[key];
+
+      // Convert string numbers to actual numbers
+      if (typeof value === 'string') {
+        // Handle decimal strings (e.g., "0.00")
+        const numberValue = Number(value);
+        if (!isNaN(numberValue)) {
+          value = numberValue;
+        }
       }
-    }
-    
-    // Handle boolean values that might be 0/1
-    if (key === 'Archived' || key.startsWith('is') || key.includes('State')) {
-      value = Boolean(value);
-    }
-    
-    normalized[key] = value;
-    return normalized;
-  }, {});
+
+      // Handle boolean values that might be 0/1
+      if (key === 'Archived' || key.startsWith('is') || key.includes('State')) {
+        value = Boolean(value);
+      }
+
+      normalized[key] = value;
+      return normalized;
+    }, {});
 }
 
 function areObjectsEqual(obj1, obj2) {
   const norm1 = normalizeObject(obj1);
   const norm2 = normalizeObject(obj2);
-  
+
   // For debugging
   const str1 = JSON.stringify(norm1);
   const str2 = JSON.stringify(norm2);
   if (str1 !== str2) {
     console.log('Differences found:', {
       obj1: norm1,
-      obj2: norm2
+      obj2: norm2,
     });
   }
-  
+
   return str1 === str2;
 }
-
 
 const setChangeAmount = async (SelectedUserId) => {
   const changeAmountOnline = await getValuesWithSql_Online(
     'users',
     `WHERE id = '${SelectedUserId}'`
   );
-  console.log(`WHERE id = '${SelectedUserId}'`, changeAmountOnline[0],changeAmountOnline[0].changeAmount, '==========================================================================================');
+  console.log(
+    `WHERE id = '${SelectedUserId}'`,
+    changeAmountOnline[0],
+    changeAmountOnline[0].changeAmount,
+    '=========================================================================================='
+  );
   window.electron.store.set('changeAmount', changeAmountOnline[0].changeAmount);
 };
 export const RevertOfflineChanges = async () => {
@@ -320,9 +342,31 @@ export async function verifyCredentials(email, password) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': 'HH(CzZuQoW@tB$By)e'
+        'x-api-key': 'HH(CzZuQoW@tB$By)e',
       },
-      body: JSON.stringify({ email, password })
+      body: JSON.stringify({ email, password }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+
+    const data = await response.json();
+    return data.isValid;
+  } catch (error) {
+    console.error('Error verifying credentials:', error);
+    return false;
+  }
+}
+export async function verifyAppUserCredentials(email, password) {
+  try {
+    const response = await fetch(`${baseUrl}/verify-credentials-app-user`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': 'HH(CzZuQoW@tB$By)e',
+      },
+      body: JSON.stringify({ email, password }),
     });
 
     if (!response.ok) {
@@ -404,8 +448,11 @@ const fetchDataFromLocalDatabase = async (tableName) => {
 };
 async function syncActionHistory(onlineData, localData, SelectedUserId) {
   // Create a Set of existing IDs for faster lookup
-  const existingIds = new Set(localData.map(row => row.id));
-  console.log(existingIds, "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000")
+  const existingIds = new Set(localData.map((row) => row.id));
+  console.log(
+    existingIds,
+    '000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000'
+  );
   let addedRows = 0;
   let skippedRows = 0;
 
@@ -431,9 +478,10 @@ async function syncActionHistory(onlineData, localData, SelectedUserId) {
     }
   }
 
-  console.log(`Action History Sync - Added: ${addedRows}, Skipped: ${skippedRows}`);
+  console.log(
+    `Action History Sync - Added: ${addedRows}, Skipped: ${skippedRows}`
+  );
 }
-
 
 // Update the sync functions
 export const syncOnlineToLocal = async (SelectedUserId) => {
@@ -443,14 +491,22 @@ export const syncOnlineToLocal = async (SelectedUserId) => {
   for (const table of tables) {
     console.log(`Processing table: ${table}`);
 
-    const onlineData = await getValuesWithSql_Online(table, `WHERE userId = '${SelectedUserId}'`);
-    console.log(`Fetched ${onlineData.length} rows from online database for table: ${table}`);
+    const onlineData = await getValuesWithSql_Online(
+      table,
+      `WHERE userId = '${SelectedUserId}'`
+    );
+    console.log(
+      `Fetched ${onlineData.length} rows from online database for table: ${table}`
+    );
 
     const localData = await fetchDataFromLocalDatabase(table);
-    console.log(`Fetched ${localData.length} rows from local database for table: ${table}`);
+    console.log(
+      `Fetched ${localData.length} rows from local database for table: ${table}`
+    );
 
     if (table === 'action_history') {
-      await syncActionHistory(onlineData, localData, SelectedUserId);      continue;
+      await syncActionHistory(onlineData, localData, SelectedUserId);
+      continue;
     }
 
     const onlineDataMap = new Map(onlineData.map((row) => [row.id, row]));
@@ -473,7 +529,11 @@ export const syncOnlineToLocal = async (SelectedUserId) => {
         if (!areObjectsEqual(onlineRow, localRow)) {
           await updateLocalRecord(table, id, onlineRow);
           updatedRows++;
-          console.log(`Updated row with id: ${id} in table: ${table}, ${JSON.stringify(onlineRow)} ${JSON.stringify(localRow)}`);
+          console.log(
+            `Updated row with id: ${id} in table: ${table}, ${JSON.stringify(
+              onlineRow
+            )} ${JSON.stringify(localRow)}`
+          );
         } else {
           skippedRows++;
           console.log(`Skipped row with id: ${id} (no changes)`);
@@ -485,7 +545,9 @@ export const syncOnlineToLocal = async (SelectedUserId) => {
       }
     }
 
-    console.log(`Table ${table} - Updated: ${updatedRows}, Added: ${addedRows}, Skipped: ${skippedRows}`);
+    console.log(
+      `Table ${table} - Updated: ${updatedRows}, Added: ${addedRows}, Skipped: ${skippedRows}`
+    );
   }
 
   setChangeAmount(SelectedUserId);
@@ -498,7 +560,10 @@ export const syncOnlineToLocal = async (SelectedUserId) => {
   return 'Sync completed';
 };
 
-export const syncOnlineToLocalWithCallback = async (SelectedUserId, setSyncProgress) => {
+export const syncOnlineToLocalWithCallback = async (
+  SelectedUserId,
+  setSyncProgress
+) => {
   console.log(`Starting sync process for user: ${SelectedUserId}`);
   console.log(`Tables to sync: ${tables.join(', ')}`);
 
@@ -508,14 +573,22 @@ export const syncOnlineToLocalWithCallback = async (SelectedUserId, setSyncProgr
   for (const table of tables) {
     console.log(`Processing table: ${table}`);
 
-    const onlineData = await getValuesWithSql_Online(table, `WHERE userId = '${SelectedUserId}'`);
-    console.log(`Fetched ${onlineData.length} rows from online database for table: ${table}`);
+    const onlineData = await getValuesWithSql_Online(
+      table,
+      `WHERE userId = '${SelectedUserId}'`
+    );
+    console.log(
+      `Fetched ${onlineData.length} rows from online database for table: ${table}`
+    );
 
     const localData = await fetchDataFromLocalDatabase(table);
-    console.log(`Fetched ${localData.length} rows from local database for table: ${table}`);
+    console.log(
+      `Fetched ${localData.length} rows from local database for table: ${table}`
+    );
 
     if (table === 'action_history') {
-      await syncActionHistory(onlineData, localData, SelectedUserId);    } else {
+      await syncActionHistory(onlineData, localData, SelectedUserId);
+    } else {
       const onlineDataMap = new Map(onlineData.map((row) => [row.id, row]));
       const localDataMap = new Map(localData.map((row) => [row.id, row]));
 
@@ -536,13 +609,15 @@ export const syncOnlineToLocalWithCallback = async (SelectedUserId, setSyncProgr
           if (!areObjectsEqual(onlineRow, localRow)) {
             console.log(`Updating row due to differences:`, {
               online: onlineRow,
-              local: localRow
+              local: localRow,
             });
             await updateLocalRecord(table, id, onlineRow);
             updatedRows++;
           } else {
             skippedRows++;
-            console.log(`Skipped row with id: ${id} (no changes after normalization)`);
+            console.log(
+              `Skipped row with id: ${id} (no changes after normalization)`
+            );
           }
         } else {
           await addLocalRecord(table, onlineRow);
@@ -551,7 +626,9 @@ export const syncOnlineToLocalWithCallback = async (SelectedUserId, setSyncProgr
         }
       }
 
-      console.log(`Table ${table} - Updated: ${updatedRows}, Added: ${addedRows}, Skipped: ${skippedRows}`);
+      console.log(
+        `Table ${table} - Updated: ${updatedRows}, Added: ${addedRows}, Skipped: ${skippedRows}`
+      );
     }
 
     completedTables++;
@@ -585,56 +662,73 @@ export const syncOnlineToLocalWithBool = async (
   let currentStep = 0;
 
   try {
-    for (const table of tables) {
-      console.log(`Processing table: ${table}`);
+    try {
+      for (const table of tables) {
+        console.log(`Processing table: ${table}`);
 
-      const onlineData = await  getValuesWithSql_Online(table, `WHERE userId = '${SelectedUserId}'`);
-      console.log(`Fetched ${onlineData.length} rows from online database for table: ${table}`);
+        const onlineData = await getValuesWithSql_Online(
+          table,
+          `WHERE userId = '${SelectedUserId}'`
+        );
+        console.log(
+          `Fetched ${onlineData.length} rows from online database for table: ${table}`
+        );
 
-      const localData = await fetchDataFromLocalDatabase(table);
-      console.log(`Fetched ${localData.length} rows from local database for table: ${table}`);
+        const localData = await fetchDataFromLocalDatabase(table);
+        console.log(
+          `Fetched ${localData.length} rows from local database for table: ${table}`
+        );
 
-      if (table === 'action_history') {
-        await syncActionHistory(onlineData, localData, SelectedUserId);      } else {
-        const onlineDataMap = new Map(onlineData.map((row) => [row.id, row]));
-        const localDataMap = new Map(localData.map((row) => [row.id, row]));
+        if (table === 'action_history') {
+          await syncActionHistory(onlineData, localData, SelectedUserId);
+        } else {
+          const onlineDataMap = new Map(onlineData.map((row) => [row.id, row]));
+          const localDataMap = new Map(localData.map((row) => [row.id, row]));
 
-        console.log(`Processing rows for table: ${table}`);
-        let updatedRows = 0;
-        let addedRows = 0;
-        let skippedRows = 0;
+          console.log(`Processing rows for table: ${table}`);
+          let updatedRows = 0;
+          let addedRows = 0;
+          let skippedRows = 0;
 
-        for (const [id, onlineRow] of onlineDataMap.entries()) {
-          if (onlineRow.userId !== SelectedUserId) {
-            skippedRows++;
-            console.log(`Skipped row with id: ${id} (different user)`);
-            continue;
-          }
-
-          if (localDataMap.has(id)) {
-            const localRow = localDataMap.get(id);
-            if (!areObjectsEqual(onlineRow, localRow)) {
-              await updateLocalRecord(table, id, onlineRow);
-              updatedRows++;
-              console.log(`Updated row with id: ${id} in table: ${table}, ${JSON.stringify(onlineRow)} ${JSON.stringify(localRow)}`);
-            } else {
+          for (const [id, onlineRow] of onlineDataMap.entries()) {
+            if (onlineRow.userId !== SelectedUserId) {
               skippedRows++;
-              console.log(`Skipped row with id: ${id} (no changes)`);
+              console.log(`Skipped row with id: ${id} (different user)`);
+              continue;
             }
-          } else {
-            await addLocalRecord(table, onlineRow);
-            addedRows++;
-            console.log(`Added new row with id: ${id} to table: ${table}`);
+
+            if (localDataMap.has(id)) {
+              const localRow = localDataMap.get(id);
+              if (!areObjectsEqual(onlineRow, localRow)) {
+                await updateLocalRecord(table, id, onlineRow);
+                updatedRows++;
+                console.log(
+                  `Updated row with id: ${id} in table: ${table}, ${JSON.stringify(
+                    onlineRow
+                  )} ${JSON.stringify(localRow)}`
+                );
+              } else {
+                skippedRows++;
+                console.log(`Skipped row with id: ${id} (no changes)`);
+              }
+            } else {
+              await addLocalRecord(table, onlineRow);
+              addedRows++;
+              console.log(`Added new row with id: ${id} to table: ${table}`);
+            }
           }
+
+          console.log(
+            `Table ${table} - Updated: ${updatedRows}, Added: ${addedRows}, Skipped: ${skippedRows}`
+          );
         }
 
-        console.log(`Table ${table} - Updated: ${updatedRows}, Added: ${addedRows}, Skipped: ${skippedRows}`);
+        currentStep++;
+        setSyncProgress((currentStep / totalSteps) * 100);
       }
-
-      currentStep++;
-      setSyncProgress((currentStep / totalSteps) * 100);
+    } catch (error) {
+      console.log(error);
     }
-
     setChangeAmount(SelectedUserId);
     console.log('Applying offline changes');
     const offlineChanges = await fetchOfflineChanges();
@@ -657,13 +751,15 @@ export const syncOnlineToLocalWithBool = async (
 
 // Version 1: Basic branch sync
 export const syncOnlineToLocalBranch = async (SelectedUserId, BranchId) => {
-  console.log(`Starting branch sync process for user: ${SelectedUserId}, branch: ${BranchId}`);
+  console.log(
+    `Starting branch sync process for user: ${SelectedUserId}, branch: ${BranchId}`
+  );
 
   for (const table of tables) {
     console.log(`Processing table: ${table}`);
 
     const onlineData = await getValuesWithSql_Online(
-      table, 
+      table,
       `WHERE userId = '${SelectedUserId}'`
     );
 
@@ -683,8 +779,10 @@ export const syncOnlineToLocalBranch = async (SelectedUserId, BranchId) => {
 
     for (const [id, onlineRow] of onlineDataMap.entries()) {
       // Skip if wrong user or branch
-      if (onlineRow.userId !== SelectedUserId || 
-          (onlineRow.branchId && onlineRow.branchId !== BranchId)) {
+      if (
+        onlineRow.userId !== SelectedUserId ||
+        (onlineRow.branchId && onlineRow.branchId !== BranchId)
+      ) {
         skippedRows++;
         continue;
       }
@@ -729,8 +827,10 @@ export const syncOnlineToLocalBranchWithCallback = async (
 
       for (const [id, onlineRow] of onlineDataMap.entries()) {
         // Skip if wrong user or branch
-        if (onlineRow.userId !== SelectedUserId || 
-            (onlineRow.branchId && onlineRow.branchId !== BranchId)) {
+        if (
+          onlineRow.userId !== SelectedUserId ||
+          (onlineRow.branchId && onlineRow.branchId !== BranchId)
+        ) {
           continue;
         }
 
@@ -764,7 +864,7 @@ export const syncOnlineToLocalBranchWithBool = async (
   try {
     setIsSyncing(true);
     setSyncProgress(0);
-
+    const offlineChanges = await fetchOfflineChanges();
     const totalSteps = tables.length;
     let currentStep = 0;
 
@@ -781,15 +881,45 @@ export const syncOnlineToLocalBranchWithBool = async (
         const onlineDataMap = new Map(onlineData.map((row) => [row.id, row]));
         const localDataMap = new Map(localData.map((row) => [row.id, row]));
 
+        // Check for records that exist locally but not online
+        for (const [id, localRow] of localDataMap.entries()) {
+          if (!onlineDataMap.has(id)) {
+            // Check if this record exists in offline changes as an 'add'
+            const isInOfflineChanges = offlineChanges.some(
+              change => change.type === 'add' && 
+                       change.tableName === table && 
+                       change.rowId === id
+            );
+            
+            if (!isInOfflineChanges) {
+              // If not in offline changes, delete from local database
+              await deleteLocalRecord(table, id);
+            }
+          }
+        }
+
+        // Update or add records from online
         for (const [id, onlineRow] of onlineDataMap.entries()) {
           // Skip if wrong user or branch
-          if (onlineRow.userId !== SelectedUserId || 
-              (onlineRow.branchId && onlineRow.branchId !== BranchId)) {
+          if (
+            onlineRow.userId !== SelectedUserId ||
+            (onlineRow.branchId && onlineRow.branchId !== BranchId)
+          ) {
             continue;
           }
 
           if (localDataMap.has(id)) {
             const localRow = localDataMap.get(id);
+            // Check if schemas match before updating
+            const onlineKeys = Object.keys(onlineRow).sort();
+            const localKeys = Object.keys(localRow).sort();
+            const schemasMatch = JSON.stringify(onlineKeys) === JSON.stringify(localKeys);
+
+            if (!schemasMatch) {
+              console.warn(`Schema mismatch for table ${table}, row ${id} - skipping update`);
+              continue;
+            }
+
             if (!areObjectsEqual(onlineRow, localRow)) {
               await updateLocalRecord(table, id, onlineRow);
             }
@@ -802,12 +932,17 @@ export const syncOnlineToLocalBranchWithBool = async (
       currentStep++;
       setSyncProgress((currentStep / totalSteps) * 100);
     }
+    setChangeAmount(SelectedUserId);
+    
+    await applyOfflineChangesToLocalDatabase(offlineChanges);
 
-    setSyncProgress(100);
+    currentStep++;
+    
     setIsSyncing(false);
     RefreshDataFromSqlite();
-    return 'Branch sync completed';
-
+    setSyncProgress(100);
+    console.log('Sync completed');
+    return 'Sync completed';
   } catch (error) {
     console.error('Error during branch sync:', error);
     setIsSyncing(false);
@@ -830,12 +965,15 @@ const fetchOfflineChanges = async () => {
 };
 // Apply offline changes to the local SQLite database
 const applyOfflineChangesToLocalDatabase = async (changes) => {
+  console.log(changes);
+
   for (const change of changes) {
     switch (change.type) {
       case 'edit':
         await updateLocalRecord(change.tableName, change.rowId, {
           [change.columnName]: change.newValue,
         });
+        console.log(change.rowId, change);
         break;
       case 'add':
         //await addLocalRecord(change.tableName, JSON.parse(change.addedJsonData));
@@ -920,7 +1058,10 @@ export const updateValue = async (tableName, id, columnName, columnValue) => {
 };
 
 /// UIAMgeses
-export const UploadUserFilesToTheOnlineDatabase = async (userId, setProgressValue) => {
+export const UploadUserFilesToTheOnlineDatabase = async (
+  userId,
+  setProgressValue
+) => {
   try {
     setProgressValue(0);
     console.log('Getting local directory...');
@@ -929,29 +1070,34 @@ export const UploadUserFilesToTheOnlineDatabase = async (userId, setProgressValu
     setProgressValue(10);
 
     console.log('Sending directory data to online database...');
-    const response = await retry(() => fetch(`${baseUrl}/check-user-directory`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-      },
-      body: JSON.stringify({ userId, directory: localDirectory }),
-    }));
+    const response = await retry(() =>
+      fetch(`${baseUrl}/check-user-directory`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+        },
+        body: JSON.stringify({ userId, directory: localDirectory }),
+      })
+    );
     const { requiredFiles } = await response.json();
     console.log('Response received from online database:', requiredFiles);
     setProgressValue(30);
 
     if (requiredFiles.length > 0) {
       console.log('Required files missing:', requiredFiles);
-      
-      const prepareResponse = await fetch(`${baseUrlLocal}/prepare-upload-files`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ userId, requiredFiles }),
-      });
-      
+
+      const prepareResponse = await fetch(
+        `${baseUrlLocal}/prepare-upload-files`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ userId, requiredFiles }),
+        }
+      );
+
       const zipContent = await prepareResponse.arrayBuffer();
       const totalSize = zipContent.byteLength;
       console.log(`Total upload size: ${totalSize} bytes`);
@@ -965,7 +1111,9 @@ export const UploadUserFilesToTheOnlineDatabase = async (userId, setProgressValu
       const startTime = Date.now();
       let uploadedSize = 0;
       const logInterval = setInterval(() => {
-        console.log(`Upload progress: ${((uploadedSize / totalSize) * 100).toFixed(2)}%`);
+        console.log(
+          `Upload progress: ${((uploadedSize / totalSize) * 100).toFixed(2)}%`
+        );
         console.log(`Upload size: ${uploadedSize} bytes`);
       }, 3000);
 
@@ -996,7 +1144,6 @@ export const UploadUserFilesToTheOnlineDatabase = async (userId, setProgressValu
   }
 };
 
-
 const retry = async (fn, maxRetries = 3, delay = 1000) => {
   let lastError;
   for (let i = 0; i < maxRetries; i++) {
@@ -1004,12 +1151,15 @@ const retry = async (fn, maxRetries = 3, delay = 1000) => {
       return await fn();
     } catch (error) {
       lastError = error;
-      await new Promise(resolve => setTimeout(resolve, delay));
+      await new Promise((resolve) => setTimeout(resolve, delay));
     }
   }
   throw lastError;
 };
-export const DownloadUserFilesFromOnlineDatabase = async (userId, setProgressValue) => {
+export const DownloadUserFilesFromOnlineDatabase = async (
+  userId,
+  setProgressValue
+) => {
   try {
     setProgressValue(0);
     console.log('Getting local directory structure...');
@@ -1030,14 +1180,17 @@ export const DownloadUserFilesFromOnlineDatabase = async (userId, setProgressVal
 
     if (missingFiles.length > 0) {
       console.log('Downloading missing files...');
-      const downloadResponse = await fetch(`${baseUrl}/download-missing-files`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': apiKey,
-        },
-        body: JSON.stringify({ userId, missingFiles }),
-      });
+      const downloadResponse = await fetch(
+        `${baseUrl}/download-missing-files`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': apiKey,
+          },
+          body: JSON.stringify({ userId, missingFiles }),
+        }
+      );
 
       const reader = downloadResponse.body.getReader();
       const contentLength = +downloadResponse.headers.get('Content-Length');
@@ -1047,7 +1200,12 @@ export const DownloadUserFilesFromOnlineDatabase = async (userId, setProgressVal
 
       const logInterval = setInterval(() => {
         console.log(`Download size: ${receivedLength} bytes`);
-        console.log(`Download progress: ${((receivedLength / contentLength) * 100).toFixed(2)}%`);
+        console.log(
+          `Download progress: ${(
+            (receivedLength / contentLength) *
+            100
+          ).toFixed(2)}%`
+        );
       }, 3000);
 
       while (true) {
@@ -1110,34 +1268,37 @@ const extractDownloadedFiles = async (zipBuffer, userId) => {
   }
 };
 
-
-
 export const replaceUserData = async (userId, tables) => {
   const filteredTables = Object.fromEntries(
     Object.entries(tables).map(([tableName, rows]) => [
       tableName,
-      rows.map(row => {
+      rows.map((row) => {
         const { RecommendedTenantsIdList, ...rest } = row;
         return rest;
-      })
+      }),
     ])
   );
 
   try {
-    const response = await fetch('https://www.rentmaster.markethubet.com/api/replace-user-data', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-      },
-      body: JSON.stringify({ userId, tables: filteredTables }),
-    });
+    const response = await fetch(
+      'https://www.rentmaster.markethubet.com/api/replace-user-data',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+        },
+        body: JSON.stringify({ userId, tables: filteredTables }),
+      }
+    );
 
     const responseData = await response.text();
     console.log('Full server response:', responseData);
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}, response: ${responseData}`);
+      throw new Error(
+        `HTTP error! status: ${response.status}, response: ${responseData}`
+      );
     }
 
     return JSON.parse(responseData);
@@ -1146,36 +1307,36 @@ export const replaceUserData = async (userId, tables) => {
     throw error;
   }
 };
- const tables = [
-    'rooms',
-    'room_specifications',
-    'tenants',
-    'room_pay_info',
-    'room_pay_info_history',
-    'email_templates',
-    'sms_templates',
-    'expenses',
-    'notification_template_selections',
-    'utility_payments',
-    'utility_payments_settings',
-    'brokers',
-    'brokersRecommendationList',
-    'PastTenantsForRoom',
-    'agreements',
-    'action_history',
-  ];
+const tables = [
+  'rooms',
+  'room_specifications',
+  'tenants',
+  'room_pay_info',
+  'room_pay_info_history',
+  'email_templates',
+  'sms_templates',
+  'expenses',
+  'notification_template_selections',
+  'utility_payments',
+  'utility_payments_settings',
+  'brokers',
+  'brokersRecommendationList',
+  'PastTenantsForRoom',
+  'agreements',
+  'action_history',
+];
 
 export const SetBackUpAsMain = async (userId) => {
   const allData = {};
 
   // Fetch data from all tables except action_history
   for (const table of tables) {
-    const tableData = await getValuesWithSql(table, "WHERE 1");
+    const tableData = await getValuesWithSql(table, 'WHERE 1');
     allData[table] = Array.isArray(tableData) ? tableData : [];
   }
-  
+
   console.log(allData);
-  
+
   // Replace online data with local data
   try {
     const result = await replaceUserData(userId, allData);
@@ -1186,6 +1347,7 @@ export const SetBackUpAsMain = async (userId) => {
     throw error;
   }
 };
+
 /*
 
 
@@ -1373,7 +1535,3 @@ export const uploadImage = async (userId, file, newFilename, rowId) => {
   }
 };
 */
-
-
-
-

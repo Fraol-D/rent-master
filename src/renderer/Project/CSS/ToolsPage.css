@@ -178,7 +178,7 @@
   width: var(--120px-V);
 }
 .expense-cards {
-  width: 90%;
+  width: 100%;
   border-collapse: collapse;
 }
 .expense-cards th {

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getValuesWithSql } from 'Backend/localServerApis';
 import { format } from 'date-fns';
+import { Input } from '../Helpers/CustomReactComponents';
 
 interface ActionHistoryItem {
   id: string;
@@ -12,7 +13,7 @@ interface ActionHistoryItem {
   userId: string;
 }
 
-const DashbActionHistoryDashboard: React.FC = ({SelectedBranchId}:any) => {
+const DashbActionHistoryDashboard: React.FC = ({ SelectedBranchId }: any) => {
   const [history, setHistory] = useState<ActionHistoryItem[]>([]);
   const [filteredHistory, setFilteredHistory] = useState<ActionHistoryItem[]>(
     []
@@ -92,16 +93,18 @@ const DashbActionHistoryDashboard: React.FC = ({SelectedBranchId}:any) => {
     }));
 
     setFilteredHistory((prevHistory) =>
-      [...prevHistory].sort((a, b) => {
-        if (key === 'action_date') {
-          return sortConfig.direction === 'asc'
-            ? new Date(a[key]).getTime() - new Date(b[key]).getTime()
-            : new Date(b[key]).getTime() - new Date(a[key]).getTime();
-        }
-        if (a[key] < b[key]) return sortConfig.direction === 'asc' ? -1 : 1;
-        if (a[key] > b[key]) return sortConfig.direction === 'asc' ? 1 : -1;
-        return 0;
-      }).slice(0, limit)
+      [...prevHistory]
+        .sort((a, b) => {
+          if (key === 'action_date') {
+            return sortConfig.direction === 'asc'
+              ? new Date(a[key]).getTime() - new Date(b[key]).getTime()
+              : new Date(b[key]).getTime() - new Date(a[key]).getTime();
+          }
+          if (a[key] < b[key]) return sortConfig.direction === 'asc' ? -1 : 1;
+          if (a[key] > b[key]) return sortConfig.direction === 'asc' ? 1 : -1;
+          return 0;
+        })
+        .slice(0, limit)
     );
   };
 
@@ -193,7 +196,12 @@ const DashbActionHistoryDashboard: React.FC = ({SelectedBranchId}:any) => {
           {showFilters ? 'Hide Filters' : 'Show Filters'}
         </button>
         {showFilters && (
-          <div style={{ marginTop: 'var(--15px-V)', marginBottom: 'var(--15px-V)' }}>
+          <div
+            style={{
+              marginTop: 'var(--15px-V)',
+              marginBottom: 'var(--15px-V)',
+            }}
+          >
             <button
               onClick={clearFilters}
               style={{
@@ -249,7 +257,8 @@ const DashbActionHistoryDashboard: React.FC = ({SelectedBranchId}:any) => {
                 border: `var(--1px-V) solid ${
                   isValidDate ? 'var(--Secondary-Color)' : 'red'
                 }`,
-                width: dateRange === 'month' ? 'var(--150px-V)' : 'var(--80px-V)',
+                width:
+                  dateRange === 'month' ? 'var(--150px-V)' : 'var(--80px-V)',
               }}
             />
             <button
@@ -365,7 +374,8 @@ const DashbActionHistoryDashboard: React.FC = ({SelectedBranchId}:any) => {
                         borderRadius: 'var(--5px-V)',
                         border: 'var(--1px-V) solid var(--Secondary-Color)',
                         backgroundColor: 'var(--Secondary-Color)',
-                        color: 'var(--Text-Color)',minWidth: 'var(--90px-V)'
+                        color: 'var(--Text-Color)',
+                        minWidth: 'var(--90px-V)',
                       }}
                     />
                   )}
@@ -387,7 +397,8 @@ const DashbActionHistoryDashboard: React.FC = ({SelectedBranchId}:any) => {
                   <td
                     style={{
                       padding: 'var(--5px-V)',
-                      borderRadius: 'var(--10px-V) var(--0px-V) var(--0px-V) var(--10px-V)',
+                      borderRadius:
+                        'var(--10px-V) var(--0px-V) var(--0px-V) var(--10px-V)',
                       fontSize: 'var(--14px-V)',
                       color: 'var(--Text-Color)',
                     }}
@@ -420,13 +431,23 @@ const DashbActionHistoryDashboard: React.FC = ({SelectedBranchId}:any) => {
                       color: 'var(--Text-Color)',
                     }}
                   >
-                    {item.performed_by}<br></br>
-                   <span style={{fontSize: 'var(--12px-V)', color: 'var(--Text-Color-Grey)'}}> {item.userInfo}</span>
+                    {item.performed_by}
+                    <br></br>
+                    <span
+                      style={{
+                        fontSize: 'var(--12px-V)',
+                        color: 'var(--Text-Color-Grey)',
+                      }}
+                    >
+                      {' '}
+                      {item.userInfo}
+                    </span>
                   </td>
                   <td
                     style={{
                       padding: 'var(--5px-V)',
-                      borderRadius: 'var(--0px-V) var(--10px-V) var(--10px-V) var(--0px-V)',
+                      borderRadius:
+                        'var(--0px-V) var(--10px-V) var(--10px-V) var(--0px-V)',
                       fontSize: 'var(--14px-V)',
                       color: 'var(--Text-Color)',
                       textAlign: 'right',

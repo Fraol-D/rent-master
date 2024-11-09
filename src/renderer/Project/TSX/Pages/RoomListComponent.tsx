@@ -92,6 +92,7 @@ export function RoomListComponent({
               .filter((r: RoomType) => r.Archived == ShowArchived)
               .map((room: any, index: any) => (
                 <Room
+              
                   agreementApi={agreementApi}
                   SelectedUserId={SelectedUserId}
                   setChangeMade={setChangeMade}

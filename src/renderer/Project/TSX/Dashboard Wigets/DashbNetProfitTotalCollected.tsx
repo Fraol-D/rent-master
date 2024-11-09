@@ -3,6 +3,7 @@ import * as d3 from 'd3';
 import { BarChart, barElementClasses } from '@mui/x-charts/BarChart';
 import { axisClasses } from '@mui/x-charts/ChartsAxis';
 import { getValuesWithSql } from 'Backend/localServerApis';
+import { Input } from '../Helpers/CustomReactComponents';
 import {
   format,
   startOfMonth,
@@ -19,11 +20,13 @@ import {
 const DashbTotalCollected = ({
   RoomList,
   expenses2,
-  tenantList,SelectedBranchId
+  tenantList,
+  SelectedBranchId,
 }: {
   RoomList: RoomType[];
   expenses2: expenses[];
-  tenantList: tenant[];SelectedBranchId:any
+  tenantList: tenant[];
+  SelectedBranchId: any;
 }) => {
   const [showBy, setShowBy] = useState<'Monthly' | 'Yearly'>('Monthly');
   const [selectedDate, setSelectedDate] = useState(
@@ -54,7 +57,7 @@ const DashbTotalCollected = ({
     const selectedYear = parseInt(selectedDate);
     let yearStart = startOfYear(new Date(selectedYear - 2, 0, 1));
     let yearEnd = endOfYear(new Date(selectedYear + 2, 11, 31));
-    
+
     // Get all actual payments for the selected year range
     const actualPayments = await getValuesWithSql(
       'room_pay_info',
@@ -69,8 +72,8 @@ const DashbTotalCollected = ({
 
     // Only add paid payments from actual and historical
     const combinedPayments = [...actualPayments, ...historicalPayments]
-      .filter(payment => payment.Paid === 1)
-      .map(payment => ({
+      .filter((payment) => payment.Paid === 1)
+      .map((payment) => ({
         id: payment.id,
         Day: payment.Day,
         Value: payment.Value,
@@ -106,7 +109,10 @@ const DashbTotalCollected = ({
         );
         if (agreements.length > 0) {
           startDate = Math.max(agreements[0].startTime, yearStart.getTime());
-          if (tenant.SelectedAgreement === 'Fixed-Term' && agreements[0].endTime) {
+          if (
+            tenant.SelectedAgreement === 'Fixed-Term' &&
+            agreements[0].endTime
+          ) {
             endDate = Math.min(agreements[0].endTime, yearEnd.getTime());
           }
         }
@@ -116,9 +122,9 @@ const DashbTotalCollected = ({
 
       while (currentDate.getTime() <= endDate) {
         const paymentId = `${room.id}-${currentDate.getTime()}`;
-        
+
         // Only add if payment doesn't already exist
-        if (!allPayments.some(p => p.id === paymentId)) {
+        if (!allPayments.some((p) => p.id === paymentId)) {
           // Add as unpaid prediction
           allPayments.push({
             id: paymentId,
@@ -140,15 +146,24 @@ const DashbTotalCollected = ({
   // Helper function to calculate next payment date
   const calculateNextPaymentDate = (currentDate: Date, room: any) => {
     switch (room.PaymentCycleType) {
-      case '30': return addDays(currentDate, 30);
-      case '15': return addDays(currentDate, 15);
-      case '7': return addDays(currentDate, 7);
-      case 'daily': return addDays(currentDate, 1);
-      case 'monthly': return addMonths(currentDate, 1);
-      case 'weekly': return addDays(currentDate, 7);
-      case 'Annually': return addYears(currentDate, 1);
-      case 'custom': return addDays(currentDate, room.PaymentCycleCustomeDays || 30);
-      default: return addMonths(currentDate, 1);
+      case '30':
+        return addDays(currentDate, 30);
+      case '15':
+        return addDays(currentDate, 15);
+      case '7':
+        return addDays(currentDate, 7);
+      case 'daily':
+        return addDays(currentDate, 1);
+      case 'monthly':
+        return addMonths(currentDate, 1);
+      case 'weekly':
+        return addDays(currentDate, 7);
+      case 'Annually':
+        return addYears(currentDate, 1);
+      case 'custom':
+        return addDays(currentDate, room.PaymentCycleCustomeDays || 30);
+      default:
+        return addMonths(currentDate, 1);
     }
   };
 
@@ -161,22 +176,87 @@ const DashbTotalCollected = ({
 
     expenses.forEach((expense) => {
       if (expense.doesReoccur) {
-        let currentDate = new Date(expense.date);
-        while (isBefore(currentDate, endDate)) {
-          if (isAfter(currentDate, startDate)) {
+        const StartExpenseDate = new Date(expense.date);
+        StartExpenseDate.setHours(0, 0, 0, 0);
+
+        // Get the actual start date (either expense start date or period start date)
+        const effectiveStartDate = new Date(StartExpenseDate.getTime());
+
+        let currentDate = effectiveStartDate;
+        let expenseCount = 0;
+
+        // Calculate end date based on expense settings
+        const finalEndDate = expense.HasEndDate
+          ? new Date(Math.min(expense.EndDate, endDate.getTime()))
+          : endDate;
+
+        while (currentDate <= finalEndDate && expenseCount < 100) {
+          const expenseId = `${expense.id}-${currentDate.getTime()}`;
+
+          // Only add if the expense date falls within our range
+          if (
+            currentDate >= startDate &&
+            (currentDate <= endDate || expense.HasEndDate)
+          ) {
             allExpenses.push({
               ...expense,
+              id: expenseId,
               date: currentDate.getTime(),
             });
           }
-          currentDate = addDays(currentDate, expense.recurringCycle);
+
+          // Calculate next expense date based on recurring type
+          switch (expense.recurringType) {
+            case 'Day':
+              // Add days based on recurringCycle
+              currentDate = addDays(currentDate, expense.recurringCycle);
+              break;
+            case 'Monthly':
+              // Add one month to current date
+              const nextMonthDate = new Date(currentDate);
+              nextMonthDate.setMonth(nextMonthDate.getMonth() + 1);
+              currentDate = nextMonthDate;
+              break;
+
+            case 'Yearly':
+              // Preserve month and day when adding years
+              const nextYearDate = new Date(currentDate);
+              const originalMonth = nextYearDate.getMonth();
+              const originalDay = nextYearDate.getDate();
+              nextYearDate.setFullYear(nextYearDate.getFullYear() + 1);
+              // Ensure we keep the same month and day
+              nextYearDate.setMonth(originalMonth);
+              nextYearDate.setDate(originalDay);
+              currentDate = nextYearDate;
+              console.log(currentDate, 'lllllllllll');
+              break;
+
+            default:
+              console.warn(
+                `Unknown recurring type: ${expense.recurringType}, defaulting to monthly`
+              );
+              const defaultNextDate = new Date(currentDate);
+              defaultNextDate.setMonth(defaultNextDate.getMonth() + 1);
+          }
+
+          expenseCount++;
         }
       } else {
-        allExpenses.push(expense);
+        // For non-recurring expenses, only include if within date range
+        const expenseDate = new Date(expense.date);
+        expenseDate.setHours(0, 0, 0, 0);
+
+        if (expenseDate >= startDate && expenseDate <= endDate) {
+          allExpenses.push({
+            ...expense,
+            date: expenseDate.getTime(),
+          });
+        }
       }
     });
 
-    return allExpenses;
+    // Sort expenses by date
+    return allExpenses.sort((a, b) => a.date - b.date);
   };
 
   const aggregateMonthlyData = useMemo(() => {
@@ -238,7 +318,11 @@ const DashbTotalCollected = ({
       .map((year: any) => {
         const yearStart = startOfYear(new Date(year, 0, 1));
         const yearEnd = endOfYear(new Date(year, 11, 31));
-        const allExpenses = generateRecurringExpenses(expenses, yearStart, yearEnd);
+        const allExpenses = generateRecurringExpenses(
+          expenses,
+          yearStart,
+          yearEnd
+        );
         const yearlyExpenses = allExpenses
           .filter(
             (e) => new Date(e.date) >= yearStart && new Date(e.date) <= yearEnd
@@ -318,10 +402,13 @@ const DashbTotalCollected = ({
       : 'N/A';
 
   return (
-    <div className="DashboardWigetMainContainer" style={{height: 'var(--510px-V)',}}>
+    <div
+      className="DashboardWigetMainContainer"
+      style={{ height: 'var(--510px-V)' }}
+    >
       <p
         className="DashboardWigetPieChartTextHeader"
-        style={{ width: 'var(--458px-V)',    }}
+        style={{ width: 'var(--458px-V)' }}
       >
         Net Profit (Total Collected - Expenses)
       </p>
@@ -398,9 +485,8 @@ const DashbTotalCollected = ({
             dataKey: 'expectedValue',
             label: 'Expected',
             color: 'var(--Accent-Color50)',
-          }, 
+          },
         ]}
-      
         margin={{
           left: 74,
           right: 30,

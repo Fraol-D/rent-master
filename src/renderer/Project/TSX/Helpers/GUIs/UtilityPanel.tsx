@@ -1,3 +1,4 @@
+import { Input } from '../CustomReactComponents';
 import {
   getValuesWithSql,
   updateValue,
@@ -5,12 +6,14 @@ import {
 } from 'Backend/localServerApis';
 import React, { useEffect, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
+import CurrencySign, { GetDefaultCurrency } from '../CurrencySign';
 
 type PaymentType = {
   id: string;
   ParentDate: number;
   type: string;
   price: number;
+  Currency: string;
   custom: boolean;
   paid: boolean;
 };
@@ -20,6 +23,7 @@ type UtilityDateObject = {
   date: number;
   PaymentTypes: PaymentType[];
   FullComplete: boolean;
+
   isOpen: boolean;
 };
 
@@ -27,14 +31,16 @@ interface props {
   roomType: RoomType;
   TenantList: tenant[];
   setChangeMade: React.Dispatch<React.SetStateAction<number>>;
-  selectedUserId: string;SelectedBranchId:any;
+  selectedUserId: string;
+  SelectedBranchId: any;
 }
 
 const UtilityPanel: React.FC<props> = ({
   roomType,
   TenantList,
   setChangeMade,
-  selectedUserId,SelectedBranchId
+  selectedUserId,
+  SelectedBranchId,
 }) => {
   const [utilityData, setUtilityData] = useState<UtilityDateObject[]>([]);
   const [visiblePastUtilities, setVisiblePastUtilities] = useState(10);
@@ -94,7 +100,8 @@ const UtilityPanel: React.FC<props> = ({
           PaymentTypes: activeUtilities.map((utility) => {
             const existingUtility = utilityDataFromDatabase.find(
               (u: any) =>
-                u.type === utility.type && new Date(u.date).toDateString() === currentDate.toDateString()
+                u.type === utility.type &&
+                new Date(u.date).toDateString() === currentDate.toDateString()
             );
 
             const price = existingUtility
@@ -116,13 +123,15 @@ const UtilityPanel: React.FC<props> = ({
               price: price,
               custom: existingUtility?.custom ? true : utility.alwaysAsk,
               paid: existingUtility?.paid || false,
+              Currency:  utility.Currency || GetDefaultCurrency(),
               ParentDate: currentDate.getTime(),
             };
           }),
           FullComplete: activeUtilities.every((utility) => {
             const existingUtility = utilityDataFromDatabase.find(
               (u: any) =>
-                u.type === utility.type && new Date(u.date).toDateString() === currentDate.toDateString()
+                u.type === utility.type &&
+                new Date(u.date).toDateString() === currentDate.toDateString()
             );
             return existingUtility?.paid || false;
           }),
@@ -158,7 +167,8 @@ const UtilityPanel: React.FC<props> = ({
           PaymentTypes: activeUtilities.map((utility) => {
             const existingUtility = utilityDataFromDatabase.find(
               (u: any) =>
-                u.type === utility.type && new Date(u.date).toDateString() === currentDate.toDateString()
+                u.type === utility.type &&
+                new Date(u.date).toDateString() === currentDate.toDateString()
             );
 
             const price = existingUtility
@@ -179,14 +189,15 @@ const UtilityPanel: React.FC<props> = ({
               type: utility.type,
               price: price,
               custom: existingUtility?.custom ? true : utility.alwaysAsk,
-              paid: existingUtility?.paid || false,
+              paid: existingUtility?.paid || false,    Currency:  utility.Currency || GetDefaultCurrency(),
               ParentDate: currentDate.getTime(),
             };
           }),
           FullComplete: activeUtilities.every((utility) => {
             const existingUtility = utilityDataFromDatabase.find(
               (u: any) =>
-                u.type === utility.type && new Date(u.date).toDateString() === currentDate.toDateString()
+                u.type === utility.type &&
+                new Date(u.date).toDateString() === currentDate.toDateString()
             );
             return existingUtility?.paid || false;
           }),
@@ -202,8 +213,14 @@ const UtilityPanel: React.FC<props> = ({
         }
         i++;
       }
-      const uniqueUtilities = ListOfUtilities.filter((utility, index, self) =>
-        index === self.findIndex((u) => new Date(u.date).toDateString() === new Date(utility.date).toDateString())
+      const uniqueUtilities = ListOfUtilities.filter(
+        (utility, index, self) =>
+          index ===
+          self.findIndex(
+            (u) =>
+              new Date(u.date).toDateString() ===
+              new Date(utility.date).toDateString()
+          )
       );
       ListOfUtilities.length = 0;
       ListOfUtilities.push(...uniqueUtilities);
@@ -211,7 +228,8 @@ const UtilityPanel: React.FC<props> = ({
 
       // Scroll to the current date
       const currentUtilityIndex = ListOfUtilities.findIndex(
-        (utility) => new Date(utility.date).toDateString() === today.toDateString()
+        (utility) =>
+          new Date(utility.date).toDateString() === today.toDateString()
       );
       if (currentUtilityIndex !== -1) {
         const element = document.getElementById(
@@ -314,6 +332,7 @@ const UtilityPanel: React.FC<props> = ({
             custom: updatedPayment.custom ? 1 : 0,
             paid: updatedPayment.paid ? 1 : 0,
             date: updatedPayment.ParentDate,
+            Currency: updatedPayment.Currency,
             roomId: roomType.id,
             userId: selectedUserId,
             branchId: SelectedBranchId,
@@ -325,8 +344,16 @@ const UtilityPanel: React.FC<props> = ({
     console.log('handlePaidChange completed');
   };
 
-  const handlePaidChangeWithValue = async (utilityId: string, paymentId: string, value: boolean) => {
-    console.log('handlePaidChangeWithValue called with:', { utilityId, paymentId, value });
+  const handlePaidChangeWithValue = async (
+    utilityId: string,
+    paymentId: string,
+    value: boolean
+  ) => {
+    console.log('handlePaidChangeWithValue called with:', {
+      utilityId,
+      paymentId,
+      value,
+    });
 
     let updatedPayment: PaymentType | undefined;
     setUtilityData((prevData) => {
@@ -395,8 +422,10 @@ const UtilityPanel: React.FC<props> = ({
             custom: updatedPayment.custom ? 1 : 0,
             paid: updatedPayment.paid ? 1 : 0,
             date: updatedPayment.ParentDate,
+            Currency: updatedPayment.Currency,
             roomId: roomType.id,
-            userId: selectedUserId, branchId: SelectedBranchId,
+            userId: selectedUserId,
+            branchId: SelectedBranchId,
           },
           setChangeMade
         );
@@ -483,7 +512,9 @@ const UtilityPanel: React.FC<props> = ({
             custom: updatedPayment.custom ? 1 : 0,
             paid: updatedPayment.paid ? 1 : 0,
             date: updatedPayment.ParentDate,
-            roomId: roomType.id, branchId: SelectedBranchId,
+            Currency: updatedPayment.Currency,
+            roomId: roomType.id,
+            branchId: SelectedBranchId,
             userId: selectedUserId,
           },
           setChangeMade
@@ -561,7 +592,9 @@ const UtilityPanel: React.FC<props> = ({
             custom: updatedPayment.custom ? 1 : 0,
             paid: updatedPayment.paid ? 1 : 0,
             date: updatedPayment.ParentDate,
-            roomId: roomType.id, branchId: SelectedBranchId,
+            roomId: roomType.id,
+            branchId: SelectedBranchId,
+            Currency: updatedPayment.Currency,
             userId: selectedUserId,
           },
           setChangeMade
@@ -619,9 +652,10 @@ const UtilityPanel: React.FC<props> = ({
     });
 
     // Sync the state change with the database
-    const updatedUtility = updatedUtilityData.find((utility) => utility.id === utilityId);
+    const updatedUtility = updatedUtilityData.find(
+      (utility) => utility.id === utilityId
+    );
     if (updatedUtility) {
-   
       updatedUtility.PaymentTypes.forEach(async (payment) => {
         await updateValue(
           'utility_payments',
@@ -799,7 +833,8 @@ const UtilityPanel: React.FC<props> = ({
                         <tr
                           style={{
                             fontSize: 'var(--11px-V)',
-                            borderTop: 'var(--1px-V) solid var(--Text-Color-Grey)',
+                            borderTop:
+                              'var(--1px-V) solid var(--Text-Color-Grey)',
                             height: 'var(--10px-V)',
                           }}
                         >
@@ -817,7 +852,7 @@ const UtilityPanel: React.FC<props> = ({
                                 {'  - '} {paymentType.type}
                               </td>
 
-                              <td style={{ textAlign: 'center' }}>
+                              <td style={{ textAlign: 'left' }}>
                                 <input
                                   type="checkbox"
                                   checked={paymentType.custom}
@@ -829,7 +864,7 @@ const UtilityPanel: React.FC<props> = ({
                                     )
                                   }
                                 />
-                                $<input
+                                <input
                                   type="number"
                                   value={
                                     tempPrice[paymentType.id] !== undefined
@@ -841,7 +876,7 @@ const UtilityPanel: React.FC<props> = ({
                                       ? 0
                                       : paymentType.price
                                   }
-                                  style={{ width: 'var(--60px-V)' }}
+                                  style={{ width: 'var(--70px-V)' }}
                                   onChange={(e) =>
                                     handleTempPriceChange(
                                       paymentType.id,
@@ -869,8 +904,8 @@ const UtilityPanel: React.FC<props> = ({
                                       ? 'UtilityPriceInput'
                                       : 'UtilityPriceInputDisabled'
                                   }
-                                />
-                                
+                                  />
+                                {CurrencySign(paymentType.Currency)}
                               </td>
                               <td style={{ textAlign: 'center' }}>
                                 <input
@@ -897,10 +932,12 @@ const UtilityPanel: React.FC<props> = ({
                       <span>
                         Total:{' '}
                         {utility.PaymentTypes.reduce(
-                          (total, paymentType) => total +  (isNaN(paymentType.price) ? 0 : paymentType.price),
+                          (total, paymentType) =>
+                            total +
+                            (isNaN(paymentType.price) ? 0 : paymentType.price),
                           0
                         ).toLocaleString()}
-                        $
+                        
                       </span>{' '}
                       <span>
                         Done{' '}

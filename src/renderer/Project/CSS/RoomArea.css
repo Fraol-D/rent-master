@@ -442,10 +442,18 @@
   border-radius: var(--10px-V);
   padding: var(--10px-V);
 }
+.abcScroll {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
 .appUserItem {
   width: var(--350px-V);
   background-color: var(--Secondary-Color30);
   border-radius: var(--5px-V);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
   margin: var(--10px-V);
   box-shadow: var(--1px-V) var(--1px-V) var(--3px-V) var(---1px-V) var(--Text-Color);
   padding: var(--5px-V);
@@ -534,7 +542,7 @@
 .progress-details {
   display: flex;
   justify-content: space-between;
-  font-size: 0.875rem;
+
   color: var(--Text-Color-Grey);
 }
 

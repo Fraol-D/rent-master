@@ -10,7 +10,7 @@ import { dialog } from 'electron';
 import mime from 'mime';
 //const nodemailer = require('nodemailer');
 const nodemailer = require('nodemailer');
-
+const { translate, detectLanguage } = require('afrotranslate');
 const Store = require('electron-store');
 const store = new Store();
 const getStoreValue = (key: string) => {
@@ -52,13 +52,13 @@ class AppUpdater {
         available: true,
         version: info.version,
         releaseNotes: info.releaseNotes,
-        releaseDate: info.releaseDate
+        releaseDate: info.releaseDate,
       });
       mainWindow?.webContents.send('update-available', {
         version: info.version,
         releaseNotes: info.releaseNotes,
         releaseDate: info.releaseDate,
-        path: info.path
+        path: info.path,
       });
       autoUpdater.downloadUpdate();
     });
@@ -74,7 +74,7 @@ class AppUpdater {
       store.set('updateProgress', {
         percent: progressObj.percent,
         transferred: progressObj.transferred,
-        total: progressObj.total
+        total: progressObj.total,
       });
       mainWindow?.webContents.send('download-progress', {
         percent: progressObj.percent,
@@ -113,6 +113,16 @@ export function installUpdate() {
 }
 
 let mainWindow: BrowserWindow | null = null;
+let connectionCheckInterval: NodeJS.Timeout | null = null;
+let lastHeartbeat = Date.now();
+let debugLog: string[] = [];
+
+function logDebug(message: string) {
+  const timestamp = new Date().toISOString();
+  const logMessage = `[${timestamp}] ${message}`;
+  debugLog.push(logMessage);
+  console.log(logMessage);
+}
 
 ipcMain.on('ipc-example', async (event, arg) => {
   const msgTemplate = (pingPong: string) => `IPC test: ${pingPong}`;
@@ -146,6 +156,109 @@ const installExtensions = async () => {
 };
 const os = require('os');
 // Serve static files from the 'src/renderer' directory
+// Add this near the top of main.ts
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
+  dialog.showErrorBox(
+    'Critical Error',
+    `An unexpected error occurred: ${error.message}\n\nThe application will try to restart.`
+  );
+  app.relaunch();
+  app.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+// Connection monitoring functions
+function setupConnectionMonitoring(window: BrowserWindow) {
+  if (!window) {
+    logDebug('Setup failed: Window is null');
+    return;
+  }
+
+  if (connectionCheckInterval) {
+    logDebug('Clearing existing interval');
+    clearInterval(connectionCheckInterval);
+  }
+
+  lastHeartbeat = Date.now();
+  logDebug('Connection monitoring setup started');
+
+  // Log initial window state
+  logDebug(`Initial window state: 
+    isDestroyed: ${window.isDestroyed()}
+    isVisible: ${window.isVisible()}
+    isResponsive: ${!window.webContents.isLoadingMainFrame()}
+  `);
+
+  ipcMain.on('renderer-heartbeat', () => {
+    lastHeartbeat = Date.now();
+  });
+
+  connectionCheckInterval = setInterval(() => {
+    if (!window || window.isDestroyed()) {
+      logDebug('Window check failed: Window is null or destroyed');
+      cleanupConnectionMonitoring();
+      return;
+    }
+
+    const timeSinceLastHeartbeat = Date.now() - lastHeartbeat;
+
+    try {
+      // Check window state
+      const windowState = {
+        isDestroyed: window.isDestroyed(),
+        isVisible: window.isVisible(),
+        isResponsive: !window.webContents.isLoadingMainFrame(),
+        url: window.webContents.getURL(),
+      };
+
+      if (timeSinceLastHeartbeat > 5000) {
+        logDebug('Connection timeout detected');
+
+        // Check if renderer is actually running
+        window.webContents
+          .executeJavaScript(
+            `
+          window.electron?.connectionMonitor?.isActive || 'not-initialized'
+        `
+          )
+          .then((result) => {
+            logDebug(`Renderer check result: ${result}`);
+          })
+          .catch((error) => {
+            logDebug(`Renderer check failed: ${error.message}`);
+          });
+
+        if (!window.isDestroyed()) {
+          logDebug('Attempting to reload window...');
+
+          // Save debug logs before reload
+          const logsPath = path.join(
+            app.getPath('userData'),
+            'connection-debug.log'
+          );
+          fs.writeFileSync(logsPath, debugLog.join('\n'));
+
+          window.reload();
+        }
+      }
+
+      window.webContents.send('main-heartbeat');
+    } catch (error) {
+      logDebug(`Error during connection check: ${error.message}`);
+    }
+  }, 2000);
+}
+
+function cleanupConnectionMonitoring() {
+  if (connectionCheckInterval) {
+    clearInterval(connectionCheckInterval);
+    connectionCheckInterval = null;
+  }
+}
 
 const createWindow = async () => {
   if (isDebug) {
@@ -197,16 +310,34 @@ const createWindow = async () => {
     icon: getAssetPath('icon.png'),
     title: `RentMaster v${app.getVersion()}`,
     webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: true,
       preload: app.isPackaged
         ? path.join(__dirname, 'preload.js')
         : path.join(__dirname, '../../.erb/dll/preload.js'),
     },
-    // Add these lines
-    autoHideMenuBar: true, // Hides the menu bar but can be accessed with Alt
-    // Completely hides the menu bar
+    autoHideMenuBar: true,
+  }).on('error', (error) => {
+    console.error('Window creation error:', error);
   });
+
+  // Add error handler for window load
+  mainWindow.webContents.on(
+    'did-fail-load',
+    (event, errorCode, errorDescription) => {
+      console.error('Window failed to load:', errorDescription);
+      dialog.showErrorBox(
+        'Application Error',
+        `Failed to load the application: ${errorDescription}`
+      );
+    }
+  );
   Menu.setApplicationMenu(null);
-  mainWindow.loadURL(resolveHtmlPath('index.html'));
+  try {
+    mainWindow.loadURL(resolveHtmlPath('index.html'));
+  } catch (error) {
+    console.error('Error loading main window:', error);
+  }
   // Get the PC name
 
   mainWindow.on('ready-to-show', () => {
@@ -225,11 +356,20 @@ const createWindow = async () => {
     }
   });
 
-  mainWindow.on('closed', () => {
-    mainWindow = null;
-  });
-  mainWindow.on('close', () => {
-    if (mainWindow) {
+  // Modify the window close handler
+  mainWindow.on('close', async (e) => {
+    console.log('Close event triggered');
+
+    // Immediately prevent closing
+    e.preventDefault();
+
+    if (!mainWindow) {
+      console.log('No mainWindow, allowing close');
+      return;
+    }
+
+    try {
+      // Save window state
       const { width, height } = mainWindow.getBounds();
       store.set('windowState', {
         width,
@@ -238,7 +378,139 @@ const createWindow = async () => {
         y: mainWindow.getPosition()[1],
         FullScreen: mainWindow.isFullScreen(),
       });
-      console.log('Window closed', mainWindow.isFullScreen());
+      console.log('Window state saved');
+
+      // Check conditions
+      const isOnline = await mainWindow.webContents.executeJavaScript(
+        'navigator.onLine'
+      );
+      console.log('Is online:', isOnline);
+
+      const hasChanges = await hasOfflineChanges();
+      console.log('Has changes:', hasChanges);
+
+      if (isOnline && hasChanges) {
+        console.log('Showing dialog');
+        const choice = await dialog.showMessageBox(mainWindow, {
+          type: 'question',
+          buttons: [
+            'Upload Changes then Keep Working',
+            'Upload Changes then Close App',
+            'Close Anyway',
+            'Cancel',
+          ],
+          defaultId: 1,
+          title: 'Unuploaded Changes',
+          message:
+            'There are offline changes that can be uploaded. Would you like to upload before closing?',
+          detail:
+            'Your changes will remain in the on your local pc if you choose "Close Anyway".',
+          noLink: true, // Prevents the dialog from closing when clicking outside
+        });
+
+        console.log('Dialog response:', choice.response);
+
+        switch (choice.response) {
+          case 0: // Upload & Keep Working
+            console.log('Syncing changes and keeping app open');
+            try {
+              await mainWindow.webContents.executeJavaScript(`
+                (async () => {
+                  try {
+                    await window.handleUploadChanges();
+                    return true;
+                  } catch (error) {
+                    console.error('Upload error:', error);
+                    return false;
+                  }
+                })()
+              `);
+              console.log('Sync complete, keeping app open');
+            } catch (error) {
+              console.error('Sync error:', error);
+              dialog.showMessageBox(mainWindow, {
+                type: 'error',
+                title: 'Sync Error',
+                message: 'Failed to upload changes. You can try again later.',
+                buttons: ['OK'],
+              });
+            }
+            break;
+
+          case 1: // Upload & Close
+            console.log('Syncing changes and closing');
+            try {
+              const success = await mainWindow.webContents.executeJavaScript(`
+                (async () => {
+                  try {
+                    await window.handleUploadChanges();
+                    return true;
+                  } catch (error) {
+                    console.error('Upload error:', error);
+                    return false;
+                  }
+                })()
+              `);
+
+              if (success) {
+                console.log('Sync complete, closing app');
+                mainWindow.destroy();
+              } else {
+                const retryChoice = await dialog.showMessageBox(mainWindow, {
+                  type: 'error',
+                  buttons: ['Try Again', 'Close Anyway'],
+                  defaultId: 0,
+                  title: 'Sync Failed',
+                  message:
+                    'Failed to upload changes. Would you like to try again?',
+                });
+
+                if (retryChoice.response === 1) {
+                  mainWindow.destroy();
+                }
+              }
+            } catch (error) {
+              console.error('Sync error:', error);
+              mainWindow.destroy();
+            }
+            break;
+
+          case 2: // Close Without Uploading
+            console.log('Closing without upload');
+            mainWindow.destroy();
+            break;
+
+          case 3: // Cancel
+            console.log('Cancelled close');
+            break;
+
+          default:
+            console.log('Dialog closed, keeping app open');
+            break;
+        }
+      } else {
+        console.log('No changes or offline, closing directly');
+        mainWindow.destroy();
+      }
+    } catch (error) {
+      console.error('Error in close handler:', error);
+      mainWindow.destroy();
+    }
+  });
+
+  // Add this to handle the actual window destruction
+  mainWindow.on('closed', () => {
+    console.log('Window closed event');
+    cleanupConnectionMonitoring();
+    mainWindow = null;
+  });
+
+  // Add this to handle app quit
+  app.on('before-quit', (e) => {
+    console.log('Before quit event');
+    if (mainWindow) {
+      e.preventDefault();
+      mainWindow.close();
     }
   });
   const menuBuilder = new MenuBuilder(mainWindow);
@@ -250,13 +522,86 @@ const createWindow = async () => {
   });
 
   new AppUpdater();
+
+  // Initialize monitoring after window is ready
+  mainWindow.webContents.on('did-finish-load', () => {
+    setupConnectionMonitoring(mainWindow);
+  });
+
+  // Add these near other IPC handlers
+  ipcMain.handle('check-for-updates', async () => {
+    return autoUpdater.checkForUpdates();
+  });
+
+  ipcMain.handle('install-update', () => {
+    autoUpdater.quitAndInstall(false, true);
+  });
+
+  ipcMain.handle('is-update-ready', () => {
+    return store.get('updateReady', false);
+  });
+
+  // Add this to your preload.ts exposure
+  contextBridge.exposeInMainWorld('electron', {
+    ...electronHandler,
+    connectionMonitor: {
+      ...electronHandler.connectionMonitor,
+      isActive: true,
+      getDebugLogs: () => debugLog,
+    },
+  });
+
+  // Add diagnostic IPC handlers
+  ipcMain.handle('get-connection-logs', () => {
+    return debugLog;
+  });
+
+  // Add this to your renderer code to check connection status
+  function checkConnectionStatus() {
+    console.log('Checking connection status...');
+    window.electron.ipcRenderer
+      .invoke('get-connection-logs')
+      .then((logs) => {
+        console.log('Connection logs:', logs);
+      })
+      .catch((error) => {
+        console.error('Failed to get connection logs:', error);
+      });
+  }
+
+  // Add error handlers for the window
+  mainWindow.webContents.on('crashed', (event) => {
+    logDebug('Renderer process crashed');
+    console.error('Renderer crashed:', event);
+  });
+
+  mainWindow.on('unresponsive', () => {
+    logDebug('Window became unresponsive');
+  });
+
+  mainWindow.webContents.on(
+    'did-fail-load',
+    (event, errorCode, errorDescription) => {
+      logDebug(`Page failed to load: ${errorDescription} (${errorCode})`);
+    }
+  );
+
+  // Monitor renderer process memory usage
+  setInterval(() => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      const memory = process.getProcessMemoryInfo();
+      logDebug(`Memory usage: ${JSON.stringify(memory)}`);
+    }
+  }, 10000);
 };
 
 app.on('window-all-closed', () => {
+  cleanupConnectionMonitoring();
   if (process.platform !== 'darwin') {
     app.quit();
   }
-});
+}); // Add this function to check offline changes
+
 ipcMain.handle('os-info', () => {
   const userInfo = os.userInfo();
   const pcName = os.hostname();
@@ -552,7 +897,8 @@ const appDB = express();
 appDB.use(express.static(path.join(__dirname, 'src/renderer')));
 
 const port = 8100;
-const appname = 'rent-master';
+const dev = true;
+const appname = dev ?'Electron' :'rent-master';
 appDB.use(
   cors({
     origin: ['http://localhost:1212', 'https://www.rentmaster.markethubet.com'],
@@ -627,8 +973,9 @@ const tableStructures = [
       'utilityPaymentEveryCustom INTEGER DEFAULT 0',
       'utilityPaymentStartDate INTEGER DEFAULT 0',
       'utilityPaymentUseDifferentStartDate BOOLEAN DEFAULT 0',
+      'Currency TEXT DEFAULT "ETB"',
       'userId TEXT',
-      'branchId TEXT',  // Added
+      'branchId TEXT', // Added
     ],
   },
   {
@@ -641,7 +988,7 @@ const tableStructures = [
       'type TEXT ',
       'Boolean BOOLEAN',
       'userId TEXT',
-      'branchId TEXT',  // Added
+      'branchId TEXT', // Added
     ],
   },
   {
@@ -661,8 +1008,9 @@ const tableStructures = [
       'TIN TEXT',
       'RentReason TEXT',
       'AddedTime INTEGER',
+      'Currency TEXT DEFAULT "ETB"',
       'userId TEXT',
-      'branchId TEXT',  // Added
+      'branchId TEXT', // Added
     ],
   },
   {
@@ -675,7 +1023,7 @@ const tableStructures = [
       'Paid BOOLEAN ',
       'Value REAL DEFAULT 0',
       'userId TEXT',
-      'branchId TEXT',  // Added
+      'branchId TEXT', // Added
     ],
   },
 
@@ -688,7 +1036,7 @@ const tableStructures = [
       'Value REAL',
       'Paid INTEGER',
       'userId TEXT',
-      'branchId TEXT',  // Added
+      'branchId TEXT', // Added
       'agreementId TEXT',
       'tenantId TEXT ',
     ],
@@ -707,7 +1055,7 @@ const tableStructures = [
       'rating REAL DEFAULT 0',
       'notes TEXT',
       'userId TEXT',
-      'branchId TEXT',  // Added
+      'branchId TEXT', // Added
     ],
   },
   {
@@ -720,7 +1068,7 @@ const tableStructures = [
       'AddedTime INTEGER ',
       'AgreedCommission INTEGER ',
       'userId TEXT',
-      'branchId TEXT',  // Added
+      'branchId TEXT', // Added
     ],
   },
   {
@@ -739,8 +1087,9 @@ const tableStructures = [
       'Stars INTEGER ',
       'description TEXT ',
       'endReason TEXT ',
+      'Currency TEXT DEFAULT "ETB"',
       'userId TEXT',
-      'branchId TEXT',  // Added
+      'branchId TEXT', // Added
     ],
   },
   {
@@ -757,8 +1106,9 @@ const tableStructures = [
       'Memo TEXT',
       'RentReserved REAL DEFAULT 0',
       'representative TEXT',
+      'Currency TEXT DEFAULT "ETB"',
       'userId TEXT',
-      'branchId TEXT',  // Added
+      'branchId TEXT', // Added
     ],
   },
   {
@@ -804,7 +1154,7 @@ const tableStructures = [
       'notification_type TEXT',
       'email_template_id TEXT',
       'userId  TEXT',
-      'branchId TEXT',  // Added
+      'branchId TEXT', // Added
     ],
   },
   {
@@ -816,8 +1166,9 @@ const tableStructures = [
       'useThis BOOLEAN',
       'price REAL DEFAULT 0',
       'alwaysAsk BOOLEAN',
+      'Currency TEXT DEFAULT "ETB"',
       'userId TEXT',
-      'branchId TEXT',  // Added
+      'branchId TEXT', // Added
     ],
   },
   {
@@ -828,10 +1179,11 @@ const tableStructures = [
       'type TEXT',
       'price REAL DEFAULT 0',
       'custom BOOLEAN',
+      'Currency TEXT DEFAULT "ETB"',
       'paid BOOLEAN',
       'date INTEGER',
       'userId TEXT',
-      'branchId TEXT',  // Added
+      'branchId TEXT', // Added
     ],
   },
   {
@@ -848,10 +1200,23 @@ const tableStructures = [
       'doesReoccur BOOLEAN',
       'recurringCycle INTEGER',
       'price REAL DEFAULT 0',
-
+      'recurringType TEXT',
+      'EndDate INTEGER',
+      'HasEndDate BOOLEAN',
       'date INTEGER',
       'userId TEXT',
-      'branchId TEXT',  // Added
+      'branchId TEXT',
+
+      // New notification fields
+      'sendEmail BOOLEAN DEFAULT 0',
+
+      'emailDaysBefore INTEGER DEFAULT 0',
+      'sendSms BOOLEAN DEFAULT 0',
+
+      'smsDaysBefore INTEGER DEFAULT 0',
+      'emailTo TEXT',
+      'smsTo TEXT',
+      'Currency TEXT DEFAULT "ETB"',
     ],
   },
 
@@ -866,7 +1231,7 @@ const tableStructures = [
       'action_date INTEGER',
       'userInfo TEXT',
       'userId TEXT',
-      'branchId TEXT',  // Added
+      'branchId TEXT', // Added
     ],
   },
 ];
@@ -1656,7 +2021,7 @@ appDB.post(
         .toISOString()
         .replace(/:/g, '_')
         .replace(/\./g, '-');
-      const safeTenantName = tenantName.replace(/[^a-z0-9]/gi, ' ');
+      const safeTenantName = tenantName;
       const dirPath = path.join(
         process.env.APPDATA || '',
         appname || '',
@@ -2633,16 +2998,57 @@ ipcMain.handle('GetReceiptFile', (event, date, roomId, tenant) => {
 function reloadApp() {
   BrowserWindow.getFocusedWindow()?.webContents.reload();
 }
+async function hasOfflineChanges(): Promise<boolean> {
+  return new Promise((resolve) => {
+    db.get('SELECT COUNT(*) as count FROM offline_changes', [], (err, row) => {
+      if (err) {
+        console.error('Error checking offline changes:', err);
+        resolve(false);
+        return;
+      }
 
-// Add these near other IPC handlers
-ipcMain.handle('check-for-updates', async () => {
-  return autoUpdater.checkForUpdates();
-});
+      console.log('Raw offline changes data:', row);
+      const count = row ? row.count : 0;
+      console.log('Offline changes count:', count);
+      resolve(count > 0);
+    });
+  });
+}
+// Add IPC handler for sync-offline-changes
+ipcMain.handle('sync-offline-changes', async () => {
+  if (!mainWindow) return false;
 
-ipcMain.handle('install-update', () => {
-  autoUpdater.quitAndInstall(false, true);
-});
+  try {
+    // Call the renderer's handleUploadChanges function
+    await mainWindow.webContents.executeJavaScript(`
+      (async () => {
+        try {
+          if (window.electron.store.get('SelectedUserId')) {
+            await window.handleUploadChanges();
+            return true;
+          }
+          return false;
+        } catch (error) {
+          console.error('Upload error:', error);
+          return false;
+        }
+      })()
+    `);
 
-ipcMain.handle('is-update-ready', () => {
-  return store.get('updateReady', false);
+    return true;
+  } catch (error) {
+    console.error('Error syncing changes:', error);
+    return false;
+  }
 });
+const formatFolderName = (name: string) => {
+  const spaceMatch = name.match(/^(.*?)\s+(\d+)$/);
+  const parenthesesMatch = name.match(/^(.*?)\((\d+)\)$/);
+  
+  if (spaceMatch) {
+    return `${spaceMatch[1]}(${spaceMatch[2]})`;
+  } else if (parenthesesMatch) {
+    return name;
+  }
+  return name;
+};

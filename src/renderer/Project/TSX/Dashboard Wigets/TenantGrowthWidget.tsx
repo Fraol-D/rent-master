@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { LineChart } from '@mui/x-charts/LineChart';
+import { Input } from '../Helpers/CustomReactComponents';
 
 const TenantGrowthWidget = ({ TenantList }: { TenantList: tenant[] }) => {
   const [viewBy, setViewBy] = useState<'month' | 'year'>('month');
@@ -162,12 +163,10 @@ const TenantGrowthWidget = ({ TenantList }: { TenantList: tenant[] }) => {
             '.MuiLineElement-root': {
               stroke: 'var(--Text-Color)',
             },
-            '.MuiChartsGrid-line': {
-              stroke: 'var(--Text-Color)',
-            },
-            '.css-xyaj9i-MuiMarkElement-root' : {
+
+            '.css-xyaj9i-MuiMarkElement-root': {
               stroke: 'var(--Accent-Color)',
-            }
+            },
           }}
         />
       ) : (

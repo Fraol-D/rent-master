@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import * as d3 from 'd3';
 import { LineChart } from '@mui/x-charts/LineChart';
 import { getValuesWithSql } from 'Backend/localServerApis';
+import { Input } from '../Helpers/CustomReactComponents';
 import {
   format,
   startOfMonth,
@@ -11,25 +12,30 @@ import {
   addDays,
   isBefore,
   isAfter,
+  isSameMonth,
 } from 'date-fns';
 import { axisClasses } from '@mui/x-charts/ChartsAxis';
-
+import { subDays, differenceInDays, addMonths, addYears } from 'date-fns';
 interface MonthlyExpenseTrendWidgetProps {
-  expenses: expenses[];SelectedBranchId:any
+  expenses: expenses[];
+  SelectedBranchId: any;
 }
 
 const DashbMonthlyExpenseTrendWidget: React.FC<
   MonthlyExpenseTrendWidgetProps
-> = ({SelectedBranchId}) => {
+> = ({ SelectedBranchId }) => {
   const [showBy, setShowBy] = useState<'Monthly' | 'Yearly'>('Monthly');
   const [selectedDate, setSelectedDate] = useState(
     new Date().getFullYear().toString()
   );
-  const [expensesData, setExpensesData] = useState<Expense[]>([]);
+  const [expensesData, setExpensesData] = useState<expenses[]>([]);
 
   useEffect(() => {
     const fetchExpenses = async () => {
-      const expensesData = await getValuesWithSql('expenses', `WHERE 1 AND branchId = '${SelectedBranchId}'`);
+      const expensesData = await getValuesWithSql(
+        'expenses',
+        `WHERE 1 AND branchId = '${SelectedBranchId}'`
+      );
       setExpensesData(expensesData);
     };
     fetchExpenses();
@@ -44,22 +50,87 @@ const DashbMonthlyExpenseTrendWidget: React.FC<
 
     expenses.forEach((expense) => {
       if (expense.doesReoccur) {
-        let currentDate = new Date(expense.date);
-        while (isBefore(currentDate, endDate)) {
-          if (isAfter(currentDate, startDate)) {
+        const StartExpenseDate = new Date(expense.date);
+        StartExpenseDate.setHours(0, 0, 0, 0);
+
+        // Get the actual start date (either expense start date or period start date)
+        const effectiveStartDate = new Date(StartExpenseDate.getTime());
+
+        let currentDate = effectiveStartDate;
+        let expenseCount = 0;
+
+        // Calculate end date based on expense settings
+        const finalEndDate = expense.HasEndDate
+          ? new Date(Math.min(expense.EndDate, endDate.getTime()))
+          : endDate;
+
+        while (currentDate <= finalEndDate && expenseCount < 100) {
+          const expenseId = `${expense.id}-${currentDate.getTime()}`;
+
+          // Only add if the expense date falls within our range
+          if (
+            currentDate >= startDate &&
+            (currentDate <= endDate || expense.HasEndDate)
+          ) {
             allExpenses.push({
               ...expense,
+              id: expenseId,
               date: currentDate.getTime(),
             });
           }
-          currentDate = addDays(currentDate, expense.recurringCycle);
+
+          // Calculate next expense date based on recurring type
+          switch (expense.recurringType) {
+            case 'Day':
+              // Add days based on recurringCycle
+              currentDate = addDays(currentDate, expense.recurringCycle);
+              break;
+            case 'Monthly':
+              // Add one month to current date
+              const nextMonthDate = new Date(currentDate);
+              nextMonthDate.setMonth(nextMonthDate.getMonth() + 1);
+              currentDate = nextMonthDate;
+              break;
+
+            case 'Yearly':
+              // Preserve month and day when adding years
+              const nextYearDate = new Date(currentDate);
+              const originalMonth = nextYearDate.getMonth();
+              const originalDay = nextYearDate.getDate();
+              nextYearDate.setFullYear(nextYearDate.getFullYear() + 1);
+              // Ensure we keep the same month and day
+              nextYearDate.setMonth(originalMonth);
+              nextYearDate.setDate(originalDay);
+              currentDate = nextYearDate;
+              console.log(currentDate, 'lllllllllll');
+              break;
+
+            default:
+              console.warn(
+                `Unknown recurring type: ${expense.recurringType}, defaulting to monthly`
+              );
+              const defaultNextDate = new Date(currentDate);
+              defaultNextDate.setMonth(defaultNextDate.getMonth() + 1);
+          }
+
+          expenseCount++;
         }
       } else {
-        allExpenses.push(expense);
+        // For non-recurring expenses, only include if within date range
+        const expenseDate = new Date(expense.date);
+        expenseDate.setHours(0, 0, 0, 0);
+
+        if (expenseDate >= startDate && expenseDate <= endDate) {
+          allExpenses.push({
+            ...expense,
+            date: expenseDate.getTime(),
+          });
+        }
       }
     });
 
-    return allExpenses;
+    // Sort expenses by date
+    return allExpenses.sort((a, b) => a.date - b.date);
   };
 
   const aggregateMonthlyData = useMemo(() => {
@@ -161,8 +232,94 @@ const DashbMonthlyExpenseTrendWidget: React.FC<
     };
   }, [expensesData, selectedDate]);
 
+  // Add debug logging
+  useEffect(() => {
+    console.log('Component mounted with branch ID:', SelectedBranchId);
+  }, []);
+
+  useEffect(() => {
+    console.log('Expenses data updated:', {
+      count: expensesData?.length,
+      firstExpense: expensesData?.[0],
+      lastExpense: expensesData?.[expensesData.length - 1],
+    });
+  }, [expensesData]);
+
+  // Add error boundary around the chart
+  const renderChart = () => {
+    try {
+      return (
+        <LineChart
+          xAxis={[
+            {
+              dataKey: 'date',
+              scaleType: 'point',
+              valueFormatter: (value) => value.toLocaleString(),
+              tickLabelStyle: {
+                angle: 0,
+                textAnchor: 'middle',
+              },
+            },
+          ]}
+          series={[
+            {
+              dataKey: 'expense',
+              label: 'Total Expenses',
+              area: true,
+
+              valueFormatter: (value) => `$${value?.toLocaleString()}`,
+            },
+          ]}
+          yAxis={[
+            {
+              colorMap: {
+                type: 'piecewise',
+                thresholds: [0, 1000000],
+                colors: ['red', 'red', 'red'],
+              },
+            },
+          ]}
+          dataset={dataset}
+          onError={(error) => {
+            console.error('Chart error:', error);
+          }}
+          grid={{ vertical: true, horizontal: true }}
+          margin={{ left: 70, right: 30, top: 30, bottom: 60 }}
+          sx={{
+            '.MuiLineElement-root': {
+              stroke: 'red',
+              strokeWidth: 2,
+            },
+            '.MuiAreaElement-root': {
+              fillOpacity: 0.1,
+            },
+            [`.${axisClasses.left} .${axisClasses.label}`]: {
+              transform: 'translate(var(---35px-V), 0)',
+              color: 'red',
+            },
+            [`.${axisClasses.root}`]: {
+              [`.${axisClasses.tick}, .${axisClasses.line}`]: {
+                stroke: 'red',
+                strokeWidth: 1,
+              },
+              [`.${axisClasses.tickLabel}`]: {
+                fill: 'var(--Text-Color)',
+              },
+            },
+          }}
+        />
+      );
+    } catch (error) {
+      console.error('Error rendering chart:', error);
+      return <div>Error rendering expense chart</div>;
+    }
+  };
+
   return (
-    <div className="DashboardWigetMainContainer" style={{width: 'var(--800px-V)', height: 'var(--510px-V)',}}>
+    <div
+      className="DashboardWigetMainContainer"
+      style={{ width: 'var(--800px-V)', height: 'var(--510px-V)' }}
+    >
       <p className="DashboardWigetPieChartTextHeader">Expense Trend</p>
       <div className="DashboardTotalCollectedTopPart">
         <div className="ShowByContainer">
@@ -189,67 +346,7 @@ const DashbMonthlyExpenseTrendWidget: React.FC<
           />
         </div>
       </div>
-      <LineChart
-        xAxis={[
-          {
-            dataKey: 'date',
-            scaleType: 'point',
-            valueFormatter: (value) => value.toLocaleString(),
-            tickLabelStyle: {
-              angle: 0,
-              textAnchor: 'middle',
-              
-            },
-          },
-        ]}
-        series={[
-          {
-            dataKey: 'expense',
-            label: 'Total Expenses',
-            area: true,
-            
-            valueFormatter: (value) => `$${value?.toLocaleString()}`,
-          },
-        ]}
-        yAxis={[
-          {
-            colorMap: {
-              type: 'piecewise',
-              thresholds: [0, 1000000],
-              colors: ['red', 'red', 'red'],
-            },
-          },
-        ]}
-        dataset={dataset}
-       
-        grid={{ vertical: true, horizontal: true }}
-     
-        margin={{ left: 70, right: 30, top: 30, bottom: 60 }}
-        sx={{
-          '.MuiLineElement-root': {
-            stroke: 'red',
-            strokeWidth: 2,
-          },
-          '.MuiAreaElement-root': {
-      
-            fillOpacity: 0.1,
-          },
-          [`.${axisClasses.left} .${axisClasses.label}`]: {
-            transform: 'translate(var(---35px-V), 0)',
-            color: 'red',
-          
-          },
-          [`.${axisClasses.root}`]: {
-            [`.${axisClasses.tick}, .${axisClasses.line}`]: {
-              stroke: 'red',
-              strokeWidth: 1,
-            },
-            [`.${axisClasses.tickLabel}`]: {
-              fill: 'var(--Text-Color)',
-            },
-          },
-        }}
-      />
+      {renderChart()}
       <div
         className="ExpenseStatsContainer"
         style={{

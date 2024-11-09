@@ -3,12 +3,15 @@ import * as d3 from 'd3';
 import '../../../CSS/Calendar.css';
 import { addDays, addMonths, startOfYear, endOfYear, addYears } from 'date-fns';
 import { getValuesWithSql } from 'Backend/localServerApis';
+import { Input } from '../CustomReactComponents';
+import { CurrencySign } from '../CurrencySign';
 
 interface CalendarProps {
   rooms: RoomType[];
   initialMonths: number;
   initialMonthsPast: number;
-  tenantList: tenant[];SelectedBranchId:any
+  tenantList: tenant[];
+  SelectedBranchId: any;
 }
 
 interface Payment {
@@ -23,7 +26,8 @@ const CalendarGUI: React.FC<CalendarProps> = ({
   rooms,
   initialMonths,
   initialMonthsPast,
-  tenantList,SelectedBranchId
+  tenantList,
+  SelectedBranchId,
 }: CalendarProps) => {
   const [numberOfMonthsFuture, setNumberOfMonthsFuture] =
     useState(initialMonths);
@@ -188,7 +192,7 @@ const CalendarGUI: React.FC<CalendarProps> = ({
       const height = Math.max(minimumHeight, calculatedHeight);
       const cellSize = 25 * scaleFactor;
       const margin = {
-        top: 70  ,
+        top: 70,
         right: 30 * 1,
         bottom: 30 * 1,
         left: 200 * 1,
@@ -222,23 +226,28 @@ const CalendarGUI: React.FC<CalendarProps> = ({
         const xAxis = d3
           .axisTop(xScale)
           .ticks(d3.timeDay.every(1))
-          .tickFormat((d: Date) => {
-            const day = d3.timeFormat('%d')(d);
-            return day;
+          .tickFormat((d: Date | d3.NumberValue) => {
+            if (d instanceof Date) {
+              const day = d3.timeFormat('%d')(d);
+              return day;
+            }
+            return '';
           })
           .tickSizeOuter(0);
 
         const monthAxis = d3
           .axisTop(xScale)
           .ticks(d3.timeMonth.every(1))
-          .tickFormat((d: Date) => {
-            const monthStart = d3.timeMonth(d);
-            const monthEnd = d3.timeMonth.offset(monthStart, 1);
-            const monthCenter = new Date(
-              (monthStart.getTime() + monthEnd.getTime()) / 2
-            );
-            if (monthCenter >= startDate && monthCenter <= endDate) {
-              return d3.timeFormat(`%B ${monthCenter.getFullYear()}`)(d);
+          .tickFormat((d: Date | d3.NumberValue) => {
+            if (d instanceof Date) {
+              const monthStart = d3.timeMonth(d);
+              const monthEnd = d3.timeMonth.offset(monthStart, 1);
+              const monthCenter = new Date(
+                (monthStart.getTime() + monthEnd.getTime()) / 2
+              );
+              if (monthCenter >= startDate && monthCenter <= endDate) {
+                return d3.timeFormat(`%B ${monthCenter.getFullYear()}`)(d);
+              }
             }
             return '';
           })
@@ -246,17 +255,23 @@ const CalendarGUI: React.FC<CalendarProps> = ({
 
         svg
           .append('g')
-          .call(monthAxis)
+          .call(monthAxis as any)
           .attr('transform', `translate(0, ${-25})`)
           .selectAll('text')
           .style('font-size', `${15 * scaleFactor}px`);
 
         svg
           .append('g')
-          .call(xAxis)
+          .call(xAxis as any)
           .attr('transform', `translate(0, -3)`)
           .selectAll('text')
-          .style('font-size', `${14 * scaleFactor}px`);
+          .style('font-size', `${14 * scaleFactor}px`)
+          .style('fill', (d: any) => {
+            const date = new Date(d);
+            return date.toDateString() === today.toDateString()
+              ? 'var(--Accent-Color)'
+              : 'var(--Text-Color)';
+          });
 
         const yAxis = d3
           .axisLeft(yScale)
@@ -266,51 +281,52 @@ const CalendarGUI: React.FC<CalendarProps> = ({
               ? `${
                   tenantList.find((t: tenant) => t.id === room.tenantId)?.name
                 }\n` +
-                  `${room.AgreedPrice.toLocaleString()}$ - Floor. ${
-                    room.floor
-                  } Room. ${room.roomIndex}`
+                  `${room.AgreedPrice.toLocaleString()} ${CurrencySign(
+                    room.Currency
+                  )} - Floor. ${room.floor} Room. ${room.roomIndex}`
               : '';
           })
           .tickSize(10 * scaleFactor)
           .tickPadding(5 * scaleFactor);
 
-        svg
-          .append('g')
-          .call(yAxis)
-          .raise()
-          .selectAll('.tick text')
-          .call(function (text: any) {
-            text.each(function (this: SVGTextElement) {
-              var text = d3.select(this);
-              var words = text.text().split('\n');
-              text.text('');
-              text
-                .append('tspan')
-                .attr('x', -10 * scaleFactor)
-                .attr('dy', `-${0.5 * scaleFactor}em`)
-                .style('font-size', `${14 * scaleFactor}px`)
-                .text(words[0]);
-              text
-                .append('tspan')
-                .attr('x', -15 * scaleFactor)
-                .attr('dy', `${1.2 * scaleFactor}em`)
-                .style('font-size', `${11.3 * scaleFactor}px`)
-                .text(words[1]);
+        if (filteredRooms.length > 0) {
+          svg
+            .append('g')
+            .call(yAxis)
+            .raise()
+            .selectAll('.tick text')
+            .call(function (text: any) {
+              text.each(function (this: SVGTextElement) {
+                var text = d3.select(this);
+                var words = text.text().split('\n');
+                text.text('');
+                text
+                  .append('tspan')
+                  .attr('x', -10 * scaleFactor)
+                  .attr('dy', `-${0.5 * scaleFactor}em`)
+                  .style('font-size', `${14 * scaleFactor}px`)
+                  .text(words[0]);
+                text
+                  .append('tspan')
+                  .attr('x', -15 * scaleFactor)
+                  .attr('dy', `${1.2 * scaleFactor}em`)
+                  .style('font-size', `${11.3 * scaleFactor}px`)
+                  .text(words[1]);
 
-              var parentNode = this.parentNode;
-              if (parentNode) {
-                d3.select(parentNode)
-                  .append('line')
-                  .attr('x1', 0)
-                  .attr('x2', -100 * scaleFactor)
-                  .attr('y1', 15 * scaleFactor)
-                  .attr('y2', 15 * scaleFactor)
-                  .attr('stroke', '#DDDDDD')
-                  .attr('stroke-width', 1 * scaleFactor);
-              }
+                var parentNode = this.parentNode;
+                if (parentNode instanceof Element) {
+                  d3.select(parentNode)
+                    .append('line')
+                    .attr('x1', 0)
+                    .attr('x2', -100 * scaleFactor)
+                    .attr('y1', 15 * scaleFactor)
+                    .attr('y2', 15 * scaleFactor)
+                    .attr('stroke', '#DDDDDD')
+                    .attr('stroke-width', 1 * scaleFactor);
+                }
+              });
             });
-          });
-
+        }
         svg
           .selectAll('.x-grid')
           .data(yScale.domain())
@@ -335,7 +351,26 @@ const CalendarGUI: React.FC<CalendarProps> = ({
           .attr('y1', (d: any) => (yScale(d) || 0) + yScale.bandwidth())
           .attr('y2', (d: any) => (yScale(d) || 0) + yScale.bandwidth())
           .attr('stroke', 'grey');
+
+        const currentdatehight =
+          today.getDate() >= 26 || today.getDate() <= 6 ? 40 : 25;
+        svg
+          .append('text')
+          .attr('x', xScale(today))
+          .attr('y', -currentdatehight)
+          .attr('text-anchor', 'middle')
+          .attr('fill', '#db911a')
+          .style('font-size', `${18 * scaleFactor}px`)
+          .text(today.toDateString());
+
         if (filteredRooms.length === 0) return;
+        const currentDateRect = svg
+          .append('rect')
+          .attr('x', xScale(today))
+          .attr('y', 0)
+          .attr('width', 2 * scaleFactor)
+          .attr('height', height - 62)
+          .attr('fill', '#db911a');
 
         svg
           .selectAll('.y-grid')
@@ -348,24 +383,6 @@ const CalendarGUI: React.FC<CalendarProps> = ({
           .attr('y1', 0 - 0)
           .attr('y2', height - 62)
           .attr('stroke', 'grey');
-        const currentDateRect = svg
-          .append('rect')
-          .attr('x', xScale(today))
-          .attr('y', 0)
-          .attr('width', 2 * scaleFactor)
-          .attr('height', height - 62)
-          .attr('fill', '#db911a');
-
-        const currentdatehight =
-          today.getDate() >= 26 || today.getDate() <= 6 ? 40  : 25;
-        svg
-          .append('text')
-          .attr('x', xScale(today))
-          .attr('y', -currentdatehight)
-          .attr('text-anchor', 'middle')
-          .attr('fill', '#db911a')
-          .style('font-size', `${18 * scaleFactor}px`)
-          .text(today.toDateString());
 
         const monthStarts = d3.timeMonths(startDate, endDate);
         svg
@@ -460,7 +477,7 @@ const CalendarGUI: React.FC<CalendarProps> = ({
                           ? '<span style="color: #00e1ff; ">Paid</span>'
                           : '<span style="color: red; font-weight: bold;">Unpaid</span>'
                       }</p>
-                      <p><em style="font-style: italic;">Agreed Price:</em> <span style="font-weight: bold; color: #e67e22;">${payment.Value.toLocaleString()}$</span></p>
+                      <p><em style="font-style: italic;">Agreed Price:</em> <span style="font-weight: bold; color: #e67e22;">${payment.Value.toLocaleString()} ${CurrencySign(room.Currency)}</span></p>
                       <p>Payment Cycle: <span style="background-color: #f1c40f; padding: var(--2px-V) var(--5px-V); border-radius: var(--3px-V);">${
                         room.PaymentCycleType
                       }</span></p>
@@ -576,19 +593,21 @@ const CalendarGUI: React.FC<CalendarProps> = ({
               border: 'var(--1px-V) solid #ccc',
             }}
           />
-          <button
-            onClick={scrollToCurrentDate}
-            style={{
-              padding: 'var(--5px-V) var(--10px-V)',
-              backgroundColor: '#4CAF50',
+          {numberOfMonthsFuture > 1 && numberOfMonthsPast > 1 && (
+            <button
+              onClick={scrollToCurrentDate}
+              style={{
+                padding: 'var(--5px-V) var(--10px-V)',
+                backgroundColor: '#4CAF50',
 
-              border: 'none',
-              borderRadius: 'var(--3px-V)',
-              cursor: 'pointer',
-            }}
-          >
-            Go to Current Date
-          </button>
+                border: 'none',
+                borderRadius: 'var(--3px-V)',
+                cursor: 'pointer',
+              }}
+            >
+              Go to Current Date
+            </button>
+          )}
         </div>
         <div
           style={{ overflowX: 'auto', height: 'calc(100% - var(--44px-V))' }}
