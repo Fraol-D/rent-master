@@ -16,6 +16,7 @@ import {
 } from 'date-fns';
 import { axisClasses } from '@mui/x-charts/ChartsAxis';
 import { subDays, differenceInDays, addMonths, addYears } from 'date-fns';
+import { formatNumberWithSuffix } from '../Helpers/CurrencySign';
 interface MonthlyExpenseTrendWidgetProps {
   expenses: expenses[];
   SelectedBranchId: any;
@@ -254,7 +255,7 @@ const DashbMonthlyExpenseTrendWidget: React.FC<
             {
               dataKey: 'date',
               scaleType: 'point',
-              valueFormatter: (value) => value.toLocaleString(),
+              valueFormatter: (value) => formatNumberWithSuffix(value.toLocaleString()),
               tickLabelStyle: {
                 angle: 0,
                 textAnchor: 'middle',
@@ -267,7 +268,7 @@ const DashbMonthlyExpenseTrendWidget: React.FC<
               label: 'Total Expenses',
               area: true,
 
-              valueFormatter: (value) => `$${value?.toLocaleString()}`,
+              valueFormatter: (value) => `$${formatNumberWithSuffix(value?.toLocaleString())}`,
             },
           ]}
           yAxis={[
@@ -360,19 +361,19 @@ const DashbMonthlyExpenseTrendWidget: React.FC<
         <p className="ExpenseStatItem">
           Total Expense This Year:{' '}
           <em className="ExpenseStatValue">
-            ${expenseStats.totalExpense.toLocaleString()}
+            ${formatNumberWithSuffix(expenseStats.totalExpense.toLocaleString())}
           </em>
         </p>
         <p className="ExpenseStatItem">
           Highest Monthly Expense:{' '}
           <em className="ExpenseStatValue">
-            ${expenseStats.highestMonthlyExpense.toLocaleString()}
+            ${formatNumberWithSuffix(expenseStats.highestMonthlyExpense.toLocaleString())}
           </em>
         </p>
         <p className="ExpenseStatItem">
           Average Monthly Expense:{' '}
           <em className="ExpenseStatValue">
-            ${expenseStats.averageMonthlyExpense.toLocaleString()}
+            ${formatNumberWithSuffix(expenseStats.averageMonthlyExpense.toLocaleString())}
           </em>
         </p>
         <p className="ExpenseStatItem">

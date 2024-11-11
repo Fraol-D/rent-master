@@ -1086,12 +1086,9 @@ function Hello() {
       setUploadingLoadingEffect(true);
       setIsSyncing(true);
       setSyncProgress(0);
-      setShowAdvancedUpload(true);
+      
       if (navigator.onLine) {
-        await UploadUserFilesToTheOnlineDatabase(
-          SelectedUserId,
-          setUploadAssetsProgress
-        );
+        
         const offline_changes = await getValuesWithSql(
           'offline_changes',
           'WHERE 1'
@@ -1353,9 +1350,11 @@ function Hello() {
   };
   const fetchBranches = async () => {
     if (navigator.onLine) {
+      if(window.electron.store.get('users'))
+      if(window.electron.store.get('users')[0]) {
       const branches = await getValuesWithSql_Online(
         'branches',
-        `WHERE userId = '${SelectedUserId}'`
+        `WHERE userId = '${window.electron.store.get('users')[0].id}'`
       );
 
       const branchesWithData = await Promise.all(
@@ -1456,6 +1455,7 @@ function Hello() {
 
       setBranches(branchesWithData);
       window.electron.store.set('Branches', branchesWithData);
+    }
     } else {
       if (window.electron.store.get('Branches')) {
         setBranches(window.electron.store.get('Branches'));
@@ -1653,6 +1653,7 @@ export const getUserPrivileges = (
   editEmailTemplates: boolean;
   editSmsTemplates: boolean;
   editExpenses: boolean;
+  editSettings: boolean;
   viewRoomsPage: boolean;
   addRoom: boolean;
   editRoomData: boolean;
@@ -1677,6 +1678,7 @@ export const getUserPrivileges = (
     editEmailTemplates: false,
     editSmsTemplates: false,
     editExpenses: false,
+    editSettings: false,
     viewRoomsPage: false,
     addRoom: false,
     editRoomData: false,
@@ -1728,6 +1730,9 @@ export const getUserPrivileges = (
             break;
           case 'edit expenses':
             privilegeObject.editExpenses = true;
+            break;
+          case 'edit settings':
+            privilegeObject.editSettings = true;
             break;
           case 'View rooms page':
             privilegeObject.viewRoomsPage = true;

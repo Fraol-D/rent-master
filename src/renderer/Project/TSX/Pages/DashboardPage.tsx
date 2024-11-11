@@ -15,6 +15,7 @@ import { getValuesWithSql } from 'Backend/localServerApis';
 import DashbExpenseHistory from '../Dashboard Wigets/DashbExpenseHistory';
 import DashbUpcomingExpensesWidget from '../Dashboard Wigets/DashbUpcomingExpensesWidget';
 import DashbActionHistoryDashboard from '../Dashboard Wigets/DashbActionHistoryDashboard';
+import DashbSmsDetails from '../Dashboard Wigets/DashbSmsDetails';
 interface props {
   RoomList: RoomType[];
   tenantList: tenant[];
@@ -84,8 +85,6 @@ const DashboardPage: React.FC<props> = ({
             tenantList={tenantList}
           ></DashbEmailHistory>
         </>
-      ) : DashboardSelectedPage === 'SMS History' ? (
-        <></>
       ) : DashboardSelectedPage === 'Action History' ? (
         <DashbActionHistoryDashboard SelectedBranchId={SelectedBranchId} />
       ) : DashboardSelectedPage === 'Expenses' ? (
@@ -101,6 +100,12 @@ const DashboardPage: React.FC<props> = ({
           <DashbExpenseHistory expenses={expenses} />
           <DashbUpcomingExpensesWidget expenses={expenses} />
         </div>
+      ) : DashboardSelectedPage === 'SMS Details' ? (
+        <><DashbSmsDetails
+        SelectedUserId={SelectedUserId}
+        RoomList={RoomList}
+        tenantList={tenantList}
+      /></>
       ) : (
         <></>
       )}

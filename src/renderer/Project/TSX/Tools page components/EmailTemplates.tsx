@@ -119,6 +119,7 @@ const EmailTemplates: React.FC<EmailTemplatesProps> = ({
             {editingTemplateId === template.id ? (
               <input
                 value={editedTemplate?.name || ''}
+                style={{width:"50%"}}
                 onChange={(e) => handleEditChange('name', e.target.value)}
               />
             ) : (

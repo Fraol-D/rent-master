@@ -5,6 +5,7 @@ import { axisClasses } from '@mui/x-charts/ChartsAxis';
 import { getValuesWithSql } from 'Backend/localServerApis';
 import { addDays, addMonths, addYears, startOfYear, endOfYear } from 'date-fns';
 import { Input } from '../Helpers/CustomReactComponents';
+import { formatNumberWithSuffix } from '../Helpers/CurrencySign';
 
 interface Payment {
   id: string;
@@ -230,7 +231,7 @@ const DashbOverAllTax = ({
             step="1"
           />
           <span className="TotalLabel">Total Tax:</span>
-          <span className="TotalValue">${totalTax.toLocaleString()}</span>
+          <span className="TotalValue">${formatNumberWithSuffix(totalTax.toLocaleString())}</span>
         </div>
       </div>
       <BarChart
@@ -243,13 +244,15 @@ const DashbOverAllTax = ({
         ]}
         yAxis={[
           {
-            fill: 'var(--Text-Color)',
+            fill: 'var(--Text-Color)',            valueFormatter: (value: any) => `$${formatNumberWithSuffix(value).toString()}`,
+
           },
         ]}
         series={[
           {
             dataKey: 'tax',
-            label: 'Tax (15%)',
+            label: 'Tax (15%)',            valueFormatter: (value: any) => `$${formatNumberWithSuffix(value).toString()}`,
+
             color: 'var(--Accent-Color50)',
           },
         ]}

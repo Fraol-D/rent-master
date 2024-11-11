@@ -6,7 +6,7 @@ import {
 } from 'Backend/localServerApis';
 import React, { useEffect, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import CurrencySign, { GetDefaultCurrency } from '../CurrencySign';
+import CurrencySign, { formatNumberWithSuffix, GetDefaultCurrency } from '../CurrencySign';
 
 type PaymentType = {
   id: string;
@@ -931,12 +931,12 @@ const UtilityPanel: React.FC<props> = ({
                     >
                       <span>
                         Total:{' '}
-                        {utility.PaymentTypes.reduce(
+                        {formatNumberWithSuffix(utility.PaymentTypes.reduce(
                           (total, paymentType) =>
                             total +
                             (isNaN(paymentType.price) ? 0 : paymentType.price),
                           0
-                        ).toLocaleString()}
+                        ).toLocaleString())}
                         
                       </span>{' '}
                       <span>

@@ -33,8 +33,9 @@ const NotificationSettingsTable: React.FC<NotificationSettingsProps> = ({
   SelectedBranchId,
 }) => {
   const [emailTemplates, setEmailTemplates] = useState<EmailTemplate[]>([]);
+  const [smsTemplates, setSmsTemplates] = useState<EmailTemplate[]>([]);
   const [selectedTemplates, setSelectedTemplates] = useState<
-    Record<string, string>
+    Record<string, { email?: string; sms?: string }>
   >({});
   const [templateValidation, setTemplateValidation] = useState<ValidationState>(
     {}
@@ -56,7 +57,10 @@ const NotificationSettingsTable: React.FC<NotificationSettingsProps> = ({
       const templates = await getValuesWithSql('email_templates', 'WHERE 1');
       setEmailTemplates(templates);
     };
-
+    const fetchSmsTemplates = async () => {
+      const templates = await getValuesWithSql('sms_templates', 'WHERE 1');
+      setSmsTemplates(templates);
+    };
     const fetchSelectedTemplates = async () => {
       const selections = await getValuesWithSql(
         'notification_template_selections',
@@ -65,14 +69,18 @@ const NotificationSettingsTable: React.FC<NotificationSettingsProps> = ({
       const selectionsMap = selections.reduce((acc, selection) => {
         const expectedId = `${roomId}_${selection.notification_type}`;
         if (selection.id === expectedId) {
-          acc[selection.notification_type] = selection.email_template_id;
+          acc[selection.notification_type] = {
+            email: selection.email_template_id,
+            sms: selection.sms_template_id
+          };
         }
         return acc;
-      }, {} as Record<string, string>);
+      }, {} as Record<string, { email?: string; sms?: string }>);
       setSelectedTemplates(selectionsMap);
     };
 
     fetchEmailTemplates();
+    fetchSmsTemplates();
     fetchSelectedTemplates();
   }, [userId, roomId]);
 
@@ -100,6 +108,45 @@ const NotificationSettingsTable: React.FC<NotificationSettingsProps> = ({
 
   const handleTemplateChange = async (
     notificationType: string,
+    templateId: string,
+    EmailOrSms: 'email' | 'sms'
+  ) => {
+    setSelectedTemplates((prev) => ({
+      ...prev,
+      [notificationType]: {
+        ...prev[notificationType],
+        [EmailOrSms]: templateId,
+      },
+    }));
+    const NotificationSettingsSelectionRaw = await getValuesWithSql(
+      'notification_template_selections',
+      `WHERE id = '${roomId}_${notificationType}' AND notification_type = '${notificationType}'`
+    );
+    if (NotificationSettingsSelectionRaw.length === 0) {
+      await addValue(
+        'notification_template_selections',
+        {
+          id: `${roomId}_${notificationType}`,
+          notification_type: notificationType,
+          [EmailOrSms === 'email' ? 'email_template_id' : 'sms_template_id']: templateId,
+          userId: userId,
+          branchId: SelectedBranchId,
+        },
+        setChangeMade
+      );
+    } else {
+      await updateValue(
+        'notification_template_selections',
+        `${roomId}_${notificationType}`,
+        EmailOrSms === 'email' ? 'email_template_id' : 'sms_template_id',
+        templateId,
+        setChangeMade,
+        selectedTemplates[notificationType]
+      );
+    }
+  };
+  const handleTemplateChangeSms = async (
+    notificationType: string,
     templateId: string
   ) => {
     setSelectedTemplates((prev) => ({
@@ -116,103 +163,125 @@ const NotificationSettingsTable: React.FC<NotificationSettingsProps> = ({
         {
           id: `${roomId}_${notificationType}`,
           notification_type: notificationType,
-          email_template_id: templateId,
+          sms_template_id: templateId,
           userId: userId,
           branchId: SelectedBranchId,
         },
         setChangeMade
       );
     } else {
-      // Update the selection in the database
       await updateValue(
         'notification_template_selections',
         `${roomId}_${notificationType}`,
-        'email_template_id',
+        'sms_template_id',
         templateId,
-        setChangeMade, // You can add a callback function here if needed
+        setChangeMade,
         selectedTemplates[notificationType]
       );
     }
   };
-
   const getSelectStyle = (type: string) => ({
     border: templateValidation[type]
       ? 'var(--2px-V) solid red'
       : 'var(--1px-V) solid var(--Border-Color)',
     borderRadius: 'var(--4px-V)',
     padding: 'var(--4px-V)',
+    width: '100%',
   });
 
   return (
-    <table style={{ fontSize: 'var(--14px-V)', borderCollapse: 'collapse' }}>
-      <thead>
-        <tr>
-          <th style={{ padding: 'var(--5px-V)', textAlign: 'left' }}>
-            Notification
-          </th>
-          <th style={{ padding: 'var(--5px-V)', textAlign: 'center' }}>
-            Email
-          </th>
-          <th style={{ padding: 'var(--5px-V)', textAlign: 'center' }}>SMS</th>
-          <th style={{ padding: 'var(--5px-V)', textAlign: 'center' }}>
-            Email Template
-          </th>
-        </tr>
-      </thead>
-      <tbody>
-        {notificationTypes.map((type, index) => (
-          <tr key={index}>
-            <td style={{ padding: 'var(--5px-V)' }}>{type}</td>
-            <td style={{ padding: 'var(--5px-V)', textAlign: 'center' }}>
+    <div style={{ fontSize: 'var(--14px-V)' }}>
+      {notificationTypes.map((type, index) => (
+        <div
+          key={index}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            marginTop: 'var(--10px-V)',
+            padding: 'var(--5px-V)',
+            backgroundColor:
+              (notificationSettings & (1 << (index * 2))) !== 0 ||
+              (notificationSettings & (1 << (index * 2 + 1))) !== 0
+                ? 'var(--Secondary-Color60)'
+                : 'var(--Secondary-Color30)',
+            borderRadius: 'var(--5px-V)',
+          }}
+        >
+          <div style={{ width: 'var(--150px-V)' }}>{type}</div>
+
+          <div>
+            <div
+              style={{
+                marginBottom: 'var(--5px-V)',
+                display: 'flex',
+                alignItems: 'center',
+              }}
+            >
               <input
                 type="checkbox"
                 checked={(notificationSettings & (1 << (index * 2))) !== 0}
                 onChange={() => toggleSetting(index, type)}
+                style={{ marginRight: 'var(--5px-V)' }}
               />
-            </td>
-            <td style={{ padding: 'var(--5px-V)', textAlign: 'center' }}>
+              <label style={{ marginRight: 'var(--5px-V)' }}>Email</label>
+              {(notificationSettings & (1 << (index * 2))) !== 0 && (
+                <div>
+                  <select
+                    value={selectedTemplates[type]?.email || ''}
+                    onChange={(e) => {
+                      handleTemplateChange(type, e.target.value, 'email');
+                      setTemplateValidation((prev) => ({
+                        ...prev,
+                        [type]: false,
+                      }));
+                    }}
+                    style={getSelectStyle(type)}
+                  >
+                    <option value="">Select a template</option>
+                    {emailTemplates.map((template) => (
+                      <option key={template.id} value={template.id}>
+                        {template.name}{' '}
+                        {template.name === type && 'RECOMMENDED'}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
               <input
                 type="checkbox"
                 checked={(notificationSettings & (1 << (index * 2 + 1))) !== 0}
                 onChange={() => toggleSmsSetting(index)}
+                style={{ marginRight: 'var(--5px-V)' }}
               />
-            </td>
-            <td style={{ padding: 'var(--5px-V)', textAlign: 'center' }}>
-              <select
-                value={selectedTemplates[type] || ''}
-                onChange={(e) => {
-                  handleTemplateChange(type, e.target.value);
-                  setTemplateValidation((prev) => ({
-                    ...prev,
-                    [type]: false,
-                  }));
-                }}
-                style={getSelectStyle(type)}
-              >
-                <option value="">Select a template</option>
-                {emailTemplates.map((template) => (
-                  <option key={template.id} value={template.id}>
-                    {template.name}
-                  </option>
-                ))}
-              </select>
-              {templateValidation[type] && (
-                <div
-                  style={{
-                    color: 'red',
-                    fontSize: 'var(--12px-V)',
-                    position: 'absolute',
-                    marginTop: 'var(--2px-V)',
-                  }}
-                >
-                  Template required
-                </div>
+              <label style={{ marginRight: 'var(--10px-V)' }}>SMS </label>
+              {(notificationSettings & (1 << (index * 2 + 1))) !== 0 && (
+                 <select
+                  value={selectedTemplates[type]?.sms || ''}
+                  onChange={(e) => {
+                    handleTemplateChange(type, e.target.value, 'sms');
+                    setTemplateValidation((prev) => ({
+                     ...prev,
+                     [type]: false,
+                   }));
+                 }}
+                 style={getSelectStyle(type)}
+               >
+                  <option value="">Select a template</option>
+                  {smsTemplates.map((template) => (
+                    <option key={template.id} value={template.id}>
+                      {template.name}{' '}
+                     {template.name === type && 'RECOMMENDED'}
+                   </option>
+                  ))}
+                </select>
               )}
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
   );
 };
 

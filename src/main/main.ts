@@ -359,7 +359,7 @@ const createWindow = async () => {
   // Modify the window close handler
   mainWindow.on('close', async (e) => {
     console.log('Close event triggered');
-
+   if(dev) return;
     // Immediately prevent closing
     e.preventDefault();
 
@@ -898,7 +898,7 @@ appDB.use(express.static(path.join(__dirname, 'src/renderer')));
 
 const port = 8100;
 const dev = true;
-const appname = dev ?'Electron' :'rent-master';
+const appname = dev ? 'Electron' : 'rent-master';
 appDB.use(
   cors({
     origin: ['http://localhost:1212', 'https://www.rentmaster.markethubet.com'],
@@ -1153,6 +1153,7 @@ const tableStructures = [
       'id TEXT PRIMARY KEY',
       'notification_type TEXT',
       'email_template_id TEXT',
+      'sms_template_id TEXT',
       'userId  TEXT',
       'branchId TEXT', // Added
     ],
@@ -3044,7 +3045,7 @@ ipcMain.handle('sync-offline-changes', async () => {
 const formatFolderName = (name: string) => {
   const spaceMatch = name.match(/^(.*?)\s+(\d+)$/);
   const parenthesesMatch = name.match(/^(.*?)\((\d+)\)$/);
-  
+
   if (spaceMatch) {
     return `${spaceMatch[1]}(${spaceMatch[2]})`;
   } else if (parenthesesMatch) {

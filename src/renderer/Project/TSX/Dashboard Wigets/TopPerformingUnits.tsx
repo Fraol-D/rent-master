@@ -1,5 +1,6 @@
 import { getValuesWithSql } from 'Backend/localServerApis';
 import React, { useEffect, useMemo, useState } from 'react';
+import { formatNumberWithSuffix } from '../Helpers/CurrencySign';
 //"search bar for all" where this is make a search bar which is deffrent for each one and that search bar makes it search through to find the one you want , And also make not filter insted jump to that element or scroll to that element, only show the search bar if the show all is on
 const TopPerformingUnits = ({
   RoomList,
@@ -210,7 +211,7 @@ const TopPerformingUnits = ({
                 valueKey="stayDuration"
                 labelKey="name"
                 valueFormatter={(duration: number) =>
-                  `${Math.floor(duration / (1000 * 60 * 60 * 24))} days`
+                  `${Math.floor(duration / (1000 * 60 * 60 * 24))} day` + (Math.floor(duration / (1000 * 60 * 60 * 24)) > 1 ? "s":'')
                 }
               />
             )}
@@ -236,7 +237,7 @@ const TopList = ({ title, items, valueKey, labelKey, valueFormatter }: any) => (
           {index + 1}. <strong>{item[labelKey]}</strong>:{' '}
           {valueFormatter
             ? valueFormatter(item[valueKey])
-            : item[valueKey]?.toLocaleString()}
+            : formatNumberWithSuffix(item[valueKey]?.toLocaleString())}
           {valueKey === 'annualRevenue' || valueKey === 'totalPaid'
             ? ' '
             : valueKey === 'tenantsCount'
@@ -300,7 +301,7 @@ const calculateAnnualRevenue = (room: RoomType) => {
       annualRevenue = room.AgreedPrice * (365 / room.PaymentCycleCustomeDays);
       break;
     default:
-      console.log('  Unknown payment cycle');
+      console.log('  Unknown payment cycle', room.PaymentCycleType);
       return;
   }
   return annualRevenue;

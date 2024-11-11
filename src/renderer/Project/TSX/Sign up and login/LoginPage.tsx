@@ -72,24 +72,29 @@ const LoginPage = ({
         );
 
         if (getAppUser.length > 0) {
-          const user = await getValuesWithSql_Online(
-            'users',
-            `WHERE id = '${getAppUser[0].userId}' AND email = '${email}'`
-          );
-          if (user[0]) {
-            handleLogin(user[0]);
-            setSelectedAppUser(getAppUser[0]);
-            window.electron.store.set('SelectedAppUserId', getAppUser[0].id);
-            setAppUserManagerShow(false);
-            setViewBranchManagementPage(true);
-            setTimeout(async () => {
-              await fetchBranches();
-              console.log('branches fetched');
-              RefreshComponent();
-            }, 600);
+          if(getAppUser[0].EnterWithPassword){
+            const user = await getValuesWithSql_Online(
+              'users',
+              `WHERE id = '${getAppUser[0].userId}' AND email = '${email}'`
+            );
+            if (user[0]) {
+              handleLogin(user[0]);
+              setSelectedAppUser(getAppUser[0]);
+              window.electron.store.set('SelectedAppUserId', getAppUser[0].id);
+              setAppUserManagerShow(false);
+              setViewBranchManagementPage(true);
+              setTimeout(async () => {
+                await fetchBranches();
+                console.log('branches fetched');
+                RefreshComponent();
+              }, 600);
+            } else {
+              setErrorMessage('Error retrieving user data. Please try again.');
+            }
           } else {
-            setErrorMessage('Error retrieving user data. Please try again.');
+            setErrorMessage('This AppUser is not allowed to enter with password. Please contact Administrator.');
           }
+       
         } else {
           setErrorMessage('Invalid Username or password');
         }

@@ -15,7 +15,7 @@ import {
   updateValue,
 } from 'Backend/localServerApis';
 import { addDays } from 'date-fns'; // Add this import
-import CurrencySign, { GetCurrencyAsOptionsOnSelect, GetDefaultCurrency } from '../CurrencySign';
+import CurrencySign, { formatNumberWithSuffix, GetCurrencyAsOptionsOnSelect, GetDefaultCurrency } from '../CurrencySign';
 
 const AgreementViewerForRoom = ({
   TenantList,
@@ -103,7 +103,7 @@ const AgreementViewerForRoom = ({
   const [ShowConverterEndDate, setShowConverterEndDate] = useState(false);
   const [ShowConverterSignDate, setShowConverterSignDate] = useState(false);
   const [selectedAgreement, setSelectedAgreement] = useState('');
-  const [paymentCycle, setPaymentCycle] = useState('Every 30 days');
+  const [paymentCycle, setPaymentCycle] = useState('30');
   const [customDays, setCustomDays] = useState('');
   const [agreedPrice, setAgreedPrice] = useState(0);
   const [endDateError, setEndDateError] = useState('');
@@ -142,6 +142,36 @@ const AgreementViewerForRoom = ({
     // Now delete only the paid payments from room_pay_info
   };
   const HandleAddAgreement = async () => {
+    // Validate start time and end time
+    if (!startTime || !endTime) {
+      alert('Please select both start time and end time');
+      return;
+    }
+    if(signDate === ''){
+      alert('Please enter a sign date');
+      return;
+    }
+    if(!paymentCycle){
+      alert('Please enter a payment cycle');
+      return;
+    }
+    if(paymentCycle === 'custom' && !customDays){
+      alert('Please enter a custom payment cycle');
+      return;
+    }
+    const startDate = new Date(startTime);
+    const endDate = new Date(endTime);
+
+    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+      alert('Please enter valid dates for start time and end time');
+      return;
+    }
+
+    if (startDate >= endDate) {
+      alert('End time must be after start time');
+      return;
+    }
+
     // Deal with deleting, keeping, and makeing true of payments
     if (paymentOption === 'deleteUnpaid') {
       const FutruePaymentsRaw = await getValuesWithSql(
@@ -188,9 +218,9 @@ const AgreementViewerForRoom = ({
     // Create new payment data from start time to endtime using payment cycle
     console.log(paymentCycle);
     const paymentIntervals = {
-      'Every 30 days': 30,
-      'Every 15 days': 15,
-      'Every 7 days': 7,
+      '30': 30,
+      '15': 15,
+      '7': 7,
       monthly: 1,
       daily: 1,
       custom: parseInt(customDays, 10) || 30, // Provide a fallback value
@@ -200,10 +230,7 @@ const AgreementViewerForRoom = ({
       paymentIntervals[paymentCycle as keyof typeof paymentIntervals] || 30;
 
     console.log('reached1', interval);
-
-    const startDate = new Date(startTime);
-
-    // Create a new agreement ID first
+// Create a new agreement ID first
 
     // Create a new agreement and add it to the agreements table
     agreementApi.addAgreementApi(
@@ -235,7 +262,7 @@ const AgreementViewerForRoom = ({
     setEndTime('');
     setSignDate('');
     setRepresentative('');
-    setPaymentCycle('Every 30 days');
+    setPaymentCycle('monthly');
     setCustomDays('');
     setAgreedPrice(0);
     setAddAgreementFormCurrency(GetDefaultCurrency());
@@ -249,7 +276,7 @@ const AgreementViewerForRoom = ({
     setEndTime('');
     setSignDate('');
     setRepresentative('');
-    setPaymentCycle('Every 30 days');
+    setPaymentCycle('monthly');
     setCustomDays('');
     setAgreedPrice(0);
     setAddAgreementFormCurrency(GetDefaultCurrency());
@@ -371,7 +398,7 @@ const AgreementViewerForRoom = ({
           <div className="AddTenantContainerinnerElement">
             Agreed Price:{' '}
             <em style={{ fontWeight: '600' }}>
-              {Agreements[CurrentAgreementIndex].agreedPrice.toLocaleString()}
+              {(Agreements[CurrentAgreementIndex].agreedPrice.toLocaleString())}
             </em>
             {CurrencySign(Agreements[CurrentAgreementIndex].Currency)} Every{' '}
             {getCorrectPaymentStatment(
@@ -666,7 +693,7 @@ const AgreementViewerForRoom = ({
                         type="number"
                         className="AddTenantContainerinnerInput"
                         style={{
-                          width: 'var(--50px-V)',
+                          width: 'var(--80px-V)',
                           marginLeft: 'var(--10px-V)',
                         }}
                         placeholder="Enter days"

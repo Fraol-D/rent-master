@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { getValuesWithSql } from 'Backend/localServerApis';
 import { addDays, addMonths, startOfYear, endOfYear, addYears } from 'date-fns';
 import PaymentProgressBarGUI from '../Helpers/GUIs/PaymentProgressBarGUI';
+import { formatNumberWithSuffix, GetDefaultCurrency } from '../Helpers/CurrencySign';
 
 interface Payment {
   id: string;
@@ -14,12 +15,21 @@ interface Payment {
 const DashbPastPayments = ({
   tenantList,
   RoomList,
-  roomPaymentInfoApi,setChangeMade,updateRoomPropertyLocal,updateRoomProperty,SelectedUserId,SelectedBranchId
+  roomPaymentInfoApi,
+  setChangeMade,
+  updateRoomPropertyLocal,
+  updateRoomProperty,
+  SelectedUserId,
+  SelectedBranchId,
 }: {
   tenantList: tenant[];
   RoomList: RoomType[];
-  roomPaymentInfoApi: any;SelectedBranchId:any;
-  setChangeMade:any;updateRoomPropertyLocal:any;updateRoomProperty:any;SelectedUserId:string;
+  roomPaymentInfoApi: any;
+  SelectedBranchId: any;
+  setChangeMade: any;
+  updateRoomPropertyLocal: any;
+  updateRoomProperty: any;
+  SelectedUserId: string;
 }) => {
   const [PastPaymentList, setPastPaymentList] = useState<
     { tenant: tenant; NumOfPayments: number; PastBy: number }[]
@@ -66,18 +76,22 @@ const DashbPastPayments = ({
         }
 
         let currentDate = new Date(Math.max(startDate, yearStart.getTime()));
-        const finalEndDate = endDate ? new Date(Math.min(endDate, yearEnd.getTime())) : yearEnd;
+        const finalEndDate = endDate
+          ? new Date(Math.min(endDate, yearEnd.getTime()))
+          : yearEnd;
 
         while (currentDate <= finalEndDate) {
           const paymentId = `${room.id}-${currentDate.getTime()}`;
-          const actualPayment = actualPayments.find((p: any) => p.id === paymentId);
+          const actualPayment = actualPayments.find(
+            (p: any) => p.id === paymentId
+          );
 
           allPayments.push({
             id: paymentId,
             Day: currentDate.getTime(),
             Value: room.AgreedPrice,
             Paid: actualPayment ? actualPayment.Paid === 1 : false,
-            roomId: room.id
+            roomId: room.id,
           });
 
           // Calculate next payment date using the same logic as PaymentProgressBarGUI
@@ -104,7 +118,10 @@ const DashbPastPayments = ({
               currentDate = addYears(currentDate, 1);
               break;
             case 'custom':
-              currentDate = addDays(currentDate, room.PaymentCycleCustomeDays || 30);
+              currentDate = addDays(
+                currentDate,
+                room.PaymentCycleCustomeDays || 30
+              );
               break;
             default:
               currentDate = addMonths(currentDate, 1);
@@ -120,32 +137,36 @@ const DashbPastPayments = ({
 
   useEffect(() => {
     const currentDate = new Date();
-    
+
     // Filter past unpaid payments
-    const pastPayments = predictedPayments.filter(payment => {
+    const pastPayments = predictedPayments.filter((payment) => {
       const paymentDate = new Date(payment.Day);
       return paymentDate < currentDate && !payment.Paid;
     });
 
     // Group by tenant with corrected counting
     const newPastPaymentList = pastPayments.reduce((acc, payment) => {
-      const room = RoomList.find(r => r.id === payment.roomId);
-      const tenant = tenantList.find(t => t.id === room?.tenantId);
-      
+      const room = RoomList.find((r) => r.id === payment.roomId);
+      const tenant = tenantList.find((t) => t.id === room?.tenantId);
+
       if (tenant) {
-        const existingTenant = acc.find(item => item.tenant.id === tenant.id);
+        const existingTenant = acc.find((item) => item.tenant.id === tenant.id);
         if (existingTenant) {
           // Update existing tenant's data
           existingTenant.NumOfPayments++;
           // Keep the earliest past due date for PastBy calculation
-          const paymentDays = Math.floor((currentDate.getTime() - payment.Day) / (1000 * 3600 * 24));
+          const paymentDays = Math.floor(
+            (currentDate.getTime() - payment.Day) / (1000 * 3600 * 24)
+          );
           existingTenant.PastBy = Math.min(existingTenant.PastBy, paymentDays);
         } else {
           // Add new tenant
           acc.push({
             tenant,
             NumOfPayments: 1,
-            PastBy: Math.floor((currentDate.getTime() - payment.Day) / (1000 * 3600 * 24))
+            PastBy: Math.floor(
+              (currentDate.getTime() - payment.Day) / (1000 * 3600 * 24)
+            ),
           });
         }
       }
@@ -154,35 +175,41 @@ const DashbPastPayments = ({
 
     // Filter out tenants with all payments paid
     const filteredPastPaymentList = newPastPaymentList
-      .filter(tenantData => {
-        const room = RoomList.find(r => r.tenantId === tenantData.tenant.id);
+      .filter((tenantData) => {
+        const room = RoomList.find((r) => r.tenantId === tenantData.tenant.id);
         if (!room) return false;
 
-        const tenantPayments = predictedPayments.filter(p => p.roomId === room.id);
-        return tenantPayments.some(payment => !payment.Paid);
+        const tenantPayments = predictedPayments.filter(
+          (p) => p.roomId === room.id
+        );
+        return tenantPayments.some((payment) => !payment.Paid);
       })
       .sort((a, b) => b.PastBy - a.PastBy); // Sort by most overdue first
 
     setPastPaymentList(filteredPastPaymentList);
 
     // Update upcoming payments calculation
-    const tenDaysFromNow = new Date(currentDate.getTime() + 10 * 24 * 60 * 60 * 1000);
-    const upcomingPayments = predictedPayments.filter(payment => {
+    const tenDaysFromNow = new Date(
+      currentDate.getTime() + 10 * 24 * 60 * 60 * 1000
+    );
+    const upcomingPayments = predictedPayments.filter((payment) => {
       const paymentDate = new Date(payment.Day);
-      return paymentDate >= currentDate && 
-             paymentDate <= tenDaysFromNow && 
-             !payment.Paid;
+      return (
+        paymentDate >= currentDate &&
+        paymentDate <= tenDaysFromNow &&
+        !payment.Paid
+      );
     });
 
     const newUpcomingPaymentList = upcomingPayments
-      .map(payment => {
-        const room = RoomList.find(r => r.id === payment.roomId);
-        const tenant = tenantList.find(t => t.id === room?.tenantId);
+      .map((payment) => {
+        const room = RoomList.find((r) => r.id === payment.roomId);
+        const tenant = tenantList.find((t) => t.id === room?.tenantId);
         if (tenant) {
           return {
             tenant,
             DueDate: new Date(payment.Day),
-            Amount: payment.Value
+            Amount: payment.Value,
           };
         }
         return null;
@@ -197,7 +224,7 @@ const DashbPastPayments = ({
     const roomType = RoomList.find(
       (room) => room.tenantId === SelectedTenantViewShow
     );
-    
+
     if (roomType) {
       const listOfPayments = await getValuesWithSql(
         'room_pay_info',
@@ -237,7 +264,13 @@ const DashbPastPayments = ({
         overflowX: 'hidden',
       }}
     >
-      <div style={{ display: 'flex', width: '100%', marginBottom: 'var(--10px-V)' }}>
+      <div
+        style={{
+          display: 'flex',
+          width: '100%',
+          marginBottom: 'var(--10px-V)',
+        }}
+      >
         <button
           onClick={() => setActiveTab('past')}
           style={{
@@ -275,91 +308,111 @@ const DashbPastPayments = ({
           >
             Past Payments
           </p>
-          <div style={{ width: '100%',overflowX:'auto' }}><table className="InfoTable" style={{ width: '100%' }}>
-            <thead className="InfoTableThead">
-              <tr className="InfoTableHeadTR">
-                <th className="InfoTableHeadTh">Tenants</th>
-                <th className="InfoTableHeadTh" style={{ width: 'var(--40px-V)' }}>
-                  Num of <br />
-                  payment
-                </th>
-                <th className="InfoTableHeadTh" style={{ width: 'var(--50px-V)' }}>
-                  Past By
-                </th>
-                <th className="InfoTableHeadTh" style={{ width: 'var(--40px-V)' }}>
-                  Action
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {PastPaymentList.length > 0 ? (
-                PastPaymentList.map((tenant, index) =>
-                  tenant.tenant.RentingOrOut ? (
-                    <tr
-                      key={index}
-                      className="InfoTableBodyTr"
-                      style={{ backgroundColor: '#FFFFFF1C' }}
-                    >
-                      <td className="InfoTableBodyTD">
-                        <span
-                          style={{ fontSize: 'var(--16px-V)', overflowX: 'auto' }}
-                          title={tenant.tenant.name}
-                        >
-                          {tenant.tenant.name.slice(0, 20)}
-                        </span>{' '}
-                        <br />{' '}
-                        <span style={{ fontSize: 'var(--12px-V)' }}>
-                          Flr:
-                          {
-                            RoomList.find(
-                              (r: RoomType) => r.tenantId === tenant.tenant.id
-                            )?.floor
-                          }{' '}
-                          Rm:
-                          {
-                            RoomList.find(
-                              (r: RoomType) => r.tenantId === tenant.tenant.id
-                            )?.roomIndex
-                          }
-                        </span>
-                      </td>
-                      <td className="InfoTableBodyTD">
-                        {tenant.NumOfPayments}
-                      </td>
-                      <td className="InfoTableBodyTD">{tenant.PastBy}</td>
-                      <td
-                        className="InfoTableBodyTD"
-                        style={{
-                          display: 'flex',
-                          justifyContent: 'center',
-                          width: 'var(--46px-V)',
-                        }}
+          <div style={{ width: '100%', overflowX: 'auto' }}>
+            <table className="InfoTable" style={{ width: '100%' }}>
+              <thead className="InfoTableThead">
+                <tr className="InfoTableHeadTR">
+                  <th className="InfoTableHeadTh">Tenants</th>
+                  <th
+                    className="InfoTableHeadTh"
+                    style={{ width: 'var(--40px-V)' }}
+                  >
+                    Num of <br />
+                    payment
+                  </th>
+                  <th
+                    className="InfoTableHeadTh"
+                    style={{ width: 'var(--50px-V)' }}
+                  >
+                    Past By
+                  </th>
+                  <th
+                    className="InfoTableHeadTh"
+                    style={{ width: 'var(--40px-V)' }}
+                  >
+                    Action
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {PastPaymentList.length > 0 ? (
+                  PastPaymentList.map((tenant, index) =>
+                    tenant.tenant.RentingOrOut ? (
+                      <tr
+                        key={index}
+                        className="InfoTableBodyTr"
+                        style={{ backgroundColor: '#FFFFFF1C' }}
                       >
-                        <button
-                          onClick={() => {
-                            setSelectedTenantViewShow(tenant.tenant.id === SelectedTenantViewShow ? '' : tenant.tenant.id);
+                        <td className="InfoTableBodyTD">
+                          <span
+                            style={{
+                              fontSize: 'var(--16px-V)',
+                              overflowX: 'auto',
+                            }}
+                            title={tenant.tenant.name}
+                          >
+                            {tenant.tenant.name.slice(0, 20)}
+                          </span>{' '}
+                          <br />{' '}
+                          <span style={{ fontSize: 'var(--12px-V)' }}>
+                            Flr:
+                            {
+                              RoomList.find(
+                                (r: RoomType) => r.tenantId === tenant.tenant.id
+                              )?.floor
+                            }{' '}
+                            Rm:
+                            {
+                              RoomList.find(
+                                (r: RoomType) => r.tenantId === tenant.tenant.id
+                              )?.roomIndex
+                            }
+                          </span>
+                        </td>
+                        <td className="InfoTableBodyTD">
+                          {tenant.NumOfPayments}
+                        </td>
+                        <td className="InfoTableBodyTD">{tenant.PastBy}</td>
+                        <td
+                          className="InfoTableBodyTD"
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'center',
+                            width: 'var(--46px-V)',
                           }}
                         >
-                          {tenant.tenant.id === SelectedTenantViewShow ? 'Cancel' : 'View'}
-                        </button>
-                      </td>
-                    </tr>
-                  ) : (
-                    <></>
+                          <button
+                            onClick={() => {
+                              setSelectedTenantViewShow(
+                                tenant.tenant.id === SelectedTenantViewShow
+                                  ? ''
+                                  : tenant.tenant.id
+                              );
+                            }}
+                          >
+                            {tenant.tenant.id === SelectedTenantViewShow
+                              ? 'Cancel'
+                              : 'View'}
+                          </button>
+                        </td>
+                      </tr>
+                    ) : (
+                      <></>
+                    )
                   )
-                )
-              ) : (
-                <tr>
-                  <td
-                    colSpan={4}
-                    style={{ textAlign: 'center', padding: 'var(--10px-V)' }}
-                  >
-                    No unpaid payments available
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table></div>
+                ) : (
+                  <tr>
+                    <td
+                      colSpan={4}
+                      style={{ textAlign: 'center', padding: 'var(--10px-V)' }}
+                    >
+                      No unpaid payments available
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </>
       ) : (
         <>
@@ -373,10 +426,16 @@ const DashbPastPayments = ({
             <thead className="InfoTableThead">
               <tr className="InfoTableHeadTR">
                 <th className="InfoTableHeadTh">Tenants</th>
-                <th className="InfoTableHeadTh" style={{ width: 'var(--80px-V)' }}>
+                <th
+                  className="InfoTableHeadTh"
+                  style={{ width: 'var(--80px-V)' }}
+                >
                   Due Date
                 </th>
-                <th className="InfoTableHeadTh" style={{ width: 'var(--70px-V)' }}>
+                <th
+                  className="InfoTableHeadTh"
+                  style={{ width: 'var(--70px-V)' }}
+                >
                   Amount
                 </th>
               </tr>
@@ -435,7 +494,7 @@ const DashbPastPayments = ({
                       </span>
                     </td>
                     <td className="InfoTableBodyTD">
-                      {payment.Amount.toLocaleString()}$
+                      {formatNumberWithSuffix(payment.Amount.toLocaleString())}
                     </td>
                   </tr>
                 ))
@@ -479,7 +538,7 @@ const DashbPastPayments = ({
             }}
           >
             <PaymentProgressBarGUI
-            SelectedBranchId={SelectedBranchId}
+              SelectedBranchId={SelectedBranchId}
               refresh={handlePaymentRefresh}
               paymentData={
                 predictedPayments.filter(
@@ -495,7 +554,6 @@ const DashbPastPayments = ({
                 ) || []
               }
               roomPaymentInfoApi={roomPaymentInfoApi}
-              
               tenantList={tenantList}
               agreedPrice={
                 RoomList.find(
@@ -522,24 +580,31 @@ const DashbPastPayments = ({
                   );
                 }
               }}
-          roomType={RoomList.find(
-            (r: RoomType) =>
-              r.tenantId ===
-              tenantList.find(
-                (t: tenant) => t.id == SelectedTenantViewShow
-              )?.id
-          )}
-          tenantId={RoomList.find(
-            (r: RoomType) =>
-              r.tenantId ===
-              tenantList.find(
-                (t: tenant) => t.id == SelectedTenantViewShow
-              )?.tenantId
-          )}
-             ShowReceipt={ShowReceipt}
+              roomType={RoomList.find(
+                (r: RoomType) =>
+                  r.tenantId ===
+                  tenantList.find((t: tenant) => t.id == SelectedTenantViewShow)
+                    ?.id
+              )}
+              tenantId={RoomList.find(
+                (r: RoomType) =>
+                  r.tenantId ===
+                  tenantList.find((t: tenant) => t.id == SelectedTenantViewShow)
+                    ?.tenantId
+              )}
+              ShowReceipt={ShowReceipt}
               setShowReceipt={setShowReceipt}
               setChangeMade={setChangeMade}
-              SelectedUserId={SelectedUserId}updateRoomPropertyLocal={updateRoomPropertyLocal}
+              SelectedUserId={SelectedUserId}
+              updateRoomPropertyLocal={updateRoomPropertyLocal}
+              Currency={
+                RoomList.find(
+                  (r: RoomType) =>
+                    r.tenantId ===
+                    tenantList.find((t: tenant) => t.id == SelectedTenantViewShow)
+                    )?.Currency
+                 || GetDefaultCurrency()
+              }
             />
           </div>
         </>

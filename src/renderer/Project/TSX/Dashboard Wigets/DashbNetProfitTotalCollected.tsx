@@ -16,6 +16,7 @@ import {
   addMonths,
   addYears,
 } from 'date-fns';
+import { formatNumberWithSuffix } from '../Helpers/CurrencySign';
 
 const DashbTotalCollected = ({
   RoomList,
@@ -36,6 +37,17 @@ const DashbTotalCollected = ({
     { date: Date; value: number; expectedValue: number }[]
   >([]);
   const [expenses, setExpenses] = useState<expenses[]>([]);
+  const [visibleSeries, setVisibleSeries] = useState({
+    collected: true,
+    expected: true
+  });
+
+  const handleSeriesToggle = (series: 'collected' | 'expected') => {
+    setVisibleSeries(prev => ({
+      ...prev,
+      [series]: !prev[series]
+    }));
+  };
 
   useEffect(() => {
     const getPredictedRoomPayInfo = async () => {
@@ -413,6 +425,7 @@ const DashbTotalCollected = ({
         Net Profit (Total Collected - Expenses)
       </p>
 
+    
       <div className="DashboardTotalCollectedTopPart">
         <div className="ShowByContainer">
           <span className="ShowByLabel">Show by:</span>
@@ -438,8 +451,8 @@ const DashbTotalCollected = ({
           />
           <span className="TotalLabel">Total:</span>
           <span className="TotalValue">
-            ${totalCollected.toLocaleString()} / $
-            {totalExpected.toLocaleString()}
+            ${formatNumberWithSuffix(totalCollected.toLocaleString())} / $
+            {formatNumberWithSuffix(totalExpected.toLocaleString())}
           </span>
           <span className="DifferenceLabel">
             <span
@@ -447,15 +460,64 @@ const DashbTotalCollected = ({
                 difference > 0 ? 'DifferenceValue' : 'DifferenceValueNegative'
               }
             >
-              {difference > 0 ? '+' : ''}${difference.toLocaleString()} (
+              {difference > 0 ? '+' : ''}${formatNumberWithSuffix(difference.toLocaleString())} (
               {percentageChange}%)
             </span>{' '}
             in {parseInt(selectedDate) - 1}
           </span>
         </div>
       </div>
+      <div style={{
+        display: 'flex',
+        gap: 'var(--20px-V)',
+        justifyContent: 'center',
+        marginBottom: 'var(--10px-V)',
+      }}>
+        <div
+          onClick={() => handleSeriesToggle('collected')}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 'var(--8px-V)',
+            cursor: 'pointer',
+            opacity: visibleSeries.collected ? 1 : 0.2,
+          }}
+        >
+          <div style={{
+            width: 'var(--16px-V)',
+            height: 'var(--16px-V)',
+            backgroundColor: 'var(--Primary-Color)',
+            borderRadius: 'var(--4px-V)',
+          }} />
+          <span>Collected</span>
+        </div>
+        <div
+          onClick={() => handleSeriesToggle('expected')}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 'var(--8px-V)',
+            cursor: 'pointer',
+            opacity: visibleSeries.expected ? 1 : 0.2,
+          }}
+        >
+          <div style={{
+            width: 'var(--16px-V)',
+            height: 'var(--16px-V)',
+            backgroundColor: 'var(--Accent-Color50)',
+            borderRadius: 'var(--4px-V)',
+          }} />
+          <span>Expected</span>
+        </div>
+      </div>
+
       <BarChart
         dataset={dataset}
+        slotProps={{
+          legend: {
+            hidden: true,
+          },
+        }}
         xAxis={[
           {
             scaleType: 'band',
@@ -464,6 +526,8 @@ const DashbTotalCollected = ({
         ]}
         yAxis={[
           {
+            valueFormatter: (value: any) => `$${formatNumberWithSuffix(value).toString()}`,
+
             colorMap: {
               type: 'piecewise',
               thresholds: [0, 1000000],
@@ -476,16 +540,18 @@ const DashbTotalCollected = ({
           },
         ]}
         series={[
-          {
+          ...(visibleSeries.collected ? [{
             dataKey: 'value',
             label: 'Collected',
             color: 'var(--Primary-Color)',
-          },
-          {
+            valueFormatter: (value: any) => `$${formatNumberWithSuffix(value).toString()}`,
+          }] : []),
+          ...(visibleSeries.expected ? [{
             dataKey: 'expectedValue',
             label: 'Expected',
             color: 'var(--Accent-Color50)',
-          },
+            valueFormatter: (value: any) => `$${formatNumberWithSuffix(value).toString()}`,
+          }] : []),
         ]}
         margin={{
           left: 74,

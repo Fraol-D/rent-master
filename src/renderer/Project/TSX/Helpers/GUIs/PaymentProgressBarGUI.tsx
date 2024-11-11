@@ -22,7 +22,7 @@ import {
 } from 'Backend/localServerApis';
 import UtilityPanel from './UtilityPanel';
 import { Payment } from 'electron';
-import CurrencySign from '../CurrencySign';
+import CurrencySign, { formatNumberWithSuffix } from '../CurrencySign';
 export type RoomPayInfo = {
   Day: number; // milliseconds since January 1, 1970, 00:00:00 UTC
   Paid: boolean;
@@ -162,13 +162,16 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
             break;
           default:
             currentDate = addMonths(currentDate, 1);
+            break;
         }
       }
 
       return newPayments;
     };
 
-    calculatePayments().then(setPayments);
+    calculatePayments().then((payments) =>
+      setPayments(payments as RoomPayInfo[])
+    );
   }, [roomType, tenantList]);
   const calculatePredictedPayments = async (room: RoomType) => {
     const allPayments = [];
@@ -620,8 +623,8 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
         .style('font-size', `${fontSize}px`)
         .text((d: any) => {
           return d.Value === null
-            ? `${agreedPrice.toLocaleString()} X`
-            : `${d.Value.toLocaleString()} X`;
+            ? `${formatNumberWithSuffix(agreedPrice.toLocaleString())} X`
+            : `${formatNumberWithSuffix(d.Value.toLocaleString())} X`;
         })
         .on('click', (event, d) => handlePayClick(d));
       /////////////////////////////////////////////
@@ -1014,9 +1017,9 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
       ? daysDifference > 0
         ? `Due in ${daysDifference + 1} day${
             daysDifference + 1 !== 1 ? 's' : ''
-          }. Earnings: ${(
+          }. Earnings: ${formatNumberWithSuffix((
             agreedPrice * payments.filter((payment) => payment.Paid).length
-          ).toLocaleString()}. ${
+          ).toLocaleString())}. ${
             payments.filter((payment) => payment.Paid).length
           } payments.`
         : `Payment is past due by ${Math.abs(daysDifference)} days.`

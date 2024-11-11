@@ -20,6 +20,7 @@ import NotAllowedScreen from './NotAllowedScreen';
 import TrialEndedText from './TrialEndedText';
 import loadingGif from '../../../assets/assets/Loading/Rolling-1s-200px.gif';
 import DashboardPage from '../Pages/DashboardPage';
+import { formatNumberWithSuffix } from '../Helpers/CurrencySign';
 
 interface MyComponentProps {
   children: React.ReactNode;
@@ -755,11 +756,11 @@ const AccountManager = (React.FC<MyComponentProps> = ({
     'View peoples page', //
     'View calendar page', //
     'View database page', //
-    'edit database data', //
     'View tools page',
     'edit email templates',
     'edit sms templates',
     'edit expenses',
+    'edit settings',
     'View rooms page',
     'Add a room', //
     'Add a tenant',
@@ -789,7 +790,6 @@ const AccountManager = (React.FC<MyComponentProps> = ({
     { name: 'View calendar page' },
     {
       name: 'View database page',
-      children: [{ name: 'edit database data' }],
     },
     {
       name: 'View tools page',
@@ -797,6 +797,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
         { name: 'edit email templates' },
         { name: 'edit sms templates' },
         { name: 'edit expenses' },
+        { name: 'edit settings' },
       ],
     },
     {
@@ -817,7 +818,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
     },
     {
       name: 'add a branch',
-    }
+    },
   ];
   const [IsTrueAdmin, setIsTrueAdmin] = useState(false);
   const [CheckIfTureAdmin, setCheckIfTureAdmin] = useState(false);
@@ -1119,6 +1120,8 @@ const AccountManager = (React.FC<MyComponentProps> = ({
 
   const handleFetchBranches = async () => {
     setIsBranchesLoading(true);
+    const { maxBranches, currentBranches } = await getBranchLimitInfo();
+    setBranchLimit(maxBranches);
     try {
       await fetchBranches();
     } finally {
@@ -1127,6 +1130,8 @@ const AccountManager = (React.FC<MyComponentProps> = ({
   };
   const handleShowBranches = async () => {
     setViewBranchManagementPage(true);
+    const { maxBranches, currentBranches } = await getBranchLimitInfo();
+    setBranchLimit(maxBranches);
     setIsBranchesLoading(true);
     try {
       await fetchBranches();
@@ -1185,6 +1190,78 @@ const AccountManager = (React.FC<MyComponentProps> = ({
     setCount(count + 1);
   };
   const [count, setCount] = useState(0);
+  const [BranchLimit, setBranchLimit] = useState(0);
+  const getBranchLimitInfo = async () => {
+    if (navigator.onLine) {
+      if (window.electron.store.get('users')) {
+        if (window.electron.store.get('users')[0]) {
+          const userMaxBranches = await getValuesWithSql_Online(
+            'users',
+            `WHERE id = '${window.electron.store.get('users')[0].id}'`
+          );
+          const AllBranches = await getValuesWithSql_Online(
+            'branches',
+            `WHERE userId = '${window.electron.store.get('users')[0].id}'`
+          );
+
+          if (!userMaxBranches) {
+            throw new Error('Failed to get user branch limit');
+          }
+
+          return {
+            maxBranches: userMaxBranches[0].maxNumberOfBranches,
+            currentBranches: AllBranches.length,
+          };
+        } else {
+          return {
+            maxBranches: 0,
+            currentBranches: 0,
+          };
+        }
+      }return {
+        maxBranches: 0,
+        currentBranches: 0,
+      };
+    } else {
+      return {
+        maxBranches: 0,
+        currentBranches: 0,
+      };
+    }
+  };
+
+  const handleAddBranchFunction = async () => {
+    try {
+      const { maxBranches, currentBranches } = await getBranchLimitInfo();
+      setBranchLimit(maxBranches);
+
+      if (maxBranches <= currentBranches) {
+        alert(
+          'You have reached the maximum number of branches allowed for your account. Please contact support to increase your limit. +2519 4450 9999 or +2519 4450 8888, or email rentmaster.et@gmail.com'
+        );
+        return;
+      }
+
+      setShowAddBranchModal(true);
+    } catch (error) {
+      alert(
+        'Failed to get user branch limit. Please check your internet connection and try again.'
+      );
+    }
+  };
+  const handleAllowEnterWithPassword = async (appUser: appUser) => {
+    await updateValueOnline('app_users', appUser.id, 'EnterWithPassword', true);
+    await appUsersManagement();
+  };
+  const handleDisallowEnterWithPassword = async (appUser: appUser) => {
+    await updateValueOnline(
+      'app_users',
+      appUser.id,
+      'EnterWithPassword',
+      false
+    );
+    await appUsersManagement();
+  };
   return (
     <>
       {(loading || initialLoading) && (
@@ -1778,9 +1855,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                         )
                                       )}
                                       <hr />
-                                      {window.electron.store.get(
-                                        'SelectedAppUserId'
-                                      ) === 'admin' && (
+                                      {appUser.EnterWithPassword ? (
                                         <div>
                                           <button
                                             onClick={() => {
@@ -1814,6 +1889,19 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                                   Change Password
                                                 </button>
                                               )}
+                                            {ChangingPasswordId !==
+                                              appUser.id && (
+                                              <button
+                                                onClick={() => {
+                                                  handleDisallowEnterWithPassword(
+                                                    appUser
+                                                  );
+                                                }}
+                                              >
+                                                Don't allow entering with
+                                                password
+                                              </button>
+                                            )}
                                             {ChangingPasswordId ===
                                               appUser.id && (
                                               <>
@@ -1852,6 +1940,50 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                             )}
                                           </div>
                                         </div>
+                                      ) : (
+                                        <>
+                                          <button
+                                            onClick={() => {
+                                              if (IsTrueAdmin) {
+                                                if (appUser.EnterWithPassword) {
+                                                  handleDisallowEnterWithPassword(
+                                                    appUser
+                                                  );
+                                                } else {
+                                                  handleAllowEnterWithPassword(
+                                                    appUser
+                                                  );
+                                                }
+                                              } else {
+                                                setCheckIfTureAdmin(true);
+                                                if (appUser.EnterWithPassword) {
+                                                  handleDisallowEnterWithPassword(
+                                                    appUser
+                                                  );
+                                                } else {
+                                                  handleAllowEnterWithPassword(
+                                                    appUser
+                                                  );
+                                                }
+                                              }
+                                            }}
+                                            style={{
+                                              marginRight: 'var(--10px-V)',
+                                            }}
+                                          >
+                                            {IsTrueAdmin
+                                              ? appUser.EnterWithPassword
+                                                ? 'Disallow'
+                                                : 'Allow'
+                                              : appUser.EnterWithPassword
+                                              ? 'Allow'
+                                              : 'Allow'}
+                                          </button>
+                                          Enter with password:{' '}
+                                          {appUser.EnterWithPassword
+                                            ? 'Yes'
+                                            : 'No'}
+                                        </>
                                       )}
                                     </div>
                                   </div>
@@ -2004,7 +2136,21 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                           >
                             {' '}
                             <h1 style={{ margin: 0 }}>Branch Management</h1>
-                            <p style={{ margin: 0 }}>{appUsers.find(appUser => appUser.id === window.electron.store.get('SelectedAppUserId'))?.roleName}</p>
+                            <p style={{ margin: 0 }}>
+                              {window.electron.store.get(
+                                'SelectedAppUserId'
+                              ) === 'admin' ? (
+                                <>Admin</>
+                              ) : (
+                                appUsers.find(
+                                  (appUser) =>
+                                    appUser.id ===
+                                    window.electron.store.get(
+                                      'SelectedAppUserId'
+                                    )
+                                )?.roleName
+                              )}
+                            </p>
                           </div>
                           <p style={{ width: '40%' }}>
                             {window.electron.store.get('SelectedAppUserId') !==
@@ -2018,6 +2164,12 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                             )}
                           </p>{' '}
                           <div>
+                            {window.electron.store.get('SelectedAppUserId') ===
+                              'admin' && (
+                              <>
+                                Limit {Branches.length}/{BranchLimit}
+                              </>
+                            )}
                             <button
                               className="appUserButtons"
                               style={{ marginRight: 'var(--20px-V)' }}
@@ -2027,14 +2179,27 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                             >
                               Refresh
                             </button>
-                            {appUsers.find(appUser => appUser.id === 'admin' || appUser.id === window.electron.store.get('SelectedAppUserId'))?.privileges.includes('add a branch') && (
+                            {window.electron.store.get('SelectedAppUserId') ===
+                              'admin' ||
+                            appUsers
+                              .find(
+                                (appUser) =>
+                                  appUser.id === 'admin' ||
+                                  appUser.id ===
+                                    window.electron.store.get(
+                                      'SelectedAppUserId'
+                                    )
+                              )
+                              ?.privileges.includes('add a branch') ? (
                               <button
                                 className="appUserButtons"
                                 style={{ marginRight: 'var(--20px-V)' }}
-                                onClick={() => setShowAddBranchModal(true)}
-                            >
+                                onClick={() => handleAddBranchFunction()}
+                              >
                                 Add New Branch
                               </button>
+                            ) : (
+                              <></>
                             )}
                             {Branches.length > 0 &&
                               window.electron.store.get('SelectedBranchId') !==
@@ -2239,55 +2404,75 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                   </div>
 
                                   {/* Financial Section */}
-                                  <div
-                                    style={{
-                                      backgroundColor:
-                                        'var(--Background-Color)',
-                                      padding: 'var(--15px-V)',
-                                      borderRadius: 'var(--8px-V)',
-                                      border: '1px solid var(--Border-Color)',
-                                    }}
-                                  >
-                                    <h4
-                                      style={{
-                                        margin: 0,
-                                        marginBottom: 'var(--10px-V)',
-                                        fontSize: 'var(--16px-V)',
-                                        color: 'var(--Text-Color-80)',
-                                        fontWeight: '600',
-                                      }}
-                                    >
-                                      Financial Overview
-                                    </h4>
+                                  {window.electron.store.get(
+                                    'SelectedAppUserId'
+                                  ) === 'admin' ||
+                                  appUsers
+                                    .find(
+                                      (appUser) =>
+                                        appUser.id ===
+                                        window.electron.store.get(
+                                          'SelectedAppUserId'
+                                        )
+                                    )
+                                    ?.privileges.includes(
+                                      'View dashboard page'
+                                    ) ? (
                                     <div
                                       style={{
-                                        display: 'flex',
-                                        justifyContent: 'space-between',
+                                        backgroundColor:
+                                          'var(--Background-Color)',
+                                        padding: 'var(--15px-V)',
+                                        borderRadius: 'var(--8px-V)',
+                                        border: '1px solid var(--Border-Color)',
                                       }}
                                     >
-                                      <FinancialItem
-                                        label="This Month Revenue"
-                                        value={
-                                          branch.monthlyRevenue?.toLocaleString() ||
-                                          0
-                                        }
-                                      />
-                                      <FinancialItem
-                                        label="This Month Expenses"
-                                        value={
-                                          branch.monthlyExpenses?.toLocaleString() ||
-                                          0
-                                        }
-                                      />
-                                      <FinancialItem
-                                        label="This Month Profit"
-                                        value={
-                                          branch.monthlyProfit?.toLocaleString() ||
-                                          0
-                                        }
-                                      />
+                                      <h4
+                                        style={{
+                                          margin: 0,
+                                          marginBottom: 'var(--10px-V)',
+                                          fontSize: 'var(--16px-V)',
+                                          color: 'var(--Text-Color-80)',
+                                          fontWeight: '600',
+                                        }}
+                                      >
+                                        Financial Overview
+                                      </h4>
+                                      <div
+                                        style={{
+                                          display: 'flex',
+                                          justifyContent: 'space-between',
+                                        }}
+                                      >
+                                        <FinancialItem
+                                          label="This Month Revenue"
+                                          value={
+                                            formatNumberWithSuffix(
+                                              branch.monthlyRevenue?.toLocaleString()
+                                            ) || 0
+                                          }
+                                        />
+                                        <FinancialItem
+                                          label="This Month Expenses"
+                                          value={
+                                            formatNumberWithSuffix(
+                                              branch.monthlyExpenses?.toLocaleString()
+                                            ) || 0
+                                          }
+                                        />
+                                        <FinancialItem
+                                          label="This Month Profit"
+                                          value={
+                                            formatNumberWithSuffix(
+                                              branch.monthlyProfit?.toLocaleString()
+                                            ) || 0
+                                          }
+                                        />
+                                      </div>
                                     </div>
-                                  </div>
+                                  ) : (
+                                    <></>
+                                  )}
                                 </div>
 
                                 {/* Actions Section */}

@@ -35,7 +35,7 @@ const SignupPage = ({
   const [companyName, setCompanyName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [verificationSuccess, setVerificationSuccess] = useState(false);
-  const [subscriptionType, setSubscriptionType] = useState('');
+  const [subscriptionType, setSubscriptionType] = useState('fullpackage');
   const [RepeatPassword, setRepeatPassword] = useState('');
   const [formStage, setFormStage] = useState('initial'); // New state to track form stage
 
@@ -661,7 +661,7 @@ const SignupPage = ({
       const daysUntilEnd = Math.ceil(
         (endDate.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24)
       );
-
+      window.electron.store.set('useLiveExchangeRates', true);
       await AddUserOnline(
         JSON.stringify({
           id: userID,
@@ -923,37 +923,7 @@ const SignupPage = ({
                   placeholder="Phone Number"
                   className="userName-input"
                 />
-                <p
-                  style={{
-                    color: 'var(--Text-Color-Grey)',
-                    marginBottom: 'var(--5px-V)',
-                    marginTop: 'var(--5px-V)',
-                    textAlign: 'center',
-                  }}
-                >
-                  Now select your subscription type.
-                </p>
-                <div style={{ display: 'flex' }}>
-                  {' '}
-                  <label>
-                    <input
-                      type="radio"
-                      name="subscriptionType"
-                      value="7daytrial"
-                      onChange={() => setSubscriptionType('7daytrial')}
-                    />
-                    7-Day Trial
-                  </label>
-                  <label>
-                    <input
-                      type="radio"
-                      name="subscriptionType"
-                      value="fullpackage"
-                      onChange={() => setSubscriptionType('fullpackage')}
-                    />
-                    Full package
-                  </label>
-                </div>
+               
                 <br />
                 <button onClick={handleSignUp} className="LoginButton">
                   Sign Up ▶

@@ -217,10 +217,7 @@ const DatabasePage = ({
         }}
       >
         <div className="CalenderOptionsMainContainer">
-          <span style={{ color: 'red', fontWeight: 'bold' }}>
-            Warning: Modifying database values can cause critical errors. Edit
-            only if certain.
-          </span>
+         
           <label htmlFor="monthsFutureInput">Select a table: </label>
           <select
             value={SelectedTable}
@@ -289,11 +286,7 @@ const DatabasePage = ({
                     {Object.entries(row).map(([key, value], cellIndex) => (
                       <td
                         key={cellIndex}
-                        onDoubleClick={() => {
-                          if (privileges.editDatabaseData) {
-                            handleCellDoubleClick(rowIndex, key, String(value));
-                          }
-                        }}
+                  
                       >
                         {editCell &&
                         editCell.rowIndex === rowIndex &&

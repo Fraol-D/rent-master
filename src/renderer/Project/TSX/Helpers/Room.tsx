@@ -34,6 +34,7 @@ import UtilityPaymentsTable from './UtilityPaymentsTable';
 import UtilityPanel from './GUIs/UtilityPanel';
 import { addDays, addMonths, differenceInDays } from 'date-fns';
 import CurrencySign, {
+  formatNumberWithSuffix,
   GetCurrencyAsOptionsOnSelect,
   GetDefaultCurrency,
 } from './CurrencySign';
@@ -396,13 +397,10 @@ const Room = ({
   const getCorrectPaymentStatment = (text: string, custom: string) => {
     switch (text) {
       case '30':
-      case 'Every 30 days':
         return '30 days';
       case '15':
-      case 'Every 15 days':
         return '15 days';
       case '7':
-      case 'Every 7 days':
         return '7 days';
       case 'monthly':
         return 'month';
@@ -494,9 +492,9 @@ const Room = ({
       }
 
       const paymentIntervals = {
-        'Every 30 days': 30,
-        'Every 15 days': 15,
-        'Every 7 days': 7,
+        '30': 30,
+        '15': 15,
+        '7': 7,
         monthly: 1,
         daily: 1,
         custom: parseInt(customDays, 10),
@@ -783,11 +781,11 @@ const Room = ({
     setPaymentCycle(e.target.value);
     const val = e.target.value;
 
-    if (val === 'Every 30 days') {
+    if (val === '30') {
       setAgreedPrice(Math.round(roomType.price));
-    } else if (val === 'Every 15 days') {
+    } else if (val === '15') {
       setAgreedPrice(Math.round(roomType.price / 2));
-    } else if (val === 'Every 7 days') {
+    } else if (val === '7') {
       setAgreedPrice(Math.round(roomType.price / 4.28));
     } else if (val === 'monthly') {
       setAgreedPrice(Math.round(roomType.price));
@@ -1581,7 +1579,7 @@ const Room = ({
                     <div>
                       Price:{' '}
                       <strong>
-                        {roomType.price.toLocaleString()}
+                        {formatNumberWithSuffix(roomType.price.toLocaleString())}
                         {CurrencySign(roomType.Currency)}
                       </strong>
                     </div>{' '}
@@ -1598,7 +1596,7 @@ const Room = ({
                     <div>
                       Price:{' '}
                       <strong>
-                        {roomType.AgreedPrice.toLocaleString()}{' '}
+                        {formatNumberWithSuffix(roomType.AgreedPrice.toLocaleString())}{' '}
                         {CurrencySign(roomType.Currency)}
                       </strong>
                     </div>{' '}
@@ -2321,9 +2319,9 @@ const Room = ({
                               value={paymentCycle}
                               onChange={handlePaymentCycleChange}
                             >
-                              <option value="Every 30 days">30 days</option>
-                              <option value="Every 15 days">15 days</option>
-                              <option value="Every 7 days">7 days</option>
+                              <option value="30">30 days</option>
+                              <option value="15">15 days</option>
+                              <option value="7">7 days</option>
                               <option value="daily">daily</option>
                               <option value="monthly">monthly</option>
                               <option value="custom">custom days</option>

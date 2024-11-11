@@ -276,6 +276,7 @@ declare global {
     addedDate: number;
     AllowedBranches: string;
     password: string;
+    EnterWithPassword: boolean;
   };
 }
 const MainPage = ({
@@ -526,7 +527,7 @@ const MainPage = ({
                 ?.name.toLowerCase()
                 .includes(value.toLowerCase())
             );
-          
+
           break;
         case 'room':
           filteredRooms = filteredRooms.filter(
@@ -730,8 +731,7 @@ const MainPage = ({
       removeFilterOptionByName('filterPriceValue');
     if (filterSquareFeetValue == '' || filterSquareFeetValue == '0')
       removeFilterOptionByName('filterSquareFeetValue');
-    if (selectedCurrency == 'all')
-      removeFilterOptionByName('selectedCurrency');
+    if (selectedCurrency == 'all') removeFilterOptionByName('selectedCurrency');
     if (FilterDueDateValue == '' || FilterDueDateValue == '0')
       removeFilterOptionByName('filterDueDateValue');
   }, [
@@ -750,10 +750,10 @@ const MainPage = ({
     'TenantsList' | 'BrokersList' | 'TenantReviews'
   >('TenantsList');
   const [ToolsSelectedPage, setToolsSelectedPage] = useState<
-    'EmailTemplates' | 'SMSTemplates' | 'Expense Manager'
+    'EmailTemplates' | 'SMSTemplates' | 'Expense Manager' | 'Settings'
   >('EmailTemplates');
   const [DashboardSelectedPage, setDashboardSelectedPage] = useState<
-    'Overview' | 'Email History' | 'Expenses' | 'Action History'
+    'Overview' | 'Email History' | 'Expenses' | 'Action History'| 'SMS Details'
   >('Overview');
   const [AddARoomState, setAddARoomState] = useState(false);
   const [AddRoomFormFloor, setAddRoomFormFloor] = useState(1);
@@ -874,36 +874,23 @@ const MainPage = ({
           );
         }
       }
-      // After room is added successfully
-      setTimeout(() => {
-        const roomElement = document.getElementById(`room-${newRoom.id}`);
-        if (roomElement && roomListContainerRef.current) {
-          roomListContainerRef.current.scrollTo({
-            top:
-              roomElement.offsetTop -
-              roomListContainerRef.current.offsetTop -
-              100, // var(--100px-V) offset from top
-            behavior: 'smooth',
-          });
 
-          roomElement.classList.add('highlight-new-room');
-          setTimeout(() => {
-            roomElement.classList.remove('highlight-new-room');
-          }, 2000);
-        }
-      }, 100);
-
-      // Reset form variables
+      // Reset form and update UI
       ResetAddRoomForumVariables(continueAdding);
-      setRefreshInspectorForAddRoom(true);
-
-      // Only close the form if not continuing
+      
+      // Update states in correct order
       if (!continueAdding) {
         setAddARoomState(false);
       }
-
+      
       setRoomExistsWarning(false);
       setIsMoreThanOneImage(false);
+      setRefreshInspectorForAddRoom(true);
+
+      
+
+    } catch (error) {
+      console.error('Error adding room:', error);
     } finally {
       setIsAddingRoom(false); // End loading
     }
@@ -917,43 +904,52 @@ const MainPage = ({
 
   const [showContinueAddingSettings, setShowContinueAddingSettings] =
     useState(false);
-  const ResetAddRoomForumVariables = (continueAdding?: boolean) => {
-    // Handle room number and floor increments
-    if (incrementRoomNumber) {
-      setAddRoomFormRoomIndex(AddRoomFormRoomIndex + 1);
+  const ResetAddRoomForumVariables = (continueAdding = false) => {
+    if (continueAdding) {
+      const fieldsToHighlight: string[] = [];
+
+      if (!incrementRoomNumber) {
+        setAddRoomFormRoomIndex(0);
+        fieldsToHighlight.push('roomNumber');
+      } else {
+        setAddRoomFormRoomIndex((prev) => (parseInt(prev) + 1).toString());
+      }
+
+      if (resetPrice) {
+        setAddRoomFormPrice(0);
+        fieldsToHighlight.push('roomPrice');
+      }
+
+      if (resetSquareMeters) {
+        setAddRoomFormSquareMeters(0);
+        fieldsToHighlight.push('squareMeters');
+      }
+
+      if (resetRoomSpecifications) {
+        setAddRoomFormRoomSpecifications([]);
+        fieldsToHighlight.push('specifications');
+      }
+
+      if (resetRoomImages) {
+        setRefreshInspectorForAddRoom(true);
+        fieldsToHighlight.push('images');
+      }
+
+      // Set the highlighted fields and remove them after animation
+      setHighlightedFields(fieldsToHighlight);
+      setTimeout(() => {
+        setHighlightedFields([]);
+      }, 2000);
     } else {
-      setAddRoomFormRoomIndex(1);
-    }
-
-    if (incrementFloor) {
-      setAddRoomFormFloor(AddRoomFormFloor + 1);
-    }
-    // Floor stays the same if !incrementFloor
-
-    // Reset other fields based on settings
-    if (resetPrice || !continueAdding) {
+      // Reset all fields without highlighting
+      setAddRoomFormRoomIndex('');
       setAddRoomFormPrice(0);
-    }
-    if (resetCurrency || !continueAdding) {
-      setAddRoomFormCurrency(GetDefaultCurrency());
-    }
-
-    if (resetPaymentCycle || !continueAdding) {
-      setAddRoomFormPaymentCycleType('monthly');
-      setAddRoomFormPaymentCycleCustomDays(0);
-    }
-
-    if (resetSquareMeters || !continueAdding) {
       setAddRoomFormSquareMeters(0);
-    }
-
-    if (resetRoomSpecifications) {
       setAddRoomFormRoomSpecifications([]);
-    }
-    if (resetRoomImages) {
-      handleDeleteFolderImages('Add a room images');
+      setRefreshInspectorForAddRoom(true);
     }
   };
+
   const ResetAddRoomForumVariables2 = () => {
     // Handle room number and floor increments
     setAddRoomFormRoomIndex(1);
@@ -1370,6 +1366,8 @@ const MainPage = ({
       </div>
     );
   };
+  const [highlightedFields, setHighlightedFields] = useState<string[]>([]);
+
   return (
     <>
       <div
@@ -1727,10 +1725,11 @@ const MainPage = ({
                             </div>
                           </div>
                           <div>
-                            <div style={{display:'flex',alignItems:'center'}}>
+                            <div
+                              style={{ display: 'flex', alignItems: 'center' }}
+                            >
                               Filter Currency:
                               <div className="FilterSection">
-                               
                                 <select
                                   value={selectedCurrency}
                                   onChange={(e) => {
@@ -1743,7 +1742,7 @@ const MainPage = ({
                                   className="FilterSelect"
                                 >
                                   <option value="all">All Currencies</option>
-                                 { GetCurrencyAsOptionsOnSelect()}
+                                  {GetCurrencyAsOptionsOnSelect()}
                                 </select>
                               </div>
                             </div>
@@ -1814,7 +1813,11 @@ const MainPage = ({
                     <div>
                       <div className="AddaNewRoomRowObject">
                         <input
-                          className="AddANewRoomInputsSmall"
+                          className={`AddANewRoomInputsSmall ${
+                            highlightedFields.includes('floor')
+                              ? 'highlight-reset-field'
+                              : ''
+                          }`}
                           type="number"
                           placeholder="Floor"
                           value={AddRoomFormFloor}
@@ -1826,7 +1829,11 @@ const MainPage = ({
                       </div>
                       <div className="AddaNewRoomRowObject">
                         <input
-                          className="AddANewRoomInputsSmall"
+                          className={`AddANewRoomInputsSmall ${
+                            highlightedFields.includes('roomIndex')
+                              ? 'highlight-reset-field'
+                              : ''
+                          }`}
                           type="number"
                           placeholder="Room Index"
                           value={AddRoomFormRoomIndex}
@@ -1854,7 +1861,11 @@ const MainPage = ({
                       <div className="AddaNewRoomRowObject">
                         Price (inc. VAT):
                         <input
-                          className="AddANewRoomInputsSmall"
+                          className={`AddANewRoomInputsSmall ${
+                            highlightedFields.includes('roomPrice')
+                              ? 'highlight-reset-field'
+                              : ''
+                          }`}
                           type="number"
                           placeholder="Price"
                           value={AddRoomFormPrice}
@@ -1873,9 +1884,9 @@ const MainPage = ({
                           }
                           className="AddANewRoomSelectMid"
                         >
-                          <option value="Every 30 days">30 days</option>
-                          <option value="Every 15 days">15 days</option>
-                          <option value="Every 7 days">7 days</option>
+                          <option value="30">30 days</option>
+                          <option value="15">15 days</option>
+                          <option value= "7">7 days</option>
                           <option value="daily">daily</option>
 
                           <option value="monthly">monthly</option>
@@ -1901,7 +1912,11 @@ const MainPage = ({
                       <div className="AddaNewRoomRowObject">
                         Square Meters:
                         <input
-                          className="AddANewRoomInputsSmall"
+                          className={`AddANewRoomInputsSmall ${
+                            highlightedFields.includes('squareMeters')
+                              ? 'highlight-reset-field'
+                              : ''
+                          }`}
                           type="number"
                           placeholder="Square Meters"
                           value={AddRoomFormSquareMeters}
@@ -2262,6 +2277,17 @@ const MainPage = ({
                   Expense Manager
                 </SideBarItem>
               )}
+              
+              {privileges.editSettings && (
+                <SideBarItem
+                  page="Settings"
+                  currentPage={ToolsSelectedPage}
+                  onClick={() => setToolsSelectedPage('Settings')}
+                >
+                  Settings
+                </SideBarItem>
+              )}
+              
             </>
           ) : SelectedPage === 'Dashboard' ? (
             <>
@@ -2285,6 +2311,13 @@ const MainPage = ({
                 onClick={() => setDashboardSelectedPage('Email History')}
               >
                 Email History
+              </SideBarItem>
+              <SideBarItem
+                page="SMS Details"
+                currentPage={DashboardSelectedPage}
+                onClick={() => setDashboardSelectedPage('SMS Details')}
+              >
+                SMS Details
               </SideBarItem>
               <SideBarItem
                 page="Action History"
@@ -2343,7 +2376,9 @@ const MainPage = ({
                 />
               </div>
               <div style={{ display: 'flex' }}>
-                <div className="RoomSpecficationsMainContainer">
+                <div className={`RoomSpecficationsMainContainer ${
+    highlightedFields.includes('specifications') ? 'highlight-reset-field' : ''
+  }`}>
                   <h3>
                     Room Specifications{' - '}
                     <button
@@ -2584,7 +2619,9 @@ const MainPage = ({
               : `calc(100% - var(--${SideBarWidth}px-V))`,
             overflowY: SelectedPage === 'Database' ? 'hidden' : 'auto',
             height:
-              SelectedPage === 'Database' ? 'calc(100% - var(--60px-V))' : '',
+              SelectedPage === 'Database' || SelectedPage === 'Tools'
+                ? 'calc(100% - var(--60px-V))'
+                : '',
           }}
         >
           {SelectedPage === 'Rooms' && (

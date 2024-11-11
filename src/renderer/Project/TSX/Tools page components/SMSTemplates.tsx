@@ -32,6 +32,7 @@ interface SMSTemplatesProps {
   handleSendSMS: () => void;
   bodyTextareaRef: React.RefObject<HTMLTextAreaElement>;
   setSelectedInput: (input: string) => void;
+  handleReplaceWithDefaultSms: () => void;
 }
 
 const SMSTemplates: React.FC<SMSTemplatesProps> = ({
@@ -61,6 +62,7 @@ const SMSTemplates: React.FC<SMSTemplatesProps> = ({
   handleSendSMS,
   bodyTextareaRef,
   setSelectedInput,
+  handleReplaceWithDefaultSms,
 }) => {
   return (
     <div className="tools-page">
@@ -71,7 +73,19 @@ const SMSTemplates: React.FC<SMSTemplatesProps> = ({
           alignItems: 'center',
         }}
       >
-        <h2>Your SMS Templates (SMS sending is currently not available)</h2>
+        <h2>Your SMS Templates</h2>
+        <button
+          onClick={() => {
+            if (navigator.onLine) handleReplaceWithDefaultSms();
+            else alert('You are offline, cannot reset to default');
+          }}
+          style={{
+            fontSize: 'var(--10px-V)',
+            border: 'var(--1px-V) dashed red',
+          }}
+        >
+          Reset to Default
+        </button>
         <button onClick={handleAddSMSTemplate}>Add an SMS template</button>
       </div>
       {smsTemplates.map((template) => (

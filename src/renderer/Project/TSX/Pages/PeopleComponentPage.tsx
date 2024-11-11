@@ -2,7 +2,7 @@ import { builtinModules } from 'module';
 import React, { useState } from 'react';
 import { toEthiopianDateString } from 'renderer/Project/JS/Calendar Converter';
 import { Input } from '../Helpers/CustomReactComponents';
-import CurrencySign from '../Helpers/CurrencySign';
+import CurrencySign, { formatNumberWithSuffix } from '../Helpers/CurrencySign';
 
 export function PeopleComponentPage({
   TenantList,
@@ -392,7 +392,7 @@ export function PeopleComponentPage({
                         <div>
                                                    {' '}
                           {highlightText(
-                            tenant.agreedPrice.toLocaleString() + CurrencySign(tenant.Currency),
+                           formatNumberWithSuffix(tenant.agreedPrice.toLocaleString()) + CurrencySign(tenant.Currency),
                             mainSearch
                           )}
                                                  {' '}
@@ -565,7 +565,7 @@ export function PeopleComponentPage({
                           <td className="InfoTableBodyTD">
                                                          {' '}
                             {highlightText(
-                              agreement.agreedPrice.toLocaleString() + CurrencySign(agreement.Currency),
+                              formatNumberWithSuffix(agreement.agreedPrice.toLocaleString()) + CurrencySign(agreement.Currency),
                               mainSearch
                             )}
                                                        {' '}
@@ -771,7 +771,7 @@ export function PeopleComponentPage({
                               <span style={{ color: 'var(--Accent-Color)' }}>
                                 Commission: $
                                 {highlightText(
-                                  recommendation.AgreedCommission.toLocaleString(),
+                                  formatNumberWithSuffix(recommendation.AgreedCommission.toLocaleString()),
                                   mainSearch
                                 )}
                               </span>
@@ -933,7 +933,7 @@ export function PeopleComponentPage({
                     </td>
                     <td className="InfoTableBodyTD">
                       {highlightText(
-                        review.AgreedPrice.toLocaleString(),
+                        formatNumberWithSuffix(review.AgreedPrice.toLocaleString()),
                         mainSearch
                       )}
                       {CurrencySign(review.Currency)} per{' '}
@@ -944,7 +944,7 @@ export function PeopleComponentPage({
                     </td>
                     <td className="InfoTableBodyTD">
                       {highlightText(
-                        review.totalEarnings.toLocaleString(),
+                        formatNumberWithSuffix(review.totalEarnings.toLocaleString()),
                         mainSearch
                       )}
                       {CurrencySign(review.Currency)}

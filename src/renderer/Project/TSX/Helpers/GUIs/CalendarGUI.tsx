@@ -4,7 +4,7 @@ import '../../../CSS/Calendar.css';
 import { addDays, addMonths, startOfYear, endOfYear, addYears } from 'date-fns';
 import { getValuesWithSql } from 'Backend/localServerApis';
 import { Input } from '../CustomReactComponents';
-import { CurrencySign } from '../CurrencySign';
+import { CurrencySign, formatNumberWithSuffix } from '../CurrencySign';
 
 interface CalendarProps {
   rooms: RoomType[];
@@ -281,7 +281,7 @@ const CalendarGUI: React.FC<CalendarProps> = ({
               ? `${
                   tenantList.find((t: tenant) => t.id === room.tenantId)?.name
                 }\n` +
-                  `${room.AgreedPrice.toLocaleString()} ${CurrencySign(
+                  `${formatNumberWithSuffix(room.AgreedPrice.toLocaleString())} ${CurrencySign(
                     room.Currency
                   )} - Floor. ${room.floor} Room. ${room.roomIndex}`
               : '';
@@ -477,7 +477,7 @@ const CalendarGUI: React.FC<CalendarProps> = ({
                           ? '<span style="color: #00e1ff; ">Paid</span>'
                           : '<span style="color: red; font-weight: bold;">Unpaid</span>'
                       }</p>
-                      <p><em style="font-style: italic;">Agreed Price:</em> <span style="font-weight: bold; color: #e67e22;">${payment.Value.toLocaleString()} ${CurrencySign(room.Currency)}</span></p>
+                      <p><em style="font-style: italic;">Agreed Price:</em> <span style="font-weight: bold; color: #e67e22;">${formatNumberWithSuffix(payment.Value.toLocaleString())} ${CurrencySign(room.Currency)}</span></p>
                       <p>Payment Cycle: <span style="background-color: #f1c40f; padding: var(--2px-V) var(--5px-V); border-radius: var(--3px-V);">${
                         room.PaymentCycleType
                       }</span></p>

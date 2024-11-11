@@ -12,6 +12,7 @@ import {
   endOfYear,
   addYears,
 } from 'date-fns';
+import { formatNumberWithSuffix } from '../Helpers/CurrencySign';
 
 interface Payment {
   id: string;
@@ -35,6 +36,17 @@ const DashbTotalCollected = ({
     new Date().getFullYear().toString()
   );
   const [predictedPayments, setPredictedPayments] = useState<Payment[]>([]);
+  const [visibleSeries, setVisibleSeries] = useState({
+    collected: true,
+    expected: true
+  });
+
+  const handleSeriesToggle = (series: 'collected' | 'expected') => {
+    setVisibleSeries(prev => ({
+      ...prev,
+      [series]: !prev[series]
+    }));
+  };
 
   useEffect(() => {
     const calculatePayments = async () => {
@@ -279,8 +291,8 @@ const DashbTotalCollected = ({
           />
           <span className="TotalLabel">Total:</span>
           <span className="TotalValue">
-            ${totalCollected.toLocaleString()} / $
-            {totalExpected.toLocaleString()}
+            ${formatNumberWithSuffix(totalCollected.toLocaleString())} / $
+            {formatNumberWithSuffix(totalExpected.toLocaleString())}
           </span>
           <span className="DifferenceLabel">
             <span
@@ -288,13 +300,58 @@ const DashbTotalCollected = ({
                 difference > 0 ? 'DifferenceValue' : 'DifferenceValueNegative'
               }
             >
-              {difference > 0 ? '+' : ''}${difference.toLocaleString()} (
+              {difference > 0 ? '+' : ''}{formatNumberWithSuffix(difference.toLocaleString())} (
               {percentageChange}%)
             </span>{' '}
             in {parseInt(selectedDate) - 1}
           </span>
         </div>
       </div>
+      
+      <div style={{
+        display: 'flex',
+        gap: 'var(--20px-V)',
+        justifyContent: 'center',
+        marginBottom: 'var(--10px-V)',
+      }}>
+        <div
+          onClick={() => handleSeriesToggle('collected')}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 'var(--8px-V)',
+            cursor: 'pointer',
+            opacity: visibleSeries.collected ? 1 : 0.5,
+          }}
+        >
+          <div style={{
+            width: 'var(--16px-V)',
+            height: 'var(--16px-V)',
+            backgroundColor: 'var(--Primary-Color)',
+            borderRadius: 'var(--4px-V)',
+          }} />
+          <span>Collected</span>
+        </div>
+        <div
+          onClick={() => handleSeriesToggle('expected')}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 'var(--8px-V)',
+            cursor: 'pointer',
+            opacity: visibleSeries.expected ? 1 : 0.5,
+          }}
+        >
+          <div style={{
+            width: 'var(--16px-V)',
+            height: 'var(--16px-V)',
+            backgroundColor: 'var(--Accent-Color50)',
+            borderRadius: 'var(--4px-V)',
+          }} />
+          <span>Expected</span>
+        </div>
+      </div>
+
       <BarChart
         dataset={dataset}
         xAxis={[
@@ -303,22 +360,30 @@ const DashbTotalCollected = ({
             dataKey: showBy === 'Monthly' ? 'month' : 'year',
           },
         ]}
+        slotProps={{
+          legend: {
+            hidden: true, // This hides the built-in legend
+          },
+        }}
         yAxis={[
           {
             fill: 'var(--Text-Color)',
+            valueFormatter: (value: any) => `$${formatNumberWithSuffix(value).toString()}`,
           },
         ]}
         series={[
-          {
+          ...(visibleSeries.collected ? [{
             dataKey: 'value',
             label: 'Collected',
             color: 'var(--Primary-Color)',
-          },
-          {
+            valueFormatter: (value: number) => `$${formatNumberWithSuffix(value)}`,
+          }] : []),
+          ...(visibleSeries.expected ? [{
             dataKey: 'expectedValue',
             label: 'Expected',
             color: 'var(--Accent-Color50)',
-          },
+            valueFormatter: (value: number) => `$${formatNumberWithSuffix(value)}`,
+          }] : []),
         ]}
         grid={{ vertical: true, horizontal: true }}
         margin={{

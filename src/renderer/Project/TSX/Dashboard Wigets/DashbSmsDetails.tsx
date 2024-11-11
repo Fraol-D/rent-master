@@ -1,7 +1,6 @@
 import { getValuesWithSql_Online } from 'Backend/OnlineServerApis';
 import React, { useEffect, useState, useMemo } from 'react';
 import '../../CSS/ToolsPage.css';
-import { Input } from '../Helpers/CustomReactComponents';
 import { LineChart } from '@mui/x-charts/LineChart';
 import { axisClasses } from '@mui/x-charts/ChartsAxis';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns';
@@ -11,53 +10,58 @@ interface props {
   RoomList: RoomType[];
   tenantList: tenant[];
 }
-type emailHistoryType = {
+
+type smsHistoryType = {
   id: string;
   receiver: string;
-  subject: string;
   body: string;
   sentDate: number;
   templateId: string;
   userId: string;
-  from: string;
   mode: string;
 };
-const DashbEmailHistory = ({ SelectedUserId, RoomList, tenantList }: props) => {
-  const [emailHistory, setEmailHistory] = useState<emailHistoryType[]>([]);
-  const [expandedEmailId, setExpandedEmailId] = useState<string | null>(null);
+
+const DashbSmsDetails = ({ SelectedUserId, RoomList, tenantList }: props) => {
+  const [smsHistory, setSmsHistory] = useState<smsHistoryType[]>([]);
+  const [expandedSmsId, setExpandedSmsId] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<string>(
     new Date().toISOString().substr(0, 7)
   );
   const [searchConfig, setSearchConfig] = useState({
     receiver: '',
-    subject: '',
     body: '',
     mode: '',
     room: '',
     floor: '',
   });
   const [advancedSearchVisible, setAdvancedSearchVisible] = useState(false);
+  const [SMSMonthlyLimit, setSMSMonthlyLimit] = useState(0);
   const [applyFiltersToGraph, setApplyFiltersToGraph] = useState(false);
 
   useEffect(() => {
-    const fetchEmailHistory = async () => {
-      const emailHistoryRaw = await getValuesWithSql_Online(
-        'email_history',
+    const fetchSmsHistory = async () => {
+      const user = await getValuesWithSql_Online(
+        'users',
+        `WHERE id = '${SelectedUserId}'`
+      );
+      setSMSMonthlyLimit(await user[0].SMSMonthlyLimit);
+      const smsHistoryRaw = await getValuesWithSql_Online(
+        'sms_history',
         `WHERE userId = '${SelectedUserId}'`
       );
-      const sortedEmailHistory = emailHistoryRaw.sort(
-        (a: emailHistoryType, b: emailHistoryType) => b.sentDate - a.sentDate
+      const sortedSmsHistory = smsHistoryRaw.sort(
+        (a: smsHistoryType, b: smsHistoryType) => b.sentDate - a.sentDate
       );
-      setEmailHistory(sortedEmailHistory);
+      setSmsHistory(sortedSmsHistory);
     };
-    fetchEmailHistory();
+    if(navigator.onLine)fetchSmsHistory();
   }, [SelectedUserId]);
 
   const toggleExpand = (id: string) => {
-    setExpandedEmailId(expandedEmailId === id ? null : id);
+    setExpandedSmsId(expandedSmsId === id ? null : id);
   };
 
-  const formatEmailBody = (body: string) => {
+  const formatSmsBody = (body: string) => {
     return body.split('\n').map((line, index) => (
       <React.Fragment key={index}>
         {line}
@@ -66,35 +70,37 @@ const DashbEmailHistory = ({ SelectedUserId, RoomList, tenantList }: props) => {
     ));
   };
 
-  const filteredEmails = emailHistory.filter((email) => {
-    const emailDate = new Date(email.sentDate);
+  const filteredSms = smsHistory.filter((sms) => {
+    const smsDate = new Date(sms.sentDate);
     const [year, month] = selectedDate.split('-').map(Number);
-    const tenant = tenantList.find((t) => t.email === email.receiver);
+    const tenant = tenantList.find((t) => t.phoneNumber === sms.receiver);
     const room = RoomList.find((r) => r.tenantId === tenant?.id);
 
     return (
-      emailDate.getMonth() + 1 === month &&
-      emailDate.getFullYear() === year &&
-      (searchConfig.receiver === '' || 
-        email.receiver.toLowerCase().includes(searchConfig.receiver.toLowerCase())) &&
-      (searchConfig.subject === '' || 
-        email.subject.toLowerCase().includes(searchConfig.subject.toLowerCase())) &&
-      (searchConfig.body === '' || 
-        email.body.toLowerCase().includes(searchConfig.body.toLowerCase())) &&
-      (searchConfig.mode === '' || email.mode === searchConfig.mode) &&
-      (searchConfig.room === '' || room?.roomIndex.toString() === searchConfig.room) &&
-      (searchConfig.floor === '' || room?.floor.toString() === searchConfig.floor)
+      smsDate.getMonth() + 1 === month &&
+      smsDate.getFullYear() === year &&
+      (searchConfig.receiver === '' ||
+        sms.receiver
+          .toLowerCase()
+          .includes(searchConfig.receiver.toLowerCase())) &&
+      (searchConfig.body === '' ||
+        sms.body.toLowerCase().includes(searchConfig.body.toLowerCase())) &&
+      (searchConfig.mode === '' || sms.mode === searchConfig.mode) &&
+      (searchConfig.room === '' ||
+        room?.roomIndex.toString() === searchConfig.room) &&
+      (searchConfig.floor === '' ||
+        room?.floor.toString() === searchConfig.floor)
     );
   });
 
   const handleSearchChange = (field: string, value: string) => {
-    setSearchConfig(prev => ({
+    setSearchConfig((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
   };
 
-  const emailStats = useMemo(() => {
+  const smsStats = useMemo(() => {
     const [year, month] = selectedDate.split('-').map(Number);
     const monthStart = startOfMonth(new Date(year, month - 1));
     const monthEnd = endOfMonth(new Date(year, month - 1));
@@ -104,36 +110,36 @@ const DashbEmailHistory = ({ SelectedUserId, RoomList, tenantList }: props) => {
       end: monthEnd,
     });
 
-    const emailsToCount = applyFiltersToGraph ? filteredEmails : emailHistory;
+    const smsToCount = applyFiltersToGraph ? filteredSms : smsHistory;
 
-    const dailyEmailCounts = daysInMonth.map(day => {
-      const dayEmails = emailsToCount.filter(email => {
-        const emailDate = new Date(email.sentDate);
-        return emailDate.getDate() === day.getDate() &&
-               emailDate.getMonth() === day.getMonth() &&
-               emailDate.getFullYear() === day.getFullYear();
+    const dailySmsCounts = daysInMonth.map(day => {
+      const daySms = smsToCount.filter(sms => {
+        const smsDate = new Date(sms.sentDate);
+        return smsDate.getDate() === day.getDate() &&
+               smsDate.getMonth() === day.getMonth() &&
+               smsDate.getFullYear() === day.getFullYear();
       });
       return {
         date: format(day, 'd'),
-        emails: dayEmails.length
+        sms: daySms.length
       };
     });
 
-    const totalEmails = emailsToCount.filter(email => {
-      const emailDate = new Date(email.sentDate);
-      return emailDate >= monthStart && emailDate <= monthEnd;
+    const totalSms = smsToCount.filter(sms => {
+      const smsDate = new Date(sms.sentDate);
+      return smsDate >= monthStart && smsDate <= monthEnd;
     }).length;
 
-    const highestDailyEmails = Math.max(...dailyEmailCounts.map(d => d.emails));
-    const averageDailyEmails = totalEmails / daysInMonth.length;
+    const highestDailySms = Math.max(...dailySmsCounts.map(d => d.sms));
+    const averageDailySms = totalSms / daysInMonth.length;
 
     return {
-      dailyEmailCounts,
-      totalEmails,
-      highestDailyEmails,
-      averageDailyEmails
+      dailySmsCounts,
+      totalSms,
+      highestDailySms,
+      averageDailySms
     };
-  }, [selectedDate, emailHistory, filteredEmails, applyFiltersToGraph]);
+  }, [selectedDate, smsHistory, filteredSms, applyFiltersToGraph]);
 
   const renderChart = () => {
     try {
@@ -152,13 +158,13 @@ const DashbEmailHistory = ({ SelectedUserId, RoomList, tenantList }: props) => {
           ]}
           series={[
             {
-              dataKey: 'emails',
-              label: 'Emails Sent',
+              dataKey: 'sms',
+              label: 'SMS Sent',
               area: true,
               valueFormatter: (value) => value?.toString() || '0',
             },
           ]}
-          dataset={emailStats.dailyEmailCounts}
+          dataset={smsStats.dailySmsCounts}
           height={250}
           margin={{ left: 70, right: 30, top: 30, bottom: 30 }}
           sx={{
@@ -186,7 +192,7 @@ const DashbEmailHistory = ({ SelectedUserId, RoomList, tenantList }: props) => {
       );
     } catch (error) {
       console.error('Error rendering chart:', error);
-      return <div>Error rendering email chart</div>;
+      return <div>Error rendering SMS chart</div>;
     }
   };
 
@@ -200,17 +206,15 @@ const DashbEmailHistory = ({ SelectedUserId, RoomList, tenantList }: props) => {
         alignItems: 'center',
       }}
     >
-      <h1 style={{ margin: 'var(--10px-V)' }}>Email History</h1>
+      <h1 style={{ margin: 'var(--10px-V)' }}>SMS History</h1>
 
-      {/* Chart Section */}
       <div
         style={{
           width: '90%',
           backgroundColor: 'var(--Secondary-Color30)',
           borderRadius: 'var(--8px-V)',
-          paddingBottom: 'var(--15px-V)',
+          padding: 'var(--15px-V)',
           marginBottom: 'var(--20px-V)',
-          paddingTop: 'var(--15px-V)'
         }}
       >
         {renderChart()}
@@ -220,24 +224,23 @@ const DashbEmailHistory = ({ SelectedUserId, RoomList, tenantList }: props) => {
             justifyContent: 'space-around',
             marginTop: 'var(--10px-V)',
           }}
-        ><p>
-            Limit: <strong>NONE</strong>
+        >
+          <p>
+            Limit: <strong>{SMSMonthlyLimit.toLocaleString()} per month</strong>
           </p>
           <p>
-            Total Emails: <strong>{emailStats.totalEmails}</strong>
+            Total SMS: <strong>{smsStats.totalSms.toLocaleString()}/{SMSMonthlyLimit.toLocaleString()}</strong>
           </p>
           <p>
-            Highest Daily: <strong>{emailStats.highestDailyEmails}</strong>
+            Highest Daily: <strong>{smsStats.highestDailySms.toLocaleString()}</strong>
           </p>
-          
           <p>
             Average Daily:{' '}
-            <strong>{emailStats.averageDailyEmails.toFixed(1)}</strong>
+            <strong>{smsStats.averageDailySms.toFixed(1)}</strong>
           </p>
         </div>
       </div>
 
-      {/* Basic Search Controls */}
       <div
         style={{
           display: 'flex',
@@ -255,23 +258,14 @@ const DashbEmailHistory = ({ SelectedUserId, RoomList, tenantList }: props) => {
         />
         <button
           onClick={() => setAdvancedSearchVisible(!advancedSearchVisible)}
-          style={{
-            padding: 'var(--5px-V) var(--10px-V)',
-           
-            border: 'var(--1px-V) solid var(--Border-Color)',
-            borderRadius: 'var(--4px-V)',
-            cursor: 'pointer',
-          }}
         >
           {advancedSearchVisible ? 'Hide Filters' : 'Show Filters'}
         </button>
       </div>
 
-      {/* Advanced Search Panel */}
       {advancedSearchVisible && (
         <div
           style={{
-           
             marginBottom: 'var(--20px-V)',
             padding: 'var(--15px-V)',
             backgroundColor: 'var(--Secondary-Color30)',
@@ -279,35 +273,31 @@ const DashbEmailHistory = ({ SelectedUserId, RoomList, tenantList }: props) => {
             boxShadow: '0 var(--2px-V) var(--8px-V) rgba(0,0,0,0.1)',
           }}
         >
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 'var(--10px-V)' }}>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr 1fr',
+              gap: 'var(--10px-V)',
+            }}
+          >
             <div>
-              <label>Receiver Email:</label>
+              <label>Phone Number:</label>
               <input
                 type="text"
-                placeholder="Search receiver..."
+                placeholder="Search phone number..."
                 value={searchConfig.receiver}
                 onChange={(e) => handleSearchChange('receiver', e.target.value)}
                 style={{ marginBottom: 'var(--10px-V)' }}
               />
             </div>
             <div>
-              <label>Subject:</label>
+              <label>Message Content:</label>
               <input
                 type="text"
-                placeholder="Search subject..."
-                value={searchConfig.subject}
-                onChange={(e) => handleSearchChange('subject', e.target.value)}
-                style={{ marginBottom: 'var(--10px-V)' }}
-              />
-            </div>
-            <div>
-              <label>Body Content:</label>
-              <input
-                type="text"
-                placeholder="Search email body..."
+                placeholder="Search message body..."
                 value={searchConfig.body}
                 onChange={(e) => handleSearchChange('body', e.target.value)}
-                style={{  marginBottom: 'var(--10px-V)' }}
+                style={{ marginBottom: 'var(--10px-V)' }}
               />
             </div>
             <div>
@@ -315,7 +305,7 @@ const DashbEmailHistory = ({ SelectedUserId, RoomList, tenantList }: props) => {
               <select
                 value={searchConfig.mode}
                 onChange={(e) => handleSearchChange('mode', e.target.value)}
-                style={{  marginBottom: 'var(--10px-V)' }}
+                style={{ marginBottom: 'var(--10px-V)' }}
               >
                 <option value="">All Modes</option>
                 <option value="Manually">Manually</option>
@@ -330,7 +320,6 @@ const DashbEmailHistory = ({ SelectedUserId, RoomList, tenantList }: props) => {
                 placeholder="Room number..."
                 value={searchConfig.room}
                 onChange={(e) => handleSearchChange('room', e.target.value)}
-        
               />
             </div>
             <div>
@@ -340,30 +329,39 @@ const DashbEmailHistory = ({ SelectedUserId, RoomList, tenantList }: props) => {
                 placeholder="Floor number..."
                 value={searchConfig.floor}
                 onChange={(e) => handleSearchChange('floor', e.target.value)}
-              
               />
             </div>
           </div>
-          <div style={{ 
-            display: 'flex', 
-            gap: 'var(--10px-V)', 
-            marginTop: 'var(--10px-V)' 
-          }}>
+          <div style={{ display: 'flex', gap: 'var(--10px-V)', marginTop: 'var(--10px-V)' }}>
             <button
               onClick={() => setSearchConfig({
                 receiver: '',
-                subject: '',
                 body: '',
                 mode: '',
                 room: '',
                 floor: '',
               })}
-              
+              style={{
+                padding: 'var(--5px-V) var(--10px-V)',
+                backgroundColor: 'var(--Danger-Color)',
+                color: 'white',
+                border: 'none',
+                borderRadius: 'var(--4px-V)',
+                cursor: 'pointer',
+              }}
             >
               Clear All Filters
             </button>
             <button
               onClick={() => setApplyFiltersToGraph(!applyFiltersToGraph)}
+              style={{
+                padding: 'var(--5px-V) var(--10px-V)',
+                backgroundColor: applyFiltersToGraph ? 'var(--Primary-Color)' : 'white',
+                color: applyFiltersToGraph ? 'white' : 'black',
+                border: 'var(--1px-V) solid var(--Border-Color)',
+                borderRadius: 'var(--4px-V)',
+                cursor: 'pointer',
+              }}
             >
               {applyFiltersToGraph ? 'Remove Filters from Graph' : 'Apply Filters to Graph'}
             </button>
@@ -372,24 +370,24 @@ const DashbEmailHistory = ({ SelectedUserId, RoomList, tenantList }: props) => {
       )}
 
       <p>
-        {filteredEmails.length} emails sent in{' '}
+        {filteredSms.length} SMS sent in{' '}
         {new Date(selectedDate).toLocaleString('default', {
           month: 'long',
           year: 'numeric',
         })}
       </p>
 
-      <div style={{ width: '90%', height: '100%' }}>
-        {filteredEmails.length > 0 ? (
-          filteredEmails.map((email) => (
+      <div style={{ overflowY: 'auto', width: '100%', height: '100%' }}>
+        {filteredSms.length > 0 ? (
+          filteredSms.map((sms) => (
             <div
-              key={email.id}
-              onClick={() => toggleExpand(email.id)}
+              key={sms.id}
+              onClick={() => toggleExpand(sms.id)}
               className="email-template-container"
               style={{
                 cursor: 'pointer',
-                width: '98%',
-              
+                width: '95%',
+                margin: 'var(--10px-V)',
                 padding: 'var(--10px-V)',
                 borderRadius: 'var(--5px-V)',
                 boxShadow: '0 var(--2px-V) var(--4px-V) rgba(0,0,0,0.1)',
@@ -408,7 +406,7 @@ const DashbEmailHistory = ({ SelectedUserId, RoomList, tenantList }: props) => {
                     <strong>To:</strong> (
                     {
                       tenantList.find(
-                        (tenant) => tenant.email === email.receiver
+                        (tenant) => tenant.phoneNumber === sms.receiver
                       )?.name
                     }{' '}
                     - Rm.{' '}
@@ -417,7 +415,7 @@ const DashbEmailHistory = ({ SelectedUserId, RoomList, tenantList }: props) => {
                         (room) =>
                           room.tenantId ===
                           tenantList.find(
-                            (tenant) => tenant.email === email.receiver
+                            (tenant) => tenant.phoneNumber === sms.receiver
                           )?.id
                       )?.roomIndex
                     }{' '}
@@ -427,31 +425,28 @@ const DashbEmailHistory = ({ SelectedUserId, RoomList, tenantList }: props) => {
                         (room) =>
                           room.tenantId ===
                           tenantList.find(
-                            (tenant) => tenant.email === email.receiver
+                            (tenant) => tenant.phoneNumber === sms.receiver
                           )?.id
                       )?.floor
                     }
-                    ) {email.receiver} - sent with {email.from}
+                    ) {sms.receiver}
                   </p>
                   <p>
                     <strong>Sent:</strong>{' '}
-                    {new Date(email.sentDate).toLocaleDateString('en-US', {
+                    {new Date(sms.sentDate).toLocaleDateString('en-US', {
                       month: 'long',
                       day: 'numeric',
                       year: 'numeric',
                     })}{' '}
                     -{' '}
-                    {new Date(email.sentDate).toLocaleTimeString('en-US', {
+                    {new Date(sms.sentDate).toLocaleTimeString('en-US', {
                       hour: 'numeric',
                       minute: '2-digit',
                       hour12: true,
                     })}
                   </p>
                   <p>
-                    <strong>Subject:</strong> {email.subject}
-                  </p>
-                  <p>
-                    <strong>Mode:</strong> {email.mode || 'Unknown'}
+                    <strong>Mode:</strong> {sms.mode || 'Unknown'}
                   </p>
                 </div>
                 <div
@@ -460,34 +455,34 @@ const DashbEmailHistory = ({ SelectedUserId, RoomList, tenantList }: props) => {
                     marginLeft: 'var(--10px-V)',
                   }}
                 >
-                  {expandedEmailId === email.id ? '▼' : '▶'}{' '}
-                  {/* Show down arrow if expanded, right arrow if not */}
+                  {expandedSmsId === sms.id ? '▼' : '▶'}
                 </div>
               </div>
-              {expandedEmailId === email.id && (
+              {expandedSmsId === sms.id && (
                 <div>
                   <p>
-                    <strong>Template ID:</strong> {email.templateId}
+                    <strong>Template ID:</strong> {sms.templateId}
                   </p>
-
                   <p>
-                    <strong>Body:</strong>
+                    <strong>Message:</strong>
                   </p>
                   <pre
                     style={{ whiteSpace: 'pre-wrap', wordWrap: 'break-word' }}
                   >
-                    {formatEmailBody(email.body)}
+                    {formatSmsBody(sms.body)}
                   </pre>
                 </div>
               )}
             </div>
           ))
         ) : (
-          <p style={{color:'var(--Text-Color-Grey)',textAlign:'center'}}>No emails found for the selected criteria.</p>
+          <p style={{ color: 'var(--Text-Color-Grey)', textAlign: 'center' }}>
+            No SMS found for the selected criteria.
+          </p>
         )}
       </div>
     </div>
   );
 };
 
-export default DashbEmailHistory;
+export default DashbSmsDetails;

@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { format, addDays, isBefore, isAfter, addMonths } from 'date-fns';
 import { Input } from '../Helpers/CustomReactComponents';
+import { formatNumberWithSuffix } from '../Helpers/CurrencySign';
 
 interface Expense {
   id: string;
@@ -346,7 +347,7 @@ const DashbExpenseHistory: React.FC<DashbExpenseHistoryProps> = ({
                   textAlign: 'right',
                 }}
               >
-                ${expense.price.toLocaleString()}
+                ${formatNumberWithSuffix(expense.price.toLocaleString())}
               </div>
               <div
                 style={{
