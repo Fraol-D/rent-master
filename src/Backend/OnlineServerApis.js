@@ -1085,89 +1085,25 @@ const retry = async (fn, maxRetries = 3, delay = 1000) => {
   }
   throw lastError;
 };
-export const DownloadUserFilesFromOnlineDatabase = async (
-  userId,
-  setProgressValue
-) => {
+export const DownloadUserFilesFromOnlineDatabase = async (userId, setProgressValue) => {
+ let cleanup = null;
   try {
+     console.log('Starting file download process...');
     setProgressValue(0);
-    console.log('Getting local directory structure...');
-    const localDirectory = await getLocalUserDirectory();
-    setProgressValue(20);
+    
+    // Set up progress listener
+    const handleProgress = (event, progress) => {
+      if (typeof setProgressValue === 'function') {
+        setProgressValue(progress);
+      }
+    };
 
-    console.log('Requesting file list from online database...');
-    const response = await fetch(`${baseUrl}/check-missing-files`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-      },
-      body: JSON.stringify({ userId, localDirectory }),
+   
+    const result = await window.electron.ipcRenderer.invoke('download-files', {
+      userId
     });
-    const { missingFiles } = await response.json();
-    setProgressValue(40);
+    console.log(result)
 
-    if (missingFiles.length > 0) {
-      console.log('Downloading missing files...');
-      const downloadResponse = await fetch(
-        `${baseUrl}/download-missing-files`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-api-key': apiKey,
-          },
-          body: JSON.stringify({ userId, missingFiles }),
-        }
-      );
-
-      const reader = downloadResponse.body.getReader();
-      const contentLength = +downloadResponse.headers.get('Content-Length');
-      let receivedLength = 0;
-      const chunks = [];
-      const startTime = Date.now();
-
-      const logInterval = setInterval(() => {
-        console.log(`Download size: ${receivedLength} bytes`);
-        console.log(
-          `Download progress: ${(
-            (receivedLength / contentLength) *
-            100
-          ).toFixed(2)}%`
-        );
-      }, 3000);
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        chunks.push(value);
-        receivedLength += value.length;
-        setProgressValue(40 + (receivedLength / contentLength) * 30);
-      }
-
-      clearInterval(logInterval);
-
-      const zipBuffer = new Uint8Array(receivedLength);
-      let position = 0;
-      for (const chunk of chunks) {
-        zipBuffer.set(chunk, position);
-        position += chunk.length;
-      }
-
-      console.log('Extracting downloaded files...');
-      const extractStartTime = Date.now();
-      await extractDownloadedFiles(zipBuffer, userId);
-      const extractEndTime = Date.now();
-      const extractionTime = (extractEndTime - extractStartTime) / 1000;
-      console.log(`Extraction time: ${extractionTime} seconds`);
-      console.log(`Extracted size: ${receivedLength} bytes`);
-
-      setProgressValue(90);
-      console.log('Files downloaded and extracted successfully.');
-    } else {
-      console.log('No missing files to download.');
-      setProgressValue(90);
-    }
     setProgressValue(100);
   } catch (error) {
     console.error('Error during file download process:', error);
@@ -1175,23 +1111,6 @@ export const DownloadUserFilesFromOnlineDatabase = async (
   }
 };
 
-const extractDownloadedFiles = async (zipBuffer, userId) => {
-  try {
-    const { data } = await axios.post(
-      `${baseUrlLocal}/extract-downloaded-files`,
-      zipBuffer,
-      {
-        headers: {
-          'Content-Type': 'application/octet-stream',
-        },
-      }
-    );
-    console.log('Files extracted successfully:', data);
-  } catch (error) {
-    console.error('Error extracting files:', error);
-    throw error;
-  }
-};
 
 export const replaceUserData = async (userId, tables) => {
   const filteredTables = Object.fromEntries(
@@ -1205,20 +1124,20 @@ export const replaceUserData = async (userId, tables) => {
   );
 
   try {
-    const { data } = await axios.post(
-      `https://www.rentmaster.markethubet.com/api/replace-user-data`,
-      {
+    const url = `${baseUrl}/replace-user-data`;
+    const headers = {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+    };
+    const data = await window.electron.ipcRenderer.invoke('api-request', {
+      url,
+      method: 'post',
+      headers,
+      data: {
         userId,
         tables: filteredTables,
       },
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': apiKey,
-        },
-      }
-    );
-    console.log('Full server response:', data);
+    });
 
     if (!data.ok) {
       throw new Error(`HTTP error! status: ${data.status}, response: ${data}`);

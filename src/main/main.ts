@@ -1263,37 +1263,7 @@ import FormData from 'form-data';
 
 const baseUrl = 'https://www.rentmaster.markethubet.com/api';
 
-// IPC handler for uploading files
-ipcMain.handle('upload-files', async (event, { formData, apiKey }) => {
-  try {
-    // Set up the fetch options with the secure HTTPS agent
-    const fetchOptions = {
-      method: 'POST',
-      body: formData,
-      headers: {
-        'x-api-key': apiKey,
-        // This ensures the correct Content-Type header
-      },
-      agent: secureAgent, // Use the secure HTTPS agent
-    };
 
-    // Perform the fetch request to upload the files
-    const response = await fetch(
-      `${baseUrl}/upload-missing-files`,
-      fetchOptions
-    );
-
-    if (!response.ok) {
-      throw new Error(`Upload failed with status: ${response.status}`);
-    }
-
-    // Return the JSON response from the server
-    return await response.json();
-  } catch (error) {
-    console.error('Error in upload-files handler:', error);
-    throw error;
-  }
-});
 // Add IPC handler for secure HTTPS agent configuration
 ipcMain.handle('get-https-agent', () => {
   try {
@@ -3149,45 +3119,45 @@ ipcMain.handle('api-request', async (event, { url, method, headers, data }) => {
     });
   }
 });
+const getLocalUserDirectory2 = async () => {
+  const userDataPath = process.env.APPDATA || app.getPath('userData');
+  const bmsFolderPath = path.join(userDataPath, appname);
 
+  function directoryToJson(dir: string) {
+    const result = {
+      name: path.basename(dir),
+      type: 'directory',
+      children: [],
+    };
+    const files = fs.readdirSync(dir, { withFileTypes: true });
+
+    files.forEach((file: { name: string; isDirectory: () => any }) => {
+      const filePath = path.join(dir, file.name);
+      if (file.isDirectory()) {
+        result.children.push(directoryToJson(filePath));
+      } else {
+        result.children.push({ name: file.name, type: 'file' });
+      }
+    });
+
+    return result;
+  }
+
+  try {
+    const directoryStructure = directoryToJson(bmsFolderPath);
+    return directoryStructure;
+  } catch (error) {
+    console.error('Error reading directory structure:', error);
+    return null;
+  }
+};
 ipcMain.handle('upload-user-files', async (event, { userId }) => {
   try {
     // Send progress updates
     const updateProgress = (progress: number) => {
       event.sender.send('upload-progress', progress);
     };
-    const getLocalUserDirectory2 = async () => {
-      const userDataPath = process.env.APPDATA || app.getPath('userData');
-      const bmsFolderPath = path.join(userDataPath, appname);
-
-      function directoryToJson(dir: string) {
-        const result = {
-          name: path.basename(dir),
-          type: 'directory',
-          children: [],
-        };
-        const files = fs.readdirSync(dir, { withFileTypes: true });
-
-        files.forEach((file: { name: string; isDirectory: () => any }) => {
-          const filePath = path.join(dir, file.name);
-          if (file.isDirectory()) {
-            result.children.push(directoryToJson(filePath));
-          } else {
-            result.children.push({ name: file.name, type: 'file' });
-          }
-        });
-
-        return result;
-      }
-
-      try {
-        const directoryStructure = directoryToJson(bmsFolderPath);
-        return directoryStructure;
-      } catch (error) {
-        console.error('Error reading directory structure:', error);
-        return null;
-      }
-    };
+   
     updateProgress(0);
     console.log('Getting local directory...');
     const localDirectory = await getLocalUserDirectory2();
@@ -3337,4 +3307,119 @@ const retry = async (fn: () => Promise<any>, maxRetries = 3, delay = 1000) => {
     }
   }
   throw lastError;
+};
+
+ipcMain.handle('download-files', async (event, { userId }) => {
+  const sendProgress = (progress: number) => {
+    event.sender.send('download-progress', progress);
+  };
+
+  try {
+    console.log('Getting local directory structure...');
+    const localDirectory = await getLocalUserDirectory2();
+    sendProgress(20);
+
+    console.log('Requesting file list from online database...');
+    const response = await axios.post(`${baseUrl}/check-missing-files`, 
+      { userId, localDirectory },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+        },
+        httpsAgent: secureAgent
+      }
+    );
+    const { missingFiles } = response.data;
+    sendProgress(40);
+
+    if (missingFiles.length > 0) {
+      console.log('Downloading missing files...');
+      const downloadResponse = await axios.post(`${baseUrl}/download-missing-files`,
+        { userId, missingFiles },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': apiKey,
+          },
+          responseType: 'arraybuffer',  // Changed from 'stream' to 'arraybuffer'
+          httpsAgent: secureAgent
+        }
+      );
+
+      const contentLength = parseInt(downloadResponse.headers['content-length']);
+      const data = downloadResponse.data;
+      console.log(`Received ${data.byteLength} bytes of data`);
+      sendProgress(70);
+
+      console.log('Extracting downloaded files...');
+      const extractStartTime = Date.now();
+      await extractDownloadedFiles(Buffer.from(data), userId);
+      const extractEndTime = Date.now();
+      const extractionTime = (extractEndTime - extractStartTime) / 1000;
+      console.log(`Extraction time: ${extractionTime} seconds`);
+      console.log(`Extracted size: ${data.byteLength} bytes`);
+
+      sendProgress(90);
+      console.log('Files downloaded and extracted successfully.');
+      return {
+        success: true,
+        message: 'Files downloaded and extracted successfully.'
+      };
+    } else {
+      console.log('No missing files to download.');
+      sendProgress(90);
+      return {
+        success: true,
+        message: 'No files needed to be downloaded'
+      };
+    }
+
+  } catch (error) {
+    console.error('Download error:', error);
+    sendProgress(0);
+    
+    if (axios.isAxiosError(error)) {
+      return {
+        success: false,
+        message: `Download failed (${error.response?.status}): ${error.response?.data?.message || error.message}`,
+        error: {
+          status: error.response?.status,
+          data: error.response?.data
+        }
+      };
+    }
+    
+    return {
+      success: false,
+      message: error.message || 'Unknown error occurred'
+    };
+  }
+});
+const baseUrlLocal = 'http://localhost:8100';
+
+const extractDownloadedFiles = async (zipBuffer: Buffer, userId: string) => {
+  try {
+    const response = await axios.post(
+      `${baseUrlLocal}/extract-downloaded-files`,
+      zipBuffer,
+      {
+        headers: {
+          'Content-Type': 'application/octet-stream',
+        },
+        maxBodyLength: Infinity, // Allow large file uploads
+        maxContentLength: Infinity
+      }
+    );
+
+    if (response.status !== 200) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+
+    console.log('Files extracted successfully:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error extracting files:', error);
+    throw error;
+  }
 };

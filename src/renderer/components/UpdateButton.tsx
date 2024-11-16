@@ -121,7 +121,7 @@ export const UpdateButton = () => {
             </div>
             
             <div className="progress-details">
-              <span>{status.progress.toFixed(1)}%</span>
+              <span>{status.progress ? status.progress.toFixed(1) : 0}%</span>
               <span>
                 {formatBytes(status.downloadedSize)} / {formatBytes(status.totalSize)}
               </span>
