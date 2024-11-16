@@ -24,6 +24,13 @@ interface ValidationState {
   [key: string]: boolean;
 }
 
+// Bit settings explanation:
+// For each notification type (index), we use 4 bits:
+// bit 0 (index * 4): email enabled
+// bit 1 (index * 4 + 1): sms enabled  
+// bit 2 (index * 4 + 2): email self enabled
+// bit 3 (index * 4 + 3): sms self enabled
+
 const NotificationSettingsTable: React.FC<NotificationSettingsProps> = ({
   notificationSettings,
   setNotificationSettings,
@@ -35,7 +42,7 @@ const NotificationSettingsTable: React.FC<NotificationSettingsProps> = ({
   const [emailTemplates, setEmailTemplates] = useState<EmailTemplate[]>([]);
   const [smsTemplates, setSmsTemplates] = useState<EmailTemplate[]>([]);
   const [selectedTemplates, setSelectedTemplates] = useState<
-    Record<string, { email?: string; sms?: string }>
+    Record<string, { email?: string; sms?: string; emailSelf?: string; smsSelf?: string }>
   >({});
   const [templateValidation, setTemplateValidation] = useState<ValidationState>(
     {}
@@ -43,7 +50,7 @@ const NotificationSettingsTable: React.FC<NotificationSettingsProps> = ({
 
   const notificationTypes = [
     '5 days before due',
-    '3 days before due',
+    '3 days before due', 
     '1 day before due',
     'On due date',
     '1 day after due',
@@ -71,11 +78,13 @@ const NotificationSettingsTable: React.FC<NotificationSettingsProps> = ({
         if (selection.id === expectedId) {
           acc[selection.notification_type] = {
             email: selection.email_template_id,
-            sms: selection.sms_template_id
+            sms: selection.sms_template_id,
+            emailSelf: selection.email_self_template_id,
+            smsSelf: selection.sms_self_template_id
           };
         }
         return acc;
-      }, {} as Record<string, { email?: string; sms?: string }>);
+      }, {} as Record<string, { email?: string; sms?: string; emailSelf?: string; smsSelf?: string }>);
       setSelectedTemplates(selectionsMap);
     };
 
@@ -84,12 +93,13 @@ const NotificationSettingsTable: React.FC<NotificationSettingsProps> = ({
     fetchSelectedTemplates();
   }, [userId, roomId]);
 
-  const toggleSetting = (index: number, type: string) => {
-    const newSettings = notificationSettings ^ (1 << (index * 2));
+  const toggleSetting = (index: number, type: string, settingType: 'email' | 'emailSelf') => {
+    const bitOffset = settingType === 'email' ? 0 : 2;
+    const newSettings = notificationSettings ^ (1 << (index * 4 + bitOffset));
     setNotificationSettings(newSettings);
 
-    const isEmailEnabled = (newSettings & (1 << (index * 2))) !== 0;
-    if (isEmailEnabled && !selectedTemplates[type]) {
+    const isEnabled = (newSettings & (1 << (index * 4 + bitOffset))) !== 0;
+    if (isEnabled && !selectedTemplates[type]) {
       setTemplateValidation((prev) => ({
         ...prev,
         [type]: true,
@@ -102,33 +112,43 @@ const NotificationSettingsTable: React.FC<NotificationSettingsProps> = ({
     }
   };
 
-  const toggleSmsSetting = (index: number) => {
-    setNotificationSettings(notificationSettings ^ (1 << (index * 2 + 1)));
+  const toggleSmsSetting = (index: number, isSelf: boolean) => {
+    const bitOffset = isSelf ? 3 : 1;
+    setNotificationSettings(notificationSettings ^ (1 << (index * 4 + bitOffset)));
   };
 
   const handleTemplateChange = async (
     notificationType: string,
     templateId: string,
-    EmailOrSms: 'email' | 'sms'
+    type: 'email' | 'sms' | 'emailSelf' | 'smsSelf'
   ) => {
     setSelectedTemplates((prev) => ({
       ...prev,
       [notificationType]: {
         ...prev[notificationType],
-        [EmailOrSms]: templateId,
+        [type]: templateId,
       },
     }));
+
+    const dbFieldMap = {
+      email: 'email_template_id',
+      sms: 'sms_template_id',
+      emailSelf: 'email_self_template_id',
+      smsSelf: 'sms_self_template_id'
+    };
+
     const NotificationSettingsSelectionRaw = await getValuesWithSql(
       'notification_template_selections',
       `WHERE id = '${roomId}_${notificationType}' AND notification_type = '${notificationType}'`
     );
+
     if (NotificationSettingsSelectionRaw.length === 0) {
       await addValue(
         'notification_template_selections',
         {
           id: `${roomId}_${notificationType}`,
           notification_type: notificationType,
-          [EmailOrSms === 'email' ? 'email_template_id' : 'sms_template_id']: templateId,
+          [dbFieldMap[type]]: templateId,
           userId: userId,
           branchId: SelectedBranchId,
         },
@@ -138,48 +158,14 @@ const NotificationSettingsTable: React.FC<NotificationSettingsProps> = ({
       await updateValue(
         'notification_template_selections',
         `${roomId}_${notificationType}`,
-        EmailOrSms === 'email' ? 'email_template_id' : 'sms_template_id',
+        dbFieldMap[type],
         templateId,
         setChangeMade,
         selectedTemplates[notificationType]
       );
     }
   };
-  const handleTemplateChangeSms = async (
-    notificationType: string,
-    templateId: string
-  ) => {
-    setSelectedTemplates((prev) => ({
-      ...prev,
-      [notificationType]: templateId,
-    }));
-    const NotificationSettingsSelectionRaw = await getValuesWithSql(
-      'notification_template_selections',
-      `WHERE id = '${roomId}_${notificationType}' AND notification_type = '${notificationType}'`
-    );
-    if (NotificationSettingsSelectionRaw.length === 0) {
-      await addValue(
-        'notification_template_selections',
-        {
-          id: `${roomId}_${notificationType}`,
-          notification_type: notificationType,
-          sms_template_id: templateId,
-          userId: userId,
-          branchId: SelectedBranchId,
-        },
-        setChangeMade
-      );
-    } else {
-      await updateValue(
-        'notification_template_selections',
-        `${roomId}_${notificationType}`,
-        'sms_template_id',
-        templateId,
-        setChangeMade,
-        selectedTemplates[notificationType]
-      );
-    }
-  };
+
   const getSelectStyle = (type: string) => ({
     border: templateValidation[type]
       ? 'var(--2px-V) solid red'
@@ -200,8 +186,10 @@ const NotificationSettingsTable: React.FC<NotificationSettingsProps> = ({
             marginTop: 'var(--10px-V)',
             padding: 'var(--5px-V)',
             backgroundColor:
-              (notificationSettings & (1 << (index * 2))) !== 0 ||
-              (notificationSettings & (1 << (index * 2 + 1))) !== 0
+              (notificationSettings & (1 << (index * 4))) !== 0 ||
+              (notificationSettings & (1 << (index * 4 + 1))) !== 0 ||
+              (notificationSettings & (1 << (index * 4 + 2))) !== 0 ||
+              (notificationSettings & (1 << (index * 4 + 3))) !== 0
                 ? 'var(--Secondary-Color60)'
                 : 'var(--Secondary-Color30)',
             borderRadius: 'var(--5px-V)',
@@ -210,21 +198,21 @@ const NotificationSettingsTable: React.FC<NotificationSettingsProps> = ({
           <div style={{ width: 'var(--150px-V)' }}>{type}</div>
 
           <div>
+            {/* Client notifications */}
             <div
               style={{
-                marginBottom: 'var(--5px-V)',
                 display: 'flex',
                 alignItems: 'center',
               }}
             >
               <input
                 type="checkbox"
-                checked={(notificationSettings & (1 << (index * 2))) !== 0}
-                onChange={() => toggleSetting(index, type)}
+                checked={(notificationSettings & (1 << (index * 4))) !== 0}
+                onChange={() => toggleSetting(index, type, 'email')}
                 style={{ marginRight: 'var(--5px-V)' }}
               />
-              <label style={{ marginRight: 'var(--5px-V)' }}>Email</label>
-              {(notificationSettings & (1 << (index * 2))) !== 0 && (
+              <label style={{ marginRight: 'var(--5px-V)' }}>Email Tenant</label>
+              {(notificationSettings & (1 << (index * 4))) !== 0 && (
                 <div>
                   <select
                     value={selectedTemplates[type]?.email || ''}
@@ -248,35 +236,67 @@ const NotificationSettingsTable: React.FC<NotificationSettingsProps> = ({
                 </div>
               )}
             </div>
+
             <div style={{ display: 'flex', alignItems: 'center' }}>
               <input
                 type="checkbox"
-                checked={(notificationSettings & (1 << (index * 2 + 1))) !== 0}
-                onChange={() => toggleSmsSetting(index)}
+                checked={(notificationSettings & (1 << (index * 4 + 1))) !== 0}
+                onChange={() => toggleSmsSetting(index, false)}
                 style={{ marginRight: 'var(--5px-V)' }}
               />
-              <label style={{ marginRight: 'var(--10px-V)' }}>SMS </label>
-              {(notificationSettings & (1 << (index * 2 + 1))) !== 0 && (
-                 <select
+              <label style={{ marginRight: 'var(--10px-V)' }}>SMS Tenant</label>
+              {(notificationSettings & (1 << (index * 4 + 1))) !== 0 && (
+                <select
                   value={selectedTemplates[type]?.sms || ''}
                   onChange={(e) => {
                     handleTemplateChange(type, e.target.value, 'sms');
                     setTemplateValidation((prev) => ({
-                     ...prev,
-                     [type]: false,
-                   }));
-                 }}
-                 style={getSelectStyle(type)}
-               >
+                      ...prev,
+                      [type]: false,
+                    }));
+                  }}
+                  style={getSelectStyle(type)}
+                >
                   <option value="">Select a template</option>
                   {smsTemplates.map((template) => (
                     <option key={template.id} value={template.id}>
                       {template.name}{' '}
-                     {template.name === type && 'RECOMMENDED'}
-                   </option>
+                      {template.name === type && 'RECOMMENDED'}
+                    </option>
                   ))}
                 </select>
               )}
+            </div>
+
+            {/* Self notifications */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+              }}
+              title='You can select representative email in the email templates settings'
+            >
+              <input
+                type="checkbox"
+                checked={(notificationSettings & (1 << (index * 4 + 2))) !== 0}
+                onChange={() => toggleSetting(index, type, 'emailSelf')}
+                style={{ marginRight: 'var(--5px-V)' }}
+              />
+              <label style={{ marginRight: 'var(--5px-V)' }}>Email Representative</label>
+              
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center' }} 
+              title='You can select representative phonenumber in the sms templates settings'
+            >
+              <input
+                type="checkbox"
+                checked={(notificationSettings & (1 << (index * 4 + 3))) !== 0}
+                onChange={() => toggleSmsSetting(index, true)}
+                style={{ marginRight: 'var(--5px-V)' }}
+              />
+              <label style={{ marginRight: 'var(--10px-V)' }}>SMS Representative</label>
+             
             </div>
           </div>
         </div>

@@ -12,7 +12,11 @@ import {
   endOfYear,
   addYears,
 } from 'date-fns';
-import { formatNumberWithSuffix } from '../Helpers/CurrencySign';
+import CurrencySign, {
+  formatNumberWithSuffix,
+  getRateByDate,
+} from '../Helpers/CurrencySign';
+import { convertCurrency } from '../Helpers/CurrencySign';
 
 interface Payment {
   id: string;
@@ -38,13 +42,16 @@ const DashbTotalCollected = ({
   const [predictedPayments, setPredictedPayments] = useState<Payment[]>([]);
   const [visibleSeries, setVisibleSeries] = useState({
     collected: true,
-    expected: true
+    expected: true,
   });
+  const [currencyDisplay, setCurrencyDisplay] = useState<
+    'ETB_ONLY' | 'USD_ONLY' | 'ALL_ETB' | 'ALL_USD'
+  >('ALL_ETB');
 
   const handleSeriesToggle = (series: 'collected' | 'expected') => {
-    setVisibleSeries(prev => ({
+    setVisibleSeries((prev) => ({
       ...prev,
-      [series]: !prev[series]
+      [series]: !prev[series],
     }));
   };
 
@@ -67,25 +74,18 @@ const DashbTotalCollected = ({
         `WHERE Day >= ${yearStart.getTime()} AND Day <= ${yearEnd.getTime()} AND branchId = '${SelectedBranchId}'`
       );
 
-      // Only add paid payments from actual and historical
-      const combinedPayments = [...actualPayments, ...historicalPayments]
-        .filter((payment) => payment.Paid === 1)
-        .map((payment) => ({
+      // Add ALL payments (both paid and unpaid) from actual and historical
+      const combinedPayments = [...actualPayments, ...historicalPayments].map(
+        (payment) => ({
           id: payment.id,
           Day: payment.Day,
           Value: payment.Value,
-          Paid: true,
+          Paid: payment.Paid === 1,
           roomId: payment.roomId,
-        }));
+        })
+      );
 
-      // If we have no payment history, don't add predictions
-      if (actualPayments.length === 0 && historicalPayments.length === 0) {
-        console.log('No payment history found, skipping predictions');
-        setPredictedPayments(allPayments);
-        return;
-      }
-
-      // Add verified payments to allPayments
+      // Add all payments to allPayments
       allPayments.push(...combinedPayments);
 
       // Only generate predictions if we have payment history
@@ -168,6 +168,48 @@ const DashbTotalCollected = ({
     }
   };
 
+  // Add this to display current exchange rate
+  const getCurrentExchangeRate = () => {
+    const storedRates = window.electron.store.get('exchangeRate');
+    if (!storedRates || storedRates.length === 0) return null;
+    return storedRates[storedRates.length - 1].rates;
+  };
+
+  // Replace processValueByCurrency function with this updated version
+  const processValueByCurrency = (
+    value: number,
+    currency: string,
+    date: number
+  ) => {
+    const { rate, direction } = getRateByDate(date);
+
+    if (!rate) {
+      console.warn('No rate available, using current rate as fallback');
+      return value; // Return original value if no rate found
+    }
+
+    if (
+      (currencyDisplay === 'ETB_ONLY' && currency === 'ETB') ||
+      (currencyDisplay === 'USD_ONLY' && currency === 'USD')
+    ) {
+      return value;
+    } else if (currencyDisplay === 'ALL_ETB') {
+      if (currency === 'USD') {
+        const convertedValue = value * rate;
+        return convertedValue;
+      }
+      return value;
+    } else if (currencyDisplay === 'ALL_USD') {
+      if (currency === 'ETB') {
+        const convertedValue = value / rate;
+        return convertedValue;
+      }
+      return value;
+    }
+    return 0;
+  };
+
+  // Modify the aggregateMonthlyData to use currency filtering
   const aggregateMonthlyData = useMemo(() => {
     const selectedYear = parseInt(selectedDate);
     const filteredData = predictedPayments.filter(
@@ -177,8 +219,22 @@ const DashbTotalCollected = ({
     const monthlyData = d3.rollups(
       filteredData,
       (v) => ({
-        value: d3.sum(v, (d) => (d.Paid ? d.Value : 0)),
-        expectedValue: d3.sum(v, (d) => d.Value),
+        value: d3.sum(v, (d) =>
+          d.Paid
+            ? processValueByCurrency(
+                d.Value,
+                RoomList.find((r) => r.id === d.roomId)?.Currency || 'ETB',
+                d.Day
+              )
+            : 0
+        ),
+        expectedValue: d3.sum(v, (d) =>
+          processValueByCurrency(
+            d.Value,
+            RoomList.find((r) => r.id === d.roomId)?.Currency || 'ETB',
+            d.Day
+          )
+        ),
       }),
       (d) => new Date(d.Day).getMonth()
     );
@@ -195,14 +251,29 @@ const DashbTotalCollected = ({
     });
 
     return allMonths;
-  }, [selectedDate, predictedPayments, showBy]);
+  }, [selectedDate, predictedPayments, showBy, currencyDisplay]); // Add currencyDisplay to dependencies
 
+  // Similarly modify aggregateYearlyData
   const aggregateYearlyData = useMemo(() => {
     const yearlyData = d3.rollups(
       predictedPayments,
       (v) => ({
-        value: d3.sum(v, (d) => (d.Paid ? d.Value : 0)),
-        expectedValue: d3.sum(v, (d) => d.Value),
+        value: d3.sum(v, (d) =>
+          d.Paid
+            ? processValueByCurrency(
+                d.Value,
+                RoomList.find((r) => r.id === d.roomId)?.Currency || 'ETB',
+                d.Day
+              )
+            : 0
+        ),
+        expectedValue: d3.sum(v, (d) =>
+          processValueByCurrency(
+            d.Value,
+            RoomList.find((r) => r.id === d.roomId)?.Currency || 'ETB',
+            d.Day
+          )
+        ),
       }),
       (d) => new Date(d.Day).getFullYear()
     );
@@ -224,7 +295,7 @@ const DashbTotalCollected = ({
     });
 
     return yearRange;
-  }, [selectedDate, predictedPayments, showBy]);
+  }, [selectedDate, predictedPayments, showBy, currencyDisplay]);
 
   const dataset =
     showBy === 'Monthly' ? aggregateMonthlyData : aggregateYearlyData;
@@ -233,28 +304,98 @@ const DashbTotalCollected = ({
     const selectedYear = parseInt(selectedDate);
     return predictedPayments
       .filter((d) => new Date(d.Day).getFullYear() === selectedYear && d.Paid)
-      .reduce((sum, item) => sum + item.Value, 0);
-  }, [selectedDate, predictedPayments, showBy]);
+      .reduce(
+        (sum, item) =>
+          sum +
+          processValueByCurrency(
+            item.Value,
+            RoomList.find((r) => r.id === item.roomId)?.Currency || 'ETB',
+            item.Day
+          ),
+        0
+      );
+  }, [selectedDate, predictedPayments, showBy, currencyDisplay]);
 
   const totalExpected = useMemo(() => {
     const selectedYear = parseInt(selectedDate);
     return predictedPayments
       .filter((d) => new Date(d.Day).getFullYear() === selectedYear)
-      .reduce((sum, item) => sum + item.Value, 0);
-  }, [selectedDate, predictedPayments, showBy]);
+      .reduce(
+        (sum, item) =>
+          sum +
+          processValueByCurrency(
+            item.Value,
+            RoomList.find((r) => r.id === item.roomId)?.Currency || 'ETB',
+            item.Day
+          ),
+        0
+      );
+  }, [selectedDate, predictedPayments, showBy, currencyDisplay]);
 
   const lastYearTotalCollected = useMemo(() => {
     const previousYear = parseInt(selectedDate) - 1;
     return predictedPayments
       .filter((d) => new Date(d.Day).getFullYear() === previousYear && d.Paid)
-      .reduce((sum, item) => sum + item.Value, 0);
-  }, [selectedDate, predictedPayments, showBy]);
+      .reduce(
+        (sum, item) =>
+          sum +
+          processValueByCurrency(
+            item.Value,
+            RoomList.find((r) => r.id === item.roomId)?.Currency || 'ETB',
+            item.Day
+          ),
+        0
+      );
+  }, [selectedDate, predictedPayments, showBy, currencyDisplay]);
 
   const difference = totalCollected - lastYearTotalCollected;
   const percentageChange =
     lastYearTotalCollected !== 0
       ? ((difference / lastYearTotalCollected) * 100).toFixed(2)
       : 'N/A';
+
+  const formatChartValue = (value: number) => {
+    if (currencyDisplay === 'ETB_ONLY' || currencyDisplay === 'ALL_ETB') {
+      const formatted = `${formatNumberWithSuffix(value)} ${CurrencySign(
+        'ETB'
+      )}`;
+      return formatted;
+    } else {
+      const formatted = `${formatNumberWithSuffix(value)}${CurrencySign(
+        'USD'
+      )}`;
+      return formatted;
+    }
+  };
+
+  // Add this useMemo hook to calculate the statistics
+  const collectedStats = useMemo(() => {
+    const selectedYear = parseInt(selectedDate);
+    const yearData = dataset.map((item) => ({
+      collected: item.value,
+      month: item.month,
+    }));
+
+    const totalCollectedAmount = yearData.reduce(
+      (sum, item) => sum + item.collected,
+      0
+    );
+    const highestCollection = Math.max(
+      ...yearData.map((item) => item.collected)
+    );
+    const averageCollection = totalCollectedAmount / yearData.length;
+    const totalTransactions = predictedPayments.filter(
+      (payment) =>
+        new Date(payment.Day).getFullYear() === selectedYear && payment.Paid
+    ).length;
+
+    return {
+      totalCollectedAmount,
+      highestCollection,
+      averageCollection,
+      totalTransactions,
+    };
+  }, [dataset, selectedDate, predictedPayments]);
 
   return (
     <div
@@ -268,7 +409,7 @@ const DashbTotalCollected = ({
 
       <div className="DashboardTotalCollectedTopPart">
         <div className="ShowByContainer">
-          <span className="ShowByLabel">Show by:</span>
+          <span className="ShowByLabel">Show by</span>
           <select
             className="ShowBySelect"
             value={showBy}
@@ -279,20 +420,23 @@ const DashbTotalCollected = ({
           </select>
         </div>
         <div className="YearInputContainer">
-          <span className="YearLabel">Year:</span>
-          <input
-            className="YearInput"
-            type="number"
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            min="1900"
-            max="2100"
-            step="1"
-          />
+          <div className="ShowByContainer">
+            {' '}
+            <span className="YearLabel">Year</span>
+            <input
+              className="YearInput"
+              type="number"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              min="1900"
+              max="2100"
+              step="1"
+            />
+          </div>
           <span className="TotalLabel">Total:</span>
           <span className="TotalValue">
-            ${formatNumberWithSuffix(totalCollected.toLocaleString())} / $
-            {formatNumberWithSuffix(totalExpected.toLocaleString())}
+            {formatChartValue(totalCollected)} /{' '}
+            {formatChartValue(totalExpected)}
           </span>
           <span className="DifferenceLabel">
             <span
@@ -300,20 +444,23 @@ const DashbTotalCollected = ({
                 difference > 0 ? 'DifferenceValue' : 'DifferenceValueNegative'
               }
             >
-              {difference > 0 ? '+' : ''}{formatNumberWithSuffix(difference.toLocaleString())} (
-              {percentageChange}%)
+              {difference > 0 ? '+' : ''}
+              {formatChartValue(difference)} ({percentageChange}%)
             </span>{' '}
             in {parseInt(selectedDate) - 1}
           </span>
         </div>
       </div>
-      
-      <div style={{
-        display: 'flex',
-        gap: 'var(--20px-V)',
-        justifyContent: 'center',
-        marginBottom: 'var(--10px-V)',
-      }}>
+
+      <div
+        style={{
+          display: 'flex',
+          gap: 'var(--20px-V)',
+          justifyContent: 'center',
+          marginBottom: 'var(--10px-V)',
+          alignItems: 'center',
+        }}
+      >
         <div
           onClick={() => handleSeriesToggle('collected')}
           style={{
@@ -324,12 +471,14 @@ const DashbTotalCollected = ({
             opacity: visibleSeries.collected ? 1 : 0.5,
           }}
         >
-          <div style={{
-            width: 'var(--16px-V)',
-            height: 'var(--16px-V)',
-            backgroundColor: 'var(--Primary-Color)',
-            borderRadius: 'var(--4px-V)',
-          }} />
+          <div
+            style={{
+              width: 'var(--16px-V)',
+              height: 'var(--16px-V)',
+              backgroundColor: 'var(--Primary-Color)',
+              borderRadius: 'var(--4px-V)',
+            }}
+          />
           <span>Collected</span>
         </div>
         <div
@@ -342,13 +491,52 @@ const DashbTotalCollected = ({
             opacity: visibleSeries.expected ? 1 : 0.5,
           }}
         >
-          <div style={{
-            width: 'var(--16px-V)',
-            height: 'var(--16px-V)',
-            backgroundColor: 'var(--Accent-Color50)',
-            borderRadius: 'var(--4px-V)',
-          }} />
+          <div
+            style={{
+              width: 'var(--16px-V)',
+              height: 'var(--16px-V)',
+              backgroundColor: 'var(--Accent-Color50)',
+              borderRadius: 'var(--4px-V)',
+            }}
+          />
           <span>Expected</span>
+        </div>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            flexDirection: 'column',
+          }}
+        >
+          <select
+            value={currencyDisplay}
+            onChange={(e) =>
+              setCurrencyDisplay(e.target.value as typeof currencyDisplay)
+            }
+            style={{
+              padding: '3px 8px',
+              borderRadius: '4px',
+              border: '1px solid var(--Border-Color)',
+              backgroundColor: 'var(--Background-Color)',
+              color: 'var(--Text-Color)',
+              cursor: 'pointer',
+            }}
+          >
+            <option value="ETB_ONLY">Show Only Birr</option>
+            <option value="USD_ONLY">Show Only Dollar</option>
+            <option value="ALL_ETB">Show All in Birr</option>
+            <option value="ALL_USD">Show All in Dollar</option>
+          </select>
+          <span
+            style={{
+              fontSize: 'var(--12px-V)',
+              color: 'var(--Text-Color-Grey)',
+              marginLeft: 'var(--10px-V)',
+            }}
+          >
+            Current Rate: 1 USD ={' '}
+            {getCurrentExchangeRate()?.toFixed(2) || 'N/A'} ETB
+          </span>
         </div>
       </div>
 
@@ -357,40 +545,69 @@ const DashbTotalCollected = ({
         xAxis={[
           {
             scaleType: 'band',
+            tickLabelStyle: {
+              fill: 'var(--Text-Color)',
+              fontSize: 'var(--12px-V)',
+            },
             dataKey: showBy === 'Monthly' ? 'month' : 'year',
           },
         ]}
         slotProps={{
           legend: {
-            hidden: true, // This hides the built-in legend
+            hidden: true,
           },
         }}
         yAxis={[
           {
             fill: 'var(--Text-Color)',
-            valueFormatter: (value: any) => `$${formatNumberWithSuffix(value).toString()}`,
+            tickLabelStyle: {
+              fill: 'var(--Text-Color)',
+              fontSize: 'var(--12px-V)',
+            },
+            valueFormatter: (value: any) => formatChartValue(value),
           },
         ]}
         series={[
-          ...(visibleSeries.collected ? [{
-            dataKey: 'value',
-            label: 'Collected',
-            color: 'var(--Primary-Color)',
-            valueFormatter: (value: number) => `$${formatNumberWithSuffix(value)}`,
-          }] : []),
-          ...(visibleSeries.expected ? [{
-            dataKey: 'expectedValue',
-            label: 'Expected',
-            color: 'var(--Accent-Color50)',
-            valueFormatter: (value: number) => `$${formatNumberWithSuffix(value)}`,
-          }] : []),
+          ...(visibleSeries.collected
+            ? [
+                {
+                  dataKey: 'value',
+                  label: 'Collected',
+                  color: 'var(--Primary-Color)',
+                  valueFormatter: (value: number | null) =>
+                    value ? formatChartValue(value) : '',
+                },
+              ]
+            : []),
+          ...(visibleSeries.expected
+            ? [
+                {
+                  dataKey: 'expectedValue',
+                  label: 'Expected',
+                  color: 'var(--Accent-Color50)',
+                  valueFormatter: (value: number | null) =>
+                    value ? formatChartValue(value) : '',
+                },
+              ]
+            : []),
         ]}
         grid={{ vertical: true, horizontal: true }}
         margin={{
-          left: 74,
+          left:
+            40 +
+            (window.electron.store.get('abbreiviateBigNumbers')
+              ? 30
+              : Math.max(
+                  ...dataset.map((d) =>
+                    Math.max(
+                      visibleSeries.collected ? d.value || 0 : 0,
+                      visibleSeries.expected ? d.expectedValue || 0 : 0
+                    )
+                  )
+                ).toString().length * 6),
           right: 30,
-          top: 40,
-          bottom: 35,
+          top: 5,
+          bottom: 55,
         }}
         sx={(theme) => ({
           [`.${axisClasses.root}`]: {
@@ -406,6 +623,52 @@ const DashbTotalCollected = ({
           '.MuiBarElement-root': {},
         })}
       />
+      <div
+        className="ExpenseStatsContainer"
+        style={{
+          display: 'flex',
+          flexDirection: 'row',
+          position: 'relative',
+          top: 'var(---31px-V)',
+          height: 'var(--16px-V)',
+          textAlign: 'center',
+        }}
+      >
+        <p className="ExpenseStatItem">
+          Total Collected{' '}
+          {showBy === 'Monthly' ? 'This Year' : 'Selected Period'}:
+          <em className="ExpenseStatValue">
+            {formatNumberWithSuffix(
+              collectedStats.totalCollectedAmount.toLocaleString()
+            )}
+            {CurrencySign(currencyDisplay.includes('ETB') ? 'ETB' : 'USD')}
+          </em>
+        </p>
+        <p className="ExpenseStatItem">
+          Highest {showBy === 'Monthly' ? 'Monthly' : 'Yearly'} Collection:
+          <em className="ExpenseStatValue">
+            {formatNumberWithSuffix(
+              collectedStats.highestCollection.toLocaleString()
+            )}
+            {CurrencySign(currencyDisplay.includes('ETB') ? 'ETB' : 'USD')}
+          </em>
+        </p>
+        <p className="ExpenseStatItem">
+          Average {showBy === 'Monthly' ? 'Monthly' : 'Yearly'} Collection:
+          <em className="ExpenseStatValue">
+            {formatNumberWithSuffix(
+              collectedStats.averageCollection.toLocaleString()
+            )}
+            {CurrencySign(currencyDisplay.includes('ETB') ? 'ETB' : 'USD')}
+          </em>
+        </p>
+        <p className="ExpenseStatItem">
+          Total Number of Transactions:
+          <em className="ExpenseStatValue">
+            {collectedStats.totalTransactions}
+          </em>
+        </p>
+      </div>
     </div>
   );
 };

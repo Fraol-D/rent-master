@@ -42,6 +42,12 @@ const electronHandler = {
     once(channel: Channels, func: (...args: unknown[]) => void) {
       ipcRenderer.once(channel, (_event, ...args) => func(...args));
     },
+    removeListener: (channel: string, func: (...args: any[]) => void) => {
+      const validChannels = ['upload-progress'];
+      if (validChannels.includes(channel)) {
+        ipcRenderer.removeListener(channel, func);
+      }
+    }
   },
   showContextMenu: () => ipcRenderer.send('show-context-menu'),
   onContextMenuCommand: (callback) => ipcRenderer.on('context-menu-command', callback),

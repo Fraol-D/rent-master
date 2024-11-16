@@ -16,6 +16,7 @@ import DashbExpenseHistory from '../Dashboard Wigets/DashbExpenseHistory';
 import DashbUpcomingExpensesWidget from '../Dashboard Wigets/DashbUpcomingExpensesWidget';
 import DashbActionHistoryDashboard from '../Dashboard Wigets/DashbActionHistoryDashboard';
 import DashbSmsDetails from '../Dashboard Wigets/DashbSmsDetails';
+import loadingGif from '../../../assets/assets/Loading/Rolling-1s-200px.gif';
 interface props {
   RoomList: RoomType[];
   tenantList: tenant[];
@@ -27,6 +28,7 @@ interface props {
   SelectedUserId: string;
   setChangeMade: any;updateRoomPropertyLocal:any;updateRoomProperty:any;SelectedBranchId:any;
 }
+
 const DashboardPage: React.FC<props> = ({
   RoomList,
   tenantList,
@@ -42,11 +44,18 @@ const DashboardPage: React.FC<props> = ({
 
   useEffect(() => {
     const fetchExpenses = async () => {
-      const expensesData = await getValuesWithSql('expenses', `WHERE 1 AND branchId = '${SelectedBranchId}'`);
-      setExpenses(expensesData);
+      try {
+        const expensesData = await getValuesWithSql('expenses', `WHERE 1 AND branchId = '${SelectedBranchId}'`);
+        setExpenses(expensesData);
+      } catch (error) {
+        console.error('Error fetching expenses:', error);
+      } finally {
+      }
     };
     fetchExpenses();
   }, []);
+
+
 
   return (
     <>

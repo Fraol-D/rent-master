@@ -2256,7 +2256,7 @@ const MainPage = ({
                   currentPage={ToolsSelectedPage}
                   onClick={() => setToolsSelectedPage('EmailTemplates')}
                 >
-                  Email Templates
+                  Email Settings
                 </SideBarItem>
               )}
               {privileges.editSmsTemplates && (
@@ -2265,7 +2265,7 @@ const MainPage = ({
                   currentPage={ToolsSelectedPage}
                   onClick={() => setToolsSelectedPage('SMSTemplates')}
                 >
-                  SMS Templates
+                  SMS Settings
                 </SideBarItem>
               )}
               {privileges.editExpenses && (

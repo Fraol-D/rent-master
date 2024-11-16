@@ -16,6 +16,10 @@ const store = new Store();
 const getStoreValue = (key: string) => {
   return store.get(key);
 };
+// Replace console with electron-log
+
+// Capture renderer logs
+
 const setStoreValue = (key: string, value: any) => {
   store.set(key, value);
 };
@@ -121,12 +125,10 @@ function logDebug(message: string) {
   const timestamp = new Date().toISOString();
   const logMessage = `[${timestamp}] ${message}`;
   debugLog.push(logMessage);
-  console.log(logMessage);
 }
 
 ipcMain.on('ipc-example', async (event, arg) => {
   const msgTemplate = (pingPong: string) => `IPC test: ${pingPong}`;
-  console.log(msgTemplate(arg));
   event.reply('ipc-example', msgTemplate('pong'));
 });
 
@@ -359,7 +361,7 @@ const createWindow = async () => {
   // Modify the window close handler
   mainWindow.on('close', async (e) => {
     console.log('Close event triggered');
-   if(dev) return;
+    if (dev) return;
     // Immediately prevent closing
     e.preventDefault();
 
@@ -541,16 +543,6 @@ const createWindow = async () => {
     return store.get('updateReady', false);
   });
 
-  // Add this to your preload.ts exposure
-  contextBridge.exposeInMainWorld('electron', {
-    ...electronHandler,
-    connectionMonitor: {
-      ...electronHandler.connectionMonitor,
-      isActive: true,
-      getDebugLogs: () => debugLog,
-    },
-  });
-
   // Add diagnostic IPC handlers
   ipcMain.handle('get-connection-logs', () => {
     return debugLog;
@@ -585,14 +577,6 @@ const createWindow = async () => {
       logDebug(`Page failed to load: ${errorDescription} (${errorCode})`);
     }
   );
-
-  // Monitor renderer process memory usage
-  setInterval(() => {
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      const memory = process.getProcessMemoryInfo();
-      logDebug(`Memory usage: ${JSON.stringify(memory)}`);
-    }
-  }, 10000);
 };
 
 app.on('window-all-closed', () => {
@@ -669,8 +653,9 @@ app
         .catch((error) => console.error(error));
     });
     // Check for backup on app start
-    if (store.get('users')[0])
-      if (store.get('users')[0].allowed === 1) checkAndCreateBackup();
+    if (store.get('users'))
+      if (store.get('users')[0])
+        if (store.get('users')[0].allowed === 1) checkAndCreateBackup();
     ipcMain.on('reload-app', () => {
       reloadApp();
     });
@@ -1268,6 +1253,60 @@ const initializeTables = (db: any) => {
     );
   });
 };
+import https from 'https';
+import axios from 'axios';
+const secureAgent = new https.Agent({
+  secureProtocol: 'TLS_method',
+  rejectUnauthorized: false,
+});
+import FormData from 'form-data';
+
+const baseUrl = 'https://www.rentmaster.markethubet.com/api';
+
+// IPC handler for uploading files
+ipcMain.handle('upload-files', async (event, { formData, apiKey }) => {
+  try {
+    // Set up the fetch options with the secure HTTPS agent
+    const fetchOptions = {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'x-api-key': apiKey,
+        // This ensures the correct Content-Type header
+      },
+      agent: secureAgent, // Use the secure HTTPS agent
+    };
+
+    // Perform the fetch request to upload the files
+    const response = await fetch(
+      `${baseUrl}/upload-missing-files`,
+      fetchOptions
+    );
+
+    if (!response.ok) {
+      throw new Error(`Upload failed with status: ${response.status}`);
+    }
+
+    // Return the JSON response from the server
+    return await response.json();
+  } catch (error) {
+    console.error('Error in upload-files handler:', error);
+    throw error;
+  }
+});
+// Add IPC handler for secure HTTPS agent configuration
+ipcMain.handle('get-https-agent', () => {
+  try {
+    const agent = new https.Agent({
+      secureProtocol: 'TLS_method',
+      rejectUnauthorized: false,
+    });
+    return agent;
+  } catch (error) {
+    console.error('Error creating HTTPS agent:', error);
+    throw error;
+  }
+});
 
 // Function to check and update table structure
 const checkAndUpdateTableStructure = (
@@ -1343,6 +1382,8 @@ const updateTableStructure = (
     console.log(`Table ${table.name} structure updated successfully.`);
   });
 };
+// Add helper for reading files
+
 const NodeClam = require('clamscan');
 const JSZip = require('jszip');
 const fs2 = require('fs').promises;
@@ -2961,6 +3002,7 @@ import {
   addValueOnline,
   getValuesWithSql_Online,
 } from '../Backend/OnlineServerApis';
+import { getLocalUserDirectory } from '../Backend/localServerApis';
 ipcMain.handle('GetReceiptFile', (event, date, roomId, tenant) => {
   const formattedDate = format(new Date(date), 'yyyy-MM-dd');
   const addedTimeText = format(
@@ -3052,4 +3094,247 @@ const formatFolderName = (name: string) => {
     return name;
   }
   return name;
+};
+ipcMain.on('console-message', (event, messageData) => {
+  const data = JSON.parse(messageData);
+  log.info('Renderer:', {
+    type: data.type,
+    message: data.message,
+    data: data.data,
+    source: data.source,
+  });
+});
+process.on('uncaughtException', (error) => {
+  log.error('Uncaught Exception:', error);
+});
+
+process.on('unhandledRejection', (error) => {
+  log.error('Unhandled Rejection:', error);
+}); // Add this with your other IPC handlers
+ipcMain.handle('api-request', async (event, { url, method, headers, data }) => {
+  try {
+    const response = await axios({
+      method,
+      url,
+      headers,
+      data,
+      httpsAgent: secureAgent,
+      validateStatus: (status) => {
+        // Accept any status code to handle it ourselves
+        return true;
+      },
+    });
+
+    // Handle different status codes
+    if (response.status === 404) {
+      console.warn(`Resource not found at ${url}. Creating new resource.`);
+      // You might want to modify the URL or method here
+      return null;
+    }
+
+    if (response.status >= 500) {
+      throw new Error(
+        `Server error: ${response.status} ${response.statusText}`
+      );
+    }
+
+    return response.data;
+  } catch (error) {
+    console.error('API Request Error:', {
+      url,
+      method,
+      status: error.response?.status,
+      message: error.message,
+      data: error.response?.data,
+    });
+  }
+});
+
+ipcMain.handle('upload-user-files', async (event, { userId }) => {
+  try {
+    // Send progress updates
+    const updateProgress = (progress: number) => {
+      event.sender.send('upload-progress', progress);
+    };
+    const getLocalUserDirectory2 = async () => {
+      const userDataPath = process.env.APPDATA || app.getPath('userData');
+      const bmsFolderPath = path.join(userDataPath, appname);
+
+      function directoryToJson(dir: string) {
+        const result = {
+          name: path.basename(dir),
+          type: 'directory',
+          children: [],
+        };
+        const files = fs.readdirSync(dir, { withFileTypes: true });
+
+        files.forEach((file: { name: string; isDirectory: () => any }) => {
+          const filePath = path.join(dir, file.name);
+          if (file.isDirectory()) {
+            result.children.push(directoryToJson(filePath));
+          } else {
+            result.children.push({ name: file.name, type: 'file' });
+          }
+        });
+
+        return result;
+      }
+
+      try {
+        const directoryStructure = directoryToJson(bmsFolderPath);
+        return directoryStructure;
+      } catch (error) {
+        console.error('Error reading directory structure:', error);
+        return null;
+      }
+    };
+    updateProgress(0);
+    console.log('Getting local directory...');
+    const localDirectory = await getLocalUserDirectory2();
+    const filteredDirectory = {
+      name: localDirectory.name,
+      type: 'directory',
+      children: localDirectory.children.filter(child => 
+        ['Room Pictures', 'Room Documents'].includes(child.name)
+      )
+    };
+
+    console.log('Filtered directory structure:', JSON.stringify(filteredDirectory, null, 2));
+    updateProgress(10);
+
+    console.log('Sending directory data to online database...');
+    const checkResponse = await axios.post(
+      `${baseUrl}/check-user-directory`,
+      { 
+        userId, 
+        directory: filteredDirectory 
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+        },
+        httpsAgent: secureAgent
+      }
+    );
+
+    const { requiredFiles } = checkResponse.data;
+    console.log('Response received from online database:', requiredFiles);
+    updateProgress(30);
+
+    if (requiredFiles?.length > 0) {
+      console.log('Required files missing:', requiredFiles);
+      
+      // Create zip file
+      const zip = new JSZip();
+      let totalSize = 0;
+
+      // Add files to zip
+      for (const filePath of requiredFiles) {
+        try {
+          // Only process files from Room Pictures or Room Documents
+          if (!filePath.startsWith('Room Pictures/') && !filePath.startsWith('Room Documents/')) {
+            console.log('Skipping non-room file:', filePath);
+            continue;
+          }
+
+          const fullPath = path.join(process.env.APPDATA || '', 'Electron', filePath);
+          if (fs.existsSync(fullPath)) {
+            const fileContent = fs.readFileSync(fullPath);
+            zip.file(filePath, fileContent);
+            totalSize += fileContent.length;
+          } else {
+            console.warn(`File not found: ${fullPath}`);
+          }
+        } catch (error) {
+          console.warn(`Error adding file ${filePath} to zip:`, error);
+        }
+      }
+
+      console.log(`Total upload size: ${totalSize} bytes`);
+      updateProgress(50);
+
+      if (totalSize === 0) {
+        console.log('No valid files to upload');
+        return {
+          success: true,
+          message: 'No files needed to be uploaded'
+        };
+      }
+
+      const zipBuffer = await zip.generateAsync({ type: 'nodebuffer' });
+      
+      console.log('Sending zip file to online database...');
+      const form = new FormData();
+      form.append('files', zipBuffer, {
+        filename: 'required_files.zip',
+        contentType: 'application/zip'
+      });
+      form.append('userId', userId);
+      const uploadResponse = await axios.post(
+        `${baseUrl}/upload-missing-files`,
+        form,
+        {
+          headers: {
+            'x-api-key': apiKey,
+            ...form.getHeaders()
+          },
+          maxContentLength: Infinity,
+          maxBodyLength: Infinity,
+          httpsAgent: secureAgent
+        }
+      );
+
+      if (!uploadResponse.data?.success) {
+        
+      }
+
+      console.log('Upload completed successfully:', uploadResponse.data);
+      updateProgress(90);
+    } else {
+      console.log('No files need to be uploaded');
+      updateProgress(90);
+    }
+
+    updateProgress(100);
+    return {
+      success: true,
+      message: 'Upload completed successfully'
+    };
+
+  } catch (error) {
+    console.error('Upload error:', error);
+    
+    if (axios.isAxiosError(error)) {
+      const errorMessage = error.response?.data?.message || error.message;
+      const statusCode = error.response?.status;
+      return {
+        success: false,
+        message: `Upload failed (${statusCode}): ${errorMessage}`,
+        error: {
+          status: statusCode,
+          data: error.response?.data
+        }
+      };
+    }
+    
+    return {
+      success: false,
+      message: error.message || 'Unknown error occurred'
+    };
+  }
+});
+
+// Helper retry function
+const retry = async (fn: () => Promise<any>, maxRetries = 3, delay = 1000) => {
+  let lastError;
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error;
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+  }
+  throw lastError;
 };

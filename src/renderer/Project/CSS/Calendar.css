@@ -50,10 +50,10 @@
   color: var(--Text-Color);
   display: flex;
   align-items: center;
+  flex-direction: column;
 }
 
 .ShowByLabel {
-  margin-right: var(--10px-V);
 }
 
 .ShowBySelect {
@@ -61,7 +61,6 @@
   background-color: var(--Secondary-Color);
   padding: var(--5px-V) var(--10px-V);
   border-radius: var(--4px-V);
-  margin-right: var(--20px-V);
   border: var(--1px-V) solid grey;
 }
 
@@ -72,7 +71,6 @@
 }
 
 .YearLabel {
-  margin-right: var(--10px-V);
 }
 
 .YearInput {
@@ -80,7 +78,7 @@
   background-color: var(--Secondary-Color);
   padding: var(--5px-V) var(--10px-V);
   border-radius: var(--4px-V);
-  margin-right: var(--20px-V);
+ 
   border: var(--1px-V) solid grey;
   width: var(--80px-V);
 }

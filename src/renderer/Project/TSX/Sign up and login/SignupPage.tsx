@@ -399,17 +399,12 @@ const SignupPage = ({
   }
   function getSmsTemplates(userId: string | null) {
     return [
+      // English templates
       {
         id: uuidv4(),
         name: '5 days before due',
-        body: `Dear {{tenant_name}},
-  
-  Your rent payment of {{currency}}{{due_amount}} is due in 5 days ({{due_duration}}) on {{due_date}}.
-  
-  If you have any questions, please contact {{landlord_name}} at {{landlord_Telephone}}.
-  
-  Best regards,
-  {{landlord_name}}`,
+        body: `Rent of {{currency}}{{due_amount}} due in 5 days on {{due_date}}.
+{{landlord_name}}, {{landlord_Telephone}}`,
         created_at: Date.now(),
         updated_at: Date.now(),
         userId: userId,
@@ -417,14 +412,8 @@ const SignupPage = ({
       {
         id: uuidv4(),
         name: '3 days before due',
-        body: `Dear {{tenant_name}},
-  
-  Your rent payment of {{currency}}{{due_amount}} is due in 3 days ({{due_duration}}) on {{due_date}}. Please ensure timely payment.
-  
-  For any inquiries, contact {{landlord_name}} at {{landlord_Telephone}}.
-  
-  Thank you,
-  {{landlord_name}}`,
+        body: `Rent of {{currency}}{{due_amount}} due in 3 days on {{due_date}}.
+{{landlord_name}}, {{landlord_Telephone}}`,
         created_at: Date.now(),
         updated_at: Date.now(),
         userId: userId,
@@ -432,14 +421,8 @@ const SignupPage = ({
       {
         id: uuidv4(),
         name: '1 day before due',
-        body: `Dear {{tenant_name}},
-  
-  This is an urgent reminder that your rent payment of {{currency}}{{due_amount}} is due tomorrow ({{due_duration}}), {{due_date}}.
-  
-  If you have any concerns, please contact {{landlord_name}} at {{landlord_Telephone}}.
-  
-  Best regards,
-  {{landlord_name}}`,
+        body: `Rent of {{currency}}{{due_amount}} due tomorrow, {{due_date}}.
+{{landlord_name}}, {{landlord_Telephone}}`,
         created_at: Date.now(),
         updated_at: Date.now(),
         userId: userId,
@@ -447,14 +430,8 @@ const SignupPage = ({
       {
         id: uuidv4(),
         name: 'On due date',
-        body: `Dear {{tenant_name}},
-  
-  Your rent payment of {{currency}}{{due_amount}} is due today ({{due_duration}}), {{due_date}}. Please make the payment as soon as possible.
-  
-  For any questions, contact {{landlord_name}} at {{landlord_Telephone}}.
-  
-  Thank you,
-  {{landlord_name}}`,
+        body: `Rent of {{currency}}{{due_amount}} due today, {{due_date}}.
+{{landlord_name}}, {{landlord_Telephone}}`,
         created_at: Date.now(),
         updated_at: Date.now(),
         userId: userId,
@@ -462,14 +439,8 @@ const SignupPage = ({
       {
         id: uuidv4(),
         name: '1 day after due',
-        body: `Dear {{tenant_name}},
-  
-  Your rent payment of {{currency}}{{due_amount}} was due yesterday ({{due_duration}}), {{due_date}}. If you have already made the payment, please disregard this message.
-  
-  If not, please make the payment immediately or contact {{landlord_name}} at {{landlord_Telephone}}.
-  
-  Regards,
-  {{landlord_name}}`,
+        body: `Rent of {{currency}}{{due_amount}} was due yesterday, {{due_date}}.
+{{landlord_name}}, {{landlord_Telephone}}`,
         created_at: Date.now(),
         updated_at: Date.now(),
         userId: userId,
@@ -477,29 +448,8 @@ const SignupPage = ({
       {
         id: uuidv4(),
         name: '3 days after due',
-        body: `Dear {{tenant_name}},
-  
-  Your rent payment of {{currency}}{{due_amount}} is now 3 days overdue ({{due_duration}}). The due date was {{due_date}}.
-  
-  Please make the payment immediately or contact {{landlord_name}} at {{landlord_Telephone}}.
-  
-  Sincerely,
-  {{landlord_name}}`,
-        created_at: Date.now(),
-        updated_at: Date.now(),
-        userId: userId,
-      },
-      {
-        id: uuidv4(),
-        name: '5 days after due',
-        body: `Dear {{tenant_name}},
-  
-  Your rent payment of {{currency}}{{due_amount}} is now 5 days overdue ({{due_duration}}). Due date was {{due_date}}.
-  
-  Please make the payment immediately or contact {{landlord_name}} at {{landlord_Telephone}}.
-  
-  Regards,
-  {{landlord_name}}`,
+        body: `Rent of {{currency}}{{due_amount}} is 3 days overdue. Due date was {{due_date}}.
+{{landlord_name}}, {{landlord_Telephone}}`,
         created_at: Date.now(),
         updated_at: Date.now(),
         userId: userId,
@@ -507,14 +457,8 @@ const SignupPage = ({
       {
         id: uuidv4(),
         name: '7 days after due',
-        body: `Dear {{tenant_name}},
-  
-  Your rent payment of {{currency}}{{due_amount}} is now 7 days overdue ({{due_duration}}). Due date was {{due_date}}.
-  
-  Please make immediate payment or contact {{landlord_name}} at {{landlord_Telephone}}.
-  
-  Sincerely,
-  {{landlord_name}}`,
+        body: `Rent of {{currency}}{{due_amount}} is 7 days overdue. Due date was {{due_date}}.
+{{landlord_name}}, {{landlord_Telephone}}`,
         created_at: Date.now(),
         updated_at: Date.now(),
         userId: userId,
@@ -523,14 +467,8 @@ const SignupPage = ({
       {
         id: uuidv4(),
         name: 'በ5 ቀናት ውስጥ የሚከፈል',
-        body: `ውድ {{tenant_name}},
-  
-  የ{{currency}}{{due_amount}} የኪራይ ክፍያዎ በ5 ቀናት ውስጥ ({{due_duration}}) በ{{due_date}} መከፈል አለበት።
-  
-  ጥያቄ ካለዎት {{landlord_name}}ን በ{{landlord_Telephone}} ያግኙ።
-  
-  ከሰላምታ ጋር፣
-  {{landlord_name}}`,
+        body: `የ{{currency}}{{due_amount}} ኪራይ በ5 ቀናት በ{{due_date}} ይከፈላል።
+{{landlord_name}}, {{landlord_Telephone}}`,
         created_at: Date.now(),
         updated_at: Date.now(),
         userId: userId,
@@ -538,14 +476,8 @@ const SignupPage = ({
       {
         id: uuidv4(),
         name: 'በ3 ቀናት ውስጥ የሚከፈል',
-        body: `ውድ {{tenant_name}},
-  
-  የ{{currency}}{{due_amount}} የኪራይ ክፍያዎ በ3 ቀናት ውስጥ ({{due_duration}}) በ{{due_date}} መከፈል አለበት። በጊዜው እንዲከፍሉ እናሳስባለን።
-  
-  ጥያቄ ካለዎት {{landlord_name}}ን በ{{landlord_Telephone}} ያግኙ።
-  
-  እናመሰግናለን፣
-  {{landlord_name}}`,
+        body: `የ{{currency}}{{due_amount}} ኪራይ በ3 ቀናት በ{{due_date}} ይከፈላል።
+{{landlord_name}}, {{landlord_Telephone}}`,
         created_at: Date.now(),
         updated_at: Date.now(),
         userId: userId,
@@ -553,14 +485,8 @@ const SignupPage = ({
       {
         id: uuidv4(),
         name: 'በ1 ቀን ውስጥ የሚከፈል',
-        body: `ውድ {{tenant_name}},
-  
-  የ{{currency}}{{due_amount}} የኪራይ ክፍያዎ ነገ ({{due_duration}}) በ{{due_date}} መከፈል አለበት።
-  
-  ጥያቄ ካለዎት {{landlord_name}}ን በ{{landlord_Telephone}} ያግኙ።
-  
-  ከሰላምታ ጋር፣
-  {{landlord_name}}`,
+        body: `የ{{currency}}{{due_amount}} ኪራይ ነገ በ{{due_date}} ይከፈላል።
+{{landlord_name}}, {{landlord_Telephone}}`,
         created_at: Date.now(),
         updated_at: Date.now(),
         userId: userId,
@@ -568,14 +494,8 @@ const SignupPage = ({
       {
         id: uuidv4(),
         name: 'በመክፈያ ቀን',
-        body: `ውድ {{tenant_name}},
-  
-  የ{{currency}}{{due_amount}} የኪራይ ክፍያዎ ዛሬ ({{due_duration}}) በ{{due_date}} መከፈል አለበት። በአስቸኳይ እንዲከፍሉ እናሳስባለን።
-  
-  ጥያቄ ካለዎት {{landlord_name}}ን በ{{landlord_Telephone}} ያግኙ።
-  
-  እናመሰግናለን፣
-  {{landlord_name}}`,
+        body: `የ{{currency}}{{due_amount}} ኪራይ ዛሬ በ{{due_date}} ይከፈላል።
+{{landlord_name}}, {{landlord_Telephone}}`,
         created_at: Date.now(),
         updated_at: Date.now(),
         userId: userId,
@@ -583,14 +503,8 @@ const SignupPage = ({
       {
         id: uuidv4(),
         name: 'ከቀኑ በኋላ 1 ቀን',
-        body: `ውድ {{tenant_name}},
-  
-  የ{{currency}}{{due_amount}} የኪራይ ክፍያዎ ትላንት ({{due_duration}}) በ{{due_date}} መከፈል ነበረበት። ከፍለው ከሆነ ይህን መልእክት ይተዉት።
-  
-  ካልከፈሉ፣ እባክዎ በአስቸኳይ ይክፈሉ ወይም {{landlord_name}}ን በ{{landlord_Telephone}} ያግኙ።
-  
-  ከሰላምታ ጋር፣
-  {{landlord_name}}`,
+        body: `የ{{currency}}{{due_amount}} የኪራይ ክፍያዎ ትላንት በ{{due_date}} መከፈል ነበረበት።
+{{landlord_name}}, {{landlord_Telephone}}`,
         created_at: Date.now(),
         updated_at: Date.now(),
         userId: userId,
@@ -598,29 +512,8 @@ const SignupPage = ({
       {
         id: uuidv4(),
         name: 'ከቀኑ በኋላ 3 ቀናት',
-        body: `ውድ {{tenant_name}},
-  
-  የ{{currency}}{{due_amount}} የኪራይ ክፍያዎ በ3 ቀናት ዘግይቷል ({{due_duration}})። የመክፈያ ቀኑ {{due_date}} ነበር።
-  
-  እባክዎ በአስቸኳይ ይክፈሉ ወይም {{landlord_name}}ን በ{{landlord_Telephone}} ያግኙ።
-  
-  ከሰላምታ ጋር፣
-  {{landlord_name}}`,
-        created_at: Date.now(),
-        updated_at: Date.now(),
-        userId: userId,
-      },
-      {
-        id: uuidv4(),
-        name: 'ከቀኑ በኋላ 5 ቀናት',
-        body: `ውድ {{tenant_name}},
-  
-  የ{{currency}}{{due_amount}} የኪራይ ክፍያዎ በ5 ቀናት ዘግይቷል ({{due_duration}})። የመክፈያ ቀኑ {{due_date}} ነበር።
-  
-  እባክዎ በአስቸኳይ ይክፈሉ ወይም {{landlord_name}}ን በ{{landlord_Telephone}} ያግኙ።
-  
-  ከሰላምታ ጋር፣
-  {{landlord_name}}`,
+        body: `የ{{currency}}{{due_amount}} የኪራይ ክፍያዎ አሁን በ3 ቀናት ዘግይቷል። የመክፈያ ቀኑ {{due_date}} ነበር።
+{{landlord_name}}, {{landlord_Telephone}}`,
         created_at: Date.now(),
         updated_at: Date.now(),
         userId: userId,
@@ -628,14 +521,8 @@ const SignupPage = ({
       {
         id: uuidv4(),
         name: 'ከቀኑ በኋላ 7 ቀናት',
-        body: `ውድ {{tenant_name}},
-  
-  የ{{currency}}{{due_amount}} የኪራይ ክፍያዎ በ7 ቀናት ዘግይቷል ({{due_duration}})። የመክፈያ ቀኑ {{due_date}} ነበር።
-  
-  እባክዎ በአስቸኳይ ይክፈሉ ወይም {{landlord_name}}ን በ{{landlord_Telephone}} ያግኙ።
-  
-  ከሰላምታ ጋር፣
-  {{landlord_name}}`,
+        body: `የ{{currency}}{{due_amount}} የኪራይ ክፍያዎ አሁን በ7 ቀናት ዘግይቷል። የመክፈያ ቀኑ {{due_date}} ነበር።
+{{landlord_name}}, {{landlord_Telephone}}`,
         created_at: Date.now(),
         updated_at: Date.now(),
         userId: userId,
@@ -653,7 +540,11 @@ const SignupPage = ({
     }
 
     const userID = uuidv4();
-
+    window.electron.store.set('abbreviationDecimals', 2);
+    window.electron.store.set(
+      'abbreiviateBigNumbers',
+ true
+    );
     if (subscriptionType === '7daytrial') {
       const startDate = new Date();
       const endDate = new Date(startDate.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days later
@@ -748,6 +639,29 @@ const SignupPage = ({
     setisSignUpMode(false);
   };
 
+  const [CheckOnlineDB, setCheckOnlineDB] = useState(0);
+  useEffect(() => {
+    const check = async () => {
+      try {
+        const response = await getValuesWithSql_Online('users', "WHERE 1");
+        window.electron.ipcRenderer.send('console-message', JSON.stringify({
+          type: 'info',
+          message: 'CheckOnlineDB',
+          data: response,
+          source: 'SignupPage'
+        }));
+        if (response) setCheckOnlineDB(response.length);
+      } catch (error) {
+        window.electron.ipcRenderer.send('console-message', JSON.stringify({
+          type: 'error',
+          message: 'CheckOnlineDB Failed',
+          data: error,
+          source: 'SignupPage'
+        }));
+      }
+    };
+    check();
+  }, [formStage]);
   return (
     <>
       {loading && (
@@ -783,6 +697,7 @@ const SignupPage = ({
             marginBottom: 'var(--15px-V)',
           }}
         >
+          CheckOnlineDB: {CheckOnlineDB}
           <h1
             style={{
               marginRight: 'var(--10px-V)',

@@ -14,9 +14,9 @@ const DashbRoomSummary = ({ RoomList }: { RoomList: RoomType[] }) => {
 
   // Calculate scale factor based on window width
   const getScaleFactor = () => {
-    if (windowWidth <= 1280) return 1280/1920;
-    if (windowWidth <= 1366) return 1366/1920;
-    if (windowWidth >= 2560) return 3840/1920;
+    if (windowWidth <= 1280) return 1280 / 1920;
+    if (windowWidth <= 1366) return 1366 / 1920;
+    if (windowWidth >= 2560) return 3840 / 1920;
     return 1;
   };
 
@@ -25,7 +25,7 @@ const DashbRoomSummary = ({ RoomList }: { RoomList: RoomType[] }) => {
   // Base dimensions
   const baseWidth = 400;
   const baseHeight = 350;
-  
+
   // Scaled dimensions
   const scaledWidth = baseWidth * scaleFactor;
   const scaledHeight = baseHeight * scaleFactor;
@@ -38,22 +38,31 @@ const DashbRoomSummary = ({ RoomList }: { RoomList: RoomType[] }) => {
   ).length;
 
   const roomSummaryData = [
-    { id: 0, value: takenRoomsCount, label: 'Taken Rooms', color: 'var(--Primary-Color)' },
-    { id: 1, value: emptyRoomsCount, label: 'Empty Rooms', color: 'var(--Accent-Color50)' },
+    {
+      id: 0,
+      value: takenRoomsCount,
+      label: 'Taken Rooms',
+      color: 'var(--Primary-Color)',
+    },
+    {
+      id: 1,
+      value: emptyRoomsCount,
+      label: 'Empty Rooms',
+      color: 'var(--Accent-Color50)',
+    },
   ];
   return (
-    <div 
-      className="DashboardWigetMainContainer" 
-      style={{ 
+    <div
+      className="DashboardWigetMainContainer"
+      style={{
         width: 'var(--400px-V)',
         height: 'var(--510px-V)',
-       
       }}
     >
-      <p 
+      <p
         className="DashboardWigetPieChartTextHeader"
         style={{
-          marginBottom: 'var(--10px-V)'
+          marginBottom: 'var(--10px-V)',
         }}
       >
         Rooms Status
@@ -64,30 +73,34 @@ const DashbRoomSummary = ({ RoomList }: { RoomList: RoomType[] }) => {
             data: roomSummaryData,
             arcLabel: (item) => `${item.label} (${item.value})`,
             arcLabelMinAngle: 45,
+            
           },
         ]}
-  
         colors={roomSummaryData.map((item) => item.color)}
         sx={(theme) => ({
           [`.${axisClasses.root}`]: {
             [`.${axisClasses.tick}, .${axisClasses.line}`]: {
-              stroke: 'white',
+              stroke: 'var(--Text-Color)',
               strokeWidth: 1,
+              fontSize: 'var(--12px-V)',
             },
             [`.${axisClasses.tickLabel}`]: {
-              fill: 'white',
+              fill: 'var(--Text-Color)',
+              fontSize: 'var(--12px-V)',
             },
           },
           '.MuiChartsLegend-label': {
-            fill: 'white',
+            fill: 'var(--Text-Color)',
+            fontSize: 'var(--12px-V)',
           },
           '.MuiChartsLegend-mark': {
             rx: 10,
             ry: 10,
           },
           '.MuiChartsArcLabel-root': {
-            fill: 'white',
+            fill: 'var(--Text-Color)',
             fontWeight: 'bold',
+            fontSize: 'var(--12px-V)',
           },
         })}
       />

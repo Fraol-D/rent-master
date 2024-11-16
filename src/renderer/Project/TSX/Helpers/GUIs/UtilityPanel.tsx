@@ -6,7 +6,7 @@ import {
 } from 'Backend/localServerApis';
 import React, { useEffect, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import CurrencySign, { formatNumberWithSuffix, GetDefaultCurrency } from '../CurrencySign';
+import CurrencySign, { convertCurrency, formatNumberWithSuffix, GetDefaultCurrency, getRateByDate } from '../CurrencySign';
 
 type PaymentType = {
   id: string;
@@ -931,12 +931,37 @@ const UtilityPanel: React.FC<props> = ({
                     >
                       <span>
                         Total:{' '}
-                        {formatNumberWithSuffix(utility.PaymentTypes.reduce(
-                          (total, paymentType) =>
-                            total +
-                            (isNaN(paymentType.price) ? 0 : paymentType.price),
-                          0
-                        ).toLocaleString())}
+                        {(() => {
+  const defaultCurrency = GetDefaultCurrency();
+  
+  // Convert all amounts to the default currency using date-specific rates
+  const total = utility.PaymentTypes.reduce((total, paymentType) => {
+    let amount = isNaN(paymentType.price) ? 0 : paymentType.price;
+    
+    // Only convert if currencies don't match
+    if (paymentType.Currency !== defaultCurrency) {
+      const { rate, direction } = getRateByDate(paymentType.ParentDate);
+      console.log(`Converting ${amount} ${paymentType.Currency} from ${new Date(paymentType.ParentDate).toLocaleDateString()}`);
+      console.log(`Using rate: ${rate} (${direction})`);
+      
+      if (rate) {
+        if (paymentType.Currency === 'USD') {
+          amount = amount * rate; // Convert USD to ETB
+          console.log(`Converted USD to ETB: ${amount}`);
+        } else {
+          amount = amount / rate; // Convert ETB to USD
+          console.log(`Converted ETB to USD: ${amount}`);
+        }
+      } else {
+        console.warn('No rate found for date, using original amount');
+      }
+    }
+    
+    return total + amount;
+  }, 0);
+
+  return `${formatNumberWithSuffix(total.toLocaleString())} ${CurrencySign(defaultCurrency)}`;
+})()}
                         
                       </span>{' '}
                       <span>

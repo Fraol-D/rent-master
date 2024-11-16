@@ -112,6 +112,7 @@ const TenantGrowthWidget = ({ TenantList }: { TenantList: tenant[] }) => {
       </div>
       {hasNewTenants ? (
         <LineChart
+        grid={{ vertical: true, horizontal: true }}
           xAxis={[
             {
               data:
@@ -148,25 +149,17 @@ const TenantGrowthWidget = ({ TenantList }: { TenantList: tenant[] }) => {
           width={480}
           height={160}
           sx={{
-            '.MuiChartsAxis-tickLabel': {
-              fill: 'var(--Text-Color)',
-            },
-            '.MuiChartsAxis-label': {
-              fill: 'var(--Text-Color)',
-            },
+          
+          
             '.MuiChartsAxis-line': {
               stroke: 'var(--Text-Color)',
             },
             '.MuiChartsAxis-tick': {
               stroke: 'var(--Text-Color)',
             },
-            '.MuiLineElement-root': {
-              stroke: 'var(--Text-Color)',
-            },
+         
 
-            '.css-xyaj9i-MuiMarkElement-root': {
-              stroke: 'var(--Accent-Color)',
-            },
+         
           }}
         />
       ) : (

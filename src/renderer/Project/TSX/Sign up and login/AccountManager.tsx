@@ -115,57 +115,74 @@ const AccountManager = (React.FC<MyComponentProps> = ({
   const [initialLoading, setInitialLoading] = useState(true);
   // Function to check if a user is signed in
   const checkIfSignedIn = async () => {
+    const startTime = Date.now();
+    const getSeconds = () => ((Date.now() - startTime) / 1000).toFixed(2);
+    
+    console.log(`[${getSeconds()}s] Starting checkIfSignedIn...`);
     setInitialLoading(true);
     const allUsers = window.electron.store.get('users') || [];
+    console.log(`[${getSeconds()}s] Got users from store:`, allUsers.length > 0);
 
     if (allUsers.length > 0) {
       try {
+        console.log(`[${getSeconds()}s] Attempting online user check...`);
         const userCheck = async () => {
+          console.log(`[${getSeconds()}s] Making online SQL query...`);
           const userONLINE = await getValuesWithSql_Online(
             'users',
             `WHERE id = '${allUsers[0].id}' AND password = '${allUsers[0].password}'`
           );
+          console.log(`[${getSeconds()}s] Online SQL query complete`);
           return userONLINE;
         };
 
+        console.log(`[${getSeconds()}s] Starting race between userCheck and timeout...`);
         const userONLINE = await Promise.race([
           userCheck(),
           timeoutPromise(10000),
         ]).catch((error) => {
-          console.log('Online check failed or timed out:', error);
+          console.log(`[${getSeconds()}s] Online check failed or timed out:`, error);
           return null;
         });
+        console.log(`[${getSeconds()}s] Race complete, userONLINE:`, !!userONLINE);
 
         if (!userONLINE && allUsers[0].Allowed) {
-          console.log('Falling back to local data');
+          console.log(`[${getSeconds()}s] Falling back to local data...`);
           setisSignedIn(true);
           setIsAllowedState(allUsers[0].Allowed);
           setSelectedUserId(allUsers[0].id);
 
           if (!window.electron.store.get('SelectedAppUserId')) {
+            console.log(`[${getSeconds()}s] Setting app user manager show`);
             setAppUserManagerShow(true);
           }
+          console.log(`[${getSeconds()}s] Fetching branches...`);
           await handleFetchBranches();
+          console.log(`[${getSeconds()}s] Managing app users...`);
           await appUsersManagement();
           setInitialLoading(false);
+          console.log(`[${getSeconds()}s] Local fallback complete`);
           return;
         }
 
         if (userONLINE?.length === 1 || !navigator.onLine) {
+          console.log(`[${getSeconds()}s] User verified online or offline mode`);
           setisSignedIn(true);
 
           const check = async () => {
+            console.log(`[${getSeconds()}s] Starting user check...`);
             const userRaw = allUsers[0];
 
             if (userRaw.packageType === '7daytrial') {
+              console.log(`[${getSeconds()}s] Checking trial status...`);
               if (userRaw.TrailEndDate < Date.now()) {
                 setTrialExpiredState(true);
-                console.log('Trial expired');
+                console.log(`[${getSeconds()}s] Trial expired`);
               }
 
               if (userRaw.TrailEndDate - 7 * 24 * 60 * 60 * 1000 > Date.now()) {
                 setTrialExpiredState(true);
-                console.log('Trial Has expired bc invalid date input');
+                console.log(`[${getSeconds()}s] Trial Has expired bc invalid date input`);
               }
 
               if (
@@ -173,16 +190,18 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                 userRaw.TrailEndDate - 7 * 24 * 60 * 60 * 1000 < Date.now()
               ) {
                 setTrialExpiredState(false);
-                console.log('Trial is still active');
+                console.log(`[${getSeconds()}s] Trial is still active`);
               }
             }
 
             if (navigator.onLine) {
+              console.log(`[${getSeconds()}s] Online mode - fetching latest user data...`);
               try {
                 const OnlineUser = await getValuesWithSql_Online(
                   'users',
                   `WHERE id = '${userRaw.id}'`
                 );
+                console.log(`[${getSeconds()}s] Got online user data`);
                 setIsAllowedState(OnlineUser[0].Allowed);
 
                 const updatedUsers = allUsers.map((user: any) =>
@@ -192,22 +211,28 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                 );
                 window.electron.store.set('users', updatedUsers);
                 setChangeMade(true);
+                console.log(`[${getSeconds()}s] Updated local user data`);
               } catch (error) {
-                console.log('Error fetching online user data:', error);
+                console.log(`[${getSeconds()}s] Error fetching online user data:`, error);
                 setIsAllowedState(userRaw.Allowed);
               }
             } else {
+              console.log(`[${getSeconds()}s] Offline mode - using local allowed state`);
               setIsAllowedState(userRaw.Allowed);
             }
           };
 
+          console.log(`[${getSeconds()}s] Running user check...`);
           await check();
           setSelectedUserId(allUsers[0].id);
 
           if (!window.electron.store.get('SelectedAppUserId')) {
+            console.log(`[${getSeconds()}s] Setting app user manager show`);
             setAppUserManagerShow(true);
           }
+          console.log(`[${getSeconds()}s] Fetching branches...`);
           await handleFetchBranches();
+          console.log(`[${getSeconds()}s] Managing app users...`);
           await appUsersManagement();
           if (
             navigator.onLine &&
@@ -215,39 +240,52 @@ const AccountManager = (React.FC<MyComponentProps> = ({
             !ViewBranchManagementPage &&
             window.electron.store.get('SelectedBranchId') !== ''
           ) {
+            console.log(`[${getSeconds()}s] Sync conditions met but sync disabled`);
             //syncWithOnline(allUsers[0].id);
           }
         }
       } catch (error) {
-        console.error('Error in checkIfSignedIn:', error);
+        console.error(`[${getSeconds()}s] Error in checkIfSignedIn:`, error);
         if (allUsers[0].Allowed) {
+          console.log(`[${getSeconds()}s] Error fallback - proceeding with local data`);
           setisSignedIn(true);
           setIsAllowedState(allUsers[0].Allowed);
           setSelectedUserId(allUsers[0].id);
 
           if (!window.electron.store.get('SelectedAppUserId')) {
+            console.log(`[${getSeconds()}s] Setting app user manager show`);
             setAppUserManagerShow(true);
           }
+          console.log(`[${getSeconds()}s] Fetching branches...`);
           await handleFetchBranches();
+          console.log(`[${getSeconds()}s] Managing app users...`);
           await appUsersManagement();
         }
       }
     } else {
+      console.log(`[${getSeconds()}s] No users found, setting signed in false`);
       setisSignedIn(false);
     }
 
+    console.log(`[${getSeconds()}s] Setting initial loading false`);
     setInitialLoading(false);
   };
   const appUsersManagement = async () => {
+    const startTime = Date.now();
+    const getSeconds = () => ((Date.now() - startTime) / 1000).toFixed(2);
+
     if (navigator.onLine) {
+      console.log(`[${getSeconds()}s] Online mode - fetching app users...`);
       const appUsers = await getValuesWithSql_Online(
         'app_users',
         `WHERE userId = '${window.electron.store.get('users')[0].id}'`
       );
       if (appUsers) {
+        console.log(`[${getSeconds()}s] Got app users, updating local store...`);
         await window.electron.store.set('app_users', appUsers);
         setAppUsers(appUsers);
         if (window.electron.store.get('SelectedAppUserId')) {
+          console.log(`[${getSeconds()}s] Setting selected app user...`);
           if (window.electron.store.get('SelectedAppUserId') == 'admin') {
             setSelectedAppUser({
               id: 'admin',
@@ -269,10 +307,12 @@ const AccountManager = (React.FC<MyComponentProps> = ({
         }
       }
     } else {
+      console.log(`[${getSeconds()}s] Offline mode - using local app users`);
       const appUsers = window.electron.store.get('app_users');
 
       setAppUsers(appUsers);
       if (window.electron.store.get('SelectedAppUserId')) {
+        console.log(`[${getSeconds()}s] Setting selected app user from local data...`);
         if (window.electron.store.get('SelectedAppUserId') == 'admin') {
           setSelectedAppUser({
             id: 'admin',
@@ -293,7 +333,10 @@ const AccountManager = (React.FC<MyComponentProps> = ({
         }
       }
     }
+    console.log(`[${getSeconds()}s] App users management complete`);
   };
+ 
+ 
   const handleAddNewAppUser = async () => {
     if (navigator.onLine) {
       const existingUsers = appUsers.filter((user: any) =>
@@ -883,6 +926,9 @@ const AccountManager = (React.FC<MyComponentProps> = ({
       );
       setChangingPasswordId('');
       setNewAdminPassword('');
+      setAppUsers(appUsers.map((u) =>
+        u.id === ChangingPasswordId ? { ...u, password: NewAdminPassword } : u
+      ));
       await appUsersManagement();
     }
   };
@@ -1205,7 +1251,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
           );
 
           if (!userMaxBranches) {
-            throw new Error('Failed to get user branch limit');
+            return ('Failed to get user branch limit');
           }
 
           return {
@@ -1953,6 +1999,11 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                                   handleAllowEnterWithPassword(
                                                     appUser
                                                   );
+                                                  if(appUser.password === "") {
+                                                    setChangingPasswordId(
+                                                      appUser.id
+                                                    )
+                                                  }
                                                 }
                                               } else {
                                                 setCheckIfTureAdmin(true);

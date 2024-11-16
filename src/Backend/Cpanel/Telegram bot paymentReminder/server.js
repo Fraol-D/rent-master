@@ -142,6 +142,126 @@ const shouldSendNotification = (paymentDay, notificationSetting) => {
   return { shouldSendEmail: false, shouldSendSMS: false };
 };
 
+
+// Function to fetch and store exchange rates
+const fetchAndStoreExchangeRates = async () => {
+  logger.debug('Fetching exchange rates...');
+  try {
+    const response = await fetch('https://v6.exchangerate-api.com/v6/dc263c2acc91e59fb8905502/latest/USD');
+    const data = await response.json();
+    
+    if (data.result !== 'success') {
+      throw new Error('Failed to fetch exchange rates');
+    }
+
+    const currentUnixTime = Math.floor(Date.now() / 1000);
+    // Round down to the start of the day (00:00:00)
+    const dayStart = Math.floor(currentUnixTime / 86400) * 86400;
+    
+    // Check if we already have this day's rates
+    const [existingRate] = await new Promise((resolve, reject) => {
+      pool.query(
+        'SELECT * FROM Exchange_RatesUSDtoETB WHERE id = ?',
+        [dayStart],
+        (error, results) => {
+          if (error) reject(error);
+          else resolve(results);
+        }
+      );
+    });
+
+    if (existingRate) {
+      logger.debug(`Exchange rate for timestamp ${dayStart} already exists, skipping...`);
+      return {
+        status: 'skipped',
+        message: 'Rate for this day already exists',
+        timestamp: dayStart
+      };
+    }
+
+    // Store new rate
+    await new Promise((resolve, reject) => {
+      pool.query(
+        'INSERT INTO Exchange_RatesUSDtoETB (id, rates) VALUES (?, ?)',
+        [dayStart, data.conversion_rates.ETB],
+        (error, results) => {
+          if (error) reject(error);
+          else resolve(results);
+        }
+      );
+    });
+
+    logger.debug(`Stored new exchange rate: ${data.conversion_rates.ETB} for timestamp ${dayStart}`);
+    return {
+      status: 'success',
+      message: 'New rate stored successfully',
+      timestamp: dayStart,
+      rate: data.conversion_rates.ETB
+    };
+  } catch (error) {
+    logger.error('Error fetching/storing exchange rates:', error);
+    throw error;
+  }
+};
+
+// Schedule the cron job to run at 00:01 every day
+const exchangeRateTask = cron.schedule('1 0 * * *', async () => {
+  logger.debug('Running scheduled exchange rate update');
+  try {
+    await fetchAndStoreExchangeRates();
+  } catch (error) {
+    logger.error('Scheduled exchange rate update failed:', error);
+  }
+}, {
+  scheduled: true,
+  timezone: 'UTC'
+});
+
+// Manual trigger endpoint
+app.post('/api/trigger-exchange-rate-update', async (req, res) => {
+  logger.debug('Manual trigger of exchange rate update');
+  try {
+    const result = await fetchAndStoreExchangeRates();
+    res.json(result);
+  } catch (error) {
+    logger.error('Manual exchange rate update failed:', error);
+    res.status(500).json({
+      status: 'error',
+      message: error.message
+    });
+  }
+});
+
+app.get('/api/exchange-rates', async (req, res) => {
+  const { start, end } = req.query;
+  let query = 'SELECT * FROM `Exchange_RatesUSDtoETB`';
+
+  if (start) {
+    query += ` WHERE \`id\` >= UNIX_TIMESTAMP(?)`;
+    if (end) {
+      query += ` AND \`id\` <= UNIX_TIMESTAMP(?) ORDER BY \`id\` DESC`;
+    } else {
+      query += ' ORDER BY `id` DESC';
+    }
+  } else {
+    query += ' ORDER BY `id` DESC';
+  }
+
+  try {
+    const params = [];
+    if (start) params.push(start);
+    if (end) params.push(end);
+
+    const [rows] = await pool.query(query, params);
+    res.json(rows);
+  } catch (error) {
+    console.error('Failed to fetch exchange rates:', error);
+    res.status(500).json({
+      message: 'Failed to fetch exchange rates',
+      error: error.message
+    });
+  }
+});
 app.post('/api/verify-credentials', async (req, res) => {
   const { email, password } = req.body;
 
@@ -302,7 +422,7 @@ const calculatePredictedPayments = async (room, currentDate) => {
         currentPaymentDate.add(7, 'days');
         break;
       case 'Annually':
-        currentPaymentDate = addYears(currentDate, 1);
+        currentPaymentDate.add(1, 'year');
         break;
       case 'custom':
         currentPaymentDate.add(room.PaymentCycleCustomeDays || 30, 'days');
@@ -391,35 +511,39 @@ const processNotifications = async () => {
               `Sending email notification for room ${room.id} to tenant ${tenant.email}`
             );
             const notificationTypes = [
-              '5 days before due',
-              '3 days before due',
-              '1 day before due',
-              'On due date',
-              '1 day after due',
-              '3 days after due',
-              '5 days after due',
-              '7 days after due',
+              {type: '5 days before due', index: 0},
+              {type: '3 days before due', index: 1},
+              {type: '1 day before due', index: 2},
+              {type: 'On due date', index: 3},
+              {type: '1 day after due', index: 4},
+              {type: '3 days after due', index: 5},
+              {type: '5 days after due', index: 6},
+              {type: '7 days after due', index: 7}
             ];
+            
+            let daysBeforeDue = moment(nextUnpaidPayment.Day).diff(currentDate, 'days') - 1;
+            const notificationType = notificationTypes.find((notification) => {
+              return (
+                (notification.type === '5 days before due' && daysBeforeDue === 5) ||
+                (notification.type === '3 days before due' && daysBeforeDue === 3) ||
+                (notification.type === '1 day before due' && daysBeforeDue === 1) ||
+                (notification.type === 'On due date' && daysBeforeDue === 0) ||
+                (notification.type === '1 day after due' && daysBeforeDue === -1) ||
+                (notification.type === '3 days after due' && daysBeforeDue === -3) ||
+                (notification.type === '5 days after due' && daysBeforeDue === -5) ||
+                (notification.type === '7 days after due' && daysBeforeDue === -7)
+              );
+            });
+
+            if (!notificationType) {
+              logger.debug(`No matching notification type found for days before due: ${daysBeforeDue}`);
+              continue;
+            }
 
             const getEmailTemplateIdQuery = `SELECT * FROM notification_template_selections WHERE id = '${
               room.id
-            }_${notificationTypes.find((type) => {
-              const daysBeforeDue = moment(nextUnpaidPayment.Day).diff(
-                currentDate,
-                'days'
-              );
-              return (
-                (type === '5 days before due' && daysBeforeDue === 5) ||
-                (type === '3 days before due' && daysBeforeDue === 3) ||
-                (type === '1 day before due' && daysBeforeDue === 1) ||
-                (type === 'On due date' && daysBeforeDue === 0) ||
-                (type === '1 day after due' && daysBeforeDue === -1) ||
-                (type === '3 days after due' && daysBeforeDue === -3) ||
-                (type === '5 days after due' && daysBeforeDue === -5) ||
-                (type === '7 days after due' && daysBeforeDue === -7)
-              );
-            })}'`;
-
+            }_${notificationType.type}'`;
+    
             const [EmailTemplateObject] = await new Promise(
               (resolve, reject) => {
                 pool.query(getEmailTemplateIdQuery, (error, results) => {
@@ -430,7 +554,7 @@ const processNotifications = async () => {
             );
 
             logger.debug(
-              `EmailTemplateObject: ${JSON.stringify(EmailTemplateObject)}`
+              `EmailTemplateObject: ${JSON.stringify(EmailTemplateObject)}, ${getEmailTemplateIdQuery}, `
             );
 
             if (
@@ -438,7 +562,7 @@ const processNotifications = async () => {
               !EmailTemplateObject.email_template_id
             ) {
               logger.warn(`No email template selected for room ${room.id}`);
-              return; // Skip sending email if no template is selected
+              continue; // Skip sending email if no template is selected
             }
 
             const getSelectedEmailTemplateQuery = `SELECT * FROM email_templates WHERE id = ?`;
@@ -463,7 +587,7 @@ const processNotifications = async () => {
               logger.warn(
                 `Email template with id ${EmailTemplateObject.email_template_id} not found`
               );
-              return; // Skip sending email if the template is not found
+              continue; // Skip sending email if the template is not found
             }
 
             const variables = [
@@ -473,7 +597,7 @@ const processNotifications = async () => {
               'due_date',
               'landlord_Email',
               'landlord_Telephone',
-              'due_duration',
+              'due_duration','currency'
             ];
 
             let endOfBillingPeriod;
@@ -540,14 +664,15 @@ const processNotifications = async () => {
 
             const replacements = {
               tenant_name: tenant.name,
-              landlord_name: user.fullName,
+              landlord_name: user.LandlordName || user.fullName,
               due_amount: nextUnpaidPayment.Value,
               due_date: moment(nextUnpaidPayment.Day).format('MMMM D, YYYY'),
-              landlord_Email: user.email,
-              landlord_Telephone: user.phoneNumber,
+              landlord_Email: user.LandlordEmail || user.email,
+              landlord_Telephone: user.LandlordTelephone || user.phoneNumber,
               due_duration: `${startOfBillingPeriod.format(
                 'MMMM D, YYYY'
               )} - ${endOfBillingPeriod.format('MMMM D, YYYY')}`,
+              currency: tenant.Currency,
             };
 
             let emailSubject = selectedEmailTemplate.subject;
@@ -600,7 +725,51 @@ const processNotifications = async () => {
                   else resolve(results);
                 }
               );
-            });
+            }); 
+
+            // Check notification settings for representative email
+            const representativeNotificationBit = 1 << (notificationType.index * 4 + 2);
+            if ((room.notificationSettings & representativeNotificationBit) !== 0 && user.RepresentativeEmail) {
+              const representativeEmails = user.RepresentativeEmail.split(',')
+                .map(email => email.trim())
+                .filter(email => validateAndLogEmail(email, logger));
+            
+              for (const repEmail of representativeEmails) {
+                logger.debug(`Sending representative notification to: ${repEmail}`);
+                
+                const repEmailResult = await sendEmail(
+                  repEmail,
+                  `[REPRESENTATIVE] ${emailSubject}`,
+                  `[REPRESENTATIVE NOTIFICATION]\n\n${emailBody}`,
+                  user
+                );
+            
+                if (repEmailResult.success) {
+                  const repEmailHistoryId = `${room.id}_${Date.now()}_rep_${Math.random().toString(36).substr(2, 9)}`;
+                  await new Promise((resolve, reject) => {
+                    pool.query(
+                      `INSERT INTO email_history (id, receiver, subject, body, templateId, sentDate, \`from\`, mode, userId)
+                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                      [
+                        repEmailHistoryId,
+                        repEmail,
+                        `[REPRESENTATIVE] ${emailSubject}`,
+                        `[REPRESENTATIVE NOTIFICATION]\n\n${emailBody}`,
+                        EmailTemplateObject.email_template_id,
+                        moment().valueOf(),
+                        user.selectedEmailToSendWith,
+                        'Representative_Automatic',
+                        user.id,
+                      ],
+                      (error) => {
+                        if (error) reject(error);
+                        else resolve(true);
+                      }
+                    );
+                  });
+                }
+              }
+            }
           }
           if (shouldSendSMS) {
             logger.debug(
@@ -951,7 +1120,7 @@ This is a reminder about an upcoming expense:
 EXPENSE DETAILS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Name: ${expense.name}
-Amount: $${expense.price || 0}
+Amount: ${expense.price || 0} ${expense.Currency}
 Due Date: ${moment(nextExpense.date).format('MMMM D, YYYY')}
 
 Branch: ${branch.name}
@@ -963,17 +1132,20 @@ PAYMENT SCHEDULE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Type: ${expense.doesReoccur ? 'Recurring' : 'One-time'} Payment
 ${
+  expense.doesReoccur ? `Started on: ${moment(expense.date).format('MMMM D, YYYY')}` :""}
+${
   expense.doesReoccur
-    ? `Frequency: Every ${expense.recurringCycle} ${expense.recurringType}(s)`
+    ? `Frequency:  ${expense.recurringType === "Day" ?  `Every ${expense.recurringCycle}(s)`:"" } ${expense.recurringType}`
     : ''
 }
+
 ${
   expense.HasEndDate
     ? `End Date: ${moment(expense.EndDate).format('MMMM D, YYYY')}`
     : ''
 }
 
-Please ensure this payment is processed on time.
+Please ensure this payment is paid on time.
 
 This is an automated notification from RentMaster System.
 Generated on: ${moment().format('MMMM D, YYYY, h:mm A')}
@@ -1127,6 +1299,8 @@ app.get('/api/trigger-expense-notifications', async (req, res) => {
 // Routes ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 // Routes ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// Add this endpoint to your server code
+// Add this to your server code
 
 app.post('/api/replace-user-data', async (req, res) => {
   const { userId, tables } = req.body;
@@ -1374,12 +1548,12 @@ const validateTableName = (tableName) => {
     'brokersRecommendationList',
     'PastTenantsForRoom',
     'agreements',
-    'notification_template_selections',
+    'notification_template_selections','Exchange_RatesUSDtoETB',
     'email_templates',
     'utility_payments',
     'utility_payments_settings',
     'sms_templates',
-    'email_history',
+    'email_history', 'sms_history',
     'expenses',
     'room_pay_info_history',
     'app_users',
@@ -1399,6 +1573,7 @@ app.get('/api/:tableName', (req, res) => {
   if (!validateTableName(tableName)) {
     return res.status(400).send('Invalid table name.');
   }
+ 
 
   pool.getConnection((err, connection) => {
     if (err) {
@@ -1423,6 +1598,7 @@ app.get('/api/:tableName/:sqlCode', (req, res) => {
   if (!validateTableName(tableName)) {
     return res.status(400).send('Invalid table name.');
   }
+  
 
   pool.getConnection((err, connection) => {
     if (err) {
@@ -1449,6 +1625,7 @@ app.get('/api/:tableName/:id', (req, res) => {
   if (!validateTableName(tableName)) {
     return res.status(400).send('Invalid table name.');
   }
+
 
   pool.getConnection((err, connection) => {
     if (err) {
@@ -1478,7 +1655,9 @@ app.delete('/api/:tableName/:id', (req, res) => {
   const { tableName, id } = req.params;
   if (!validateTableName(tableName)) {
     return res.status(400).send('Invalid table name.');
-  }
+  }  
+  
+
 
   pool.getConnection((err, connection) => {
     if (err) {
@@ -1508,6 +1687,7 @@ app.delete('/api/:tableName/:id', (req, res) => {
 
 app.post('/api/:tableName', (req, res) => {
   const { tableName } = req.params;
+  
   if (!validateTableName(tableName)) {
     return res.status(400).send('Invalid table name.');
   }

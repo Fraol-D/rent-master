@@ -4,24 +4,20 @@ import {
   getValuesWithSql,
 } from './localServerApis';
 
-//import { downloadImageFromLocalEndpoint, getFileContent, getListOfFiles } from './localServerApis';
 const baseUrl = 'https://www.rentmaster.markethubet.com/api';
 const baseUrlLocal = 'http://localhost:8100';
 const apiKey = 'HH(CzZuQoW@tB$By)e';
-
+import axios from 'axios';
 const deleteValue = async (tableName, id) => {
   try {
-    const response = await fetch(`${baseUrlLocal}/${tableName}/${id}`, {
-      method: 'DELETE',
-    });
-    const data = await response.text();
-
+    const { data } = await axios.delete(`${baseUrlLocal}/${tableName}/${id}`);
     return data;
   } catch (error) {
     console.error('Error deleting value:', error);
     return null;
   }
 };
+
 export const updateValueOnline = async (
   tableName,
   id,
@@ -29,27 +25,17 @@ export const updateValueOnline = async (
   columnValue
 ) => {
   try {
-    const response = await fetch(
-      `${baseUrl}/${tableName}/${id}/${columnName}`,
-      {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': apiKey,
-        },
-        body: JSON.stringify({ [columnName]: columnValue }),
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const data = await response.json();
-    console.log(
-      `Successfully updated ${columnName} for ${tableName} with id ${id}`
-    );
-    return data;
+    const url = `${baseUrl}/${tableName}/${id}/${columnName}`;
+    const headers = {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+    };
+    return await window.electron.ipcRenderer.invoke('api-request', {
+      url,
+      method: 'put',
+      headers,
+      data: { [columnName]: columnValue },
+    });
   } catch (error) {
     console.error('Error updating value online:', error);
     throw error;
@@ -58,21 +44,22 @@ export const updateValueOnline = async (
 
 export const deleteValueOnline = async (tableName, id) => {
   try {
-    const response = await fetch(`${baseUrl}/${tableName}/${id}`, {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-      },
+    const url = `${baseUrl}/${tableName}/${id}`;
+    const headers = {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+    };
+    return await window.electron.ipcRenderer.invoke('api-request', {
+      url,
+      method: 'delete',
+      headers,
     });
-    const data = await response.text();
-
-    return data;
   } catch (error) {
     console.error('Error deleting value:', error);
     return null;
   }
 };
+
 const handleSignOut = async () => {
   try {
     await window.electron.ipcRenderer.invoke('cleanup-on-sign-out');
@@ -82,33 +69,38 @@ const handleSignOut = async () => {
     console.error('Error during cleanup:', error);
   }
 };
+
 export const SignOutUser = async () => {
   // Clear the local storage
   handleSignOut();
 };
+
 export const AddUserOnline = async (json) => {
   try {
-    const response = await fetch(`${baseUrl}/users`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-      },
-      body: json,
+    const url = `${baseUrl}/users`;
+    const headers = {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+    };
+    return await window.electron.ipcRenderer.invoke('api-request', {
+      url,
+      method: 'post',
+      headers,
+      data: json,
     });
-    const data = await response.json();
-    return data;
   } catch (error) {
-    console.error('Error fetching users:', error);
+    console.error('Error adding user:', error);
     return [];
   }
 };
+
 const removeKeys = (obj, keys) => {
   keys.forEach((key) => {
     delete obj[key];
   });
   return obj;
 };
+
 function convertBase64ToBlob(base64String) {
   const binaryString = window.atob(base64String);
   const bytes = new Uint8Array(binaryString.length);
@@ -120,6 +112,7 @@ function convertBase64ToBlob(base64String) {
   const blob = new Blob([bytes], { type: 'application/octet-stream' });
   return blob;
 }
+
 export const Upload = async (
   offline_changes_Array,
   SelectedUserId,
@@ -130,6 +123,11 @@ export const Upload = async (
   const totalChanges = offline_changes_Array.length;
   let failedUploads = [];
   let uploadedChanges = [];
+
+  const headers = {
+    'Content-Type': 'application/json',
+    'x-api-key': apiKey,
+  };
 
   // Process changes in original order
   for (let i = 0; i < totalChanges; i++) {
@@ -155,63 +153,39 @@ export const Upload = async (
               console.log(
                 `Row ${rowData.id} exists, updating instead of adding`
               );
-              const updateResponse = await fetch(
-                `${baseUrl}/${change.tableName}/${rowData.id}`,
-                {
-                  method: 'PUT',
-                  headers: {
-                    'Content-Type': 'application/json',
-                    'x-api-key': apiKey,
-                  },
-                  body: change.addedJsonData,
-                }
-              );
-              await updateResponse.json();
+              await window.electron.ipcRenderer.invoke('api-request', {
+                url: `${baseUrl}/${change.tableName}/${rowData.id}`,
+                method: 'put',
+                headers,
+                data: JSON.parse(change.addedJsonData),
+              });
             } else {
               // Row doesn't exist, add it
-              const addResponse = await fetch(
-                `${baseUrl}/${change.tableName}`,
-                {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                    'x-api-key': apiKey,
-                  },
-                  body: change.addedJsonData,
-                }
-              );
-              await addResponse.json();
+              await window.electron.ipcRenderer.invoke('api-request', {
+                url: `${baseUrl}/${change.tableName}`,
+                method: 'post',
+                headers,
+                data: JSON.parse(change.addedJsonData),
+              });
             }
           }
           break;
 
         case 'edit':
-          const editResponse = await fetch(
-            `${baseUrl}/${change.tableName}/${change.rowId}/${change.columnName}`,
-            {
-              method: 'PUT',
-              headers: {
-                'Content-Type': 'application/json',
-                'x-api-key': apiKey,
-              },
-              body: JSON.stringify({ [change.columnName]: change.newValue }),
-            }
-          );
-          await editResponse.json();
+          await window.electron.ipcRenderer.invoke('api-request', {
+            url: `${baseUrl}/${change.tableName}/${change.rowId}/${change.columnName}`,
+            method: 'put',
+            headers,
+            data: { [change.columnName]: change.newValue },
+          });
           break;
 
         case 'delete':
-          const deleteResponse = await fetch(
-            `${baseUrl}/${change.tableName}/${change.rowId}`,
-            {
-              method: 'DELETE',
-              headers: {
-                'Content-Type': 'application/json',
-                'x-api-key': apiKey,
-              },
-            }
-          );
-          await deleteResponse.text();
+          await window.electron.ipcRenderer.invoke('api-request', {
+            url: `${baseUrl}/${change.tableName}/${change.rowId}`,
+            method: 'delete',
+            headers,
+          });
           break;
       }
 
@@ -249,6 +223,7 @@ export const Upload = async (
   RefreshApp();
   return true;
 };
+
 function normalizeObject(obj) {
   // Create a new object with sorted keys
   return Object.keys(obj)
@@ -305,15 +280,17 @@ const setChangeAmount = async (SelectedUserId) => {
   );
   window.electron.store.set('changeAmount', changeAmountOnline[0].changeAmount);
 };
-export const RevertOfflineChanges = async () => {
-  //make it delete all the rows in the offlinechangestable
-  try {
-    const response = await fetch(`${baseUrlLocal}/offline_changes`, {
-      method: 'DELETE',
-    });
-    const data = await response.text();
 
-    return data;
+export const RevertOfflineChanges = async () => {
+  try {
+    const url = `${baseUrlLocal}/offline_changes`;
+    return await window.electron.ipcRenderer.invoke('api-request', {
+      url,
+      method: 'delete',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
   } catch (error) {
     console.error('Error deleting value:', error);
     return null;
@@ -322,100 +299,94 @@ export const RevertOfflineChanges = async () => {
 
 export const getAllUsers = async () => {
   try {
-    const response = await fetch(`${baseUrl}/users`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-      },
+    const url = `${baseUrl}/users`;
+    const headers = {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+    };
+    return await window.electron.ipcRenderer.invoke('api-request', {
+      url,
+      method: 'get',
+      headers,
     });
-    const data = await response.json();
-    return data;
   } catch (error) {
     console.error('Error fetching users:', error);
     return [];
   }
 };
+
 export async function verifyCredentials(email, password) {
   try {
-    const response = await fetch(`${baseUrl}/verify-credentials`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': 'HH(CzZuQoW@tB$By)e',
-      },
-      body: JSON.stringify({ email, password }),
+    const url = `${baseUrl}/verify-credentials`;
+    const headers = {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+    };
+    const response = await window.electron.ipcRenderer.invoke('api-request', {
+      url,
+      method: 'post',
+      headers,
+      data: { email, password },
     });
-
-    if (!response.ok) {
-      throw new Error('Network response was not ok');
-    }
-
-    const data = await response.json();
-    return data.isValid;
+    return response.isValid;
   } catch (error) {
     console.error('Error verifying credentials:', error);
     return false;
   }
 }
+
 export async function verifyAppUserCredentials(email, password) {
   try {
-    const response = await fetch(`${baseUrl}/verify-credentials-app-user`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': 'HH(CzZuQoW@tB$By)e',
-      },
-      body: JSON.stringify({ email, password }),
+    const url = `${baseUrl}/verify-credentials-app-user`;
+    const headers = {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+    };
+    const response = await window.electron.ipcRenderer.invoke('api-request', {
+      url,
+      method: 'post',
+      headers,
+      data: { email, password },
     });
-
-    if (!response.ok) {
-      throw new Error('Network response was not ok');
-    }
-
-    const data = await response.json();
-    return data.isValid;
+    return response.isValid;
   } catch (error) {
     console.error('Error verifying credentials:', error);
     return false;
   }
 }
+
 export const getValuesWithSql_Online = async (tableName, sqlCode) => {
   try {
-    const response = await fetch(
-      `${baseUrl}/${tableName}/${encodeURIComponent(sqlCode)}`,
-      {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': apiKey,
-        },
-      }
-    );
-    const data = await response.json();
-    return data;
+    if (navigator.onLine) {
+      const url = `${baseUrl}/${tableName}/${encodeURIComponent(sqlCode)}`;
+      const headers = {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+      };
+      return await window.electron.ipcRenderer.invoke('api-request', {
+        url,
+        method: 'get',
+        headers,
+      });
+    }
   } catch (error) {
-    console.error('Error fetching values with SQL code:', error);
+    console.error('Error in getValuesWithSql_Online:', error);
     return [];
   }
 };
 
 export const getValuesFromOnlineDatabase = async (tableName) => {
   try {
-    const response = await fetch(`${baseUrl}/${tableName}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-      },
+    const url = `${baseUrl}/${tableName}`;
+    const headers = {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+    };
+    return await window.electron.ipcRenderer.invoke('api-request', {
+      url,
+      method: 'get',
+      headers,
     });
-
-    if (!response.ok) {
-      throw new Error(`Error fetching data: ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    return data;
   } catch (error) {
     console.error('Error fetching values from the online database:', error);
     return [];
@@ -425,17 +396,13 @@ export const getValuesFromOnlineDatabase = async (tableName) => {
 // Fetch data from the online MySQL database
 const fetchDataFromOnlineDatabase = async (tableName) => {
   try {
-    const response = await fetch(`${baseUrl}/${tableName}`, {
-      method: 'GET',
+    const { data } = await axios.get(`${baseUrl}/${tableName}`, {
       headers: {
         'Content-Type': 'application/json',
         'x-api-key': apiKey,
       },
     });
-    if (!response.ok) {
-      throw new Error(`Error fetching data: ${response.statusText}`);
-    }
-    return await response.json();
+    return data;
   } catch (error) {
     console.error('Error fetching values from the online database:', error);
     return [];
@@ -446,6 +413,7 @@ const fetchDataFromOnlineDatabase = async (tableName) => {
 const fetchDataFromLocalDatabase = async (tableName) => {
   return getValuesWithSql(tableName, 'WHERE 1');
 };
+
 async function syncActionHistory(onlineData, localData, SelectedUserId) {
   // Create a Set of existing IDs for faster lookup
   const existingIds = new Set(localData.map((row) => row.id));
@@ -886,11 +854,12 @@ export const syncOnlineToLocalBranchWithBool = async (
           if (!onlineDataMap.has(id)) {
             // Check if this record exists in offline changes as an 'add'
             const isInOfflineChanges = offlineChanges.some(
-              change => change.type === 'add' && 
-                       change.tableName === table && 
-                       change.rowId === id
+              (change) =>
+                change.type === 'add' &&
+                change.tableName === table &&
+                change.rowId === id
             );
-            
+
             if (!isInOfflineChanges) {
               // If not in offline changes, delete from local database
               await deleteLocalRecord(table, id);
@@ -913,10 +882,13 @@ export const syncOnlineToLocalBranchWithBool = async (
             // Check if schemas match before updating
             const onlineKeys = Object.keys(onlineRow).sort();
             const localKeys = Object.keys(localRow).sort();
-            const schemasMatch = JSON.stringify(onlineKeys) === JSON.stringify(localKeys);
+            const schemasMatch =
+              JSON.stringify(onlineKeys) === JSON.stringify(localKeys);
 
             if (!schemasMatch) {
-              console.warn(`Schema mismatch for table ${table}, row ${id} - skipping update`);
+              console.warn(
+                `Schema mismatch for table ${table}, row ${id} - skipping update`
+              );
               continue;
             }
 
@@ -933,11 +905,11 @@ export const syncOnlineToLocalBranchWithBool = async (
       setSyncProgress((currentStep / totalSteps) * 100);
     }
     setChangeAmount(SelectedUserId);
-    
+
     await applyOfflineChangesToLocalDatabase(offlineChanges);
 
     currentStep++;
-    
+
     setIsSyncing(false);
     RefreshDataFromSqlite();
     setSyncProgress(100);
@@ -952,9 +924,14 @@ export const syncOnlineToLocalBranchWithBool = async (
 
 export const getValues = async (tableName) => {
   try {
-    const response = await fetch(`${baseUrlLocal}/${tableName}`);
-    const data = await response.json();
-    return data;
+    const url = `${baseUrlLocal}/${tableName}`;
+    return await window.electron.ipcRenderer.invoke('api-request', {
+      url,
+      method: 'get',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
   } catch (error) {
     console.error('Error fetching values:', error);
     return [];
@@ -1004,33 +981,34 @@ const deleteLocalRecord = async (tableName, id) => {
 
 export const addValue = async (tableName, value) => {
   try {
-    const response = await fetch(`${baseUrlLocal}/${tableName}`, {
-      method: 'POST',
+    const url = `${baseUrlLocal}/${tableName}`;
+    return await window.electron.ipcRenderer.invoke('api-request', {
+      url,
+      method: 'post',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(value),
+      data: value,
     });
-    const data = await response.json();
-    return data;
   } catch (error) {
     console.error('Error adding value:', error);
     return null;
   }
 };
+
 export const addValueOnline = async (tableName, value) => {
   try {
-    const response = await fetch(`${baseUrl}/${tableName}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-      },
-
-      body: JSON.stringify(value),
+    const url = `${baseUrl}/${tableName}`;
+    const headers = {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+    };
+    return await window.electron.ipcRenderer.invoke('api-request', {
+      url,
+      method: 'post',
+      headers,
+      data: value,
     });
-    const data = await response.json();
-    return data;
   } catch (error) {
     console.error('Error adding value:', error);
     return null;
@@ -1039,108 +1017,59 @@ export const addValueOnline = async (tableName, value) => {
 
 export const updateValue = async (tableName, id, columnName, columnValue) => {
   try {
-    const response = await fetch(
+    const { data } = await axios.put(
       `${baseUrlLocal}/${tableName}/${id}/${columnName}`,
+      { [columnName]: columnValue },
       {
-        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ [columnName]: columnValue }),
       }
     );
-    const data = await response.json();
     return data;
   } catch (error) {
     console.error('Error updating value:', error);
     return null;
   }
-};
+}; /// UIAMgeses
 
-/// UIAMgeses
 export const UploadUserFilesToTheOnlineDatabase = async (
   userId,
   setProgressValue
 ) => {
   try {
-    setProgressValue(0);
-    console.log('Getting local directory...');
-    const localDirectory = await getLocalUserDirectory();
-    console.log('Local directory obtained:', localDirectory);
-    setProgressValue(10);
+    console.log('Starting file upload process...');
 
-    console.log('Sending directory data to online database...');
-    const response = await retry(() =>
-      fetch(`${baseUrl}/check-user-directory`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': apiKey,
-        },
-        body: JSON.stringify({ userId, directory: localDirectory }),
-      })
+    // Create a progress handler
+    const handleProgress = (progress) => {
+      setProgressValue(progress);
+    };
+
+    // Register progress listener
+    window.electron.ipcRenderer.on('upload-progress', handleProgress);
+
+    // Call the main process
+    const result = await window.electron.ipcRenderer.invoke(
+      'upload-user-files',
+      {
+        userId,
+      }
     );
-    const { requiredFiles } = await response.json();
-    console.log('Response received from online database:', requiredFiles);
-    setProgressValue(30);
 
-    if (requiredFiles.length > 0) {
-      console.log('Required files missing:', requiredFiles);
+    // Clean up listener
+    window.electron.ipcRenderer.removeListener(
+      'upload-progress',
+      handleProgress
+    );
 
-      const prepareResponse = await fetch(
-        `${baseUrlLocal}/prepare-upload-files`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ userId, requiredFiles }),
-        }
-      );
-
-      const zipContent = await prepareResponse.arrayBuffer();
-      const totalSize = zipContent.byteLength;
-      console.log(`Total upload size: ${totalSize} bytes`);
-      setProgressValue(50);
-
-      const formData = new FormData();
-      formData.append('files', new Blob([zipContent]), 'required_files.zip');
-      formData.append('userId', userId);
-
-      console.log('Sending zip file to online database...');
-      const startTime = Date.now();
-      let uploadedSize = 0;
-      const logInterval = setInterval(() => {
-        console.log(
-          `Upload progress: ${((uploadedSize / totalSize) * 100).toFixed(2)}%`
-        );
-        console.log(`Upload size: ${uploadedSize} bytes`);
-      }, 3000);
-
-      await fetch(`${baseUrl}/upload-missing-files`, {
-        method: 'POST',
-        headers: {
-          'x-api-key': apiKey,
-        },
-        body: formData,
-      });
-
-      clearInterval(logInterval);
-      const endTime = Date.now();
-      const uploadTime = (endTime - startTime) / 1000;
-      console.log(`Upload completed in ${uploadTime} seconds`);
-      console.log('Missing files uploaded successfully.');
-      setProgressValue(90);
-    } else {
-      console.log('No missing files required for upload.');
-      setProgressValue(90);
+    if (!result.success) {
+      throw new Error(result.message);
     }
 
-    console.log('Upload completed successfully.');
-    setProgressValue(100);
+    return result;
   } catch (error) {
     console.error('Error during file upload process:', error);
-    setProgressValue(0);
+    throw error;
   }
 };
 
@@ -1248,20 +1177,16 @@ export const DownloadUserFilesFromOnlineDatabase = async (
 
 const extractDownloadedFiles = async (zipBuffer, userId) => {
   try {
-    const response = await fetch(`${baseUrlLocal}/extract-downloaded-files`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/octet-stream',
-      },
-      body: zipBuffer,
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! Status: ${response.status}`);
-    }
-
-    const result = await response.json();
-    console.log('Files extracted successfully:', result);
+    const { data } = await axios.post(
+      `${baseUrlLocal}/extract-downloaded-files`,
+      zipBuffer,
+      {
+        headers: {
+          'Content-Type': 'application/octet-stream',
+        },
+      }
+    );
+    console.log('Files extracted successfully:', data);
   } catch (error) {
     console.error('Error extracting files:', error);
     throw error;
@@ -1280,33 +1205,32 @@ export const replaceUserData = async (userId, tables) => {
   );
 
   try {
-    const response = await fetch(
-      'https://www.rentmaster.markethubet.com/api/replace-user-data',
+    const { data } = await axios.post(
+      `https://www.rentmaster.markethubet.com/api/replace-user-data`,
       {
-        method: 'POST',
+        userId,
+        tables: filteredTables,
+      },
+      {
         headers: {
           'Content-Type': 'application/json',
           'x-api-key': apiKey,
         },
-        body: JSON.stringify({ userId, tables: filteredTables }),
       }
     );
+    console.log('Full server response:', data);
 
-    const responseData = await response.text();
-    console.log('Full server response:', responseData);
-
-    if (!response.ok) {
-      throw new Error(
-        `HTTP error! status: ${response.status}, response: ${responseData}`
-      );
+    if (!data.ok) {
+      throw new Error(`HTTP error! status: ${data.status}, response: ${data}`);
     }
 
-    return JSON.parse(responseData);
+    return data;
   } catch (error) {
     console.error('Error replacing user data:', error);
     throw error;
   }
 };
+
 const tables = [
   'rooms',
   'room_specifications',
@@ -1348,190 +1272,29 @@ export const SetBackUpAsMain = async (userId) => {
   }
 };
 
-/*
-
-
-const FormData = require('form-data');
-const { v4: uuidv4 } = require('uuid');
-const deleteImageLocal = async (userId, filename) => {
+// Function to fetch the latest exchange rate from your database
+export const fetchAndUpdateExchangeRates = async () => {
   try {
-    const response = await fetch(`${baseUrlLocal}/delete`, {
-      method: 'DELETE',
-      headers: {
-        'x-api-key': apiKey,
-        'user-id': userId,
-        filename: filename,
-      },
-    });
+    const response = await axios.get(`${baseUrl}/exchange-rates`);
+    const rates = response.data;
+    const latestRate = rates[0]; // Assuming the latest rate comes first
+    const lastUpdate = window.electron.store.get('lastExchangeRateUpdate');
 
-    if (response.status === 200) {
-      const data = await response.json();
-      return data;
-    } else {
-      const data = await response.json();
-      console.error('Failed to delete file:', data);
-      return null;
-    }
-  } catch (error) {
-    console.error('Error deleting file:', error);
-    throw error;
-  }
-};
-
-const deleteImage = async (userId, filename) => {
-  try {
-    const response = await fetch(`${baseUrl}/delete`, {
-      method: 'delete',
-
-      headers: {
-        'x-api-key': apiKey,
-        'user-id': userId,
-        filename: filename,
-      },
-    });
-
-    if (response.status === 200) {
-      return response.data;
-    } else {
-      console.error('Failed to delete file:', response.data);
-      return null;
-    }
-  } catch (error) {
-    console.error('Error deleting file:', error);
-    throw error;
-  }
-};
-const getOnlineFileNames = async (userId) => {
-  try {
-    const response = await fetch(`${baseUrl}/directory/${userId}`, {
-      method: 'GET',
-      headers: {
-        'x-api-key': 'HH(CzZuQoW@tB$By)e'  // Replace with your actual API key
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! Status: ${response.status}`);
-    }
-
-    const { structure } = await response.json();
-    const filenames = extractFilenames(structure);
-    return filenames;
-  } catch (error) {
-    console.error('Error fetching filenames:', error.message);
-    return null;
-  }
-};
-
-// Function to recursively extract filenames from directory structure
-const extractFilenames = (structure) => {
-  const filenames = [];
-
-  Object.keys(structure).forEach(key => {
-    if (structure[key] === 'file') {
-      filenames.push(key);
-    } else if (typeof structure[key] === 'object') {
-      // Recursively extract filenames from sub-directory structure
-      const subFilenames = extractFilenames(structure[key]);
-      filenames.push(...subFilenames.map(filename => `${key}/${filename}`));
-    }
-  });
-
-  return filenames;
-};
-// Function to upload an image
-export const uploadImage = async (userId, file, newFilename, rowId) => {
-  const formData = new FormData();
-  formData.append('file', file);
-
-  try {
-    const response = await fetch(`${baseUrl}/upload`, {
-      method: 'POST',
-      headers: {
-        'x-api-key': apiKey,
-        'user-id': userId,
-        filename: newFilename,
-      },
-      body: formData,
-    });
-
-    const data = await response.json();
-
-    if (response.ok && data.message === 'File saved successfully') {
-      const allImageRows = await getValuesWithSql_Online(
-        'user_images',
-        `WHERE user_id = '${userId}'`,
+    if (
+      !lastUpdate ||
+      new Date(latestRate.date * 1000).getTime() !==
+        new Date(lastUpdate).getTime()
+    ) {
+      window.electron.store.set('exchangeRate', latestRate.rates);
+      window.electron.store.set(
+        'lastExchangeRateUpdate',
+        latestRate.date * 1000
       );
-
-      let tempExistOrNot = false;
-      for (let i = 0; i < allImageRows.length; i++) {
-        const element = allImageRows[i];
-        if (element.id === rowId) {
-          // Delete the old image if exists
-          await deleteImage(userId, element.filename);
-          await deleteImageLocal(userId, element.filename);
-          const editResponse = await fetch(
-            `${baseUrl}/user_images/${rowId}/filename`,
-            {
-              method: 'PUT',
-              headers: {
-                'Content-Type': 'application/json',
-                'x-api-key': apiKey,
-              },
-              body: JSON.stringify({ filename: newFilename }),
-            },
-          );
-          await editResponse.json();
-          tempExistOrNot = true;
-        }
-      }
-      // Get the list of files in the user's directory
-      const filesInDirectory = await getListOfFiles(userId);
-
-      const productsData = await getValuesWithSql('products');
-
-      for (const file of filesInDirectory) {
-        const isAssignedToProduct = productsData.some(
-          (product) => product.image === file,
-        );
-        if (!isAssignedToProduct) {
-          await deleteImageLocal(userId, file);
-        }
-      }
-      const onlineFileDirectoryList = await getOnlineFileNames(userId);
-      for (const file of onlineFileDirectoryList) {
-        const isAssignedToProduct = productsData.some(
-          (product) => product.image === file,
-        );
-        if (!isAssignedToProduct) {
-          await deleteImage(userId, file);
-        }
-      }
-      if (!tempExistOrNot) {
-        const addResponse = await fetch(`${baseUrl}/user_images`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-api-key': apiKey,
-          },
-          body: JSON.stringify({
-            id: rowId,
-            user_id: userId,
-            filename: newFilename,
-            created_at: Date.now(),
-          }),
-        });
-        await addResponse.json();
-      }
-
-      return true;
+      console.log('Exchange rates updated:', latestRate.rates);
     } else {
-      console.error('Error uploading file:', data);
-      return false;
+      console.log('Exchange rates are up to date.');
     }
   } catch (error) {
-    console.error('Error uploading file:', error);
-    return false;
+    console.error('Failed to fetch exchange rates:', error);
   }
 };
-*/

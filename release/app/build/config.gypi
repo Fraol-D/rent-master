@@ -6,8 +6,8 @@
     "defines": [],
     "include_dirs": [],
     "libraries": [],
-    "msbuild_toolset": "v143",
-    "msvs_windows_target_platform_version": "10.0.22621.0"
+    "msbuild_toolset": "v141",
+    "msvs_windows_target_platform_version": "8.1"
   },
   "variables": {
     "asan": 0,

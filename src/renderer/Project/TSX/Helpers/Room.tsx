@@ -1576,7 +1576,7 @@ const Room = ({
               >
                 {roomType.status === 'Empty' ? (
                   <>
-                    <div>
+                    <div title={"Price: " + roomType.price.toLocaleString() + " " + (roomType.Currency)}>
                       Price:{' '}
                       <strong>
                         {formatNumberWithSuffix(roomType.price.toLocaleString())}
@@ -1593,7 +1593,7 @@ const Room = ({
                   </>
                 ) : (
                   <>
-                    <div>
+                    <div title={"Price: " + roomType.AgreedPrice.toLocaleString() + " " + (roomType.Currency)}>
                       Price:{' '}
                       <strong>
                         {formatNumberWithSuffix(roomType.AgreedPrice.toLocaleString())}{' '}

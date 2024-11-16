@@ -259,7 +259,7 @@ const DashbPastPayments = ({
       style={{
         width: 'var(--400px-V)',
         alignItems: 'flex-start',
-        height: 'var(--500px-V)',
+       
         overflowY: 'auto',
         overflowX: 'hidden',
       }}
@@ -370,9 +370,9 @@ const DashbPastPayments = ({
                           </span>
                         </td>
                         <td className="InfoTableBodyTD">
-                          {tenant.NumOfPayments}
+                          {tenant.NumOfPayments} 
                         </td>
-                        <td className="InfoTableBodyTD">{tenant.PastBy}</td>
+                        <td className="InfoTableBodyTD">{tenant.PastBy === 0 ? 'Today' : tenant.PastBy === 1 ? 'Yesterday' : `${tenant.PastBy} days`}</td>
                         <td
                           className="InfoTableBodyTD"
                           style={{
@@ -598,10 +598,10 @@ const DashbPastPayments = ({
               SelectedUserId={SelectedUserId}
               updateRoomPropertyLocal={updateRoomPropertyLocal}
               Currency={
-                RoomList.find(
-                  (r: RoomType) =>
-                    r.tenantId ===
-                    tenantList.find((t: tenant) => t.id == SelectedTenantViewShow)
+                tenantList.find(
+                  (t: tenant) =>
+                    t.id ===
+                   SelectedTenantViewShow
                     )?.Currency
                  || GetDefaultCurrency()
               }

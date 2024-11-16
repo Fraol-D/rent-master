@@ -16,7 +16,7 @@ import {
 } from 'date-fns';
 import { axisClasses } from '@mui/x-charts/ChartsAxis';
 import { subDays, differenceInDays, addMonths, addYears } from 'date-fns';
-import { formatNumberWithSuffix } from '../Helpers/CurrencySign';
+import CurrencySign, { formatNumberWithSuffix, getRateByDate } from '../Helpers/CurrencySign';
 interface MonthlyExpenseTrendWidgetProps {
   expenses: expenses[];
   SelectedBranchId: any;
@@ -30,7 +30,31 @@ const DashbMonthlyExpenseTrendWidget: React.FC<
     new Date().getFullYear().toString()
   );
   const [expensesData, setExpensesData] = useState<expenses[]>([]);
+  const [currencyDisplay, setCurrencyDisplay] = useState<
+    'ETB_ONLY' | 'USD_ONLY' | 'ALL_ETB' | 'ALL_USD'
+  >('ALL_ETB');
+  const processValueByCurrency = (
+    value: number,
+    currency: string,
+    date: number
+  ) => {
+    const { rate } = getRateByDate(date); // Assume this function fetches the exchange rate based on the date
 
+    if (!rate) return value; // Fallback if no rate is available
+
+    switch (currencyDisplay) {
+      case 'ETB_ONLY':
+        return currency === 'ETB' ? value : 0;
+      case 'USD_ONLY':
+        return currency === 'USD' ? value : 0;
+      case 'ALL_ETB':
+        return currency === 'USD' ? value * rate : value;
+      case 'ALL_USD':
+        return currency === 'ETB' ? value / rate : value;
+      default:
+        return value;
+    }
+  };
   useEffect(() => {
     const fetchExpenses = async () => {
       const expensesData = await getValuesWithSql(
@@ -145,7 +169,7 @@ const DashbMonthlyExpenseTrendWidget: React.FC<
       yearEnd
     );
 
-    const allMonths = d3.range(0, 12).map((month: number) => {
+    return d3.range(0, 12).map((month: number) => {
       const monthStart = startOfMonth(new Date(selectedYear, month, 1));
       const monthEnd = endOfMonth(new Date(selectedYear, month, 1));
       const totalExpense = allExpenses
@@ -153,47 +177,37 @@ const DashbMonthlyExpenseTrendWidget: React.FC<
           const expenseDate = new Date(e.date);
           return expenseDate >= monthStart && expenseDate <= monthEnd;
         })
-        .reduce((sum, e) => sum + e.price, 0);
+        .reduce(
+          (sum, e) => sum + processValueByCurrency(e.price, e.Currency, e.date),
+          0
+        );
 
       return {
         date: format(new Date(selectedYear, month, 1), 'MMM'),
         expense: totalExpense,
       };
     });
-
-    return allMonths;
-  }, [selectedDate, expensesData]);
-
+  }, [selectedDate, expensesData, currencyDisplay]);
   const aggregateYearlyData = useMemo(() => {
-    const yearRange = d3.range(
-      parseInt(selectedDate) - 2,
-      parseInt(selectedDate) + 3
+    const selectedYear = parseInt(selectedDate);
+    const yearStart = startOfYear(new Date(selectedYear, 0, 1));
+    const yearEnd = endOfYear(new Date(selectedYear, 11, 31));
+
+    const allExpenses = generateRecurringExpenses(
+      expensesData,
+      yearStart,
+      yearEnd
     );
 
-    return yearRange.map((year: number) => {
-      const yearStart = startOfYear(new Date(year, 0, 1));
-      const yearEnd = endOfYear(new Date(year, 11, 31));
+    const totalYearlyExpense = allExpenses.reduce((sum, e) => {
+      return sum + processValueByCurrency(e.price, e.Currency, e.date);
+    }, 0);
 
-      const allExpenses = generateRecurringExpenses(
-        expensesData,
-        yearStart,
-        yearEnd
-      );
-
-      const totalExpense = allExpenses
-        .filter((e) => {
-          const expenseDate = new Date(e.date);
-          return expenseDate >= yearStart && expenseDate <= yearEnd;
-        })
-        .reduce((sum, e) => sum + e.price, 0);
-
-      return {
-        date: year.toString(),
-        expense: totalExpense,
-      };
-    });
-  }, [selectedDate, expensesData]);
-
+    return {
+      year: selectedYear,
+      totalExpense: totalYearlyExpense,
+    };
+  }, [selectedDate, expensesData, currencyDisplay]);
   const dataset =
     showBy === 'Monthly' ? aggregateMonthlyData : aggregateYearlyData;
 
@@ -211,13 +225,13 @@ const DashbMonthlyExpenseTrendWidget: React.FC<
     const filteredExpenses = allExpenses.filter((e) => {
       const expenseDate = new Date(e.date);
       return expenseDate >= yearStart && expenseDate <= yearEnd;
-    });
+    }).map(e => ({...e, price: processValueByCurrency(e.price, e.Currency, e.date)}));
 
-    const totalExpense = filteredExpenses.reduce((sum, e) => sum + e.price, 0);
+    const totalExpense = filteredExpenses.reduce((sum, e) => sum + e.price, 0)
 
     const monthlyExpenses = d3.rollup(
       filteredExpenses,
-      (v) => d3.sum(v, (d) => d.price),
+      (v) => processValueByCurrency(d3.sum(v, (d) => d.price), v[0].Currency, v[0].date),
       (d) => format(new Date(d.date), 'MMM')
     );
 
@@ -255,10 +269,13 @@ const DashbMonthlyExpenseTrendWidget: React.FC<
             {
               dataKey: 'date',
               scaleType: 'point',
-              valueFormatter: (value) => formatNumberWithSuffix(value.toLocaleString()),
+              valueFormatter: (value) =>
+                (value.toLocaleString()),
               tickLabelStyle: {
                 angle: 0,
                 textAnchor: 'middle',
+                fill: 'var(--Text-Color)',
+                fontSize: 'var(--12px-V)',
               },
             },
           ]}
@@ -268,14 +285,19 @@ const DashbMonthlyExpenseTrendWidget: React.FC<
               label: 'Total Expenses',
               area: true,
 
-              valueFormatter: (value) => `$${formatNumberWithSuffix(value?.toLocaleString())}`,
+              valueFormatter: (value) =>
+                `${formatNumberWithSuffix(value?.toLocaleString())}${CurrencySign(currencyDisplay.includes('ETB') ? 'ETB' : 'USD')}`,
             },
-          ]}
+          ]} 
           yAxis={[
             {
               colorMap: {
                 type: 'piecewise',
                 thresholds: [0, 1000000],
+                tickLabelStyle: {
+                  fill: 'var(--Text-Color)',
+                  fontSize: 'var(--12px-V)',
+                },
                 colors: ['red', 'red', 'red'],
               },
             },
@@ -285,7 +307,9 @@ const DashbMonthlyExpenseTrendWidget: React.FC<
             console.error('Chart error:', error);
           }}
           grid={{ vertical: true, horizontal: true }}
-          margin={{ left: 70, right: 30, top: 30, bottom: 60 }}
+          margin={{ left: 40 + (window.electron.store.get("abbreiviateBigNumbers") ? 30 : Math.max(
+            ...dataset.map(d => d.expense.toString().length * 6)
+          )), right: 30, top: 30, bottom: 60 }}
           sx={{
             '.MuiLineElement-root': {
               stroke: 'red',
@@ -315,7 +339,11 @@ const DashbMonthlyExpenseTrendWidget: React.FC<
       return <div>Error rendering expense chart</div>;
     }
   };
-
+  const getCurrentExchangeRate = () => {
+    const storedRates = window.electron.store.get('exchangeRate');
+    if (!storedRates || storedRates.length === 0) return null;
+    return storedRates[storedRates.length - 1].rates;
+  };
   return (
     <div
       className="DashboardWigetMainContainer"
@@ -324,7 +352,7 @@ const DashbMonthlyExpenseTrendWidget: React.FC<
       <p className="DashboardWigetPieChartTextHeader">Expense Trend</p>
       <div className="DashboardTotalCollectedTopPart">
         <div className="ShowByContainer">
-          <span className="ShowByLabel">Show by:</span>
+          <span className="ShowByLabel">Show by</span>
           <select
             className="ShowBySelect"
             value={showBy}
@@ -335,16 +363,55 @@ const DashbMonthlyExpenseTrendWidget: React.FC<
           </select>
         </div>
         <div className="YearInputContainer">
-          <span className="YearLabel">Year:</span>
-          <input
-            className="YearInput"
-            type="number"
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            min="1900"
-            max="2100"
-            step="1"
-          />
+          <div className="ShowByContainer">
+            {' '}
+            <span className="YearLabel">Year</span>
+            <input
+              className="YearInput"
+              type="number"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              min="1900"
+              max="2100"
+              step="1"
+            />
+          </div>
+        </div>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            flexDirection: 'column',
+          }}
+        >
+          <select
+            value={currencyDisplay}
+            onChange={(e) =>
+              setCurrencyDisplay(e.target.value as typeof currencyDisplay)
+            }
+            style={{
+              padding: '3px 8px',
+              borderRadius: '4px',
+              border: '1px solid var(--Border-Color)',
+              backgroundColor: 'var(--Background-Color)',
+              color: 'var(--Text-Color)',
+              cursor: 'pointer',
+            }}
+          >
+            <option value="ETB_ONLY">Show Only Birr</option>
+            <option value="USD_ONLY">Show Only Dollar</option>
+            <option value="ALL_ETB">Show All in Birr</option>
+            <option value="ALL_USD">Show All in Dollar</option>
+          </select>
+          <span
+            style={{
+              fontSize: 'var(--12px-V)',
+              color: 'var(--Text-Color-Grey)',
+            }}
+          >
+            Current Rate: 1 USD ={' '}
+            {getCurrentExchangeRate()?.toFixed(2) || 'N/A'} ETB
+          </span>
         </div>
       </div>
       {renderChart()}
@@ -361,19 +428,26 @@ const DashbMonthlyExpenseTrendWidget: React.FC<
         <p className="ExpenseStatItem">
           Total Expense This Year:{' '}
           <em className="ExpenseStatValue">
-            ${formatNumberWithSuffix(expenseStats.totalExpense.toLocaleString())}
+            {formatNumberWithSuffix(expenseStats.totalExpense.toLocaleString())}
+          {CurrencySign(currencyDisplay.includes('ETB') ? 'ETB' : 'USD')}
           </em>
         </p>
         <p className="ExpenseStatItem">
           Highest Monthly Expense:{' '}
           <em className="ExpenseStatValue">
-            ${formatNumberWithSuffix(expenseStats.highestMonthlyExpense.toLocaleString())}
+            {formatNumberWithSuffix(
+              expenseStats.highestMonthlyExpense.toLocaleString()
+            )}
+            {CurrencySign(currencyDisplay.includes('ETB') ? 'ETB' : 'USD')}
           </em>
         </p>
         <p className="ExpenseStatItem">
           Average Monthly Expense:{' '}
           <em className="ExpenseStatValue">
-            ${formatNumberWithSuffix(expenseStats.averageMonthlyExpense.toLocaleString())}
+            {formatNumberWithSuffix(
+              expenseStats.averageMonthlyExpense.toLocaleString()
+            )}
+            {CurrencySign(currencyDisplay.includes('ETB') ? 'ETB' : 'USD')}
           </em>
         </p>
         <p className="ExpenseStatItem">

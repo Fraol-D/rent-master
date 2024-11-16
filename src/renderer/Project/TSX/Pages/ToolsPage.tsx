@@ -865,17 +865,12 @@ const ToolsPage = ({
   }
   function getSmsTemplates(userId: string | null) {
     return [
+      // English templates
       {
         id: uuidv4(),
         name: '5 days before due',
-        body: `Dear {{tenant_name}},
-
-Your rent payment of {{currency}}{{due_amount}} is due in 5 days ({{due_duration}}) on {{due_date}}.
-
-If you have any questions, please contact {{landlord_name}} at {{landlord_Telephone}}.
-
-Best regards,
-{{landlord_name}}`,
+        body: `Rent of {{currency}}{{due_amount}} due in 5 days on {{due_date}}.
+{{landlord_name}}, {{landlord_Telephone}}`,
         created_at: Date.now(),
         updated_at: Date.now(),
         userId: userId,
@@ -883,14 +878,8 @@ Best regards,
       {
         id: uuidv4(),
         name: '3 days before due',
-        body: `Dear {{tenant_name}},
-
-Your rent payment of {{currency}}{{due_amount}} is due in 3 days ({{due_duration}}) on {{due_date}}. Please ensure timely payment.
-
-For any inquiries, contact {{landlord_name}} at {{landlord_Telephone}}.
-
-Thank you,
-{{landlord_name}}`,
+        body: `Rent of {{currency}}{{due_amount}} due in 3 days on {{due_date}}.
+{{landlord_name}}, {{landlord_Telephone}}`,
         created_at: Date.now(),
         updated_at: Date.now(),
         userId: userId,
@@ -898,14 +887,8 @@ Thank you,
       {
         id: uuidv4(),
         name: '1 day before due',
-        body: `Dear {{tenant_name}},
-
-This is an urgent reminder that your rent payment of {{currency}}{{due_amount}} is due tomorrow ({{due_duration}}), {{due_date}}.
-
-If you have any concerns, please contact {{landlord_name}} at {{landlord_Telephone}}.
-
-Best regards,
-{{landlord_name}}`,
+        body: `Rent of {{currency}}{{due_amount}} due tomorrow, {{due_date}}.
+{{landlord_name}}, {{landlord_Telephone}}`,
         created_at: Date.now(),
         updated_at: Date.now(),
         userId: userId,
@@ -913,14 +896,8 @@ Best regards,
       {
         id: uuidv4(),
         name: 'On due date',
-        body: `Dear {{tenant_name}},
-
-Your rent payment of {{currency}}{{due_amount}} is due today ({{due_duration}}), {{due_date}}. Please make the payment as soon as possible.
-
-For any questions, contact {{landlord_name}} at {{landlord_Telephone}}.
-
-Thank you,
-{{landlord_name}}`,
+        body: `Rent of {{currency}}{{due_amount}} due today, {{due_date}}.
+{{landlord_name}}, {{landlord_Telephone}}`,
         created_at: Date.now(),
         updated_at: Date.now(),
         userId: userId,
@@ -928,14 +905,8 @@ Thank you,
       {
         id: uuidv4(),
         name: '1 day after due',
-        body: `Dear {{tenant_name}},
-
-Your rent payment of {{currency}}{{due_amount}} was due yesterday ({{due_duration}}), {{due_date}}. If you have already made the payment, please disregard this message.
-
-If not, please make the payment immediately or contact {{landlord_name}} at {{landlord_Telephone}}.
-
-Regards,
-{{landlord_name}}`,
+        body: `Rent of {{currency}}{{due_amount}} was due yesterday, {{due_date}}.
+{{landlord_name}}, {{landlord_Telephone}}`,
         created_at: Date.now(),
         updated_at: Date.now(),
         userId: userId,
@@ -943,29 +914,8 @@ Regards,
       {
         id: uuidv4(),
         name: '3 days after due',
-        body: `Dear {{tenant_name}},
-
-Your rent payment of {{currency}}{{due_amount}} is now 3 days overdue ({{due_duration}}). The due date was {{due_date}}.
-
-Please make the payment immediately or contact {{landlord_name}} at {{landlord_Telephone}}.
-
-Sincerely,
-{{landlord_name}}`,
-        created_at: Date.now(),
-        updated_at: Date.now(),
-        userId: userId,
-      },
-      {
-        id: uuidv4(),
-        name: '5 days after due',
-        body: `Dear {{tenant_name}},
-
-Your rent payment of {{currency}}{{due_amount}} is now 5 days overdue ({{due_duration}}). Due date was {{due_date}}.
-
-Please make the payment immediately or contact {{landlord_name}} at {{landlord_Telephone}}.
-
-Regards,
-{{landlord_name}}`,
+        body: `Rent of {{currency}}{{due_amount}} is 3 days overdue. Due date was {{due_date}}.
+{{landlord_name}}, {{landlord_Telephone}}`,
         created_at: Date.now(),
         updated_at: Date.now(),
         userId: userId,
@@ -973,14 +923,8 @@ Regards,
       {
         id: uuidv4(),
         name: '7 days after due',
-        body: `Dear {{tenant_name}},
-
-Your rent payment of {{currency}}{{due_amount}} is now 7 days overdue ({{due_duration}}). Due date was {{due_date}}.
-
-Please make immediate payment or contact {{landlord_name}} at {{landlord_Telephone}}.
-
-Sincerely,
-{{landlord_name}}`,
+        body: `Rent of {{currency}}{{due_amount}} is 7 days overdue. Due date was {{due_date}}.
+{{landlord_name}}, {{landlord_Telephone}}`,
         created_at: Date.now(),
         updated_at: Date.now(),
         userId: userId,
@@ -989,14 +933,8 @@ Sincerely,
       {
         id: uuidv4(),
         name: 'በ5 ቀናት ውስጥ የሚከፈል',
-        body: `ውድ {{tenant_name}},
-
-የ{{currency}}{{due_amount}} የኪራይ ክፍያዎ በ5 ቀናት ውስጥ ({{due_duration}}) በ{{due_date}} መከፈል አለበት።
-
-ጥያቄ ካለዎት {{landlord_name}}ን በ{{landlord_Telephone}} ያግኙ።
-
-ከሰላምታ ጋር፣
-{{landlord_name}}`,
+        body: `የ{{currency}}{{due_amount}} ኪራይ በ5 ቀናት በ{{due_date}} ይከፈላል።
+{{landlord_name}}, {{landlord_Telephone}}`,
         created_at: Date.now(),
         updated_at: Date.now(),
         userId: userId,
@@ -1004,14 +942,8 @@ Sincerely,
       {
         id: uuidv4(),
         name: 'በ3 ቀናት ውስጥ የሚከፈል',
-        body: `ውድ {{tenant_name}},
-
-የ{{currency}}{{due_amount}} የኪራይ ክፍያዎ በ3 ቀናት ውስጥ ({{due_duration}}) በ{{due_date}} መከፈል አለበት። በጊዜው እንዲከፍሉ እናሳስባለን።
-
-ጥያቄ ካለዎት {{landlord_name}}ን በ{{landlord_Telephone}} ያግኙ።
-
-እናመሰግናለን፣
-{{landlord_name}}`,
+        body: `የ{{currency}}{{due_amount}} ኪራይ በ3 ቀናት በ{{due_date}} ይከፈላል።
+{{landlord_name}}, {{landlord_Telephone}}`,
         created_at: Date.now(),
         updated_at: Date.now(),
         userId: userId,
@@ -1019,14 +951,8 @@ Sincerely,
       {
         id: uuidv4(),
         name: 'በ1 ቀን ውስጥ የሚከፈል',
-        body: `ውድ {{tenant_name}},
-
-የ{{currency}}{{due_amount}} የኪራይ ክፍያዎ ነገ ({{due_duration}}) በ{{due_date}} መከፈል አለበት።
-
-ጥያቄ ካለዎት {{landlord_name}}ን በ{{landlord_Telephone}} ያግኙ።
-
-ከሰላምታ ጋር፣
-{{landlord_name}}`,
+        body: `የ{{currency}}{{due_amount}} ኪራይ ነገ በ{{due_date}} ይከፈላል።
+{{landlord_name}}, {{landlord_Telephone}}`,
         created_at: Date.now(),
         updated_at: Date.now(),
         userId: userId,
@@ -1034,14 +960,8 @@ Sincerely,
       {
         id: uuidv4(),
         name: 'በመክፈያ ቀን',
-        body: `ውድ {{tenant_name}},
-
-የ{{currency}}{{due_amount}} የኪራይ ክፍያዎ ዛሬ ({{due_duration}}) በ{{due_date}} መከፈል አለበት። በአስቸኳይ እንዲከፍሉ እናሳስባለን።
-
-ጥያቄ ካለዎት {{landlord_name}}ን በ{{landlord_Telephone}} ያግኙ።
-
-እናመሰግናለን፣
-{{landlord_name}}`,
+        body: `የ{{currency}}{{due_amount}} ኪራይ ዛሬ በ{{due_date}} ይከፈላል።
+{{landlord_name}}, {{landlord_Telephone}}`,
         created_at: Date.now(),
         updated_at: Date.now(),
         userId: userId,
@@ -1049,14 +969,8 @@ Sincerely,
       {
         id: uuidv4(),
         name: 'ከቀኑ በኋላ 1 ቀን',
-        body: `ውድ {{tenant_name}},
-
-የ{{currency}}{{due_amount}} የኪራይ ክፍያዎ ትላንት ({{due_duration}}) በ{{due_date}} መከፈል ነበረበት። ከፍለው ከሆነ ይህን መልእክት ይተዉት።
-
-ካልከፈሉ፣ እባክዎ በአስቸኳይ ይክፈሉ ወይም {{landlord_name}}ን በ{{landlord_Telephone}} ያግኙ።
-
-ከሰላምታ ጋር፣
-{{landlord_name}}`,
+        body: `የ{{currency}}{{due_amount}} የኪራይ ክፍያዎ ትላንት በ{{due_date}} መከፈል ነበረበት።
+{{landlord_name}}, {{landlord_Telephone}}`,
         created_at: Date.now(),
         updated_at: Date.now(),
         userId: userId,
@@ -1064,29 +978,8 @@ Sincerely,
       {
         id: uuidv4(),
         name: 'ከቀኑ በኋላ 3 ቀናት',
-        body: `ውድ {{tenant_name}},
-
-የ{{currency}}{{due_amount}} የኪራይ ክፍያዎ በ3 ቀናት ዘግይቷል ({{due_duration}})። የመክፈያ ቀኑ {{due_date}} ነበር።
-
-እባክዎ በአስቸኳይ ይክፈሉ ወይም {{landlord_name}}ን በ{{landlord_Telephone}} ያግኙ።
-
-ከሰላምታ ጋር፣
-{{landlord_name}}`,
-        created_at: Date.now(),
-        updated_at: Date.now(),
-        userId: userId,
-      },
-      {
-        id: uuidv4(),
-        name: 'ከቀኑ በኋላ 5 ቀናት',
-        body: `ውድ {{tenant_name}},
-
-የ{{currency}}{{due_amount}} የኪራይ ክፍያዎ በ5 ቀናት ዘግይቷል ({{due_duration}})። የመክፈያ ቀኑ {{due_date}} ነበር።
-
-እባክዎ በአስቸኳይ ይክፈሉ ወይም {{landlord_name}}ን በ{{landlord_Telephone}} ያግኙ።
-
-ከሰላምታ ጋር፣
-{{landlord_name}}`,
+        body: `የ{{currency}}{{due_amount}} የኪራይ ክፍያዎ አሁን በ3 ቀናት ዘግይቷል። የመክፈያ ቀኑ {{due_date}} ነበር።
+{{landlord_name}}, {{landlord_Telephone}}`,
         created_at: Date.now(),
         updated_at: Date.now(),
         userId: userId,
@@ -1094,14 +987,8 @@ Sincerely,
       {
         id: uuidv4(),
         name: 'ከቀኑ በኋላ 7 ቀናት',
-        body: `ውድ {{tenant_name}},
-
-የ{{currency}}{{due_amount}} የኪራይ ክፍያዎ በ7 ቀናት ዘግይቷል ({{due_duration}})። የመክፈያ ቀኑ {{due_date}} ነበር።
-
-እባክዎ በአስቸኳይ ይክፈሉ ወይም {{landlord_name}}ን በ{{landlord_Telephone}} ያግኙ።
-
-ከሰላምታ ጋር፣
-{{landlord_name}}`,
+        body: `የ{{currency}}{{due_amount}} የኪራይ ክፍያዎ አሁን በ7 ቀናት ዘግይቷል። የመክፈያ ቀኑ {{due_date}} ነበር።
+{{landlord_name}}, {{landlord_Telephone}}`,
         created_at: Date.now(),
         updated_at: Date.now(),
         userId: userId,
@@ -1396,7 +1283,7 @@ Sincerely,
       console.log('Selected email to send with:', selectedEmail);
       setEmailSendingwith(selectedEmail || '');
     };
-    a();
+    if (navigator.onLine) a();
   }, []);
   const privileges = useMemo(
     () => getUserPrivileges(SelectedAppUser),
@@ -1471,6 +1358,146 @@ Sincerely,
 
     return Math.ceil((nextPayment2 - todayTime) / msPerDay);
   };
+  const [exchangeRates, setExchangeRates] = useState<
+    Array<{
+      id: number;
+      rates: number;
+    }>
+  >([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const ratesPerPage = 50;
+  // Add useEffect to refetch when page changes
+  // Add these new states at the top with your other states
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+
+  // Add this state near your other states
+  const [isLoadingRates, setIsLoadingRates] = useState(false);
+  const [showRecentRates, setShowRecentRates] = useState(false);
+
+  // Modify your fetchExchangeRates function
+  const fetchExchangeRates = async () => {
+    try {
+      if(navigator.onLine) {
+      setIsLoadingRates(true);
+      let whereClause = 'WHERE 1';
+      if (startDate) {
+        whereClause += ` AND id >= ${new Date(startDate).getTime() / 1000}`;
+      }
+      if (endDate) {
+        whereClause += ` AND id <= ${new Date(endDate).getTime() / 1000}`;
+      }
+
+      // First get total count for pagination
+      const countQuery = `SELECT COUNT(*) as total FROM Exchange_RatesUSDtoETB ${whereClause}`;
+      const totalResult = await getValuesWithSql_Online(
+        'Exchange_RatesUSDtoETB',
+        whereClause
+      );
+     
+        const total = totalResult.length;
+        const calculatedTotalPages = Math.ceil(total / ratesPerPage);
+        setTotalPages(calculatedTotalPages);
+
+        // Then get paginated data
+        const offset = (currentPage - 1) * ratesPerPage;
+        const paginatedQuery = `${whereClause} ORDER BY id DESC LIMIT ${ratesPerPage} OFFSET ${offset}`;
+        const rates = await getValuesWithSql_Online(
+          'Exchange_RatesUSDtoETB',
+          paginatedQuery
+        );
+        setExchangeRates(rates);
+      }
+    } catch (error) {
+      console.error('Error fetching exchange rates:', error);
+    } finally {
+      setIsLoadingRates(false);
+    }
+  };
+
+  // Add this useEffect to handle pagination changes
+  useEffect(() => {
+    fetchExchangeRates();
+  }, [currentPage, startDate, endDate]);
+
+  // Add this useEffect to reset page when date filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [startDate, endDate]);
+
+  // Simplified update function that just stores the latest rate
+  const updateExchangeRates = async () => {
+    if (navigator.onLine) {
+      const exchangeRates2 = await getValuesWithSql_Online(
+        'Exchange_RatesUSDtoETB',
+        'WHERE 1'
+      );
+      if (exchangeRates2.length > 0) {
+        const latestRate = exchangeRates2;
+        window.electron.store.set('exchangeRate', latestRate);
+        window.electron.store.set(
+          'lastExchangeRateUpdate',
+          latestRate[latestRate.length - 1].id * 1000
+        );
+        setRefresh(refresh + 1);
+      }
+    }
+  };
+  const [GetExchangeRateDate, setGetExchangeRateDate] = useState('');
+  const [GetExchangeRate, setGetExchangeRate] = useState(0);
+  const fetchExchangeRateOfThatDate = async () => {
+    try {
+      if(navigator.onLine) {
+        // First try to get the exact date's rate
+        const targetDate = new Date(GetExchangeRateDate).getTime();
+        if (!isNaN(targetDate) && targetDate > 0) {
+          let rates = await getValuesWithSql_Online(
+            'Exchange_RatesUSDtoETB',
+            `WHERE id <= ${targetDate} ORDER BY id DESC LIMIT 1`
+          );
+
+          // If we found a rate, use it
+          if (rates.length > 0) {
+            console.log('Found rate:', rates[0]);
+            setGetExchangeRate(rates[0].rates);
+            // Optionally show when this rate is from if it's not the exact date
+            if (rates[0].id !== targetDate) {
+              console.log(
+                `Using rate from ${new Date(rates[0].id).toLocaleDateString()}`
+              );
+            }
+          } else {
+            console.log('No historical rates found for this date');
+            setGetExchangeRate(0);
+          }
+        }
+      } else {
+        // Get from local store if offline
+        const localRates = window.electron.store.get('exchangeRate');
+        if (localRates && localRates.length > 0) {
+          const targetDate = new Date(GetExchangeRateDate).getTime();
+          // Find closest rate that's not after target date
+          const closestRate = localRates
+            .filter(rate => rate.id <= targetDate)
+            .sort((a, b) => b.id - a.id)[0];
+            
+          if (closestRate) {
+            setGetExchangeRate(closestRate.rates);
+          } else {
+            setGetExchangeRate(0);
+          }
+        } else {
+          setGetExchangeRate(0);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching exchange rate:', error);
+      setGetExchangeRate(null);
+    }
+  };
+  // Add these states
+
   const [refresh, setRefresh] = useState(0);
   return (
     <>
@@ -2332,6 +2359,32 @@ Sincerely,
                                       right: 'var(--160px-V)',
                                     }}
                                   >
+                                    {isLoadingRates && (
+                                      <div
+                                        style={{
+                                          position: 'absolute',
+                                          top: 0,
+                                          left: 0,
+                                          right: 0,
+                                          bottom: 0,
+                                          backgroundColor:
+                                            'rgba(255, 255, 255, 0.8)',
+                                          display: 'flex',
+                                          justifyContent: 'center',
+                                          alignItems: 'center',
+                                          zIndex: 1000,
+                                        }}
+                                      >
+                                        <img
+                                          src={loadingGif}
+                                          alt="Loading..."
+                                          style={{
+                                            width: '50px',
+                                            height: '50px',
+                                          }}
+                                        />
+                                      </div>
+                                    )}
                                     <div
                                       style={{
                                         display: 'flex',
@@ -2537,27 +2590,453 @@ Sincerely,
           )}
           {ToolsSelectedPage === 'Settings' && (
             <div style={{ margin: '10px' }}>
-              <h1>Settings</h1>
-              <div style={{ margin: '10px' }}>
+              <h1 style={{ fontSize: 'var(--35px-V)' }}>Settings</h1>
+              <div style={{ margin: 'var(--10px-V)' }}>
                 {' '}
-                <h2>Currency</h2>
-                -Default Currency:{' '}
-                <select
-                  name=""
-                  id=""
-                  onChange={(e) => {
-                    window.electron.store.set(
-                      'defaultCurrency',
-                      e.target.value
-                    );
-                    setRefresh(refresh + 1);
-                  }}
-                  value={GetDefaultCurrency()}
-                >
-                  {GetCurrencyAsOptionsOnSelect()}
-                </select>
-                <br />
-                -Use live exchange Rates{' '}
+                <h2 style={{ fontSize: 'var(--25px-V)' }}>
+                  -- Tax percentages --
+                </h2>
+                <div style={{ marginLeft: 'var(--20px-V)' }}>
+                  Tax percentage:{' '}
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    style={{ width: 'var(--60px-V)' }}
+                    value={window.electron.store.get('taxPercentage')}
+                    onChange={(e) => {
+                      window.electron.store.set(
+                        'taxPercentage',
+                        parseFloat(e.target.value)
+                      );
+                      setRefresh(refresh + 1);
+                    }}
+                  />
+                  %
+                </div>
+              </div>
+
+              <div style={{ margin: 'var(--10px-V)', borderRadius: 'var(--8px-V)' }}>
+                <h2 style={{ marginBottom: 'var(--15px-V)', fontSize: 'var(--25px-V)' }}>
+                  -- Currency Settings --
+                </h2>
+
+                <div style={{ marginLeft: 'var(--20px-V)' }}>
+                  <label style={{ fontWeight: 500 }}>Default Currency: </label>
+                  <select
+                    onChange={(e) => {
+                      window.electron.store.set(
+                        'defaultCurrency',
+                        e.target.value
+                      );
+                      setRefresh(refresh + 1);
+                    }}
+                    value={GetDefaultCurrency()}
+                  >
+                    {GetCurrencyAsOptionsOnSelect()}
+                  </select>
+                </div>
+
+                <div style={{ marginLeft: 'var(--20px-V)' }}>
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 'var(--10px-V)',
+                    }}
+                  >
+                    <span>
+                      Exchange rates
+                    
+                    </span>
+                    <button onClick={updateExchangeRates}>Update</button>
+                    <p style={{ fontSize: 'var(--13px-V)' }}>
+                      Current latest rate using (
+                      {window.electron.store.get('lastExchangeRateUpdate')
+                        ? new Date(
+                            window.electron.store.get('lastExchangeRateUpdate')
+                          ).toDateString({
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric',
+                          })
+                        : "Haven't updated yet"}{' '}
+                      :{' '}
+                      {
+                        GetDefaultCurrency() === 'USD' ? 
+                          (1 / window.electron.store.get('exchangeRate')[
+                            window.electron.store.get('exchangeRate').length - 1
+                          ].rates).toFixed(5) :
+                          window.electron.store.get('exchangeRate')[
+                            window.electron.store.get('exchangeRate').length - 1
+                          ].rates.toFixed(5)
+                      }
+                      {CurrencySign(GetDefaultCurrency())})
+                    </p>
+                  </div>
+                  {navigator.onLine ? (
+                    <>
+                      {' '}
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 'var(--10px-V)',
+                        }}
+                      >
+                        <span>Check rate on: </span>
+                        <input
+                          type="date"
+                          onChange={(e) => {
+                            const selectedDate =
+                              new Date(e.target.value).getTime() / 1000;
+
+                            // Check if date is after 2015
+                            if (
+                              selectedDate <
+                              new Date('2015-01-01').getTime() / 1000
+                            ) {
+                              alert('Please select a date after 2015');
+                              return;
+                            }
+
+                            
+                              setGetExchangeRateDate(selectedDate);
+                            
+                          }}
+                        />
+                        <button onClick={() => fetchExchangeRateOfThatDate()}>
+                          Get Rate
+                        </button>
+                        {GetExchangeRate != 0 ? (
+                          <>
+                            {new Date(
+                              new Date(GetExchangeRateDate).getTime() * 1000
+                            ).toDateString()}
+                            : {GetExchangeRate}
+                          </>
+                        ) : (
+                          ''
+                        )}
+                      </div>
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 'var(--10px-V)',
+                          marginBottom: 'var(--10px-V)',
+                        }}
+                      >
+                        <h3 style={{ margin: 0 }}>
+                          Recent Exchange Rates (USD to ETB)
+                        </h3>
+                        <button
+                          onClick={() => setShowRecentRates(!showRecentRates)}
+                          style={{
+                            padding: 'var(--3px-V) var(--8px-V)',
+                          }}
+                        >
+                          {showRecentRates ? '▼ Hide' : '▶ Show'}
+                        </button>
+                      </div>
+                      {showRecentRates && (
+                        <div
+                          style={{
+                            backgroundColor: 'var(--Secondary-Color60)',
+                            marginLeft: 'var(--20px-V)',
+                            width: 'var(--500px-V)',
+                            borderRadius: 'var(--5px-V)',
+                            padding: 'var(--10px-V)',
+                          }}
+                        >
+                          {' '}
+                          <>
+                            <div
+                              style={{
+                                fontSize: 'var(--13px-V)',
+                                color: 'var(--Text-Color-Grey)',
+                                fontStyle: 'italic',
+                              }}
+                            >
+                              * Future rates provided by exchangerates-api *
+                              Past rates provided by investing.com
+                            </div>
+                            <div
+                              style={{
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                                gap: 'var(--10px-V)',
+                                padding: 'var(--5px-V)',
+                                borderTop: 'var(--1px-V) solid var(--Border-Color)',
+                              }}
+                            >
+                              <div
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 'var(--10px-V)',
+                                }}
+                              >
+                                <div>
+                                  <span style={{ marginRight: 'var(--5px-V)' }}>
+                                    From:
+                                  </span>
+                                  <input
+                                    type="date"
+                                    value={startDate}
+                                    onChange={(e) =>
+                                      setStartDate(e.target.value)
+                                    }
+                                    style={{
+                                      padding: 'var(--5px-V) var(--10px-V)',
+                                      borderRadius: 'var(--4px-V)',
+                                      border: 'var(--1px-V) solid var(--Border-Color)',
+                                    }}
+                                  />
+                                </div>
+                                <div>
+                                  <span style={{ marginRight: 'var(--5px-V)' }}>
+                                    To:
+                                  </span>
+                                  <input
+                                    type="date"
+                                    value={endDate}
+                                    onChange={(e) => setEndDate(e.target.value)}
+                                    style={{
+                                      padding: 'var(--5px-V) var(--10px-V)',
+                                      borderRadius: 'var(--4px-V)',
+                                      border: 'var(--1px-V) solid var(--Border-Color)',
+                                    }}
+                                  />
+                                </div>
+                                <button
+                                  onClick={() => {
+                                    setStartDate('');
+                                    setEndDate('');
+                                  }}
+                                  style={{
+                                    padding: 'var(--5px-V) var(--10px-V)',
+                                    borderRadius: 'var(--4px-V)',
+                                    border: 'var(--1px-V) solid var(--Border-Color)',
+                                    backgroundColor: 'var(--Background-Color)',
+                                    cursor: 'pointer',
+                                  }}
+                                >
+                                  Clear
+                                </button>
+                              </div>{' '}
+                            </div>
+                            {exchangeRates.map((rate, index) => {
+                              const nextRate =
+                                index < exchangeRates.length - 1
+                                  ? exchangeRates[index + 1].rates
+                                  : rate.rates;
+                              const difference = rate.rates - nextRate;
+                              const differenceText =
+                                difference !== 0
+                                  ? `(${
+                                      difference > 0 ? '+' : ''
+                                    }${difference.toFixed(2)})`
+                                  : '';
+
+                              return (
+                                <div
+                                  key={rate.id}
+                                  style={{
+                                    padding: 'var(--8px-V) var(--15px-V)',
+                                    borderBottom: 'var(--1px-V) solid #eee',
+                                    width: 'var(--350px-V)',
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                  }}
+                                >
+                                  <span>
+                                    {new Date(
+                                      rate.id * 1000
+                                    ).toLocaleDateString('en-US', {
+                                      month: 'short',
+                                      day: 'numeric',
+                                      year: 'numeric',
+                                    })}
+                                  </span>
+                                  <span
+                                    style={{
+                                      fontWeight: 500,
+                                      color:
+                                        index < exchangeRates.length - 1
+                                          ? rate.rates > nextRate
+                                            ? 'green'
+                                            : rate.rates < nextRate
+                                            ? 'red'
+                                            : 'inherit'
+                                          : 'inherit',
+                                    }}
+                                  >
+                                    {rate.rates} ETB {differenceText}
+                                  </span>
+                                </div>
+                              );
+                            })}
+                            <div
+                              style={{
+                                display: 'flex',
+
+                                alignItems: 'center',
+                                gap: 'var(--10px-V)',
+                                padding: 'var(--5px-V)',
+                                borderTop: 'var(--1px-V) solid var(--Border-Color)',
+                              }}
+                            >
+                              <button
+                                onClick={() => setCurrentPage(1)}
+                                disabled={currentPage === 1 || isLoadingRates}
+                                style={{
+                                  padding: 'var(--5px-V) var(--10px-V)',
+                                  cursor:
+                                    currentPage === 1 || isLoadingRates
+                                      ? 'not-allowed'
+                                      : 'pointer',
+                                  opacity:
+                                    currentPage === 1 || isLoadingRates
+                                      ? 0.5
+                                      : 1,
+                                }}
+                              >
+                                First
+                              </button>
+                              <button
+                                onClick={() =>
+                                  setCurrentPage((prev) =>
+                                    Math.max(1, prev - 1)
+                                  )
+                                }
+                                disabled={currentPage === 1 || isLoadingRates}
+                                style={{
+                                  padding: 'var(--5px-V) var(--10px-V)',
+                                  cursor:
+                                    currentPage === 1 || isLoadingRates
+                                      ? 'not-allowed'
+                                      : 'pointer',
+                                  opacity:
+                                    currentPage === 1 || isLoadingRates
+                                      ? 0.5
+                                      : 1,
+                                }}
+                              >
+                                Previous
+                              </button>
+                              <span
+                                style={{
+                                  color: 'var(--Text-Color)',
+                                  padding: '0 var(--10px-V)',
+                                  minWidth: 'var(--100px-V)',
+                                  textAlign: 'center',
+                                }}
+                              >
+                                Page {currentPage} of {totalPages || 1}
+                              </span>
+                              <button
+                                onClick={() =>
+                                  setCurrentPage((prev) =>
+                                    Math.min(totalPages, prev + 1)
+                                  )
+                                }
+                                disabled={
+                                  currentPage >= totalPages || isLoadingRates
+                                }
+                                style={{
+                                  padding: 'var(--5px-V) var(--10px-V)',
+                                  cursor:
+                                    currentPage >= totalPages || isLoadingRates
+                                      ? 'not-allowed'
+                                      : 'pointer',
+                                  opacity:
+                                    currentPage >= totalPages || isLoadingRates
+                                      ? 0.5
+                                      : 1,
+                                }}
+                              >
+                                Next
+                              </button>
+                              <button
+                                onClick={() => setCurrentPage(totalPages)}
+                                disabled={
+                                  currentPage >= totalPages || isLoadingRates
+                                }
+                                style={{
+                                  padding: 'var(--5px-V) var(--10px-V)',
+                                  cursor:
+                                    currentPage >= totalPages || isLoadingRates
+                                      ? 'not-allowed'
+                                      : 'pointer',
+                                  opacity:
+                                    currentPage >= totalPages || isLoadingRates
+                                      ? 0.5
+                                      : 1,
+                                }}
+                              >
+                                Last
+                              </button>
+                            </div>
+                          </>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <>Please connect to internet to see exchange rates</>
+                  )}
+                </div>
+
+                {/* <div
+                      style={{
+                        marginTop: 'var(--15px-V)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 'var(--10px-V)',
+                      }}
+                    >
+                      <span>Check rate on: </span>
+                      <input
+                        type="date"
+                        style={{
+                          padding: 'var(--5px-V) var(--10px-V)',
+                          borderRadius: 'var(--4px-V)',
+                          border: 'var(--1px-V) solid #ddd',
+                        }}
+                        onChange={(e) => {
+                          const selectedDate =
+                            new Date(e.target.value).getTime() / 1000;
+                          const rate = exchangeRates.find((r) => {
+                            const rateDate = new Date(r.id * 1000);
+                            return (
+                              rateDate.toDateString() ===
+                              new Date(selectedDate * 1000).toDateString()
+                            );
+                          });
+                          if (rate) {
+                            setGetExchangeRateDate(selectedDate);
+                          } else {
+                            alert(
+                              'No exchange rate data available for this date'
+                            );
+                          }
+                        }}
+                      />
+                      <button
+                       
+                        onClick={() => fetchExchangeRateOfThatDate()}
+                      >
+                        Get Rate
+                      </button>
+                      {GetExchangeRate != 0 ? (
+                        <>
+                          {new Date(new Date(GetExchangeRateDate).getTime()*1000).toDateString()}:{' '}
+                          {GetExchangeRate}
+                        </>
+                      ) : (
+                        ''
+                      )}
+                    </div>*-Use live exchange Rates{' '}
                 <input
                   type="checkbox"
                   onChange={(e) => {
@@ -2569,14 +3048,14 @@ Sincerely,
                   }}
                   value={window.electron.store.get('useLiveExchangeRates')}
                 />{' '}
-                <br />
-                <>
+                <br /> */}
+                {/** <>
                   -Exchange rates in {GetDefaultCurrency()}
                   {AllCurrencies.filter(
                     (currency) => currency !== GetDefaultCurrency()
                   ).map((currency) => (
                     <div
-                      style={{ margin: '10px', marginLeft: 'var(--15px-V)' }}
+                      style={{ margin: 'var(--10px-V)', marginLeft: 'var(--15px-V)' }}
                     >
                       {currency} =
                       <input
@@ -2595,44 +3074,50 @@ Sincerely,
                       {CurrencySign(GetDefaultCurrency())}
                     </div>
                   ))}
-                </>
-                
+                </>*/}
               </div>
-              <div style={{ margin: '10px' }}>
+              <div style={{ margin: 'var(--10px-V)' }}>
                 {' '}
-                <h2>Abbreiviate big numbers</h2>
-                -Make big numbers like 100,000, 1,000,000 or 10,000,000 to 100k,
-                1M or 10M:{' '}
-                <input
-                  type="checkbox"
-                  name=""
-                  id=""
-                  checked={window.electron.store.get('abbreiviateBigNumbers')}
-                  onChange={(e) => {
-                    window.electron.store.set(
-                      'abbreiviateBigNumbers',
-                      e.target.checked
-                    );
-                    setRefresh(refresh + 1);
-                  }}
-                />
-                <br />
-                -Number of decimal places to show:{' '}
-                <input
-                  type="number"
-                  min="0"
-                  max="4"
-                  style={{ width: '60px' }}
-                  value={window.electron.store.get('abbreviationDecimals')}
-                  onChange={(e) => {
-                    window.electron.store.set(
-                      'abbreviationDecimals',
-                      parseInt(e.target.value)
-                    );
-                    setRefresh(refresh + 1);
-                  }}
-                />
-                <br />
+                <h2 style={{ fontSize: 'var(--25px-V)' }}>
+                  -- Formating numbers --
+                </h2>
+                <div style={{ marginLeft: 'var(--20px-V)' }}>
+                  Make big numbers like 100,000, 1,000,000 or 10,000,000 to
+                  100k, 1M or 10M:{' '}
+                  <input
+                    type="checkbox"
+                    name=""
+                    id=""
+                    checked={window.electron.store.get('abbreiviateBigNumbers')}
+                    onChange={(e) => {
+                      window.electron.store.set(
+                        'abbreiviateBigNumbers',
+                        e.target.checked
+                      );
+                      if (e.target.checked) {
+                        window.electron.store.set('abbreviationDecimals', 2);
+                      }
+                      setRefresh(refresh + 1);
+                    }}
+                  />
+                  <br />
+                  Number of decimal places to show:{' '}
+                  <input
+                    type="number"
+                    min="0"
+                    max="4"
+                    style={{ width: 'var(--60px-V)' }}
+                    value={window.electron.store.get('abbreviationDecimals')}
+                    onChange={(e) => {
+                      window.electron.store.set(
+                        'abbreviationDecimals',
+                        parseInt(e.target.value)
+                      );
+                      setRefresh(refresh + 1);
+                    }}
+                  />
+                  <br />
+                </div>
               </div>
             </div>
           )}

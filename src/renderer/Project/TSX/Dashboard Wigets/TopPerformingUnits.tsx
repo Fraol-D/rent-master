@@ -1,6 +1,6 @@
 import { getValuesWithSql } from 'Backend/localServerApis';
 import React, { useEffect, useMemo, useState } from 'react';
-import { formatNumberWithSuffix } from '../Helpers/CurrencySign';
+import { formatNumberWithSuffix, GetDefaultCurrency, CurrencySign, getRateByDate } from '../Helpers/CurrencySign';
 //"search bar for all" where this is make a search bar which is deffrent for each one and that search bar makes it search through to find the one you want , And also make not filter insted jump to that element or scroll to that element, only show the search bar if the show all is on
 const TopPerformingUnits = ({
   RoomList,
@@ -74,21 +74,75 @@ const TopPerformingUnits = ({
     GetRoomPayment();
   }, []);
   const topLifetimeRoomIncome = useMemo(() => {
+    const defaultCurrency = GetDefaultCurrency();
+    
+    // Group payments by room and calculate total income with proper currency conversion
     const roomIncomes = RoomPayInfo.reduce((acc, payment) => {
       if (payment.Paid) {
-        acc[payment.roomId] = (acc[payment.roomId] || 0) + payment.Value;
+        let value = payment.Value;
+        
+        // Convert payment value if currencies don't match
+        if (RoomList.find((r) => r.id === payment.roomId)?.Currency !== defaultCurrency) {
+          const { rate, direction } = getRateByDate(payment.Day);
+          console.log(`Processing payment from ${new Date(payment.Day).toLocaleDateString()}`);
+          console.log(`Converting ${value} ${RoomList.find((r) => r.id === payment.roomId)?.Currency} to ${defaultCurrency}`);
+          console.log(`Using rate: ${rate} (${direction})`);
+          
+          if (rate) {
+            if (RoomList.find((r) => r.id === payment.roomId)?.Currency === 'USD' && defaultCurrency === 'ETB') {
+              value = value * rate; // Convert USD to ETB
+              console.log(`Converted USD to ETB: ${value}`);
+            } else if (RoomList.find((r) => r.id === payment.roomId)?.Currency === 'ETB' && defaultCurrency === 'USD') {
+              value = value / rate; // Convert ETB to USD
+              console.log(`Converted ETB to USD: ${value}`);
+            }
+          } else {
+            console.warn('No rate found for date, using original value');
+          }
+        }
+        
+        // Add to accumulator
+        if (!acc[payment.roomId]) {
+          acc[payment.roomId] = {
+            totalIncome: 0,
+            payments: []
+          };
+        }
+        
+        acc[payment.roomId].totalIncome += value;
+        acc[payment.roomId].payments.push({
+          date: payment.Day,
+          originalValue: payment.Value,
+          originalCurrency: RoomList.find((r) => r.id === payment.roomId)?.Currency||GetDefaultCurrency(),
+          convertedValue: value
+        });
       }
       return acc;
-    }, {} as Record<string, number>);
+    }, {} as Record<string, { 
+      totalIncome: number, 
+      payments: Array<{
+        date: number,
+        originalValue: number,
+        originalCurrency: string,
+        convertedValue: number
+      }>
+    }>);
 
+    // Sort rooms by total income and get top rooms
     return Object.entries(roomIncomes)
-      .sort(([, a], [, b]) => b - a)
+      .sort(([, a], [, b]) => b.totalIncome - a.totalIncome)
       .slice(0, showAll ? Object.keys(roomIncomes).length : 5)
-      .map(([roomId, totalIncome]) => {
+      .map(([roomId, data]) => {
         const room = RoomList.find((r) => r.id === roomId);
+        console.log(`Room ${room?.floor}-${room?.roomIndex} total income:`, {
+          originalPayments: data.payments,
+          totalIncome: data.totalIncome,
+          currency: defaultCurrency
+        });
+        
         return {
           roomId,
-          totalIncome,
+          totalIncome: data.totalIncome,
           floor: room?.floor,
           roomIndex: room?.roomIndex,
         };
@@ -131,6 +185,7 @@ const TopPerformingUnits = ({
             style={{
               width: 'var(--100px-V)',
               padding: 'var(--5px-V)',
+              marginBottom:"var(--5px-V)",
               backgroundColor:
                 activeTab === 'brokers'
                   ? 'var(--Secondary-Color)'
@@ -144,7 +199,7 @@ const TopPerformingUnits = ({
             onClick={() => setActiveTab('loyal')}
             style={{
               width: 'var(--100px-V)',
-              padding: 'var(--5px-V)',
+              padding: 'var(--5px-V)', marginBottom:"var(--5px-V)",
               backgroundColor:
                 activeTab === 'loyal'
                   ? 'var(--Secondary-Color)'
@@ -229,9 +284,17 @@ const TopPerformingUnits = ({
   );
 };
 
-const TopList = ({ title, items, valueKey, labelKey, valueFormatter }: any) => (
-  <div>
-    <ul style={{ listStyleType: 'none', padding: 0 }}>
+const TopList = ({ title, items, valueKey, labelKey, valueFormatter }: any) => {
+  if (!items || items.length === 0) {
+    return (
+      <div>
+        <p>No data available</p>
+      </div>
+    );
+  }
+  return (
+    <div>
+      <ul style={{ listStyleType: 'none', padding: 0 }}>
       {items.map((item: any, index: any) => (
         <li key={index} style={{ marginBottom: 'var(--10px-V)' }}>
           {index + 1}. <strong>{item[labelKey]}</strong>:{' '}
@@ -247,28 +310,27 @@ const TopList = ({ title, items, valueKey, labelKey, valueFormatter }: any) => (
       ))}
     </ul>
   </div>
-);
+  );}
 
-const TopListRoom = ({ title, items, valueKey }: any) => (
-  <div>
-    <ul style={{ listStyleType: 'none', padding: 0 }}>
-      {items.map((item: any, index: any) => (
-        <li key={index} style={{ marginBottom: 'var(--10px-V)' }}>
-          {index + 1}.{' '}
-          <strong>
-            Flr: {item.floor}, Rm: {item.roomIndex}
-          </strong>
-          : {item[valueKey]?.toLocaleString()}
-          {valueKey === 'annualRevenue' ||
-          valueKey === 'totalPaid' ||
-          valueKey === 'totalIncome'
-            ? ' '
-            : ' tenants'}
-        </li>
-      ))}
-    </ul>
-  </div>
-);
+const TopListRoom = ({ title, items, valueKey }: any) => {
+  const defaultCurrency = GetDefaultCurrency();
+  
+  return (
+    <div>
+      <ul style={{ listStyleType: 'none', padding: 0 }}>
+        {items.map((item: any, index: any) => (
+          <li key={index} style={{ marginBottom: 'var(--5px-V)' }} title={`${index+1}. ${item[valueKey].toLocaleString()} ${CurrencySign(defaultCurrency)}`}>
+            {index + 1}.{' '}
+            <strong>
+              Flr: {item.floor}, Rm: {item.roomIndex}
+            </strong>
+            : {formatNumberWithSuffix(item[valueKey])} {CurrencySign(defaultCurrency)}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+};
 
 const calculateAnnualRevenue = (room: RoomType) => {
   let annualRevenue = 0;

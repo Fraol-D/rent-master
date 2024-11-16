@@ -5,7 +5,6 @@ import MainPage from './Project/TSX/MainPage';
 import { useEffect, useState } from 'react';
 import NavBar from './Project/TSX/Navbar/NavBar';
 import LogoImage from './assets/Insert Image Pic.png';
-import { initializeInputBehavior } from './Project/TSX/Helpers/initializeInputs';
 
 const { v4: uuidv4 } = require('uuid');
 import {
@@ -32,16 +31,10 @@ import {
   isBefore,
 } from 'date-fns';
 import { Payment } from 'electron';
-import { GetDefaultCurrency } from './Project/TSX/Helpers/CurrencySign';
+import { GetDefaultCurrency, getRateByDate } from './Project/TSX/Helpers/CurrencySign';
 declare global {}
 function Hello() {
-  useEffect(() => {
-    // Initialize input behavior
-    const cleanup = initializeInputBehavior();
-
-    // Cleanup on unmount
-    return cleanup;
-  }, []);
+ 
   const [RoomList, setRoomList] = useState<RoomType[]>([]);
   const [TenantList, setTenantList] = useState<tenant[]>([]);
   const [BrokerList, setBrokerList] = useState<BrokerType[]>([]);
@@ -1019,6 +1012,39 @@ function Hello() {
 
     getBranchName(branchId);
   };
+ // Fetch exchange rates on component mount
+ useEffect(() => {
+  fetchExchangeRates();
+}, []);
+
+const fetchExchangeRates = async () => {
+  try {
+    // Check last sync time
+    const lastUpdate = window.electron.store.get('lastExchangeRateUpdate');
+    const oneDayAgo = Date.now() - (24 * 60 * 60 * 1000);
+
+    // Fetch if online and either:
+    // - lastUpdate is undefined
+    // - lastUpdate was more than a day ago
+    if (navigator.onLine && (!lastUpdate || lastUpdate < oneDayAgo)) {
+      const exchangeRates2 = await getValuesWithSql_Online(
+        'Exchange_RatesUSDtoETB',
+        'WHERE 1'
+      );
+      if (exchangeRates2.length > 0) {
+        const latestRate = exchangeRates2;
+        window.electron.store.set('exchangeRate', latestRate);
+        window.electron.store.set(
+          'lastExchangeRateUpdate',
+          latestRate[latestRate.length - 1].id * 1000
+        );
+        setRefresh(Refresh + 1);
+      }
+    }
+  } catch (error) {
+    console.error('Error fetching exchange rates:', error);
+  }
+};
 
   const [ThemeMode, setThemeMode] = useState<'light' | 'dark'>('light');
 
@@ -1348,114 +1374,139 @@ function Hello() {
     // Sort expenses by date
     return allExpenses.sort((a, b) => a.date - b.date);
   };
+  const getBranchData = true; // Control whether to fetch detailed branch data
+  const processValueByCurrency = (value: number, currency: string | undefined, date: number) => {
+    const { rate, direction } = getRateByDate(date);
+    console.log(value, currency || GetDefaultCurrency());
+    if (!rate) {
+      console.warn('No rate available, using current rate as fallback');
+      return 0; // Return 0 if no rate found to be consistent
+    }
+  const currencyDisplay = GetDefaultCurrency();
+ 
+    
+    // For ALL_ETB, convert USD to ETB
+    if (currencyDisplay === 'ETB') {
+      if (currency === 'USD') {
+        return value * rate;
+      }
+      return value;
+    }
+    
+    // For ALL_USD, convert ETB to USD
+    if (currencyDisplay === 'USD') {
+      if (currency === 'ETB') {
+        return value / rate;
+      }
+      return value;
+    }
+  
+    return 0;
+  };
   const fetchBranches = async () => {
     if (navigator.onLine) {
-      if(window.electron.store.get('users'))
-      if(window.electron.store.get('users')[0]) {
-      const branches = await getValuesWithSql_Online(
-        'branches',
-        `WHERE userId = '${window.electron.store.get('users')[0].id}'`
-      );
-
-      const branchesWithData = await Promise.all(
-        branches.map(async (branch: BranchType) => {
-          const allRooms =
-            (await getValuesWithSql_Online(
-              'rooms',
-              `WHERE branchId = '${branch.id}'`
-            )) || [];
-
-          const allTenants =
-            (await getValuesWithSql_Online(
-              'tenants',
-              `WHERE branchId = '${branch.id}'`
-            )) || [];
-
-          // Get all actual payments for the current month
-          const today = new Date();
-          const currentMonth = today.getMonth();
-          const currentYear = today.getFullYear();
-          const monthStart = new Date(currentYear, currentMonth, 1);
-          const monthEnd = new Date(currentYear, currentMonth + 1, 0);
-
-          const actualPayments = await getValuesWithSql_Online(
-            'room_pay_info',
-            `WHERE Day >= ${monthStart.getTime()} 
-             AND Day <= ${monthEnd.getTime()} 
-             AND branchId = '${branch.id}'
-             AND Paid = 1`
+      if(window.electron.store.get('users')?.[0]) {
+        const branches = await getValuesWithSql_Online(
+          'branches',
+          `WHERE userId = '${window.electron.store.get('users')[0].id}'`
+        );
+  
+        if (getBranchData) {
+          const branchesWithData = await Promise.all(
+            branches.map(async (branch: BranchType) => {
+              const allRooms = await getValuesWithSql_Online(
+                'rooms',
+                `WHERE branchId = '${branch.id}'`
+              ) || [];
+  
+              const allTenants = await getValuesWithSql_Online(
+                'tenants',
+                `WHERE branchId = '${branch.id}'`
+              ) || [];
+  
+              // Get payments for current month
+              const today = new Date();
+              const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+              const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+  
+              const actualPayments = await getValuesWithSql_Online(
+                'room_pay_info',
+                `WHERE Day >= ${monthStart.getTime()} 
+                 AND Day <= ${monthEnd.getTime()} 
+                 AND branchId = '${branch.id}'
+                 AND Paid = 1`
+              );
+  
+              const historicalPayments = await getValuesWithSql_Online(
+                'room_pay_info_history',
+                `WHERE Day >= ${monthStart.getTime()} 
+                 AND Day <= ${monthEnd.getTime()} 
+                 AND branchId = '${branch.id}'
+                 AND Paid = 1`
+              );
+  
+              // Process payments with currency conversion
+              const monthlyRevenue = [...actualPayments, ...historicalPayments].reduce(
+                (sum, payment) => {
+                  const convertedValue = processValueByCurrency(
+                    parseFloat(payment.Value),
+                    allRooms.find((r:RoomType)=>r.id === payment.roomId)?.Currency || GetDefaultCurrency(),
+                    payment.Day
+                  );
+                  return sum + convertedValue;
+                },
+                0
+              );
+  
+              // Get and process expenses with currency conversion
+              const branchExpenses = await getValuesWithSql_Online(
+                'expenses',
+                `WHERE branchId = '${branch.id}'`
+              ) || [];
+  
+              const allMonthExpenses = generateRecurringExpenses(
+                branchExpenses,
+                monthStart,
+                monthEnd
+              );
+  
+              const monthlyExpenses = allMonthExpenses
+                .filter(e => new Date(e.date) >= monthStart && new Date(e.date) <= monthEnd)
+                .reduce((sum, expense) => {
+                  const convertedValue = processValueByCurrency(
+                    parseFloat(expense.price || "0"),
+                    expense.Currency || GetDefaultCurrency(),
+                    new Date(expense.date).getTime()
+                  );
+                  return sum + convertedValue;
+                }, 0);
+  
+              const monthlyProfit = monthlyRevenue - monthlyExpenses;
+  
+              return {
+                ...branch,
+                totalRooms: allRooms.length,
+                totalFloors: Math.max(...allRooms.map(room => room.floor)) === -Infinity ? 0 : Math.max(...allRooms.map(room => room.floor)),
+                totalTenants: allTenants.length,
+                occupiedRooms: allRooms.filter(room => room.tenantId !== '').length,
+                vacantRooms: allRooms.filter(room => room.tenantId === '').length,
+                monthlyRevenue,
+                monthlyExpenses,
+                monthlyProfit,
+                currency: GetDefaultCurrency(), // Add currency information
+                unpaidPastPayments: 0,
+                userAccountsWhichHaveAccess: [],
+              };
+            })
           );
-
-          // Get historical payments for the current month
-          const historicalPayments = await getValuesWithSql_Online(
-            'room_pay_info_history',
-            `WHERE Day >= ${monthStart.getTime()} 
-             AND Day <= ${monthEnd.getTime()} 
-             AND branchId = '${branch.id}'
-             AND Paid = 1`
-          );
-
-          // Calculate monthly revenue from actual collected payments
-          const monthlyRevenue = [
-            ...actualPayments,
-            ...historicalPayments,
-          ].reduce(
-            (sum, payment) => parseFloat(sum) + parseFloat(payment.Value),
-            0
-          );
-
-          // Calculate other branch statistics
-          const totalRooms = allRooms.length;
-          const totalFloors =
-            Math.max(...allRooms.map((room) => room.floor)) === -Infinity
-              ? 0
-              : Math.max(...allRooms.map((room) => room.floor));
-          const totalTenants = allTenants.length;
-          const occupiedRooms = allRooms.filter(
-            (room) => room.tenantId !== ''
-          ).length;
-          const vacantRooms = totalRooms - occupiedRooms;
-
-          // Calculate expenses and profit
-          const branchExpenses =
-            (await getValuesWithSql_Online(
-              'expenses',
-              `WHERE branchId = '${branch.id}'`
-            )) || [];
-
-          const allMonthExpenses = generateRecurringExpenses(
-            branchExpenses,
-            monthStart,
-            monthEnd
-          );
-          const monthlyExpenses = allMonthExpenses
-            .filter(
-              (e) =>
-                new Date(e.date) >= monthStart && new Date(e.date) <= monthEnd
-            )
-            .reduce((sum, e) => sum + parseFloat(e.price), 0);
-
-          const monthlyProfit = monthlyRevenue - monthlyExpenses;
-
-          return {
-            ...branch,
-            totalRooms,
-            totalFloors,
-            totalTenants,
-            occupiedRooms,
-            vacantRooms,
-            monthlyRevenue,
-            monthlyExpenses,
-            monthlyProfit,
-            unpaidPastPayments: 0, // This should be calculated if needed
-            userAccountsWhichHaveAccess: [], // This should be populated if needed
-          };
-        })
-      );
-
-      setBranches(branchesWithData);
-      window.electron.store.set('Branches', branchesWithData);
-    }
+  
+          setBranches(branchesWithData);
+          window.electron.store.set('Branches', branchesWithData);
+        } else {
+          setBranches(branches);
+          window.electron.store.set('Branches', branches);
+        }
+      }
     } else {
       if (window.electron.store.get('Branches')) {
         setBranches(window.electron.store.get('Branches'));

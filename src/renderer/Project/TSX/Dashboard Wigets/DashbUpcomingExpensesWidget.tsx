@@ -1,7 +1,10 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { format, addMonths, isBefore, isAfter, addDays } from 'date-fns';
 import { Input } from '../Helpers/CustomReactComponents';
-import { formatNumberWithSuffix } from '../Helpers/CurrencySign';
+import CurrencySign, {
+  formatNumberWithSuffix,
+  getRateByDate,
+} from '../Helpers/CurrencySign';
 
 interface Expense {
   id: string;
@@ -121,12 +124,45 @@ const DashbUpcomingExpensesWidget: React.FC<UpcomingExpensesWidgetProps> = ({
   const [filterFullBuilding, setFilterFullBuilding] = useState<boolean | null>(
     null
   );
+  const [currencyDisplay, setCurrencyDisplay] = useState<
+    'ETB_ONLY' | 'USD_ONLY' | 'ALL_ETB' | 'ALL_USD' | 'ALL_ETB_USD'
+  >('ALL_ETB');
+
+  // Add currency conversion function
+  const processValueByCurrency = (
+    value: number,
+    currency: string,
+    date: number
+  ) => {
+    const { rate } = getRateByDate(date);
+
+    if (!rate) return value;
+
+    switch (currencyDisplay) {
+      case 'ETB_ONLY':
+        return currency === 'ETB' ? value : 0;
+      case 'USD_ONLY':
+        return currency === 'USD' ? value : 0;
+      case 'ALL_ETB':
+        return currency === 'USD' ? value * rate : value;
+      case 'ALL_USD':
+        return currency === 'ETB' ? value / rate : value;
+      case 'ALL_ETB_USD':
+        return value;
+      default:
+        return value;
+    }
+  };
   const [filterFloor, setFilterFloor] = useState<number | ''>('');
   const [filterRoom, setFilterRoom] = useState<number | ''>('');
   const [filterPriceLimit, setFilterPriceLimit] = useState<number | ''>('');
   const [monthsToShow, setMonthsToShow] = useState<number>(6);
   const [limit, setLimit] = useState<number>(500);
-
+  const getCurrentExchangeRate = () => {
+    const storedRates = window.electron.store.get('exchangeRate');
+    if (!storedRates || storedRates.length === 0) return null;
+    return storedRates[storedRates.length - 1].rates;
+  };
   const upcomingExpenses = useMemo(() => {
     const today = new Date();
     const futureDate = addMonths(today, monthsToShow);
@@ -150,8 +186,15 @@ const DashbUpcomingExpensesWidget: React.FC<UpcomingExpensesWidgetProps> = ({
           if (filterRoom !== '' && expense.room !== Number(filterRoom))
             return false;
         }
-        if (filterPriceLimit !== '' && expense.price > Number(filterPriceLimit))
-          return false;
+        // Update price filter to use converted value
+        if (filterPriceLimit !== '') {
+          const convertedPrice = processValueByCurrency(
+            expense.price,
+            expense.Currency || 'ETB',
+            expense.date
+          );
+          if (convertedPrice > Number(filterPriceLimit)) return false;
+        }
         return true;
       })
       .sort((a, b) => a.date - b.date);
@@ -163,6 +206,7 @@ const DashbUpcomingExpensesWidget: React.FC<UpcomingExpensesWidgetProps> = ({
     filterPriceLimit,
     monthsToShow,
     limit,
+    currencyDisplay, // Add currencyDisplay to dependencies
   ]);
 
   const groupedExpenses = useMemo(() => {
@@ -280,6 +324,39 @@ const DashbUpcomingExpensesWidget: React.FC<UpcomingExpensesWidgetProps> = ({
             <option value={12}>1 Year</option>
           </select>
         </div>
+        <div>
+          <label style={{ marginRight: 'var(--10px-V)' }}>Currency:</label>
+          <select
+            value={currencyDisplay}
+            onChange={(e) =>
+              setCurrencyDisplay(e.target.value as typeof currencyDisplay)
+            }
+            style={{
+              padding: '3px 8px',
+              borderRadius: '4px',
+              border: '1px solid var(--Border-Color)',
+              backgroundColor: 'var(--Background-Color)',
+              color: 'var(--Text-Color)',
+              cursor: 'pointer',
+            }}
+          >
+            <option value="ETB_ONLY">Show Only Birr</option>
+            <option value="USD_ONLY">Show Only Dollar</option>
+            <option value="ALL_ETB">Show All in Birr</option>
+            <option value="ALL_USD">Show All in Dollar</option>
+            <option value="ALL_ETB_USD">Show All</option>
+          </select>
+          <span
+            style={{
+              fontSize: 'var(--12px-V)',
+              color: 'var(--Text-Color-Grey)',
+              marginLeft: 'var(--10px-V)',
+            }}
+          >
+            Current Rate: 1 USD ={' '}
+            {getCurrentExchangeRate()?.toFixed(2) || 'N/A'} ETB
+          </span>
+        </div>
       </div>
       <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
         {groupedExpenses.length > 0 ? (
@@ -298,84 +375,113 @@ const DashbUpcomingExpensesWidget: React.FC<UpcomingExpensesWidgetProps> = ({
               </h3>
               {expandedMonths.includes(month) && (
                 <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-                  {monthExpenses.map((expense, index) => (
-                    <li
-                      key={`${expense.id}-${index}`}
-                      style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        padding: 'var(--10px-V)',
-                        marginBottom: 'var(--10px-V)',
-                        borderBottom:
-                          'var(--1px-V) solid var(--Secondary-Color)',
-                        backgroundColor: 'var(--Secondary-Color60)',
-                        borderRadius: 'var(--10px-V)',
-                        marginLeft: 'var(--10px-V)',
-                      }}
-                    >
+                  {monthExpenses
+                    .filter((exp: Expense) =>
+                      currencyDisplay === 'ETB_ONLY'
+                        ? exp.Currency === 'ETB'
+                        : currencyDisplay === 'USD_ONLY'
+                        ? exp.Currency === 'USD'
+                        : true
+                    )
+                    .map((expense, index) => (
                       <div
+                        key={`${expense.id}-${index}`}
                         style={{
-                          flex: '0 0 var(--120px-V)',
-                          fontSize: 'var(--14px-V)',
-                          color: 'var(--Text-Color)',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          padding: 'var(--10px-V)',
+                          marginBottom: 'var(--10px-V)',
+                          borderBottom:
+                            'var(--1px-V) solid var(--Secondary-Color)',
+                          backgroundColor: 'var(--Secondary-Color60)',
+                          borderRadius: 'var(--10px-V)',
+                          marginLeft: 'var(--10px-V)',
                         }}
                       >
-                        {format(new Date(expense.date), 'MMM dd, yyyy')}
+                        <div
+                          style={{
+                            fontSize: 'var(--14px-V)',
+                            color: 'var(--Text-Color)',
+                            width: 'var(--100px-V)',
+                          }}
+                        >
+                          {format(new Date(expense.date), 'MMM dd, yyyy')}
+                        </div>
+                        <div
+                          style={{
+                            flex: '1 1 0%',
+                            fontSize: 'var(--16px-V)',
+                            fontWeight: 'bold',
+                            color: 'var(--Text-Color)',
+                          }}
+                        >
+                          {expense.name}
+                        </div>
+                        <div
+                          style={{
+                            fontSize: 'var(--16px-V)',
+                            fontWeight: 'bold',
+                            color: 'var(--Text-Color-Grey)',
+                            textAlign: 'right',
+                          }}
+                        >
+                          {currencyDisplay === 'ALL_ETB_USD' ? (
+                            <>
+                              {formatNumberWithSuffix(
+                                processValueByCurrency(
+                                  expense.price,
+                                  expense.Currency || 'ETB',
+                                  expense.date
+                                ).toLocaleString()
+                              )}
+                              {CurrencySign(expense.Currency)}
+                            </>
+                          ) : (
+                            <>
+                              {formatNumberWithSuffix(
+                                processValueByCurrency(
+                                  expense.price,
+                                  expense.Currency || 'ETB',
+                                  expense.date
+                                ).toLocaleString()
+                              )}
+                              {CurrencySign(
+                                currencyDisplay.includes('ETB') ? 'ETB' : 'USD'
+                              )}
+                            </>
+                          )}
+                        </div>
+                        <div
+                          style={{
+                            fontSize: 'var(--14px-V)',
+                            color: 'var(--Text-Color)',
+                            textAlign: 'center',
+                            marginLeft: '20px',
+                          }}
+                        >
+                          {expense.fullBuilding ? (
+                            <strong>Full Building</strong>
+                          ) : (
+                            <em>{`Room ${expense.room}, Floor ${expense.floor}`}</em>
+                          )}
+                        </div>
+                        <div
+                          style={{
+                            fontSize: 'var(--12px-V)',
+                            color: 'var(--Accent-Color)',
+                            textAlign: 'right',
+                            marginLeft: 'var(--20px-V)',
+                          }}
+                        >
+                          {expense.isUtility
+                            ? 'Utility'
+                            : expense.doesReoccur
+                            ? 'Recurring'
+                            : ''}
+                        </div>
                       </div>
-                      <div
-                        style={{
-                          flex: '1',
-                          fontSize: 'var(--16px-V)',
-                          fontWeight: 'bold',
-                          color: 'var(--Text-Color)',
-                          marginLeft: 'var(--20px-V)',
-                        }}
-                      >
-                        {expense.name}
-                      </div>
-                      <div
-                        style={{
-                          flex: '0 0 var(--100px-V)',
-                          fontSize: 'var(--16px-V)',
-                          fontWeight: 'bold',
-                          color: 'var(--Text-Color-Grey)',
-                          textAlign: 'right',
-                        }}
-                      >
-                        ${formatNumberWithSuffix(expense.price.toLocaleString())}
-                      </div>
-                      <div
-                        style={{
-                          flex: '0 0 var(--120px-V)',
-                          fontSize: 'var(--14px-V)',
-                          color: 'var(--Text-Color)',
-                          textAlign: 'center',
-                        }}
-                      >
-                        {expense.fullBuilding ? (
-                          <strong>Full Building</strong>
-                        ) : (
-                          <em>{`Room ${expense.room}, Floor ${expense.floor}`}</em>
-                        )}
-                      </div>
-                      <div
-                        style={{
-                          flex: '0 0 var(--80px-V)',
-                          fontSize: 'var(--12px-V)',
-                          color: 'var(--Accent-Color)',
-                          textAlign: 'right',
-                          marginLeft: 'var(--20px-V)',
-                        }}
-                      >
-                        {expense.isUtility
-                          ? 'Utility'
-                          : expense.doesReoccur
-                          ? 'Recurring'
-                          : ''}
-                      </div>
-                    </li>
-                  ))}
+                    ))}
                 </ul>
               )}
             </li>

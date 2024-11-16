@@ -552,7 +552,22 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
         .style('font-size', `${fontSize}px`)
         .style('cursor', 'pointer')
         .text((d: { Paid: boolean }) => (d.Paid ? 'Paid' : 'Pay'))
-        .on('click', (event, d) => handlePayClick(d));
+        .on('click', (event, d) => handlePayClick(d))
+        .on('mouseover', function(event, d) {
+          // Create tooltip
+          svg.append('text')
+            .attr('class', 'price-tooltip')
+            .attr('x', d3.pointer(event)[0])
+            .attr('y', d3.pointer(event)[1] -10)
+            .attr('text-anchor', 'middle').style("zIndex", "1000")
+            .style('fill', 'var(--Text-Color)')
+            .style('font-size', `${fontSize + 10}px`)
+            .text(`${d.Value.toLocaleString()} ${Currency}`);
+        })
+        .on('mouseout', function() {
+          // Remove tooltip
+          svg.selectAll('.price-tooltip').remove();
+        });
       const selectButtons = svg
         .selectAll('rect.select-button')
         .data(sortedPaymentData)
