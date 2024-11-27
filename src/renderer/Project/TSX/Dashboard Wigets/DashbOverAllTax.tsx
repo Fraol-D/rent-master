@@ -35,8 +35,6 @@ const DashbOverAllTax = ({
 
   const processValueByCurrency = (value: number, currency: string, date: number) => {
     const { rate, direction } = getRateByDate(date);
-    console.log(`Processing tax value: ${value} ${currency} from ${new Date(date).toLocaleDateString()}`);
-    console.log(`Rate: ${rate} (${direction})`);
 
     if (!rate) {
       console.warn('No rate available for tax calculation, using original value');

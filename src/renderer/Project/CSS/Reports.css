@@ -1,0 +1,129 @@
+.currency-selector {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  margin-left: var(--10px-V);
+}
+
+.currency-select {
+  padding: var(--3px-V) var(--8px-V);
+  border-radius: var(--4px-V);
+  border: var(--1px-V) solid var(--Border-Color);
+  background-color: var(--Background-Color);
+  color: var(--Text-Color);
+  cursor: pointer;
+}
+
+.exchange-rate {
+  font-size: var(--12px-V);
+  color: var(--Text-Color-Grey);
+  margin-top: var(--5px-V);
+}
+
+.report-controls {
+  display: flex;
+  gap: var(--10px-V);
+  align-items: flex-start;
+}
+.report-container {
+  padding: var(--20px-V);
+
+  border-radius: var(--4px-V);
+}
+
+.report-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--20px-V);
+}
+
+.report-controls {
+  display: flex;
+  gap: var(--10px-Va);
+  align-items: center;
+}
+
+.view-type-select,
+.date-picker,
+.year-picker {
+  padding: 10px;
+  border: var(--1px-V) solid var(--Text-Color-Grey);
+  border-radius: var(--4px-V);
+  margin: 5px;
+}
+
+.report-table-container {
+  overflow-x: auto;
+  margin-top: var(--20px-V);
+}
+
+.report-table {
+
+  border-collapse: collapse;
+  text-align: right;
+}
+.report-table thead {
+  background-color: var(--Secondary-Color);
+  
+}
+.report-table th {
+  background-color: var(--Secondary-Color);
+  padding: var(--8px-V) var(--12px-V);
+  border: var(--1px-V) solid var(--Text-Color-Grey);
+  color: var(--Text-Color);
+  border-bottom: var(--4px-V) solid var(--Text-Color-Grey);
+  text-align: left;
+}
+.report-table td {
+  padding: var(--8px-V) var(--12px-V);
+  border: var(--1px-V) solid var(--Text-Color-Grey);
+  color: var(--Text-Color); text-align: left;
+}
+
+.report-table th {
+  background: var(--Secondary-Background);
+  font-weight: bold; text-align: left;
+}
+
+
+
+
+
+.total-header {
+    border-left: var(--5px-V) solid var(--Text-Color-Grey);
+}.currency-control {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--5px-V);
+}
+
+.currency-select {
+  padding: var(--3px-V) var(--8px-V);
+  border-radius: var(--4px-V);
+  border: var(--1px-V) solid var(--Border-Color);
+  background-color: var(--Background-Color);
+  color: var(--Text-Color);
+  cursor: pointer;
+}
+
+.exchange-rate-info {
+  font-size: var(--12px-V);
+  color: var(--Text-Color-Grey);
+}
+
+.report-controls {
+  display: flex;
+  gap: var(--10px-V);
+  align-items: flex-start;
+}
+
+.report-table td {
+  white-space: nowrap;
+  text-align: right;
+}
+
+.report-table td:first-child {
+  text-align: left;
+}

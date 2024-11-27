@@ -10,6 +10,7 @@ import '../../CSS/ToolsPage.css';
 import {
   addValueOnline,
   getValuesWithSql_Online,
+  updateValueOnline,
 } from 'Backend/OnlineServerApis';
 import EmailTemplates from '../Tools page components/EmailTemplates';
 import SMSTemplates from '../Tools page components/SMSTemplates';
@@ -31,6 +32,7 @@ import {
   GetCurrencyAsOptionsOnSelect,
   GetDefaultCurrency,
 } from '../Helpers/CurrencySign';
+import ExpenseManager from '../Tools page components/ExpenseManager';
 
 interface SMSTemplate {
   id: string;
@@ -120,9 +122,9 @@ const ToolsPage = ({
   };
   // Start Generation Here
   const [sendEmail, setSendEmail] = useState(false);
-  const [emailDaysBefore, setEmailDaysBefore] = useState('');
+  const [emailDaysBefore, setEmailDaysBefore] = useState(0);
   const [sendSms, setSendSms] = useState(false);
-  const [smsDaysBefore, setSmsDaysBefore] = useState('');
+  const [smsDaysBefore, setSmsDaysBefore] = useState(0);
   const [emailTo, setEmailTo] = useState('');
   const [smsTo, setSmsTo] = useState('');
   const [isApplyingNotifications, setIsApplyingNotifications] = useState(false);
@@ -453,33 +455,30 @@ const ToolsPage = ({
           const userPass = userDATA[0].password;
           console.log(userEmail, userPass);
           if (navigator.onLine) {
-            window.electron.ipcRenderer.send('SendCustomEmail', {
-              to: recipientEmail,
-              subject: subject,
-              body: body,
-              userEmail: userEmail,
-              userPassword: userPass,
-              SelectedUserId: SelectedUserId,
-              branchId: SelectedBranchId,
-              templateId: template.id,
-            });
-
-            window.electron.ipcRenderer.once(
-              'SendCustomEmailResponse',
-              (response) => {
-                if (response.success) {
-                  setEmailSentSuccessstring('Email sent successfully');
-                  setEmailSentSuccessstring('Sent');
-                  setIsSending(false);
-                  setEmailSentSuccess(true);
-                } else {
-                  setEmailSentSuccessstring('Failed to send email');
-                  setEmailSentSuccessstring('Failed');
-                  setIsSending(false);
-                  setEmailSentSuccess(false);
-                }
-              }
-            );
+            try {
+              await window.electron.ipcRenderer.send('SendCustomEmail', {
+                to: recipientEmail,
+                subject: subject,
+                body: body,
+                userEmail: userEmail,
+                userPassword: userPass,
+                SelectedUserId: SelectedUserId,
+                branchId: SelectedBranchId,
+                templateId: template.id,
+              });
+              setEmailSentSuccessstring('Email sent successfully');
+              setEmailSentSuccessstring('Sent');
+              setIsSending(false);
+              setEmailSentSuccess(true);
+            } catch (error) {
+              console.error('Error sending email:', error);
+              setEmailSentSuccessstring(
+                error.message || 'Failed to send email'
+              );
+              setEmailSentSuccessstring('Failed');
+              setIsSending(false);
+              setEmailSentSuccess(false);
+            }
           }
         }
       } else {
@@ -1275,16 +1274,65 @@ const ToolsPage = ({
 
   const [emailSendingwith, setEmailSendingwith] = useState('');
   useEffect(() => {
-    const a = async () => {
-      const emaiSendingwith = await getValuesWithSql_Online('users', `WHERE 1`);
-      const selectedEmail = emaiSendingwith.find(
-        (a: any) => a.id === SelectedUserId
-      )?.selectedEmailToSendWith;
-      console.log('Selected email to send with:', selectedEmail);
-      setEmailSendingwith(selectedEmail || '');
+    const getUserSettings = async () => {
+      if (!navigator.onLine) return;
+
+      try {
+        setLoading(true);
+        const user = await getValuesWithSql_Online('users', `WHERE id = '${SelectedUserId}'`);
+        if (!user || !user[0]) return;
+
+        // Get email sending settings
+        const selectedEmail = user[0].selectedEmailToSendWith;
+        setEmailSendingwith(selectedEmail || '');
+
+        // Get tax percentage
+        const taxPercentage = user[0].taxPercentage;
+        setTaxPercentage(taxPercentage || window.electron.store.get('taxPercentage'));
+
+        // Get email settings
+        const {
+          RepresentativeEmails,
+          RepresentativePhoneNumbers,
+          LandlordName,
+          LandlordEmail, 
+          LandlordTelephone
+        } = user[0];
+
+        console.log('Fetched settings:', {
+          RepresentativeEmails,
+          RepresentativePhoneNumbers,
+          LandlordName,
+          LandlordEmail,
+          LandlordTelephone
+        });
+
+        // Update all states
+        setRepresentativeEmails(RepresentativeEmails);
+        setRepresentativePhoneNumbers(RepresentativePhoneNumbers);
+        setLandlordDisplayName(LandlordName);
+        setLandlordEmail(LandlordEmail);
+        setLandlordTelephone(LandlordTelephone);
+
+        setOriginalValues({
+          representativeEmails: RepresentativeEmails,
+          representativePhoneNumbers: RepresentativePhoneNumbers,
+          landlordDisplayName: LandlordName,
+          landlordEmail: LandlordEmail,
+          landlordTelephone: LandlordTelephone,
+        });
+
+      } catch (error) {
+        console.error('Failed to fetch user settings:', error);
+        // Fallback to stored tax percentage if online fetch fails
+        setTaxPercentage(window.electron.store.get('taxPercentage'));
+      } finally {
+        setLoading(false);
+      }
     };
-    if (navigator.onLine) a();
-  }, []);
+
+    getUserSettings();
+  }, [SelectedUserId]);
   const privileges = useMemo(
     () => getUserPrivileges(SelectedAppUser),
     [SelectedAppUser]
@@ -1379,23 +1427,23 @@ const ToolsPage = ({
   // Modify your fetchExchangeRates function
   const fetchExchangeRates = async () => {
     try {
-      if(navigator.onLine) {
-      setIsLoadingRates(true);
-      let whereClause = 'WHERE 1';
-      if (startDate) {
-        whereClause += ` AND id >= ${new Date(startDate).getTime() / 1000}`;
-      }
-      if (endDate) {
-        whereClause += ` AND id <= ${new Date(endDate).getTime() / 1000}`;
-      }
+      if (navigator.onLine) {
+        setIsLoadingRates(true);
+        let whereClause = 'WHERE 1';
+        if (startDate) {
+          whereClause += ` AND id >= ${new Date(startDate).getTime() / 1000}`;
+        }
+        if (endDate) {
+          whereClause += ` AND id <= ${new Date(endDate).getTime() / 1000}`;
+        }
 
-      // First get total count for pagination
-      const countQuery = `SELECT COUNT(*) as total FROM Exchange_RatesUSDtoETB ${whereClause}`;
-      const totalResult = await getValuesWithSql_Online(
-        'Exchange_RatesUSDtoETB',
-        whereClause
-      );
-     
+        // First get total count for pagination
+        const countQuery = `SELECT COUNT(*) as total FROM Exchange_RatesUSDtoETB ${whereClause}`;
+        const totalResult = await getValuesWithSql_Online(
+          'Exchange_RatesUSDtoETB',
+          whereClause
+        );
+
         const total = totalResult.length;
         const calculatedTotalPages = Math.ceil(total / ratesPerPage);
         setTotalPages(calculatedTotalPages);
@@ -1448,7 +1496,7 @@ const ToolsPage = ({
   const [GetExchangeRate, setGetExchangeRate] = useState(0);
   const fetchExchangeRateOfThatDate = async () => {
     try {
-      if(navigator.onLine) {
+      if (navigator.onLine) {
         // First try to get the exact date's rate
         const targetDate = new Date(GetExchangeRateDate).getTime();
         if (!isNaN(targetDate) && targetDate > 0) {
@@ -1479,9 +1527,9 @@ const ToolsPage = ({
           const targetDate = new Date(GetExchangeRateDate).getTime();
           // Find closest rate that's not after target date
           const closestRate = localRates
-            .filter(rate => rate.id <= targetDate)
+            .filter((rate) => rate.id <= targetDate)
             .sort((a, b) => b.id - a.id)[0];
-            
+
           if (closestRate) {
             setGetExchangeRate(closestRate.rates);
           } else {
@@ -1497,8 +1545,193 @@ const ToolsPage = ({
     }
   };
   // Add these states
+  const [representativeEmails, setRepresentativeEmails] = useState<string>('');
+  const [representativePhoneNumbers, setRepresentativePhoneNumbers] =
+    useState<string>('');
+  const [landlordDisplayName, setLandlordDisplayName] = useState<string>('');
+  const [landlordEmail, setLandlordEmail] = useState<string>('');
+  const [landlordTelephone, setLandlordTelephone] = useState<string>('');
+  const [originalValues, setOriginalValues] = useState({
+    representativeEmails: '',
+    representativePhoneNumbers: '',
+    landlordDisplayName: '',
+    landlordEmail: '',
+    landlordTelephone: '',
+  });
+  const [hasChanges, setHasChanges] = useState(false);
+  const [loading, setLoading] = useState(false);
+  
 
+  useEffect(() => {
+    const hasAnyChanges =
+      representativeEmails !== originalValues.representativeEmails ||
+      representativePhoneNumbers !==
+        originalValues.representativePhoneNumbers ||
+      landlordDisplayName !== originalValues.landlordDisplayName ||
+      landlordEmail !== originalValues.landlordEmail ||
+      landlordTelephone !== originalValues.landlordTelephone;
+
+    setHasChanges(hasAnyChanges);
+  }, [
+    representativeEmails,
+    representativePhoneNumbers,
+    landlordDisplayName,
+    landlordEmail,
+    landlordTelephone,
+    originalValues,
+  ]);
+
+  const handleSaveEmailSettings = async () => {
+    if (navigator.onLine) {
+      try {
+        const userId = await window.electron.store.get('users')[0].id;
+        if (!userId) {
+          alert('ISSUES user data');
+          return;
+        }
+        // Assuming there's an API call to save the values
+        if (representativeEmails && hasChanges) {
+          await updateValueOnline(
+            'users',
+            userId,
+            'RepresentativeEmails',
+            representativeEmails
+          );
+        }
+        if (representativePhoneNumbers && hasChanges) {
+          await updateValueOnline(
+            'users',
+            userId,
+            'RepresentativePhoneNumbers',
+            representativePhoneNumbers
+          );
+        }
+        if (landlordDisplayName && hasChanges) {
+          await updateValueOnline(
+            'users',
+            userId,
+            'LandlordName',
+            landlordDisplayName
+          );
+        }
+        if (landlordEmail && hasChanges) {
+          await updateValueOnline(
+            'users',
+            userId,
+            'LandlordEmail',
+            landlordEmail
+          );
+        }
+        if (landlordTelephone && hasChanges) {
+          await updateValueOnline(
+            'users',
+            userId,
+            'LandlordTelephone',
+            landlordTelephone
+          );
+        }
+        setOriginalValues({
+          representativeEmails,
+          representativePhoneNumbers,
+          landlordDisplayName,
+          landlordEmail,
+          landlordTelephone,
+        });
+        setHasChanges(false);
+      } catch (error) {
+        console.error('Failed to save email settings:', error);
+      }
+    } else {
+      alert('You are offline, cannot save settings');
+    }
+  };
+
+  const handleCancel = () => {
+    setRepresentativeEmails(originalValues.representativeEmails);
+    setRepresentativePhoneNumbers(originalValues.representativePhoneNumbers);
+    setLandlordDisplayName(originalValues.landlordDisplayName);
+    setLandlordEmail(originalValues.landlordEmail);
+    setLandlordTelephone(originalValues.landlordTelephone);
+    setHasChanges(false);
+  };
+  const [reviewForm, setReviewForm] = useState('');
+  const [featureSuggestion, setFeatureSuggestion] = useState('');
+  const [isSendingReview, setIsSendingReview] = useState(false);
+  const [isSendingFeatureSuggestion, setIsSendingFeatureSuggestion] =
+    useState(false);
+  const handleSubmit = async () => {
+    setIsSendingReview(true);
+    const review = reviewForm;
+    const subject = 'Review';
+    const body = review;
+    const userDATA = await window.electron.store.get('users');
+    const userEmail = userDATA[0].email;
+    const userPass = userDATA[0].password;
+    window.electron.ipcRenderer.send('SendCustomEmail', {
+      to: 'rentmaster.et@gmail.com',
+      subject: 'Review From ' + userEmail,
+      body: review,
+      userEmail: userEmail,
+      userPassword: userPass,
+      SelectedUserId: SelectedUserId,
+      branchId: SelectedBranchId,
+      templateId: '',
+    });
+    setReviewForm('');
+    setInterval(() => {
+      setIsSendingReview(false);
+    }, 2000);
+  };
+  const handleSubmitFeatureSuggestion = async () => {
+    setIsSendingFeatureSuggestion(true);
+    const feature = featureSuggestion;
+    const subject = 'Feature Suggestion';
+    const body = feature;
+    const userDATA = await window.electron.store.get('users');
+    const userEmail = userDATA[0].email;
+    const userPass = userDATA[0].password;
+    await window.electron.ipcRenderer.send('SendCustomEmail', {
+      to: 'rentmaster.et@gmail.com',
+      subject: 'Feature Suggestion From ' + userEmail,
+      body: feature,
+      userEmail: userEmail,
+      userPassword: userPass,
+      SelectedUserId: SelectedUserId,
+      branchId: SelectedBranchId,
+      templateId: '',
+    });
+    setFeatureSuggestion('');
+
+    setInterval(() => {
+      setIsSendingFeatureSuggestion(false);
+    }, 2000);
+  };
   const [refresh, setRefresh] = useState(0);
+  const [isOnline, setIsOnline] = useState(false);
+  useEffect(() => {
+    setIsOnline(navigator.onLine);
+  }, [navigator.onLine]);
+  const [taxPercentage, setTaxPercentage] = useState(0);
+  const [hasChangedTaxPercentage, setHasChangedTaxPercentage] = useState(false);
+  const [isApplyingTaxPercentage, setIsApplyingTaxPercentage] = useState(false);
+  const changeTaxPercentage = async (value: number) => {
+    try {
+      window.electron.store.set('taxPercentage', value);
+      await updateValueOnline('users', SelectedUserId, 'taxPercentage', value);
+    } catch (error) {
+      console.error('Failed to change tax percentage:', error);
+    }
+  };
+  const saveTaxPercentage = async () => {
+    setIsApplyingTaxPercentage(true);
+    await changeTaxPercentage(taxPercentage);
+    setHasChangedTaxPercentage(false);
+    setIsApplyingTaxPercentage(false);
+  };
+  const CancelTaxPercentage = async () => {
+    setTaxPercentage(window.electron.store.get('taxPercentage'));
+    setHasChangedTaxPercentage(false);
+  };
   return (
     <>
       <></>
@@ -1574,986 +1807,69 @@ const ToolsPage = ({
             />
           )}
           {ToolsSelectedPage === 'Expense Manager' && (
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'flex-start',
-                alignItems: 'center',
-                flexDirection: 'column',
-                width: '100%',
-                maxWidth: 'var(--1200px-V)',
-                margin: '0 auto',
-                height: '100%',
-              }}
-            >
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  width: '500%',
-                  maxWidth: 'var(--800px-V)',
-                  margin: '0 auto',
-                }}
-              >
-                <h2>Expense Manager</h2>
-                <button
-                  onClick={() => {
-                    setShowFilters(!showFilters);
-                    if (showFilters) {
-                      resetFilters();
-                    }
-                  }}
-                  style={{}}
-                >
-                  {showFilters ? 'Hide Filters' : 'Show Filters'}
-                </button>
-                <button
-                  onClick={() => {
-                    setShowFilters(false);
-                    setShowDefaultNotificationsSettings(
-                      !ShowDefaultNotificationsSettings
-                    );
-                  }}
-                  style={{}}
-                >
-                  {ShowDefaultNotificationsSettings
-                    ? 'Hide Default Expenses Notifications'
-                    : 'Show Default Expenses Notifications'}
-                </button>
-                <button onClick={handleAddExpense}>Add Expense</button>
-              </div>
-              <div
-                style={{
-                  marginBottom: 'var(--20px-V)',
-                  width: '90%',
-                  display: 'flex',
-                  gap: 'var(--10px-V)',
-                }}
-              ></div>
-              {showFilters && (
-                <div
-                  style={{
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    gap: 'var(--10px-V)',
-                    marginBottom: 'var(--20px-V)',
-                  }}
-                >
-                  <div
-                    style={{ display: 'flex', alignItems: 'center', flex: '1' }}
-                  ></div>
-                </div>
-              )}
-              {ShowDefaultNotificationsSettings && (
-                <div
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                  }}
-                >
-                  <div>
-                    <input
-                      type="checkbox"
-                      checked={sendEmail}
-                      onChange={(e) => setSendEmail(e.target.checked)}
-                    />
-                    Send email{' '}
-                    {sendEmail ? (
-                      <>
-                        {' '}
-                        <input
-                          type="text"
-                          placeholder="example@gmail.com"
-                          value={emailTo}
-                          onChange={(e) => setEmailTo(e.target.value)}
-                        />
-                        {emailTo && (
-                          <>
-                            <>
-                              <input
-                                type="number"
-                                value={emailDaysBefore}
-                                onChange={(e) =>
-                                  setEmailDaysBefore(
-                                    parseInt(e.target.value, 10)
-                                  )
-                                }
-                                placeholder="2"
-                                style={{ width: 'var(--40px-V)' }}
-                              />
-                              <span> days before expense.</span>
-                            </>
-                          </>
-                        )}
-                      </>
-                    ) : (
-                      <></>
-                    )}
-                  </div>
-                  <div>
-                    <input
-                      type="checkbox"
-                      checked={sendSms}
-                      onChange={(e) => setSendSms(e.target.checked)}
-                    />
-                    Send SMS{' '}
-                    {sendSms ? (
-                      <>
-                        {' '}
-                        to{' '}
-                        <input
-                          type="text"
-                          placeholder="09123456789"
-                          value={smsTo}
-                          onChange={(e) => setSmsTo(e.target.value)}
-                        />
-                        {smsTo && (
-                          <>
-                            <>
-                              <input
-                                type="number"
-                                value={smsDaysBefore}
-                                onChange={(e) =>
-                                  setSmsDaysBefore(parseInt(e.target.value, 10))
-                                }
-                                placeholder="2"
-                                style={{ width: 'var(--40px-V)' }}
-                              />
-                              <span> days before expense.</span>
-                            </>
-                          </>
-                        )}
-                      </>
-                    ) : (
-                      <></>
-                    )}
-                  </div>
-
-                  <button
-                    style={{
-                      width: 'var(--180px-V)',
-                      marginTop: 'var(--10px-V)',
-                    }}
-                    onClick={applyDefaultNotifications}
-                  >
-                    Apply To All
-                  </button>
-                </div>
-              )}
-              <div
-                style={{
-                  overflowX: 'auto',
-                  width: '100%',
-                  height: 'calc(100% - 150px)',
-                }}
-              >
-                <table className="expense-cards">
-                  <thead>
-                    <tr>
-                      <th style={{ width: '5%' }}></th>
-                      <th style={{ width: '30%' }}>
-                        {' '}
-                        {showFilters && (
-                          <input
-                            type="text"
-                            placeholder="Search expenses"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            style={{ padding: 'var(--5px-V)', width: '60%' }}
-                          />
-                        )}
-                      </th>
-                      <th style={{ width: '10%' }}>
-                        {' '}
-                        {showFilters && (
-                          <>
-                            <input
-                              type="number"
-                              placeholder="Max Price"
-                              value={maxPrice}
-                              onChange={(e) =>
-                                setMaxPrice(
-                                  e.target.value
-                                    ? parseFloat(e.target.value)
-                                    : ''
-                                )
-                              }
-                              style={{
-                                flex: '1',
-                                padding: 'var(--5px-V)',
-                                width: 'var(--80px-V)',
-                              }}
-                            />
-                            <input
-                              type="number"
-                              placeholder="Min Price"
-                              value={minPrice}
-                              onChange={(e) =>
-                                setMinPrice(
-                                  e.target.value
-                                    ? parseFloat(e.target.value)
-                                    : ''
-                                )
-                              }
-                              style={{
-                                flex: '1',
-                                padding: 'var(--5px-V)',
-                                width: 'var(--80px-V)',
-                              }}
-                            />
-                          </>
-                        )}
-                      </th>
-                      <th style={{ textAlign: 'center' }}>
-                        {showFilters && (
-                          <>
-                            <select
-                              value={fullBuildingFilter}
-                              onChange={(e) =>
-                                setFullBuildingFilter(
-                                  e.target.value as 'yes' | 'no' | ''
-                                )
-                              }
-                              style={{ flex: '1', padding: 'var(--5px-V)' }}
-                            >
-                              <option value="">Full Building</option>
-                              <option value="yes">Yes</option>
-                              <option value="no">No</option>
-                            </select>
-                            <br />
-                            <input
-                              type="text"
-                              placeholder="Floor"
-                              value={floorSearch}
-                              onChange={(e) => setFloorSearch(e.target.value)}
-                              style={{
-                                flex: '1',
-                                padding: 'var(--5px-V)',
-                                width: 'var(--40px-V)',
-                              }}
-                            />{' '}
-                            <input
-                              type="text"
-                              placeholder="Room"
-                              value={roomSearch}
-                              onChange={(e) => setRoomSearch(e.target.value)}
-                              style={{
-                                flex: '1',
-                                padding: 'var(--5px-V)',
-                                width: 'var(--40px-V)',
-                              }}
-                            />
-                          </>
-                        )}
-                      </th>
-                      <th>
-                        {' '}
-                        {showFilters && (
-                          <>
-                            <select
-                              value={doesReoccurFilter}
-                              onChange={(e) =>
-                                setDoesReoccurFilter(
-                                  e.target.value as 'yes' | 'no' | ''
-                                )
-                              }
-                              style={{ flex: '1', padding: 'var(--5px-V)' }}
-                            >
-                              <option value="">Does Reoccur</option>
-                              <option value="yes">Yes</option>
-                              <option value="no">No</option>
-                            </select>
-                            <input
-                              type="text"
-                              placeholder="Reoccur every X days"
-                              value={reoccurDays}
-                              onChange={(e) => setReoccurDays(e.target.value)}
-                              style={{
-                                flex: '1',
-                                padding: 'var(--5px-V)',
-                                width: 'var(--150px-V)',
-                              }}
-                            />
-                          </>
-                        )}
-                      </th>
-                      <th>
-                        {showFilters && (
-                          <div
-                            style={{ display: 'flex', flexDirection: 'row' }}
-                          >
-                            <input
-                              type="date"
-                              value={dateFilter}
-                              onChange={(e) => setDateFilter(e.target.value)}
-                              style={{ flex: '1', padding: 'var(--5px-V)' }}
-                            />
-                            <button
-                              onClick={() => setDateFilter('')}
-                              style={{
-                                padding: 'var(--5px-V)',
-
-                                color: 'white',
-                                border: 'none',
-                                borderRadius: 'var(--5px-V)',
-                                cursor: 'pointer',
-                                marginLeft: 'var(--5px-V)',
-                              }}
-                            >
-                              X
-                            </button>
-                          </div>
-                        )}
-                      </th>
-                    </tr>
-                    <tr>
-                      <th style={{ width: '7%' }}>No.</th>
-                      <th style={{ width: '30%' }}>Expense</th>
-                      <th style={{ width: '10%' }}>Price</th>
-                      <th>Room</th>
-                      <th>Reoccur</th>
-                      {editingExpenseId !== null && <th>Date</th>}
-                      <th>Notify</th>
-                      {editingExpenseId !== null && <th>Actions</th>}
-                    </tr>
-                  </thead>
-
-                  <tbody>
-                    {filteredExpenses.length === 0 ? (
-                      <tr>
-                        <td
-                          colSpan={editingExpenseId !== null ? 7 : 6}
-                          style={{ textAlign: 'center' }}
-                        >
-                          There are currently no expenses to display. Please add
-                          an expense or adjust your filters to see results.
-                        </td>
-                      </tr>
-                    ) : (
-                      filteredExpenses.map((expense, index) => (
-                        <>
-                          <tr key={expense.id} className="expense-card">
-                            <td
-                              style={{
-                                borderRadius:
-                                  'var(--10px-V) var(--0px-V) var(--0px-V) var(--10px-V)',
-                                textAlign: 'center',
-                              }}
-                            >
-                              {index + 1}.
-                              <button
-                                className="email-template-buttons-button"
-                                onClick={() => handleEditExpenseClick(expense)}
-                              >
-                                {editingExpenseId === expense.id
-                                  ? 'Save'
-                                  : 'Edit'}
-                              </button>
-                            </td>
-                            <td>
-                              {editingExpenseId === expense.id ? (
-                                <textarea
-                                  value={editedExpense?.name || ''}
-                                  onChange={(e) =>
-                                    handleEditExpenseChange(
-                                      'name',
-                                      e.target.value
-                                    )
-                                  }
-                                  style={{
-                                    width: '95%',
-                                    padding: 'var(--5px-V)',
-                                    border:
-                                      'var(--1px-V) solid var(--Secondary-Color)',
-                                    backgroundColor: 'var(--Background-Color)',
-                                    color: 'var(--Text-Color)',
-                                    resize: 'vertical',
-                                    maxHeight: 'var(--100px-V)',
-                                  }}
-                                />
-                              ) : (
-                                expense.name
-                              )}
-                            </td>
-                            <td style={{}}>
-                              {editingExpenseId === expense.id ? (
-                                <>
-                                  <select
-                                    value={editedExpense?.Currency}
-                                    onChange={(e) =>
-                                      handleEditExpenseChange(
-                                        'Currency',
-                                        e.target.value
-                                      )
-                                    }
-                                    className="AddANewRoomSelectMid"
-                                  >
-                                    {GetCurrencyAsOptionsOnSelect()}
-                                  </select>
-                                  <input
-                                    type="number"
-                                    value={editedExpense?.price || 0}
-                                    onChange={(e) =>
-                                      handleEditExpenseChange(
-                                        'price',
-                                        parseFloat(e.target.value)
-                                      )
-                                    }
-                                    style={{ width: '70%' }}
-                                  />
-                                </>
-                              ) : (
-                                `${
-                                  formatNumberWithSuffix(
-                                    expense.price.toLocaleString()
-                                  ) || 0
-                                } ${CurrencySign(expense.Currency || 'ETB')}`
-                              )}
-                            </td>
-                            <td>
-                              {editingExpenseId === expense.id ? (
-                                <div
-                                  style={{
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                  }}
-                                >
-                                  <label>
-                                    Full building:
-                                    <input
-                                      type="checkbox"
-                                      checked={
-                                        editedExpense?.fullBuilding || false
-                                      }
-                                      onChange={(e) =>
-                                        handleEditExpenseChange(
-                                          'fullBuilding',
-                                          e.target.checked
-                                        )
-                                      }
-                                    />
-                                  </label>
-                                  {!editedExpense?.fullBuilding && (
-                                    <div
-                                      style={{
-                                        display: 'flex',
-                                        flexDirection: 'row',
-                                      }}
-                                    >
-                                      <label>
-                                        Floor:
-                                        <input
-                                          type="text"
-                                          value={editedExpense?.floor || ''}
-                                          onChange={(e) =>
-                                            handleEditExpenseChange(
-                                              'floor',
-                                              parseInt(e.target.value, 10)
-                                            )
-                                          }
-                                          style={{
-                                            width: 'var(--35px-V)',
-                                            marginRight: 'var(--10px-V)',
-                                          }}
-                                        />
-                                      </label>
-                                      <label>
-                                        Room:
-                                        <input
-                                          type="text"
-                                          value={editedExpense?.room || ''}
-                                          onChange={(e) =>
-                                            handleEditExpenseChange(
-                                              'room',
-                                              parseInt(e.target.value)
-                                            )
-                                          }
-                                          style={{ width: 'var(--35px-V)' }}
-                                        />
-                                      </label>
-                                    </div>
-                                  )}
-                                </div>
-                              ) : (
-                                <div
-                                  style={{
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                  }}
-                                >
-                                  <div>
-                                    Full building:{' '}
-                                    <em>
-                                      {expense.fullBuilding ? 'Yes' : 'No'}
-                                    </em>
-                                  </div>
-                                  {!expense.fullBuilding && (
-                                    <div
-                                      style={{
-                                        display: 'flex',
-                                        flexDirection: 'row',
-                                      }}
-                                    >
-                                      {' '}
-                                      <div
-                                        style={{ marginRight: 'var(--10px-V)' }}
-                                      >
-                                        Floor. <em>{expense.floor || 'N/A'}</em>
-                                      </div>
-                                      <div>
-                                        Room. <em>{expense.room || 'N/A'}</em>
-                                      </div>
-                                    </div>
-                                  )}
-                                </div>
-                              )}
-                            </td>
-                            <td>
-                              {editingExpenseId === expense.id ? (
-                                <>
-                                  Does reoccur:{' '}
-                                  <input
-                                    type="checkbox"
-                                    checked={
-                                      editedExpense?.doesReoccur || false
-                                    }
-                                    name=""
-                                    id=""
-                                    onChange={(e) =>
-                                      handleEditExpenseChange(
-                                        'doesReoccur',
-                                        e.target.checked
-                                      )
-                                    }
-                                  />
-                                  {editedExpense?.doesReoccur ? (
-                                    <>
-                                      <select
-                                        value={
-                                          editedExpense?.recurringType || 'Day'
-                                        }
-                                        onChange={(e) =>
-                                          handleEditExpenseChange(
-                                            'recurringType',
-                                            e.target.value
-                                          )
-                                        }
-                                      >
-                                        <option value="Day">
-                                          By day count
-                                        </option>
-                                        <option value="Monthly">Monthly</option>
-                                        <option value="Yearly">Yearly</option>
-                                      </select>
-                                      <br />
-                                      {editedExpense?.recurringType ===
-                                      'Day' ? (
-                                        <>
-                                          Every{' '}
-                                          <input
-                                            type="text"
-                                            value={
-                                              editedExpense?.recurringCycle ||
-                                              ''
-                                            }
-                                            onChange={(e) =>
-                                              handleEditExpenseChange(
-                                                'recurringCycle',
-                                                e.target.value
-                                              )
-                                            }
-                                            style={{ width: 'var(--40px-V)' }}
-                                          />
-                                        </>
-                                      ) : (
-                                        <></>
-                                      )}
-                                    </>
-                                  ) : (
-                                    <></>
-                                  )}
-                                </>
-                              ) : expense.doesReoccur ? (
-                                <div
-                                  style={{
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    gap: 'var(--5px-V)',
-                                  }}
-                                >
-                                  <div>
-                                    {expense.recurringType === 'Day'
-                                      ? `Every ${expense.recurringCycle} Day${
-                                          expense.recurringCycle !== 1
-                                            ? 's'
-                                            : ''
-                                        }`
-                                      : `Recurring: ${expense.recurringType}`}
-                                  </div>
-                                  <div
-                                    style={{
-                                      fontSize: 'var(--13px-V)',
-                                      color: 'var(--Text-Color-60)',
-                                    }}
-                                  >
-                                    Start:{' '}
-                                    {new Date(
-                                      expense.date
-                                    ).toLocaleDateString()}
-                                    {expense.HasEndDate && (
-                                      <>
-                                        <br />
-                                        End:{' '}
-                                        {new Date(
-                                          expense.EndDate
-                                        ).toLocaleDateString()}
-                                      </>
-                                    )}
-                                  </div>
-                                </div>
-                              ) : (
-                                <div>
-                                  One Time
-                                  <div
-                                    style={{
-                                      fontSize: 'var(--13px-V)',
-                                      color: 'var(--Text-Color-60)',
-                                    }}
-                                  >
-                                    Date:{' '}
-                                    {new Date(
-                                      expense.date
-                                    ).toLocaleDateString()}
-                                  </div>
-                                </div>
-                              )}
-                            </td>
-                            {editingExpenseId !== null && (
-                              <td
-                                style={{
-                                  borderRadius:
-                                    'var(--0px-V) var(--0px-V) var(--0px-V) var(--0px-V)',
-                                }}
-                              >
-                                {editingExpenseId === expense.id ? (
-                                  <>
-                                    <div
-                                      style={{
-                                        display: 'flex',
-                                        flexDirection: 'row',
-                                      }}
-                                    >
-                                      Start:{' '}
-                                      <input
-                                        type="date"
-                                        value={
-                                          new Date(
-                                            editedExpense?.date || Date.now()
-                                          )
-                                            .toISOString()
-                                            .split('T')[0]
-                                        }
-                                        onChange={(e) =>
-                                          handleEditExpenseChange(
-                                            'date',
-                                            new Date(e.target.value).getTime()
-                                          )
-                                        }
-                                        style={{ width: '100%' }}
-                                      />
-                                    </div>
-                                    {editedExpense?.doesReoccur ? (
-                                      <div
-                                        style={{
-                                          display: 'flex',
-                                          flexDirection: 'row',
-                                        }}
-                                      >
-                                        <input
-                                          type="checkbox"
-                                          name=""
-                                          id=""
-                                          checked={
-                                            editedExpense?.HasEndDate || false
-                                          }
-                                          onChange={(e) =>
-                                            handleEditExpenseChange(
-                                              'HasEndDate',
-                                              e.target.checked
-                                            )
-                                          }
-                                        />
-                                        {editedExpense?.HasEndDate ? (
-                                          <>
-                                            End:
-                                            <input
-                                              type="date"
-                                              value={
-                                                new Date(
-                                                  editedExpense?.EndDate ||
-                                                    Date.now()
-                                                )
-                                                  .toISOString()
-                                                  .split('T')[0]
-                                              }
-                                              onChange={(e) =>
-                                                handleEditExpenseChange(
-                                                  'EndDate',
-                                                  new Date(
-                                                    e.target.value
-                                                  ).getTime()
-                                                )
-                                              }
-                                              style={{ width: '100%' }}
-                                            />
-                                          </>
-                                        ) : (
-                                          <>:Enter End date</>
-                                        )}
-                                      </div>
-                                    ) : (
-                                      <></>
-                                    )}
-                                  </>
-                                ) : (
-                                  new Date(expense.date).toDateString()
-                                )}
-                              </td>
-                            )}
-                            <td
-                              style={{
-                                borderRadius:
-                                  editingExpenseId === expense.id
-                                    ? 'var(--0px-V) var(--0px-V) var(--0px-V) var(--0px-V)'
-                                    : 'var(--0px-V) var(--10px-V) var(--10px-V) var(--0px-V)',
-                              }}
-                            >
-                              {editingExpenseId === expense.id ? (
-                                <button
-                                  onClick={() =>
-                                    toggleNotifySettings(expense.id)
-                                  }
-                                  style={{}}
-                                >
-                                  {showNotifySettings[expense.id]
-                                    ? 'Hide Notifications'
-                                    : 'Show Notifications'}
-                                </button>
-                              ) : (
-                                <></>
-                              )}
-                              {showNotifySettings[expense.id] &&
-                              expense.id === editingExpenseId ? (
-                                <div style={{ width: '0', height: '0' }}>
-                                  <div
-                                    style={{
-                                      background: 'var(--Background-Color)',
-                                      zIndex: '1',
-                                      border:
-                                        'var(--1px-V) solid var(--Secondary-Color)',
-                                      padding: 'var(--10px-V)',
-                                      borderRadius: 'var(--5px-V)',
-                                      width: 'var(--250px-V)',
-                                      position: 'relative',
-                                      right: 'var(--160px-V)',
-                                    }}
-                                  >
-                                    {isLoadingRates && (
-                                      <div
-                                        style={{
-                                          position: 'absolute',
-                                          top: 0,
-                                          left: 0,
-                                          right: 0,
-                                          bottom: 0,
-                                          backgroundColor:
-                                            'rgba(255, 255, 255, 0.8)',
-                                          display: 'flex',
-                                          justifyContent: 'center',
-                                          alignItems: 'center',
-                                          zIndex: 1000,
-                                        }}
-                                      >
-                                        <img
-                                          src={loadingGif}
-                                          alt="Loading..."
-                                          style={{
-                                            width: '50px',
-                                            height: '50px',
-                                          }}
-                                        />
-                                      </div>
-                                    )}
-                                    <div
-                                      style={{
-                                        display: 'flex',
-                                        flexDirection: 'column',
-                                      }}
-                                    >
-                                      <div>
-                                        <input
-                                          type="checkbox"
-                                          checked={
-                                            editedExpense?.sendEmail || false
-                                          }
-                                          onChange={(e) =>
-                                            handleEditExpenseChange(
-                                              'sendEmail',
-                                              e.target.checked
-                                            )
-                                          }
-                                        />
-                                        Send Email
-                                        <br />
-                                        Days Before:
-                                        <input
-                                          type="number"
-                                          value={
-                                            editedExpense?.emailDaysBefore || ''
-                                          }
-                                          onChange={(e) =>
-                                            handleEditExpenseChange(
-                                              'emailDaysBefore',
-                                              parseInt(e.target.value, 10)
-                                            )
-                                          }
-                                          style={{ width: 'var(--40px-V)' }}
-                                        />
-                                      </div>
-                                      <br />
-                                      <div style={{ width: 'var(--140px-V)' }}>
-                                        <input
-                                          type="checkbox"
-                                          checked={
-                                            editedExpense?.sendSms || false
-                                          }
-                                          onChange={(e) =>
-                                            handleEditExpenseChange(
-                                              'sendSms',
-                                              e.target.checked
-                                            )
-                                          }
-                                        />
-                                        Send SMS
-                                        <br />
-                                        Days Before:
-                                        <input
-                                          type="number"
-                                          value={
-                                            editedExpense?.smsDaysBefore || ''
-                                          }
-                                          onChange={(e) =>
-                                            handleEditExpenseChange(
-                                              'smsDaysBefore',
-                                              parseInt(e.target.value, 10)
-                                            )
-                                          }
-                                          style={{ width: 'var(--40px-V)' }}
-                                        />
-                                      </div>
-
-                                      <span
-                                        style={{
-                                          fontSize: 'var(--13px-V)',
-                                          color: 'var(--Text-Color-Grey)',
-                                        }}
-                                      >
-                                        you can send this expense email or sms
-                                        to multiple people make it be comma
-                                        seppereted emails and phone numbers.
-                                      </span>
-                                      <div>
-                                        Email To:
-                                        <textarea
-                                          value={editedExpense?.emailTo || ''}
-                                          placeholder="comma separated emails"
-                                          onChange={(e) =>
-                                            handleEditExpenseChange(
-                                              'emailTo',
-                                              e.target.value
-                                            )
-                                          }
-                                          style={{ width: '100%' }}
-                                        />
-                                      </div>
-                                      <div>
-                                        SMS To:
-                                        <textarea
-                                          value={editedExpense?.smsTo || ''}
-                                          placeholder="comma separated phone numbers"
-                                          onChange={(e) =>
-                                            handleEditExpenseChange(
-                                              'smsTo',
-                                              e.target.value
-                                            )
-                                          }
-                                          style={{ width: '100%' }}
-                                        />
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-                              ) : editingExpenseId === expense.id ? (
-                                <></>
-                              ) : calculateNextPayment(expense) === null ? (
-                                <>No payments into the future</>
-                              ) : (
-                                <>
-                                  {calculateNextPayment(expense) === 'today' ? (
-                                    <div
-                                      style={{
-                                        color: 'var(--Accent-Color)',
-                                        fontWeight: 'bold',
-                                      }}
-                                    >
-                                      Payment Due TODAY!
-                                    </div>
-                                  ) : (
-                                    <>
-                                      Next payment in:{' '}
-                                      {calculateNextPayment(expense)} days
-                                      <br />
-                                      On{' '}
-                                      {addDays(
-                                        new Date(),
-                                        calculateNextPayment(expense) || 0
-                                      ).toLocaleDateString()}
-                                    </>
-                                  )}
-                                </>
-                              )}
-                            </td>
-
-                            {editingExpenseId === expense.id && (
-                              <td
-                                style={{
-                                  borderRadius:
-                                    'var(--0px-V) var(--10px-V) var(--10px-V) var(--0px-V)',
-                                }}
-                              >
-                                <button
-                                  style={{
-                                    backgroundColor: 'red',
-                                    color: 'white',
-                                  }}
-                                  onClick={() =>
-                                    handleDeleteExpense(expense.id)
-                                  }
-                                >
-                                  Delete
-                                </button>
-                              </td>
-                            )}
-                          </tr>
-                          <tr style={{ height: 'var(--10px-V)' }}></tr>
-                        </>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+            <>
+              <ExpenseManager
+                // Header controls
+                showFilters={showFilters}
+                setShowFilters={setShowFilters}
+                ShowDefaultNotificationsSettings={
+                  ShowDefaultNotificationsSettings
+                }
+                setShowDefaultNotificationsSettings={
+                  setShowDefaultNotificationsSettings
+                }
+                handleAddExpense={handleAddExpense}
+                resetFilters={resetFilters}
+                // Filter controls
+                searchTerm={searchTerm}
+                setSearchTerm={setSearchTerm}
+                maxPrice={maxPrice}
+                setMaxPrice={setMaxPrice}
+                minPrice={minPrice}
+                setMinPrice={setMinPrice}
+                fullBuildingFilter={fullBuildingFilter}
+                setFullBuildingFilter={setFullBuildingFilter}
+                floorSearch={floorSearch}
+                setFloorSearch={setFloorSearch}
+                roomSearch={roomSearch}
+                setRoomSearch={setRoomSearch}
+                doesReoccurFilter={doesReoccurFilter}
+                setDoesReoccurFilter={setDoesReoccurFilter}
+                reoccurDays={reoccurDays}
+                setReoccurDays={setReoccurDays}
+                dateFilter={dateFilter}
+                setDateFilter={setDateFilter}
+                // Notification settings
+                sendEmail={sendEmail}
+                setSendEmail={setSendEmail}
+                emailTo={emailTo}
+                setEmailTo={setEmailTo}
+                emailDaysBefore={emailDaysBefore}
+                setEmailDaysBefore={setEmailDaysBefore}
+                sendSms={sendSms}
+                setSendSms={setSendSms}
+                smsTo={smsTo}
+                setSmsTo={setSmsTo}
+                smsDaysBefore={smsDaysBefore}
+                setSmsDaysBefore={setSmsDaysBefore}
+                applyDefaultNotifications={applyDefaultNotifications}
+                // Expense data and handlers
+                filteredExpenses={filteredExpenses}
+                editingExpenseId={editingExpenseId}
+                editedExpense={editedExpense}
+                showNotifySettings={showNotifySettings}
+                handleEditExpenseClick={handleEditExpenseClick}
+                handleEditExpenseChange={handleEditExpenseChange}
+                toggleNotifySettings={toggleNotifySettings}
+                handleDeleteExpense={handleDeleteExpense}
+                calculateNextPayment={calculateNextPayment}
+                // Utility functions
+                GetCurrencyAsOptionsOnSelect={GetCurrencyAsOptionsOnSelect}
+                CurrencySign={CurrencySign}
+                formatNumberWithSuffix={formatNumberWithSuffix}
+                addDays={addDays}
+              />
+            </>
           )}
           {isApplyingNotifications && (
             <div
@@ -2589,39 +1905,61 @@ const ToolsPage = ({
             </div>
           )}
           {ToolsSelectedPage === 'Settings' && (
-            <div style={{ margin: '10px' }}>
-              <h1 style={{ fontSize: 'var(--35px-V)' }}>Settings</h1>
-              <div style={{ margin: 'var(--10px-V)' }}>
+            <div className="settings-main-container">
+              <h1>Settings</h1>
+              <div className="settings-container">
                 {' '}
-                <h2 style={{ fontSize: 'var(--25px-V)' }}>
-                  -- Tax percentages --
-                </h2>
-                <div style={{ marginLeft: 'var(--20px-V)' }}>
-                  Tax percentage:{' '}
-                  <input
-                    type="number"
-                    min="0"
-                    max="100"
-                    style={{ width: 'var(--60px-V)' }}
-                    value={window.electron.store.get('taxPercentage')}
-                    onChange={(e) => {
-                      window.electron.store.set(
-                        'taxPercentage',
-                        parseFloat(e.target.value)
-                      );
-                      setRefresh(refresh + 1);
-                    }}
-                  />
-                  %
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 'var(--10px-V)',
+                  }}
+                >
+                  <h2>Tax percentages</h2>
+                  {hasChangedTaxPercentage ? (
+                    <>
+                      {isApplyingTaxPercentage ? (
+                        <img src={loadingGif} alt="Loading..." style={{width:'var(--20px-V)',height:'var(--20px-V)'}} />
+                      ) : (
+                        <>
+                          <button onClick={saveTaxPercentage}>Save</button>
+                          <button onClick={CancelTaxPercentage}>Cancel</button>
+                        </>
+                      )}
+                    </>
+                  ) : (
+                    <></>
+                  )}
                 </div>
+                {isOnline ? (
+                  <div className="settings-inner-container">
+                    Tax percentage:{' '}
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      style={{ width: 'var(--60px-V)' }}
+                      value={taxPercentage}
+                      onChange={(e) => {
+                        setHasChangedTaxPercentage(true);
+                        setTaxPercentage(parseInt(e.target.value, 10));
+                      }}
+                    />
+                    %
+                  </div>
+                ) : (
+                  <div className="settings-inner-container">
+                    Please connect to the internet to change tax percentage
+                  </div>
+                )}
               </div>
 
-              <div style={{ margin: 'var(--10px-V)', borderRadius: 'var(--8px-V)' }}>
-                <h2 style={{ marginBottom: 'var(--15px-V)', fontSize: 'var(--25px-V)' }}>
-                  -- Currency Settings --
-                </h2>
+              <div className="settings-container">
+                <h2>Currency Settings</h2>
 
-                <div style={{ marginLeft: 'var(--20px-V)' }}>
+                {/* Default Currency Selection */}
+                <div className="settings-inner-container">
                   <label style={{ fontWeight: 500 }}>Default Currency: </label>
                   <select
                     onChange={(e) => {
@@ -2637,176 +1975,143 @@ const ToolsPage = ({
                   </select>
                 </div>
 
-                <div style={{ marginLeft: 'var(--20px-V)' }}>
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 'var(--10px-V)',
-                    }}
-                  >
-                    <span>
-                      Exchange rates
-                    
-                    </span>
-                    <button onClick={updateExchangeRates}>Update</button>
-                    <p style={{ fontSize: 'var(--13px-V)' }}>
-                      Current latest rate using (
-                      {window.electron.store.get('lastExchangeRateUpdate')
-                        ? new Date(
-                            window.electron.store.get('lastExchangeRateUpdate')
-                          ).toDateString({
-                            day: '2-digit',
-                            month: '2-digit',
-                            year: 'numeric',
-                          })
-                        : "Haven't updated yet"}{' '}
-                      :{' '}
-                      {
-                        GetDefaultCurrency() === 'USD' ? 
-                          (1 / window.electron.store.get('exchangeRate')[
-                            window.electron.store.get('exchangeRate').length - 1
-                          ].rates).toFixed(5) :
-                          window.electron.store.get('exchangeRate')[
-                            window.electron.store.get('exchangeRate').length - 1
-                          ].rates.toFixed(5)
-                      }
-                      {CurrencySign(GetDefaultCurrency())})
-                    </p>
-                  </div>
-                  {navigator.onLine ? (
-                    <>
-                      {' '}
+                {/* Exchange Rate Section */}
+                <div className="settings-inner-container">
+                  {isOnline ? (
+                    <div>
+                      {/* Current Exchange Rate */}
                       <div
                         style={{
                           display: 'flex',
                           alignItems: 'center',
                           gap: 'var(--10px-V)',
+                          marginBottom: 'var(--15px-V)',
                         }}
                       >
-                        <span>Check rate on: </span>
-                        <input
-                          type="date"
-                          onChange={(e) => {
-                            const selectedDate =
-                              new Date(e.target.value).getTime() / 1000;
-
-                            // Check if date is after 2015
-                            if (
-                              selectedDate <
-                              new Date('2015-01-01').getTime() / 1000
-                            ) {
-                              alert('Please select a date after 2015');
-                              return;
-                            }
-
-                            
-                              setGetExchangeRateDate(selectedDate);
-                            
-                          }}
-                        />
-                        <button onClick={() => fetchExchangeRateOfThatDate()}>
-                          Get Rate
+                        <span>Current Exchange Rate:</span>
+                        <button onClick={updateExchangeRates}>
+                          Update Now
                         </button>
-                        {GetExchangeRate != 0 ? (
-                          <>
-                            {new Date(
-                              new Date(GetExchangeRateDate).getTime() * 1000
-                            ).toDateString()}
-                            : {GetExchangeRate}
-                          </>
-                        ) : (
-                          ''
-                        )}
+                        <p style={{ fontSize: 'var(--13px-V)' }}>
+                          Last Updated:{' '}
+                          {window.electron.store.get('lastExchangeRateUpdate')
+                            ? new Date(
+                                window.electron.store.get(
+                                  'lastExchangeRateUpdate'
+                                )
+                              ).toDateString()
+                            : 'Not updated yet'}
+                          <br />
+                          Rate:{' '}
+                          {GetDefaultCurrency() === 'USD'
+                            ? (
+                                1 /
+                                window.electron.store.get('exchangeRate')[
+                                  window.electron.store.get('exchangeRate')
+                                    .length - 1
+                                ].rates
+                              ).toFixed(5)
+                            : window.electron.store
+                                .get('exchangeRate')
+                                [
+                                  window.electron.store.get('exchangeRate')
+                                    .length - 1
+                                ].rates.toFixed(5)}
+                          {CurrencySign(GetDefaultCurrency())}
+                        </p>
                       </div>
-                      <div
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 'var(--10px-V)',
-                          marginBottom: 'var(--10px-V)',
-                        }}
-                      >
-                        <h3 style={{ margin: 0 }}>
-                          Recent Exchange Rates (USD to ETB)
-                        </h3>
-                        <button
-                          onClick={() => setShowRecentRates(!showRecentRates)}
-                          style={{
-                            padding: 'var(--3px-V) var(--8px-V)',
-                          }}
-                        >
-                          {showRecentRates ? '▼ Hide' : '▶ Show'}
-                        </button>
-                      </div>
-                      {showRecentRates && (
+
+                      {/* Check Historical Rate */}
+                      <div style={{ marginBottom: 'var(--15px-V)' }}>
                         <div
                           style={{
-                            backgroundColor: 'var(--Secondary-Color60)',
-                            marginLeft: 'var(--20px-V)',
-                            width: 'var(--500px-V)',
-                            borderRadius: 'var(--5px-V)',
-                            padding: 'var(--10px-V)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 'var(--10px-V)',
                           }}
                         >
-                          {' '}
-                          <>
-                            <div
-                              style={{
-                                fontSize: 'var(--13px-V)',
-                                color: 'var(--Text-Color-Grey)',
-                                fontStyle: 'italic',
-                              }}
-                            >
-                              * Future rates provided by exchangerates-api *
-                              Past rates provided by investing.com
-                            </div>
-                            <div
-                              style={{
-                                justifyContent: 'center',
-                                alignItems: 'center',
-                                gap: 'var(--10px-V)',
-                                padding: 'var(--5px-V)',
-                                borderTop: 'var(--1px-V) solid var(--Border-Color)',
-                              }}
-                            >
+                          <span>Check Historical Rate: </span>
+                          <input
+                            type="date"
+                            onChange={(e) => {
+                              const selectedDate =
+                                new Date(e.target.value).getTime() / 1000;
+                              if (
+                                selectedDate <
+                                new Date('2015-01-01').getTime() / 1000
+                              ) {
+                                alert('Please select a date after 2015');
+                                return;
+                              }
+                              setGetExchangeRateDate(selectedDate);
+                            }}
+                          />
+                          <button onClick={() => fetchExchangeRateOfThatDate()}>
+                            Get Rate
+                          </button>
+                        </div>
+                        {GetExchangeRate !== 0 && (
+                          <div style={{ marginTop: 'var(--5px-V)' }}>
+                            Rate on{' '}
+                            {new Date(
+                              GetExchangeRateDate * 1000
+                            ).toDateString()}
+                            : {GetExchangeRate}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Recent Rates Section */}
+                      <div>
+                        <div
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 'var(--10px-V)',
+                            marginBottom: 'var(--10px-V)',
+                          }}
+                        >
+                          <h3 style={{ margin: 0 }}>Recent Exchange Rates</h3>
+                          <button
+                            onClick={() => setShowRecentRates(!showRecentRates)}
+                          >
+                            {showRecentRates ? 'Hide' : 'Show'}
+                          </button>
+                        </div>
+
+                        {showRecentRates && (
+                          <div
+                            style={{
+                              backgroundColor: 'var(--Secondary-Color60)',
+                              padding: 'var(--10px-V)',
+                              borderRadius: 'var(--5px-V)',
+                            }}
+                          >
+                            {/* Date Range Selection */}
+                            <div style={{ marginBottom: 'var(--10px-V)' }}>
                               <div
                                 style={{
                                   display: 'flex',
-                                  alignItems: 'center',
                                   gap: 'var(--10px-V)',
+                                  alignItems: 'center',
                                 }}
                               >
                                 <div>
-                                  <span style={{ marginRight: 'var(--5px-V)' }}>
-                                    From:
-                                  </span>
+                                  <span>From: </span>
                                   <input
                                     type="date"
                                     value={startDate}
                                     onChange={(e) =>
                                       setStartDate(e.target.value)
                                     }
-                                    style={{
-                                      padding: 'var(--5px-V) var(--10px-V)',
-                                      borderRadius: 'var(--4px-V)',
-                                      border: 'var(--1px-V) solid var(--Border-Color)',
-                                    }}
                                   />
                                 </div>
                                 <div>
-                                  <span style={{ marginRight: 'var(--5px-V)' }}>
-                                    To:
-                                  </span>
+                                  <span>To: </span>
                                   <input
                                     type="date"
                                     value={endDate}
                                     onChange={(e) => setEndDate(e.target.value)}
-                                    style={{
-                                      padding: 'var(--5px-V) var(--10px-V)',
-                                      borderRadius: 'var(--4px-V)',
-                                      border: 'var(--1px-V) solid var(--Border-Color)',
-                                    }}
                                   />
                                 </div>
                                 <button
@@ -2814,18 +2119,13 @@ const ToolsPage = ({
                                     setStartDate('');
                                     setEndDate('');
                                   }}
-                                  style={{
-                                    padding: 'var(--5px-V) var(--10px-V)',
-                                    borderRadius: 'var(--4px-V)',
-                                    border: 'var(--1px-V) solid var(--Border-Color)',
-                                    backgroundColor: 'var(--Background-Color)',
-                                    cursor: 'pointer',
-                                  }}
                                 >
                                   Clear
                                 </button>
-                              </div>{' '}
+                              </div>
                             </div>
+
+                            {/* Rates List */}
                             {exchangeRates.map((rate, index) => {
                               const nextRate =
                                 index < exchangeRates.length - 1
@@ -2843,9 +2143,8 @@ const ToolsPage = ({
                                 <div
                                   key={rate.id}
                                   style={{
-                                    padding: 'var(--8px-V) var(--15px-V)',
+                                    padding: 'var(--8px-V)',
                                     borderBottom: 'var(--1px-V) solid #eee',
-                                    width: 'var(--350px-V)',
                                     display: 'flex',
                                     justifyContent: 'space-between',
                                   }}
@@ -2861,14 +2160,11 @@ const ToolsPage = ({
                                   </span>
                                   <span
                                     style={{
-                                      fontWeight: 500,
                                       color:
-                                        index < exchangeRates.length - 1
-                                          ? rate.rates > nextRate
-                                            ? 'green'
-                                            : rate.rates < nextRate
-                                            ? 'red'
-                                            : 'inherit'
+                                        difference > 0
+                                          ? 'green'
+                                          : difference < 0
+                                          ? 'red'
                                           : 'inherit',
                                     }}
                                   >
@@ -2877,212 +2173,64 @@ const ToolsPage = ({
                                 </div>
                               );
                             })}
+
+                            {/* Pagination */}
                             <div
                               style={{
                                 display: 'flex',
-
-                                alignItems: 'center',
+                                justifyContent: 'center',
                                 gap: 'var(--10px-V)',
-                                padding: 'var(--5px-V)',
-                                borderTop: 'var(--1px-V) solid var(--Border-Color)',
+                                marginTop: 'var(--10px-V)',
                               }}
                             >
                               <button
                                 onClick={() => setCurrentPage(1)}
-                                disabled={currentPage === 1 || isLoadingRates}
-                                style={{
-                                  padding: 'var(--5px-V) var(--10px-V)',
-                                  cursor:
-                                    currentPage === 1 || isLoadingRates
-                                      ? 'not-allowed'
-                                      : 'pointer',
-                                  opacity:
-                                    currentPage === 1 || isLoadingRates
-                                      ? 0.5
-                                      : 1,
-                                }}
+                                disabled={currentPage === 1}
                               >
                                 First
                               </button>
                               <button
                                 onClick={() =>
-                                  setCurrentPage((prev) =>
-                                    Math.max(1, prev - 1)
-                                  )
+                                  setCurrentPage((p) => Math.max(1, p - 1))
                                 }
-                                disabled={currentPage === 1 || isLoadingRates}
-                                style={{
-                                  padding: 'var(--5px-V) var(--10px-V)',
-                                  cursor:
-                                    currentPage === 1 || isLoadingRates
-                                      ? 'not-allowed'
-                                      : 'pointer',
-                                  opacity:
-                                    currentPage === 1 || isLoadingRates
-                                      ? 0.5
-                                      : 1,
-                                }}
+                                disabled={currentPage === 1}
                               >
                                 Previous
                               </button>
-                              <span
-                                style={{
-                                  color: 'var(--Text-Color)',
-                                  padding: '0 var(--10px-V)',
-                                  minWidth: 'var(--100px-V)',
-                                  textAlign: 'center',
-                                }}
-                              >
+                              <span>
                                 Page {currentPage} of {totalPages || 1}
                               </span>
                               <button
                                 onClick={() =>
-                                  setCurrentPage((prev) =>
-                                    Math.min(totalPages, prev + 1)
+                                  setCurrentPage((p) =>
+                                    Math.min(totalPages, p + 1)
                                   )
                                 }
-                                disabled={
-                                  currentPage >= totalPages || isLoadingRates
-                                }
-                                style={{
-                                  padding: 'var(--5px-V) var(--10px-V)',
-                                  cursor:
-                                    currentPage >= totalPages || isLoadingRates
-                                      ? 'not-allowed'
-                                      : 'pointer',
-                                  opacity:
-                                    currentPage >= totalPages || isLoadingRates
-                                      ? 0.5
-                                      : 1,
-                                }}
+                                disabled={currentPage >= totalPages}
                               >
                                 Next
                               </button>
                               <button
                                 onClick={() => setCurrentPage(totalPages)}
-                                disabled={
-                                  currentPage >= totalPages || isLoadingRates
-                                }
-                                style={{
-                                  padding: 'var(--5px-V) var(--10px-V)',
-                                  cursor:
-                                    currentPage >= totalPages || isLoadingRates
-                                      ? 'not-allowed'
-                                      : 'pointer',
-                                  opacity:
-                                    currentPage >= totalPages || isLoadingRates
-                                      ? 0.5
-                                      : 1,
-                                }}
+                                disabled={currentPage >= totalPages}
                               >
                                 Last
                               </button>
                             </div>
-                          </>
-                        </div>
-                      )}
-                    </>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   ) : (
-                    <>Please connect to internet to see exchange rates</>
+                    <div>Please connect to internet to see exchange rates</div>
                   )}
                 </div>
-
-                {/* <div
-                      style={{
-                        marginTop: 'var(--15px-V)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 'var(--10px-V)',
-                      }}
-                    >
-                      <span>Check rate on: </span>
-                      <input
-                        type="date"
-                        style={{
-                          padding: 'var(--5px-V) var(--10px-V)',
-                          borderRadius: 'var(--4px-V)',
-                          border: 'var(--1px-V) solid #ddd',
-                        }}
-                        onChange={(e) => {
-                          const selectedDate =
-                            new Date(e.target.value).getTime() / 1000;
-                          const rate = exchangeRates.find((r) => {
-                            const rateDate = new Date(r.id * 1000);
-                            return (
-                              rateDate.toDateString() ===
-                              new Date(selectedDate * 1000).toDateString()
-                            );
-                          });
-                          if (rate) {
-                            setGetExchangeRateDate(selectedDate);
-                          } else {
-                            alert(
-                              'No exchange rate data available for this date'
-                            );
-                          }
-                        }}
-                      />
-                      <button
-                       
-                        onClick={() => fetchExchangeRateOfThatDate()}
-                      >
-                        Get Rate
-                      </button>
-                      {GetExchangeRate != 0 ? (
-                        <>
-                          {new Date(new Date(GetExchangeRateDate).getTime()*1000).toDateString()}:{' '}
-                          {GetExchangeRate}
-                        </>
-                      ) : (
-                        ''
-                      )}
-                    </div>*-Use live exchange Rates{' '}
-                <input
-                  type="checkbox"
-                  onChange={(e) => {
-                    window.electron.store.set(
-                      'useLiveExchangeRates',
-                      e.target.checked
-                    );
-                    setRefresh(refresh + 1);
-                  }}
-                  value={window.electron.store.get('useLiveExchangeRates')}
-                />{' '}
-                <br /> */}
-                {/** <>
-                  -Exchange rates in {GetDefaultCurrency()}
-                  {AllCurrencies.filter(
-                    (currency) => currency !== GetDefaultCurrency()
-                  ).map((currency) => (
-                    <div
-                      style={{ margin: 'var(--10px-V)', marginLeft: 'var(--15px-V)' }}
-                    >
-                      {currency} =
-                      <input
-                        style={{ width: 'var(--80px-V)' }}
-                        type="number"
-                        value={window.electron.store.get(
-                          `exchangeRateFrom${GetDefaultCurrency()}To${currency}`
-                        )}
-                        onChange={(e) => {
-                          window.electron.store.set(
-                            `exchangeRateFrom${GetDefaultCurrency()}To${currency}`,
-                            parseFloat(e.target.value)
-                          );
-                        }}
-                      />
-                      {CurrencySign(GetDefaultCurrency())}
-                    </div>
-                  ))}
-                </>*/}
               </div>
-              <div style={{ margin: 'var(--10px-V)' }}>
+              <div className="settings-container">
                 {' '}
-                <h2 style={{ fontSize: 'var(--25px-V)' }}>
-                  -- Formating numbers --
-                </h2>
+                <h2 style={{ fontSize: 'var(--25px-V)' }}>Formating numbers</h2>
                 <div style={{ marginLeft: 'var(--20px-V)' }}>
-                  Make big numbers like 100,000, 1,000,000 or 10,000,000 to
+                  Make long numbers like 100,000, 1,000,000 or 10,000,000 to
                   100k, 1M or 10M:{' '}
                   <input
                     type="checkbox"
@@ -3117,6 +2265,443 @@ const ToolsPage = ({
                     }}
                   />
                   <br />
+                </div>
+              </div>
+              <div className="settings-container">
+                <h2
+                  style={{
+                    fontSize: 'var(--25px-V)',
+                    display: 'flex',
+                    gap: 'var(--10px-V)',
+                  }}
+                >
+                  Email Settings{' '}
+                  {hasChanges && (
+                    <div
+                      style={{
+                        display: 'flex',
+                        gap: 'var(--10px-V)',
+                      }}
+                    >
+                      <button
+                        style={{
+                          backgroundColor: 'var(--Primary-Color)',
+                          color: 'var(--Text-Color-Reverse)',
+                        }}
+                        onClick={handleSaveEmailSettings}
+                      >
+                        Save
+                      </button>
+                      <button onClick={handleCancel}>Cancel</button>
+                    </div>
+                  )}
+                </h2>
+                {isOnline ? (
+                  <>
+                    {' '}
+                    <div style={{ marginLeft: 'var(--20px-V)' }}>
+                      {loading ? (
+                        <img
+                          src={loadingGif}
+                          alt="Loading..."
+                          style={{
+                            width: 'var(--20px-V)',
+                            height: 'var(--20px-V)',
+                          }}
+                        />
+                      ) : (
+                        <>
+                          <div
+                            style={{
+                              display: 'flex',
+                              flexDirection: 'row',
+                              alignItems: 'flex-start',
+                              marginTop: 'var(--15px-V)',
+                            }}
+                          >
+                            Representative Emails:{' '}
+                            <div
+                              style={{
+                                width: 'var(--150px-V)',
+                                paddingLeft: 'var(--5px-V)',
+
+                                display: 'flex',
+                                flexDirection: 'column',
+                                flexWrap: 'wrap',
+                                gap: 'var(--5px-V)',
+                              }}
+                            >
+                              {representativeEmails.split(',').map(
+                                (email, index) =>
+                                  email.trim() && (
+                                    <div
+                                      key={index}
+                                      style={{
+                                        backgroundColor:
+                                          'var(--Secondary-Color30)',
+                                        justifyContent: 'space-between',
+                                        padding: 'var(--4px-V) var(--8px-V)',
+                                        borderRadius: 'var(--5px-V)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 'var(--15px-V)',
+                                      }}
+                                    >
+                                      <span>{email.trim()}</span>
+                                      <button
+                                        onClick={() => {
+                                          const emails =
+                                            representativeEmails.split(',');
+                                          emails.splice(index, 1);
+                                          setRepresentativeEmails(
+                                            emails.join(',')
+                                          );
+                                        }}
+                                        style={{
+                                          border: 'none',
+
+                                          cursor: 'pointer',
+                                          padding: '0 4px',
+                                        }}
+                                      >
+                                        ×
+                                      </button>
+                                    </div>
+                                  )
+                              )}
+                              <input
+                                type="text"
+                                placeholder="Enter email and press Space, Enter or Comma"
+                                style={{
+                                  border: 'none',
+                                  outline: 'none',
+                                  height: 'var(--25px-V)',
+                                }}
+                                onKeyDown={(e) => {
+                                  if (['Enter', ' ', ','].includes(e.key)) {
+                                    e.preventDefault();
+                                    const value = e.currentTarget.value.trim();
+                                    if (value) {
+                                      const emails = representativeEmails
+                                        ? representativeEmails.split(',')
+                                        : [];
+                                      emails.push(value);
+                                      setRepresentativeEmails(emails.join(','));
+                                      e.currentTarget.value = '';
+                                    }
+                                  }
+                                }}
+                              />
+                            </div>
+                          </div>
+                          <div
+                            style={{
+                              display: 'flex',
+                              flexDirection: 'row',
+                              alignItems: 'flex-start',
+                              marginTop: 'var(--15px-V)',
+                            }}
+                          >
+                            Representative Phone Numbers:{' '}
+                            <div
+                              style={{
+                                width: 'var(--150px-V)',
+                                paddingLeft: 'var(--5px-V)',
+
+                                display: 'flex',
+                                flexDirection: 'column',
+                                flexWrap: 'wrap',
+                                gap: 'var(--5px-V)',
+                              }}
+                            >
+                              {representativePhoneNumbers.split(',').map(
+                                (phone, index) =>
+                                  phone.trim() && (
+                                    <div
+                                      key={index}
+                                      style={{
+                                        backgroundColor:
+                                          'var(--Secondary-Color30)',
+                                        justifyContent: 'space-between',
+                                        padding: 'var(--4px-V) var(--8px-V)',
+                                        borderRadius: 'var(--5px-V)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 'var(--4px-V)',
+                                      }}
+                                    >
+                                      <span>{phone.trim()}</span>
+                                      <button
+                                        onClick={() => {
+                                          const phones =
+                                            representativePhoneNumbers.split(
+                                              ','
+                                            );
+                                          phones.splice(index, 1);
+                                          setRepresentativePhoneNumbers(
+                                            phones.join(',')
+                                          );
+                                        }}
+                                        style={{
+                                          border: 'none',
+
+                                          cursor: 'pointer',
+                                          padding: '0 var(--4px-V)',
+                                        }}
+                                      >
+                                        ×
+                                      </button>
+                                    </div>
+                                  )
+                              )}
+                              <input
+                                type="text"
+                                placeholder="Enter phone number and press Space, Enter or Comma"
+                                style={{
+                                  border: 'none',
+                                  outline: 'none',
+                                  height: 'var(--25px-V)',
+                                }}
+                                onKeyDown={(e) => {
+                                  if (['Enter', ' ', ','].includes(e.key)) {
+                                    e.preventDefault();
+                                    const value = e.currentTarget.value.trim();
+                                    if (value && value.length >= 10) {
+                                      const phones = representativePhoneNumbers
+                                        ? representativePhoneNumbers.split(',')
+                                        : [];
+                                      phones.push(value);
+                                      setRepresentativePhoneNumbers(
+                                        phones.join(',')
+                                      );
+                                      e.currentTarget.value = '';
+                                    }
+                                  }
+                                }}
+                              />
+                              {document.activeElement?.tagName === 'INPUT' &&
+                                document.activeElement.value.trim() &&
+                                document.activeElement.value.trim().length <
+                                  10 && (
+                                  <p
+                                    style={{
+                                      fontSize: 'var(--13px-V)',
+                                      color: 'var(--Text-Color-Grey)',
+                                      marginBottom: 'var(--10px-V)',
+                                    }}
+                                  >
+                                    Phone numbers must be at least 10 digits
+                                  </p>
+                                )}
+                            </div>
+                          </div>
+
+                          <div
+                            style={{
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: 'var(--10px-V)',
+                              marginTop: 'var(--15px-V)',
+                            }}
+                          >
+                            <div
+                              style={{
+                                display: 'flex',
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                gap: 'var(--10px-V)',
+                              }}
+                            >
+                              <label>Landlord Display Name:</label>
+                              <input
+                                type="text"
+                                value={landlordDisplayName}
+                                onChange={(e) =>
+                                  setLandlordDisplayName(e.target.value)
+                                }
+                                placeholder="Name shown in emails"
+                                style={{ width: 'var(--300px-V)' }}
+                              />
+                              :{' '}
+                              <span style={{ color: 'var(--Text-Color-Grey)' }}>
+                                The name that is visible in emails and sms sent
+                                to the tenant
+                              </span>
+                            </div>
+                            <div
+                              style={{
+                                display: 'flex',
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                gap: 'var(--10px-V)',
+                              }}
+                            >
+                              <label>Landlord Email:</label>
+                              <input
+                                type="email"
+                                value={landlordEmail}
+                                onChange={(e) =>
+                                  setLandlordEmail(e.target.value)
+                                }
+                                placeholder="Email address shown in emails"
+                                style={{ width: 'var(--300px-V)' }}
+                              />
+                              :{' '}
+                              <span style={{ color: 'var(--Text-Color-Grey)' }}>
+                                The email address that is visible in emails and
+                                sms sent to the tenant
+                              </span>
+                            </div>
+                            <div
+                              style={{
+                                display: 'flex',
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                gap: 'var(--10px-V)',
+                              }}
+                            >
+                              <label>Landlord Telephone:</label>
+                              <input
+                                type="tel"
+                                value={landlordTelephone}
+                                onChange={(e) =>
+                                  setLandlordTelephone(e.target.value)
+                                }
+                                placeholder="Phone number shown in emails"
+                                style={{ width: 'var(--300px-V)' }}
+                              />
+                              :{' '}
+                              <span style={{ color: 'var(--Text-Color-Grey)' }}>
+                                The phone number that is visible in emails and
+                                sms sent to the tenant
+                              </span>
+                            </div>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  <div style={{ marginLeft: 'var(--20px-V)' }}>
+                    Please connect to internet to cahnge these settings
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+          {ToolsSelectedPage === 'Support' && (
+            <div className="settings-main-container">
+              <h1>Support</h1>
+              <div className="settings-container">
+                <h2 style={{ fontSize: 'var(--25px-V)' }}>Contact</h2>
+                <div style={{ marginLeft: 'var(--20px-V)' }}>
+                  <div
+                    style={{
+                      display: 'flex',
+                      gap: 'var(--10px-V)',
+                      alignItems: 'center',
+                    }}
+                  >
+                    <span>Phone Number:</span>
+                    <span>094450-9999</span>
+                  </div>
+                  <div
+                    style={{
+                      display: 'flex',
+                      gap: 'var(--10px-V)',
+                      alignItems: 'center',
+                    }}
+                  >
+                    <span>Email:</span>
+                    <span>rentmaster.et@gmail.com</span>
+                  </div>
+                  <div
+                    style={{
+                      display: 'flex',
+                      gap: 'var(--10px-V)',
+                      alignItems: 'center',
+                    }}
+                  >
+                    <span>Telegram:</span>
+                    <span>@Rent_Master</span>
+                  </div>
+                </div>
+              </div>
+              <div className="settings-container">
+                <h2 style={{ fontSize: 'var(--25px-V)' }}>Feedback</h2>
+                <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+                  <div
+                    style={{
+                      marginLeft: 'var(--20px-V)',
+                      width: 'var(--300px-V)',
+                      flexDirection: 'column',
+                      gap: 'var(--10px-V)',
+                      display: 'flex',
+                    }}
+                  >
+                    <label>Leave a review</label>
+                    <textarea
+                      value={reviewForm}
+                      onChange={(e) => setReviewForm(e.target.value)}
+                      id="review"
+                      name="review"
+                      placeholder="Tell us what you think about RentMaster..."
+                      style={{ height: 'var(--100px-V)', resize: 'vertical' }}
+                    ></textarea>
+                    <button onClick={handleSubmit}>
+                      {isSendingReview ? (
+                        <>
+                          <img
+                            src={loadingGif}
+                            alt="Loading..."
+                            style={{
+                              width: 'var(--20px-V)',
+                              height: 'var(--20px-V)',
+                            }}
+                          />
+                          Sending...
+                        </>
+                      ) : (
+                        'Submit'
+                      )}
+                    </button>
+                  </div>
+                  <div
+                    style={{
+                      marginLeft: 'var(--20px-V)',
+                      width: 'var(--300px-V)',
+                      flexDirection: 'column',
+                      gap: 'var(--10px-V)',
+                      display: 'flex',
+                    }}
+                  >
+                    <label>Suggest a feature</label>
+                    <textarea
+                      value={featureSuggestion}
+                      onChange={(e) => setFeatureSuggestion(e.target.value)}
+                      id="featureSuggestion"
+                      name="featureSuggestion"
+                      placeholder="Tell us what features you would like to see in RentMaster..."
+                      style={{ height: 'var(--100px-V)', resize: 'vertical' }}
+                    ></textarea>
+                    <button onClick={handleSubmitFeatureSuggestion}>
+                      {isSendingFeatureSuggestion ? (
+                        <>
+                          <img
+                            src={loadingGif}
+                            alt="Loading..."
+                            style={{
+                              width: 'var(--20px-V)',
+                              height: 'var(--20px-V)',
+                            }}
+                          />
+                          Sending...
+                        </>
+                      ) : (
+                        'Submit'
+                      )}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

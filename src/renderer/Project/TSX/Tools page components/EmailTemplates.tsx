@@ -77,40 +77,45 @@ const EmailTemplates: React.FC<EmailTemplatesProps> = ({
   isSending,
 }) => {
   const [representativeEmails, setRepresentativeEmails] = useState<string>('');
+  const [representativePhoneNumbers, setRepresentativePhoneNumbers] = useState<string>('');
   const [landlordDisplayName, setLandlordDisplayName] = useState<string>('');
   const [landlordEmail, setLandlordEmail] = useState<string>('');
   const [landlordTelephone, setLandlordTelephone] = useState<string>('');
   const [originalValues, setOriginalValues] = useState({
     representativeEmails: '',
+    representativePhoneNumbers: '',
     landlordDisplayName: '',
     landlordEmail: '',
     landlordTelephone: ''
   });
   const [hasChanges, setHasChanges] = useState(false);
- const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
   useEffect(() => {
     const fetchEmailSettings = async () => {
       if (navigator.onLine) {
         try {
           setLoading(true);
-        const userId = await window.electron.store.get("users")[0].id;
+          const userId = await window.electron.store.get("users")[0].id;
 
           // Assuming there's an API call to get the values
-         console.log("fetching email settings", userId)
-         const user = (await getValuesWithSql_Online("users", `WHERE id = '${userId}'`))[0];
+          console.log("fetching email settings", userId)
+          const user = (await getValuesWithSql_Online("users", `WHERE id = '${userId}'`))[0];
           const RepresentativeEmailsONLINE = user.RepresentativeEmails;
+          const RepresentativePhoneNumbersONLINE = user.RepresentativePhoneNumbers;
           const LandlordNamesONLINE = user.LandlordName;
           const LandlordEmailONLINE = user.LandlordEmail;
           const LandlordTelephoneONLINE = user.LandlordTelephone;
-         console.log("fetching email settings", RepresentativeEmailsONLINE,LandlordNamesONLINE,LandlordEmailONLINE,LandlordTelephoneONLINE)
+          console.log("fetching email settings", RepresentativeEmailsONLINE, RepresentativePhoneNumbersONLINE, LandlordNamesONLINE, LandlordEmailONLINE, LandlordTelephoneONLINE)
           
           setRepresentativeEmails(RepresentativeEmailsONLINE);
+          setRepresentativePhoneNumbers(RepresentativePhoneNumbersONLINE);
           setLandlordDisplayName(LandlordNamesONLINE);
           setLandlordEmail(LandlordEmailONLINE);
           setLandlordTelephone(LandlordTelephoneONLINE);
           
           setOriginalValues({
             representativeEmails: RepresentativeEmailsONLINE,
+            representativePhoneNumbers: RepresentativePhoneNumbersONLINE,
             landlordDisplayName: LandlordNamesONLINE,
             landlordEmail: LandlordEmailONLINE,
             landlordTelephone: LandlordTelephoneONLINE
@@ -128,12 +133,13 @@ const EmailTemplates: React.FC<EmailTemplatesProps> = ({
   useEffect(() => {
     const hasAnyChanges = 
       representativeEmails !== originalValues.representativeEmails ||
+      representativePhoneNumbers !== originalValues.representativePhoneNumbers ||
       landlordDisplayName !== originalValues.landlordDisplayName ||
       landlordEmail !== originalValues.landlordEmail ||
       landlordTelephone !== originalValues.landlordTelephone;
     
     setHasChanges(hasAnyChanges);
-  }, [representativeEmails, landlordDisplayName, landlordEmail, landlordTelephone, originalValues]);
+  }, [representativeEmails, representativePhoneNumbers, landlordDisplayName, landlordEmail, landlordTelephone, originalValues]);
 
   const handleSaveEmailSettings = async () => {
     if (navigator.onLine) {
@@ -145,19 +151,23 @@ const EmailTemplates: React.FC<EmailTemplatesProps> = ({
         }
         // Assuming there's an API call to save the values
         if (representativeEmails && hasChanges) {
-          await   updateValueOnline("users", userId, "RepresentativeEmails", representativeEmails);
+          await updateValueOnline("users", userId, "RepresentativeEmails", representativeEmails);
+        }
+        if (representativePhoneNumbers && hasChanges) {
+          await updateValueOnline("users", userId, "RepresentativePhoneNumbers", representativePhoneNumbers);
         }
         if (landlordDisplayName && hasChanges) {
-          await  updateValueOnline("users", userId, "LandlordName", landlordDisplayName);
+          await updateValueOnline("users", userId, "LandlordName", landlordDisplayName);
         }
-        if (landlordEmail&& hasChanges) {
-          await   updateValueOnline("users", userId, "LandlordEmail", landlordEmail);
+        if (landlordEmail && hasChanges) {
+          await updateValueOnline("users", userId, "LandlordEmail", landlordEmail);
         }
         if (landlordTelephone && hasChanges) {
-          await     updateValueOnline("users", userId, "LandlordTelephone", landlordTelephone);
+          await updateValueOnline("users", userId, "LandlordTelephone", landlordTelephone);
         }
         setOriginalValues({
           representativeEmails,
+          representativePhoneNumbers,
           landlordDisplayName,
           landlordEmail,
           landlordTelephone
@@ -173,6 +183,7 @@ const EmailTemplates: React.FC<EmailTemplatesProps> = ({
 
   const handleCancel = () => {
     setRepresentativeEmails(originalValues.representativeEmails);
+    setRepresentativePhoneNumbers(originalValues.representativePhoneNumbers);
     setLandlordDisplayName(originalValues.landlordDisplayName);
     setLandlordEmail(originalValues.landlordEmail);
     setLandlordTelephone(originalValues.landlordTelephone);
@@ -181,97 +192,7 @@ const EmailTemplates: React.FC<EmailTemplatesProps> = ({
 
   return (
     <div className="tools-page">
-      <h2>Email Settings</h2>{' '}
-      <p style={{fontSize: 'var(--16px-V)', color:"var(--Text-Color-Grey)",marginBottom:"var(--20px-V)"}}>Contact Information Display Settings <br />
-<span style={{fontSize: 'var(--13px-V)', color:"var(--Text-Color-Grey)",marginBottom:"var(--10px-V)"}}>
-These settings control how your contact details (name, phone number, and email) will be visible to your tenants. Please select your preferred visibility options below.</span></p>
-      {loading ? <><img src={loadingGif} alt="Loading..." /></> : <><div
-        style={{
-          display: 'flex',
-          flexDirection: 'row',
-          alignItems: 'flex-start',
-        }}
-      >
-        Representative Emails:{' '}
-        <textarea
-          value={representativeEmails}
-          onChange={(e) => setRepresentativeEmails(e.target.value)}
-          placeholder="Enter emails separated by commas"
-          id=""
-          style={{ width: 'var(--300px-V)', height: 'var(--100px-V)' }}
-        />
-      </div>
-      <div
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 'var(--10px-V)',
-          marginTop: 'var(--15px-V)',
-        }}
-      >
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 'var(--10px-V)',
-          }}
-        >
-          <label style={{ width: 'var(--200px-V)' }}>
-            Landlord Display Name:
-          </label>
-          <input
-            type="text"
-            value={landlordDisplayName}
-            onChange={(e) => setLandlordDisplayName(e.target.value)}
-            placeholder="Name shown in emails"
-            style={{ width: 'var(--300px-V)' }}
-          />
-        </div>
-
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 'var(--10px-V)',
-          }}
-        >
-          <label style={{ width: 'var(--200px-V)' }}>Landlord Email:</label>
-          <input
-            type="email"
-            value={landlordEmail}
-            onChange={(e) => setLandlordEmail(e.target.value)}
-            placeholder="Email address shown in emails"
-            style={{ width: 'var(--300px-V)' }}
-          />
-        </div>
-
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 'var(--10px-V)',
-          }}
-        >
-          <label style={{ width: 'var(--200px-V)' }}>Landlord Telephone:</label>
-          <input
-            type="tel"
-            value={landlordTelephone}
-            onChange={(e) => setLandlordTelephone(e.target.value)}
-            placeholder="Phone number shown in emails"
-            style={{ width: 'var(--300px-V)' }}
-          />
-        </div>
       
-        {hasChanges && (
-          <div style={{ display: 'flex', gap: 'var(--10px-V)' }}>
-            <button onClick={handleSaveEmailSettings}>Save</button>
-            <button onClick={handleCancel}>Cancel</button>
-          </div>
-        )}
-      </div></>}
       <div
         style={{
           display: 'flex',

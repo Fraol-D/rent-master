@@ -241,7 +241,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
             window.electron.store.get('SelectedBranchId') !== ''
           ) {
             console.log(`[${getSeconds()}s] Sync conditions met but sync disabled`);
-            //syncWithOnline(allUsers[0].id);
+           // syncWithOnline(allUsers[0].id);
           }
         }
       } catch (error) {
@@ -811,6 +811,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
     'edit rent payments', //
     'edit utility payments', //
     'edit tenant room tenant info',
+    'edit tenant room tenant portal',
     'edit tenant room agreement info',
     'edit tenant room utility settings',
     'edit tenant room attachments',
@@ -852,6 +853,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
         { name: 'edit rent payments' },
         { name: 'edit utility payments' },
         { name: 'edit tenant room tenant info' },
+        { name: 'edit tenant room tenant portal' },
         { name: 'edit tenant room agreement info' },
         { name: 'edit tenant room utility settings' },
         { name: 'edit tenant room attachments' },
@@ -1805,7 +1807,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                           marginBottom: 'var(--10px-V)',
                                         }}
                                       >
-                                        Allowed branchs{' '}
+                                        Allowed branches{' '}
                                         <select
                                           name=""
                                           id=""
@@ -1864,8 +1866,9 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                         )}
                                       </div>
 
-                                      {appUser.AllowedBranches.split(',').map(
-                                        (branchId: string) => (
+                                      {appUser.AllowedBranches
+                                        .match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/g)
+                                        ?.map((branchId: string) => (
                                           <span
                                             key={branchId}
                                             style={{
@@ -1898,8 +1901,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                               x
                                             </button>
                                           </span>
-                                        )
-                                      )}
+                                        ))}
                                       <hr />
                                       {appUser.EnterWithPassword ? (
                                         <div>

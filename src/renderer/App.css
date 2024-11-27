@@ -290,10 +290,7 @@ li {
 }
 
 a {
-  text-decoration: none;
-  height: fit-content;
-  width: fit-content;
-  margin: var(--10px-V);
+  color: var(--Text-Color);
 }
 p {
   margin: var(--0px-V);

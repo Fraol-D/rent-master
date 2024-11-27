@@ -2,13 +2,21 @@ import React, { useEffect, useState } from 'react';
 import { PieChart } from '@mui/x-charts/PieChart';
 import { axisClasses } from '@mui/x-charts/ChartsAxis';
 import { getValuesWithSql } from 'Backend/localServerApis';
+import loadingGif from '../../../assets/assets/Loading/Rolling-1s-200px.gif';
 
 const DashbRoomSummary = ({ RoomList }: { RoomList: RoomType[] }) => {
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const handleResize = () => setWindowWidth(window.innerWidth);
     window.addEventListener('resize', handleResize);
+    
+    // Simulate loading time
+    setTimeout(() => {
+      setIsLoading(false);
+    }, 1000);
+
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
@@ -51,6 +59,31 @@ const DashbRoomSummary = ({ RoomList }: { RoomList: RoomType[] }) => {
       color: 'var(--Accent-Color50)',
     },
   ];
+
+  if (isLoading) {
+    return (
+      <div
+        className="DashboardWigetMainContainer"
+        style={{
+          width: 'var(--400px-V)',
+          height: 'var(--510px-V)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center'
+        }}
+      >
+        <img 
+          src={loadingGif} 
+          alt="Loading..." 
+          style={{
+            width: 'var(--80px-V)',
+            height: 'var(--80px-V)'
+          }}
+        />
+      </div>
+    );
+  }
+
   return (
     <div
       className="DashboardWigetMainContainer"

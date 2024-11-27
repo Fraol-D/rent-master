@@ -127,8 +127,8 @@ const Room = ({
   );
   const [Representative, setRepresentative] = useState('');
   const [agreedPrice, setAgreedPrice] = useState(roomType.price);
-  const [paymentCycle, setPaymentCycle] = useState('monthly');
-  const [customDays, setCustomDays] = useState('');
+  const [paymentCycle, setPaymentCycle] = useState(roomType.PaymentCycleType ? roomType.PaymentCycleType : 'monthly');
+  const [customDays, setCustomDays] = useState(roomType.PaymentCycleCustomeDays ? roomType.PaymentCycleCustomeDays : '');
   const [searchTermTenant, setSearchTermTenant] = useState('');
   const filteredTenants =
     TenantList &&
@@ -1289,6 +1289,7 @@ const Room = ({
   const [sectionStates, setSectionStates] = useState({
     tenantInformation: true,
     agreementInformation: false,
+    tenantPortal: false,
     fileAttachments: false,
     remindersAndNotifications: false,
     utilitySettings: false,
@@ -1370,8 +1371,54 @@ const Room = ({
     );
   };
   const [AddTenantFormCurrency, setAddTenantFormCurrency] = useState(
-    GetDefaultCurrency()
+    roomType.Currency ? roomType.Currency : GetDefaultCurrency()
   );
+
+  const toggleSetting = (
+    timing: 'before' | 'due' | 'after',
+    settingType: 'emailTenant' | 'smsTenant' | 'emailRep' | 'smsRep'
+  ) => {
+    const bitOffsets = {
+      before: 0, // bits 0-3
+      due: 4, // bits 4-7
+      after: 8, // bits 8-11
+    };
+
+    const typeBits = {
+      emailTenant: 0,
+      smsTenant: 1,
+      emailRep: 2,
+      smsRep: 3,
+    };
+
+    const bitPosition = bitOffsets[timing] + typeBits[settingType];
+    const newSettings =
+      roomType.UtilityNotificationSettings ^ (1 << bitPosition);
+
+    updateRoomProperty(roomType.id, 'UtilityNotificationSettings', newSettings);
+  
+  };
+
+  const isChecked = (
+    timing: 'before' | 'due' | 'after',
+    settingType: 'emailTenant' | 'smsTenant' | 'emailRep' | 'smsRep'
+  ) => {
+    const bitOffsets = {
+      before: 0,
+      due: 4,
+      after: 8,
+    };
+
+    const typeBits = {
+      emailTenant: 0,
+      smsTenant: 1,
+      emailRep: 2,
+      smsRep: 3,
+    };
+
+    const bitPosition = bitOffsets[timing] + typeBits[settingType];
+    return (roomType.UtilityNotificationSettings & (1 << bitPosition)) !== 0;
+  };
 
   return (
     <>
@@ -3071,6 +3118,92 @@ const Room = ({
                       )}
                     </div>
                   )}
+                  {privileges.editTenantRoomTenantPortal && (
+                    <div
+                      style={{
+                        width: '93%',
+                        background: 'var(--Secondary-Color30)',
+                        padding: 'var(--5px-V)',
+                        marginBottom: 'var(--10px-V)',
+                        borderRadius: 'var(--5px-V)',
+                      }}
+                    >
+                      <div
+                        style={{
+                          fontSize: 'var(--18px-V)',
+                          fontWeight: 'bold',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          cursor: 'pointer',
+                        }}
+                        onClick={() =>
+                          setSectionStates((prev) => ({
+                            ...prev,
+                            tenantPortal: !prev.tenantPortal,
+                          }))
+                        }
+                      >
+                        <span style={{ marginBottom: 'var(--10px-V)' }}>
+                          {sectionStates.tenantPortal ? '▼' : '▶'}{' '}
+                          Tenant Portal
+                        </span>
+                      </div>
+                      {sectionStates.tenantPortal && (
+                        <>
+                          <div style={{padding: 'var(--10px-V)'}}>
+                            <p style={{marginBottom: 'var(--10px-V)', color: 'var(--Text-Color-Grey)'}}>
+                              Configure tenant portal settings and access permissions. <br /> 
+                           
+                            </p>
+                            
+
+                            <div style={{display: 'flex', flexDirection: 'column', gap: 'var(--10px-V)'}}>
+                              <label style={{display: 'flex', alignItems: 'center', gap: 'var(--10px-V)'}}>
+                                <input
+                                  type="checkbox"
+                                  checked={roomType.useTenantPortal || false}
+                                  onChange={(e) => updateRoomProperty(roomType.id, 'useTenantPortal', e.target.checked)}
+                                />
+                                Enable Tenant Portal Access
+                              </label>
+                             {roomType.useTenantPortal &&<><span style={{fontSize: 'var(--12px-V)'}}>
+                                Page: <a href={`https://rentmaster.markethubet.com/tenantPortal/${window.electron.store.get("Branches").find((branch: any) => branch.id === SelectedBranchId).name}-${window.electron.store.get("users").find((user: any) => user.id === SelectedUserId).companyName}/${TenantList.find((tenant: any) => tenant.id === roomType.tenantId)?.name}`} target="_blank" rel="noopener noreferrer">https://rentmaster.markethubet.com/tenantPortal/ <br />{window.electron.store.get("Branches").find((branch: any) => branch.id === SelectedBranchId).name}-{window.electron.store.get("users").find((user: any) => user.id === SelectedUserId).companyName}/{TenantList.find((tenant: any) => tenant.id === roomType.tenantId)?.name}</a>
+                              </span>  <label style={{display: 'flex', alignItems: 'center', gap: 'var(--10px-V)'}}>
+                                <input
+                                  type="checkbox"
+                                  checked={roomType.TenantPortalShowReceipts || false} 
+                                  onChange={(e) => updateRoomProperty(roomType.id, 'TenantPortalShowReceipts', e.target.checked)}
+                                />
+                                Show Payment Receipts
+                              </label>
+
+                              <label style={{display: 'flex', alignItems: 'center', gap: 'var(--10px-V)'}}>
+                                <input
+                                  type="checkbox"
+                                  checked={roomType.TenantPortalShowTenantDetails || false}
+                                  onChange={(e) => updateRoomProperty(roomType.id, 'TenantPortalShowTenantDetails', e.target.checked)}
+                                />
+                                Show Extended Tenant Details
+                              </label>
+
+                              <label style={{display: 'flex', alignItems: 'center', gap: 'var(--10px-V)'}}>
+                                <input
+                                  type="checkbox"
+                                  checked={roomType.TenantPortalAllowOnlinePayments || false}
+                                  onChange={(e) => updateRoomProperty(roomType.id, 'TenantPortalAllowOnlinePayments', e.target.checked)}
+                                />
+                                Allow Online Payments
+                              </label></> 
+                             } 
+                            
+                            </div>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )}
+
                   {privileges.editTenantRoomUtilitySettings && (
                     <div
                       style={{
@@ -3194,6 +3327,170 @@ const Room = ({
                             userId={SelectedUserId}
                             SelectedBranchId={SelectedBranchId}
                           />
+                      <hr />
+                          <div className="reminder-group">
+                          <p className='Reminder-p'>Send utility reminder 3 days before</p>
+                            <div className="checkbox-group">
+                            <label className='Reminder-label'>
+                                Email Tenant:
+                                <input
+                                  type="checkbox"
+                                  checked={isChecked('before', 'emailTenant')}
+                                  onChange={() =>
+                                    toggleSetting('before', 'emailTenant')
+                                  }
+                                />
+                              </label>
+                              <label className='Reminder-label'>
+                                SMS Tenant:
+                                <input
+                                  type="checkbox"
+                                  checked={isChecked('before', 'smsTenant')}
+                                  onChange={() =>
+                                    toggleSetting('before', 'smsTenant')
+                                  }
+                                />
+                              </label>
+                              <label className='Reminder-label'>
+                                Email Representative:
+                                <input
+                                  type="checkbox"
+                                  checked={isChecked('before', 'emailRep')}
+                                  onChange={() =>
+                                    toggleSetting('before', 'emailRep')
+                                  }
+                                />
+                              </label>
+                              <label className='Reminder-label'>
+                                SMS Representative:
+                                <input
+                                  type="checkbox"
+                                  checked={isChecked('before', 'smsRep')}
+                                  onChange={() =>
+                                    toggleSetting('before', 'smsRep')
+                                  }
+                                />
+                              </label>
+                            </div>
+                          </div>
+
+                          {/* On Due Date */}
+                          <div className="reminder-group">
+                          <p className='Reminder-p'>Send utility reminder on due date</p>
+                            <div className="checkbox-group">
+                            <label className='Reminder-label'>
+                                Email Tenant:
+                                <input
+                                  type="checkbox"
+                                  checked={isChecked('due', 'emailTenant')}
+                                  onChange={() =>
+                                    toggleSetting('due', 'emailTenant')
+                                  }
+                                />
+                              </label>
+                              <label className='Reminder-label'>
+                                SMS Tenant:
+                                <input
+                                  type="checkbox"
+                                  checked={isChecked('due', 'smsTenant')}
+                                  onChange={() =>
+                                    toggleSetting('due', 'smsTenant')
+                                  }
+                                />
+                              </label>
+                              <label className='Reminder-label'>
+                                Email Representative:
+                                <input
+                                  type="checkbox"
+                                  checked={isChecked('due', 'emailRep')}
+                                  onChange={() =>
+                                    toggleSetting('due', 'emailRep')
+                                  }
+                                />
+                              </label>
+                              <label className='Reminder-label'>
+                                SMS Representative:
+                                <input
+                                  type="checkbox"
+                                  checked={isChecked('due', 'smsRep')}
+                                  onChange={() =>
+                                    toggleSetting('due', 'smsRep')
+                                  }
+                                />
+                              </label>
+                            </div>
+                          </div>
+
+                          {/* 3 Days After */}
+                          <div className="reminder-group">
+                            <p className='Reminder-p'>Send utility reminder 3 days after</p>
+                            <div className="checkbox-group">
+                            <label className='Reminder-label'>
+                                Email Tenant:
+                                <input
+                                  type="checkbox"
+                                  checked={isChecked('after', 'emailTenant')}
+                                  onChange={() =>
+                                    toggleSetting('after', 'emailTenant')
+                                  }
+                                />
+                              </label>
+                              <label className='Reminder-label'>
+                                SMS Tenant:
+                                <input
+                                  type="checkbox"
+                                  checked={isChecked('after', 'smsTenant')}
+                                  onChange={() =>
+                                    toggleSetting('after', 'smsTenant')
+                                  }
+                                />
+                              </label>
+                              <label className='Reminder-label'>
+                                Email Representative:
+                                <input
+                                  type="checkbox"
+                                  checked={isChecked('after', 'emailRep')}
+                                  onChange={() =>
+                                    toggleSetting('after', 'emailRep')
+                                  }
+                                />
+                              </label>
+                              <label className='Reminder-label'>
+                                SMS Representative:
+                                <input
+                                  type="checkbox"
+                                  checked={isChecked('after', 'smsRep')}
+                                  onChange={() =>
+                                    toggleSetting('after', 'smsRep')
+                                  }
+                                />
+                              </label>
+                            </div>
+                          </div>
+
+                          <style jsx>{`
+                            .reminder-group {
+                              margin: var(--15px-V) 0;
+                              padding: var(--10px-V);
+                              border-radius: var(--5px-V);
+                            }
+
+                            .checkbox-group {
+                              display: grid;
+                              gap: var(--10px-V);
+                            }
+
+                            .Reminder-label {
+                              display: flex;
+                              align-items: center;
+                              gap: var(--5px-V);
+                            }
+
+                            .Reminder-p {
+                              margin-bottom: var(--10px-V);
+                              font-weight: bold;
+                            }
+                          `}</style>
                         </div>
                       )}
                     </div>

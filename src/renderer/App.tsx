@@ -264,6 +264,11 @@ function Hello() {
               paymentShowAmount: room.paymentShowAmount || 10,
               DaysTillNextPayment: DaysTillNextPayment || 0,
               Currency: room.Currency || '',
+              UtilityNotificationSettings: room.UtilityNotificationSettings || 0,
+              useTenantPortal: room.useTenantPortal || false,
+              TenantPortalShowTenantDetails: room.TenantPortalShowTenantDetails || false,
+              TenantPortalShowReceipts: room.TenantPortalShowReceipts || false,
+              TenantPortalAllowOnlinePayments: room.TenantPortalAllowOnlinePayments || false,
             };
           })
         );
@@ -1410,7 +1415,7 @@ const fetchExchangeRates = async () => {
           'branches',
           `WHERE userId = '${window.electron.store.get('users')[0].id}'`
         );
-  
+        if(branches)
         if (getBranchData) {
           const branchesWithData = await Promise.all(
             branches.map(async (branch: BranchType) => {
@@ -1711,6 +1716,7 @@ export const getUserPrivileges = (
   editRoomPayment: boolean;
   editUtilityPayments: boolean;
   editTenantRoomTenantInfo: boolean;
+  editTenantRoomTenantPortal: boolean;
   editTenantRoomAgreementInfo: boolean;
   editTenantRoomUtilitySettings: boolean;
   editTenantRoomAttachments: boolean;
@@ -1736,6 +1742,7 @@ export const getUserPrivileges = (
     editRoomPayment: false,
     editUtilityPayments: false,
     editTenantRoomTenantInfo: false,
+    editTenantRoomTenantPortal: false,
     editTenantRoomAgreementInfo: false,
     editTenantRoomUtilitySettings: false,
     editTenantRoomAttachments: false,
@@ -1805,6 +1812,9 @@ export const getUserPrivileges = (
             break;
           case 'edit tenant room tenant info':
             privilegeObject.editTenantRoomTenantInfo = true;
+            break;
+          case 'edit tenant room tenant portal':
+            privilegeObject.editTenantRoomTenantPortal = true;
             break;
           case 'edit tenant room agreement info':
             privilegeObject.editTenantRoomAgreementInfo = true;

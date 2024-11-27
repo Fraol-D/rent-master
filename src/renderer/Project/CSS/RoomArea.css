@@ -295,7 +295,7 @@
 .sideBarItemComponentMain {
   width: 95%;
 
-  background-color: var(--Secondary-Color);
+  background-color: var(--Secondary-Color60);
   margin: var(--5px-V);
   display: flex;
 

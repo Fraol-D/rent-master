@@ -17,7 +17,7 @@ const getStoreValue = (key: string) => {
   return store.get(key);
 };
 // Replace console with electron-log
-
+Object.assign(console, log);
 // Capture renderer logs
 
 const setStoreValue = (key: string, value: any) => {
@@ -264,7 +264,7 @@ function cleanupConnectionMonitoring() {
 
 const createWindow = async () => {
   if (isDebug) {
-    await installExtensions();
+   // await installExtensions();
   }
 
   const RESOURCES_PATH = app.isPackaged
@@ -309,12 +309,12 @@ const createWindow = async () => {
     fullscreen: windowState.FullScreen,
     x: finalX,
     y: finalY,
-    icon: getAssetPath('icon.png'),
+    icon: getAssetPath('icon.png'),autoOpenDevTools:false,
     title: `RentMaster v${app.getVersion()}`,
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: true,
-      preload: app.isPackaged
+       preload: app.isPackaged
         ? path.join(__dirname, 'preload.js')
         : path.join(__dirname, '../../.erb/dll/preload.js'),
     },
@@ -676,17 +676,26 @@ ipcMain.on('SendCustomEmail', async (event, message) => {
     userPassword: any
   ) => {
     //Getemail and pass from online
-    const user = await getValuesWithSql_Online(
-      'users',
-      `WHERE email = '${userEmail}' AND password = '${userPassword}' AND Allowed = 1`
-    );
-    console.log(
-      'user',
-      user,
-      `WHERE email = '${userEmail}' AND password = '${userPassword}' AND Allowed = 1`
-    );
-    console.log(user[0].selectedEmailToSendWith);
-    console.log(user[0].selectedEmailToSendWithPassword);
+    const url = `${baseUrl}/${'users'}/${encodeURIComponent(`WHERE email = '${userEmail}' AND password = '${userPassword}' AND Allowed = 1`)}`;
+      const headers = {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+      };
+      const config = {
+        url: url, 
+        method: 'get',
+        headers: {
+          ...headers,
+          'x-api-key': API_KEY, // Ensure API key is always included
+        },
+        data:{},
+        retry: MAX_RETRIES,
+      };
+
+      const response = await axiosInstance.request(config);
+
+    const user = response.data;
+ 
     if (user[0]) {
       const transporter = nodemailer.createTransport({
         host: 'rentmaster.markethubet.com',
@@ -706,19 +715,30 @@ ipcMain.on('SendCustomEmail', async (event, message) => {
       };
 
       try {
-        await transporter.sendMail(mailOptions);
-        await addValueOnline('email_history', {
-          id: uuidv4(),
-          receiver: message.to,
-          subject: message.subject,
-          body: message.body,
-          from: user[0].selectedEmailToSendWith,
-          sentDate: Date.now(),
-          templateId: message.templateId,
-          mode: 'Manually',
-          userId: user[0].id,
-          branchId: message.branchId,
-        });
+        const ans =await transporter.sendMail(mailOptions);
+        const url = `${baseUrl}/${'email_history'}`;
+    const headers = {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+    };
+    const ans2 = await axiosInstance.request({
+      url,
+      method: 'post',
+      headers,
+      data: {
+        id: uuidv4(),
+        receiver: message.to,
+        subject: message.subject,
+        body: message.body,
+        from: user[0].selectedEmailToSendWith,
+        sentDate: Date.now(),
+        templateId: message.templateId,
+        mode: 'Manually',
+        userId: user[0].id,
+        branchId: message.branchId,
+      },
+    });
+      
         return { success: true };
       } catch (error) {
         return { success: false, error: error.message };
@@ -958,7 +978,12 @@ const tableStructures = [
       'utilityPaymentEveryCustom INTEGER DEFAULT 0',
       'utilityPaymentStartDate INTEGER DEFAULT 0',
       'utilityPaymentUseDifferentStartDate BOOLEAN DEFAULT 0',
+      'UtilityNotificationSettings INTEGER DEFAULT 0',
       'Currency TEXT DEFAULT "ETB"',
+      'useTenantPortal BOOLEAN DEFAULT 0',
+      'TenantPortalShowTenantDetails BOOLEAN DEFAULT 0',
+      'TenantPortalShowReceipts BOOLEAN DEFAULT 0', 
+      'TenantPortalAllowOnlinePayments BOOLEAN DEFAULT 0',
       'userId TEXT',
       'branchId TEXT', // Added
     ],
@@ -1263,7 +1288,6 @@ import FormData from 'form-data';
 
 const baseUrl = 'https://www.rentmaster.markethubet.com/api';
 
-
 // Add IPC handler for secure HTTPS agent configuration
 ipcMain.handle('get-https-agent', () => {
   try {
@@ -1502,69 +1526,261 @@ appDB.post(
   }
 );
 
-appDB.post(
-  '/prepare-upload-files',
-  async (
-    req: { body: { userId: any; requiredFiles: any } },
-    res: {
-      send: (arg0: any) => void;
-      status: (arg0: number) => {
-        (): any;
-        new (): any;
-        json: { (arg0: { error: string; details: any }): void; new (): any };
+// Add these constants but keep existing ones
+const UPLOAD_TIMEOUT = 60000;
+
+ipcMain.handle('upload-user-files', async (event, { userId }) => {
+  try {
+    // Send progress updates
+    const updateProgress = (progress: number) => {
+      event.sender.send('upload-progress', progress);
+    };
+    const getLocalUserDirectory2 = async () => {
+      const userDataPath = process.env.APPDATA || app.getPath('userData');
+      const bmsFolderPath = path.join(userDataPath, appname);
+
+      function directoryToJson(dir: string) {
+        const result = {
+          name: path.basename(dir),
+          type: 'directory',
+          children: [],
+        };
+        const files = fs.readdirSync(dir, { withFileTypes: true });
+
+        files.forEach((file: { name: string; isDirectory: () => any }) => {
+          const filePath = path.join(dir, file.name);
+          if (file.isDirectory()) {
+            result.children.push(directoryToJson(filePath));
+          } else {
+            result.children.push({ name: file.name, type: 'file' });
+          }
+        });
+
+        return result;
+      }
+
+      try {
+        const directoryStructure = directoryToJson(bmsFolderPath);
+        return directoryStructure;
+      } catch (error) {
+        console.error('Error reading directory structure:', error);
+        return null;
+      }
+    };
+    updateProgress(0);
+    console.log('Getting local directory...');
+    const localDirectory = await getLocalUserDirectory2();
+    const filteredDirectory = {
+      name: localDirectory.name,
+      type: 'directory',
+      children: localDirectory.children.filter(child => 
+        ['Room Pictures', 'Room Documents'].includes(child.name)
+      )
+    };
+
+    console.log('Filtered directory structure:', JSON.stringify(filteredDirectory, null, 2));
+    updateProgress(10);
+
+    console.log('Sending directory data to online database...');
+    const checkResponse = await axios.post(
+      `${baseUrl}/check-user-directory`,
+      { 
+        userId, 
+        directory: filteredDirectory 
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+        },
+        httpsAgent: secureAgent
+      }
+    );
+
+    const { requiredFiles } = checkResponse.data;
+    console.log('Response received from online database:', requiredFiles);
+    updateProgress(30);
+
+    if (requiredFiles?.length > 0) {
+      console.log('Required files missing:', requiredFiles);
+      
+      // Create zip file
+      const zip = new JSZip();
+      let totalSize = 0;
+
+      // Add files to zip
+      for (const filePath of requiredFiles) {
+        try {
+          // Only process files from Room Pictures or Room Documents
+          if (!filePath.startsWith('Room Pictures/') && !filePath.startsWith('Room Documents/')) {
+            console.log('Skipping non-room file:', filePath);
+            continue;
+          }
+
+          const fullPath = path.join(process.env.APPDATA || '', 'Electron', filePath);
+          if (fs.existsSync(fullPath)) {
+            const fileContent = fs.readFileSync(fullPath);
+            zip.file(filePath, fileContent);
+            totalSize += fileContent.length;
+          } else {
+            console.warn(`File not found: ${fullPath}`);
+          }
+        } catch (error) {
+          console.warn(`Error adding file ${filePath} to zip:`, error);
+        }
+      }
+
+      console.log(`Total upload size: ${totalSize} bytes`);
+      updateProgress(50);
+
+      if (totalSize === 0) {
+        console.log('No valid files to upload');
+        return {
+          success: true,
+          message: 'No files needed to be uploaded'
+        };
+      }
+
+      const zipBuffer = await zip.generateAsync({ type: 'nodebuffer' });
+      
+      console.log('Sending zip file to online database...');
+      const form = new FormData();
+      form.append('files', zipBuffer, {
+        filename: 'required_files.zip',
+        contentType: 'application/zip'
+      });
+      form.append('userId', userId);
+      const uploadResponse = await axios.post(
+        `${baseUrl}/upload-missing-files`,
+        form,
+        {
+          headers: {
+            'x-api-key': apiKey,
+            ...form.getHeaders()
+          },
+          maxContentLength: Infinity,
+          maxBodyLength: Infinity,
+          httpsAgent: secureAgent
+        }
+      );
+
+      if (!uploadResponse.data?.success) {
+        
+      }
+
+      console.log('Upload completed successfully:', uploadResponse.data);
+      updateProgress(90);
+    } else {
+      console.log('No files need to be uploaded');
+      updateProgress(90);
+    }
+
+    updateProgress(100);
+    return {
+      success: true,
+      message: 'Upload completed successfully'
+    };
+
+  } catch (error) {
+    console.error('Upload error:', error);
+    
+    if (axios.isAxiosError(error)) {
+      const errorMessage = error.response?.data?.message || error.message;
+      const statusCode = error.response?.status;
+      return {
+        success: false,
+        message: `Upload failed (${statusCode}): ${errorMessage}`,
+        error: {
+          status: statusCode,
+          data: error.response?.data
+        }
       };
     }
-  ) => {
-    const { userId, requiredFiles } = req.body;
+    
+    return {
+      success: false,
+      message: error.message || 'Unknown error occurred'
+    };
+  }
+});
 
+// Add helper function for retrying uploads
+const retryUpload = async (
+  uploadFn: () => Promise<any>,
+  maxRetries = 3
+): Promise<any> => {
+  let lastError;
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
-      const zip = new JSZip();
+      return await uploadFn();
+    } catch (error) {
+      console.error(`Upload attempt ${attempt + 1} failed:`, error);
+      lastError = error;
 
-      for (const filePath of requiredFiles) {
+      if (attempt < maxRetries - 1) {
+        const delay = Math.pow(2, attempt) * 1000; // Exponential backoff
+        await new Promise((resolve) => setTimeout(resolve, delay));
+      }
+    }
+  }
+  throw lastError;
+};
+
+// Add error handling for the existing prepare-upload-files endpoint
+appDB.post('/prepare-upload-files', async (req, res) => {
+  const { userId, requiredFiles } = req.body;
+
+  try {
+    const zip = new JSZip();
+    let totalSize = 0;
+
+    for (const filePath of requiredFiles) {
+      try {
         const fullPath = path.join(process.env.APPDATA, appname, filePath);
-        const relativePath = path.relative(process.env.APPDATA, fullPath);
 
-        const normalizedPath = relativePath.substring(
-          relativePath.indexOf('/') + 1
-        );
-        if (!allowedFolders.some((folder) => normalizedPath.includes(folder))) {
-          console.log(`Skipping file not in allowed folder: ${relativePath}`);
+        if (
+          !(await fs2
+            .access(fullPath)
+            .then(() => true)
+            .catch(() => false))
+        ) {
+          console.warn(`File not found: ${fullPath}`);
           continue;
         }
 
         const fileStats = await fs2.stat(fullPath);
-        const fileType = mime2.lookup(fullPath);
-
-        if (!isAllowedFileType({ type: fileType })) {
-          console.log(`Skipping file with disallowed type: ${filePath}`);
+        if (fileStats.size === 0) {
+          console.warn(`Empty file skipped: ${filePath}`);
           continue;
         }
-
-        if (!isAllowedFileSize({ size: fileStats.size })) {
-          console.log(`Skipping file that exceeds size limit: ${filePath}`);
-          continue;
-        }
-
-        /*  if (!(await isFileClean(fullPath))) {
-        console.log(`Skipping file that failed virus scan: ${filePath}`);
-        continue;
-      }*/
 
         const fileContent = await fs2.readFile(fullPath);
         zip.file(filePath, fileContent);
+        totalSize += fileContent.length;
+      } catch (error) {
+        console.error(`Error processing file ${filePath}:`, error);
       }
-
-      const zipContent = await zip.generateAsync({ type: 'nodebuffer' });
-      res.send(zipContent);
-    } catch (error) {
-      console.error('Error preparing files for upload:', error);
-      res.status(500).json({
-        error: 'Failed to prepare files for upload',
-        details: error.message,
-      });
     }
+
+    if (totalSize === 0) {
+      return res.send(null);
+    }
+
+    const zipContent = await zip.generateAsync({
+      type: 'nodebuffer',
+      compression: 'DEFLATE',
+      compressionOptions: { level: 6 },
+    });
+
+    res.send(zipContent);
+  } catch (error) {
+    console.error('Error preparing files for upload:', error);
+    res.status(500).json({
+      error: 'Failed to prepare files for upload',
+      details: error.message,
+    });
   }
-);
+});
 
 appDB.get(
   '/local-user-directory',
@@ -3081,42 +3297,199 @@ process.on('uncaughtException', (error) => {
 process.on('unhandledRejection', (error) => {
   log.error('Unhandled Rejection:', error);
 }); // Add this with your other IPC handlers
-ipcMain.handle('api-request', async (event, { url, method, headers, data }) => {
+import dns from 'dns';
+import { promisify } from 'util';
+import { AxiosInstance } from 'axios';
+// Constants
+const BASE_URL = 'https://www.rentmaster.markethubet.com/api';
+const API_KEY = 'HH(CzZuQoW@tB$By)e';
+const MAX_RETRIES = 3;
+const TIMEOUT = 30000;
+
+// Create axios instance with default config
+const createAxiosInstance = (): AxiosInstance => {
+  const instance = axios.create({
+    baseURL: BASE_URL,
+    timeout: TIMEOUT,
+    httpsAgent: new https.Agent({
+      rejectUnauthorized: true,
+      keepAlive: true,
+      timeout: TIMEOUT,
+    }),
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': API_KEY,
+    },
+  });
+
+  // Add request interceptor for logging
+  instance.interceptors.request.use((config) => {
+    console.log(
+      `Making ${config.method?.toUpperCase()} request to: ${config.url}`
+    );
+    return config;
+  });
+
+  // Add response interceptor for retries
+  instance.interceptors.response.use(
+    (response) => response,
+    async (error) => {
+      const config = error.config;
+
+      if (!config || !config.retry) {
+        return Promise.reject(error);
+      }
+
+      config.retry -= 1;
+
+      if (error.code === 'ETIMEDOUT' || error.code === 'ECONNREFUSED') {
+        const delay = (MAX_RETRIES - config.retry) * 2000;
+        await new Promise((resolve) => setTimeout(resolve, delay));
+        return instance(config);
+      }
+
+      return Promise.reject(error);
+    }
+  );
+
+  return instance;
+};
+
+// Create a single axios instance
+const axiosInstance = createAxiosInstance();
+
+// Helper function to check server connectivity
+const checkServerConnectivity = async (): Promise<boolean> => {
   try {
-    const response = await axios({
-      method,
-      url,
-      headers,
-      data,
-      httpsAgent: secureAgent,
-      validateStatus: (status) => {
-        // Accept any status code to handle it ourselves
-        return true;
-      },
-    });
-
-    // Handle different status codes
-    if (response.status === 404) {
-      console.warn(`Resource not found at ${url}. Creating new resource.`);
-      // You might want to modify the URL or method here
-      return null;
-    }
-
-    if (response.status >= 500) {
-      throw new Error(
-        `Server error: ${response.status} ${response.statusText}`
-      );
-    }
-
-    return response.data;
+    const lookup = promisify(dns.lookup);
+    const { address } = await lookup('www.rentmaster.markethubet.com');
+    
+    return true;
   } catch (error) {
-    console.error('API Request Error:', {
-      url,
-      method,
-      status: error.response?.status,
-      message: error.message,
-      data: error.response?.data,
+    console.error('Server connectivity check failed:', error);
+    return false;
+  }
+};
+
+// Main API request handler
+ipcMain.handle(
+  'api-request',
+  async (event, { url, method, headers = {}, data }) => {
+    try {
+      // Check server connectivity first
+      const isConnected = await checkServerConnectivity();
+      if (!isConnected) {
+        return {
+          error: true,
+          message:
+            'Cannot connect to server. Please check your internet connection.',
+        };
+      }
+
+      const config = {
+        url: url.replace(BASE_URL, ''), // Remove base URL if included
+        method,
+        headers: {
+          ...headers,
+          'x-api-key': API_KEY, // Ensure API key is always included
+        },
+        data,
+        retry: MAX_RETRIES,
+      };
+
+      const response = await axiosInstance.request(config);
+
+      return response.data;
+    } catch (error) {
+      console.error('API Request Failed:', {
+        url,
+        method,
+        error: {
+          message: error.message,
+          code: error.code,
+          response: error.response?.data,
+        },
+      });
+
+      // Return structured error response
+      return {
+        error: true,
+        message: error.message,
+        code: error.code,
+        status: error.response?.status,
+        details: error.response?.data,
+      };
+    }
+  }
+);
+
+// File download handler with improved error handling
+ipcMain.handle('download-files', async (event, { userId }) => {
+  const sendProgress = (progress: number) => {
+  //  event.sender.send('download-progress', progress);
+  };
+
+  try {
+    // Check connectivity first
+    const isConnected = await checkServerConnectivity();
+    if (!isConnected) {
+      throw new Error('Cannot connect to server');
+    }
+
+    console.log('Starting file download process for user:', userId);
+    sendProgress(10);
+
+    // Get local directory structure
+    const localDirectory = await getLocalUserDirectory2();
+    sendProgress(20);
+
+    // Request file list with timeout and retry
+    const fileListResponse = await axiosInstance.post('/check-missing-files', {
+      userId,
+      localDirectory,
     });
+
+    const { missingFiles } = fileListResponse.data;
+    sendProgress(40);
+
+    if (missingFiles.length === 0) {
+      return {
+        success: true,
+        message: 'No files needed to be downloaded',
+      };
+    }
+
+    // Download missing files
+    const downloadResponse = await axiosInstance.post(
+      '/download-missing-files',
+      { userId, missingFiles },
+      { responseType: 'arraybuffer' }
+    );
+
+    sendProgress(70);
+
+    // Extract files
+    await extractDownloadedFiles(Buffer.from(downloadResponse.data), userId);
+    sendProgress(100);
+
+    return {
+      success: true,
+      message: 'Files downloaded and extracted successfully',
+      filesCount: missingFiles.length,
+    };
+  } catch (error) {
+    console.error('Download process failed:', error);
+    sendProgress(0);
+
+    return {
+      success: false,
+      message: error.message || 'Download failed',
+      error: {
+        code: error.code,
+        status: error.response?.status,
+        details: error.response?.data,
+      },
+    };
   }
 });
 const getLocalUserDirectory2 = async () => {
@@ -3151,149 +3524,6 @@ const getLocalUserDirectory2 = async () => {
     return null;
   }
 };
-ipcMain.handle('upload-user-files', async (event, { userId }) => {
-  try {
-    // Send progress updates
-    const updateProgress = (progress: number) => {
-      event.sender.send('upload-progress', progress);
-    };
-   
-    updateProgress(0);
-    console.log('Getting local directory...');
-    const localDirectory = await getLocalUserDirectory2();
-    const filteredDirectory = {
-      name: localDirectory.name,
-      type: 'directory',
-      children: localDirectory.children.filter(child => 
-        ['Room Pictures', 'Room Documents'].includes(child.name)
-      )
-    };
-
-    console.log('Filtered directory structure:', JSON.stringify(filteredDirectory, null, 2));
-    updateProgress(10);
-
-    console.log('Sending directory data to online database...');
-    const checkResponse = await axios.post(
-      `${baseUrl}/check-user-directory`,
-      { 
-        userId, 
-        directory: filteredDirectory 
-      },
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': apiKey,
-        },
-        httpsAgent: secureAgent
-      }
-    );
-
-    const { requiredFiles } = checkResponse.data;
-    console.log('Response received from online database:', requiredFiles);
-    updateProgress(30);
-
-    if (requiredFiles?.length > 0) {
-      console.log('Required files missing:', requiredFiles);
-      
-      // Create zip file
-      const zip = new JSZip();
-      let totalSize = 0;
-
-      // Add files to zip
-      for (const filePath of requiredFiles) {
-        try {
-          // Only process files from Room Pictures or Room Documents
-          if (!filePath.startsWith('Room Pictures/') && !filePath.startsWith('Room Documents/')) {
-            console.log('Skipping non-room file:', filePath);
-            continue;
-          }
-
-          const fullPath = path.join(process.env.APPDATA || '', 'Electron', filePath);
-          if (fs.existsSync(fullPath)) {
-            const fileContent = fs.readFileSync(fullPath);
-            zip.file(filePath, fileContent);
-            totalSize += fileContent.length;
-          } else {
-            console.warn(`File not found: ${fullPath}`);
-          }
-        } catch (error) {
-          console.warn(`Error adding file ${filePath} to zip:`, error);
-        }
-      }
-
-      console.log(`Total upload size: ${totalSize} bytes`);
-      updateProgress(50);
-
-      if (totalSize === 0) {
-        console.log('No valid files to upload');
-        return {
-          success: true,
-          message: 'No files needed to be uploaded'
-        };
-      }
-
-      const zipBuffer = await zip.generateAsync({ type: 'nodebuffer' });
-      
-      console.log('Sending zip file to online database...');
-      const form = new FormData();
-      form.append('files', zipBuffer, {
-        filename: 'required_files.zip',
-        contentType: 'application/zip'
-      });
-      form.append('userId', userId);
-      const uploadResponse = await axios.post(
-        `${baseUrl}/upload-missing-files`,
-        form,
-        {
-          headers: {
-            'x-api-key': apiKey,
-            ...form.getHeaders()
-          },
-          maxContentLength: Infinity,
-          maxBodyLength: Infinity,
-          httpsAgent: secureAgent
-        }
-      );
-
-      if (!uploadResponse.data?.success) {
-        
-      }
-
-      console.log('Upload completed successfully:', uploadResponse.data);
-      updateProgress(90);
-    } else {
-      console.log('No files need to be uploaded');
-      updateProgress(90);
-    }
-
-    updateProgress(100);
-    return {
-      success: true,
-      message: 'Upload completed successfully'
-    };
-
-  } catch (error) {
-    console.error('Upload error:', error);
-    
-    if (axios.isAxiosError(error)) {
-      const errorMessage = error.response?.data?.message || error.message;
-      const statusCode = error.response?.status;
-      return {
-        success: false,
-        message: `Upload failed (${statusCode}): ${errorMessage}`,
-        error: {
-          status: statusCode,
-          data: error.response?.data
-        }
-      };
-    }
-    
-    return {
-      success: false,
-      message: error.message || 'Unknown error occurred'
-    };
-  }
-});
 
 // Helper retry function
 const retry = async (fn: () => Promise<any>, maxRetries = 3, delay = 1000) => {
@@ -3309,93 +3539,6 @@ const retry = async (fn: () => Promise<any>, maxRetries = 3, delay = 1000) => {
   throw lastError;
 };
 
-ipcMain.handle('download-files', async (event, { userId }) => {
-  const sendProgress = (progress: number) => {
-    event.sender.send('download-progress', progress);
-  };
-
-  try {
-    console.log('Getting local directory structure...');
-    const localDirectory = await getLocalUserDirectory2();
-    sendProgress(20);
-
-    console.log('Requesting file list from online database...');
-    const response = await axios.post(`${baseUrl}/check-missing-files`, 
-      { userId, localDirectory },
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': apiKey,
-        },
-        httpsAgent: secureAgent
-      }
-    );
-    const { missingFiles } = response.data;
-    sendProgress(40);
-
-    if (missingFiles.length > 0) {
-      console.log('Downloading missing files...');
-      const downloadResponse = await axios.post(`${baseUrl}/download-missing-files`,
-        { userId, missingFiles },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'x-api-key': apiKey,
-          },
-          responseType: 'arraybuffer',  // Changed from 'stream' to 'arraybuffer'
-          httpsAgent: secureAgent
-        }
-      );
-
-      const contentLength = parseInt(downloadResponse.headers['content-length']);
-      const data = downloadResponse.data;
-      console.log(`Received ${data.byteLength} bytes of data`);
-      sendProgress(70);
-
-      console.log('Extracting downloaded files...');
-      const extractStartTime = Date.now();
-      await extractDownloadedFiles(Buffer.from(data), userId);
-      const extractEndTime = Date.now();
-      const extractionTime = (extractEndTime - extractStartTime) / 1000;
-      console.log(`Extraction time: ${extractionTime} seconds`);
-      console.log(`Extracted size: ${data.byteLength} bytes`);
-
-      sendProgress(90);
-      console.log('Files downloaded and extracted successfully.');
-      return {
-        success: true,
-        message: 'Files downloaded and extracted successfully.'
-      };
-    } else {
-      console.log('No missing files to download.');
-      sendProgress(90);
-      return {
-        success: true,
-        message: 'No files needed to be downloaded'
-      };
-    }
-
-  } catch (error) {
-    console.error('Download error:', error);
-    sendProgress(0);
-    
-    if (axios.isAxiosError(error)) {
-      return {
-        success: false,
-        message: `Download failed (${error.response?.status}): ${error.response?.data?.message || error.message}`,
-        error: {
-          status: error.response?.status,
-          data: error.response?.data
-        }
-      };
-    }
-    
-    return {
-      success: false,
-      message: error.message || 'Unknown error occurred'
-    };
-  }
-});
 const baseUrlLocal = 'http://localhost:8100';
 
 const extractDownloadedFiles = async (zipBuffer: Buffer, userId: string) => {
@@ -3408,7 +3551,7 @@ const extractDownloadedFiles = async (zipBuffer: Buffer, userId: string) => {
           'Content-Type': 'application/octet-stream',
         },
         maxBodyLength: Infinity, // Allow large file uploads
-        maxContentLength: Infinity
+        maxContentLength: Infinity,
       }
     );
 

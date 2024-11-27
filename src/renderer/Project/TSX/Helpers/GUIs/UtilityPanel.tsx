@@ -58,7 +58,6 @@ const UtilityPanel: React.FC<props> = ({
 
       const tenant = TenantList.find((t: tenant) => t.id === roomType.tenantId);
       let startDate = new Date(tenant?.startTime || Date.now());
-
       if (roomType.utilityPaymentUseDifferentStartDate) {
         const utilityPaymentStartDate = new Date(
           roomType.utilityPaymentStartDate
@@ -67,6 +66,7 @@ const UtilityPanel: React.FC<props> = ({
           startDate = utilityPaymentStartDate;
         }
       }
+      console.log(startDate, "TENANT START", tenant?.startTime, "utility payment start", roomType.utilityPaymentStartDate);
 
       let endDate: Date;
       if (tenant?.SelectedAgreement === 'Open-Ended') {
@@ -76,7 +76,7 @@ const UtilityPanel: React.FC<props> = ({
       }
 
       const today = new Date();
-      let currentDate = new Date(today);
+      let currentDate = new Date(startDate);
       let i = 0;
 
       const utilityDataFromDatabase = await getValuesWithSql(
@@ -224,6 +224,7 @@ const UtilityPanel: React.FC<props> = ({
       );
       ListOfUtilities.length = 0;
       ListOfUtilities.push(...uniqueUtilities);
+      console.log(ListOfUtilities);
       setUtilityData(ListOfUtilities);
 
       // Scroll to the current date

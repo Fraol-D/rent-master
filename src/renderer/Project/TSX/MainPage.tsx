@@ -117,6 +117,13 @@ declare global {
     utilityPayments: UtilityPaymentSettings[];
     DaysTillNextPayment: number;
     branchId: string; // Added
+    UtilityNotificationSettings: number;
+
+    // Tenant Portal
+    useTenantPortal: boolean;
+    TenantPortalShowTenantDetails: boolean;
+    TenantPortalShowReceipts: boolean;
+    TenantPortalAllowOnlinePayments: boolean;
   };
   type RoomSpecificationType = {
     id: string;
@@ -750,10 +757,10 @@ const MainPage = ({
     'TenantsList' | 'BrokersList' | 'TenantReviews'
   >('TenantsList');
   const [ToolsSelectedPage, setToolsSelectedPage] = useState<
-    'EmailTemplates' | 'SMSTemplates' | 'Expense Manager' | 'Settings'
+    'EmailTemplates' | 'SMSTemplates' | 'Expense Manager' | 'Settings' | 'Support'
   >('EmailTemplates');
   const [DashboardSelectedPage, setDashboardSelectedPage] = useState<
-    'Overview' | 'Email History' | 'Expenses' | 'Action History'| 'SMS Details'
+    'Overview' | 'Email History' | 'Expenses' | 'Action History' | 'SMS Details' | 'Basic Rental income report'
   >('Overview');
   const [AddARoomState, setAddARoomState] = useState(false);
   const [AddRoomFormFloor, setAddRoomFormFloor] = useState(1);
@@ -877,18 +884,15 @@ const MainPage = ({
 
       // Reset form and update UI
       ResetAddRoomForumVariables(continueAdding);
-      
+
       // Update states in correct order
       if (!continueAdding) {
         setAddARoomState(false);
       }
-      
+
       setRoomExistsWarning(false);
       setIsMoreThanOneImage(false);
       setRefreshInspectorForAddRoom(true);
-
-      
-
     } catch (error) {
       console.error('Error adding room:', error);
     } finally {
@@ -1131,6 +1135,17 @@ const MainPage = ({
     RoomList.find((r: RoomType) => r.id === SelectedEditRoomId)?.squareMeters ||
       0
   );
+  const [tempPrice, setTempPrice] = useState(
+    RoomList.find((r: RoomType) => r.id === SelectedEditRoomId)?.price || 0
+  );
+  const [tempPaymentCycle, setTempPaymentCycle] = useState(
+    RoomList.find((r: RoomType) => r.id === SelectedEditRoomId)?.paymentCycle ||
+      'monthly'
+  );
+  const [tempPaymentCycleCustomDays, setTempPaymentCycleCustomDays] = useState(
+    RoomList.find((r: RoomType) => r.id === SelectedEditRoomId)
+      ?.PaymentCycleCustomeDays || 0
+  );
   useEffect(() => {
     setTempSquareMeters(
       RoomList.find((r: RoomType) => r.id === SelectedEditRoomId)
@@ -1144,10 +1159,42 @@ const MainPage = ({
       parseInt(tempSquareMeters.toString())
     );
   };
-
+  const handleBlurPrice = () => {
+    updateRoomProperty(
+      SelectedEditRoomId,
+      'price',
+      parseInt(tempPrice.toString())
+    );
+  };
+  const handleBlurCustomePaymentCycle = () => {
+    updateRoomProperty(
+      SelectedEditRoomId,
+      'PaymentCycleCustomeDays',
+      parseInt(tempPaymentCycleCustomDays.toString())
+    );
+  };
+  const handleBlurPaymentCycle = () => {
+    updateRoomProperty(
+      SelectedEditRoomId,
+      'PaymentCycleType',
+      tempPaymentCycle
+    );
+  };
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       handleBlur();
+    }
+  };
+  const handleKeyDownPrice = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleBlurPrice();
+    }
+  };
+  const handleKeyDownCustomePaymentCycle = (
+    e: React.KeyboardEvent<HTMLInputElement>
+  ) => {
+    if (e.key === 'Enter') {
+      handleBlurCustomePaymentCycle();
     }
   };
   const [incrementRoomNumber, setIncrementRoomNumber] = useState(true);
@@ -1886,7 +1933,7 @@ const MainPage = ({
                         >
                           <option value="30">30 days</option>
                           <option value="15">15 days</option>
-                          <option value= "7">7 days</option>
+                          <option value="7">7 days</option>
                           <option value="daily">daily</option>
 
                           <option value="monthly">monthly</option>
@@ -2277,6 +2324,15 @@ const MainPage = ({
                   Expense Manager
                 </SideBarItem>
               )}
+<br />  
+
+                <SideBarItem
+                  page="Support"
+                  currentPage={ToolsSelectedPage}
+                  onClick={() => setToolsSelectedPage('Support')}
+                >
+                  Support
+                </SideBarItem>
               
               {privileges.editSettings && (
                 <SideBarItem
@@ -2287,46 +2343,70 @@ const MainPage = ({
                   Settings
                 </SideBarItem>
               )}
-              
+            
             </>
           ) : SelectedPage === 'Dashboard' ? (
             <>
-              <SideBarItem
-                page="Overview"
-                currentPage={DashboardSelectedPage}
-                onClick={() => setDashboardSelectedPage('Overview')}
-              >
-                Overview
-              </SideBarItem>
-              <SideBarItem
-                page="Expenses"
-                currentPage={DashboardSelectedPage}
-                onClick={() => setDashboardSelectedPage('Expenses')}
-              >
-                Expenses
-              </SideBarItem>
-              <SideBarItem
-                page="Email History"
-                currentPage={DashboardSelectedPage}
-                onClick={() => setDashboardSelectedPage('Email History')}
-              >
-                Email History
-              </SideBarItem>
-              <SideBarItem
-                page="SMS Details"
-                currentPage={DashboardSelectedPage}
-                onClick={() => setDashboardSelectedPage('SMS Details')}
-              >
-                SMS Details
-              </SideBarItem>
-              <SideBarItem
-                page="Action History"
-                currentPage={DashboardSelectedPage}
-                onClick={() => setDashboardSelectedPage('Action History')}
-              >
-                Action History
-              </SideBarItem>
-            </>
+            <h3 style={{ fontSize: 'var(--28px-V)', margin: 'var(--15px-V) 0px var(--15px-V) 0px' }}>
+              Dashboard
+            </h3>
+            <h3 style={{ fontSize: 'var(--20px-V)', margin: '0px 0px 0px 0px' }}>
+              Overview
+            </h3>
+            <SideBarItem
+              page="Overview" 
+              currentPage={DashboardSelectedPage}
+              onClick={() => setDashboardSelectedPage('Overview')}
+            >
+              Overview
+            </SideBarItem>
+            
+            <SideBarItem
+              page="Expenses"
+              currentPage={DashboardSelectedPage}
+              onClick={() => setDashboardSelectedPage('Expenses')}
+            >
+              Expenses
+            </SideBarItem>
+            <h3 style={{ fontSize: 'var(--20px-V)', margin: '0px 0px 0px 0px' }}>
+              Communication
+            </h3>
+            <SideBarItem
+              page="Email History"
+              currentPage={DashboardSelectedPage}
+              onClick={() => setDashboardSelectedPage('Email History')}
+            >
+              Email History
+            </SideBarItem>
+            <SideBarItem
+              page="SMS Details"
+              currentPage={DashboardSelectedPage}
+              onClick={() => setDashboardSelectedPage('SMS Details')}
+            >
+              SMS Details
+            </SideBarItem>
+            <h3 style={{ fontSize: 'var(--20px-V)', margin: '0px 0px 0px 0px' }}>
+              History
+            </h3>
+            <SideBarItem
+              page="Action History"
+              currentPage={DashboardSelectedPage}
+              onClick={() => setDashboardSelectedPage('Action History')}
+            >
+              Action History
+            </SideBarItem>
+            <h3 style={{ fontSize: 'var(--20px-V)', margin: '0px 0px 0px 0px' }}>
+              Reports
+            </h3>
+            <SideBarItem
+              page="Basic Rental income report"
+              currentPage={DashboardSelectedPage}
+              onClick={() => setDashboardSelectedPage('Basic Rental income report')}
+            >
+              Basic Rental income report
+            </SideBarItem>
+            <p style={{fontSize:"var(--12px-V)",color:"var(--Text-Color-Grey)"}}>More reports coming soon</p>
+          </>
           ) : (
             <></>
           )}
@@ -2364,6 +2444,46 @@ const MainPage = ({
                 </p>
               </div>{' '}
               <div className="AddaNewRoomRowObject">
+                Payment Cycle :{' '}
+                <select
+                  value={tempPaymentCycle}
+                  onChange={(e) => setTempPaymentCycle(e.target.value)}
+                  onBlur={handleBlurPaymentCycle}
+                >
+                  <option value="monthly">Monthly</option>
+                  <option value="weekly">Weekly</option>
+                  <option value="daily">Daily</option>
+                  <option value="30">30</option>
+                  <option value="15">15</option>
+                  <option value="7">7</option>
+                  <option value="Annually">Annually</option>
+                  <option value="custom">Custom</option>
+                </select>
+                {tempPaymentCycle === 'custom' && (
+                  <input
+                    type="number"
+                    value={tempPaymentCycleCustomDays}
+                    onBlur={handleBlurCustomePaymentCycle}
+                    onKeyDown={handleKeyDownCustomePaymentCycle}
+                    onChange={(e) =>
+                      setTempPaymentCycleCustomDays(e.target.value)
+                    }
+                  />
+                )}
+              </div>
+              <div className="AddaNewRoomRowObject">
+                Price :{' '}
+                <input
+                  className="AddANewRoomInputsSmall"
+                  type="number"
+                  placeholder="Price"
+                  value={tempPrice}
+                  onChange={(e) => setTempPrice(e.target.value)}
+                  onBlur={handleBlurPrice}
+                  onKeyDown={handleKeyDownPrice}
+                />
+              </div>
+              <div className="AddaNewRoomRowObject">
                 Square Meters :{' '}
                 <input
                   className="AddANewRoomInputsSmall"
@@ -2376,9 +2496,13 @@ const MainPage = ({
                 />
               </div>
               <div style={{ display: 'flex' }}>
-                <div className={`RoomSpecficationsMainContainer ${
-    highlightedFields.includes('specifications') ? 'highlight-reset-field' : ''
-  }`}>
+                <div
+                  className={`RoomSpecficationsMainContainer ${
+                    highlightedFields.includes('specifications')
+                      ? 'highlight-reset-field'
+                      : ''
+                  }`}
+                >
                   <h3>
                     Room Specifications{' - '}
                     <button

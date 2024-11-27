@@ -17,6 +17,7 @@ import DashbUpcomingExpensesWidget from '../Dashboard Wigets/DashbUpcomingExpens
 import DashbActionHistoryDashboard from '../Dashboard Wigets/DashbActionHistoryDashboard';
 import DashbSmsDetails from '../Dashboard Wigets/DashbSmsDetails';
 import loadingGif from '../../../assets/assets/Loading/Rolling-1s-200px.gif';
+import DashRentalIncomeReport from '../Dashboard Wigets/Reprots page/DashRentalIncomeReport';
 interface props {
   RoomList: RoomType[];
   tenantList: tenant[];
@@ -115,6 +116,11 @@ const DashboardPage: React.FC<props> = ({
         RoomList={RoomList}
         tenantList={tenantList}
       /></>
+      ) : DashboardSelectedPage === 'Basic Rental income report' ? (
+        <>
+        <DashRentalIncomeReport RoomList={RoomList} tenantList={tenantList} SelectedBranchId={SelectedBranchId}/>
+    
+        </>
       ) : (
         <></>
       )}

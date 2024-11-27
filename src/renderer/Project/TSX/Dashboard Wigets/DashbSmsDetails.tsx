@@ -156,6 +156,15 @@ const DashbSmsDetails = ({ SelectedUserId, RoomList, tenantList }: props) => {
               },
             },
           ]}
+          yAxis={[
+            {
+              colorMap: {
+                type: 'piecewise',
+                thresholds: [SMSMonthlyLimit],
+                colors: [ 'var(--Primary-Color)','red',],
+              },
+            },
+          ]}
           series={[
             {
               dataKey: 'sms',

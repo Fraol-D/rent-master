@@ -64,6 +64,29 @@ const SMSTemplates: React.FC<SMSTemplatesProps> = ({
   setSelectedInput,
   handleReplaceWithDefaultSms,
 }) => {
+  // Add this helper function at the top of your file
+// Add this helper function at the top of your file
+const calculateSMSInfo = (text: string) => {
+  // Function to check if text contains ANY Amharic characters
+  const containsAmharic = (text: string): boolean => {
+    const amharicRange = /[\u1200-\u137F]/; // Unicode range for Amharic
+    return amharicRange.test(text);
+  };
+
+  const messageLength = text.length;
+  const isAmharic = containsAmharic(text);
+  
+  // If there's ANY Amharic character, use 69 limit for the entire message
+  const charLimit = isAmharic ? 69 : 159;
+  const smsCount = Math.ceil(messageLength / charLimit);
+
+  return {
+    count: smsCount,
+    total: messageLength
+  };
+};
+
+// Then in your JSX, replace the "counts as 5 SMS" part with:
   return (
     <div className="tools-page">
       <div
@@ -74,6 +97,7 @@ const SMSTemplates: React.FC<SMSTemplatesProps> = ({
         }}
       >
         <h2>Your SMS Templates</h2>
+        <p style={{fontSize: 'var(--13px-V)', color: 'var(--Text-Color-Grey)', width: 'var(--150px-V)'}}>69 characters for Amharic and 159 for English counts as 1 SMS</p>
         <button
           onClick={() => {
             if (navigator.onLine) handleReplaceWithDefaultSms();
@@ -179,6 +203,8 @@ const SMSTemplates: React.FC<SMSTemplatesProps> = ({
                         )
                       )}
                     </ul>
+                    Counts as {calculateSMSInfo(template.body).count} SMS
+                   
                     <button onClick={() => handleTryOut(template.id)}>
                       Send / Try Out
                     </button>
@@ -228,7 +254,9 @@ const SMSTemplates: React.FC<SMSTemplatesProps> = ({
                   ))}
                 </div>
                 <hr />
-                <h3>Send SMS</h3>
+                <div style={{display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
+                <h3 >Send SMS</h3> will send {calculateSMSInfo(replaceVariables(template.body)).count} SMS
+                </div>
                 <p>
                   You will now send the above SMS to the phone number specified
                   below

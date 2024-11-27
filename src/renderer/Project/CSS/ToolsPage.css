@@ -198,3 +198,22 @@
   
   padding: var(--5px-V);
 }
+.settings-container{
+  margin: var(--20px-V);
+    background: var(--Secondary-Color20);
+    padding: var(--10px-V);
+    border-radius: var(--10px-V);
+}
+.settings-container h2{
+  margin-bottom: var(--10px-V);
+  margin-top: var(--0px-V);
+}
+.settings-main-container{
+  margin: var(--10px-V);
+}
+.settings-main-container h1{
+  font-size: var(--35px-V);
+}
+.settings-inner-container{
+  margin-left: var(--20px-V);
+}
