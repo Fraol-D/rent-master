@@ -738,7 +738,7 @@ const NavBar = ({
           {ThemeMode === 'light' ? 'light' : ThemeMode === 'dark' ? 'dark' : ''}
         </button>
 
-        <button onClick={handleSignOut}>Sign out</button>
+        
         <div className="CurrentTimeContainer">
           <p className="CurrentTime">
             {currentHour}:{currentMinute}

@@ -6,7 +6,7 @@
   margin: var(--0px-V);
   display: flex;
   width: 100%;
-  border-bottom: var(--1px-V) solid grey;
+  box-shadow: var(--3px-V) var(--3px-V) var(--5px-V) var(---1px-V) var(--Background-Color2);
 
   justify-content: space-between;
   flex-direction: row;

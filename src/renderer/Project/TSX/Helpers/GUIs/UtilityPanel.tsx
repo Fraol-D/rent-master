@@ -149,7 +149,7 @@ const UtilityPanel: React.FC<props> = ({
       }
 
       // Reset currentDate to today for future utilities
-      currentDate = new Date(today);
+      currentDate = new Date(startDate);
       i = 0;
 
       while (currentDate <= endDate && i < visibleFutureUtilities) {
@@ -189,7 +189,8 @@ const UtilityPanel: React.FC<props> = ({
               type: utility.type,
               price: price,
               custom: existingUtility?.custom ? true : utility.alwaysAsk,
-              paid: existingUtility?.paid || false,    Currency:  utility.Currency || GetDefaultCurrency(),
+              paid: existingUtility?.paid || false,
+              Currency:  utility.Currency || GetDefaultCurrency(),
               ParentDate: currentDate.getTime(),
             };
           }),

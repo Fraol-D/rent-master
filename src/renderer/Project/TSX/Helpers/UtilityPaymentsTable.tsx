@@ -147,7 +147,7 @@ const UtilityPaymentsTable = ({
                   }
                 />
               </td>
-              <td style={{ padding: 'var(--5px-V)', textAlign: 'center' }}>
+              <td style={{ textAlign: 'center' }}>
                 {utility.useThis ? <><input
                   type="number"
                   value={tempPrices[utility.id]}

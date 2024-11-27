@@ -241,7 +241,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
             window.electron.store.get('SelectedBranchId') !== ''
           ) {
             console.log(`[${getSeconds()}s] Sync conditions met but sync disabled`);
-           // syncWithOnline(allUsers[0].id);
+          //  syncWithOnline(allUsers[0].id);
           }
         }
       } catch (error) {

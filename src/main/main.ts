@@ -902,7 +902,7 @@ const appDB = express();
 appDB.use(express.static(path.join(__dirname, 'src/renderer')));
 
 const port = 8100;
-const dev = true;
+const dev = false;
 const appname = dev ? 'Electron' : 'rent-master';
 appDB.use(
   cors({

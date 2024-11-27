@@ -1,10 +1,10 @@
 :root {
-  --Text-Color-Grey: rgb(128, 128, 128);
+  --Text-Color-Grey: rgba(128, 128, 128);
   --Text-Color: rgb(255, 255, 255);
   --Text-Color-Reverse: rgb(0, 0, 0);
   --Text-Color-Reverse50: rgba(0, 0, 0, 0.5);
   --Background-Color: #2e2f30;
-
+  --Background-Color2: #333538;
   --Primary-Color: #00e1ff;
   --Primary-Color25: hsl(187, 100%, 50%, 50%);
   --Primary-Color50: hsl(187, 100%, 50%, 50%);
@@ -168,7 +168,8 @@
   --Text-Color-Reverse50: rgba(255, 255, 255, 0.5);
   --Text-Color-Reverse: rgb(0, 0, 0);
   --Background-Color: #E2E2E2;
-
+  --Background-Color2: #e0e0e0; /* Slightly darker light gray */
+  
   --Primary-Color: #00e1ff;
   --Primary-Color25: hsl(187, 100%, 50%, 25%);
   --Primary-Color50: hsl(187, 100%, 50%, 50%);
@@ -181,7 +182,6 @@
   --Accent-Color: #db911a;
   --Accent-Color50: hsl(37, 79%, 48%, 50%);
 
-  --Static11: hsl(225, 7.1%, 78%);
 }
 .GreyTheme {
   --Text-Color-Grey: rgb(128, 128, 128);
@@ -239,8 +239,8 @@ button {
   color: var(--Text-Color);
   border: none;
   margin: var(--0px-V);
-  box-shadow: var(--1px-V) var(--1px-V) var(--3px-V) var(---1px-V)
-    var(--Text-Color);
+  box-shadow: var(--3px-V) var(--3px-V) var(--5px-V) var(---1px-V)
+    var(--Secondary-Color);
   font-family: 'Inter';
   font-size: var(--15px-V);
   transition: all 0.2s;
@@ -248,7 +248,7 @@ button {
 button:hover {
   background-color: var(--Primary-Color50);
   box-shadow: var(--3px-V) var(--3px-V) var(--3px-V) var(---1px-V)
-    var(--Text-Color);
+    var(--Secondary-Color);
   /* box-shadow: var(--2px-V) var(--2px-V) var(--55px-V) var(--Text-Color-Reverse);*/
   color: var(--Text-Color-Reverse);
   text-shadow: var(--0px-V) var(--0px-V) var(--10px-V) var(--Text-Color);
@@ -260,10 +260,11 @@ input,
 textarea {
   background-color: var(--Secondary-Color);
   color: var(--Text-Color);
-  border: var(--1px-V) solid grey;
+  border:none;
   border-radius: var(--5px-V);
   font-family: 'Inter';
   font-size: var(--15px-V);
+  padding-left: var(--5px-V);
 }
 input[type='checkbox'] {
   accent-color: var(--Accent-Color);
@@ -557,7 +558,8 @@ input[type='checkbox'] {
     --320px-V: 213.3px;
     --321px-V: 214px;
     --350px-V: 233.3px;
-    --365px-V: 243.3px;    --46px-V: 30.7px;
+    --365px-V: 243.3px;
+    --46px-V: 30.7px;
     --47px-V: 31.3px;
     --48px-V: 32px;
     --49px-V: 32.7px;
@@ -600,7 +602,8 @@ input[type='checkbox'] {
     ---845px-V: -596.3px;
     ---757px-V: -534.2px;
     ---567px-V: -400.1px;
-    ---536px-V: -378.3px;   --46px-V: 32.5px;
+    ---536px-V: -378.3px;
+    --46px-V: 32.5px;
     --47px-V: 33.2px;
     --48px-V: 33.9px;
     --49px-V: 34.6px;
@@ -750,7 +753,8 @@ input[type='checkbox'] {
     ---757px-V: -1514px;
     ---567px-V: -1134px;
     ---536px-V: -1072px;
-    ---210px-V: -420px;    --46px-V: 92px;
+    ---210px-V: -420px;
+    --46px-V: 92px;
     --47px-V: 94px;
     --48px-V: 96px;
     --49px-V: 98px;

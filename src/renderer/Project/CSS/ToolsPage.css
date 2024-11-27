@@ -113,7 +113,7 @@
   width: 80%;
   padding: var(--5px-V);
  
-  border: var(--1px-V) solid var(--Secondary-Color);
+ 
   background-color: var(--Background-Color);
   color: var(--Text-Color);
 }

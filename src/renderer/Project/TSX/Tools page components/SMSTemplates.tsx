@@ -255,7 +255,7 @@ const calculateSMSInfo = (text: string) => {
                 </div>
                 <hr />
                 <div style={{display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
-                <h3 >Send SMS</h3> will send {calculateSMSInfo(replaceVariables(template.body)).count} SMS
+                <h3 >Send SMS</h3> will count as {calculateSMSInfo(replaceVariables(template.body)).count} SMS
                 </div>
                 <p>
                   You will now send the above SMS to the phone number specified

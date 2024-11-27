@@ -9,13 +9,12 @@
 }
 .SideBarContainer {
   width: var(--290px-V);
-  border-top: var(--1px-V) solid grey;
+  
   background-color: var(--Secondary-Color20);
   color: var(--Text-Color);
   display: flex;
   flex-direction: column;
   align-items: center;
-  box-shadow: var(--1px-V) var(--1px-V) var(--3px-V) var(---1px-V) var(--Text-Color);
 }
 .MainContainerMain {
   width: 100%;
@@ -38,10 +37,10 @@
 .SearchBarContainer {
   display: flex;
   align-items: flex-start;
-  justify-content: center;
-  height: var(--136px-V);
+  justify-content: flex-start;
+  
   color: var(--Text-Color);
-  width: 100%;
+  
   flex-direction: column;
 }
 .RoomAndFloorContainer {
@@ -59,7 +58,7 @@
   background-color: var(--Secondary-Color);
   font-size: var(--15px-V);
   color: var(--Text-Color);
-  border: var(--1px-V) solid grey;
+  border: none;
 }
 .TenantSearchBar {
   width: var(--140px-V);
@@ -67,17 +66,17 @@
   background-color: var(--Secondary-Color);
   font-size: var(--15px-V);
   border-radius: var(--5px-V);
-  border: var(--1px-V) solid grey;
+  border: none;
   color: var(--Text-Color);
 }
 .RoomSearchBar {
-  width: var(--50px-V);
+  width: var(--80px-V);
   height: var(--25px-V);
   border-radius: var(--5px-V);
   background-color: var(--Secondary-Color);
   font-size: var(--15px-V);
   color: var(--Text-Color);
-  border: var(--1px-V) solid grey;
+  border: none;
 }
 .sort-button-img {
   width: var(--35px-V);
@@ -121,7 +120,7 @@
 }
 .filter-drop {
   background-color: var(--Secondary-Color);
-  border: var(--1px-V) solid grey;
+  border: none;
   color: var(--Text-Color);
   border-radius: var(--5px-V);
 }
@@ -135,7 +134,7 @@
   width: var(--70px-V);
   height: var(--30px-V);
   background-color: var(--Secondary-Color);
-  border: var(--1px-V) solid grey;
+  border: none;
   border-radius: var(--5px-V);
   color: var(--Text-Color);
 }
@@ -194,27 +193,27 @@
 .AddANewRoomInputsSmall {
   width: var(--60px-V);
   background-color: var(--Secondary-Color);
-  border: var(--1px-V) solid grey;
+  border: none;
   color: var(--Text-Color);
   border-radius: var(--5px-V);
 }
 .AddANewRoomSelectMid {
   background-color: var(--Secondary-Color);
-  border: var(--1px-V) solid grey;
+  border: none;
   color: var(--Text-Color);
   border-radius: var(--5px-V);
 }
 .AddANewRoomInputsMid {
   width: var(--120px-V);
   background-color: var(--Secondary-Color);
-  border: var(--1px-V) solid grey;
+  border: none;
   color: var(--Text-Color);
   border-radius: var(--5px-V);
 }
 .AddANewRoomSpecObjectMainContainer {
   background-color: var(--Secondary-Color);
   padding: var(--5px-V);
-  border: var(--1px-V) solid grey;
+  border: none;
   border-radius: var(--5px-V);
   margin-bottom: var(--5px-V);
 }
@@ -271,7 +270,7 @@
   position: absolute;
   left: 50%;
   top: 50%;
-  border: var(--1px-V) solid white;
+  border: none;
   border-radius: var(--10px-V);
   padding: var(--10px-V);
   display: flex;
@@ -321,7 +320,7 @@
   font-size: var(--18px-V);
 }
 .sideBarItemComponentMain:hover {
-  border: var(--1px-V) solid white;
+  border: none;
 }
 .NotificationButton {
   height: var(--35px-V);
@@ -351,7 +350,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  border: var(--1px-V) solid grey;
+  border: none;
   border-bottom: var(--1px-V) dashed grey;
   justify-content: flex-start;
 }

@@ -1106,7 +1106,21 @@ const ToolsPage = ({
       setEditedExpense({ ...expense });
     }
   };
+  const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
 
+  const handleSignOut = () => {
+    setShowSignOutConfirm(true);
+  };
+
+  const confirmSignOut = () => {
+    signOutUserAndRestart();
+
+    setShowSignOutConfirm(false);
+  };
+
+  const cancelSignOut = () => {
+    setShowSignOutConfirm(false);
+  };
   const handleEditExpense = async (
     id: string,
     name: string,
@@ -1279,7 +1293,10 @@ const ToolsPage = ({
 
       try {
         setLoading(true);
-        const user = await getValuesWithSql_Online('users', `WHERE id = '${SelectedUserId}'`);
+        const user = await getValuesWithSql_Online(
+          'users',
+          `WHERE id = '${SelectedUserId}'`
+        );
         if (!user || !user[0]) return;
 
         // Get email sending settings
@@ -1288,15 +1305,17 @@ const ToolsPage = ({
 
         // Get tax percentage
         const taxPercentage = user[0].taxPercentage;
-        setTaxPercentage(taxPercentage || window.electron.store.get('taxPercentage'));
+        setTaxPercentage(
+          taxPercentage || window.electron.store.get('taxPercentage')
+        );
 
         // Get email settings
         const {
           RepresentativeEmails,
           RepresentativePhoneNumbers,
           LandlordName,
-          LandlordEmail, 
-          LandlordTelephone
+          LandlordEmail,
+          LandlordTelephone,
         } = user[0];
 
         console.log('Fetched settings:', {
@@ -1304,7 +1323,7 @@ const ToolsPage = ({
           RepresentativePhoneNumbers,
           LandlordName,
           LandlordEmail,
-          LandlordTelephone
+          LandlordTelephone,
         });
 
         // Update all states
@@ -1321,7 +1340,6 @@ const ToolsPage = ({
           landlordEmail: LandlordEmail,
           landlordTelephone: LandlordTelephone,
         });
-
       } catch (error) {
         console.error('Failed to fetch user settings:', error);
         // Fallback to stored tax percentage if online fetch fails
@@ -1560,7 +1578,6 @@ const ToolsPage = ({
   });
   const [hasChanges, setHasChanges] = useState(false);
   const [loading, setLoading] = useState(false);
-  
 
   useEffect(() => {
     const hasAnyChanges =
@@ -1906,7 +1923,33 @@ const ToolsPage = ({
           )}
           {ToolsSelectedPage === 'Settings' && (
             <div className="settings-main-container">
-              <h1>Settings</h1>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                }}
+              >
+                <h1>Settings</h1>{' '}
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 'var(--10px-V)',
+                  }}
+                >
+                  {window.electron.store.get('users')[0].email} -{' '}
+                  {window.electron.store.get('users')[0].companyName}
+                  <button onClick={handleSignOut}>Sign Out</button>{' '}
+                  {showSignOutConfirm && (
+                    <div className="signOutConfirmation">
+                      <p>Are you sure you want to sign out?</p>
+                      <button onClick={confirmSignOut}>Yes</button>
+                      <button onClick={cancelSignOut}>No</button>
+                    </div>
+                  )}
+                </div>
+              </div>
               <div className="settings-container">
                 {' '}
                 <div
@@ -1920,7 +1963,14 @@ const ToolsPage = ({
                   {hasChangedTaxPercentage ? (
                     <>
                       {isApplyingTaxPercentage ? (
-                        <img src={loadingGif} alt="Loading..." style={{width:'var(--20px-V)',height:'var(--20px-V)'}} />
+                        <img
+                          src={loadingGif}
+                          alt="Loading..."
+                          style={{
+                            width: 'var(--20px-V)',
+                            height: 'var(--20px-V)',
+                          }}
+                        />
                       ) : (
                         <>
                           <button onClick={saveTaxPercentage}>Save</button>
@@ -2715,3 +2765,6 @@ const ToolsPage = ({
 };
 
 export default React.memo(ToolsPage);
+function signOutUserAndRestart() {
+  throw new Error('Function not implemented.');
+}
