@@ -279,7 +279,7 @@ const DashbPastPayments = ({
             backgroundColor:
               activeTab === 'past'
                 ? 'var(--Secondary-Color)'
-                : 'var(--Background-Color)',
+                : 'var(--Secondary-Color30)',
             cursor: 'pointer',
           }}
         >
@@ -293,7 +293,7 @@ const DashbPastPayments = ({
             backgroundColor:
               activeTab === 'upcoming'
                 ? 'var(--Secondary-Color)'
-                : 'var(--Background-Color)',
+                : 'var(--Secondary-Color30)',
             cursor: 'pointer',
           }}
         >
@@ -309,7 +309,7 @@ const DashbPastPayments = ({
             Past Payments
           </p>
           <div style={{ width: '100%', overflowX: 'auto' }}>
-            <table className="InfoTable" style={{ width: '100%' }}>
+            <table className="InfoTable" style={{ width: '100%',margin:"0px" }}>
               <thead className="InfoTableThead">
                 <tr className="InfoTableHeadTR">
                   <th className="InfoTableHeadTh">Tenants</th>

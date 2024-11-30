@@ -273,7 +273,7 @@ const getCurrentExchangeRate = () => {
       className="DashboardWigetMainContainer"
       style={{ width: 'var(--710px-V)', height: 'var(--500px-V)' }}
     >
-      <p className="DashboardWigetPieChartTextHeader">Overall Tax</p>
+      <p className="DashboardWigetPieChartTextHeader">Overall Tax ({window.electron.store.get('taxPercentage') || 0.15}%)</p>
       <div
         className="DashboardTotalCollectedTopPart"
         style={{ marginBottom: '0' }}
@@ -313,7 +313,7 @@ const getCurrentExchangeRate = () => {
               padding: '3px 8px',
               borderRadius: '4px',
               border: '1px solid var(--Border-Color)',
-              backgroundColor: 'var(--Background-Color)',
+              backgroundColor: 'var(--Secondary-Color)',
               color: 'var(--Text-Color)',
               marginLeft: 'var(--10px-V)',
             }}
@@ -329,7 +329,11 @@ const getCurrentExchangeRate = () => {
         </div>
       </div>
       <BarChart
-        dataset={dataset}
+        dataset={dataset}  slotProps={{
+          legend: {
+            hidden: true,
+          },
+        }}
         xAxis={[
           {
             scaleType: 'band', tickLabelStyle: {

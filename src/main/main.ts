@@ -733,7 +733,7 @@ ipcMain.on('SendCustomEmail', async (event, message) => {
         from: user[0].selectedEmailToSendWith,
         sentDate: Date.now(),
         templateId: message.templateId,
-        mode: 'Manually',
+        mode: 'Rent_Manually',
         userId: user[0].id,
         branchId: message.branchId,
       },

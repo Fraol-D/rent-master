@@ -1,5 +1,5 @@
 .AgreementMainContianer {
-  background-color: var(--Secondary-Color);
+  background-color: var(--Secondary-Color30);
   padding: var(--5px-V);
   border-radius: var(--5px-V);
   margin: var(--5px-V);
@@ -21,12 +21,16 @@
   top: 50%;
   transform: translate(-50%, -50%);
   z-index: 3;
-  border: var(--1px-V) solid grey;
+ 
   display: flex;
   align-items: center;
   flex-direction: column;
-  padding: var(--5px-V);
+  padding: var(--15px-V);
   justify-content: space-between;
+}
+.AgreementPopUpContainer h2 {
+  margin: var(--0px-V);
+  margin-bottom: var(--10px-V);
 }
 .AgreementPopUpContainerOpacity {
   background-color: #000000a9;

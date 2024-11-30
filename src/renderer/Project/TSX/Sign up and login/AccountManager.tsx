@@ -21,6 +21,8 @@ import TrialEndedText from './TrialEndedText';
 import loadingGif from '../../../assets/assets/Loading/Rolling-1s-200px.gif';
 import DashboardPage from '../Pages/DashboardPage';
 import { formatNumberWithSuffix } from '../Helpers/CurrencySign';
+import { useAlert } from 'renderer/components/useAlert';
+import { useConfirm } from 'renderer/components/useConfirm';
 
 interface MyComponentProps {
   children: React.ReactNode;
@@ -50,6 +52,8 @@ interface MyComponentProps {
   Branches: BranchTypeWithData[];
   setBranches: (newval: BranchTypeWithData[]) => void;
   setBranchName: (newval: string) => void;
+  getBranchData: boolean;
+  setGetBranchData: (newval: boolean) => void;
 }
 
 const timeoutPromise = (ms: number) => {
@@ -87,6 +91,8 @@ const AccountManager = (React.FC<MyComponentProps> = ({
   Branches,
   setBranches,
   setBranchName,
+  setGetBranchData,
+  getBranchData,
 }: any) => {
   const [TrialExpiredState, setTrialExpiredState] = useState(false);
   const [IsAllowedState, setIsAllowedState] = useState(false);
@@ -113,15 +119,19 @@ const AccountManager = (React.FC<MyComponentProps> = ({
     return mainTabs.some((tab) => privileges.includes(tab));
   };
   const [initialLoading, setInitialLoading] = useState(true);
+  const [hasNotPaid, setHasNotPaid] = useState(false);
   // Function to check if a user is signed in
   const checkIfSignedIn = async () => {
     const startTime = Date.now();
     const getSeconds = () => ((Date.now() - startTime) / 1000).toFixed(2);
-    
+
     console.log(`[${getSeconds()}s] Starting checkIfSignedIn...`);
     setInitialLoading(true);
     const allUsers = window.electron.store.get('users') || [];
-    console.log(`[${getSeconds()}s] Got users from store:`, allUsers.length > 0);
+    console.log(
+      `[${getSeconds()}s] Got users from store:`,
+      allUsers.length > 0
+    );
 
     if (allUsers.length > 0) {
       try {
@@ -136,15 +146,23 @@ const AccountManager = (React.FC<MyComponentProps> = ({
           return userONLINE;
         };
 
-        console.log(`[${getSeconds()}s] Starting race between userCheck and timeout...`);
+        console.log(
+          `[${getSeconds()}s] Starting race between userCheck and timeout...`
+        );
         const userONLINE = await Promise.race([
           userCheck(),
           timeoutPromise(10000),
         ]).catch((error) => {
-          console.log(`[${getSeconds()}s] Online check failed or timed out:`, error);
+          console.log(
+            `[${getSeconds()}s] Online check failed or timed out:`,
+            error
+          );
           return null;
         });
-        console.log(`[${getSeconds()}s] Race complete, userONLINE:`, !!userONLINE);
+        console.log(
+          `[${getSeconds()}s] Race complete, userONLINE:`,
+          !!userONLINE
+        );
 
         if (!userONLINE && allUsers[0].Allowed) {
           console.log(`[${getSeconds()}s] Falling back to local data...`);
@@ -166,7 +184,9 @@ const AccountManager = (React.FC<MyComponentProps> = ({
         }
 
         if (userONLINE?.length === 1 || !navigator.onLine) {
-          console.log(`[${getSeconds()}s] User verified online or offline mode`);
+          console.log(
+            `[${getSeconds()}s] User verified online or offline mode`
+          );
           setisSignedIn(true);
 
           const check = async () => {
@@ -182,7 +202,9 @@ const AccountManager = (React.FC<MyComponentProps> = ({
 
               if (userRaw.TrailEndDate - 7 * 24 * 60 * 60 * 1000 > Date.now()) {
                 setTrialExpiredState(true);
-                console.log(`[${getSeconds()}s] Trial Has expired bc invalid date input`);
+                console.log(
+                  `[${getSeconds()}s] Trial Has expired bc invalid date input`
+                );
               }
 
               if (
@@ -195,7 +217,9 @@ const AccountManager = (React.FC<MyComponentProps> = ({
             }
 
             if (navigator.onLine) {
-              console.log(`[${getSeconds()}s] Online mode - fetching latest user data...`);
+              console.log(
+                `[${getSeconds()}s] Online mode - fetching latest user data...`
+              );
               try {
                 const OnlineUser = await getValuesWithSql_Online(
                   'users',
@@ -203,22 +227,34 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                 );
                 console.log(`[${getSeconds()}s] Got online user data`);
                 setIsAllowedState(OnlineUser[0].Allowed);
+                setHasNotPaid(OnlineUser[0].LockBcNotPaid || false);
 
                 const updatedUsers = allUsers.map((user: any) =>
                   user.id === userRaw.id
-                    ? { ...user, Allowed: OnlineUser[0].Allowed }
+                    ? {
+                        ...user,
+                        Allowed: OnlineUser[0].Allowed,
+                        LockBcNotPaid: OnlineUser[0].LockBcNotPaid,
+                      }
                     : user
                 );
                 window.electron.store.set('users', updatedUsers);
                 setChangeMade(true);
                 console.log(`[${getSeconds()}s] Updated local user data`);
               } catch (error) {
-                console.log(`[${getSeconds()}s] Error fetching online user data:`, error);
+                console.log(
+                  `[${getSeconds()}s] Error fetching online user data:`,
+                  error
+                );
                 setIsAllowedState(userRaw.Allowed);
+                setHasNotPaid(userRaw.LockBcNotPaid || false);
               }
             } else {
-              console.log(`[${getSeconds()}s] Offline mode - using local allowed state`);
+              console.log(
+                `[${getSeconds()}s] Offline mode - using local allowed state`
+              );
               setIsAllowedState(userRaw.Allowed);
+              setHasNotPaid(userRaw.LockBcNotPaid || false);
             }
           };
 
@@ -240,16 +276,21 @@ const AccountManager = (React.FC<MyComponentProps> = ({
             !ViewBranchManagementPage &&
             window.electron.store.get('SelectedBranchId') !== ''
           ) {
-            console.log(`[${getSeconds()}s] Sync conditions met but sync disabled`);
-          //  syncWithOnline(allUsers[0].id);
+            console.log(
+              `[${getSeconds()}s] Sync conditions met but sync disabled`
+            );
+              syncWithOnline(allUsers[0].id);
           }
         }
       } catch (error) {
         console.error(`[${getSeconds()}s] Error in checkIfSignedIn:`, error);
         if (allUsers[0].Allowed) {
-          console.log(`[${getSeconds()}s] Error fallback - proceeding with local data`);
+          console.log(
+            `[${getSeconds()}s] Error fallback - proceeding with local data`
+          );
           setisSignedIn(true);
           setIsAllowedState(allUsers[0].Allowed);
+          setHasNotPaid(allUsers[0].LockBcNotPaid || false);
           setSelectedUserId(allUsers[0].id);
 
           if (!window.electron.store.get('SelectedAppUserId')) {
@@ -281,7 +322,9 @@ const AccountManager = (React.FC<MyComponentProps> = ({
         `WHERE userId = '${window.electron.store.get('users')[0].id}'`
       );
       if (appUsers) {
-        console.log(`[${getSeconds()}s] Got app users, updating local store...`);
+        console.log(
+          `[${getSeconds()}s] Got app users, updating local store...`
+        );
         await window.electron.store.set('app_users', appUsers);
         setAppUsers(appUsers);
         if (window.electron.store.get('SelectedAppUserId')) {
@@ -312,7 +355,9 @@ const AccountManager = (React.FC<MyComponentProps> = ({
 
       setAppUsers(appUsers);
       if (window.electron.store.get('SelectedAppUserId')) {
-        console.log(`[${getSeconds()}s] Setting selected app user from local data...`);
+        console.log(
+          `[${getSeconds()}s] Setting selected app user from local data...`
+        );
         if (window.electron.store.get('SelectedAppUserId') == 'admin') {
           setSelectedAppUser({
             id: 'admin',
@@ -335,8 +380,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
     }
     console.log(`[${getSeconds()}s] App users management complete`);
   };
- 
- 
+
   const handleAddNewAppUser = async () => {
     if (navigator.onLine) {
       const existingUsers = appUsers.filter((user: any) =>
@@ -395,12 +439,14 @@ const AccountManager = (React.FC<MyComponentProps> = ({
         }, 500);
       } catch (error) {
         console.error('Error adding new user:', error);
-        alert(
+        showAlert(
           'Failed to add new user. Please check your internet connection and try again.'
         );
       }
     } else {
-      alert('No internet connection. Please check your network and try again.');
+      showAlert(
+        'No internet connection. Please check your network and try again.'
+      );
     }
   };
 
@@ -513,6 +559,65 @@ const AccountManager = (React.FC<MyComponentProps> = ({
       </div>
     );
   };
+  const AccountLockedBcNotPaid = ({
+    TextBackgroundColorText,
+    ThemeMode,
+    handleSignOut,
+    b454959BackgroundColor454959,
+    ISallowedToUseAppStatus,
+    LoadingGif,
+    SignOut,
+  }: any) => {
+    return (
+      <div className="signup-success-message">
+        <div style={{ padding: 'var(--10px-V)', margin: 'var(--0px-V)' }}>
+          <h2>Your account has been locked due to payment issues</h2>
+          <p className="signOutAndIfNot">
+            Logged in as:{' '}
+            <strong>{window.electron.store.get('users')[0].email || ''}</strong>
+            <br />
+            <button
+              onClick={handleFullSignOutAndDeleteUser}
+              className="SignUpSignOutTryAgain"
+            >
+              <p>Sign out</p>
+            </button>
+          </p>
+
+          <p>
+            Your account has been locked because of a payment issue. Please
+            contact support to resolve this:
+          </p>
+
+          <span className="activation-number">-{'>'} Phone: 09 44 50 9999</span>
+          <br />
+          <span className="activation-number">-{'>'} Email: rentmaster.et@gmail.com</span>
+          <br />
+          <span className="activation-number">-{'>'} Telegram: @Rent_Master</span>
+
+          <br />
+          <br />
+
+          <p>
+            Once payment is confirmed, please retry signing in while connected
+            to the internet.
+          </p>
+
+          <div style={{ display: 'flex' }}>
+            <button
+              onClick={() => {
+                setLoading(true);
+                checkIfSignedIn().finally(() => setLoading(false));
+              }}
+              className="SignUpSignOutTryAgain"
+            >
+              <p>Retry</p>
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
   const [PasswordCheckInput, setPasswordCheckInput] = useState('');
   const [isCheckingPassword, setIsCheckingPassword] = useState(false);
   const [passwordError, setPasswordError] = useState('');
@@ -565,6 +670,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
         if (isValid) {
           setIsTrueAdmin(true);
           setCheckIfTureAdmin(false);
+          setCheckIfTureAdmin(false);
         } else {
           setPasswordError('Incorrect password. Please try again.');
         }
@@ -576,7 +682,6 @@ const AccountManager = (React.FC<MyComponentProps> = ({
       } finally {
         setIsCheckingPassword(false);
         setPasswordCheckInput('');
-        setCheckIfTureAdmin(false);
       }
     } else {
       setPasswordError(
@@ -644,12 +749,14 @@ const AccountManager = (React.FC<MyComponentProps> = ({
         setEditingUserName('');
       } catch (error) {
         console.error('Error updating user name:', error);
-        alert(
+        showAlert(
           'Failed to update user name. Please check your internet connection and try again.'
         );
       }
     } else {
-      alert('No internet connection. Please check your network and try again.');
+      showAlert(
+        'No internet connection. Please check your network and try again.'
+      );
     }
   };
 
@@ -657,23 +764,26 @@ const AccountManager = (React.FC<MyComponentProps> = ({
     setEditingUserId(null);
     setEditingUserName('');
   };
+  const [deletingUser, setDeletingUser] = useState(false);
   const handleDeleteUser = async (userId: string) => {
-    if (window.confirm('Are you sure you want to delete this user?')) {
+    if (deletingUser) {
       if (navigator.onLine) {
         try {
           await deleteValueOnline('app_users', userId);
           await appUsersManagement();
         } catch (error) {
           console.error('Error deleting user:', error);
-          alert(
+          showAlert(
             'Failed to delete user. Please check your internet connection and try again.'
           );
         }
       } else {
-        alert(
+        showAlert(
           'No internet connection. Please check your network and try again.'
         );
       }
+    } else {
+      setDeletingUser(true);
     }
   };
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
@@ -683,6 +793,10 @@ const AccountManager = (React.FC<MyComponentProps> = ({
     setSelectedAppUser(user);
     window.electron.store.set('SelectedAppUserId', user.id);
     setAppUserManagerShow(false);
+    window.electron.store.set('SelectedBranchId', '');
+    window.electron.store.set('BranchName', 'not selected');
+    window.electron.store.set('LockBranchToPc', false);
+    setViewBranchManagementPage(true);
   };
 
   const handleSavePrivileges = async () => {
@@ -698,12 +812,12 @@ const AccountManager = (React.FC<MyComponentProps> = ({
           setEditingUser(null);
         } catch (error) {
           console.error('Error saving privileges:', error);
-          alert(
+          showAlert(
             'Failed to save privileges. Please check your internet connection and try again.'
           );
         }
       } else {
-        alert(
+        showAlert(
           'No internet connection. Please check your network and try again.'
         );
       }
@@ -783,14 +897,16 @@ const AccountManager = (React.FC<MyComponentProps> = ({
         window.electron.store.set('app_users', updatedAppUsers);
       } catch (error) {
         console.error('Error updating privilege:', error);
-        alert(
+        showAlert(
           'Failed to update privilege. Please check your internet connection and try again.'
         );
       } finally {
         setLoadingPrivileges((prev) => ({ ...prev, [loadingKey]: false }));
       }
     } else {
-      alert('No internet connection. Please check your network and try again.');
+      showAlert(
+        'No internet connection. Please check your network and try again.'
+      );
     }
   };
 
@@ -928,9 +1044,11 @@ const AccountManager = (React.FC<MyComponentProps> = ({
       );
       setChangingPasswordId('');
       setNewAdminPassword('');
-      setAppUsers(appUsers.map((u) =>
-        u.id === ChangingPasswordId ? { ...u, password: NewAdminPassword } : u
-      ));
+      setAppUsers(
+        appUsers.map((u) =>
+          u.id === ChangingPasswordId ? { ...u, password: NewAdminPassword } : u
+        )
+      );
       await appUsersManagement();
     }
   };
@@ -953,7 +1071,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
         await appUsersManagement();
       } catch (error) {
         console.error('Error updating privileges:', error);
-        alert(
+        showAlert(
           'Failed to update privileges. Please check your internet connection and try again.'
         );
       } finally {
@@ -967,7 +1085,9 @@ const AccountManager = (React.FC<MyComponentProps> = ({
       }
       setPrivilegeError('');
     } else {
-      alert('No internet connection. Please check your network and try again.');
+      showAlert(
+        'No internet connection. Please check your network and try again.'
+      );
     }
   };
 
@@ -994,14 +1114,16 @@ const AccountManager = (React.FC<MyComponentProps> = ({
         setPrivilegeError('');
       } catch (error) {
         console.error('Error updating privileges:', error);
-        alert(
+        showAlert(
           'Failed to update privileges. Please check your internet connection and try again.'
         );
       } finally {
         setIsUncheckingAll(false);
       }
     } else {
-      alert('No internet connection. Please check your network and try again.');
+      showAlert(
+        'No internet connection. Please check your network and try again.'
+      );
     }
   };
 
@@ -1026,7 +1148,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
 
       // Validate required fields
       if (!newBranchData.name?.trim()) {
-        alert('Branch name is required');
+        showAlert('Branch name is required');
         return;
       }
 
@@ -1035,7 +1157,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
         (branch) => branch.name === newBranchData.name.trim()
       );
       if (existingBranch) {
-        alert('A branch with the same name already exists');
+        showAlert('A branch with the same name already exists');
         return;
       }
 
@@ -1084,10 +1206,10 @@ const AccountManager = (React.FC<MyComponentProps> = ({
       setShowAddBranchModal(false);
 
       // Show success message
-      alert('Branch added successfully!');
+      showAlert('Branch added successfully!');
     } catch (error) {
       console.error('Detailed error adding branch:', error);
-      alert(`Failed to add branch: ${error.message}`);
+      showAlert(`Failed to add branch: ${error.message}`);
     } finally {
       setIsAddingBranch(false);
     }
@@ -1124,7 +1246,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
 
       // Validate required fields
       if (!editingBranch.name?.trim()) {
-        alert('Branch name is required');
+        showAlert('Branch name is required');
         return;
       }
 
@@ -1147,19 +1269,29 @@ const AccountManager = (React.FC<MyComponentProps> = ({
       setEditingBranch(null);
     } catch (error) {
       console.error('Error updating branch:', error);
-      alert('Failed to update branch. Please try again.');
+      showAlert('Failed to update branch. Please try again.');
     } finally {
       setIsEditingBranch(false);
     }
   };
+  const { confirm } = useConfirm();
   const handleDeleteBranch = async (branchId: string) => {
-    if (!window.confirm('Are you sure you want to delete this branch?')) return;
+    const choice = await confirm(
+      'Are you sure you want to delete this branch?',
+      {
+        title: 'Delete Branch',
+        confirmText: 'Delete',
+        cancelText: 'Keep',
+        type: 'danger',
+      }
+    );
+    if (!choice) return;
     try {
       await deleteValueOnline('branches', branchId);
 
       handleFetchBranches();
     } catch (error) {
-      alert(
+      showAlert(
         'Failed to delete branch. Please check your connection and try again.'
       );
     }
@@ -1253,7 +1385,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
           );
 
           if (!userMaxBranches) {
-            return ('Failed to get user branch limit');
+            return 'Failed to get user branch limit';
           }
 
           return {
@@ -1266,7 +1398,8 @@ const AccountManager = (React.FC<MyComponentProps> = ({
             currentBranches: 0,
           };
         }
-      }return {
+      }
+      return {
         maxBranches: 0,
         currentBranches: 0,
       };
@@ -1277,6 +1410,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
       };
     }
   };
+  const { showAlert } = useAlert();
 
   const handleAddBranchFunction = async () => {
     try {
@@ -1284,16 +1418,19 @@ const AccountManager = (React.FC<MyComponentProps> = ({
       setBranchLimit(maxBranches);
 
       if (maxBranches <= currentBranches) {
-        alert(
-          'You have reached the maximum number of branches allowed for your account. Please contact support to increase your limit. +2519 4450 9999 or +2519 4450 8888, or email rentmaster.et@gmail.com'
+        showAlert(
+          'You have reached the maximum number of branches allowed for your account. Please contact support to increase your limit. +2519 4450 9999 or +2519 4450 8888, or email rentmaster.et@gmail.com',
+          'error'
         );
+
         return;
       }
 
       setShowAddBranchModal(true);
     } catch (error) {
-      alert(
-        'Failed to get user branch limit. Please check your internet connection and try again.'
+      showAlert(
+        'Failed to get user branch limit. Please check your internet connection and try again.',
+        'error'
       );
     }
   };
@@ -1340,7 +1477,9 @@ const AccountManager = (React.FC<MyComponentProps> = ({
             {isSignedIn ? (
               TrialExpiredState ? (
                 <TrialEndedText />
-              ) : IsAllowedState ? (
+              ) : IsAllowedState ? !hasNotPaid ? (
+                <AccountLockedBcNotPaid />
+              ) : (
                 <>
                   {AppUserManagerShow ? (
                     CheckIfTureAdmin ? (
@@ -1670,7 +1809,18 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                     className="appUserItem"
                                   >
                                     <div>
-                                      <div className="appUserHeader">
+                                      <div
+                                        className="appUserHeader"
+                                        style={{
+                                          display: 'flex',
+                                          justifyContent: 'space-between',
+                                          alignItems: 'flex-start',
+                                          flexDirection:
+                                            editingUserId === appUser.id
+                                              ? 'column'
+                                              : 'row',
+                                        }}
+                                      >
                                         {editingUserId === appUser.id ? (
                                           <>
                                             <input
@@ -1684,9 +1834,11 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                               style={{
                                                 fontSize: 'var(--20px-V)',
                                                 marginRight: 'var(--10px-V)',
-                                                width: '50%',
+                                                width: '100%',
+                                                marginBottom: '10px',
                                               }}
                                             />
+
                                             <div>
                                               <button
                                                 className="appUserButtons"
@@ -1695,6 +1847,16 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                                 }
                                               >
                                                 Save
+                                              </button>
+                                              <button
+                                                className="appUserButtons"
+                                                onClick={() =>
+                                                  handleDeleteUser(appUser.id)
+                                                }
+                                              >
+                                                {deletingUser
+                                                  ? 'Confirm Delete'
+                                                  : 'Delete'}
                                               </button>
                                               <button
                                                 className="appUserButtons"
@@ -1729,14 +1891,6 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                                 }
                                               >
                                                 Edit
-                                              </button>
-                                              <button
-                                                className="appUserButtons"
-                                                onClick={() =>
-                                                  handleDeleteUser(appUser.id)
-                                                }
-                                              >
-                                                Delete
                                               </button>
                                             </div>
                                           </>
@@ -1866,42 +2020,42 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                         )}
                                       </div>
 
-                                      {appUser.AllowedBranches
-                                        .match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/g)
-                                        ?.map((branchId: string) => (
-                                          <span
-                                            key={branchId}
-                                            style={{
-                                              display: 'flex',
-                                              justifyContent: 'space-between',
-                                              alignItems: 'center',
-                                              width: '60%',
-                                              backgroundColor:
-                                                'var(--Secondary-Color60)',
-                                              marginTop: 'auto',
-                                              marginRight: 'auto',
-                                              marginBottom: 'var(--5px-V)',
-                                              marginLeft: 'auto',
-                                              paddingLeft: 'var(--5px-V)',
-                                              borderRadius: 'var(--5px-V)',
+                                      {appUser.AllowedBranches.match(
+                                        /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/g
+                                      )?.map((branchId: string) => (
+                                        <span
+                                          key={branchId}
+                                          style={{
+                                            display: 'flex',
+                                            justifyContent: 'space-between',
+                                            alignItems: 'center',
+                                            width: '60%',
+                                            backgroundColor:
+                                              'var(--Secondary-Color60)',
+                                            marginTop: 'auto',
+                                            marginRight: 'auto',
+                                            marginBottom: 'var(--5px-V)',
+                                            marginLeft: 'auto',
+                                            paddingLeft: 'var(--5px-V)',
+                                            borderRadius: 'var(--5px-V)',
+                                          }}
+                                        >
+                                          {Branches.find(
+                                            (branch: any) =>
+                                              branch.id === branchId
+                                          )?.name || 'Unknown'}{' '}
+                                          <button
+                                            onClick={() => {
+                                              handleRemoveBranchFromUser(
+                                                appUser,
+                                                branchId
+                                              );
                                             }}
                                           >
-                                            {Branches.find(
-                                              (branch: any) =>
-                                                branch.id === branchId
-                                            )?.name || 'Unknown'}{' '}
-                                            <button
-                                              onClick={() => {
-                                                handleRemoveBranchFromUser(
-                                                  appUser,
-                                                  branchId
-                                                );
-                                              }}
-                                            >
-                                              x
-                                            </button>
-                                          </span>
-                                        ))}
+                                            x
+                                          </button>
+                                        </span>
+                                      ))}
                                       <hr />
                                       {appUser.EnterWithPassword ? (
                                         <div>
@@ -2001,10 +2155,10 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                                   handleAllowEnterWithPassword(
                                                     appUser
                                                   );
-                                                  if(appUser.password === "") {
+                                                  if (appUser.password === '') {
                                                     setChangingPasswordId(
                                                       appUser.id
-                                                    )
+                                                    );
                                                   }
                                                 }
                                               } else {
@@ -2217,8 +2371,17 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                             )}
                           </p>{' '}
                           <div>
-                            {window.electron.store.get('SelectedAppUserId') ===
-                              'admin' && (
+                            {(window.electron.store.get('SelectedAppUserId') ===
+                              'admin' ||
+                              appUsers
+                                .find(
+                                  (appUser) =>
+                                    appUser.id ===
+                                    window.electron.store.get(
+                                      'SelectedAppUserId'
+                                    )
+                                )
+                                ?.privileges.includes('add a branch')) && (
                               <>
                                 Limit {Branches.length}/{BranchLimit}
                               </>
@@ -2327,7 +2490,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                   gap: 'var(--20px-V)',
                                   transition: 'transform 0.2s, box-shadow 0.2s',
                                   cursor: 'default',
-                                  border: '1px solid var(--Border-Color)',
+
                                   position: 'relative',
                                 }}
                               >
@@ -2422,109 +2585,111 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                   </div>
 
                                   {/* Building Stats Section */}
-                                  <div
-                                    style={{
-                                      display: 'grid',
-                                      gridTemplateColumns: 'repeat(2, 1fr)',
-                                      gap: 'var(--15px-V)',
-                                      backgroundColor:
-                                        'var(--Background-Color)',
-                                      padding: 'var(--15px-V)',
-                                      borderRadius: 'var(--8px-V)',
-                                      border: '1px solid var(--Border-Color)',
-                                    }}
-                                  >
-                                    <StatItem
-                                      label="Total Floors"
-                                      value={branch.totalFloors || 0}
-                                    />
-                                    <StatItem
-                                      label="Total Rooms"
-                                      value={branch.totalRooms || 0}
-                                    />
-                                    <StatItem
-                                      label="Total Tenants"
-                                      value={branch.totalTenants || 0}
-                                    />
-                                    <StatItem
-                                      label="Occupied Rooms"
-                                      value={branch.occupiedRooms || 0}
-                                    />
-                                    <StatItem
-                                      label="Vacant Rooms"
-                                      value={branch.vacantRooms || 0}
-                                    />
-                                  </div>
-
-                                  {/* Financial Section */}
-                                  {window.electron.store.get(
-                                    'SelectedAppUserId'
-                                  ) === 'admin' ||
-                                  appUsers
-                                    .find(
-                                      (appUser) =>
-                                        appUser.id ===
-                                        window.electron.store.get(
-                                          'SelectedAppUserId'
-                                        )
-                                    )
-                                    ?.privileges.includes(
-                                      'View dashboard page'
-                                    ) ? (
-                                    <div
-                                      style={{
-                                        backgroundColor:
-                                          'var(--Background-Color)',
-                                        padding: 'var(--15px-V)',
-                                        borderRadius: 'var(--8px-V)',
-                                        border: '1px solid var(--Border-Color)',
-                                      }}
-                                    >
-                                      <h4
-                                        style={{
-                                          margin: 0,
-                                          marginBottom: 'var(--10px-V)',
-                                          fontSize: 'var(--16px-V)',
-                                          color: 'var(--Text-Color-80)',
-                                          fontWeight: '600',
-                                        }}
-                                      >
-                                        Financial Overview
-                                      </h4>
+                                  {getBranchData && (
+                                    <>
                                       <div
                                         style={{
-                                          display: 'flex',
-                                          justifyContent: 'space-between',
+                                          display: 'grid',
+                                          gridTemplateColumns: 'repeat(2, 1fr)',
+                                          gap: 'var(--15px-V)',
+                                          backgroundColor:
+                                            'var(--Background-Color)',
+                                          padding: 'var(--15px-V)',
+                                          borderRadius: 'var(--8px-V)',
                                         }}
                                       >
-                                        <FinancialItem
-                                          label="This Month Revenue"
-                                          value={
-                                            formatNumberWithSuffix(
-                                              branch.monthlyRevenue?.toLocaleString()
-                                            ) || 0
-                                          }
+                                        <StatItem
+                                          label="Total Floors"
+                                          value={branch.totalFloors || 0}
                                         />
-                                        <FinancialItem
-                                          label="This Month Expenses"
-                                          value={
-                                            formatNumberWithSuffix(
-                                              branch.monthlyExpenses?.toLocaleString()
-                                            ) || 0
-                                          }
+                                        <StatItem
+                                          label="Total Rooms"
+                                          value={branch.totalRooms || 0}
                                         />
-                                        <FinancialItem
-                                          label="This Month Profit"
-                                          value={
-                                            formatNumberWithSuffix(
-                                              branch.monthlyProfit?.toLocaleString()
-                                            ) || 0
-                                          }
+                                        <StatItem
+                                          label="Total Tenants"
+                                          value={branch.totalTenants || 0}
+                                        />
+                                        <StatItem
+                                          label="Occupied Rooms"
+                                          value={branch.occupiedRooms || 0}
+                                        />
+                                        <StatItem
+                                          label="Vacant Rooms"
+                                          value={branch.vacantRooms || 0}
                                         />
                                       </div>
-                                    </div>
-                                  ) : (
-                                    <></>
+
+                                      {/* Financial Section */}
+                                      {window.electron.store.get(
+                                        'SelectedAppUserId'
+                                      ) === 'admin' ||
+                                      appUsers
+                                        .find(
+                                          (appUser) =>
+                                            appUser.id ===
+                                            window.electron.store.get(
+                                              'SelectedAppUserId'
+                                            )
+                                        )
+                                        ?.privileges.includes(
+                                          'View dashboard page'
+                                        ) ? (
+                                        <div
+                                          style={{
+                                            backgroundColor:
+                                              'var(--Background-Color)',
+                                            padding: 'var(--15px-V)',
+                                            borderRadius: 'var(--8px-V)',
+                                          }}
+                                        >
+                                          <h4
+                                            style={{
+                                              margin: 0,
+                                              marginBottom: 'var(--10px-V)',
+                                              fontSize: 'var(--16px-V)',
+                                              color: 'var(--Text-Color-80)',
+                                              fontWeight: '600',
+                                            }}
+                                          >
+                                            Financial Overview
+                                          </h4>
+                                          <div
+                                            style={{
+                                              display: 'flex',
+                                              justifyContent: 'space-between',
+                                            }}
+                                          >
+                                            <FinancialItem
+                                              label="This Month Revenue"
+                                              value={
+                                                formatNumberWithSuffix(
+                                                  branch.monthlyRevenue?.toLocaleString()
+                                                ) || 0
+                                              }
+                                            />
+                                            <FinancialItem
+                                              label="This Month Expenses"
+                                              value={
+                                                formatNumberWithSuffix(
+                                                  branch.monthlyExpenses?.toLocaleString()
+                                                ) || 0
+                                              }
+                                            />
+                                            <FinancialItem
+                                              label="This Month Profit"
+                                              value={
+                                                formatNumberWithSuffix(
+                                                  branch.monthlyProfit?.toLocaleString()
+                                                ) || 0
+                                              }
+                                            />
+                                          </div>
+                                        </div>
+                                      ) : (
+                                        <></>
+                                      )}
+                                    </>
                                   )}
                                 </div>
 
@@ -2725,7 +2890,6 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                     width: '95%',
                     padding: 'var(--8px-V)',
                     borderRadius: 'var(--4px-V)',
-                    border: '1px solid var(--Text-Color-30)',
                   }}
                 />
               </div>
@@ -2750,7 +2914,6 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                     width: '95%',
                     padding: 'var(--8px-V)',
                     borderRadius: 'var(--4px-V)',
-                    border: '1px solid var(--Text-Color-30)',
                   }}
                 />
               </div>
@@ -2774,7 +2937,6 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                     width: '95%',
                     padding: 'var(--8px-V)',
                     borderRadius: 'var(--4px-V)',
-                    border: '1px solid var(--Text-Color-30)',
                     minHeight: '100px',
                     resize: 'none',
                   }}
@@ -2857,6 +3019,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                 borderRadius: 'var(--8px-V)',
                 width: 'var(--510px-V)',
                 maxWidth: '90%',
+                boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
               }}
             >
               <div
@@ -2865,25 +3028,50 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                   justifyContent: 'space-between',
                   alignItems: 'center',
                   marginBottom: 'var(--20px-V)',
+                  borderBottom: '1px solid var(--Text-Color-10)',
+                  paddingBottom: 'var(--10px-V)',
                 }}
               >
-                <h2 style={{ margin: 0 }}>Edit Branch</h2>
+                <h2
+                  style={{
+                    margin: 0,
+                    fontSize: 'var(--20px-V)',
+                    fontWeight: 600,
+                  }}
+                >
+                  Edit Branch
+                </h2>
                 <button
                   className="appUserButtons"
                   onClick={() => {
                     setShowEditBranchModal(false);
                     setEditingBranch(null);
                   }}
+                  style={{
+                    padding: 'var(--8px-V)',
+                    borderRadius: '50%',
+                    minWidth: '32px',
+                    height: '32px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
                 >
                   ✕
                 </button>
               </div>
 
-              <div style={{ marginBottom: 'var(--15px-V)' }}>
+              <div style={{ marginBottom: 'var(--20px-V)' }}>
                 <label
-                  style={{ display: 'block', marginBottom: 'var(--5px-V)' }}
+                  style={{
+                    display: 'block',
+                    marginBottom: 'var(--8px-V)',
+                    fontSize: 'var(--14px-V)',
+                    fontWeight: 500,
+                    color: 'var(--Text-Color-80)',
+                  }}
                 >
-                  Branch Name:
+                  Branch Name
                 </label>
                 <input
                   type="text"
@@ -2899,19 +3087,28 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                     )
                   }
                   style={{
-                    width: '100%',
-                    padding: 'var(--8px-V)',
-                    borderRadius: 'var(--4px-V)',
-                    border: '1px solid var(--Text-Color-30)',
+                    width: 'var(--440px-V)',
+                    padding: 'var(--12px-V)',
+                    borderRadius: 'var(--6px-V)',
+
+                    fontSize: 'var(--14px-V)',
+                    transition: 'border-color 0.2s',
+                    outline: 'none',
                   }}
                 />
               </div>
 
-              <div style={{ marginBottom: 'var(--15px-V)' }}>
+              <div style={{ marginBottom: 'var(--20px-V)' }}>
                 <label
-                  style={{ display: 'block', marginBottom: 'var(--5px-V)' }}
+                  style={{
+                    display: 'block',
+                    marginBottom: 'var(--8px-V)',
+                    fontSize: 'var(--14px-V)',
+                    fontWeight: 500,
+                    color: 'var(--Text-Color-80)',
+                  }}
                 >
-                  Location:
+                  Location
                 </label>
                 <input
                   type="text"
@@ -2927,19 +3124,28 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                     )
                   }
                   style={{
-                    width: '100%',
-                    padding: 'var(--8px-V)',
-                    borderRadius: 'var(--4px-V)',
-                    border: '1px solid var(--Text-Color-30)',
+                    width: 'var(--440px-V)',
+                    padding: 'var(--12px-V)',
+                    borderRadius: 'var(--6px-V)',
+
+                    fontSize: 'var(--14px-V)',
+                    transition: 'border-color 0.2s',
+                    outline: 'none',
                   }}
                 />
               </div>
 
-              <div style={{ marginBottom: 'var(--15px-V)' }}>
+              <div style={{ marginBottom: 'var(--20px-V)' }}>
                 <label
-                  style={{ display: 'block', marginBottom: 'var(--5px-V)' }}
+                  style={{
+                    display: 'block',
+                    marginBottom: 'var(--8px-V)',
+                    fontSize: 'var(--14px-V)',
+                    fontWeight: 500,
+                    color: 'var(--Text-Color-80)',
+                  }}
                 >
-                  Description:
+                  Description
                 </label>
                 <textarea
                   value={editingBranch?.description || ''}
@@ -2954,48 +3160,28 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                     )
                   }
                   style={{
-                    width: '100%',
-                    padding: 'var(--8px-V)',
-                    borderRadius: 'var(--4px-V)',
-                    border: '1px solid var(--Text-Color-30)',
-                    minHeight: '100px',
+                    width: 'var(--440px-V)',
+                    padding: 'var(--12px-V)',
+                    borderRadius: 'var(--6px-V)',
+
+                    fontSize: 'var(--14px-V)',
+                    minHeight: '120px',
+                    resize: 'vertical',
+                    transition: 'border-color 0.2s',
+                    outline: 'none',
+                    lineHeight: '1.5',
                   }}
                 />
               </div>
-
-              {/** <div style={{ marginBottom: 'var(--20px-V)' }}>
-                <label
-                  style={{ display: 'block', marginBottom: 'var(--5px-V)' }}
-                >
-                  Google Map Pin Point:
-                </label>
-                <input
-                  type="text"
-                  value={editingBranch?.googleMapPinPoint || ''}
-                  onChange={(e) =>
-                    setEditingBranch((prev) =>
-                      prev
-                        ? {
-                            ...prev,
-                            googleMapPinPoint: e.target.value,
-                          }
-                        : null
-                    )
-                  }
-                  style={{
-                    width: '100%',
-                    padding: 'var(--8px-V)',
-                    borderRadius: 'var(--4px-V)',
-                    border: '1px solid var(--Text-Color-30)',
-                  }}
-                />
-              </div>*/}
 
               <div
                 style={{
                   display: 'flex',
                   justifyContent: 'flex-end',
-                  gap: 'var(--10px-V)',
+                  gap: 'var(--12px-V)',
+                  borderTop: '1px solid var(--Text-Color-10)',
+                  paddingTop: 'var(--20px-V)',
+                  marginTop: 'var(--20px-V)',
                 }}
               >
                 <button
@@ -3004,6 +3190,11 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                     setShowEditBranchModal(false);
                     setEditingBranch(null);
                   }}
+                  style={{
+                    padding: 'var(--10px-V) var(--20px-V)',
+                    fontSize: 'var(--14px-V)',
+                    fontWeight: 500,
+                  }}
                 >
                   Cancel
                 </button>
@@ -3011,6 +3202,11 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                   className="appUserButtons"
                   onClick={handleEditBranch}
                   disabled={isEditingBranch || !editingBranch?.name.trim()}
+                  style={{
+                    padding: 'var(--10px-V) var(--20px-V)',
+                    fontSize: 'var(--14px-V)',
+                    fontWeight: 500,
+                  }}
                 >
                   {isEditingBranch ? (
                     <img

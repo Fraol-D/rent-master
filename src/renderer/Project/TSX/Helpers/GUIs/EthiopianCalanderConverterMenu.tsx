@@ -72,7 +72,7 @@ const EthiopianCalanderConverterMenu: React.FC<
           value={ethiopianDate}
           onChange={(e) => setEthiopianDate(e.target.value)}
           className="StartTime"
-          placeholder="Enter Ethiopian date (DD/MM/YYYY)"
+          placeholder="Enter Ethiopian date (DD/MM/YYYY)" style={{marginRight:"var(--10px-V)"}}
         />
         {/* Test cases for input:
         1. Valid Ethiopian date: 01/01/2015
@@ -86,9 +86,9 @@ const EthiopianCalanderConverterMenu: React.FC<
         9. Different separators: 01-01-2015
         10. Leap year: 29/13/2015 (Ethiopian leap year)
         */}
-        <button onClick={handleConvert}>Convert</button>
-        <button onClick={Use}>USE</button>
-        <button onClick={Cancel}>Cancel</button>
+        <button onClick={Cancel} style={{marginRight:"var(--10px-V)"}}>Cancel</button>
+        <button onClick={handleConvert} style={{marginRight:"var(--10px-V)"}}>Convert</button>
+        <button onClick={Use} style={{marginRight:"var(--10px-V)", backgroundColor:"var(--Primary-Color)", color:"black"}}>USE</button>
         <p>
           Gregorian Date: <strong>{gregorianDate}</strong>
         </p>

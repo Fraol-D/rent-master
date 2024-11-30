@@ -9,7 +9,7 @@
   align-items: center;
   padding: var(--10px-V);
   border-radius: var(--10px-V);
-  box-shadow: var(--0px-V) var(--0px-V) var(--4px-V) var(---1px-V) var(--Text-Color);
+  box-shadow: var(--2px-V) var(--2px-V) var(--1px-V) var(--1px-V) var(--Secondary-Color30);
   transition: all 0.2s;
   user-select: none;
 }
@@ -18,7 +18,7 @@
   width: 35%;
 }
 .FloorText {
-  background-color: var(--Secondary-Color);
+  background-color: var(--Secondary-Color60);
   height: var(--25px-V);
   width: var(--100px-V);
   font-size: var(--20px-V);
@@ -28,11 +28,11 @@
   justify-content: left;
   border-radius: var(--10px-V) var(--10px-V) var(--0px-V) var(--0px-V);
   align-items: center;
-  border-bottom: var(--1px-V) solid white;
+
   color: var(--Text-Color);
 }
 .RoomText {
-  background-color: var(--Secondary-Color);
+  background-color: var(--Secondary-Color60);
   height: var(--35px-V);
   font-size: var(--30px-V);
   color: var(--Text-Color);
@@ -44,7 +44,7 @@
   align-items: center;
 }
 .StatusContainer {
-  background-color: var(--Secondary-Color);
+  background-color: var(--Secondary-Color60);
   height: var(--81px-V);
   font-size: var(--18px-V);
   color: var(--Text-Color);
@@ -76,7 +76,7 @@
   width: 30%;
 }
 .RoomTypeContainer {
-  background-color: var(--Secondary-Color);
+  background-color: var(--Secondary-Color60);
   height: var(--120px-V);
   font-size: var(--20px-V);
   color: var(--Text-Color);
@@ -88,10 +88,10 @@
   align-items: top;
   text-align: center;
   flex-direction: column;
-  border-bottom: var(--1px-V) dashed white;
+  border-bottom: var(--1px-V) solid var(--Text-Color-Grey);
 }
 .RoomImageContainer {
-  background-color: var(--Secondary-Color);
+  background-color: var(--Secondary-Color60);
   height: var(--145px-V);
   font-size: var(--20px-V);
   color: var(--Text-Color);
@@ -105,11 +105,10 @@
   flex-direction: column;
 }
 .RoomTypeContainerBottom {
-  background-color: var(--Secondary-Color);
+  background-color: var(--Secondary-Color60);
   height: var(--20px-V);
   font-size: var(--20px-V);
   margin: var(--0px-V);
-  padding-top: var(--5px-V);
   color: var(--Text-Color);
   display: flex;
   justify-content: flex-start;
@@ -126,7 +125,7 @@
 }
 
 .PriceContainer {
-  background-color: var(--Secondary-Color);
+  background-color: var(--Secondary-Color60);
   height: var(--25px-V);
   width: 100%;
   font-size: var(--17px-V);
@@ -215,17 +214,11 @@
 .AddTenantContainerinnerInput {
   width: var(--180px-V);
   background-color: var(--Secondary-Color);
-  border: var(--1px-V) solid grey;
-  box-shadow: var(--2px-V) var(--2px-V) var(--2px-V) lab(0 0 0 / 0.21);
   color: var(--Text-Color);
   border-radius: var(--5px-V);
 }
 .StartTime {
-  background-color: var(--Secondary-Color);
-  border: var(--1px-V) solid grey;
-  box-shadow: var(--2px-V) var(--2px-V) var(--2px-V) lab(0 0 0 / 0.21);
-  border-radius: var(--5px-V);
-  color: var(--Text-Color);
+
 }
 .Agreementtype {
   border-radius: var(--5px-V);
@@ -241,7 +234,7 @@
   height: var(--30px-V);
 }
 .PayAndDueShowerContainer {
-  background-color: var(--Secondary-Color);
+  background-color: var(--Secondary-Color30);
   height: var(--110px-V);
   width: 90%;
   font-size: var(--17px-V);
@@ -257,7 +250,6 @@
   margin-top: var(--10px-V);
   align-items: center;
   color: var(--Text-Color);
-  border: var(--1px-V) dashed deepskyblue;
 }
 .PaymentCardContianer {
   height: 80%;

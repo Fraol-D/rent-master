@@ -280,7 +280,7 @@ app.get('/logs', (req, res) => {
 
         // Initial fetch and setup periodic refresh
         fetchLogs();
-        setInterval(fetchLogs, 5000);
+        setInterval(fetchLogs, 20000);
       </script>
     </body>
     </html>
@@ -290,6 +290,742 @@ app.get('/logs', (req, res) => {
 // Add a route to clear logs
 
 // Add a route to clear logs
+// Add a route to clear logs
+// Add a route to clear logs
+// Add a route to clear logs
+// Add a route to clear logs
+// Add a route to clear logs
+// Add a route to clear logs
+// Add a route to clear logs
+// Add a route to clear logs
+// Add a route to clear logs
+// Add a route to clear logs
+
+const styles = `
+    body {
+      margin: 0;
+      padding: 20px;
+      background: #1e1e1e;
+      color: #fff;
+      font-family: monospace;
+    }
+    .controls {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      padding: 10px;
+      background: #2d2d2d;
+      border-bottom: 1px solid #3d3d3d;
+      display: flex;
+      gap: 10px;
+      z-index: 100;
+    }
+    .content {
+      margin-top: 60px;
+      text-align: center;
+    }
+    h1 {
+      font-size: 2em;
+      margin-bottom: 20px;
+    }
+    p {
+      font-size: 1.2em;
+      color: #ccc;
+    }
+  `;
+//TENANT PORTAL
+app.get('/tenantPortal', (req, res) => {
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Tenant Portal</title>
+      <style>${styles}</style>
+    </head>
+    <body>
+      <div class="controls">
+        <h2>Tenant Portal</h2>
+      </div>
+      <div class="content">
+        <h1>Welcome to the Tenant Portal</h1>
+        <p>This is a placeholder for the tenant portal interface.</p>
+        <p>More features coming soon!</p>
+      </div>
+    </body>
+    </html>
+  `;
+  res.send(htmlContent);
+});
+
+app.get('/tenantPortal/:BranchAndCompany/:TenantName', async (req, res) => {
+  const { BranchAndCompany, TenantName } = req.params;
+
+  try {
+    // Decode URL components to handle spaces and special characters
+    const decodedBranchAndCompany = decodeURIComponent(BranchAndCompany);
+    const decodedTenantName = decodeURIComponent(TenantName);
+
+    const [branchName, companyName] = decodedBranchAndCompany.split('-');
+
+    // Get branch
+    const [branchResults] = await new Promise((resolve, reject) => {
+      pool.query(
+        'SELECT * FROM branches WHERE name = ?',
+        [branchName],
+        (error, results) => {
+          if (error) reject(error);
+          else resolve([results]);
+        }
+      );
+    });
+    const branch = branchResults[0];
+    if (!branch) {
+      throw new Error(`Branch "${branchName}" not found`);
+    }
+
+    // Get user/company
+    const [userResults] = await new Promise((resolve, reject) => {
+      pool.query(
+        'SELECT * FROM users WHERE companyName = ?',
+        [companyName],
+        (error, results) => {
+          if (error) reject(error);
+          else resolve([results]);
+        }
+      );
+    });
+    const user = userResults[0];
+    if (!user) {
+      throw new Error(`Company "${companyName}" not found`);
+    }
+
+    // Get tenant
+    const [tenantResults] = await new Promise((resolve, reject) => {
+      pool.query(
+        'SELECT * FROM tenants WHERE name = ?',
+        [decodedTenantName],
+        (error, results) => {
+          if (error) reject(error);
+          else resolve([results]);
+        }
+      );
+    });
+    const tenant = tenantResults[0];
+    if (!tenant) {
+      throw new Error(`Tenant "${decodedTenantName}" not found`);
+    }
+
+    // Get room
+    const [roomResults] = await new Promise((resolve, reject) => {
+      pool.query(
+        'SELECT * FROM rooms WHERE tenantId = ?',
+        [tenant.id],
+        (error, results) => {
+          if (error) reject(error);
+          else resolve([results]);
+        }
+      );
+    });
+    const room = roomResults[0];
+    if (!room) {
+      throw new Error(`No room found for tenant "${decodedTenantName}"`);
+    }
+
+    // Get agreements
+    const [agreements] = await new Promise((resolve, reject) => {
+      pool.query(
+        'SELECT * FROM agreements WHERE roomId = ?',
+        [room.id],
+        (error, results) => {
+          if (error) reject(error);
+          else resolve([results]);
+        }
+      );
+    });
+
+    // Get paid payments
+    const [PaidPayments] = await new Promise((resolve, reject) => {
+      pool.query(
+        'SELECT * FROM room_pay_info WHERE tenantId = ?',
+        [tenant.id],
+        (error, results) => {
+          if (error) reject(error);
+          else resolve([results]);
+        }
+      );
+    });
+
+    // Get receipts
+    const [receipts] = await new Promise((resolve, reject) => {
+      pool.query(
+        'SELECT * FROM payment_receipts WHERE tenantId = ?',
+        [tenant.id],
+        (error, results) => {
+          if (error) reject(error);
+          else resolve([results]);
+        }
+      );
+    });
+
+    // Function to calculate payments based on agreements and paid status
+    function calculatePayments(room, tenant, agreements) {
+      const payments = [];
+      const agreement = agreements.find(
+        (a) => a.id === room.selectedAgreementId
+      );
+      if (!agreement) return [];
+
+      let startDate = tenant?.startTime || Date.now();
+      let endDate = agreement.endTime;
+
+      let currentDate = new Date(startDate);
+      const today = new Date();
+
+      while (currentDate <= new Date(endDate)) {
+        // Find if payment exists for this date
+        const paid = PaidPayments.find((p) => {
+          const paymentDate = new Date(p.Day);
+          return (
+            paymentDate.getDate() === currentDate.getDate() &&
+            paymentDate.getMonth() === currentDate.getMonth() &&
+            paymentDate.getFullYear() === currentDate.getFullYear()
+          );
+        });
+
+        // Find receipt for this payment
+        const receipt = receipts.find((r) => r.paymentId === paid?.id);
+
+        const payment = {
+          date: currentDate.getTime(),
+          amount: paid ? paid.Value : agreement.agreedPrice,
+          paid: paid ? paid.Paid : false,
+          receiptId: receipt?.id,
+          status:
+            currentDate < today
+              ? 'past-due'
+              : currentDate <=
+                new Date(today.getTime() + 10 * 24 * 60 * 60 * 1000)
+              ? 'near-due'
+              : 'future',
+        };
+        payments.push(payment);
+
+        // Advance to next payment date based on cycle
+        switch (agreement.paymentCycleType) {
+          case '30':
+            currentDate.setDate(currentDate.getDate() + 30);
+            break;
+          case '15':
+            currentDate.setDate(currentDate.getDate() + 15);
+            break;
+          case '7':
+            currentDate.setDate(currentDate.getDate() + 7);
+            break;
+          case 'monthly':
+            currentDate.setMonth(currentDate.getMonth() + 1);
+            break;
+          case 'weekly':
+            currentDate.setDate(currentDate.getDate() + 7);
+            break;
+          case 'daily':
+            currentDate.setDate(currentDate.getDate() + 1);
+            break;
+          case 'Annually':
+            currentDate.setFullYear(currentDate.getFullYear() + 1);
+            break;
+          default:
+            currentDate.setMonth(currentDate.getMonth() + 1);
+        }
+      }
+
+      return payments;
+    }
+
+    // Add checkout and receipt handling scripts
+    const checkoutScript = `
+      <script>
+        async function handlePaymentClick(payment) {
+          // TODO: Implement payment processing
+          console.log('Processing payment:', payment);
+        }
+
+        async function viewReceipt(receiptId) {
+          try {
+            const response = await fetch('/receipt/' + receiptId);
+            const receipt = await response.blob();
+            const url = URL.createObjectURL(receipt);
+            window.open(url);
+          } catch (error) {
+            console.error('Error fetching receipt:', error);
+          }
+        }
+      </script>
+    `;
+
+    const payments = calculatePayments(room, tenant, agreements);
+    const agreement = agreements.find((a) => a.id === room.selectedAgreementId);
+
+    // Add this script to the HTML template (before closing body tag)
+    const positioningScript = `
+<script>
+  function updateCurrentDatePosition() {
+    const timeline = document.querySelector('.timeline');
+    const indicator = document.querySelector('.current-date-indicator');
+    if (timeline && indicator) {
+      const timelineLeft = timeline.getBoundingClientRect().left;
+      const indicatorLeft = indicator.getBoundingClientRect().left;
+      const position = indicatorLeft - timelineLeft;
+      timeline.style.setProperty('--current-date-position', position + 'px');
+    }
+  }
+
+  // Update position when page loads and on window resize
+  window.addEventListener('load', updateCurrentDatePosition);
+  window.addEventListener('resize', updateCurrentDatePosition);
+</script>
+`;
+    const htmlContent = `
+    <!DOCTYPE html>
+    <html lang="en">
+      <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Tenant Portal</title>
+        <link rel="stylesheet" href="/assets2/index-Dap_4Qtg.css">
+        ${checkoutScript}
+      </head>
+      <body>
+        <div id="root">
+          <div class="MainContainerTP">
+            <div class="controls">
+              <div class="tenant-info-container">
+                <h1 class="tenant-name">${tenant.name}</h1>
+
+                <div class="room-info">
+                  <div class="room-details">
+                    <p class="room-text">
+                      Room: ${room.roomIndex} - Floor: ${room.floor}
+                    </p>
+                    <p class="branch-text">
+                      <span class="branch-name">${branch.name}</span>
+                      <span class="branch-location">${branch.location}</span>
+                    </p>
+                  </div>
+                </div>
+
+                <div class="tenant-details">
+                  <p class="detail-row">
+                    <span class="detail-label">Rent Reason:</span>
+                    <span class="detail-value">${
+                      tenant.RentReason ? tenant.RentReason : '-'
+                    }</span>
+                  </p>
+
+                  ${
+                    tenant.TIN && tenant.TIN.toString().length >= 10
+                      ? `
+                    <p class="detail-row">
+                      <span class="detail-label">TIN:</span>
+                      <span class="detail-value">${tenant.TIN}</span>
+                    </p>
+                    `
+                      : ''
+                  }
+
+                  ${
+                    tenant.SelectedAgreement === 'Fixed-Term'
+                      ? `
+                    <p class="detail-row">
+                      <span class="detail-label">Current Agreement:</span>
+                      <span class="agreement-date">
+                        ${new Date(
+                          agreements.find(
+                            (agreement) =>
+                              agreement.id === room.selectedAgreementId
+                          ).startTime
+                        ).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                        })}
+                        ${' - '}
+                        ${new Date(
+                          agreements.find(
+                            (agreement) =>
+                              agreement.id === room.selectedAgreementId
+                          ).endTime
+                        ).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                        })}
+                      </span>
+                    </p>
+                    `
+                      : ''
+                  }
+                </div>
+              </div>
+              
+              <div class="agreements-container">
+                <h2 class="agreements-title">Agreements</h2>
+
+                <table class="agreements-table">
+                  <thead>
+                    <tr class="agreements-header-row">
+                      <th class="agreements-header">Start</th>
+                      <th class="agreements-header">End</th>
+                      <th class="agreements-header">Price</th>
+                      <th class="agreements-header">Representative</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${agreements
+                      .map(
+                        (agreement) => `
+                      <tr
+                        class="agreements-row ${
+                          agreement.id === room.selectedAgreementId
+                            ? 'selected'
+                            : ''
+                        }"
+                      >
+                        <td class="agreements-cell">
+                          <div class="date-container">
+                            <span class="date-primary">
+                              ${new Date(
+                                agreement.startTime
+                              ).toLocaleDateString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                              })}
+                            </span>
+                            <span class="date-secondary">
+                              ${new Date(agreement.startTime).getFullYear()}
+                            </span>
+                          </div>
+                        </td>
+                        <td class="agreements-cell">
+                          <div class="date-container">
+                            <span class="date-primary">
+                              ${new Date(agreement.endTime).toLocaleDateString(
+                                'en-US',
+                                {
+                                  month: 'short',
+                                  day: 'numeric',
+                                }
+                              )}
+                            </span>
+                            <span class="date-secondary">
+                              ${new Date(agreement.endTime).getFullYear()}
+                            </span>
+                          </div>
+                        </td>
+                        <td class="agreements-cell">
+                          <div class="price-container">
+                            <div class="price-row">
+                              <span class="price-amount">
+                                ${agreement.agreedPrice.toLocaleString()}
+                              </span>
+                              <span class="price-currency">
+                                ${agreement.Currency}
+                              </span>
+                            </div>
+                            <span class="price-cycle">
+                              Per ${
+                                agreement.paymentCycleType === '30'
+                                  ? '30 days'
+                                  : agreement.paymentCycleType === '15'
+                                  ? '15 days'
+                                  : agreement.paymentCycleType === '7'
+                                  ? '7 days'
+                                  : agreement.paymentCycleType === 'monthly'
+                                  ? 'Month'
+                                  : agreement.paymentCycleType === 'weekly'
+                                  ? 'Week'
+                                  : agreement.paymentCycleType === 'daily'
+                                  ? 'Day'
+                                  : agreement.paymentCycleType === 'Annually'
+                                  ? 'Year'
+                                  : agreement.paymentCycleType.startsWith('-')
+                                  ? `${agreement.paymentCycleType.substring(
+                                      1
+                                    )} days`
+                                  : agreement.paymentCycleType
+                              }
+                            </span>
+                          </div>
+                        </td>
+                        <td class="agreements-cell representative">
+                          ${agreement.representative || '-'}
+                        </td>
+                      </tr>
+                    `
+                      )
+                      .join('')}
+                  </tbody>
+                </table>
+              </div>
+              </div>
+              
+          <div class="payment-timeline-container">
+            <div class="timeline-header">
+              <h2 class="section-title" style="margin: 0px;">
+                Payment Timeline
+              </h2>
+              <div class="timeline-info">
+                <span class="next-payment-text">
+                  ${(() => {
+                    const nextPayment = payments.find(
+                      (p) => !p.paid && new Date(p.date) > new Date()
+                    );
+                    if (!nextPayment) return 'All payments are up to date';
+
+                    const daysUntil = Math.floor(
+                      (new Date(nextPayment.date) - new Date()) /
+                        (1000 * 60 * 60 * 24)
+                    );
+                    const formattedDate = new Date(
+                      nextPayment.date
+                    ).toLocaleDateString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric',
+                    });
+
+                    if (daysUntil < 0) {
+                      return `Payment overdue by ${Math.abs(
+                        daysUntil
+                      )} days (${formattedDate})`;
+                    } else if (daysUntil === 0) {
+                      return `Payment due today (${formattedDate})`;
+                    } else {
+                      return `Next payment due in ${daysUntil} days (${formattedDate})`;
+                    }
+                  })()}
+                </span>
+              </div>
+            </div>
+
+            <div class="timeline-summary">
+              <div class="summary-item">
+                <span class="summary-label">Total Payments</span>
+                <span class="summary-value">${payments.length}</span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-label">Paid</span>
+                <span class="summary-value highlight">${
+                  payments.filter((p) => p.paid).length
+                }</span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-label">Unpaid</span>
+                <span class="summary-value warning">${
+                  payments.filter((p) => !p.paid).length
+                }</span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-label">Past Due</span>
+                <span class="summary-value danger">${
+                  payments.filter((p) => p.status === 'past-due').length
+                }</span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-label">Payment Cycle</span>
+                <span class="summary-value">
+                  ${
+                    agreement.paymentCycleType.charAt(0).toUpperCase() +
+                    agreement.paymentCycleType.slice(1)
+                  }
+                </span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-label">Payment Amount</span>
+                <span class="summary-value">
+                  ${agreement.agreedPrice.toLocaleString()} ${
+      agreement.Currency
+    }
+                </span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-label">Agreement Start</span>
+                <span class="summary-value">
+                  ${new Date(agreement.startTime).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                  })}
+                </span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-label">Agreement End</span>
+                <span class="summary-value">
+                  ${new Date(agreement.endTime).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                  })}
+                </span>
+              </div>
+            </div>
+
+            <div class="timeline-scroll">
+              <div class="timeline" style="--current-date-position: 0px;">
+                <div class="timeline-edge-box first-box">
+                  <span>Start</span>
+                  <div class="edge-date">
+                    ${new Date(
+                      payments[0]?.date || Date.now()
+                    ).toLocaleDateString('en-US', {
+                      day: '2-digit',
+                      month: 'short',
+                      year: 'numeric',
+                    })}
+                  </div>
+                </div>
+
+                ${payments
+                  .map(
+                    (payment, index) => `
+                  <div class="timeline-item ${payment.status} ${
+                      payment.paid ? 'paid' : ''
+                    }">
+                    <div class="timeline-date">
+                      <div class="date-primary">
+                        ${new Date(payment.date).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                        })}
+                      </div>
+                      <div class="date-secondary">
+                        ${new Date(payment.date).getFullYear()}
+                      </div>
+                    </div>
+
+                    <div class="timeline-content">
+                      <div class="payment-Box">
+                        ${payment.amount.toLocaleString()} ${agreement.Currency}
+                      </div>
+
+                      <div class="payment-status ${
+                        payment.paid ? 'paid' : ''
+                      } ${payment.status === 'past-due' ? 'past-due' : ''}">
+                        ${payment.paid ? 'Paid' : 'Unpaid'}
+                      </div>
+
+                      ${
+                        room.TenantPortalAllowOnlinePayments && !payment.paid
+                          ? `
+                        <button class="pay-now-button" onclick='handlePaymentClick(${JSON.stringify(
+                          payment
+                        )})'>
+                          Pay Now
+                        </button>
+                      `
+                          : ''
+                      }
+
+                      ${
+                        room.TenantPortalShowReceipts &&
+                        payment.paid &&
+                        payment.receiptId
+                          ? `
+                        <button class="receipt-button" onclick="viewReceipt('${payment.receiptId}')">
+                          <span>View Receipt</span>
+                          <svg width="16" height="16" viewBox="0 0 16 16">
+                            <path d="M4 14h8v-1H4v1zm0-3h8v-1H4v1zm0-3h8V7H4v1zm0-3h8V4H4v1zm0-3h8V1H4v1z" />
+                          </svg>
+                        </button>
+                      `
+                          : ''
+                      }
+                    </div>
+                    ${
+                      index < payments.length - 1 &&
+                      new Date(payment.date) <= new Date() &&
+                      new Date(payments[index + 1].date) >= new Date()
+                        ? `
+                      <div class="current-date-indicator">
+                        <div class="indicator-line"></div>
+                        <div class="indicator-label">Today</div>
+                        <div class="indicator-date">
+                          ${new Date().toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric',
+                          })}
+                        </div>
+                      </div>
+                    `
+                        : ''
+                    }
+                  </div>
+                `
+                  )
+                  .join('')}
+
+                <div class="timeline-edge-box last-box">
+                  <span>End</span>
+                  <div class="edge-date">
+                    ${new Date(
+                      payments[payments.length - 1]?.date || Date.now()
+                    ).toLocaleDateString('en-US', {
+                      day: '2-digit',
+                      month: 'short',
+                      year: 'numeric',
+                    })}
+                  </div>
+                </div>
+              </div>
+            </div>
+          
+        </div>
+      </div>
+    </div>
+    ${positioningScript}
+  </body>
+</html>
+  `;
+    res.send(htmlContent);
+  } catch (error) {
+    // Return error page
+    const errorContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Error - Invalid Link</title>
+        <style>${styles}</style>
+      </head>
+      <body>
+        <div class="controls">
+          <h2>Error</h2>
+        </div>
+        <div class="content">
+          <h1>Invalid Tenant Portal Link</h1>
+          <p style="color: #ff4444;">The link you are trying to access is not valid.</p>
+          <p>Please contact your landlord to get the correct tenant portal link.</p>
+          <p id="error-details" style="color: #888; font-size: 0.9em;">${error.message}</p>
+        </div>
+      </body>
+      </html>
+    `;
+    res.send(errorContent);
+  }
+});
+
+// Add a route to clear logs
+// Add a route to clear logs
+// Add a route to clear logs
+// Add a route to clear logs
+// Add a route to clear logs
+// Add a route to clear logs
+// Add a route to clear logs
+// Add a route to clear logs
+// Add a route to clear logs
+// Add a route to clear logs
+// Add a route to clear logs
+
 app.post('/clear-logs', (req, res) => {
   try {
     fs.writeFileSync(path.join(__dirname, 'logs.log'), '');
@@ -300,21 +1036,39 @@ app.post('/clear-logs', (req, res) => {
   }
 });
 const sendSMS = async (phoneNumber, message, user) => {
-  logger.debug(`Attempting to send SMS to: ${phoneNumber}, checking limit.. MAX LIMIT IS ${user.SMSMonthlyLimit}`);
+  let formattedPhone = phoneNumber;
+  if (phoneNumber.startsWith('0')) {
+    // Remove leading 0 and add 2519
+    formattedPhone = `251${phoneNumber.substring(1)}`;
+  } else if (!phoneNumber.startsWith('251')) {
+    // If doesn't start with 251, assume it needs full prefix
+    formattedPhone = `251${phoneNumber}`;
+  }
+
+  logger.debug(
+    `Attempting to send SMS to: ${formattedPhone}, checking limit.. MAX LIMIT IS ${user.SMSMonthlyLimit}`
+  );
+
   const history = await new Promise((resolve, reject) => {
-    pool.query("SELECT * FROM sms_history WHERE userId = '${user.id}'", (error, results) => {
-      if (error) reject(error);
-      else resolve(results);
-    });
+    pool.query(
+      `SELECT * FROM sms_history WHERE userId = '${user.id}'`,
+      (error, results) => {
+        if (error) reject(error);
+        else resolve(results);
+      }
+    );
   });
- 
-    if(user.SMSMonthlyLimit <= history.length) {
-        return {
-                success: false,
-    log: 'data.log',
-    api_log_id: 'data.api_log_id',
-        }
-    }
+
+  if (user.SMSMonthlyLimit <= history.length) {
+    logger.debug(
+      `SMS limit reached for user ${user.id}. Current limit: ${history.length}, Max limit: ${user.SMSMonthlyLimit}`
+    );
+    return {
+      success: false,
+      log: 'data.log',
+      api_log_id: 'data.api_log_id',
+    };
+  }
   return {
     success: true,
     log: 'data.log',
@@ -325,10 +1079,7 @@ const sendSMS = async (phoneNumber, message, user) => {
     return { success: false, error: 'SMS token not configured' };
   }
 
-  // Ensure phone number starts with 251
-  const formattedPhone = phoneNumber.startsWith('251')
-    ? phoneNumber
-    : `251${phoneNumber.replace(/^0+/, '')}`;
+  // Format phone number to start with 251 and 9
 
   const params = new URLSearchParams({
     token: user.SmsToken,
@@ -634,6 +1385,76 @@ app.post('/api/send-email', async (req, res) => {
     });
   }
 });
+app.post('/api/send-email-without-user', async (req, res) => {
+  const { email, subject, text } = req.body;
+
+  // Fix typo in logger.debug
+  logger.debug('Send email', subject, email?.slice(0, 100), text);
+
+  try {
+    // Validate required fields
+    if (!email || !subject || !text) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields',
+      });
+    }
+
+    // Create transporter with more detailed configuration
+    const transporter = nodemailer.createTransport({
+      host: 'rentmaster.markethubet.com',
+      port: 465,
+      secure: true, // use SSL
+      auth: {
+        user: 'rentmaster@rentmaster.markethubet.com',
+        pass: 'Plp5H9:Li(UO#6[y+26E',
+      },
+      tls: {
+        rejectUnauthorized: false, // Only during development/testing
+      },
+      debug: true, // Enable debug logs
+      logger: true, // Enable built-in logger
+    });
+
+    // Verify transporter configuration
+    try {
+      await transporter.verify();
+    } catch (verifyError) {
+      logger.error('Transporter verification failed:', verifyError);
+      return res.status(500).json({
+        success: false,
+        error: 'Email server configuration error',
+      });
+    }
+
+    const mailOptions = {
+      from: `rentmaster@rentmaster.markethubet.com`,
+      to: email,
+      subject: subject,
+      text: text,
+      // Optional: Add HTML version
+      html: text.replace(/\n/g, '<br>'),
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+    logger.debug('Email sent successfully:', info.messageId);
+
+    res.json({
+      success: true,
+      messageId: info.messageId,
+    });
+  } catch (error) {
+    logger.error(`Failed to send email to: ${email}. Error:`, error);
+
+    // Send appropriate error response
+    const statusCode = error.responseCode || 500;
+    res.status(statusCode).json({
+      success: false,
+      error: error.message,
+      code: error.code || 'UNKNOWN_ERROR',
+    });
+  }
+});
 app.get('/api/exchange-rates', async (req, res) => {
   const { start, end } = req.query;
   let query = 'SELECT * FROM `Exchange_RatesUSDtoETB`';
@@ -683,15 +1504,6 @@ app.post('/api/verify-credentials', async (req, res) => {
         }
       );
     });
-
-    if (!user) {
-      return res.json({ isValid: false });
-    }
-
-    // Compare the provided password with the stored hash
-    const isPasswordValid = password === user.password;
-
-    res.json({ isValid: isPasswordValid });
   } catch (error) {
     logger.error('Error verifying credentials:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -1117,7 +1929,7 @@ const processNotifications = async () => {
               logger.debug(
                 `Email sending result: ${JSON.stringify(emailResult)}`
               );
-              // Add a row to email_history
+
               const addToEmailHistoryQuery = `
               INSERT INTO email_history (id, receiver, subject, body, templateId, sentDate, \`from\`, mode,userId)
               VALUES (?, ?, ?, ?, ?, ?, ?, ?,?)
@@ -1138,7 +1950,7 @@ const processNotifications = async () => {
                     EmailTemplateObject.email_template_id,
                     sentDate,
                     user.selectedEmailToSendWith,
-                    `Automatically`,
+                    `Rent_Automatic`,
                     user.id,
                   ],
                   (error, results) => {
@@ -1190,7 +2002,7 @@ const processNotifications = async () => {
                         EmailTemplateObject.email_template_id,
                         moment().valueOf(),
                         user.selectedEmailToSendWith,
-                        'Representative_Automatic',
+                        'Rent_Representative_Automatic',
                         user.id,
                       ],
                       (error) => {
@@ -1322,7 +2134,7 @@ const processNotifications = async () => {
                       smsBody,
                       SmsTemplateObject.sms_template_id,
                       moment().valueOf(),
-                      'Automatic',
+                      'Rent_Automatic',
                       user.id,
                     ],
                     (error) => {
@@ -1363,7 +2175,7 @@ const processNotifications = async () => {
                         `[REP] ${smsBody}`,
                         SmsTemplateObject.sms_template_id,
                         moment().valueOf(),
-                        'Representative_Automatic',
+                        'Rent_Representative_Automatic',
                         user.id,
                       ],
                       (error) => {
@@ -1398,8 +2210,8 @@ const processNotifications = async () => {
 const generateUtilityDueDates = (room, startDate, currentDate) => {
   const cycleType = room.utilityPaymentEvery || '30';
   const customDays = room.utilityPaymentEveryCustom || 0;
-  
-  let dueDate = moment(startDate).add(1, 'days');
+
+  let dueDate = moment(startDate);
   const dueDates = [];
 
   // Generate dates until we're past current date
@@ -1458,7 +2270,8 @@ const processUtilityNotifications = async () => {
            t.email as tenantEmail,
            t.startTime as startTime,
            u.selectedEmailToSendWith,
-           u.selectedEmailToSendWithPassword
+           u.selectedEmailToSendWithPassword,
+           u.SmsShortCode as smsShortCode
          FROM utility_payments_settings ups
          INNER JOIN rooms r ON ups.roomId = r.id 
          LEFT JOIN tenants t ON r.tenantId = t.id
@@ -1504,14 +2317,16 @@ const processUtilityNotifications = async () => {
 
       logger.debug(`│ Found tenant: ${room.tenantName} (${room.tenantId})`);
       logger.debug(`│ Tenant email: ${room.tenantEmail}`);
-      logger.debug(`│ utility start date use: ${room.utilityPaymentUseDifferentStartDate}`);
+      logger.debug(
+        `│ utility start date use: ${room.utilityPaymentUseDifferentStartDate}`
+      );
       logger.debug(`│ utility start date: ${room.utilityPaymentStartDate}`);
       logger.debug(`│ Tenant start date: ${room.startTime}`);
 
       // Determine start date
       const startDate = room.utilityPaymentUseDifferentStartDate
-        ? moment(room.utilityPaymentStartDate)
-        : moment(room.startTime);
+        ? moment(room.utilityPaymentStartDate).add(1, 'day')
+        : moment(room.startTime).add(1, 'day');
 
       if (!startDate.isValid()) {
         logger.debug('│ ⚠️ Skipping room - invalid start date');
@@ -1546,16 +2361,22 @@ const processUtilityNotifications = async () => {
       });
 
       const allUtilityPayments = await new Promise((resolve, reject) => {
-        pool.query('SELECT * FROM utility_payments', (error, results) => {
-          if (error) {
-            logger.debug(`Query error: ${error.message}`);
-            reject(error);
-          } else {
-            // Debug log the results
-            logger.debug(`Raw utility settings: ${JSON.stringify(results[0])}`);
-            resolve(results);
+        pool.query(
+          'SELECT * FROM utility_payments WHERE userId = ?',
+          [room.userId],
+          (error, results) => {
+            if (error) {
+              logger.debug(`Query error: ${error.message}`);
+              reject(error);
+            } else {
+              // Debug log the results
+              logger.debug(
+                `Raw utility settings: ${JSON.stringify(results[0])}`
+              );
+              resolve(results);
+            }
           }
-        });
+        );
       });
 
       // Process each due date
@@ -1579,16 +2400,18 @@ const processUtilityNotifications = async () => {
 
         logger.debug(
           `│ ALL DATA is 
-          allUtilityPayments: ${(JSON.stringify(allUtilityPayments))}
+          allUtilityPayments: ${JSON.stringify(allUtilityPayments)}
           roomID: ${room.id}
           dueDate: ${dueDate}
           `
         );
         // Check if utility payment exists and is paid
-        const matchingPayments = (JSON.parse(JSON.stringify(allUtilityPayments)))
+        const matchingPayments = JSON.parse(JSON.stringify(allUtilityPayments))
           .filter((payment) => {
             const dueDateStart = moment(dueDate).startOf('day');
-            const paymentDate = moment(payment.date).startOf('day');
+            const paymentDate = moment(payment.date)
+              .startOf('day')
+              .add(1, 'day');
             logger.debug(`│ │ Checking payment:
             Payment ID: ${payment.id}
             Date: ${paymentDate} OTHER: ${dueDateStart} CHECK: ${paymentDate.isSame(
@@ -1600,7 +2423,9 @@ const processUtilityNotifications = async () => {
           })
           .filter((payment) => {
             const dueDateStart = moment(dueDate).startOf('day');
-            const paymentDate = moment(payment.date).startOf('day');
+            const paymentDate = moment(payment.date)
+              .startOf('day')
+              .add(1, 'day');
 
             // Log each check
             logger.debug(`│ │ Checking payment:
@@ -1628,9 +2453,13 @@ const processUtilityNotifications = async () => {
             );
           });
         logger.debug(
-          `│ │ MATCHING PAYMENTS: ${matchingPayments}, ammount ${matchingPayments.length}, AS PARSED: ${JSON.parse(JSON.stringify(matchingPayments))}, as stringified: ${JSON.stringify(matchingPayments)} `
+          `│ │ MATCHING PAYMENTS: ${matchingPayments}, ammount ${
+            matchingPayments.length
+          }, AS PARSED: ${JSON.parse(
+            JSON.stringify(matchingPayments)
+          )}, as stringified: ${JSON.stringify(matchingPayments)} `
         );
-       
+
         logger.debug(
           `│ │ ✓ Notification day matched: ${daysUntilDue} days until due`
         );
@@ -1684,17 +2513,30 @@ const processUtilityNotifications = async () => {
           continue;
         }
 
-        // Prepare utility summary
+        // Prepare utility summary and track unpaid utilities
+        const unpaidUtilities = [];
         const utilitiesList = utilities
           .map((utilitySettings) => {
-
             // Ensure we're using the price from utility_payments_settings
             const price = Number(utilitySettings.price) || 0;
-            logger.debug(`│ │ Checking for payment for ${utilitySettings.type}, id: ${utilitySettings.id}, found: ${JSON.stringify(matchingPayments).find(p => p.id === utilitySettings.id)}`);
-            if(JSON.stringify(matchingPayments).find(p => p.id === utilitySettings.id)) {
+            // ... existing code ...
+            const matchingPayment = matchingPayments.find(
+              (p) => p.type === utilitySettings.type
+            );
+            logger.debug(
+              `│ │ Checking for payment for ${utilitySettings.type}, found: ${
+                matchingPayment ? JSON.stringify(matchingPayment) : 'undefined'
+              }`
+            );
+
+            // ... existing code ...
+            if (matchingPayment) {
               logger.debug(`│ │ ✓ Payment found for ${utilitySettings.type}`);
               return;
             }
+
+            // Add to unpaid utilities if no payment found
+            unpaidUtilities.push(utilitySettings);
 
             return `${utilitySettings.type}: ${price.toFixed(2)} ${
               utilitySettings.Currency
@@ -1703,25 +2545,28 @@ const processUtilityNotifications = async () => {
           .filter(Boolean)
           .join('\n');
 
-        if(utilitiesList.length === 0) {
+        if (utilitiesList.length === 0) {
           logger.debug(`│ │ ⚠️ Skipping - no utilities to pay`);
           continue;
         }
 
-        // Calculate total amount per currency
-        const totalsByCurrency = utilities.reduce((acc, utilitySettings) => {
-          const currency = utilitySettings.Currency;
-          const price = Number(utilitySettings.price) || 0;
-          logger.debug(
-            `Adding price ${price} ${currency} from utility ${utilitySettings.type}`
-          );
+        // Calculate total amount per currency for unpaid utilities only
+        const totalsByCurrency = unpaidUtilities.reduce(
+          (acc, utilitySettings) => {
+            const currency = utilitySettings.Currency;
+            const price = Number(utilitySettings.price) || 0;
+            logger.debug(
+              `Adding price ${price} ${currency} from utility ${utilitySettings.type}`
+            );
 
-          if (!acc[currency]) {
-            acc[currency] = 0;
-          }
-          acc[currency] += price;
-          return acc;
-        }, {});
+            if (!acc[currency]) {
+              acc[currency] = 0;
+            }
+            acc[currency] += price;
+            return acc;
+          },
+          {}
+        );
 
         // Format totals by currency
         const totalAmountText = Object.entries(totalsByCurrency)
@@ -1796,6 +2641,35 @@ Generated on: ${currentDate.format('MMMM D, YYYY, h:mm A')}
                   utilities[0].selectedEmailToSendWithPassword,
               });
               logger.debug(`│ │ ✓ Sent email to tenant: ${tenantEmail}`);
+              const addToEmailHistoryQuery = `
+              INSERT INTO email_history (id, receiver, subject, body, templateId, sentDate, \`from\`, mode,userId)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?,?)
+            `;
+              const emailHistoryId = `${room.id}_${Date.now()}_${Math.random()
+                .toString(36)
+                .substr(2, 9)}`;
+              const sentDate = moment().valueOf();
+
+              await new Promise((resolve, reject) => {
+                pool.query(
+                  addToEmailHistoryQuery,
+                  [
+                    emailHistoryId,
+                    tenantEmail,
+                    emailSubject,
+                    emailBody,
+                    'Utility',
+                    sentDate,
+                    utilities[0].selectedEmailToSendWith,
+                    `Utility_Automatic_Tenant`,
+                    utilities[0].userId,
+                  ],
+                  (error, results) => {
+                    if (error) reject(error);
+                    else resolve(results);
+                  }
+                );
+              });
             } catch (error) {
               logger.debug(
                 `│ │ ✗ Failed to send email to tenant: ${error.message}`
@@ -1824,7 +2698,7 @@ Generated on: ${currentDate.format('MMMM D, YYYY, h:mm A')}
             );
 
             if (repEmails.length > 0) {
-              const emailSubject = `Utility Payment Due Today - Floor ${room.floor}, Room ${room.roomIndex}`;
+              const emailSubject = `[REPRESENTATIVE] Utility Payment Due Today For - Floor ${room.floor}, Room ${room.roomIndex}`;
               const emailBody = `
 Dear Representative,
 
@@ -1855,6 +2729,35 @@ Generated on: ${currentDate.format('MMMM D, YYYY, h:mm A')}
                     logger.debug(
                       `│ │ ✓ Sent email to representative: ${repEmail}`
                     );
+                    const addToEmailHistoryQuery = `
+                    INSERT INTO email_history (id, receiver, subject, body, templateId, sentDate, \`from\`, mode,userId)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?,?)
+                  `;
+                    const emailHistoryId = `${
+                      room.id
+                    }_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+                    const sentDate = moment().valueOf();
+
+                    await new Promise((resolve, reject) => {
+                      pool.query(
+                        addToEmailHistoryQuery,
+                        [
+                          emailHistoryId,
+                          repEmail,
+                          emailSubject,
+                          emailBody,
+                          'Utility',
+                          sentDate,
+                          users[0].selectedEmailToSendWith,
+                          `Utility_Automatic_Representative`,
+                          users[0].id,
+                        ],
+                        (error, results) => {
+                          if (error) reject(error);
+                          else resolve(results);
+                        }
+                      );
+                    });
                   } catch (error) {
                     logger.debug(
                       `│ │ ✗ Failed to send email to representative: ${error.message}`
@@ -1899,6 +2802,35 @@ Total: ${totalAmountText.replace(/\.00/g, '')}`;
               const smsResult = await sendSMS(repPhone, repSmsMessage, user);
               if (smsResult.success) {
                 logger.debug(`│ │ ✓ Sent SMS to representative: ${repPhone}`);
+                const smsHistoryId = `${room.id}_${Date.now()}_${Math.random()
+                  .toString(36)
+                  .substr(2, 9)}`;
+                const sentDate = moment().valueOf();
+
+                await new Promise((resolve, reject) => {
+                  pool.query(
+                    `INSERT INTO sms_history (id, receiver, body, templateId, sentDate, mode, userId)
+                   VALUES (?, ?, ?, ?, ?, ?, ?)`,
+                    [
+                      smsHistoryId,
+                      repPhone,
+                      '',
+                      repSmsMessage,
+                      'Utility',
+                      sentDate,
+                      utilities[0].smsShortCode || '',
+                      'Utility_Automatic_Representative',
+                      user.id,
+                    ],
+                    (error, results) => {
+                      if (error) reject(error);
+                      else resolve(results);
+                    }
+                  );
+                });
+                logger.debug(
+                  `│ │ ✓ Added SMS history to representative: ${repPhone}`
+                );
               } else {
                 logger.debug(
                   `│ │ ✗ Failed to send SMS to representative: ${repPhone}`
@@ -1928,6 +2860,33 @@ Total: ${totalAmountText.replace(/\.00/g, '')}`;
             );
             if (smsResult.success) {
               logger.debug(`│ │ ✓ Sent SMS to tenant: ${tenantPhone}`);
+              const smsHistoryId = `${room.id}_${Date.now()}_${Math.random()
+                .toString(36)
+                .substr(2, 9)}`;
+              const sentDate = moment().valueOf();
+
+              await new Promise((resolve, reject) => {
+                pool.query(
+                  `INSERT INTO sms_history (id, receiver, body, templateId, sentDate, mode, userId)
+                   VALUES (?, ?, ?, ?, ?, ?, ?)`,
+                  [
+                    smsHistoryId,
+                    tenantPhone,
+                    '',
+                    tenantSmsMessage,
+                    'Utility',
+                    sentDate,
+                    utilities[0].smsShortCode || '',
+                    'Utility_Automatic_Tenant',
+                    user.id,
+                  ],
+                  (error, results) => {
+                    if (error) reject(error);
+                    else resolve(results);
+                  }
+                );
+              });
+              logger.debug(`│ │ ✓ Added SMS history to tenant: ${tenantPhone}`);
             } else {
               logger.debug(
                 `│ │ ✗ Failed to send SMS to tenant: ${tenantPhone}`
@@ -2073,10 +3032,10 @@ const validateEmail = (email) => {
     /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
   return emailRegex.test(email);
 };
-
 const validatePhoneNumber = (phone) => {
   if (!phone) return false;
-  const phoneRegex = /^\+?[1-9]\d+$/; // Allow any number of digits after first digit
+  // Allow Ethiopian phone numbers starting with 0 followed by 9 digits
+  const phoneRegex = /^0\d{9}$/;
   return phoneRegex.test(phone.replace(/[\s-]/g, ''));
 };
 
@@ -2103,7 +3062,7 @@ const validateAndLogPhone = (phone, logger) => {
   logger.debug(`Phone validation for ${phone}:`);
   logger.debug(`  Sanitized: ${sanitizedPhone}`);
   logger.debug(`  Valid: ${isValid}`);
-  return true;
+  return isValid;
 };
 // Add this function to generate predicted expenses
 const calculatePredictedExpenses = async (expense, currentDate) => {
@@ -2382,7 +3341,7 @@ Generated on: ${moment().format('MMMM D, YYYY, h:mm A')}
                 logger.debug(
                   `Would send SMS to validated number: ${sanitizedPhone}`
                 );
-                // ... rest of the SMS sending code ...
+                sendSMS(sanitizedPhone, smsBody, user);
               } else {
                 logger.warn(`⚠️ Skipping invalid phone number: ${recipient}`);
               }
@@ -2969,8 +3928,16 @@ app.put('/api/:tableName/:id/:columnName', (req, res) => {
 });
 // Modify the server start log message with ASCII art and color codes
 app.listen(PORT, () => {
-  logger.debug('╔════════════════════════════════════════════════════════════════════════════╗');
-  logger.debug('║                     SERVER STARTED SUCCESSFULLY                            ║');
-  logger.debug('║                     PORT: ' + PORT.toString().padEnd(39) + '      ║');
-  logger.debug('╚════════════════════════════════════════════════════════════════════════════╝');
+  logger.debug(
+    '╔════════════════════════════════════════════════════════════════════════════╗'
+  );
+  logger.debug(
+    '║                     SERVER STARTED SUCCESSFULLY                            ║'
+  );
+  logger.debug(
+    '║                     PORT: ' + PORT.toString().padEnd(39) + '      ║'
+  );
+  logger.debug(
+    '╚════════════════════════════════════════════════════════════════════════════╝'
+  );
 });

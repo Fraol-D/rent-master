@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { LineChart } from '@mui/x-charts/LineChart';
 import { Input } from '../Helpers/CustomReactComponents';
+import { axisClasses } from '@mui/x-charts/ChartsAxis';
 
 const TenantGrowthWidget = ({ TenantList }: { TenantList: tenant[] }) => {
   const [viewBy, setViewBy] = useState<'month' | 'year'>('month');
@@ -149,17 +150,20 @@ const TenantGrowthWidget = ({ TenantList }: { TenantList: tenant[] }) => {
           width={480}
           height={160}
           sx={{
-          
-          
-            '.MuiChartsAxis-line': {
-              stroke: 'var(--Text-Color)',
+            [`.${axisClasses.left} .${axisClasses.label}`]: {
+              transform: 'translate(var(---35px-V), 0)',
+              color: 'var(--Text-Color)',
+              fill: 'var(--Text-Color)',
             },
-            '.MuiChartsAxis-tick': {
-              stroke: 'var(--Text-Color)',
+            [`.${axisClasses.root}`]: {
+              [`.${axisClasses.tick}, .${axisClasses.line}`]: {
+                stroke: 'var(--Text-Color)',
+                strokeWidth: 1,
+              },
+              [`.${axisClasses.tickLabel}`]: {
+                fill: 'var(--Text-Color)',
+              },
             },
-         
-
-         
           }}
         />
       ) : (

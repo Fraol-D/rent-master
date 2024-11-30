@@ -35,6 +35,7 @@ import CurrencySign, {
   GetDefaultCurrency,
 } from './Helpers/CurrencySign';
 import { IconsGUI } from '../getIcons';
+import { useAlert } from 'renderer/components/useAlert';
 type FilterOption = {
   key: string;
   value: any;
@@ -758,10 +759,19 @@ const MainPage = ({
     'TenantsList' | 'BrokersList' | 'TenantReviews'
   >('TenantsList');
   const [ToolsSelectedPage, setToolsSelectedPage] = useState<
-    'EmailTemplates' | 'SMSTemplates' | 'Expense Manager' | 'Settings' | 'Support'
+    | 'EmailTemplates'
+    | 'SMSTemplates'
+    | 'Expense Manager'
+    | 'Settings'
+    | 'Support'
   >('EmailTemplates');
   const [DashboardSelectedPage, setDashboardSelectedPage] = useState<
-    'Overview' | 'Email History' | 'Expenses' | 'Action History' | 'SMS Details' | 'Basic Rental income report'
+    | 'Overview'
+    | 'Email History'
+    | 'Expenses'
+    | 'Action History'
+    | 'SMS Details'
+    | 'Basic Rental income report'
   >('Overview');
   const [AddARoomState, setAddARoomState] = useState(false);
   const [AddRoomFormFloor, setAddRoomFormFloor] = useState(1);
@@ -990,14 +1000,16 @@ const MainPage = ({
 
   const [SelectedEditRoomId, setSelectedEditRoomId] = useState('');
   const [DeleteConfimation, setDeleteConfimation] = useState(false);
+  const { showAlert } = useAlert();
+  
   const handleDeleteFirst = async () => {
-    if (!DeleteConfimation) setDeleteConfimation(true);
+    if (!DeleteConfimation) setInterval(() => setDeleteConfimation(true), 1000);
     if (DeleteConfimation) {
       if (
         RoomList.find((r: RoomType) => r.id === SelectedEditRoomId).status ===
         'Taken'
       ) {
-        alert('You can not delete a room that is taken');
+        showAlert('You can not delete a room that is taken','error');
         return;
       }
       const listOfPayments = await getValuesWithSql(
@@ -1466,7 +1478,7 @@ const MainPage = ({
                 <button
                   className="SideBarTopButton"
                   onClick={handleCloseSideBar}
-                  title='Close Sidebar'
+                  title="Close Sidebar"
                 >
                   close sidebar
                 </button>
@@ -1476,7 +1488,7 @@ const MainPage = ({
                     onClick={() => {
                       handleAddRoomButtonInitial(!AddARoomState);
                     }}
-                    title='Add room'
+                    title="Add room"
                   >
                     Add room
                   </button>
@@ -1489,7 +1501,7 @@ const MainPage = ({
                   style={{
                     visibility: SideBarShowState ? 'visible' : 'hidden',
                   }}
-                  title='Clear filters'
+                  title="Clear filters"
                 >
                   Clear Filters
                 </button>
@@ -1521,12 +1533,12 @@ const MainPage = ({
                   <div
                     className="SearchBarContainer"
                     style={{
-                     
                       backgroundColor: 'var(--Secondary-Color30)',
                       margin: 'var(--10px-V)',
                       borderRadius: 'var(--10px-V)',
                       padding: 'var(--10px-V)',
-                      boxShadow: 'var(--3px-V) var(--3px-V) var(--5px-V) var(---1px-V) var(--Secondary-Color30)'
+                      boxShadow:
+                        'var(--3px-V) var(--3px-V) var(--5px-V) var(---1px-V) var(--Secondary-Color30)',
                     }}
                   >
                     <div
@@ -1534,11 +1546,9 @@ const MainPage = ({
                       style={{
                         cursor: 'pointer',
                         fontSize: 'var(--22px-V)',
-                  
-                      
                       }}
                     >
-                   Search rooms
+                      Search rooms
                     </div>
                     {isSearchOpen && (
                       <div
@@ -1546,8 +1556,8 @@ const MainPage = ({
                           width: '100%',
                           display: 'flex',
                           flexDirection: 'column',
-                       marginLeft:"var(--10px-V)",
-                       marginTop:"var(--10px-V)",
+                          marginLeft: 'var(--10px-V)',
+                          marginTop: 'var(--10px-V)',
                           alignItems: 'flex-start',
                         }}
                       >
@@ -1606,14 +1616,15 @@ const MainPage = ({
                       margin: 'var(--10px-V)',
                       borderRadius: 'var(--10px-V)',
                       padding: 'var(--10px-V)',
-                      boxShadow: 'var(--3px-V) var(--3px-V) var(--5px-V) var(---1px-V) var(--Secondary-Color30)'
+                      boxShadow:
+                        'var(--3px-V) var(--3px-V) var(--5px-V) var(---1px-V) var(--Secondary-Color30)',
                     }}
                   >
                     <div
                       onClick={toggleFilter}
                       style={{
                         cursor: 'pointer',
-                        fontSize: 'var(--22px-V)'
+                        fontSize: 'var(--22px-V)',
                       }}
                     >
                       Filter rooms
@@ -1622,11 +1633,11 @@ const MainPage = ({
                       <div
                         style={{
                           width: '100%',
-                          display: 'flex', 
+                          display: 'flex',
                           flexDirection: 'column',
                           marginLeft: 'var(--10px-V)',
                           marginTop: 'var(--10px-V)',
-                          alignItems: 'flex-start'
+                          alignItems: 'flex-start',
                         }}
                       >
                         <div>
@@ -1646,7 +1657,7 @@ const MainPage = ({
                             style={{
                               width: 'var(--90px-V)',
                               height: 'var(--30px-V)',
-                              marginLeft: 'var(--10px-V)'
+                              marginLeft: 'var(--10px-V)',
                             }}
                           >
                             <option value="Taken">Taken</option>
@@ -1671,7 +1682,7 @@ const MainPage = ({
                               width: 'var(--50px-V)',
                               height: 'var(--25px-V)',
                               marginLeft: 'var(--10px-V)',
-                              marginRight: 'var(--10px-V)'
+                              marginRight: 'var(--10px-V)',
                             }}
                             className="filter-drop"
                           >
@@ -1682,7 +1693,8 @@ const MainPage = ({
                           </select>
                           <input
                             type="number"
-                            className="RoomSearchBar"placeholder='2500'
+                            className="RoomSearchBar"
+                            placeholder="2500"
                             value={filterPriceValue}
                             onChange={(e) => {
                               setFilterPriceValue(e.target.value);
@@ -1708,10 +1720,10 @@ const MainPage = ({
                               );
                             }}
                             style={{
-                              width: 'var(--50px-V)', 
+                              width: 'var(--50px-V)',
                               height: 'var(--25px-V)',
                               marginLeft: 'var(--10px-V)',
-                              marginRight: 'var(--10px-V)'
+                              marginRight: 'var(--10px-V)',
                             }}
                             className="filter-drop"
                           >
@@ -1723,7 +1735,7 @@ const MainPage = ({
                           <input
                             type="number"
                             className="RoomSearchBar"
-                            placeholder='5 days'
+                            placeholder="5 days"
                             value={FilterDueDateValue}
                             onChange={(e) => {
                               setFilterDueDateValue(e.target.value);
@@ -1754,7 +1766,7 @@ const MainPage = ({
                               width: 'var(--50px-V)',
                               height: 'var(--25px-V)',
                               marginLeft: 'var(--10px-V)',
-                              marginRight: 'var(--10px-V)'
+                              marginRight: 'var(--10px-V)',
                             }}
                             className="filter-drop"
                           >
@@ -1766,7 +1778,7 @@ const MainPage = ({
                           <input
                             type="number"
                             className="RoomSearchBar"
-                            placeholder='35m²'
+                            placeholder="35m²"
                             value={filterSquareFeetValue}
                             onChange={(e) => {
                               setFilterSquareFeetValue(e.target.value);
@@ -1793,7 +1805,7 @@ const MainPage = ({
                             style={{
                               width: 'var(--130px-V)',
                               height: 'var(--25px-V)',
-                              marginLeft: 'var(--10px-V)'
+                              marginLeft: 'var(--10px-V)',
                             }}
                           >
                             <option value="all">All Currencies</option>
@@ -1801,7 +1813,7 @@ const MainPage = ({
                           </select>
                         </div>
 
-                       {/** <div style={{ visibility: 'hidden', marginTop: 'var(--10px-V)' }}>
+                        {/** <div style={{ visibility: 'hidden', marginTop: 'var(--10px-V)' }}>
                           <button
                             className="sort-button"
                             onClick={() => {
@@ -1893,21 +1905,11 @@ const MainPage = ({
                           <em style={{ color: 'red' }}>Already exist</em>
                         )}{' '}
                       </div>
-                      <div className="AddaNewRoomRowObject">
-                        Currency:
-                        <select
-                          value={AddRoomFormCurrency}
-                          onChange={(e) =>
-                            setAddRoomFormCurrency(e.target.value)
-                          }
-                          className="AddANewRoomSelectMid"
-                        >
-                          {GetCurrencyAsOptionsOnSelect()}
-                        </select>
-                      </div>
+
                       <div className="AddaNewRoomRowObject">
                         Price (inc. VAT):
                         <input
+                          style={{ width: 'var(--100px-V)' }}
                           className={`AddANewRoomInputsSmall ${
                             highlightedFields.includes('roomPrice')
                               ? 'highlight-reset-field'
@@ -1920,7 +1922,15 @@ const MainPage = ({
                             setAddRoomFormPrice(parseInt(e.target.value))
                           }
                         />
-                        {CurrencySign(AddRoomFormCurrency)}
+                        <select
+                          value={AddRoomFormCurrency}
+                          onChange={(e) =>
+                            setAddRoomFormCurrency(e.target.value)
+                          }
+                          className="AddANewRoomSelectMid"
+                        >
+                          {GetCurrencyAsOptionsOnSelect()}
+                        </select>
                       </div>
                       <div className="AddaNewRoomRowObject">
                         Payment cycle:{' '}
@@ -1980,93 +1990,110 @@ const MainPage = ({
                             Add
                           </button>
                         </h3>
-                        {AddRoomFormRoomSpecifications.map((spec, index) => (
-                          <div
-                            key={index}
-                            className="AddANewRoomSpecObjectMainContainer"
-                          >
-                            <div>
-                              Name:
-                              <input
-                                className="AddANewRoomInputsMid"
-                                value={spec.Detail}
-                                onChange={(e) =>
-                                  handleAddRoomFormSpecificationChange(
-                                    index,
-                                    'Detail',
-                                    e.target.value
-                                  )
-                                }
-                              />
-                              {spec.type === 'bool' ? (
-                                <>
-                                  <input
-                                    type="checkbox"
-                                    checked={spec.Boolean}
-                                    onChange={(e) =>
-                                      handleAddRoomFormSpecificationChange(
-                                        index,
-                                        'Boolean',
-                                        e.target.checked
-                                      )
-                                    }
-                                  />{' '}
-                                  {spec.Boolean ? 'Yes' : 'No'}
-                                </>
-                              ) : (
+                        {AddRoomFormRoomSpecifications.length === 0 ? (
+                          <div className="AddANewRoomSpecObjectMainContainer">
+                            <div
+                              style={{
+                                color: 'var(--Text-Color-Grey)',
+                                fontStyle: 'italic',
+                              }}
+                            >
+                              <div>Click "Add" above to add specifications</div>
+                              Example specifications:
+                              <div>• Bedrooms: 3</div>
+                              <div>• Balcony: Yes</div>
+                            </div>
+                          </div>
+                        ) : (
+                          AddRoomFormRoomSpecifications.map((spec, index) => (
+                            <div
+                              key={index}
+                              className="AddANewRoomSpecObjectMainContainer"
+                            >
+                              <div>
+                                Name:
                                 <input
-                                  type="number"
-                                  className="AddANewRoomInputsSmall"
-                                  value={spec.Number}
+                                  className="AddANewRoomInputsMid"
+                                  value={spec.Detail}
+                                  placeholder="Enter name"
                                   onChange={(e) =>
                                     handleAddRoomFormSpecificationChange(
                                       index,
-                                      'Number',
+                                      'Detail',
                                       e.target.value
                                     )
                                   }
                                 />
-                              )}
+                                {spec.type === 'bool' ? (
+                                  <>
+                                    <input
+                                      type="checkbox"
+                                      checked={spec.Boolean}
+                                      onChange={(e) =>
+                                        handleAddRoomFormSpecificationChange(
+                                          index,
+                                          'Boolean',
+                                          e.target.checked
+                                        )
+                                      }
+                                    />{' '}
+                                    {spec.Boolean ? 'Yes' : 'No'}
+                                  </>
+                                ) : (
+                                  <input
+                                    type="number"
+                                    className="AddANewRoomInputsSmall"
+                                    value={spec.Number}
+                                    onChange={(e) =>
+                                      handleAddRoomFormSpecificationChange(
+                                        index,
+                                        'Number',
+                                        e.target.value
+                                      )
+                                    }
+                                  />
+                                )}
+                              </div>
+                              <div style={{ marginTop: '10px' }}>
+                                <input
+                                  type="radio"
+                                  name={`spec-${index}`}
+                                  value="bool"
+                                  checked={spec.type === 'bool'}
+                                  onChange={(e) =>
+                                    handleAddRoomFormSpecificationChange(
+                                      index,
+                                      'type',
+                                      'bool'
+                                    )
+                                  }
+                                />{' '}
+                                Yes/No
+                                <input
+                                  type="radio"
+                                  name={`spec-${index}`}
+                                  value="number"
+                                  checked={spec.type === 'number'}
+                                  onChange={(e) =>
+                                    handleAddRoomFormSpecificationChange(
+                                      index,
+                                      'type',
+                                      'number'
+                                    )
+                                  }
+                                />{' '}
+                                Number{' - - '}
+                                <button
+                                  onClick={() =>
+                                    removeAddRoomFormSpecification(index)
+                                  }
+                                >
+                                  Delete
+                                </button>
+                              </div>
                             </div>
-                            <div>
-                              <input
-                                type="radio"
-                                name={`spec-${index}`}
-                                value="bool"
-                                checked={spec.type === 'bool'}
-                                onChange={(e) =>
-                                  handleAddRoomFormSpecificationChange(
-                                    index,
-                                    'type',
-                                    'bool'
-                                  )
-                                }
-                              />{' '}
-                              Yes/No
-                              <input
-                                type="radio"
-                                name={`spec-${index}`}
-                                value="number"
-                                checked={spec.type === 'number'}
-                                onChange={(e) =>
-                                  handleAddRoomFormSpecificationChange(
-                                    index,
-                                    'type',
-                                    'number'
-                                  )
-                                }
-                              />{' '}
-                              Number{' - - '}
-                              <button
-                                onClick={() =>
-                                  removeAddRoomFormSpecification(index)
-                                }
-                              >
-                                Delete
-                              </button>
-                            </div>
-                          </div>
-                        ))}
+                          ))
+                        )}
                       </div>
                       <div className="AddARoomImageMainContainer">
                         <ImageInteractor2
@@ -2268,10 +2295,7 @@ const MainPage = ({
             </>
           ) : SelectedPage === 'People' ? (
             <>
-              <p>
-                Peoples page{' '}
-                <button onClick={RefreshDataFromSqlite}>Refresh</button>
-              </p>
+             
 
               <SideBarItem
                 page="TenantsList"
@@ -2324,16 +2348,16 @@ const MainPage = ({
                   Expense Manager
                 </SideBarItem>
               )}
-<br />  
+              <br />
 
-                <SideBarItem
-                  page="Support"
-                  currentPage={ToolsSelectedPage}
-                  onClick={() => setToolsSelectedPage('Support')}
-                >
-                  Support
-                </SideBarItem>
-              
+              <SideBarItem
+                page="Support"
+                currentPage={ToolsSelectedPage}
+                onClick={() => setToolsSelectedPage('Support')}
+              >
+                Support
+              </SideBarItem>
+
               {privileges.editSettings && (
                 <SideBarItem
                   page="Settings"
@@ -2343,70 +2367,91 @@ const MainPage = ({
                   Settings
                 </SideBarItem>
               )}
-            
             </>
           ) : SelectedPage === 'Dashboard' ? (
             <>
-            <h3 style={{ fontSize: 'var(--28px-V)', margin: 'var(--15px-V) 0px var(--15px-V) 0px' }}>
-              Dashboard
-            </h3>
-            <h3 style={{ fontSize: 'var(--20px-V)', margin: '0px 0px 0px 0px' }}>
-              Overview
-            </h3>
-            <SideBarItem
-              page="Overview" 
-              currentPage={DashboardSelectedPage}
-              onClick={() => setDashboardSelectedPage('Overview')}
-            >
-              Overview
-            </SideBarItem>
-            
-            <SideBarItem
-              page="Expenses"
-              currentPage={DashboardSelectedPage}
-              onClick={() => setDashboardSelectedPage('Expenses')}
-            >
-              Expenses
-            </SideBarItem>
-            <h3 style={{ fontSize: 'var(--20px-V)', margin: '0px 0px 0px 0px' }}>
-              Communication
-            </h3>
-            <SideBarItem
-              page="Email History"
-              currentPage={DashboardSelectedPage}
-              onClick={() => setDashboardSelectedPage('Email History')}
-            >
-              Email History
-            </SideBarItem>
-            <SideBarItem
-              page="SMS Details"
-              currentPage={DashboardSelectedPage}
-              onClick={() => setDashboardSelectedPage('SMS Details')}
-            >
-              SMS Details
-            </SideBarItem>
-            <h3 style={{ fontSize: 'var(--20px-V)', margin: '0px 0px 0px 0px' }}>
-              History
-            </h3>
-            <SideBarItem
-              page="Action History"
-              currentPage={DashboardSelectedPage}
-              onClick={() => setDashboardSelectedPage('Action History')}
-            >
-              Action History
-            </SideBarItem>
-            <h3 style={{ fontSize: 'var(--20px-V)', margin: '0px 0px 0px 0px' }}>
-              Reports
-            </h3>
-            <SideBarItem
-              page="Basic Rental income report"
-              currentPage={DashboardSelectedPage}
-              onClick={() => setDashboardSelectedPage('Basic Rental income report')}
-            >
-              Basic Rental income report
-            </SideBarItem>
-            <p style={{fontSize:"var(--12px-V)",color:"var(--Text-Color-Grey)"}}>More reports coming soon</p>
-          </>
+              <h3
+                style={{
+                  fontSize: 'var(--28px-V)',
+                  margin: 'var(--15px-V) 0px var(--15px-V) 0px',
+                }}
+              >
+                Dashboard
+              </h3>
+              <h3
+                style={{ fontSize: 'var(--20px-V)', margin: '0px 0px 0px 0px' }}
+              >
+                Overview
+              </h3>
+              <SideBarItem
+                page="Overview"
+                currentPage={DashboardSelectedPage}
+                onClick={() => setDashboardSelectedPage('Overview')}
+              >
+                Overview
+              </SideBarItem>
+
+              <SideBarItem
+                page="Expenses"
+                currentPage={DashboardSelectedPage}
+                onClick={() => setDashboardSelectedPage('Expenses')}
+              >
+                Expenses
+              </SideBarItem>
+              <h3
+                style={{ fontSize: 'var(--20px-V)', margin: '0px 0px 0px 0px' }}
+              >
+                Communication
+              </h3>
+              <SideBarItem
+                page="Email History"
+                currentPage={DashboardSelectedPage}
+                onClick={() => setDashboardSelectedPage('Email History')}
+              >
+                Email History
+              </SideBarItem>
+              <SideBarItem
+                page="SMS Details"
+                currentPage={DashboardSelectedPage}
+                onClick={() => setDashboardSelectedPage('SMS Details')}
+              >
+                SMS Details
+              </SideBarItem>
+              <h3
+                style={{ fontSize: 'var(--20px-V)', margin: '0px 0px 0px 0px' }}
+              >
+                History
+              </h3>
+              <SideBarItem
+                page="Action History"
+                currentPage={DashboardSelectedPage}
+                onClick={() => setDashboardSelectedPage('Action History')}
+              >
+                Action History
+              </SideBarItem>
+              <h3
+                style={{ fontSize: 'var(--20px-V)', margin: '0px 0px 0px 0px' }}
+              >
+                Reports
+              </h3>
+              <SideBarItem
+                page="Basic Rental income report"
+                currentPage={DashboardSelectedPage}
+                onClick={() =>
+                  setDashboardSelectedPage('Basic Rental income report')
+                }
+              >
+                Basic Rental income report
+              </SideBarItem>
+              <p
+                style={{
+                  fontSize: 'var(--12px-V)',
+                  color: 'var(--Text-Color-Grey)',
+                }}
+              >
+                More reports coming soon
+              </p>
+            </>
           ) : (
             <></>
           )}
@@ -2440,63 +2485,81 @@ const MainPage = ({
                   {
                     RoomList.find((r: RoomType) => r.id === SelectedEditRoomId)
                       .roomIndex
-                  }
-                </p>
+                  } ({RoomList.find((r: RoomType) => r.id === SelectedEditRoomId).status})
+                </p><button
+              style={{width:"20%", marginLeft:"auto"}}
+                onClick={() => {
+                  handleDeleteFirst();
+                }}
+              >
+                {DeleteConfimation ? 'Confirm Delete' : 'Delete this room'}
+              </button>
               </div>{' '}
-              <div className="AddaNewRoomRowObject">
-                Payment Cycle :{' '}
-                <select
-                  value={tempPaymentCycle}
-                  onChange={(e) => setTempPaymentCycle(e.target.value)}
-                  onBlur={handleBlurPaymentCycle}
-                >
-                  <option value="monthly">Monthly</option>
-                  <option value="weekly">Weekly</option>
-                  <option value="daily">Daily</option>
-                  <option value="30">30</option>
-                  <option value="15">15</option>
-                  <option value="7">7</option>
-                  <option value="Annually">Annually</option>
-                  <option value="custom">Custom</option>
-                </select>
-                {tempPaymentCycle === 'custom' && (
+            {RoomList.find((r: RoomType) => r.id === SelectedEditRoomId).status === "Empty" && <>  <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'space-around',
+                  width: '100%',
+                }}
+              >
+                <div className="AddaNewRoomRowObject">
+                  Payment Cycle :{' '}
+                  <select
+                    value={tempPaymentCycle}
+                    onChange={(e) => setTempPaymentCycle(e.target.value)}
+                    onBlur={handleBlurPaymentCycle}
+                  >
+                    <option value="monthly">Monthly</option>
+                    <option value="weekly">Weekly</option>
+                    <option value="daily">Daily</option>
+                    <option value="30">30</option>
+                    <option value="15">15</option>
+                    <option value="7">7</option>
+                    <option value="Annually">Annually</option>
+                    <option value="custom">Custom</option>
+                  </select>
+                  {tempPaymentCycle === 'custom' && (
+                    <input
+                      type="number"
+                      value={tempPaymentCycleCustomDays}
+                      onBlur={handleBlurCustomePaymentCycle}
+                      onKeyDown={handleKeyDownCustomePaymentCycle}
+                      onChange={(e) =>
+                        setTempPaymentCycleCustomDays(e.target.value)
+                      }
+                    />
+                  )}
+                </div>
+                <div className="AddaNewRoomRowObject">
+                  Price :{' '}
                   <input
+                    className="AddANewRoomInputsSmall"
                     type="number"
-                    value={tempPaymentCycleCustomDays}
-                    onBlur={handleBlurCustomePaymentCycle}
-                    onKeyDown={handleKeyDownCustomePaymentCycle}
-                    onChange={(e) =>
-                      setTempPaymentCycleCustomDays(e.target.value)
-                    }
+                    placeholder="Price"
+                    value={tempPrice}
+                    onChange={(e) => setTempPrice(e.target.value)}
+                    onBlur={handleBlurPrice}
+                    onKeyDown={handleKeyDownPrice}
                   />
-                )}
-              </div>
-              <div className="AddaNewRoomRowObject">
-                Price :{' '}
-                <input
-                  className="AddANewRoomInputsSmall"
-                  type="number"
-                  placeholder="Price"
-                  value={tempPrice}
-                  onChange={(e) => setTempPrice(e.target.value)}
-                  onBlur={handleBlurPrice}
-                  onKeyDown={handleKeyDownPrice}
-                />
-              </div>
-              <div className="AddaNewRoomRowObject">
-                Square Meters :{' '}
-                <input
-                  className="AddANewRoomInputsSmall"
-                  type="number"
-                  placeholder="Square Meters"
-                  value={tempSquareMeters}
-                  onChange={(e) => setTempSquareMeters(e.target.value)}
-                  onBlur={handleBlur}
-                  onKeyDown={handleKeyDown}
-                />
-              </div>
+                </div>
+                <div className="AddaNewRoomRowObject">
+                  Square Meters :{' '}
+                  <input
+                    className="AddANewRoomInputsSmall"
+                    type="number"
+                    placeholder="Square Meters"
+                    value={tempSquareMeters}
+                    onChange={(e) => setTempSquareMeters(e.target.value)}
+                    onBlur={handleBlur}
+                    onKeyDown={handleKeyDown}
+                  />
+                </div>{' '}
+              </div>{' '}</>}
               <div style={{ display: 'flex' }}>
                 <div
+                style={{height:RoomList.find((r: RoomType) => r.id === SelectedEditRoomId).status === "Empty" ? "var(--440px-V)" : "var(--480px-V)"}}
                   className={`RoomSpecficationsMainContainer ${
                     highlightedFields.includes('specifications')
                       ? 'highlight-reset-field'
@@ -2726,13 +2789,7 @@ const MainPage = ({
                   )}
                 />
               </div>
-              <button
-                onClick={() => {
-                  handleDeleteFirst();
-                }}
-              >
-                {DeleteConfimation ? 'Confirm Delete' : 'Delete this room'}
-              </button>
+              
             </div>
           </>
         )}

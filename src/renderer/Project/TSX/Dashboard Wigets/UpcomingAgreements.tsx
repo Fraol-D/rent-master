@@ -74,7 +74,7 @@ const UpcomingAgreements = ({
             backgroundColor:
               activeTab === 'upcoming'
                 ? 'var(--Secondary-Color)'
-                : 'var(--Background-Color)',
+                : 'var(--Secondary-Color30)',
             cursor: 'pointer',
           }}
         >
@@ -88,7 +88,7 @@ const UpcomingAgreements = ({
             backgroundColor:
               activeTab === 'expired'
                 ? 'var(--Secondary-Color)'
-                : 'var(--Background-Color)',
+                : 'var(--Secondary-Color30)',
             cursor: 'pointer',
           }}
         >

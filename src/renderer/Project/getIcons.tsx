@@ -119,6 +119,7 @@ import VendorLight from '../assets/assets/Light mode/Vendor.png';
 import XLight from '../assets/assets/Light mode/X.png';
 import AddRoomLight from '../assets/assets/Light mode/AddRoom.png';
 import ClearFiltersLight from '../assets/assets/Light mode/ClearFilters.png';
+import { LIMIT_LIKE_PATTERN_LENGTH } from 'sqlite3';
 
 export const IconsGUI = () => {
   const DARKtheme = window.electron.store.get("ThemeMode") === "light";
@@ -181,6 +182,6 @@ export const IconsGUI = () => {
     VendorIcon: DARKtheme ? VendorDark : VendorLight,
     XIcon: DARKtheme ? XDark : XLight,
     AddRoomIcon: DARKtheme ? AddRoomDark : AddRoomLight,
-    ClearFiltersIcon: DARKtheme ? ClearFiltersDark : ClearFiltersLight,
+    if it is going to mak eit ? make it insted use the emails firt LIMIT_LIKE_PATTERN_LENGTH: DARKtheme ? ClearFiltersDark : ClearFiltersLight,
   }
 };

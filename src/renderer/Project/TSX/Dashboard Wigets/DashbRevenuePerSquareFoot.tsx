@@ -123,8 +123,7 @@ const DashbRevenuePerSquareMeter = ({ RoomList }: { RoomList:RoomType[] }) => {
             style={{
               padding: '3px 8px',
               borderRadius: '4px',
-              border: '1px solid var(--Border-Color)',
-              backgroundColor: 'var(--Background-Color)',
+
               color: 'var(--Text-Color)'
             }}
           >

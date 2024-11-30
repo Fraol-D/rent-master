@@ -6,6 +6,7 @@ import {
   deleteRoomImage,
   getRoomImages,
 } from 'Backend/localServerApis';
+import { useAlert } from 'renderer/components/useAlert';
 
 interface ImageInteractorProps {
   onAddImage: () => void;
@@ -61,6 +62,7 @@ const ImageInteractor: React.FC<ImageInteractorProps> = ({
   const toggleFullScreen = () => {
     setIsFullScreen(!isFullScreen);
   };
+  const { showAlert } = useAlert();
   const handleOnAddImage = () => {
     const input = document.createElement('input');
     input.type = 'file';
@@ -72,12 +74,12 @@ const ImageInteractor: React.FC<ImageInteractorProps> = ({
       if (files && files.length > 0) {
         const validFiles = Array.from(files).filter(file => file.size <= 5 * 1024 * 1024); // 5MB limit
         if (validFiles.length === 0) {
-          alert('All selected files exceed the 5MB size limit. Please select smaller images.');
+          showAlert('All selected files exceed the 5MB size limit. Please select smaller images.');
           console.error('All selected files exceed the 5MB size limit');
           return;
         }
         if (validFiles.length < files.length) {
-          alert(`${files.length - validFiles.length} file(s) were skipped because they exceed the 5MB size limit.`);
+          showAlert(`${files.length - validFiles.length} file(s) were skipped because they exceed the 5MB size limit.`);
         }
         try {
           const folderText = `Floor ${room.floor}, Room ${room.roomIndex} - ${room.id}`;
@@ -87,11 +89,11 @@ const ImageInteractor: React.FC<ImageInteractorProps> = ({
             fetchRoomImages();
           } else {
             console.error('Failed to upload images');
-            alert('Failed to upload images. Please try again.');
+            showAlert('Failed to upload images. Please try again.');
           }
         } catch (error) {
           console.error('Error uploading files:', error);
-          alert('An error occurred while uploading files. Please try again.');
+          showAlert('An error occurred while uploading files. Please try again.');
         }
       }
     };

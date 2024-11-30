@@ -58,7 +58,7 @@ export function PeopleComponentPage({
       case '30':
         return '30 days';
       case '15':
-        return '15 days';
+        return '15 days'; 
       case '7':
         return '7 days';
       case 'monthly':
@@ -88,7 +88,7 @@ export function PeopleComponentPage({
       <span>
         {parts.filter(String).map((part, i) => {
           return regex.test(part) ? (
-            <mark key={i} style={{ backgroundColor: 'yellow', color: 'black' }}>
+            <mark key={i} style={{ backgroundColor: 'var(--Accent-Color)', color: 'var(--Text-Color)', padding: '0 var(--2px-V)' }}>
               {part}
             </mark>
           ) : (
@@ -100,7 +100,7 @@ export function PeopleComponentPage({
   };
 
   const [Agreements, setAgreements] = useState<agreements[]>([]);
-  const [AgreementsId, setAgreementsId] = useState<>('');
+  const [AgreementsId, setAgreementsId] = useState<string>('');
 
   const HandleOpenClicked = (tenantId: string) => {
     const roomType = RoomList.find((r: RoomType) => r.tenantId === tenantId);
@@ -140,18 +140,21 @@ export function PeopleComponentPage({
         style={{ width: '100%', height: 'calc(100% - var(--60px-V))' }}
       >
         <div style={{ marginBottom: 'var(--20px-V)' }}>
-          Search:
-          <input
+   
+         <input
             type="text"
             value={mainSearch}
             onChange={handleMainSearch}
-            placeholder="Search all fields"
+            placeholder="Search all fields..."
             style={{
-              width: 'var(--200px-V)',
-              padding: 'var(--5px-V)',
+              width: 'var(--300px-V)',
+              padding: 'var(--10px-V)',
               fontSize: 'var(--16px-V)',
-              borderRadius: 'var(--5px-V)',
-              border: 'var(--1px-V) solid #ccc',
+              borderRadius: 'var(--8px-V)',
+              border: 'var(--1px-V) solid var(--Secondary-Color)',
+           
+              color: 'var(--Text-Color)',
+              transition: 'all 0.3s ease'
             }}
           />
         </div>
@@ -222,8 +225,8 @@ export function PeopleComponentPage({
                       style={{
                         backgroundColor:
                           index % 2 === 0
-                            ? '#FFFFFF1C'
-                            : 'rgba(224 224 224 / 0.06)',
+                            ? 'var(--Secondary-Color20)'
+                            : 'var(--Secondary-Color40)',
                       }}
                     >
                                            {' '}

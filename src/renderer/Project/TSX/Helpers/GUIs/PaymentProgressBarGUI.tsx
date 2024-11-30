@@ -23,6 +23,7 @@ import {
 import UtilityPanel from './UtilityPanel';
 import { Payment } from 'electron';
 import CurrencySign, { formatNumberWithSuffix } from '../CurrencySign';
+import { useAlert } from 'renderer/components/useAlert';
 export type RoomPayInfo = {
   Day: number; // milliseconds since January 1, 1970, 00:00:00 UTC
   Paid: boolean;
@@ -352,6 +353,7 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
       calculateDaysTillNextPayment(await calculatePredictedPayments(roomType))
     );
   };
+  const { showAlert } = useAlert();
   useEffect(() => {
     if (payments.length > 0 && svgRef.current) {
       const scaleFactor = getScaleFactor();const sortedPaymentData = [...payments].sort((a, b) => a.Day - b.Day);
@@ -825,6 +827,7 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
             tenantList.find((t: tenant) => t.id === roomType.tenantId)
           );
         }
+
         // Unimplemented functions
         function AddAReceipt(d: any) {
           const input = document.createElement('input');
@@ -840,7 +843,7 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
               );
 
               if (validFiles.length !== files.length) {
-                alert(
+                showAlert(
                   'Some files were skipped because they exceed the 5MB size limit.'
                 );
               }
@@ -880,7 +883,7 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
                   console.error('Error uploading files:', error);
                 }
               } else {
-                alert(
+                showAlert(
                   'No valid files selected. Please choose files under 5MB in size.'
                 );
               }

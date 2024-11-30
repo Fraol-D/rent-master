@@ -5,12 +5,14 @@ import { Input } from '../Helpers/CustomReactComponents';
 import { LineChart } from '@mui/x-charts/LineChart';
 import { axisClasses } from '@mui/x-charts/ChartsAxis';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns';
+import { getValuesWithSql } from 'Backend/localServerApis';
 
 interface props {
   SelectedUserId: string;
   RoomList: RoomType[];
   tenantList: tenant[];
 }
+
 type emailHistoryType = {
   id: string;
   receiver: string;
@@ -22,6 +24,7 @@ type emailHistoryType = {
   from: string;
   mode: string;
 };
+
 const DashbEmailHistory = ({ SelectedUserId, RoomList, tenantList }: props) => {
   const [emailHistory, setEmailHistory] = useState<emailHistoryType[]>([]);
   const [expandedEmailId, setExpandedEmailId] = useState<string | null>(null);
@@ -38,6 +41,7 @@ const DashbEmailHistory = ({ SelectedUserId, RoomList, tenantList }: props) => {
   });
   const [advancedSearchVisible, setAdvancedSearchVisible] = useState(false);
   const [applyFiltersToGraph, setApplyFiltersToGraph] = useState(false);
+  const [emailTemplates, setEmailTemplates] = useState<emailTemplate[]>([]);
 
   useEffect(() => {
     const fetchEmailHistory = async () => {
@@ -45,12 +49,14 @@ const DashbEmailHistory = ({ SelectedUserId, RoomList, tenantList }: props) => {
         'email_history',
         `WHERE userId = '${SelectedUserId}'`
       );
+      const emailTemplates = await getValuesWithSql('email_templates', `WHERE 1`);
+      setEmailTemplates(emailTemplates);
       const sortedEmailHistory = emailHistoryRaw.sort(
         (a: emailHistoryType, b: emailHistoryType) => b.sentDate - a.sentDate
       );
       setEmailHistory(sortedEmailHistory);
     };
-    fetchEmailHistory();
+    if (navigator.onLine) fetchEmailHistory();
   }, [SelectedUserId]);
 
   const toggleExpand = (id: string) => {
@@ -75,22 +81,24 @@ const DashbEmailHistory = ({ SelectedUserId, RoomList, tenantList }: props) => {
     return (
       emailDate.getMonth() + 1 === month &&
       emailDate.getFullYear() === year &&
-      (searchConfig.receiver === '' || 
+      (searchConfig.receiver === '' ||
         email.receiver.toLowerCase().includes(searchConfig.receiver.toLowerCase())) &&
-      (searchConfig.subject === '' || 
+      (searchConfig.subject === '' ||
         email.subject.toLowerCase().includes(searchConfig.subject.toLowerCase())) &&
-      (searchConfig.body === '' || 
+      (searchConfig.body === '' ||
         email.body.toLowerCase().includes(searchConfig.body.toLowerCase())) &&
       (searchConfig.mode === '' || email.mode === searchConfig.mode) &&
-      (searchConfig.room === '' || room?.roomIndex.toString() === searchConfig.room) &&
-      (searchConfig.floor === '' || room?.floor.toString() === searchConfig.floor)
+      (searchConfig.room === '' ||
+        room?.roomIndex.toString() === searchConfig.room) &&
+      (searchConfig.floor === '' ||
+        room?.floor.toString() === searchConfig.floor)
     );
   });
 
   const handleSearchChange = (field: string, value: string) => {
-    setSearchConfig(prev => ({
+    setSearchConfig((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
   };
 
@@ -106,32 +114,34 @@ const DashbEmailHistory = ({ SelectedUserId, RoomList, tenantList }: props) => {
 
     const emailsToCount = applyFiltersToGraph ? filteredEmails : emailHistory;
 
-    const dailyEmailCounts = daysInMonth.map(day => {
-      const dayEmails = emailsToCount.filter(email => {
+    const dailyEmailCounts = daysInMonth.map((day) => {
+      const dayEmails = emailsToCount.filter((email) => {
         const emailDate = new Date(email.sentDate);
-        return emailDate.getDate() === day.getDate() &&
-               emailDate.getMonth() === day.getMonth() &&
-               emailDate.getFullYear() === day.getFullYear();
+        return (
+          emailDate.getDate() === day.getDate() &&
+          emailDate.getMonth() === day.getMonth() &&
+          emailDate.getFullYear() === day.getFullYear()
+        );
       });
       return {
         date: format(day, 'd'),
-        emails: dayEmails.length
+        emails: dayEmails.length,
       };
     });
 
-    const totalEmails = emailsToCount.filter(email => {
+    const totalEmails = emailsToCount.filter((email) => {
       const emailDate = new Date(email.sentDate);
       return emailDate >= monthStart && emailDate <= monthEnd;
     }).length;
 
-    const highestDailyEmails = Math.max(...dailyEmailCounts.map(d => d.emails));
+    const highestDailyEmails = Math.max(...dailyEmailCounts.map((d) => d.emails));
     const averageDailyEmails = totalEmails / daysInMonth.length;
 
     return {
       dailyEmailCounts,
       totalEmails,
       highestDailyEmails,
-      averageDailyEmails
+      averageDailyEmails,
     };
   }, [selectedDate, emailHistory, filteredEmails, applyFiltersToGraph]);
 
@@ -202,7 +212,6 @@ const DashbEmailHistory = ({ SelectedUserId, RoomList, tenantList }: props) => {
     >
       <h1 style={{ margin: 'var(--10px-V)' }}>Email History</h1>
 
-      {/* Chart Section */}
       <div
         style={{
           width: '90%',
@@ -210,7 +219,7 @@ const DashbEmailHistory = ({ SelectedUserId, RoomList, tenantList }: props) => {
           borderRadius: 'var(--8px-V)',
           paddingBottom: 'var(--15px-V)',
           marginBottom: 'var(--20px-V)',
-          paddingTop: 'var(--15px-V)'
+          paddingTop: 'var(--15px-V)',
         }}
       >
         {renderChart()}
@@ -220,16 +229,13 @@ const DashbEmailHistory = ({ SelectedUserId, RoomList, tenantList }: props) => {
             justifyContent: 'space-around',
             marginTop: 'var(--10px-V)',
           }}
-        ><p>
-            Limit: <strong>NONE</strong>
-          </p>
+        >
           <p>
             Total Emails: <strong>{emailStats.totalEmails}</strong>
           </p>
           <p>
             Highest Daily: <strong>{emailStats.highestDailyEmails}</strong>
           </p>
-          
           <p>
             Average Daily:{' '}
             <strong>{emailStats.averageDailyEmails.toFixed(1)}</strong>
@@ -237,7 +243,6 @@ const DashbEmailHistory = ({ SelectedUserId, RoomList, tenantList }: props) => {
         </div>
       </div>
 
-      {/* Basic Search Controls */}
       <div
         style={{
           display: 'flex',
@@ -257,7 +262,6 @@ const DashbEmailHistory = ({ SelectedUserId, RoomList, tenantList }: props) => {
           onClick={() => setAdvancedSearchVisible(!advancedSearchVisible)}
           style={{
             padding: 'var(--5px-V) var(--10px-V)',
-           
             border: 'var(--1px-V) solid var(--Border-Color)',
             borderRadius: 'var(--4px-V)',
             cursor: 'pointer',
@@ -267,11 +271,9 @@ const DashbEmailHistory = ({ SelectedUserId, RoomList, tenantList }: props) => {
         </button>
       </div>
 
-      {/* Advanced Search Panel */}
       {advancedSearchVisible && (
         <div
           style={{
-           
             marginBottom: 'var(--20px-V)',
             padding: 'var(--15px-V)',
             backgroundColor: 'var(--Secondary-Color30)',
@@ -279,12 +281,18 @@ const DashbEmailHistory = ({ SelectedUserId, RoomList, tenantList }: props) => {
             boxShadow: '0 var(--2px-V) var(--8px-V) rgba(0,0,0,0.1)',
           }}
         >
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 'var(--10px-V)' }}>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr 1fr',
+              gap: 'var(--10px-V)',
+            }}
+          >
             <div>
-              <label>Receiver Email:</label>
+              <label>Email Address:</label>
               <input
                 type="text"
-                placeholder="Search receiver..."
+                placeholder="Search email..."
                 value={searchConfig.receiver}
                 onChange={(e) => handleSearchChange('receiver', e.target.value)}
                 style={{ marginBottom: 'var(--10px-V)' }}
@@ -307,7 +315,7 @@ const DashbEmailHistory = ({ SelectedUserId, RoomList, tenantList }: props) => {
                 placeholder="Search email body..."
                 value={searchConfig.body}
                 onChange={(e) => handleSearchChange('body', e.target.value)}
-                style={{  marginBottom: 'var(--10px-V)' }}
+                style={{ marginBottom: 'var(--10px-V)' }}
               />
             </div>
             <div>
@@ -315,7 +323,7 @@ const DashbEmailHistory = ({ SelectedUserId, RoomList, tenantList }: props) => {
               <select
                 value={searchConfig.mode}
                 onChange={(e) => handleSearchChange('mode', e.target.value)}
-                style={{  marginBottom: 'var(--10px-V)' }}
+                style={{ marginBottom: 'var(--10px-V)' }}
               >
                 <option value="">All Modes</option>
                 <option value="Manually">Manually</option>
@@ -330,7 +338,6 @@ const DashbEmailHistory = ({ SelectedUserId, RoomList, tenantList }: props) => {
                 placeholder="Room number..."
                 value={searchConfig.room}
                 onChange={(e) => handleSearchChange('room', e.target.value)}
-        
               />
             </div>
             <div>
@@ -340,32 +347,36 @@ const DashbEmailHistory = ({ SelectedUserId, RoomList, tenantList }: props) => {
                 placeholder="Floor number..."
                 value={searchConfig.floor}
                 onChange={(e) => handleSearchChange('floor', e.target.value)}
-              
               />
             </div>
           </div>
-          <div style={{ 
-            display: 'flex', 
-            gap: 'var(--10px-V)', 
-            marginTop: 'var(--10px-V)' 
-          }}>
+          <div
+            style={{
+              display: 'flex',
+              gap: 'var(--10px-V)',
+              marginTop: 'var(--10px-V)',
+            }}
+          >
             <button
-              onClick={() => setSearchConfig({
-                receiver: '',
-                subject: '',
-                body: '',
-                mode: '',
-                room: '',
-                floor: '',
-              })}
-              
+              onClick={() =>
+                setSearchConfig({
+                  receiver: '',
+                  subject: '',
+                  body: '',
+                  mode: '',
+                  room: '',
+                  floor: '',
+                })
+              }
             >
               Clear All Filters
             </button>
             <button
               onClick={() => setApplyFiltersToGraph(!applyFiltersToGraph)}
             >
-              {applyFiltersToGraph ? 'Remove Filters from Graph' : 'Apply Filters to Graph'}
+              {applyFiltersToGraph
+                ? 'Remove Filters from Graph'
+                : 'Apply Filters to Graph'}
             </button>
           </div>
         </div>
@@ -381,109 +392,205 @@ const DashbEmailHistory = ({ SelectedUserId, RoomList, tenantList }: props) => {
 
       <div style={{ width: '90%', height: '100%' }}>
         {filteredEmails.length > 0 ? (
-          filteredEmails.map((email) => (
-            <div
-              key={email.id}
-              onClick={() => toggleExpand(email.id)}
-              className="email-template-container"
-              style={{
-                cursor: 'pointer',
-                width: '98%',
-              
-                padding: 'var(--10px-V)',
-                borderRadius: 'var(--5px-V)',
-                boxShadow: '0 var(--2px-V) var(--4px-V) rgba(0,0,0,0.1)',
-                transition: 'all 0.3s ease',
-              }}
-            >
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 'var(--10px-V)',
+              padding: 'var(--5px-V)',
+              width: '100%',
+            }}
+          >
+            {filteredEmails.map((email) => (
               <div
+                key={email.id}
+                onClick={() => toggleExpand(email.id)}
+                className="email-template-container"
                 style={{
+                  cursor: 'pointer',
+                  marginBottom: 'var(--5px-V)',
+                  backgroundColor: 'var(--Secondary-Color30)',
+                  padding: 'var(--10px-V)',
+                  borderRadius: 'var(--10px-V)',
+                  boxShadow: '0 var(--2px-V) var(--8px-V) rgba(0,0,0,0.15)',
+                  transition: 'all 0.3s ease',
+                  border: '1px solid var(--Border-Color)',
                   display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
+                  gap: 'var(--15px-V)',
+                  alignItems: 'flex-start',
                 }}
               >
-                <div>
-                  <p>
-                    <strong>To:</strong> (
-                    {
-                      tenantList.find(
-                        (tenant) => tenant.email === email.receiver
-                      )?.name
-                    }{' '}
-                    - Rm.{' '}
-                    {
-                      RoomList.find(
-                        (room) =>
-                          room.tenantId ===
-                          tenantList.find(
-                            (tenant) => tenant.email === email.receiver
-                          )?.id
-                      )?.roomIndex
-                    }{' '}
-                    Flr.{' '}
-                    {
-                      RoomList.find(
-                        (room) =>
-                          room.tenantId ===
-                          tenantList.find(
-                            (tenant) => tenant.email === email.receiver
-                          )?.id
-                      )?.floor
-                    }
-                    ) {email.receiver} - sent with {email.from}
-                  </p>
-                  <p>
-                    <strong>Sent:</strong>{' '}
-                    {new Date(email.sentDate).toLocaleDateString('en-US', {
-                      month: 'long',
-                      day: 'numeric',
-                      year: 'numeric',
-                    })}{' '}
-                    -{' '}
-                    {new Date(email.sentDate).toLocaleTimeString('en-US', {
-                      hour: 'numeric',
-                      minute: '2-digit',
-                      hour12: true,
-                    })}
-                  </p>
-                  <p>
-                    <strong>Subject:</strong> {email.subject}
-                  </p>
-                  <p>
-                    <strong>Mode:</strong> {email.mode || 'Unknown'}
-                  </p>
-                </div>
                 <div
                   style={{
-                    fontSize: 'var(--24px-V)',
-                    marginLeft: 'var(--10px-V)',
+                    backgroundColor: 'var(--Primary-Color20)',
+                    padding: 'var(--10px-V)',
+                    borderRadius: '50%',
+                    color: 'var(--Primary-Color)',
+                    fontSize: 'var(--20px-V)',
+                    height: 'var(--10px-V)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
                   }}
                 >
-                  {expandedEmailId === email.id ? '▼' : '▶'}{' '}
-                  {/* Show down arrow if expanded, right arrow if not */}
+                  {(() => {
+  const tenant = tenantList.find((tenant) => tenant.email === email.receiver);
+  if (tenant?.name) {
+    const words = tenant.name.split(' ');
+    return (words[0]?.charAt(0) || '') + (words[1]?.charAt(0) || '');
+  } else {
+    // Use email's first letter if no name found
+    return email.receiver.charAt(0).toUpperCase();
+  }
+})()}
+                </div>
+
+                <div style={{ flex: 1 }}>
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'flex-start',
+                    }}
+                  >
+                    <div>
+                      <h3
+                        style={{
+                          margin: 0,
+                          fontSize: 'var(--16px-V)',
+                          marginBottom: 'var(--3px-V)',
+                        }}
+                      >
+                        {tenantList.find(
+                          (tenant) => tenant.email === email.receiver
+                        )?.name || email.receiver}
+                      </h3>
+                      <div
+                        style={{
+                          display: 'flex',
+                          gap: 'var(--10px-V)',
+                          fontSize: 'var(--12px-V)',
+                        }}
+                      >
+                        <span>
+                          Room{' '}
+                          {RoomList.find(
+                            (room) =>
+                              room.tenantId ===
+                              tenantList.find(
+                                (tenant) => tenant.email === email.receiver
+                              )?.id
+                          )?.roomIndex || '?'}
+                        </span>
+                        <span>•</span>
+                        <span>
+                          Floor{' '}
+                          {RoomList.find(
+                            (room) =>
+                              room.tenantId ===
+                              tenantList.find(
+                                (tenant) => tenant.email === email.receiver
+                              )?.id
+                          )?.floor || '?'}
+                        </span>
+                        <span>•</span>
+                        <span>{email.from}</span>
+                        <span>•</span>
+                        <span>{email.mode || 'Unknown Mode'}</span>
+                      </div>
+                    </div>
+                    <div
+                      style={{
+                        fontSize: 'var(--14px-V)',
+                        color: 'var(--Text-Color)',
+                        fontWeight: 'bold',
+                        textAlign: 'right',
+                      }}
+                    >
+                      {new Date(email.sentDate).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                      })}
+                      <div
+                        style={{
+                          fontSize: 'var(--12px-V)',
+                          color: 'var(--Text-Color-Grey)',
+                          fontWeight: 'normal',
+                        }}
+                      >
+                        {new Date(email.sentDate).toLocaleTimeString('en-US', {
+                          hour: 'numeric',
+                          minute: '2-digit',
+                          hour12: true,
+                        })}
+                      </div>
+                    </div>
+                  </div>
+
+                  {expandedEmailId === email.id && (
+                    <div
+                      style={{
+                        backgroundColor: 'var(--Secondary-Color60)',
+                        padding: 'var(--10px-V)',
+                        borderRadius: 'var(--8px-V)',
+                        marginTop: 'var(--5px-V)',
+                      }}
+                    >
+                      <div
+                        style={{
+                          fontSize: 'var(--12px-V)',
+                          color: 'var(--Text-Color-Grey)',
+                          marginBottom: 'var(--5px-V)',
+                        }}
+                      >
+                        Template:{' '}
+                        {emailTemplates.find(
+                          (template) => template.id === email.templateId
+                        )?.name || email.templateId}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: 'var(--14px-V)',
+                          fontWeight: 'bold',
+                          marginBottom: 'var(--5px-V)',
+                        }}
+                      >
+                        {email.subject}
+                      </div>
+                      <pre
+                        style={{
+                          whiteSpace: 'pre-wrap',
+                          wordWrap: 'break-word',
+                          fontSize: 'var(--13px-V)',
+                          color: 'var(--Text-Color)',
+                          margin: 0,
+                        }}
+                      >
+                        {formatEmailBody(email.body)}
+                      </pre>
+                    </div>
+                  )}
                 </div>
               </div>
-              {expandedEmailId === email.id && (
-                <div>
-                  <p>
-                    <strong>Template ID:</strong> {email.templateId}
-                  </p>
-
-                  <p>
-                    <strong>Body:</strong>
-                  </p>
-                  <pre
-                    style={{ whiteSpace: 'pre-wrap', wordWrap: 'break-word' }}
-                  >
-                    {formatEmailBody(email.body)}
-                  </pre>
-                </div>
-              )}
-            </div>
-          ))
+            ))}
+          </div>
         ) : (
-          <p style={{color:'var(--Text-Color-Grey)',textAlign:'center'}}>No emails found for the selected criteria.</p>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              height: '150px',
+              color: 'var(--Text-Color-Grey)',
+              fontSize: 'var(--16px-V)',
+              fontStyle: 'italic',
+              backgroundColor: 'var(--Secondary-Color60)',
+              borderRadius: 'var(--10px-V)',
+              margin: 'var(--10px-V)',
+            }}
+          >
+            No emails found for the selected criteria. Try clearing all Filters.
+          </div>
         )}
       </div>
     </div>

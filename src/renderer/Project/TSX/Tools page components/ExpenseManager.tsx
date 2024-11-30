@@ -683,9 +683,7 @@ interface ExpenseManagerContainerProps {
                         style={{
                           width: '95%',
                           padding: 'var(--5px-V)',
-                          border:
-                            'var(--1px-V) solid var(--Secondary-Color)',
-                          backgroundColor: 'var(--Background-Color)',
+                         
                           color: 'var(--Text-Color)',
                           resize: 'vertical',
                           maxHeight: 'var(--100px-V)',

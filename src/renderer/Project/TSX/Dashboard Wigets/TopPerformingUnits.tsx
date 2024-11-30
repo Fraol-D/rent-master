@@ -189,7 +189,7 @@ const TopPerformingUnits = ({
               backgroundColor:
                 activeTab === 'brokers'
                   ? 'var(--Secondary-Color)'
-                  : 'var(--Background-Color)',
+                  : 'var(--Secondary-Color30)',
               cursor: 'pointer',
             }}
           >
@@ -203,7 +203,7 @@ const TopPerformingUnits = ({
               backgroundColor:
                 activeTab === 'loyal'
                   ? 'var(--Secondary-Color)'
-                  : 'var(--Background-Color)',
+                  : 'var(--Secondary-Color30)',
               cursor: 'pointer',
             }}
           >
@@ -217,7 +217,7 @@ const TopPerformingUnits = ({
               backgroundColor:
                 activeTab === 'lifetime'
                   ? 'var(--Secondary-Color)'
-                  : 'var(--Background-Color)',
+                  : 'var(--Secondary-Color30)',
               cursor: 'pointer',
             }}
           >

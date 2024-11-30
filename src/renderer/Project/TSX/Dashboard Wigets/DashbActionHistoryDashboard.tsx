@@ -194,15 +194,8 @@ const DashbActionHistoryDashboard: React.FC = ({ SelectedBranchId }: any) => {
           }}
         >
           {showFilters ? 'Hide Filters' : 'Show Filters'}
-        </button>
-        {showFilters && (
-          <div
-            style={{
-              marginTop: 'var(--15px-V)',
-              marginBottom: 'var(--15px-V)',
-            }}
-          >
-            <button
+        </button> {showFilters && (
+        <button
               onClick={clearFilters}
               style={{
                 padding: 'var(--8px-V) var(--16px-V)',
@@ -216,8 +209,8 @@ const DashbActionHistoryDashboard: React.FC = ({ SelectedBranchId }: any) => {
             >
               Clear Filters
             </button>
-          </div>
         )}
+        
       </h2>
 
       <div
@@ -265,7 +258,6 @@ const DashbActionHistoryDashboard: React.FC = ({ SelectedBranchId }: any) => {
               onClick={handleFindClick}
               style={{
                 padding: 'var(--8px-V) var(--16px-V)',
-                backgroundColor: 'var(--Accent-Color)',
                 color: 'var(--Text-Color)',
                 border: 'none',
                 borderRadius: 'var(--5px-V)',
@@ -342,9 +334,9 @@ const DashbActionHistoryDashboard: React.FC = ({ SelectedBranchId }: any) => {
                         style={{
                           cursor: 'pointer',
                           marginLeft: 'var(--5px-V)',
-                          backgroundColor: 'transparent',
+                
                           border: 'none',
-                          color: 'var(--Accent-Color)',
+                     
                         }}
                       >
                         Sort{' '}

@@ -404,8 +404,8 @@ const CalendarGUI: React.FC<CalendarProps> = ({
           .attr('class', 'tooltip')
           .style('position', 'absolute')
           .style('visibility', 'hidden')
-          .style('background-color', 'rgba(0,0,0,0.8)')
-          .style('color', 'white')
+          .style('background-color', 'var(--Secondary-Color60)')
+          .style('color', 'var(--Text-Color)')
           .style('padding', `${10 * scaleFactor}px`)
           .style('border-radius', `${5 * scaleFactor}px`)
           .style('font-size', `${12 * scaleFactor}px`);
@@ -461,9 +461,9 @@ const CalendarGUI: React.FC<CalendarProps> = ({
                     .style('visibility', 'visible')
                     .html(
                       `
-                    <div style="font-family: Arial, sans-serif; line-height: 1.6;">
-                      <h3 style="color: #4a4a4a; margin-bottom: var(--5px-V);">Room Details</h3>
-                      <p><em>Date:</em> <span style="color: #0066cc;">${paymentDate.toDateString()}</span></p>
+                    <div style="color: var(--Text-Color);font-family: Arial, sans-serif; line-height: 1.6;">
+                      <h3 style="color: var(--Text-Color); margin-bottom: var(--5px-V);">Room Details</h3>
+                      <p><em>Date:</em> <span style="color: var(--Primary-Color);">${paymentDate.toDateString()}</span></p>
                       <p><strong style="font-size: 1.1em;">Tenant:</strong> ${
                         tenantList.find((t) => t.id === room.tenantId)?.name ||
                         'N/A'
@@ -474,14 +474,14 @@ const CalendarGUI: React.FC<CalendarProps> = ({
                       }</span></p>
                       <p><strong>Status:</strong> ${
                         payment.Paid
-                          ? '<span style="color: #00e1ff; ">Paid</span>'
-                          : '<span style="color: red; font-weight: bold;">Unpaid</span>'
+                          ? '<span style="color: var(--Accent-Color);">Paid</span>'
+                          : '<span style="color: var(--Text-Color-Reverse); font-weight: bold;">Unpaid</span>'
                       }</p>
-                      <p><em style="font-style: italic;">Agreed Price:</em> <span style="font-weight: bold; color: #e67e22;">${formatNumberWithSuffix(payment.Value.toLocaleString())} ${CurrencySign(room.Currency)}</span></p>
-                      <p>Payment Cycle: <span style="background-color: #f1c40f; padding: var(--2px-V) var(--5px-V); border-radius: var(--3px-V);">${
+                      <p><em style="font-style: italic;">Agreed Price:</em> <span style="font-weight: bold; color: var(--Accent-Color);">${formatNumberWithSuffix(payment.Value.toLocaleString())} ${CurrencySign(room.Currency)}</span></p>
+                      <p>Payment Cycle: <span style="background-color: var(--Accent-Color50); padding: var(--2px-V) var(--5px-V); border-radius: var(--3px-V);">${
                         room.PaymentCycleType
                       }</span></p>
-                      <p style="font-size: 0.9em; color: #7f8c8d;">Days until payment: ${daysUntil}</p>
+                      <p style="font-size: 0.9em; color: var(--Text-Color-Grey);">Days until payment: ${daysUntil}</p>
                     </div>
                   `
                     )
@@ -561,7 +561,7 @@ const CalendarGUI: React.FC<CalendarProps> = ({
             style={{
               padding: 'var(--5px-V)',
               borderRadius: 'var(--3px-V)',
-              border: 'var(--1px-V) solid #ccc',
+             
             }}
           />
 
@@ -576,7 +576,7 @@ const CalendarGUI: React.FC<CalendarProps> = ({
               width: 'var(--50px-V)',
               padding: 'var(--5px-V)',
               borderRadius: 'var(--3px-V)',
-              border: 'var(--1px-V) solid #ccc',
+              
             }}
           />
           <label htmlFor="monthsFutureInput">Months to show in future: </label>
@@ -590,7 +590,7 @@ const CalendarGUI: React.FC<CalendarProps> = ({
               width: 'var(--50px-V)',
               padding: 'var(--5px-V)',
               borderRadius: 'var(--3px-V)',
-              border: 'var(--1px-V) solid #ccc',
+         
             }}
           />
           {numberOfMonthsFuture > 1 && numberOfMonthsPast > 1 && (

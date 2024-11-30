@@ -12,6 +12,8 @@
   --Secondary-Color: #454959;
   --Secondary-Color20: hsl(228, 13%, 31%, 20%);
   --Secondary-Color30: hsl(228, 13%, 31%, 30%);
+  --Secondary-Color40: hsl(228, 13%, 31%, 40%);
+  --Secondary-Color50: hsl(228, 13%, 31%, 50%);
   --Secondary-Color60: hsl(228, 13%, 31%, 60%);
 
   --Accent-Color: #e59b25;
@@ -165,23 +167,24 @@
 .DarkTheme {
   --Text-Color-Grey: #505050;
   --Text-Color: #000000;
-  --Text-Color-Reverse50: rgba(255, 255, 255, 0.5);
+  --Text-Color-Reverse50: rgba(0, 0, 0, 0.5);
   --Text-Color-Reverse: rgb(0, 0, 0);
-  --Background-Color: #E2E2E2;
+  --Background-Color: #e2e2e2;
   --Background-Color2: #e0e0e0; /* Slightly darker light gray */
-  
-  --Primary-Color: #00e1ff;
-  --Primary-Color25: hsl(187, 100%, 50%, 25%);
+
+  --Primary-Color: #00e1ff; /* A softer blue for primary actions */
+  --Primary-Color25: hsl(187, 100%, 50%, 50%);
   --Primary-Color50: hsl(187, 100%, 50%, 50%);
 
   --Secondary-Color: #a6aaba;
   --Secondary-Color20: hsl(228, 13%, 69%, 20%);
   --Secondary-Color30: hsl(228, 13%, 69%, 30%);
+  --Secondary-Color40: hsl(228, 13%, 69%, 40%);
+  --Secondary-Color50: hsl(228, 13%, 69%, 50%);
   --Secondary-Color60: hsl(228, 13%, 69%, 60%);
 
   --Accent-Color: #db911a;
   --Accent-Color50: hsl(37, 79%, 48%, 50%);
-
 }
 .GreyTheme {
   --Text-Color-Grey: rgb(128, 128, 128);
@@ -255,19 +258,41 @@ button:hover {
   transform: translate(0, var(---3px-V));
   transition: transform ease 0.2s;
 }
-select,
-input,
-textarea {
+input {
   background-color: var(--Secondary-Color);
   color: var(--Text-Color);
-  border:none;
+  border: none;
   border-radius: var(--5px-V);
   font-family: 'Inter';
   font-size: var(--15px-V);
   padding-left: var(--5px-V);
+  box-shadow: inset var(--0px-V) var(---2px-V) var(--3px-V) var(---1px-V)
+    var(--Accent-Color);
+}
+select {
+  background-color: var(--Secondary-Color);
+  color: var(--Text-Color);
+  border: none;
+  border-radius: var(--5px-V);
+  font-family: 'Inter';
+  font-size: var(--15px-V);
+  padding-left: var(--5px-V);
+  box-shadow: inset var(--0px-V) var(---2px-V) var(--3px-V) var(---1px-V)
+  var(--Accent-Color);}
+textarea {
+  background-color: var(--Secondary-Color);
+  color: var(--Text-Color);
+  border: none;
+  border-radius: var(--5px-V);
+  font-family: 'Inter';
+  font-size: var(--15px-V);
+  padding-left: var(--5px-V);
+  box-shadow: inset var(--0px-V) var(---2px-V) var(--3px-V) var(---1px-V)
+  var(--Accent-Color);
 }
 input[type='checkbox'] {
   accent-color: var(--Accent-Color);
+  box-shadow: none;
 }
 input:hover {
   background-color: var(--Primary-Color50);
@@ -370,15 +395,15 @@ em {
 
 .InfoTable {
   border-radius: var(--10px-V);
-  border: var(--1px-V) solid grey;
+  margin: var(--10px-V);
   border-collapse: collapse;
 }
 .InfoTableThead {
-  background-color: var(--Secondary-Color);
+  background-color: var(--Secondary-Color30);
 }
 
 .InfoTableHeadTR {
-  background-color: var(--Secondary-Color);
+  background-color: var(--Secondary-Color30);
   height: var(--40px-V);
 }
 .InfoTableHeadTh {
@@ -397,7 +422,7 @@ em {
 }
 .InfoTableBodyTr {
   height: var(--30px-V);
-  border-bottom: var(--1px-V) solid grey;
+
   border-radius: var(--5px-V);
 }
 .PhoneNumberInfoTableContainer {
@@ -896,3 +921,4 @@ input[type='checkbox'] {
     --1300px-V: 2600px;
   }
 }
+

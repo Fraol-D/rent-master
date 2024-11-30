@@ -1,9 +1,11 @@
 import { getValuesWithSql_Online } from 'Backend/OnlineServerApis';
 import React, { useEffect, useState, useMemo } from 'react';
 import '../../CSS/ToolsPage.css';
+import { Input } from '../Helpers/CustomReactComponents';
 import { LineChart } from '@mui/x-charts/LineChart';
 import { axisClasses } from '@mui/x-charts/ChartsAxis';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns';
+import { getValuesWithSql } from 'Backend/localServerApis';
 
 interface props {
   SelectedUserId: string;
@@ -37,24 +39,27 @@ const DashbSmsDetails = ({ SelectedUserId, RoomList, tenantList }: props) => {
   const [advancedSearchVisible, setAdvancedSearchVisible] = useState(false);
   const [SMSMonthlyLimit, setSMSMonthlyLimit] = useState(0);
   const [applyFiltersToGraph, setApplyFiltersToGraph] = useState(false);
-
+  const [smsTemplates, setSmsTemplates] = useState<smsTemplate[]>([]);
   useEffect(() => {
     const fetchSmsHistory = async () => {
       const user = await getValuesWithSql_Online(
         'users',
         `WHERE id = '${SelectedUserId}'`
       );
+
       setSMSMonthlyLimit(await user[0].SMSMonthlyLimit);
       const smsHistoryRaw = await getValuesWithSql_Online(
         'sms_history',
         `WHERE userId = '${SelectedUserId}'`
       );
+      const smsTemplates = await getValuesWithSql('sms_templates', `WHERE 1`);
+      setSmsTemplates(smsTemplates);
       const sortedSmsHistory = smsHistoryRaw.sort(
         (a: smsHistoryType, b: smsHistoryType) => b.sentDate - a.sentDate
       );
       setSmsHistory(sortedSmsHistory);
     };
-    if(navigator.onLine)fetchSmsHistory();
+    if (navigator.onLine) fetchSmsHistory();
   }, [SelectedUserId]);
 
   const toggleExpand = (id: string) => {
@@ -112,32 +117,34 @@ const DashbSmsDetails = ({ SelectedUserId, RoomList, tenantList }: props) => {
 
     const smsToCount = applyFiltersToGraph ? filteredSms : smsHistory;
 
-    const dailySmsCounts = daysInMonth.map(day => {
-      const daySms = smsToCount.filter(sms => {
+    const dailySmsCounts = daysInMonth.map((day) => {
+      const daySms = smsToCount.filter((sms) => {
         const smsDate = new Date(sms.sentDate);
-        return smsDate.getDate() === day.getDate() &&
-               smsDate.getMonth() === day.getMonth() &&
-               smsDate.getFullYear() === day.getFullYear();
+        return (
+          smsDate.getDate() === day.getDate() &&
+          smsDate.getMonth() === day.getMonth() &&
+          smsDate.getFullYear() === day.getFullYear()
+        );
       });
       return {
         date: format(day, 'd'),
-        sms: daySms.length
+        sms: daySms.length,
       };
     });
 
-    const totalSms = smsToCount.filter(sms => {
+    const totalSms = smsToCount.filter((sms) => {
       const smsDate = new Date(sms.sentDate);
       return smsDate >= monthStart && smsDate <= monthEnd;
     }).length;
 
-    const highestDailySms = Math.max(...dailySmsCounts.map(d => d.sms));
+    const highestDailySms = Math.max(...dailySmsCounts.map((d) => d.sms));
     const averageDailySms = totalSms / daysInMonth.length;
 
     return {
       dailySmsCounts,
       totalSms,
       highestDailySms,
-      averageDailySms
+      averageDailySms,
     };
   }, [selectedDate, smsHistory, filteredSms, applyFiltersToGraph]);
 
@@ -153,15 +160,6 @@ const DashbSmsDetails = ({ SelectedUserId, RoomList, tenantList }: props) => {
               tickLabelStyle: {
                 angle: 0,
                 textAnchor: 'middle',
-              },
-            },
-          ]}
-          yAxis={[
-            {
-              colorMap: {
-                type: 'piecewise',
-                thresholds: [SMSMonthlyLimit],
-                colors: [ 'var(--Primary-Color)','red',],
               },
             },
           ]}
@@ -222,8 +220,9 @@ const DashbSmsDetails = ({ SelectedUserId, RoomList, tenantList }: props) => {
           width: '90%',
           backgroundColor: 'var(--Secondary-Color30)',
           borderRadius: 'var(--8px-V)',
-          padding: 'var(--15px-V)',
+          paddingBottom: 'var(--15px-V)',
           marginBottom: 'var(--20px-V)',
+          paddingTop: 'var(--15px-V)',
         }}
       >
         {renderChart()}
@@ -238,10 +237,15 @@ const DashbSmsDetails = ({ SelectedUserId, RoomList, tenantList }: props) => {
             Limit: <strong>{SMSMonthlyLimit.toLocaleString()} per month</strong>
           </p>
           <p>
-            Total SMS: <strong>{smsStats.totalSms.toLocaleString()}/{SMSMonthlyLimit.toLocaleString()}</strong>
+            Total SMS:{' '}
+            <strong>
+              {smsStats.totalSms.toLocaleString()}/
+              {SMSMonthlyLimit.toLocaleString()}
+            </strong>
           </p>
           <p>
-            Highest Daily: <strong>{smsStats.highestDailySms.toLocaleString()}</strong>
+            Highest Daily:{' '}
+            <strong>{smsStats.highestDailySms.toLocaleString()}</strong>
           </p>
           <p>
             Average Daily:{' '}
@@ -267,6 +271,12 @@ const DashbSmsDetails = ({ SelectedUserId, RoomList, tenantList }: props) => {
         />
         <button
           onClick={() => setAdvancedSearchVisible(!advancedSearchVisible)}
+          style={{
+            padding: 'var(--5px-V) var(--10px-V)',
+            border: 'var(--1px-V) solid var(--Border-Color)',
+            borderRadius: 'var(--4px-V)',
+            cursor: 'pointer',
+          }}
         >
           {advancedSearchVisible ? 'Hide Filters' : 'Show Filters'}
         </button>
@@ -341,38 +351,32 @@ const DashbSmsDetails = ({ SelectedUserId, RoomList, tenantList }: props) => {
               />
             </div>
           </div>
-          <div style={{ display: 'flex', gap: 'var(--10px-V)', marginTop: 'var(--10px-V)' }}>
+          <div
+            style={{
+              display: 'flex',
+              gap: 'var(--10px-V)',
+              marginTop: 'var(--10px-V)',
+            }}
+          >
             <button
-              onClick={() => setSearchConfig({
-                receiver: '',
-                body: '',
-                mode: '',
-                room: '',
-                floor: '',
-              })}
-              style={{
-                padding: 'var(--5px-V) var(--10px-V)',
-                backgroundColor: 'var(--Danger-Color)',
-                color: 'white',
-                border: 'none',
-                borderRadius: 'var(--4px-V)',
-                cursor: 'pointer',
-              }}
+              onClick={() =>
+                setSearchConfig({
+                  receiver: '',
+                  body: '',
+                  mode: '',
+                  room: '',
+                  floor: '',
+                })
+              }
             >
               Clear All Filters
             </button>
             <button
               onClick={() => setApplyFiltersToGraph(!applyFiltersToGraph)}
-              style={{
-                padding: 'var(--5px-V) var(--10px-V)',
-                backgroundColor: applyFiltersToGraph ? 'var(--Primary-Color)' : 'white',
-                color: applyFiltersToGraph ? 'white' : 'black',
-                border: 'var(--1px-V) solid var(--Border-Color)',
-                borderRadius: 'var(--4px-V)',
-                cursor: 'pointer',
-              }}
             >
-              {applyFiltersToGraph ? 'Remove Filters from Graph' : 'Apply Filters to Graph'}
+              {applyFiltersToGraph
+                ? 'Remove Filters from Graph'
+                : 'Apply Filters to Graph'}
             </button>
           </div>
         </div>
@@ -386,108 +390,205 @@ const DashbSmsDetails = ({ SelectedUserId, RoomList, tenantList }: props) => {
         })}
       </p>
 
-      <div style={{ overflowY: 'auto', width: '100%', height: '100%' }}>
+      <div style={{ width: '90%', height: '100%' }}>
         {filteredSms.length > 0 ? (
-          filteredSms.map((sms) => (
-            <div
-              key={sms.id}
-              onClick={() => toggleExpand(sms.id)}
-              className="email-template-container"
-              style={{
-                cursor: 'pointer',
-                width: '95%',
-                margin: 'var(--10px-V)',
-                padding: 'var(--10px-V)',
-                borderRadius: 'var(--5px-V)',
-                boxShadow: '0 var(--2px-V) var(--4px-V) rgba(0,0,0,0.1)',
-                transition: 'all 0.3s ease',
-              }}
-            >
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 'var(--10px-V)',
+              padding: 'var(--5px-V)',
+              width: '100%',
+            }}
+          >
+            {filteredSms.map((sms) => (
               <div
+                key={sms.id}
+                onClick={() => toggleExpand(sms.id)}
+                className="email-template-container"
                 style={{
+                  cursor: 'pointer',
+                  marginBottom: 'var(--5px-V)',
+                  backgroundColor: 'var(--Secondary-Color30)',
+                  padding: 'var(--10px-V)',
+                  borderRadius: 'var(--10px-V)',
+                  boxShadow: '0 var(--2px-V) var(--8px-V) rgba(0,0,0,0.15)',
+                  transition: 'all 0.3s ease',
+                  border: '1px solid var(--Border-Color)',
                   display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
+                  gap: 'var(--15px-V)',
+                  alignItems: 'flex-start',
                 }}
               >
-                <div>
-                  <p>
-                    <strong>To:</strong> (
-                    {
-                      tenantList.find(
-                        (tenant) => tenant.phoneNumber === sms.receiver
-                      )?.name
-                    }{' '}
-                    - Rm.{' '}
-                    {
-                      RoomList.find(
-                        (room) =>
-                          room.tenantId ===
-                          tenantList.find(
-                            (tenant) => tenant.phoneNumber === sms.receiver
-                          )?.id
-                      )?.roomIndex
-                    }{' '}
-                    Flr.{' '}
-                    {
-                      RoomList.find(
-                        (room) =>
-                          room.tenantId ===
-                          tenantList.find(
-                            (tenant) => tenant.phoneNumber === sms.receiver
-                          )?.id
-                      )?.floor
-                    }
-                    ) {sms.receiver}
-                  </p>
-                  <p>
-                    <strong>Sent:</strong>{' '}
-                    {new Date(sms.sentDate).toLocaleDateString('en-US', {
-                      month: 'long',
-                      day: 'numeric',
-                      year: 'numeric',
-                    })}{' '}
-                    -{' '}
-                    {new Date(sms.sentDate).toLocaleTimeString('en-US', {
-                      hour: 'numeric',
-                      minute: '2-digit',
-                      hour12: true,
-                    })}
-                  </p>
-                  <p>
-                    <strong>Mode:</strong> {sms.mode || 'Unknown'}
-                  </p>
-                </div>
                 <div
                   style={{
-                    fontSize: 'var(--24px-V)',
-                    marginLeft: 'var(--10px-V)',
+                    backgroundColor: 'var(--Primary-Color20)',
+                    padding: 'var(--10px-V)',
+                    borderRadius: '50%',
+                    color: 'var(--Primary-Color)',
+                    fontSize: 'var(--20px-V)',
+                    height: 'var(--10px-V)',
+
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
                   }}
                 >
-                  {expandedSmsId === sms.id ? '▼' : '▶'}
+                  {(() => {
+                    const name =
+                      tenantList.find(
+                        (tenant) => tenant.phoneNumber === sms.receiver
+                      )?.name || '';
+                    const words = name.split(' ');
+                    return (
+                      (words[0]?.charAt(0) || '?') + (words[1]?.charAt(0) || '')
+                    );
+                  })()}
+                </div>
+
+                <div style={{ flex: 1 }}>
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+
+                      alignItems: 'flex-start',
+                    }}
+                  >
+                    <div>
+                      <h3
+                        style={{
+                          margin: 0,
+                          fontSize: 'var(--16px-V)',
+                         
+                          marginBottom: 'var(--3px-V)',
+                        }}
+                      >
+                        {sms.mode === "Representative_Automatic" && 'Rep - '}{tenantList.find(
+                          (tenant) => tenant.phoneNumber === sms.receiver
+                        )?.name || sms.receiver} 
+                      </h3>
+                      <div
+                        style={{
+                          display: 'flex',
+                          gap: 'var(--10px-V)',
+                        
+                          fontSize: 'var(--12px-V)',
+                        }}
+                      >
+                        <span>
+                          Room{' '}
+                          {RoomList.find(
+                            (room) =>
+                              room.tenantId ===
+                              tenantList.find(
+                                (tenant) => tenant.phoneNumber === sms.receiver
+                              )?.id
+                          )?.roomIndex || '?'}
+                        </span>
+                        <span>•</span>
+                        <span>
+                          Floor{' '}
+                          {RoomList.find(
+                            (room) =>
+                              room.tenantId ===
+                              tenantList.find(
+                                (tenant) => tenant.phoneNumber === sms.receiver
+                              )?.id
+                          )?.floor || '?'}
+                        </span>
+                          <span>•</span>
+                        <span>
+                          Number{' '}
+                          {sms.receiver || '?'}
+                        </span>
+                        <span>•</span>
+                        <span>{sms.mode || 'Unknown Mode'}</span>
+                      </div>
+                    </div>
+                    <div
+                      style={{
+                        fontSize: 'var(--14px-V)',
+                        color: 'var(--Text-Color)',
+                        fontWeight: 'bold',
+                        textAlign: 'right',
+                      }}
+                    >
+                      {new Date(sms.sentDate).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                      })}
+                      <div
+                        style={{
+                          fontSize: 'var(--12px-V)',
+                          color: 'var(--Text-Color-Grey)',
+                          fontWeight: 'normal',
+                        }}
+                      >
+                        {new Date(sms.sentDate).toLocaleTimeString('en-US', {
+                          hour: 'numeric',
+                          minute: '2-digit',
+                          hour12: true,
+                        })}
+                      </div>
+                    </div>
+                  </div>
+
+                  {expandedSmsId === sms.id && (
+                    <div
+                      style={{
+                        backgroundColor: 'var(--Secondary-Color60)',
+                        padding: 'var(--10px-V)',
+                        borderRadius: 'var(--8px-V)',
+                        marginTop: 'var(--5px-V)',
+                      }}
+                    >
+                      <div
+                        style={{
+                          fontSize: 'var(--12px-V)',
+                          color: 'var(--Text-Color-Grey)',
+                          marginBottom: 'var(--5px-V)',
+                        }}
+                      >
+                        Template:{' '}
+                        {smsTemplates.find(
+                          (template) => template.id === sms.templateId
+                        )?.name || sms.templateId}
+                      </div>
+                      <pre
+                        style={{
+                          whiteSpace: 'pre-wrap',
+                          wordWrap: 'break-word',
+                          fontSize: 'var(--13px-V)',
+                          color: 'var(--Text-Color)',
+                          margin: 0,
+                        }}
+                      >
+                        {formatSmsBody(sms.body)}
+                      </pre>
+                    </div>
+                  )}
                 </div>
               </div>
-              {expandedSmsId === sms.id && (
-                <div>
-                  <p>
-                    <strong>Template ID:</strong> {sms.templateId}
-                  </p>
-                  <p>
-                    <strong>Message:</strong>
-                  </p>
-                  <pre
-                    style={{ whiteSpace: 'pre-wrap', wordWrap: 'break-word' }}
-                  >
-                    {formatSmsBody(sms.body)}
-                  </pre>
-                </div>
-              )}
-            </div>
-          ))
+            ))}
+          </div>
         ) : (
-          <p style={{ color: 'var(--Text-Color-Grey)', textAlign: 'center' }}>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              height: '150px',
+              color: 'var(--Text-Color-Grey)',
+              fontSize: 'var(--16px-V)',
+              fontStyle: 'italic',
+              backgroundColor: 'var(--Secondary-Color60)',
+              borderRadius: 'var(--10px-V)',
+              margin: 'var(--10px-V)',
+            }}
+          >
             No SMS found for the selected criteria.
-          </p>
+          </div>
         )}
       </div>
     </div>

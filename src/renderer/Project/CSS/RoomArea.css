@@ -53,7 +53,7 @@
 .FloorSearchBar {
   width: var(--50px-V);
   height: var(--25px-V);
-  margin-right: var(--20px-V);
+  margin-right: var(--10px-V);
   border-radius: var(--5px-V);
   background-color: var(--Secondary-Color);
   font-size: var(--15px-V);
@@ -178,8 +178,8 @@
   overflow: hidden auto;
 }
 .SideBarRoomPageBottomPartAddRoom {
-  background-color: var(--Background-Color);
-  box-shadow: var(--3px-V) var(--3px-V) var(--0px-V) var(--0px-V) rgba(0, 0, 0, 0.4509803922);
+ 
+  box-shadow: var(--3px-V) var(--3px-V) var(--0px-V) var(--0px-V) var(--Secondary-Color30);
   
   width: 100%;
   border-radius: var(--5px-V);
@@ -208,23 +208,32 @@
   background-color: var(--Secondary-Color);
   border: none;
   color: var(--Text-Color);
+  margin-right: var(--5px-V);
   border-radius: var(--5px-V);
+  
 }
 .AddANewRoomSpecObjectMainContainer {
-  background-color: var(--Secondary-Color);
+  background-color: var(--Secondary-Color60);
   padding: var(--5px-V);
   border: none;
   border-radius: var(--5px-V);
+  max-width: var(--250px-V);
   margin-bottom: var(--5px-V);
 }
+.AddANewRoomSpecObjectMainContainer h3 {
+  margin: 0px;
+    margin-bottom: var(--10px-V);
+}
 .RoomSpecficationsMainContainer {
-  background-color: rgba(128, 128, 128, 0.12);
+  background-color: var(--Secondary-Color20);
   padding: var(--10px-V);
   padding-top: var(--5px-V);
   border-radius: var(--5px-V);
+  max-height: var(--440px-V);
+  overflow-y: auto;
 }
 .AddARoomImageMainContainer {
-  background-color: rgba(128, 128, 128, 0.12);
+  background-color: var(--Secondary-Color30);
   padding: var(--10px-V);
   padding-top: var(--5px-V);
   border-radius: var(--5px-V);
@@ -248,7 +257,7 @@
   display: flex;
   flex-direction: column-reverse;
   align-items: center;
-  border-top: var(--1px-V) solid white;
+  border-top: var(--3px-V) solid var(--Secondary-Color30);
   border-radius: var(--5px-V);
   padding-top: var(--5px-V);
   width: 100%;
@@ -454,7 +463,7 @@
   flex-direction: column;
   justify-content: space-between;
   margin: var(--10px-V);
-  box-shadow: var(--1px-V) var(--1px-V) var(--3px-V) var(---1px-V) var(--Text-Color);
+  box-shadow: var(--1px-V) var(--1px-V) var(--3px-V) var(---1px-V) var(--Secondary-Color);
   padding: var(--5px-V);
 }
 .appUserItemM {
@@ -474,7 +483,6 @@
   border-radius: var(--4px-V);
   cursor: pointer;
   transition: background-color 0.3s;
-  text-shadow: var(--2px-V) var(--2px-V) var(--4px-V) rgba(0, 0, 0, 0.5);
   
 }
 .appUserHeader {
@@ -586,4 +594,163 @@
 .release-notes li {
   color: var(--Text-Color);
   margin-bottom: var(--4px-V);
+}.custom-alert {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 9999;
+  min-width: 300px;
+  max-width: 450px;
+  padding: 16px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  animation: slideIn 0.3s ease-out;
 }
+
+.alert-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.alert-message {
+  flex-grow: 1;
+  font-size: 14px;
+}
+
+.close-button {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 0;
+  color: inherit;
+  opacity: 0.7;
+}
+
+.close-button:hover {
+  opacity: 1;
+}
+
+/* Alert Types */
+.success {
+  background-color: #4caf50;
+  color: white;
+}
+
+.error {
+  background-color: #f44336;
+  color: white;
+}
+
+.warning {
+  background-color: #ff9800;
+  color: white;
+}
+
+.info {
+  background-color: #2196f3;
+  color: white;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+.confirm-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.confirm-dialog {
+  background-color: var(--Background-Color);
+
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+  width: 100%;
+  max-width: 400px;
+  animation: slideIn 0.2s ease-out;
+}
+
+.confirm-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid #eee;
+}
+
+.confirm-header.info { border-bottom-color: #2196f3; }
+.confirm-header.warning { border-bottom-color: #ff9800; }
+.confirm-header.danger { border-bottom-color: #f44336; }
+
+.confirm-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.confirm-content {
+  padding: 20px;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.confirm-actions {
+  padding: 16px 20px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  border-top: 1px solid #eee;
+}
+
+.confirm-button,
+.cancel-button {
+  padding: 8px 16px;
+  border-radius: 4px;
+  border: none;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.cancel-button {
+  background-color: #f5f5f5;
+  color: #666;
+}
+
+.cancel-button:hover {
+  background-color: #e0e0e0;
+}
+
+.confirm-button.info {
+  background-color: #2196f3;
+  color: white;
+}
+
+.confirm-button.warning {
+  background-color: #ff9800;
+  color: white;
+}
+
+.confirm-button.danger {
+  background-color: #f44336;
+  color: white;
+}
+
+.confirm-button:hover {
+  opacity: 0.9;
+}
+

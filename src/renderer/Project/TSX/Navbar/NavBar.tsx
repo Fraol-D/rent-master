@@ -13,6 +13,7 @@ import {
 } from 'Backend/OnlineServerApis';
 import { getUserPrivileges } from 'renderer/App';
 import { dropAllRowsInTable } from 'Backend/localServerApis';
+import { useConfirm } from 'renderer/components/useConfirm';
 
 interface Props {
   Image: string;
@@ -191,10 +192,16 @@ const NavBar = ({
     // Clean up the interval when the component unmounts
     return () => clearInterval(intervalId);
   }, []);
+  const { confirm } = useConfirm();
+
   const handleResetOfflineChanges = async () => {
     if (navigator.onLine) {
-      const confirmDelete = window.confirm(
-        'Are you sure you want to reset all your offline changes?'
+      const confirmDelete = await confirm(
+        'Are you sure you want to reset all your offline changes?',
+        {title: 'Reset Changes',
+          confirmText: 'Reset',
+          cancelText: 'Keep',
+          type: 'danger'}
       );
       if (confirmDelete) {
         await dropAllRowsInTable('offline_changes');

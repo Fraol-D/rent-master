@@ -33,6 +33,8 @@ import {
   GetDefaultCurrency,
 } from '../Helpers/CurrencySign';
 import ExpenseManager from '../Tools page components/ExpenseManager';
+import { useAlert } from 'renderer/components/useAlert';
+import { useConfirm } from 'renderer/components/useConfirm';
 
 interface SMSTemplate {
   id: string;
@@ -133,22 +135,22 @@ const ToolsPage = ({
     ShowDefaultNotificationsSettings,
     setShowDefaultNotificationsSettings,
   ] = useState(false);
-
+  const { showAlert } =   useAlert();
   const applyDefaultNotifications = async () => {
     if (sendEmail) {
       if (!emailDaysBefore || emailDaysBefore === '') {
-        alert('Please enter days before for email notification');
+        showAlert('Please enter days before for email notification');
         return;
       }
     }
     if (sendSms) {
       if (!validatePhoneNumber(smsTo)) {
-        alert('Please enter a valid 10-digit phone number');
+        showAlert('Please enter a valid 10-digit phone number');
         return;
       }
 
       if (!smsDaysBefore || smsDaysBefore === '') {
-        alert('Please enter days before for SMS notification');
+        showAlert('Please enter days before for SMS notification');
         return;
       }
     }
@@ -179,10 +181,10 @@ const ToolsPage = ({
       // Refresh the expenses list
       await getExpenses();
       setShowDefaultNotificationsSettings(false);
-      alert('Default notifications applied to all expenses successfully!');
+      showAlert('Default notifications applied to all expenses successfully!');
     } catch (error) {
       console.error('Error applying default notifications:', error);
-      alert('Failed to apply default notifications. Please try again.');
+      showAlert('Failed to apply default notifications. Please try again.');
     } finally {
       setIsApplyingNotifications(false);
     }
@@ -551,11 +553,18 @@ const ToolsPage = ({
     setEditedTemplate(newTemplate);
     setOriginalTemplate(newTemplate);
   };
+  const { confirm } = useConfirm();
   // Add this at the top of your component
   const handleReplaceWithDefault = async () => {
     try {
-      const choice = window.confirm(
-        'Are you sure you want to delete all existing email templates and replace with defaults? This action cannot be undone.'
+      const choice = await confirm(
+        'Are you sure you want to delete all existing email templates and replace with defaults? This action cannot be undone.',
+        {
+          title: 'Replace Email Templates',
+          confirmText: 'Replace',
+          cancelText: 'Keep',
+          type: 'danger',
+        }
       );
 
       if (choice) {
@@ -579,8 +588,14 @@ const ToolsPage = ({
   };
   const handleReplaceWithDefaultSms = async () => {
     try {
-      const choice = window.confirm(
-        'Are you sure you want to delete all existing sms templates and replace with defaults? This action cannot be undone.'
+      const choice = await confirm(
+        'Are you sure you want to delete all existing sms templates and replace with defaults? This action cannot be undone.',
+        {
+          title: 'Replace SMS Templates',
+          confirmText: 'Replace',
+          cancelText: 'Keep',
+          type: 'danger',
+        }
       );
 
       if (choice) {
@@ -1106,20 +1121,17 @@ const ToolsPage = ({
       setEditedExpense({ ...expense });
     }
   };
-  const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
+  const handleSignOut = async () => {
+    const choice = await confirm('Are you sure you want to sign out?', {
+      title: 'Sign Out',
+      confirmText: 'Sign Out', 
+      cancelText: 'Cancel',
+      type: 'warning'
+    });
 
-  const handleSignOut = () => {
-    setShowSignOutConfirm(true);
-  };
-
-  const confirmSignOut = () => {
-    signOutUserAndRestart();
-
-    setShowSignOutConfirm(false);
-  };
-
-  const cancelSignOut = () => {
-    setShowSignOutConfirm(false);
+    if (choice) {
+      signOutUserAndRestart();
+    }
   };
   const handleEditExpense = async (
     id: string,
@@ -1197,7 +1209,16 @@ const ToolsPage = ({
   };
 
   const handleDeleteExpense = async (id: string) => {
-    if (window.confirm('Are you sure you want to delete this expense?')) {
+    const choice = await confirm(
+      'Are you sure you want to delete this expense?',
+      {
+        title: 'Delete Expense',
+        confirmText: 'Delete',
+        cancelText: 'Keep',
+        type: 'danger',
+      }
+    );
+    if (choice) {
       await deleteValue('expenses', id, setChangeMade);
       setEditingExpenseId(null);
       setEditedExpense(null);
@@ -1603,7 +1624,7 @@ const ToolsPage = ({
       try {
         const userId = await window.electron.store.get('users')[0].id;
         if (!userId) {
-          alert('ISSUES user data');
+          showAlert('ISSUES user data');
           return;
         }
         // Assuming there's an API call to save the values
@@ -1659,7 +1680,7 @@ const ToolsPage = ({
         console.error('Failed to save email settings:', error);
       }
     } else {
-      alert('You are offline, cannot save settings');
+      showAlert('You are offline, cannot save settings');
     }
   };
 
@@ -1941,13 +1962,7 @@ const ToolsPage = ({
                   {window.electron.store.get('users')[0].email} -{' '}
                   {window.electron.store.get('users')[0].companyName}
                   <button onClick={handleSignOut}>Sign Out</button>{' '}
-                  {showSignOutConfirm && (
-                    <div className="signOutConfirmation">
-                      <p>Are you sure you want to sign out?</p>
-                      <button onClick={confirmSignOut}>Yes</button>
-                      <button onClick={cancelSignOut}>No</button>
-                    </div>
-                  )}
+                
                 </div>
               </div>
               <div className="settings-container">
@@ -2009,7 +2024,11 @@ const ToolsPage = ({
                 <h2>Currency Settings</h2>
 
                 {/* Default Currency Selection */}
+               
+
+                {/* Exchange Rate Section */}
                 <div className="settings-inner-container">
+                <div>
                   <label style={{ fontWeight: 500 }}>Default Currency: </label>
                   <select
                     onChange={(e) => {
@@ -2024,9 +2043,6 @@ const ToolsPage = ({
                     {GetCurrencyAsOptionsOnSelect()}
                   </select>
                 </div>
-
-                {/* Exchange Rate Section */}
-                <div className="settings-inner-container">
                   {isOnline ? (
                     <div>
                       {/* Current Exchange Rate */}
@@ -2035,7 +2051,7 @@ const ToolsPage = ({
                           display: 'flex',
                           alignItems: 'center',
                           gap: 'var(--10px-V)',
-                          marginBottom: 'var(--15px-V)',
+                          
                         }}
                       >
                         <span>Current Exchange Rate:</span>
@@ -2090,7 +2106,7 @@ const ToolsPage = ({
                                 selectedDate <
                                 new Date('2015-01-01').getTime() / 1000
                               ) {
-                                alert('Please select a date after 2015');
+                                showAlert('Please select a date after 2015');
                                 return;
                               }
                               setGetExchangeRateDate(selectedDate);

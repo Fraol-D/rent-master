@@ -6,6 +6,7 @@ import {
   deleteRoomImage,
   getRoomImages,
 } from 'Backend/localServerApis';
+import { useAlert } from 'renderer/components/useAlert';
 
 interface ImageInteractorProps {
   room?: RoomType;
@@ -13,15 +14,16 @@ interface ImageInteractorProps {
   refreshState?: boolean;
   SetRefreshState?: (newval: boolean) => void;
   AddRoomState?: boolean;
-  setIsMoreThanOneImage?:any;
-  
+  setIsMoreThanOneImage?: any;
 }
 
 const ImageInteractor2: React.FC<ImageInteractorProps> = ({
   room,
   isAddRoomImage = false,
   refreshState,
-  SetRefreshState,AddRoomState,setIsMoreThanOneImage
+  SetRefreshState,
+  AddRoomState,
+  setIsMoreThanOneImage,
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [images, setImages] = useState<string[]>([]);
@@ -45,16 +47,16 @@ const ImageInteractor2: React.FC<ImageInteractorProps> = ({
       fetchRoomImages2();
     }
   }, []);
-useEffect(() => {
-  if (AddRoomState) {
-    if (images.length > 0) {
-      setIsMoreThanOneImage(true)
-    } else {
-      setIsMoreThanOneImage(false)
+  useEffect(() => {
+    if (AddRoomState) {
+      if (images.length > 0) {
+        setIsMoreThanOneImage(true);
+      } else {
+        setIsMoreThanOneImage(false);
+      }
     }
-  }
-}, [AddRoomState, images])  
-useEffect(() => {
+  }, [AddRoomState, images]);
+  useEffect(() => {
     let interval: NodeJS.Timeout;
     if (images.length > 1) {
       interval = setInterval(() => {
@@ -75,14 +77,15 @@ useEffect(() => {
     }
   };
   const fetchRoomImages2 = async () => {
-    if(AddRoomState){
+    if (AddRoomState) {
       const roomImages = await getRoomImages('Add a room images');
- 
-    if (roomImages && roomImages.images) {
-      setImages(roomImages.images);
-    } else {
-      setImages([]);
-    }}
+
+      if (roomImages && roomImages.images) {
+        setImages(roomImages.images);
+      } else {
+        setImages([]);
+      }
+    }
   };
   const nextImage = () => {
     setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length);
@@ -93,48 +96,53 @@ useEffect(() => {
       (prevIndex) => (prevIndex - 1 + images.length) % images.length
     );
   };
-    const handleOnAddImage = () => {
-      const input = document.createElement('input');
-      input.type = 'file';
-      input.accept = 'image/jpeg,image/png,image/gif,image/svg+xml';
-      input.multiple = true;
+  const { showAlert } = useAlert();
+  const handleOnAddImage = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/jpeg,image/png,image/gif,image/svg+xml';
+    input.multiple = true;
 
-      input.onchange = async (event) => {
-        const files = (event.target as HTMLInputElement).files;
-        if (files && files.length > 0) {
-          const oversizedFiles = Array.from(files).filter(file => file.size > 5 * 1024 * 1024);
-          if (oversizedFiles.length > 0) {
-            alert('Some files exceed the 5MB size limit. Please select smaller files.');
-            return;
-          }
-
-          try {
-            const folderText = isAddRoomImage
-              ? 'Add a room images'
-              : room
-              ? `Floor ${room.floor}, Room ${room.roomIndex} - ${room.id}`
-              : '';
-            const results = await AddRoomImageToFiles(files, folderText);
-            if (results) {
-              if (!isAddRoomImage && room) {
-                fetchRoomImages();
-              } else {
-                fetchRoomImages2();
-              }
-              alert('Images uploaded successfully!');
-            } else {
-              console.error('Failed to upload images');
-              alert('Failed to upload images. Please try again.');
-            }
-          } catch (error) {
-            console.error('Error uploading files:', error);
-            alert('An error occurred while uploading files. Please try again.');
-          }
+    input.onchange = async (event) => {
+      const files = (event.target as HTMLInputElement).files;
+      if (files && files.length > 0) {
+        const oversizedFiles = Array.from(files).filter(
+          (file) => file.size > 5 * 1024 * 1024
+        );
+        if (oversizedFiles.length > 0) {
+          showAlert(
+            'Some files exceed the 5MB size limit. Please select smaller files.'
+          );
+          return;
         }
-      };
 
-      input.click();
+        try {
+          const folderText = isAddRoomImage
+            ? 'Add a room images'
+            : room
+            ? `Floor ${room.floor}, Room ${room.roomIndex} - ${room.id}`
+            : '';
+          const results = await AddRoomImageToFiles(files, folderText);
+          if (results) {
+            if (!isAddRoomImage && room) {
+              fetchRoomImages();
+            } else {
+              fetchRoomImages2();
+            }
+            showAlert('Images uploaded successfully!');
+          } else {
+            console.error('Failed to upload images');
+            showAlert('Failed to upload images. Please try again.');
+          }
+        } catch (error) {
+          console.error('Error uploading files:', error);
+          showAlert('An error occurred while uploading files. Please try again.');
+        }
+      }
     };
+
+    input.click();
+  };
   const handleDeleteImage = async () => {
     if (room) {
       const currentImage = images[currentIndex];
@@ -222,7 +230,11 @@ useEffect(() => {
                 Files
               </button>
               <div
-                style={{ marginTop: 'var(---15px-V)', flexWrap:"wrap", justifyContent:"flex-start" }}
+                style={{
+                  marginTop: 'var(---15px-V)',
+                  flexWrap: 'wrap',
+                  justifyContent: 'flex-start',
+                }}
                 className="CounterImageOnImageIntercator image-counter"
               >
                 {images.map((_, index) => (
@@ -241,7 +253,14 @@ useEffect(() => {
       ) : (
         <div className="no-images">
           <p>No images available</p>
-          <button onClick={handleOnAddImage} style={{boxShadow: 'var(--2px-V) var(--2px-V) var(--6px-V) var(--Text-Color-Reverse)'}}>Add Image</button>
+          <button
+            onClick={handleOnAddImage}
+            style={{
+              
+            }}
+          >
+            Add Image
+          </button>
         </div>
       )}
     </div>

@@ -110,32 +110,28 @@ const DashbRoomSummary = ({ RoomList }: { RoomList: RoomType[] }) => {
           },
         ]}
         colors={roomSummaryData.map((item) => item.color)}
-        sx={(theme) => ({
-          [`.${axisClasses.root}`]: {
-            [`.${axisClasses.tick}, .${axisClasses.line}`]: {
+        sx={{
+          [`& .${axisClasses.root}`]: {
+            [`& .${axisClasses.tick}, .${axisClasses.line}`]: {
               stroke: 'var(--Text-Color)',
               strokeWidth: 1,
               fontSize: 'var(--12px-V)',
             },
-            [`.${axisClasses.tickLabel}`]: {
+            [`& .${axisClasses.tickLabel}`]: {
               fill: 'var(--Text-Color)',
               fontSize: 'var(--12px-V)',
             },
           },
-          '.MuiChartsLegend-label': {
+          '& .MuiChartsLegend-label': {
             fill: 'var(--Text-Color)',
             fontSize: 'var(--12px-V)',
           },
-          '.MuiChartsLegend-mark': {
-            rx: 10,
-            ry: 10,
-          },
-          '.MuiChartsArcLabel-root': {
+          '& .MuiChartsArcLabel-root': {
             fill: 'var(--Text-Color)',
             fontWeight: 'bold',
             fontSize: 'var(--12px-V)',
           },
-        })}
+        }}
       />
       <p className="DashboardWigetPieChartText">
         {RoomList.length} Total rooms

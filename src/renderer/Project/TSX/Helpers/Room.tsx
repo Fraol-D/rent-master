@@ -127,8 +127,12 @@ const Room = ({
   );
   const [Representative, setRepresentative] = useState('');
   const [agreedPrice, setAgreedPrice] = useState(roomType.price);
-  const [paymentCycle, setPaymentCycle] = useState(roomType.PaymentCycleType ? roomType.PaymentCycleType : 'monthly');
-  const [customDays, setCustomDays] = useState(roomType.PaymentCycleCustomeDays ? roomType.PaymentCycleCustomeDays : '');
+  const [paymentCycle, setPaymentCycle] = useState(
+    roomType.PaymentCycleType ? roomType.PaymentCycleType : 'monthly'
+  );
+  const [customDays, setCustomDays] = useState(
+    roomType.PaymentCycleCustomeDays ? roomType.PaymentCycleCustomeDays : ''
+  );
   const [searchTermTenant, setSearchTermTenant] = useState('');
   const filteredTenants =
     TenantList &&
@@ -216,7 +220,7 @@ const Room = ({
     if (tenantIndex !== -1) {
       if (!tenant.RentingOrOut) {
         // Existing logic for non-renting tenant
-        await handleExistingTenant(tenant,tenant.name);
+        await handleExistingTenant(tenant, tenant.name);
       } else {
         // Handle duplicate tenant case
         await handleDuplicateTenant(tenant);
@@ -227,7 +231,7 @@ const Room = ({
     await handlePaymentRefresh();
   };
 
-  const handleExistingTenant = async (tenant: any,tenant_name: string) => {
+  const handleExistingTenant = async (tenant: any, tenant_name: string) => {
     // Original logic for non-renting tenant
     tenantAPI.EditTenantApiWithOutRefresh(tenant.id, 'RentingOrOut', true);
     tenantAPI.EditTenantApiWithOutRefresh(
@@ -245,7 +249,7 @@ const Room = ({
       'Currency',
       AddTenantFormCurrency || roomType.Currency
     );
-   
+
     tenantAPI.EditTenantApiWithOutRefresh(
       tenant.id,
       'startTime',
@@ -253,7 +257,7 @@ const Room = ({
     );
     tenantAPI.EditTenantApi(tenant.id, 'endTime', endTime);
 
-    await updateRoomAndPaymentInfo(tenant.id,tenant_name);
+    await updateRoomAndPaymentInfo(tenant.id, tenant_name);
   };
 
   const handleDuplicateTenant = async (originalTenant: any) => {
@@ -269,7 +273,7 @@ const Room = ({
     ) {
       nextNumber++;
     }
- 
+
     // Create new tenant object
     const newTenant = {
       id: uuidv4(),
@@ -293,10 +297,13 @@ const Room = ({
     // Add new tenant using AddValue
     await addValue('tenants', newTenant);
 
-    await updateRoomAndPaymentInfo(newTenant.id,newTenant.name);
+    await updateRoomAndPaymentInfo(newTenant.id, newTenant.name);
   };
 
-  const updateRoomAndPaymentInfo = async (tenantId: string,tenant_name: string) => {
+  const updateRoomAndPaymentInfo = async (
+    tenantId: string,
+    tenant_name: string
+  ) => {
     // Update room properties
     updateRoomPropertyWithOutRefresh(roomType.id, 'status', 'Taken');
     updateRoomPropertyWithOutRefresh(
@@ -308,7 +315,8 @@ const Room = ({
       roomType.id,
       'PaymentCycleType',
       paymentCycle
-    );   updateRoomPropertyWithOutRefresh(
+    );
+    updateRoomPropertyWithOutRefresh(
       roomType.id,
       'Currency',
       AddTenantFormCurrency || roomType.Currency
@@ -369,7 +377,7 @@ const Room = ({
   };
 
   const handleDocuments = async (tenantId: string, tenant_name: string) => {
-   console.log('tenant_name',tenant_name);
+    console.log('tenant_name', tenant_name);
     const roomDocs = await getRoomDocuments('Add a tenant documents');
     if (roomDocs?.documents) {
       for (const element of roomDocs.documents) {
@@ -724,7 +732,7 @@ const Room = ({
   };
   const checkPaymentStatus = (allRoomPayInfo?: any): string => {
     if (roomType.DaysTillNextPayment > 0) {
-      return `Payment due in ${roomType.DaysTillNextPayment} days. ${addDays(
+      return `Rent due in ${roomType.DaysTillNextPayment} days... ${addDays(
         new Date(),
         roomType.DaysTillNextPayment + 1
       ).toLocaleDateString('en-US', {
@@ -1239,12 +1247,14 @@ const Room = ({
                 </em>
               )}
             </div>
-            {privileges.editTenantRoomTenantInfo && <button
-              onClick={() => setEditingField(label)}
-              style={{ marginLeft: 'var(--5px-V)' }}
-            >
-              Edit
-            </button>}
+            {privileges.editTenantRoomTenantInfo && (
+              <button
+                onClick={() => setEditingField(label)}
+                style={{ marginLeft: 'var(--5px-V)' }}
+              >
+                Edit
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -1396,7 +1406,6 @@ const Room = ({
       roomType.UtilityNotificationSettings ^ (1 << bitPosition);
 
     updateRoomProperty(roomType.id, 'UtilityNotificationSettings', newSettings);
-  
   };
 
   const isChecked = (
@@ -1427,10 +1436,10 @@ const Room = ({
         className="MainContainer"
         style={{
           background: roomType.AddTenantState
-            ? 'var(--Secondary-Color60)'
-            : roomType.status === 'Empty'
             ? 'var(--Secondary-Color20)'
-            : 'var(--Primary-Color25)',
+            : roomType.status === 'Empty'
+            ? ''
+            : 'var(--Secondary-Color30)',
           border: roomType.AddTenantState ? 'var(--1px-V) solid #00e1f1' : '',
         }}
       >
@@ -1451,6 +1460,7 @@ const Room = ({
             />
             {roomType.status === 'Empty' && (
               <button
+                style={{ padding: '0' }}
                 onClick={() => {
                   updateRoomProperty(
                     roomType.id,
@@ -1509,32 +1519,36 @@ const Room = ({
                   <>
                     {roomType.AddTenantState ? (
                       <>
-                       {privileges.addTenant && <strong
-                          style={{
-                            fontWeight: '600',
-                            fontSize: 'var(--17px-V)',
-                            borderBottom: 'var(--1px-V) solid white',
-                          }}
-                          onClick={() => {
-                            /* TO DO */ handleAddTenant();
-                          }}
-                        >
-                          Add tenant
-                        </strong>} 
+                        {privileges.addTenant && (
+                          <strong
+                            style={{
+                              fontWeight: '600',
+                              fontSize: 'var(--17px-V)',
+                              borderBottom: 'var(--1px-V) solid white',
+                            }}
+                            onClick={() => {
+                              /* TO DO */ handleAddTenant();
+                            }}
+                          >
+                            Add tenant
+                          </strong>
+                        )}
                       </>
                     ) : (
                       <>
-                        {privileges.addTenant && <em
-                          style={{
-                            fontWeight: '400',
-                            borderBottom: 'var(--1px-V) solid white',
-                          }}
-                          onClick={() => {
-                            /* TO DO */ handleAddTenant();
-                          }}
-                        >
-                          Add tenant
-                        </em>}
+                        {privileges.addTenant && (
+                          <em
+                            style={{
+                              fontWeight: '400',
+                              borderBottom: 'var(--1px-V) solid white',
+                            }}
+                            onClick={() => {
+                              /* TO DO */ handleAddTenant();
+                            }}
+                          >
+                            Add tenant
+                          </em>
+                        )}
                       </>
                     )}
                   </>
@@ -1562,7 +1576,6 @@ const Room = ({
                     >
                       <p
                         style={{
-                          borderBottom: 'var(--1px-V) solid white',
                           width: 'var(--140px-V)',
                         }}
                       >
@@ -1593,8 +1606,8 @@ const Room = ({
                         className="PageNavigatorButtonSelected"
                         style={{
                           width: '77%',
+                          border: 'none',
                           height: 'var(--22px-V)',
-                          borderBottom: 'var(--1px-V) solid grey',
                           marginTop: 'var(--0px-V)',
                           paddingTop: 'var(--0px-V)',
                         }}
@@ -1623,10 +1636,19 @@ const Room = ({
               >
                 {roomType.status === 'Empty' ? (
                   <>
-                    <div title={"Price: " + roomType.price.toLocaleString() + " " + (roomType.Currency)}>
+                    <div
+                      title={
+                        'Price: ' +
+                        roomType.price.toLocaleString() +
+                        ' ' +
+                        roomType.Currency
+                      }
+                    >
                       Price:{' '}
                       <strong>
-                        {formatNumberWithSuffix(roomType.price.toLocaleString())}
+                        {formatNumberWithSuffix(
+                          roomType.price.toLocaleString()
+                        )}
                         {CurrencySign(roomType.Currency)}
                       </strong>
                     </div>{' '}
@@ -1640,10 +1662,19 @@ const Room = ({
                   </>
                 ) : (
                   <>
-                    <div title={"Price: " + roomType.AgreedPrice.toLocaleString() + " " + (roomType.Currency)}>
+                    <div
+                      title={
+                        'Price: ' +
+                        roomType.AgreedPrice.toLocaleString() +
+                        ' ' +
+                        roomType.Currency
+                      }
+                    >
                       Price:{' '}
                       <strong>
-                        {formatNumberWithSuffix(roomType.AgreedPrice.toLocaleString())}{' '}
+                        {formatNumberWithSuffix(
+                          roomType.AgreedPrice.toLocaleString()
+                        )}{' '}
                         {CurrencySign(roomType.Currency)}
                       </strong>
                     </div>{' '}
@@ -1665,7 +1696,11 @@ const Room = ({
           {roomType.status === 'Taken' && (
             <div
               className="PayAndDueShowerContainer"
-              style={{ border: getBorderColor() }}
+              style={{
+                boxShadow:
+                  'var(--3px-V) var(--3px-V) var(--2px-V) var(--1px-V) ' +
+                  getBorderColor(),
+              }}
             >
               <p>
                 {paymentStatus == 'All payments have been made.' ? (
@@ -1688,43 +1723,47 @@ const Room = ({
                 )}
               </p>
               <div style={{ display: 'flex', alignItems: 'center' }}>
-                {privileges.editRoomPayment && <button
-                  className="PageNavigatorButtonSelected"
-                  ref={hideButtonRef}
-                  style={{
-                    borderBottom: 'var(--1px-V) solid grey',
-                    width: 'var(--100px-V)',
-                  }}
-                  onClick={() => {
-                    turnOffViewStateForAll();
-                    updateRoomPropertyLocal(
-                      roomType.id,
-                      'ShowPayTimeLine',
-                      !roomType.ShowPayTimeLine
-                    );
-                  }}
-                >
-                  {roomType.ShowPayTimeLine ? 'Hide' : 'Rent'}
-                </button>}
-                {privileges.editUtilityPayments && <button
-                  style={{
-                    borderBottom: 'var(--1px-V) solid grey',
-                    borderTop: 'var(--2px-V) solid var(--Primary-Color)',
-                    height: 'var(--35px-V)',
-                  }}
-                  ref={utilityShowerRefHider}
-                  onClick={() => {
-                    turnOffViewStateForAll();
+                {privileges.editRoomPayment && (
+                  <button
+                    className="PageNavigatorButtonSelected"
+                    ref={hideButtonRef}
+                    style={{
+                      width: 'var(--100px-V)',
+                      backgroundColor: 'var(--Primary-Color)',
+                      color: 'var(--Text-Color-Reverse)',
+                      border: 'none',
+                    }}
+                    onClick={() => {
+                      turnOffViewStateForAll();
+                      updateRoomPropertyLocal(
+                        roomType.id,
+                        'ShowPayTimeLine',
+                        !roomType.ShowPayTimeLine
+                      );
+                    }}
+                  >
+                    {roomType.ShowPayTimeLine ? 'Hide' : 'Rent'}
+                  </button>
+                )}
+                {privileges.editUtilityPayments && (
+                  <button
+                    style={{
+                      height: 'var(--35px-V)',
+                    }}
+                    ref={utilityShowerRefHider}
+                    onClick={() => {
+                      turnOffViewStateForAll();
 
-                    updateRoomPropertyLocal(
-                      roomType.id,
-                      'ShowUtilityLine',
-                      !roomType.ShowUtilityLine
-                    );
-                  }}
-                >
-                  {roomType.ShowUtilityLine ? 'Hide' : 'Utility'}
-                </button>}
+                      updateRoomPropertyLocal(
+                        roomType.id,
+                        'ShowUtilityLine',
+                        !roomType.ShowUtilityLine
+                      );
+                    }}
+                  >
+                    {roomType.ShowUtilityLine ? 'Hide' : 'Utility'}
+                  </button>
+                )}
               </div>
             </div>
           )}
@@ -2332,31 +2371,35 @@ const Room = ({
                                 onChange={(e) => setStartTime(e.target.value)}
                               />
                             </div>
-                            {selectedAgreement === 'Fixed-Term' && <> 
-                              <div>
-                                End time:
-                                <input
-                                  type="date"
-                                  value={endTime}
-                                  style={{ fontWeight: '700' }}
-                                  onChange={(e) => setEndTime(e.target.value)}
-                                />
-                                {calculateDaysDifference(
-                                  new Date(startTime),
-                                  new Date(endTime)
-                                )}{' '}
-                                Days
-                              </div> <div>
-                                Sign date:
-                                <input
-                                  type="date"
-                                  value={signDate}
-                                  style={{ fontWeight: '700' }}
-                                  onChange={(e) => setSignDate(e.target.value)}
-                                />
-                                
-                              </div>
-                            </>}
+                            {selectedAgreement === 'Fixed-Term' && (
+                              <>
+                                <div>
+                                  End time:
+                                  <input
+                                    type="date"
+                                    value={endTime}
+                                    style={{ fontWeight: '700' }}
+                                    onChange={(e) => setEndTime(e.target.value)}
+                                  />
+                                  {calculateDaysDifference(
+                                    new Date(startTime),
+                                    new Date(endTime)
+                                  )}{' '}
+                                  Days
+                                </div>{' '}
+                                <div>
+                                  Sign date:
+                                  <input
+                                    type="date"
+                                    value={signDate}
+                                    style={{ fontWeight: '700' }}
+                                    onChange={(e) =>
+                                      setSignDate(e.target.value)
+                                    }
+                                  />
+                                </div>
+                              </>
+                            )}
                           </div>
                           <div className="AddTenantContainerinnerElement">
                             Payment cycle every:{' '}
@@ -2388,17 +2431,16 @@ const Room = ({
                             )}
                           </div>
                           Currency:
-                      <select
-                        value={AddTenantFormCurrency}
-                        onChange={(e) =>
-                          setAddTenantFormCurrency(e.target.value)
-                        }
-                        className="AddANewRoomSelectMid"
-                      >
-                        {GetCurrencyAsOptionsOnSelect()}
-                      </select>
+                          <select
+                            value={AddTenantFormCurrency}
+                            onChange={(e) =>
+                              setAddTenantFormCurrency(e.target.value)
+                            }
+                            className="AddANewRoomSelectMid"
+                          >
+                            {GetCurrencyAsOptionsOnSelect()}
+                          </select>
                           <div className="AddTenantContainerinnerElement">
-                            
                             Agreed Price:{' '}
                             <input
                               type="number"
@@ -3083,7 +3125,9 @@ const Room = ({
                               )}
                               {renderInfoItem(
                                 'Agreed Price',
-                                `${roomType.AgreedPrice}${CurrencySign(roomType.Currency)} per ${roomType.PaymentCycleType} days`
+                                `${roomType.AgreedPrice}${CurrencySign(
+                                  roomType.Currency
+                                )} per ${roomType.PaymentCycleType} days`
                               )}
                               {renderInfoItem(
                                 'Payment cycle',
@@ -3145,58 +3189,211 @@ const Room = ({
                         }
                       >
                         <span style={{ marginBottom: 'var(--10px-V)' }}>
-                          {sectionStates.tenantPortal ? '▼' : '▶'}{' '}
-                          Tenant Portal
+                          {sectionStates.tenantPortal ? '▼' : '▶'} Tenant Portal
                         </span>
                       </div>
                       {sectionStates.tenantPortal && (
                         <>
-                          <div style={{padding: 'var(--10px-V)'}}>
-                            <p style={{marginBottom: 'var(--10px-V)', color: 'var(--Text-Color-Grey)'}}>
-                              Configure tenant portal settings and access permissions. <br /> 
-                           
+                          <div style={{ padding: 'var(--10px-V)' }}>
+                            <p
+                              style={{
+                                marginBottom: 'var(--10px-V)',
+                                color: 'var(--Text-Color-Grey)',
+                              }}
+                            >
+                              Configure tenant portal settings and access
+                              permissions. <br />
                             </p>
-                            
 
-                            <div style={{display: 'flex', flexDirection: 'column', gap: 'var(--10px-V)'}}>
-                              <label style={{display: 'flex', alignItems: 'center', gap: 'var(--10px-V)'}}>
+                            <div
+                              style={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: 'var(--10px-V)',
+                              }}
+                            >
+                              <label
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 'var(--10px-V)',
+                                }}
+                              >
                                 <input
                                   type="checkbox"
                                   checked={roomType.useTenantPortal || false}
-                                  onChange={(e) => updateRoomProperty(roomType.id, 'useTenantPortal', e.target.checked)}
+                                  onChange={(e) =>
+                                    updateRoomProperty(
+                                      roomType.id,
+                                      'useTenantPortal',
+                                      e.target.checked
+                                    )
+                                  }
                                 />
                                 Enable Tenant Portal Access
                               </label>
-                             {roomType.useTenantPortal &&<><span style={{fontSize: 'var(--12px-V)'}}>
-                                Page: <a href={`https://rentmaster.markethubet.com/tenantPortal/${window.electron.store.get("Branches").find((branch: any) => branch.id === SelectedBranchId).name}-${window.electron.store.get("users").find((user: any) => user.id === SelectedUserId).companyName}/${TenantList.find((tenant: any) => tenant.id === roomType.tenantId)?.name}`} target="_blank" rel="noopener noreferrer">https://rentmaster.markethubet.com/tenantPortal/ <br />{window.electron.store.get("Branches").find((branch: any) => branch.id === SelectedBranchId).name}-{window.electron.store.get("users").find((user: any) => user.id === SelectedUserId).companyName}/{TenantList.find((tenant: any) => tenant.id === roomType.tenantId)?.name}</a>
-                              </span>  <label style={{display: 'flex', alignItems: 'center', gap: 'var(--10px-V)'}}>
-                                <input
-                                  type="checkbox"
-                                  checked={roomType.TenantPortalShowReceipts || false} 
-                                  onChange={(e) => updateRoomProperty(roomType.id, 'TenantPortalShowReceipts', e.target.checked)}
-                                />
-                                Show Payment Receipts
-                              </label>
-
-                              <label style={{display: 'flex', alignItems: 'center', gap: 'var(--10px-V)'}}>
-                                <input
-                                  type="checkbox"
-                                  checked={roomType.TenantPortalShowTenantDetails || false}
-                                  onChange={(e) => updateRoomProperty(roomType.id, 'TenantPortalShowTenantDetails', e.target.checked)}
-                                />
-                                Show Extended Tenant Details
-                              </label>
-
-                              <label style={{display: 'flex', alignItems: 'center', gap: 'var(--10px-V)'}}>
-                                <input
-                                  type="checkbox"
-                                  checked={roomType.TenantPortalAllowOnlinePayments || false}
-                                  onChange={(e) => updateRoomProperty(roomType.id, 'TenantPortalAllowOnlinePayments', e.target.checked)}
-                                />
-                                Allow Online Payments
-                              </label></> 
-                             } 
-                            
+                              {roomType.useTenantPortal && (
+                                <>
+                                  <div
+                                    style={{
+                                      fontSize: 'var(--12px-V)',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: 'var(--10px-V)',
+                                    }}
+                                  >
+                                    Page:{' '}
+                                    <a
+                                      href={`https://rentmaster.markethubet.com/tenantPortal/${
+                                        window.electron.store
+                                          .get('Branches')
+                                          .find(
+                                            (branch: any) =>
+                                              branch.id === SelectedBranchId
+                                          ).name
+                                      }-${
+                                        window.electron.store
+                                          .get('users')
+                                          .find(
+                                            (user: any) =>
+                                              user.id === SelectedUserId
+                                          ).companyName
+                                      }/${
+                                        TenantList.find(
+                                          (tenant: any) =>
+                                            tenant.id === roomType.tenantId
+                                        )?.name
+                                      }`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                    >
+                                      https://rentmaster.markethubet.com/tenantPortal/{' '}
+                                      <br />
+                                      {
+                                        window.electron.store
+                                          .get('Branches')
+                                          .find(
+                                            (branch: any) =>
+                                              branch.id === SelectedBranchId
+                                          ).name
+                                      }
+                                      -
+                                      {
+                                        window.electron.store
+                                          .get('users')
+                                          .find(
+                                            (user: any) =>
+                                              user.id === SelectedUserId
+                                          ).companyName
+                                      }
+                                      /
+                                      {
+                                        TenantList.find(
+                                          (tenant: any) =>
+                                            tenant.id === roomType.tenantId
+                                        )?.name
+                                      }
+                                    </a>
+                                    <br />{' '}
+                                  </div>
+                                  <button
+                                    onClick={() => {
+                                      const url = `https://rentmaster.markethubet.com/tenantPortal/${
+                                        window.electron.store
+                                          .get('Branches')
+                                          .find(
+                                            (branch: any) =>
+                                              branch.id === SelectedBranchId
+                                          ).name
+                                      }-${
+                                        window.electron.store
+                                          .get('users')
+                                          .find(
+                                            (user: any) =>
+                                              user.id === SelectedUserId
+                                          ).companyName
+                                      }/${
+                                        TenantList.find(
+                                          (tenant: any) =>
+                                            tenant.id === roomType.tenantId
+                                        )?.name
+                                      }`;
+                                      navigator.clipboard.writeText(url);
+                                    }}
+                                  >
+                                    Copy
+                                  </button>{' '}
+                                  <label
+                                    style={{
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: 'var(--10px-V)',
+                                    }}
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={
+                                        roomType.TenantPortalShowReceipts ||
+                                        false
+                                      }
+                                      onChange={(e) =>
+                                        updateRoomProperty(
+                                          roomType.id,
+                                          'TenantPortalShowReceipts',
+                                          e.target.checked
+                                        )
+                                      }
+                                    />
+                                    Show Payment Receipts
+                                  </label>
+                                  <label
+                                    style={{
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: 'var(--10px-V)',
+                                    }}
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={
+                                        roomType.TenantPortalShowTenantDetails ||
+                                        false
+                                      }
+                                      onChange={(e) =>
+                                        updateRoomProperty(
+                                          roomType.id,
+                                          'TenantPortalShowTenantDetails',
+                                          e.target.checked
+                                        )
+                                      }
+                                    />
+                                    Show Extended Tenant Details
+                                  </label>
+                                  <label
+                                    style={{
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: 'var(--10px-V)',
+                                    }}
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={
+                                        roomType.TenantPortalAllowOnlinePayments ||
+                                        false
+                                      }
+                                      onChange={(e) =>
+                                        updateRoomProperty(
+                                          roomType.id,
+                                          'TenantPortalAllowOnlinePayments',
+                                          e.target.checked
+                                        )
+                                      }
+                                    />
+                                    Allow Online Payments
+                                  </label>
+                                </>
+                              )}
                             </div>
                           </div>
                         </>
@@ -3327,11 +3524,13 @@ const Room = ({
                             userId={SelectedUserId}
                             SelectedBranchId={SelectedBranchId}
                           />
-                      <hr />
+                          <hr />
                           <div className="reminder-group">
-                          <p className='Reminder-p'>Send utility reminder 3 days before</p>
+                            <p className="Reminder-p">
+                              Send utility reminder 3 days before
+                            </p>
                             <div className="checkbox-group">
-                            <label className='Reminder-label'>
+                              <label className="Reminder-label">
                                 Email Tenant:
                                 <input
                                   type="checkbox"
@@ -3341,7 +3540,7 @@ const Room = ({
                                   }
                                 />
                               </label>
-                              <label className='Reminder-label'>
+                              <label className="Reminder-label">
                                 SMS Tenant:
                                 <input
                                   type="checkbox"
@@ -3351,7 +3550,7 @@ const Room = ({
                                   }
                                 />
                               </label>
-                              <label className='Reminder-label'>
+                              <label className="Reminder-label">
                                 Email Representative:
                                 <input
                                   type="checkbox"
@@ -3361,7 +3560,7 @@ const Room = ({
                                   }
                                 />
                               </label>
-                              <label className='Reminder-label'>
+                              <label className="Reminder-label">
                                 SMS Representative:
                                 <input
                                   type="checkbox"
@@ -3376,9 +3575,11 @@ const Room = ({
 
                           {/* On Due Date */}
                           <div className="reminder-group">
-                          <p className='Reminder-p'>Send utility reminder on due date</p>
+                            <p className="Reminder-p">
+                              Send utility reminder on due date
+                            </p>
                             <div className="checkbox-group">
-                            <label className='Reminder-label'>
+                              <label className="Reminder-label">
                                 Email Tenant:
                                 <input
                                   type="checkbox"
@@ -3388,7 +3589,7 @@ const Room = ({
                                   }
                                 />
                               </label>
-                              <label className='Reminder-label'>
+                              <label className="Reminder-label">
                                 SMS Tenant:
                                 <input
                                   type="checkbox"
@@ -3398,7 +3599,7 @@ const Room = ({
                                   }
                                 />
                               </label>
-                              <label className='Reminder-label'>
+                              <label className="Reminder-label">
                                 Email Representative:
                                 <input
                                   type="checkbox"
@@ -3408,7 +3609,7 @@ const Room = ({
                                   }
                                 />
                               </label>
-                              <label className='Reminder-label'>
+                              <label className="Reminder-label">
                                 SMS Representative:
                                 <input
                                   type="checkbox"
@@ -3423,9 +3624,11 @@ const Room = ({
 
                           {/* 3 Days After */}
                           <div className="reminder-group">
-                            <p className='Reminder-p'>Send utility reminder 3 days after</p>
+                            <p className="Reminder-p">
+                              Send utility reminder 3 days after
+                            </p>
                             <div className="checkbox-group">
-                            <label className='Reminder-label'>
+                              <label className="Reminder-label">
                                 Email Tenant:
                                 <input
                                   type="checkbox"
@@ -3435,7 +3638,7 @@ const Room = ({
                                   }
                                 />
                               </label>
-                              <label className='Reminder-label'>
+                              <label className="Reminder-label">
                                 SMS Tenant:
                                 <input
                                   type="checkbox"
@@ -3445,7 +3648,7 @@ const Room = ({
                                   }
                                 />
                               </label>
-                              <label className='Reminder-label'>
+                              <label className="Reminder-label">
                                 Email Representative:
                                 <input
                                   type="checkbox"
@@ -3455,7 +3658,7 @@ const Room = ({
                                   }
                                 />
                               </label>
-                              <label className='Reminder-label'>
+                              <label className="Reminder-label">
                                 SMS Representative:
                                 <input
                                   type="checkbox"
@@ -3755,7 +3958,8 @@ const Room = ({
                 style={{ marginLeft: 'var(--20px-V)' }}
               >
                 Back
-              </button><button
+              </button>
+              <button
                 onClick={() => {
                   handleTenantLeft();
                 }}

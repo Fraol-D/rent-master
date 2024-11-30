@@ -258,24 +258,28 @@ const DashbNetProfitTotalCollected = ({
     return allExpenses.sort((a, b) => a.date - b.date);
   };
 
-  const processValueByCurrency = (value: number, currency: string | undefined, date: number) => {
+  const processValueByCurrency = (
+    value: number,
+    currency: string | undefined,
+    date: number
+  ) => {
     const { rate, direction } = getRateByDate(date);
     console.log(value, currency || GetDefaultCurrency(), currencyDisplay);
     if (!rate) {
       console.warn('No rate available, using current rate as fallback');
       return 0; // Return 0 if no rate found to be consistent
     }
-  
+
     // For ETB_ONLY, only show ETB values, return 0 for USD
     if (currencyDisplay === 'ETB_ONLY') {
       return currency === 'ETB' ? value : 0;
     }
-    
+
     // For USD_ONLY, only show USD values, return 0 for ETB
     if (currencyDisplay === 'USD_ONLY') {
       return currency === 'USD' ? value : 0;
     }
-    
+
     // For ALL_ETB, convert USD to ETB
     if (currencyDisplay === 'ALL_ETB') {
       if (currency === 'USD') {
@@ -283,7 +287,7 @@ const DashbNetProfitTotalCollected = ({
       }
       return value;
     }
-    
+
     // For ALL_USD, convert ETB to USD
     if (currencyDisplay === 'ALL_USD') {
       if (currency === 'ETB') {
@@ -291,7 +295,7 @@ const DashbNetProfitTotalCollected = ({
       }
       return value;
     }
-  
+
     return 0;
   };
   const formatChartValue = (value: number) => {
@@ -325,11 +329,7 @@ const DashbNetProfitTotalCollected = ({
         }),
         expectedValue: d3.sum(v, (d) => {
           const room = RoomList.find((r) => r.id === d.roomId);
-          return processValueByCurrency(
-            d.Value,
-            room?.Currency ,
-            d.Day
-          );
+          return processValueByCurrency(d.Value, room?.Currency, d.Day);
         }),
         expenses: d3.sum(
           expenses.filter(
@@ -337,11 +337,14 @@ const DashbNetProfitTotalCollected = ({
           ),
           (e) => {
             const expense = expenses.find((r) => r.id === e.id);
-            console.log("agregated monthly expenses",processValueByCurrency(
-              e.price,
-              expense?.Currency,
-              new Date(e.date).getTime()
-            ))
+            console.log(
+              'agregated monthly expenses',
+              processValueByCurrency(
+                e.price,
+                expense?.Currency,
+                new Date(e.date).getTime()
+              )
+            );
             return processValueByCurrency(
               e.price,
               expense?.Currency,
@@ -364,20 +367,25 @@ const DashbNetProfitTotalCollected = ({
         .filter(
           (e) => new Date(e.date) >= monthStart && new Date(e.date) <= monthEnd
         )
-        .reduce((sum, e) => sum + processValueByCurrency(
-          e.price,
-          e.Currency,
-          new Date(e.date).getTime()
-        ), 0);
+        .reduce(
+          (sum, e) =>
+            sum +
+            processValueByCurrency(
+              e.price,
+              e.Currency,
+              new Date(e.date).getTime()
+            ),
+          0
+        );
 
       const monthData = monthlyData.find(([m]) => m === month);
       const income = monthData ? monthData[1].value : 0;
       const expectedIncome = monthData ? monthData[1].expectedValue : 0;
-      console.log("monthly data", monthlyData, "other one", {
+      console.log('monthly data', monthlyData, 'other one', {
         month: d3.timeFormat('%b')(new Date(0, month)),
         netIncome: income - monthlyExpenses,
-        expectedNetIncome: expectedIncome - monthlyExpenses
-      })
+        expectedNetIncome: expectedIncome - monthlyExpenses,
+      });
 
       return {
         month: d3.timeFormat('%b')(new Date(0, month)),
@@ -452,12 +460,12 @@ const DashbNetProfitTotalCollected = ({
       .filter((e) => new Date(e.date).getFullYear() === selectedYear)
       .reduce((sum, e) => {
         const expense = allExpenses.find((r) => r.id === e.id);
-        console.log(expense?.Currency)
+        console.log(expense?.Currency);
         return (
           sum +
           processValueByCurrency(
             e.price,
-            expense?.Currency ,
+            expense?.Currency,
             new Date(e.date).getTime()
           )
         );
@@ -468,8 +476,7 @@ const DashbNetProfitTotalCollected = ({
       .reduce((sum, item) => {
         const room = RoomList.find((r) => r.id === item.roomId);
         return (
-          sum +
-          processValueByCurrency(item.Value, room?.Currency , item.Day)
+          sum + processValueByCurrency(item.Value, room?.Currency, item.Day)
         );
       }, 0);
 
@@ -486,16 +493,18 @@ const DashbNetProfitTotalCollected = ({
       .filter((e) => new Date(e.date).getFullYear() === selectedYear)
       .reduce((sum, e) => {
         const expense = allExpenses.find((r) => r.id === e.id);
-        console.log( processValueByCurrency(
-          e.price,
-          expense?.Currency ,
-          new Date(e.date).getTime()
-        ))
+        console.log(
+          processValueByCurrency(
+            e.price,
+            expense?.Currency,
+            new Date(e.date).getTime()
+          )
+        );
         return (
           sum +
           processValueByCurrency(
             e.price,
-            expense?.Currency ,
+            expense?.Currency,
             new Date(e.date).getTime()
           )
         );
@@ -506,8 +515,7 @@ const DashbNetProfitTotalCollected = ({
       .reduce((sum, item) => {
         const room = RoomList.find((r) => r.id === item.roomId);
         return (
-          sum +
-          processValueByCurrency(item.Value, room?.Currency , item.Day)
+          sum + processValueByCurrency(item.Value, room?.Currency, item.Day)
         );
       }, 0);
 
@@ -547,11 +555,17 @@ const DashbNetProfitTotalCollected = ({
       month: item.month,
     }));
 
-    const totalNetProfitAmount = yearData.reduce((sum, item) => sum + item.netProfit, 0);
-    const highestNetProfit = Math.max(...yearData.map((item) => item.netProfit));
+    const totalNetProfitAmount = yearData.reduce(
+      (sum, item) => sum + item.netProfit,
+      0
+    );
+    const highestNetProfit = Math.max(
+      ...yearData.map((item) => item.netProfit)
+    );
     const averageNetProfit = totalNetProfitAmount / yearData.length;
     const totalTransactions = predictedPayments.filter(
-      (payment) => new Date(payment.Day).getFullYear() === selectedYear && payment.Paid
+      (payment) =>
+        new Date(payment.Day).getFullYear() === selectedYear && payment.Paid
     ).length;
 
     return {
@@ -566,7 +580,6 @@ const DashbNetProfitTotalCollected = ({
     <div
       className="DashboardWigetMainContainer"
       style={{
-   
         height: 'var(--510px-V)',
       }}
     >
@@ -590,16 +603,19 @@ const DashbNetProfitTotalCollected = ({
           </select>
         </div>
         <div className="YearInputContainer">
-        <div className='ShowByContainer'>  <span className="YearLabel">Year</span>
-          <input
-            className="YearInput"
-            type="number"
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            min="1900"
-            max="2100"
-            step="1"
-          /></div>
+          <div className="ShowByContainer">
+            {' '}
+            <span className="YearLabel">Year</span>
+            <input
+              className="YearInput"
+              type="number"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              min="1900"
+              max="2100"
+              step="1"
+            />
+          </div>
           <span className="TotalLabel">Total:</span>
           <span className="TotalValue">
             ${formatNumberWithSuffix(totalCollected.toLocaleString())} / $
@@ -667,9 +683,13 @@ const DashbNetProfitTotalCollected = ({
           />
           <span>Expected</span>
         </div>
-        
+
         <div
-          style={{ display: 'flex', alignItems: 'center', flexDirection: 'column' }}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            flexDirection: 'column',
+          }}
         >
           <select
             value={currencyDisplay}
@@ -680,7 +700,7 @@ const DashbNetProfitTotalCollected = ({
               padding: '3px 8px',
               borderRadius: '4px',
               border: '1px solid var(--Border-Color)',
-              backgroundColor: 'var(--Background-Color)',
+
               color: 'var(--Text-Color)',
               cursor: 'pointer',
             }}
@@ -701,9 +721,6 @@ const DashbNetProfitTotalCollected = ({
           </span>
         </div>
       </div>
- 
-
-     
 
       <BarChart
         dataset={dataset}
@@ -763,12 +780,18 @@ const DashbNetProfitTotalCollected = ({
             : []),
         ]}
         margin={{
-          left: 40 + (window.electron.store.get("abbreiviateBigNumbers") ? 30 : Math.max(
-            ...dataset.map(d => Math.max(
-              visibleSeries.collected ? d.value || 0 : 0,
-              visibleSeries.expected ? d.expectedValue || 0 : 0
-            ))
-          ).toString().length * 6),
+          left:
+            40 +
+            (window.electron.store.get('abbreiviateBigNumbers')
+              ? 30
+              : Math.max(
+                  ...dataset.map((d) =>
+                    Math.max(
+                      visibleSeries.collected ? d.value || 0 : 0,
+                      visibleSeries.expected ? d.expectedValue || 0 : 0
+                    )
+                  )
+                ).toString().length * 6),
           right: 10,
           top: 10,
           bottom: 55,
@@ -795,34 +818,46 @@ const DashbNetProfitTotalCollected = ({
         className="ExpenseStatsContainer"
         style={{
           display: 'flex',
-flexDirection: 'row',
-position: 'relative',
-top: 'var(---31px-V)',
-height: 'var(--16px-V)',
-textAlign: 'center'
+          flexDirection: 'row',
+          position: 'relative',
+          top: 'var(---31px-V)',
+          height: 'var(--16px-V)',
+          textAlign: 'center',
         }}
       >
         <p className="ExpenseStatItem">
-          Total Net Profit {showBy === 'Monthly' ? 'This Year' : 'Selected Period'}: 
+          Total Net Profit{' '}
+          {showBy === 'Monthly' ? 'This Year' : 'Selected Period'}:
           <em className="ExpenseStatValue">
-            ${formatNumberWithSuffix(netProfitStats.totalNetProfitAmount.toLocaleString())}
+            $
+            {formatNumberWithSuffix(
+              netProfitStats.totalNetProfitAmount.toLocaleString()
+            )}
           </em>
         </p>
         <p className="ExpenseStatItem">
-          Highest {showBy === 'Monthly' ? 'Monthly' : 'Yearly'} Net Profit: 
+          Highest {showBy === 'Monthly' ? 'Monthly' : 'Yearly'} Net Profit:
           <em className="ExpenseStatValue">
-            ${formatNumberWithSuffix(netProfitStats.highestNetProfit.toLocaleString())}
+            $
+            {formatNumberWithSuffix(
+              netProfitStats.highestNetProfit.toLocaleString()
+            )}
           </em>
         </p>
         <p className="ExpenseStatItem">
-          Average {showBy === 'Monthly' ? 'Monthly' : 'Yearly'} Net Profit: 
+          Average {showBy === 'Monthly' ? 'Monthly' : 'Yearly'} Net Profit:
           <em className="ExpenseStatValue">
-            ${formatNumberWithSuffix(netProfitStats.averageNetProfit.toLocaleString())}
+            $
+            {formatNumberWithSuffix(
+              netProfitStats.averageNetProfit.toLocaleString()
+            )}
           </em>
         </p>
         <p className="ExpenseStatItem">
-          Total Number of Transactions: 
-          <em className="ExpenseStatValue">{netProfitStats.totalTransactions}</em>
+          Total Number of Transactions:
+          <em className="ExpenseStatValue">
+            {netProfitStats.totalTransactions}
+          </em>
         </p>
       </div>
     </div>

@@ -25,22 +25,26 @@ const DatabasePage = ({
     () => getUserPrivileges(SelectedAppUser),
     [SelectedAppUser]
   );
-  const GetDataBaseData = async (TableName: string) => {
-    try {
-      const DataRaw = await getValuesWithSql(
-        TableName,
-        `WHERE 1 AND branchId = '${SelectedBranchId}'`
-      );
-      console.log(DataRaw);
-      setData(DataRaw);
-    } catch (error) {
-      if (error instanceof Error) {
-        console.log(error.message);
-      } else {
-        console.log('An unknown error occurred');
-      }
+ 
+const GetDataBaseData = async (TableName: string) => {
+  try {
+    // Only add branchId filter if the table supports it
+    const whereClause = tablesWithBranchId.includes(TableName) 
+      ? `WHERE 1 AND branchId = '${SelectedBranchId}'`
+      : 'WHERE 1';
+      
+    const DataRaw = await getValuesWithSql(TableName, whereClause);
+    console.log(DataRaw);
+    setData(DataRaw);
+  } catch (error) {
+    if (error instanceof Error) {
+      console.log(error.message);
+    } else {
+      console.log('An unknown error occurred');
     }
-  };
+  }
+};
+
 
   useEffect(() => {
     GetDataBaseData('rooms');
@@ -51,7 +55,7 @@ const DatabasePage = ({
     | 'room_specifications'
     | 'tenants'
     | 'room_pay_info'
- 
+ | 'room_pay_info_history'
     | 'brokers'
     | 'brokersRecommendationList'
     | 'PastTenantsForRoom'
@@ -62,10 +66,27 @@ const DatabasePage = ({
     | 'utility_payments_settings'
     | 'sms_templates'
     | 'expenses'
-    | 'room_pay_info_history'
+    
  
   >('rooms');
-
+  const tablesWithBranchId = [
+    'rooms',
+    'room_specifications',
+    'tenants',
+    'room_pay_info',
+    'room_pay_info_history',
+ 
+    'brokers',
+    'brokersRecommendationList',
+    'PastTenantsForRoom',
+    'agreements',
+    'notification_template_selections',
+    
+    'utility_payments',
+    'utility_payments_settings',
+    
+    'expenses',
+  ];
   const validTables = [
     'rooms',
     'room_specifications',
@@ -250,12 +271,23 @@ const DatabasePage = ({
             marginTop: 'var(--5px-V)',
           }}
         >
-          <table className="table-container">
-            <thead className="table-header">
-              <tr>
-                {Data.length > 0 &&
-                  Object.keys(Data[0]).map((header, index) => (
-                    <th key={index} onClick={() => handleSearch(header)}>
+          {Data.length === 0 ? (
+            <div style={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              height: '100%',
+              fontSize: 'var(--16px-V)',
+              color: 'var(--Text-Color)'
+            }}>
+              No data available
+            </div>
+          ) : (
+            <table className="InfoTable">
+              <thead className="InfoTableThead">
+                <tr className="InfoTableHeadTR">
+                  {Object.keys(Data[0]).map((header, index) => (
+                    <th className="InfoTableHeadTh" key={index} onClick={() => handleSearch(header)}>
                       {searchConfig.key === header ? (
                         <input
                           type="text"
@@ -269,80 +301,85 @@ const DatabasePage = ({
                       )}
                     </th>
                   ))}
-                {privileges.editDatabaseData ? <th>Actions</th> : <></>}
-              </tr>
-            </thead>
-            <tbody className="table-body">
-              {filteredData(Data, searchConfig.key, searchConfig.query).map(
-                (row, rowIndex) => (
-                  <tr
-                    key={rowIndex}
-                    style={
-                      row.id === highlightedRow
-                        ? { backgroundColor: 'var(--Accent-Color50)' }
-                        : {}
-                    }
-                  >
-                    {Object.entries(row).map(([key, value], cellIndex) => (
-                      <td
-                        key={cellIndex}
-                  
-                      >
-                        {editCell &&
-                        editCell.rowIndex === rowIndex &&
-                        editCell.key === key ? (
-                          <input
-                            type="text"
-                            value={editValue}
-                            onChange={handleEditChange}
-                            onBlur={handleEditSubmit}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') {
-                                handleEditSubmit();
-                              }
-                            }}
-                            autoFocus
-                          />
-                        ) : (
-                          <>
-                            {highlightText(String(value), mainSearch)}
-                            {[
-                              'roomId',
-                              'tenantId',
-                              'brokerId',
-                              'agreementId',
-                              'email_template_id',
-                              'selectedAgreementId',
-                            ].includes(key) &&
-                              value && (
-                                <button
-                                  onClick={() => handleGoTo(key, String(value))}
-                                  style={{ marginLeft: 'var(--5px-V)' }}
-                                >
-                                  Go to
-                                </button>
-                              )}
-                          </>
-                        )}
-                      </td>
-                    ))}
-                    {privileges.editDatabaseData ? (
-                      <td>
-                        <button
-                          className="delete-button"
-                          onClick={() => handleDelete(row.id)}
+                  {privileges.editDatabaseData ? <th className="InfoTableHeadTh">Actions</th> : <></>}
+                </tr>
+              </thead>
+              <tbody>
+                {filteredData(Data, searchConfig.key, searchConfig.query).map(
+                  (row, rowIndex) => (
+                    <tr
+                      className="InfoTableBodyTr"
+                      key={rowIndex}
+                      style={{
+                        backgroundColor: row.id === highlightedRow
+                          ? 'var(--Accent-Color50)'
+                          : rowIndex % 2 === 0
+                            ? 'var(--Secondary-Color20)'
+                            : 'var(--Secondary-Color40)'
+                      }}
+                    >
+                      {Object.entries(row).map(([key, value], cellIndex) => (
+                        <td
+                          className="InfoTableBodyTD"
+                          key={cellIndex}
+                    
                         >
-                          Delete
-                        </button>
-                      </td>
-                    ) : (
-                      <></>
-                    )}
-                  </tr>
-                )
-              )}
-            </tbody>
-          </table>
+                          {editCell &&
+                          editCell.rowIndex === rowIndex &&
+                          editCell.key === key ? (
+                            <input
+                              type="text"
+                              value={editValue}
+                              onChange={handleEditChange}
+                              onBlur={handleEditSubmit}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  handleEditSubmit();
+                                }
+                              }}
+                              autoFocus
+                            />
+                          ) : (
+                            <>
+                              {highlightText(String(value), mainSearch)}
+                              {[
+                                'roomId',
+                                'tenantId',
+                                'brokerId',
+                                'agreementId',
+                                'email_template_id',
+                                'selectedAgreementId',
+                              ].includes(key) &&
+                                value && (
+                                  <button
+                                    onClick={() => handleGoTo(key, String(value))}
+                                    style={{ marginLeft: 'var(--5px-V)' }}
+                                  >
+                                    Go to
+                                  </button>
+                                )}
+                            </>
+                          )}
+                        </td>
+                      ))}
+                      {privileges.editDatabaseData ? (
+                        <td className="InfoTableBodyTD">
+                          <button
+                            className="delete-button"
+                            onClick={() => handleDelete(row.id)}
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      ) : (
+                        <></>
+                      )}
+                    </tr>
+                  )
+                )}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
     </div>

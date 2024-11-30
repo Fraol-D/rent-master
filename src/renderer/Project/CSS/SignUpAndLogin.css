@@ -75,7 +75,7 @@
   padding-left: var(--5px-V);
   width: 90%;
   margin-bottom: var(--13px-V);
-  border: var(--1px-V) solid grey;
+
   transition: all 0.5s;
   outline: none;
   position: relative;
@@ -95,7 +95,6 @@
   padding-left: var(--5px-V);
   width: var(--200px-V);
   margin-bottom: var(--13px-V);
-  border: var(--1px-V) solid grey;
   transition: all 0.5s;
   outline: none;
   position: relative;
@@ -320,14 +319,12 @@
 }
 .SignUpSignOutTryAgain {
   margin: var(--10px-V);
-  width: var(--130px-V);
-  height: var(--50px-V);
+  width: var(--100px-V);
+  height: var(--40px-V);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: var(--16px-V);
-  transition: all 0.2s;
-  box-shadow: var(--0px-V) var(--4px-V) var(--4px-V) var(--0px-V) rgba(0, 0, 0, 0.25);
 }
 .SignUpSignOutTryAgainIcon {
   width: var(--30px-V);
@@ -363,7 +360,7 @@
   justify-content: center;
 }
 .SignUpSignOutTryAgain:hover {
-  width: var(--140px-V);
+  width: var(--120px-V);
 }
 .SignUpSignOutTryAgain:active {
   width: var(--125px-V);

@@ -7,7 +7,10 @@ interface EmailTemplate {
   body: string;
 }
 import loadingGif from '../../../assets/assets/Loading/Rolling-1s-200px.gif';
-import { getValuesWithSql_Online, updateValueOnline } from 'Backend/OnlineServerApis';
+import {
+  getValuesWithSql_Online,
+  updateValueOnline,
+} from 'Backend/OnlineServerApis';
 
 interface EmailTemplatesProps {
   emailTemplates: EmailTemplate[];
@@ -77,7 +80,8 @@ const EmailTemplates: React.FC<EmailTemplatesProps> = ({
   isSending,
 }) => {
   const [representativeEmails, setRepresentativeEmails] = useState<string>('');
-  const [representativePhoneNumbers, setRepresentativePhoneNumbers] = useState<string>('');
+  const [representativePhoneNumbers, setRepresentativePhoneNumbers] =
+    useState<string>('');
   const [landlordDisplayName, setLandlordDisplayName] = useState<string>('');
   const [landlordEmail, setLandlordEmail] = useState<string>('');
   const [landlordTelephone, setLandlordTelephone] = useState<string>('');
@@ -86,7 +90,7 @@ const EmailTemplates: React.FC<EmailTemplatesProps> = ({
     representativePhoneNumbers: '',
     landlordDisplayName: '',
     landlordEmail: '',
-    landlordTelephone: ''
+    landlordTelephone: '',
   });
   const [hasChanges, setHasChanges] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -95,30 +99,40 @@ const EmailTemplates: React.FC<EmailTemplatesProps> = ({
       if (navigator.onLine) {
         try {
           setLoading(true);
-          const userId = await window.electron.store.get("users")[0].id;
+          const userId = await window.electron.store.get('users')[0].id;
 
           // Assuming there's an API call to get the values
-          console.log("fetching email settings", userId)
-          const user = (await getValuesWithSql_Online("users", `WHERE id = '${userId}'`))[0];
+          console.log('fetching email settings', userId);
+          const user = (
+            await getValuesWithSql_Online('users', `WHERE id = '${userId}'`)
+          )[0];
           const RepresentativeEmailsONLINE = user.RepresentativeEmails;
-          const RepresentativePhoneNumbersONLINE = user.RepresentativePhoneNumbers;
+          const RepresentativePhoneNumbersONLINE =
+            user.RepresentativePhoneNumbers;
           const LandlordNamesONLINE = user.LandlordName;
           const LandlordEmailONLINE = user.LandlordEmail;
           const LandlordTelephoneONLINE = user.LandlordTelephone;
-          console.log("fetching email settings", RepresentativeEmailsONLINE, RepresentativePhoneNumbersONLINE, LandlordNamesONLINE, LandlordEmailONLINE, LandlordTelephoneONLINE)
-          
+          console.log(
+            'fetching email settings',
+            RepresentativeEmailsONLINE,
+            RepresentativePhoneNumbersONLINE,
+            LandlordNamesONLINE,
+            LandlordEmailONLINE,
+            LandlordTelephoneONLINE
+          );
+
           setRepresentativeEmails(RepresentativeEmailsONLINE);
           setRepresentativePhoneNumbers(RepresentativePhoneNumbersONLINE);
           setLandlordDisplayName(LandlordNamesONLINE);
           setLandlordEmail(LandlordEmailONLINE);
           setLandlordTelephone(LandlordTelephoneONLINE);
-          
+
           setOriginalValues({
             representativeEmails: RepresentativeEmailsONLINE,
             representativePhoneNumbers: RepresentativePhoneNumbersONLINE,
             landlordDisplayName: LandlordNamesONLINE,
             landlordEmail: LandlordEmailONLINE,
-            landlordTelephone: LandlordTelephoneONLINE
+            landlordTelephone: LandlordTelephoneONLINE,
           });
           setLoading(false);
         } catch (error) {
@@ -131,53 +145,86 @@ const EmailTemplates: React.FC<EmailTemplatesProps> = ({
   }, []);
 
   useEffect(() => {
-    const hasAnyChanges = 
+    const hasAnyChanges =
       representativeEmails !== originalValues.representativeEmails ||
-      representativePhoneNumbers !== originalValues.representativePhoneNumbers ||
+      representativePhoneNumbers !==
+        originalValues.representativePhoneNumbers ||
       landlordDisplayName !== originalValues.landlordDisplayName ||
       landlordEmail !== originalValues.landlordEmail ||
       landlordTelephone !== originalValues.landlordTelephone;
-    
+
     setHasChanges(hasAnyChanges);
-  }, [representativeEmails, representativePhoneNumbers, landlordDisplayName, landlordEmail, landlordTelephone, originalValues]);
+  }, [
+    representativeEmails,
+    representativePhoneNumbers,
+    landlordDisplayName,
+    landlordEmail,
+    landlordTelephone,
+    originalValues,
+  ]);
 
   const handleSaveEmailSettings = async () => {
     if (navigator.onLine) {
       try {
-        const userId = await window.electron.store.get("users")[0].id;
-        if(!userId) {
-          alert("ISSUES user data")
+        const userId = await window.electron.store.get('users')[0].id;
+        if (!userId) {
+          showAlert('ISSUES user data');
           return;
         }
         // Assuming there's an API call to save the values
         if (representativeEmails && hasChanges) {
-          await updateValueOnline("users", userId, "RepresentativeEmails", representativeEmails);
+          await updateValueOnline(
+            'users',
+            userId,
+            'RepresentativeEmails',
+            representativeEmails
+          );
         }
         if (representativePhoneNumbers && hasChanges) {
-          await updateValueOnline("users", userId, "RepresentativePhoneNumbers", representativePhoneNumbers);
+          await updateValueOnline(
+            'users',
+            userId,
+            'RepresentativePhoneNumbers',
+            representativePhoneNumbers
+          );
         }
         if (landlordDisplayName && hasChanges) {
-          await updateValueOnline("users", userId, "LandlordName", landlordDisplayName);
+          await updateValueOnline(
+            'users',
+            userId,
+            'LandlordName',
+            landlordDisplayName
+          );
         }
         if (landlordEmail && hasChanges) {
-          await updateValueOnline("users", userId, "LandlordEmail", landlordEmail);
+          await updateValueOnline(
+            'users',
+            userId,
+            'LandlordEmail',
+            landlordEmail
+          );
         }
         if (landlordTelephone && hasChanges) {
-          await updateValueOnline("users", userId, "LandlordTelephone", landlordTelephone);
+          await updateValueOnline(
+            'users',
+            userId,
+            'LandlordTelephone',
+            landlordTelephone
+          );
         }
         setOriginalValues({
           representativeEmails,
           representativePhoneNumbers,
           landlordDisplayName,
           landlordEmail,
-          landlordTelephone
+          landlordTelephone,
         });
         setHasChanges(false);
       } catch (error) {
         console.error('Failed to save email settings:', error);
       }
     } else {
-      alert('You are offline, cannot save settings');
+      showAlert('You are offline, cannot save settings');
     }
   };
 
@@ -192,7 +239,6 @@ const EmailTemplates: React.FC<EmailTemplatesProps> = ({
 
   return (
     <div className="tools-page">
-      
       <div
         style={{
           display: 'flex',
@@ -204,7 +250,7 @@ const EmailTemplates: React.FC<EmailTemplatesProps> = ({
         <button
           onClick={() => {
             if (navigator.onLine) handleReplaceWithDefault();
-            else alert('You are offline, cannot reset to default');
+            else showAlert('You are offline, cannot reset to default');
           }}
           style={{
             fontSize: 'var(--10px-V)',

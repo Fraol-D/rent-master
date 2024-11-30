@@ -31,10 +31,14 @@ import {
   isBefore,
 } from 'date-fns';
 import { Payment } from 'electron';
-import { GetDefaultCurrency, getRateByDate } from './Project/TSX/Helpers/CurrencySign';
+import {
+  GetDefaultCurrency,
+  getRateByDate,
+} from './Project/TSX/Helpers/CurrencySign';
+import { AlertProvider, useAlert } from './components/useAlert';
+import { ConfirmProvider } from './components/useConfirm';
 declare global {}
 function Hello() {
- 
   const [RoomList, setRoomList] = useState<RoomType[]>([]);
   const [TenantList, setTenantList] = useState<tenant[]>([]);
   const [BrokerList, setBrokerList] = useState<BrokerType[]>([]);
@@ -264,11 +268,14 @@ function Hello() {
               paymentShowAmount: room.paymentShowAmount || 10,
               DaysTillNextPayment: DaysTillNextPayment || 0,
               Currency: room.Currency || '',
-              UtilityNotificationSettings: room.UtilityNotificationSettings || 0,
+              UtilityNotificationSettings:
+                room.UtilityNotificationSettings || 0,
               useTenantPortal: room.useTenantPortal || false,
-              TenantPortalShowTenantDetails: room.TenantPortalShowTenantDetails || false,
+              TenantPortalShowTenantDetails:
+                room.TenantPortalShowTenantDetails || false,
               TenantPortalShowReceipts: room.TenantPortalShowReceipts || false,
-              TenantPortalAllowOnlinePayments: room.TenantPortalAllowOnlinePayments || false,
+              TenantPortalAllowOnlinePayments:
+                room.TenantPortalAllowOnlinePayments || false,
             };
           })
         );
@@ -988,6 +995,7 @@ function Hello() {
     };
     init();
   }, []);
+
   const RefreshDataFromSqlite = async () => {
     if (!navigator.onLine) {
       setBranches(window.electron.store.get('Branches'));
@@ -1007,9 +1015,6 @@ function Hello() {
       if (!window.electron.store.get('LockBranchToPc'))
         setViewBranchManagementPage(true);
       else {
-        alert(
-          'Please select a branch to continue, user is not allowed to switch branches.'
-        );
         setViewBranchManagementPage(true);
         setViewBranchManagementPageNONAdm(true);
       }
@@ -1017,39 +1022,39 @@ function Hello() {
 
     getBranchName(branchId);
   };
- // Fetch exchange rates on component mount
- useEffect(() => {
-  fetchExchangeRates();
-}, []);
+  // Fetch exchange rates on component mount
+  useEffect(() => {
+    fetchExchangeRates();
+  }, []);
 
-const fetchExchangeRates = async () => {
-  try {
-    // Check last sync time
-    const lastUpdate = window.electron.store.get('lastExchangeRateUpdate');
-    const oneDayAgo = Date.now() - (24 * 60 * 60 * 1000);
+  const fetchExchangeRates = async () => {
+    try {
+      // Check last sync time
+      const lastUpdate = window.electron.store.get('lastExchangeRateUpdate');
+      const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
 
-    // Fetch if online and either:
-    // - lastUpdate is undefined
-    // - lastUpdate was more than a day ago
-    if (navigator.onLine && (!lastUpdate || lastUpdate < oneDayAgo)) {
-      const exchangeRates2 = await getValuesWithSql_Online(
-        'Exchange_RatesUSDtoETB',
-        'WHERE 1'
-      );
-      if (exchangeRates2.length > 0) {
-        const latestRate = exchangeRates2;
-        window.electron.store.set('exchangeRate', latestRate);
-        window.electron.store.set(
-          'lastExchangeRateUpdate',
-          latestRate[latestRate.length - 1].id * 1000
+      // Fetch if online and either:
+      // - lastUpdate is undefined
+      // - lastUpdate was more than a day ago
+      if (navigator.onLine && (!lastUpdate || lastUpdate < oneDayAgo)) {
+        const exchangeRates2 = await getValuesWithSql_Online(
+          'Exchange_RatesUSDtoETB',
+          'WHERE 1'
         );
-        setRefresh(Refresh + 1);
+        if (exchangeRates2.length > 0) {
+          const latestRate = exchangeRates2;
+          window.electron.store.set('exchangeRate', latestRate);
+          window.electron.store.set(
+            'lastExchangeRateUpdate',
+            latestRate[latestRate.length - 1].id * 1000
+          );
+          setRefresh(Refresh + 1);
+        }
       }
+    } catch (error) {
+      console.error('Error fetching exchange rates:', error);
     }
-  } catch (error) {
-    console.error('Error fetching exchange rates:', error);
-  }
-};
+  };
 
   const [ThemeMode, setThemeMode] = useState<'light' | 'dark'>('light');
 
@@ -1117,9 +1122,8 @@ const fetchExchangeRates = async () => {
       setUploadingLoadingEffect(true);
       setIsSyncing(true);
       setSyncProgress(0);
-      
+
       if (navigator.onLine) {
-        
         const offline_changes = await getValuesWithSql(
           'offline_changes',
           'WHERE 1'
@@ -1379,17 +1383,20 @@ const fetchExchangeRates = async () => {
     // Sort expenses by date
     return allExpenses.sort((a, b) => a.date - b.date);
   };
-  const getBranchData = true; // Control whether to fetch detailed branch data
-  const processValueByCurrency = (value: number, currency: string | undefined, date: number) => {
+  const [getBranchData, setGetBranchData] = useState(false); // Control whether to fetch detailed branch data
+  const processValueByCurrency = (
+    value: number,
+    currency: string | undefined,
+    date: number
+  ) => {
     const { rate, direction } = getRateByDate(date);
     console.log(value, currency || GetDefaultCurrency());
     if (!rate) {
       console.warn('No rate available, using current rate as fallback');
       return 0; // Return 0 if no rate found to be consistent
     }
-  const currencyDisplay = GetDefaultCurrency();
- 
-    
+    const currencyDisplay = GetDefaultCurrency();
+
     // For ALL_ETB, convert USD to ETB
     if (currencyDisplay === 'ETB') {
       if (currency === 'USD') {
@@ -1397,7 +1404,7 @@ const fetchExchangeRates = async () => {
       }
       return value;
     }
-    
+
     // For ALL_USD, convert ETB to USD
     if (currencyDisplay === 'USD') {
       if (currency === 'ETB') {
@@ -1405,112 +1412,134 @@ const fetchExchangeRates = async () => {
       }
       return value;
     }
-  
+
     return 0;
   };
   const fetchBranches = async () => {
     if (navigator.onLine) {
-      if(window.electron.store.get('users')?.[0]) {
+      if (window.electron.store.get('users')?.[0]) {
         const branches = await getValuesWithSql_Online(
           'branches',
           `WHERE userId = '${window.electron.store.get('users')[0].id}'`
         );
-        if(branches)
-        if (getBranchData) {
-          const branchesWithData = await Promise.all(
-            branches.map(async (branch: BranchType) => {
-              const allRooms = await getValuesWithSql_Online(
-                'rooms',
-                `WHERE branchId = '${branch.id}'`
-              ) || [];
-  
-              const allTenants = await getValuesWithSql_Online(
-                'tenants',
-                `WHERE branchId = '${branch.id}'`
-              ) || [];
-  
-              // Get payments for current month
-              const today = new Date();
-              const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
-              const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-  
-              const actualPayments = await getValuesWithSql_Online(
-                'room_pay_info',
-                `WHERE Day >= ${monthStart.getTime()} 
+        if (branches)
+          if (getBranchData) {
+            const branchesWithData = await Promise.all(
+              branches.map(async (branch: BranchType) => {
+                const allRooms =
+                  (await getValuesWithSql_Online(
+                    'rooms',
+                    `WHERE branchId = '${branch.id}'`
+                  )) || [];
+
+                const allTenants =
+                  (await getValuesWithSql_Online(
+                    'tenants',
+                    `WHERE branchId = '${branch.id}'`
+                  )) || [];
+
+                // Get payments for current month
+                const today = new Date();
+                const monthStart = new Date(
+                  today.getFullYear(),
+                  today.getMonth(),
+                  1
+                );
+                const monthEnd = new Date(
+                  today.getFullYear(),
+                  today.getMonth() + 1,
+                  0
+                );
+
+                const actualPayments = await getValuesWithSql_Online(
+                  'room_pay_info',
+                  `WHERE Day >= ${monthStart.getTime()} 
                  AND Day <= ${monthEnd.getTime()} 
                  AND branchId = '${branch.id}'
                  AND Paid = 1`
-              );
-  
-              const historicalPayments = await getValuesWithSql_Online(
-                'room_pay_info_history',
-                `WHERE Day >= ${monthStart.getTime()} 
+                );
+
+                const historicalPayments = await getValuesWithSql_Online(
+                  'room_pay_info_history',
+                  `WHERE Day >= ${monthStart.getTime()} 
                  AND Day <= ${monthEnd.getTime()} 
                  AND branchId = '${branch.id}'
                  AND Paid = 1`
-              );
-  
-              // Process payments with currency conversion
-              const monthlyRevenue = [...actualPayments, ...historicalPayments].reduce(
-                (sum, payment) => {
+                );
+
+                // Process payments with currency conversion
+                const monthlyRevenue = [
+                  ...actualPayments,
+                  ...historicalPayments,
+                ].reduce((sum, payment) => {
                   const convertedValue = processValueByCurrency(
                     parseFloat(payment.Value),
-                    allRooms.find((r:RoomType)=>r.id === payment.roomId)?.Currency || GetDefaultCurrency(),
+                    allRooms.find((r: RoomType) => r.id === payment.roomId)
+                      ?.Currency || GetDefaultCurrency(),
                     payment.Day
                   );
                   return sum + convertedValue;
-                },
-                0
-              );
-  
-              // Get and process expenses with currency conversion
-              const branchExpenses = await getValuesWithSql_Online(
-                'expenses',
-                `WHERE branchId = '${branch.id}'`
-              ) || [];
-  
-              const allMonthExpenses = generateRecurringExpenses(
-                branchExpenses,
-                monthStart,
-                monthEnd
-              );
-  
-              const monthlyExpenses = allMonthExpenses
-                .filter(e => new Date(e.date) >= monthStart && new Date(e.date) <= monthEnd)
-                .reduce((sum, expense) => {
-                  const convertedValue = processValueByCurrency(
-                    parseFloat(expense.price || "0"),
-                    expense.Currency || GetDefaultCurrency(),
-                    new Date(expense.date).getTime()
-                  );
-                  return sum + convertedValue;
                 }, 0);
-  
-              const monthlyProfit = monthlyRevenue - monthlyExpenses;
-  
-              return {
-                ...branch,
-                totalRooms: allRooms.length,
-                totalFloors: Math.max(...allRooms.map(room => room.floor)) === -Infinity ? 0 : Math.max(...allRooms.map(room => room.floor)),
-                totalTenants: allTenants.length,
-                occupiedRooms: allRooms.filter(room => room.tenantId !== '').length,
-                vacantRooms: allRooms.filter(room => room.tenantId === '').length,
-                monthlyRevenue,
-                monthlyExpenses,
-                monthlyProfit,
-                currency: GetDefaultCurrency(), // Add currency information
-                unpaidPastPayments: 0,
-                userAccountsWhichHaveAccess: [],
-              };
-            })
-          );
-  
-          setBranches(branchesWithData);
-          window.electron.store.set('Branches', branchesWithData);
-        } else {
-          setBranches(branches);
-          window.electron.store.set('Branches', branches);
-        }
+
+                // Get and process expenses with currency conversion
+                const branchExpenses =
+                  (await getValuesWithSql_Online(
+                    'expenses',
+                    `WHERE branchId = '${branch.id}'`
+                  )) || [];
+
+                const allMonthExpenses = generateRecurringExpenses(
+                  branchExpenses,
+                  monthStart,
+                  monthEnd
+                );
+
+                const monthlyExpenses = allMonthExpenses
+                  .filter(
+                    (e) =>
+                      new Date(e.date) >= monthStart &&
+                      new Date(e.date) <= monthEnd
+                  )
+                  .reduce((sum, expense) => {
+                    const convertedValue = processValueByCurrency(
+                      parseFloat(expense.price || '0'),
+                      expense.Currency || GetDefaultCurrency(),
+                      new Date(expense.date).getTime()
+                    );
+                    return sum + convertedValue;
+                  }, 0);
+
+                const monthlyProfit = monthlyRevenue - monthlyExpenses;
+
+                return {
+                  ...branch,
+                  totalRooms: allRooms.length,
+                  totalFloors:
+                    Math.max(...allRooms.map((room) => room.floor)) ===
+                    -Infinity
+                      ? 0
+                      : Math.max(...allRooms.map((room) => room.floor)),
+                  totalTenants: allTenants.length,
+                  occupiedRooms: allRooms.filter((room) => room.tenantId !== '')
+                    .length,
+                  vacantRooms: allRooms.filter((room) => room.tenantId === '')
+                    .length,
+                  monthlyRevenue,
+                  monthlyExpenses,
+                  monthlyProfit,
+                  currency: GetDefaultCurrency(), // Add currency information
+                  unpaidPastPayments: 0,
+                  userAccountsWhichHaveAccess: [],
+                };
+              })
+            );
+
+            setBranches(branchesWithData);
+            window.electron.store.set('Branches', branchesWithData);
+          } else {
+            setBranches(branches);
+            window.electron.store.set('Branches', branches);
+          }
       }
     } else {
       if (window.electron.store.get('Branches')) {
@@ -1560,134 +1589,145 @@ const fetchExchangeRates = async () => {
   const [ShowAdvancedUpload, setShowAdvancedUpload] = useState(false);
 
   return (
-    <>
-      {!isConnected && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            backgroundColor: '#ff4d4f',
-            color: 'white',
-            padding: '8px',
-            textAlign: 'center',
-            zIndex: 9999,
-          }}
-        >
-          Connection Lost - Attempting to reconnect...
-        </div>
-      )}
-      {SyncProgress >= 1 && SyncProgress <= 99 && (
+    <AlertProvider>
+      <ConfirmProvider>
         <>
-          <div className="progress-container">
+          {' '}
+          {!isConnected && (
             <div
-              className="progress-bar"
               style={{
-                width: `${SyncProgress}%`,
-                position: 'absolute',
-                zIndex: 10000,
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                right: 0,
+                backgroundColor: '#ff4d4f',
+                color: 'white',
+                padding: '8px',
+                textAlign: 'center',
+                zIndex: 9999,
               }}
-            ></div>
-          </div>
-        </>
-      )}{' '}
-      <SyncLoadingPopup colors={colors} isVisible={isSyncing} />
-      <AccountManager
-        Refresh={Refresh}
-        isSignedIn={isSignedIn}
-        setisSignedIn={setisSignedIn}
-        setChangeMade={setChangeMade}
-        SelectedUserId={SelectedUserId}
-        setSelectedUserId={setSelectedUserId}
-        setIsSyncing={setIsSyncing}
-        RefreshDataFromSqlite={RefreshDataFromSqlite}
-        setSyncProgress={setSyncProgress}
-        signOutUserAndRestart={signOutUserAndRestart}
-        setAppUserManagerShow={setAppUserManagerShow}
-        AppUserManagerShow={AppUserManagerShow}
-        AppUserManagerPromptPassword={AppUserManagerPromptPassword}
-        setAppUserManagerPromptPassword={setAppUserManagerPromptPassword}
-        setSelectedAppUser={setSelectedAppUser}
-        ViewBranchManagementPage={ViewBranchManagementPage}
-        setViewBranchManagementPage={setViewBranchManagementPage}
-        SelectedBranchId={SelectedBranchId}
-        setSelectedBranchId={setSelectedBranchId}
-        setViewBranchManagementPageNONAdm={setViewBranchManagementPageNONAdm}
-        ViewBranchManagementPageNONAdm={ViewBranchManagementPageNONAdm}
-        fetchBranches={fetchBranches}
-        Branches={Branches}
-        setBranches={setBranches}
-        setBranchName={setBranchName}
-      >
-        <>
-          <NavBar
-            RefreshDataFromSqlite={RefreshDataFromSqlite}
-            UploadAssetsProgress={UploadAssetsProgress}
-            setUploadAssetsProgress={setUploadAssetsProgress}
-            setIsSyncing={setIsSyncing}
+            >
+              Connection Lost - Attempting to reconnect...
+            </div>
+          )}
+          {SyncProgress >= 1 && SyncProgress <= 99 && (
+            <>
+              <div className="progress-container">
+                <div
+                  className="progress-bar"
+                  style={{
+                    width: `${SyncProgress}%`,
+                    position: 'absolute',
+                    zIndex: 10000,
+                  }}
+                ></div>
+              </div>
+            </>
+          )}{' '}
+          <SyncLoadingPopup colors={colors} isVisible={isSyncing} />
+          <AccountManager
+            Refresh={Refresh}
+            isSignedIn={isSignedIn}
+            setisSignedIn={setisSignedIn}
+            setChangeMade={setChangeMade}
             SelectedUserId={SelectedUserId}
-            isSyncing={isSyncing}
+            setSelectedUserId={setSelectedUserId}
+            setIsSyncing={setIsSyncing}
+            RefreshDataFromSqlite={RefreshDataFromSqlite}
             setSyncProgress={setSyncProgress}
-            ChangeMade={ChangeMade}
-            handleUpload={handleUploadChanges}
-            uploadProgress={uploadProgress}
-            UploadingLoadingEffect={UploadingLoadingEffect}
-            ProfileState={false}
-            SelectedPage={SelectedPage}
-            setSelectedPage={setSelectedPage}
-            ShowAdvancedUpload={ShowAdvancedUpload}
-            setShowAdvancedUpload={setShowAdvancedUpload}
-            Image={''}
-            ShopName={'The company'}
-            ThemeMode={ThemeMode}
+            signOutUserAndRestart={signOutUserAndRestart}
+            setAppUserManagerShow={setAppUserManagerShow}
+            AppUserManagerShow={AppUserManagerShow}
+            AppUserManagerPromptPassword={AppUserManagerPromptPassword}
+            setAppUserManagerPromptPassword={setAppUserManagerPromptPassword}
+            setSelectedAppUser={setSelectedAppUser}
+            ViewBranchManagementPage={ViewBranchManagementPage}
+            setViewBranchManagementPage={setViewBranchManagementPage}
+            SelectedBranchId={SelectedBranchId}
+            setSelectedBranchId={setSelectedBranchId}
             setViewBranchManagementPageNONAdm={
               setViewBranchManagementPageNONAdm
             }
-            branchName={branchName}
-            setThemeMode={ChangeTheme}
-            ChangeTheme={ChangeTheme}
-            signOutUserAndRestart={signOutUserAndRestart}
-            setAppUserManagerShow={setAppUserManagerShow}
-            setAppUserManagerPromptPassword={setAppUserManagerPromptPassword}
-            SelectedAppUser={SelectedAppUser}
-            setChangeMade={setChangeMade}
-            setViewBranchManagementPage={setViewBranchManagementPage}
-          ></NavBar>
-          <MainPage
-            roomSpecificationAPI={roomSpecificationAPI}
-            SelectedPage={SelectedPage}
-            setSelectedPage={setSelectedPage}
-            RoomList={RoomList}
-            setRoomList={setRoomList}
-            setTenantList={setTenantList}
-            TenantList={TenantList}
-            roomAPI={roomAPI}
-            tenantAPI={tenantAPI}
-            roomPaymentInfoApi={roomPaymentInfoApi}
-            isUpdatingTenantList={isUpdatingTenantList}
-            setIsUpdatingTenantList={setIsUpdatingTenantList}
-            pastTenantReviewApi={pastTenantReviewApi}
-            brokerApi={brokerApi}
-            BrokerList={BrokerList}
-            setBrokerList={setBrokerList}
-            PastTenantReviews={PastTenantReviews}
-            brokersRecommendationListApi={brokersRecommendationListApi}
-            RefreshDataFromSqlite={RefreshDataFromSqlite}
-            BrokerRecommendationList={BrokerRecommendationList}
-            agreementApi={agreementApi}
-            setChangeMade={setChangeMade}
-            SelectedAppUser={SelectedAppUser}
-            SelectedUserId={SelectedUserId}
-            SelectedBranchId={SelectedBranchId}
-          />
+            ViewBranchManagementPageNONAdm={ViewBranchManagementPageNONAdm}
+            fetchBranches={fetchBranches}
+            Branches={Branches}
+            setBranches={setBranches}
+            setBranchName={setBranchName}
+            setGetBranchData={setGetBranchData}
+            getBranchData={getBranchData}
+          >
+            <>
+              <NavBar
+                RefreshDataFromSqlite={RefreshDataFromSqlite}
+                UploadAssetsProgress={UploadAssetsProgress}
+                setUploadAssetsProgress={setUploadAssetsProgress}
+                setIsSyncing={setIsSyncing}
+                SelectedUserId={SelectedUserId}
+                isSyncing={isSyncing}
+                setSyncProgress={setSyncProgress}
+                ChangeMade={ChangeMade}
+                handleUpload={handleUploadChanges}
+                uploadProgress={uploadProgress}
+                UploadingLoadingEffect={UploadingLoadingEffect}
+                ProfileState={false}
+                SelectedPage={SelectedPage}
+                setSelectedPage={setSelectedPage}
+                ShowAdvancedUpload={ShowAdvancedUpload}
+                setShowAdvancedUpload={setShowAdvancedUpload}
+                Image={''}
+                ShopName={'The company'}
+                ThemeMode={ThemeMode}
+                setViewBranchManagementPageNONAdm={
+                  setViewBranchManagementPageNONAdm
+                }
+                branchName={branchName}
+                setThemeMode={ChangeTheme}
+                ChangeTheme={ChangeTheme}
+                signOutUserAndRestart={signOutUserAndRestart}
+                setAppUserManagerShow={setAppUserManagerShow}
+                setAppUserManagerPromptPassword={
+                  setAppUserManagerPromptPassword
+                }
+                SelectedAppUser={SelectedAppUser}
+                setChangeMade={setChangeMade}
+                setViewBranchManagementPage={setViewBranchManagementPage}
+              ></NavBar>
+              <MainPage
+                roomSpecificationAPI={roomSpecificationAPI}
+                SelectedPage={SelectedPage}
+                setSelectedPage={setSelectedPage}
+                RoomList={RoomList}
+                setRoomList={setRoomList}
+                setTenantList={setTenantList}
+                TenantList={TenantList}
+                roomAPI={roomAPI}
+                tenantAPI={tenantAPI}
+                roomPaymentInfoApi={roomPaymentInfoApi}
+                isUpdatingTenantList={isUpdatingTenantList}
+                setIsUpdatingTenantList={setIsUpdatingTenantList}
+                pastTenantReviewApi={pastTenantReviewApi}
+                brokerApi={brokerApi}
+                BrokerList={BrokerList}
+                setBrokerList={setBrokerList}
+                PastTenantReviews={PastTenantReviews}
+                brokersRecommendationListApi={brokersRecommendationListApi}
+                RefreshDataFromSqlite={RefreshDataFromSqlite}
+                BrokerRecommendationList={BrokerRecommendationList}
+                agreementApi={agreementApi}
+                setChangeMade={setChangeMade}
+                SelectedAppUser={SelectedAppUser}
+                SelectedUserId={SelectedUserId}
+                SelectedBranchId={SelectedBranchId}
+              />
+            </>
+          </AccountManager>
+          {/**/}
         </>
-      </AccountManager>
-      {/**/}
-    </>
+      </ConfirmProvider>
+    </AlertProvider>
   );
 }
-
+//  <Route path="/" element={<Hello />} />
 export default function App() {
   return (
     <Router>
@@ -1697,6 +1737,142 @@ export default function App() {
     </Router>
   );
 }
+const TenantPortal = () => {
+  const room: RoomType = {
+    id: 'room123',
+    floor: 1,
+    roomIndex: 101,
+    status: 'Taken',
+    price: 1000,
+    AgreedPrice: 1000,
+    utilityPaymentEvery: 'monthly',
+    Currency: 'USD',
+    utilityPaymentStartDate: Date.now(),
+    utilityPaymentUseDifferentStartDate: false,
+    utilityPaymentEveryCustom: 0,
+    PaymentCycleType: 'monthly',
+    PaymentCycleCustomeDays: 0,
+    paymentShowAmount: 1000,
+    squareMeters: 50,
+    RoomSpecifications: [],
+    Archived: false,
+    tenantId: 'tenant123',
+    AddTenantState: false,
+    ViewAgreement: false,
+    ShowPayTimeLine: false,
+    ShowUtilityLine: false,
+    AllRoomPayInfo: { RoomPayInfo: [] },
+    selectedAgreementId: '',
+    notificationSettings: 0,
+    utilityPayments: [],
+    DaysTillNextPayment: 0,
+    branchId: 'branch123',
+    UtilityNotificationSettings: 0,
+    useTenantPortal: true,
+    TenantPortalShowTenantDetails: true,
+    TenantPortalShowReceipts: true,
+    TenantPortalAllowOnlinePayments: true,
+  };
+
+  const tenant: tenant = {
+    id: 'tenant123',
+    name: 'John Doe',
+    phoneNumber: '123-456-7890',
+    email: 'john@example.com',
+    description: 'Long term tenant',
+    SelectedAgreement: 'agreement1',
+    RentingOrOut: true,
+    startTime: Date.now(),
+    agreedPrice: '1000',
+    TIN: '123456789',
+    RentReason: 'Residential',
+    AddedTime: Date.now(),
+    Currency: 'USD',
+    branchId: 'branch123',
+  };
+
+  const agreements: agreements[] = [
+    {
+      id: 'agreement1',
+      roomId: 'room123',
+      tenantId: 'tenant123',
+      startTime: Date.now(),
+      endTime: Date.now() + 31536000000, // 1 year
+      signTime: Date.now(),
+      agreedPrice: 1000,
+      paymentCycleType: 'monthly',
+      branchId: 'branch123',
+      Memo: 'Initial agreement',
+      RentReserved: 1000,
+      representative: 'Manager',
+      Currency: 'USD',
+    },
+    {
+      id: 'agreement2',
+      roomId: 'room123',
+      tenantId: 'tenant123',
+      startTime: Date.now() + 31536000000, // Starts after first agreement
+      endTime: Date.now() + 63072000000, // 2 years from now
+      signTime: Date.now(),
+      agreedPrice: 1100,
+      paymentCycleType: 'monthly',
+      branchId: 'branch123',
+      Memo: 'First renewal',
+      RentReserved: 1100,
+      representative: 'Manager',
+      Currency: 'USD',
+    },
+    {
+      id: 'agreement3',
+      roomId: 'room123',
+      tenantId: 'tenant123',
+      startTime: Date.now() + 63072000000, // Starts after second agreement
+      endTime: Date.now() + 94608000000, // 3 years from now
+      signTime: Date.now(),
+      agreedPrice: 1200,
+      paymentCycleType: 'monthly',
+      branchId: 'branch123',
+      Memo: 'Second renewal',
+      RentReserved: 1200,
+      representative: 'Manager',
+      Currency: 'USD',
+    },
+  ];
+  const branch: BranchTypeWithData = {
+    id: 'branch123',
+    userId: 'user123',
+    name: 'Main Branch',
+    location: '123 Main Street, Anytown ST 12345',
+    description: 'Main office location with 50 rooms across 5 floors',
+    googleMapPinPoint: '40.7128,-74.0060',
+    totalRooms: 50,
+    totalFloors: 5,
+    totalTenants: 42,
+    occupiedRooms: 42,
+    vacantRooms: 8,
+    monthlyRevenue: 52000,
+    monthlyExpenses: 15000,
+    monthlyProfit: 37000,
+    userAccountsWhichHaveAccess: ['user123', 'manager456', 'staff789'],
+    lock: false,
+  };
+  return (
+    <>
+      <div className="MainContainerTP">
+        <div className="controls">
+          <div className="TopBranchAndRoomInfo">
+            <p>Branch: {branch.name}</p>
+            <p>
+              Room: {room.roomIndex} - Floor:{room.floor}
+            </p>
+            
+          </div>
+          <h1 className='TenantNameH1'>{tenant.name}</h1>
+        </div>
+      </div>
+    </>
+  );
+};
 export const getUserPrivileges = (
   selectedAppUser: appUser | null
 ): {

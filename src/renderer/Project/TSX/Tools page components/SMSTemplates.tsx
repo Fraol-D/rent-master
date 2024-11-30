@@ -1,5 +1,6 @@
 import React from 'react';
 import { Input } from '../Helpers/CustomReactComponents';
+import { useAlert } from 'renderer/components/useAlert';
 interface SMSTemplate {
   id: string;
   name: string;
@@ -85,7 +86,7 @@ const calculateSMSInfo = (text: string) => {
     total: messageLength
   };
 };
-
+const { showAlert } = useAlert();
 // Then in your JSX, replace the "counts as 5 SMS" part with:
   return (
     <div className="tools-page">
@@ -101,7 +102,7 @@ const calculateSMSInfo = (text: string) => {
         <button
           onClick={() => {
             if (navigator.onLine) handleReplaceWithDefaultSms();
-            else alert('You are offline, cannot reset to default');
+            else showAlert('You are offline, cannot reset to default');
           }}
           style={{
             fontSize: 'var(--10px-V)',
