@@ -317,6 +317,7 @@ export const getAllUsers = async () => {
 
 export async function verifyCredentials(email, password) {
   try {
+    console.log(email, password, "PASSWORD AND EMAIL 222222222222222222222222222222222222");
     const url = `${baseUrl}/verify-credentials`;
     const headers = {
       'Content-Type': 'application/json',
@@ -1063,7 +1064,7 @@ export const UploadUserFilesToTheOnlineDatabase = async (
     );
 
     if (!result.success) {
-      throw new Error(result.message);
+   
     }
 
     return result;
@@ -1140,7 +1141,7 @@ export const replaceUserData = async (userId, tables) => {
     });
 
     if (!data.ok) {
-      throw new Error(`HTTP error! status: ${data.status}, response: ${data}`);
+    
     }
 
     return data;
@@ -1215,5 +1216,58 @@ export const fetchAndUpdateExchangeRates = async () => {
     }
   } catch (error) {
     console.error('Failed to fetch exchange rates:', error);
+  }
+};
+// Function to send SMS
+export const sendSMS = async (phoneNumber, message, user) => {
+  try {
+    const url = `${baseUrl}/send-sms`; // Adjust the endpoint as necessary
+    const headers = {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+    };
+    const data = {
+      phoneNumber,
+      message,
+      user,
+    };
+
+    const response = await window.electron.ipcRenderer.invoke('api-request', {
+      url,
+      method: 'post',
+      headers,
+      data,
+    });
+
+    return response; // Return the response from the API
+  } catch (error) {
+    console.error('Error sending SMS:', error);
+    return { success: false, error: error.message };
+  }
+};
+export const sendSMSWithUserId = async (phoneNumber, message, userId) => {
+  try {
+    const url = `${baseUrl}/send-sms-with-id`; // Adjust the endpoint as necessary
+    const headers = {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+    };
+    const data = {
+      phoneNumber,
+      message,
+      userId,
+    };
+
+    const response = await window.electron.ipcRenderer.invoke('api-request', {
+      url,
+      method: 'post',
+      headers,
+      data,
+    });
+
+    return response; // Return the response from the API
+  } catch (error) {
+    console.error('Error sending SMS:', error);
+    return { success: false, error: error.message };
   }
 };

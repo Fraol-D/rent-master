@@ -129,7 +129,7 @@ const ImageInteractor2: React.FC<ImageInteractorProps> = ({
             } else {
               fetchRoomImages2();
             }
-            showAlert('Images uploaded successfully!');
+            showAlert('Images uploaded successfully!', 'success');
           } else {
             console.error('Failed to upload images');
             showAlert('Failed to upload images. Please try again.');

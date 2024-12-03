@@ -14,13 +14,28 @@ const electronHandler = {
     ipcRenderer.invoke('check-file-system', userId, localFileSystem),
 
   store: {
-    get(key: any) {
+    _get(key: any) {
       return ipcRenderer.sendSync('electron-store-get', key);
     },
-    set(property: any, val: any) {
+    _set(property: any, val: any) {
       ipcRenderer.send('electron-store-set', property, val);
     },
-    // Other method you want to add like has(), reset(), etc.
+    get implementation() {
+      return {
+        get: this._get,
+        set: this._set,
+      };
+    },
+    setImplementation(impl: { get: (key: any) => any; set: (key: any, val: any) => void }) {
+      this._get = impl.get;
+      this._set = impl.set;
+    },
+    get(key: any) {
+      return this._get(key);
+    },
+    set(property: any, val: any) {
+      this._set(property, val);
+    }
   },
   ipcRenderer: {
     sendMessage(channel: Channels, ...args: unknown[]) {

@@ -302,7 +302,7 @@ const getCurrentExchangeRate = () => {
           />
           </div>
           <span className="TotalLabel">Total Tax:   <span className="TotalValue">
-            {formatNumberWithSuffix(totalTax)}
+            {formatNumberWithSuffix(taxStats.totalTaxAmount)}
             {CurrencySign(currencyDisplay.includes('ETB') ? 'ETB' : 'USD')}
           </span></span>
         

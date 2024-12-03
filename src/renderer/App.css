@@ -18,7 +18,7 @@
 
   --Accent-Color: #e59b25;
   --Accent-Color50: hsl(37, 79%, 52%, 50%);
-
+  ---900px-V: -900px;
   ---845px-V: -845px;
   ---757px-V: -757px;
   ---567px-V: -567px;
@@ -474,6 +474,7 @@ input[type='checkbox'] {
 
 @media screen and (max-width: 1280px) {
   :root {
+    ---900px-V: -600.0px;
     ---845px-V: -563.3px;
     ---757px-V: -504.7px;
     ---567px-V: -378px;
@@ -624,6 +625,7 @@ input[type='checkbox'] {
 
 @media screen and (min-width: 1281px) and (max-width: 1366px) {
   :root {
+    ---900px-V: -630px;
     ---845px-V: -596.3px;
     ---757px-V: -534.2px;
     ---567px-V: -400.1px;
@@ -774,6 +776,7 @@ input[type='checkbox'] {
 
 @media screen and (min-width: 2560px) {
   :root {
+    ---900px-V: -1800px;
     ---845px-V: -1690px;
     ---757px-V: -1514px;
     ---567px-V: -1134px;

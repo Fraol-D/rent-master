@@ -264,7 +264,7 @@ function cleanupConnectionMonitoring() {
 
 const createWindow = async () => {
   if (isDebug) {
-   // await installExtensions();
+    // await installExtensions();
   }
 
   const RESOURCES_PATH = app.isPackaged
@@ -309,12 +309,13 @@ const createWindow = async () => {
     fullscreen: windowState.FullScreen,
     x: finalX,
     y: finalY,
-    icon: getAssetPath('icon.png'),autoOpenDevTools:false,
+    icon: getAssetPath('icon.png'),
+    autoOpenDevTools: false,
     title: `RentMaster v${app.getVersion()}`,
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: true,
-       preload: app.isPackaged
+      preload: app.isPackaged
         ? path.join(__dirname, 'preload.js')
         : path.join(__dirname, '../../.erb/dll/preload.js'),
     },
@@ -676,26 +677,28 @@ ipcMain.on('SendCustomEmail', async (event, message) => {
     userPassword: any
   ) => {
     //Getemail and pass from online
-    const url = `${baseUrl}/${'users'}/${encodeURIComponent(`WHERE email = '${userEmail}' AND password = '${userPassword}' AND Allowed = 1`)}`;
-      const headers = {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-      };
-      const config = {
-        url: url, 
-        method: 'get',
-        headers: {
-          ...headers,
-          'x-api-key': API_KEY, // Ensure API key is always included
-        },
-        data:{},
-        retry: MAX_RETRIES,
-      };
+    const url = `${baseUrl}/${'users'}/${encodeURIComponent(
+      `WHERE email = '${userEmail}' AND password = '${userPassword}' AND Allowed = 1`
+    )}`;
+    const headers = {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+    };
+    const config = {
+      url: url,
+      method: 'get',
+      headers: {
+        ...headers,
+        'x-api-key': API_KEY, // Ensure API key is always included
+      },
+      data: {},
+      retry: MAX_RETRIES,
+    };
 
-      const response = await axiosInstance.request(config);
+    const response = await axiosInstance.request(config);
 
     const user = response.data;
- 
+
     if (user[0]) {
       const transporter = nodemailer.createTransport({
         host: 'rentmaster.markethubet.com',
@@ -715,30 +718,30 @@ ipcMain.on('SendCustomEmail', async (event, message) => {
       };
 
       try {
-        const ans =await transporter.sendMail(mailOptions);
+        const ans = await transporter.sendMail(mailOptions);
         const url = `${baseUrl}/${'email_history'}`;
-    const headers = {
-      'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-    };
-    const ans2 = await axiosInstance.request({
-      url,
-      method: 'post',
-      headers,
-      data: {
-        id: uuidv4(),
-        receiver: message.to,
-        subject: message.subject,
-        body: message.body,
-        from: user[0].selectedEmailToSendWith,
-        sentDate: Date.now(),
-        templateId: message.templateId,
-        mode: 'Rent_Manually',
-        userId: user[0].id,
-        branchId: message.branchId,
-      },
-    });
-      
+        const headers = {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+        };
+        const ans2 = await axiosInstance.request({
+          url,
+          method: 'post',
+          headers,
+          data: {
+            id: uuidv4(),
+            receiver: message.to,
+            subject: message.subject,
+            body: message.body,
+            from: user[0].selectedEmailToSendWith,
+            sentDate: Date.now(),
+            templateId: message.templateId,
+            mode: 'Rent_Manually',
+            userId: user[0].id,
+            branchId: message.branchId,
+          },
+        });
+
         return { success: true };
       } catch (error) {
         return { success: false, error: error.message };
@@ -982,7 +985,7 @@ const tableStructures = [
       'Currency TEXT DEFAULT "ETB"',
       'useTenantPortal BOOLEAN DEFAULT 0',
       'TenantPortalShowTenantDetails BOOLEAN DEFAULT 0',
-      'TenantPortalShowReceipts BOOLEAN DEFAULT 0', 
+      'TenantPortalShowReceipts BOOLEAN DEFAULT 0',
       'TenantPortalAllowOnlinePayments BOOLEAN DEFAULT 0',
       'userId TEXT',
       'branchId TEXT', // Added
@@ -1573,27 +1576,30 @@ ipcMain.handle('upload-user-files', async (event, { userId }) => {
     const filteredDirectory = {
       name: localDirectory.name,
       type: 'directory',
-      children: localDirectory.children.filter(child => 
+      children: localDirectory.children.filter((child) =>
         ['Room Pictures', 'Room Documents'].includes(child.name)
-      )
+      ),
     };
 
-    console.log('Filtered directory structure:', JSON.stringify(filteredDirectory, null, 2));
+    console.log(
+      'Filtered directory structure:',
+      JSON.stringify(filteredDirectory, null, 2)
+    );
     updateProgress(10);
 
     console.log('Sending directory data to online database...');
     const checkResponse = await axios.post(
       `${baseUrl}/check-user-directory`,
-      { 
-        userId, 
-        directory: filteredDirectory 
+      {
+        userId,
+        directory: filteredDirectory,
       },
       {
         headers: {
           'Content-Type': 'application/json',
           'x-api-key': apiKey,
         },
-        httpsAgent: secureAgent
+        httpsAgent: secureAgent,
       }
     );
 
@@ -1603,7 +1609,7 @@ ipcMain.handle('upload-user-files', async (event, { userId }) => {
 
     if (requiredFiles?.length > 0) {
       console.log('Required files missing:', requiredFiles);
-      
+
       // Create zip file
       const zip = new JSZip();
       let totalSize = 0;
@@ -1612,12 +1618,19 @@ ipcMain.handle('upload-user-files', async (event, { userId }) => {
       for (const filePath of requiredFiles) {
         try {
           // Only process files from Room Pictures or Room Documents
-          if (!filePath.startsWith('Room Pictures/') && !filePath.startsWith('Room Documents/')) {
+          if (
+            !filePath.startsWith('Room Pictures/') &&
+            !filePath.startsWith('Room Documents/')
+          ) {
             console.log('Skipping non-room file:', filePath);
             continue;
           }
 
-          const fullPath = path.join(process.env.APPDATA || '', 'Electron', filePath);
+          const fullPath = path.join(
+            process.env.APPDATA || '',
+           appname,
+            filePath
+          );
           if (fs.existsSync(fullPath)) {
             const fileContent = fs.readFileSync(fullPath);
             zip.file(filePath, fileContent);
@@ -1637,17 +1650,17 @@ ipcMain.handle('upload-user-files', async (event, { userId }) => {
         console.log('No valid files to upload');
         return {
           success: true,
-          message: 'No files needed to be uploaded'
+          message: 'No files needed to be uploaded',
         };
       }
 
       const zipBuffer = await zip.generateAsync({ type: 'nodebuffer' });
-      
+
       console.log('Sending zip file to online database...');
       const form = new FormData();
       form.append('files', zipBuffer, {
         filename: 'required_files.zip',
-        contentType: 'application/zip'
+        contentType: 'application/zip',
       });
       form.append('userId', userId);
       const uploadResponse = await axios.post(
@@ -1656,16 +1669,15 @@ ipcMain.handle('upload-user-files', async (event, { userId }) => {
         {
           headers: {
             'x-api-key': apiKey,
-            ...form.getHeaders()
+            ...form.getHeaders(),
           },
           maxContentLength: Infinity,
           maxBodyLength: Infinity,
-          httpsAgent: secureAgent
+          httpsAgent: secureAgent,
         }
       );
 
       if (!uploadResponse.data?.success) {
-        
       }
 
       console.log('Upload completed successfully:', uploadResponse.data);
@@ -1678,12 +1690,11 @@ ipcMain.handle('upload-user-files', async (event, { userId }) => {
     updateProgress(100);
     return {
       success: true,
-      message: 'Upload completed successfully'
+      message: 'Upload completed successfully',
     };
-
   } catch (error) {
     console.error('Upload error:', error);
-    
+
     if (axios.isAxiosError(error)) {
       const errorMessage = error.response?.data?.message || error.message;
       const statusCode = error.response?.status;
@@ -1692,14 +1703,14 @@ ipcMain.handle('upload-user-files', async (event, { userId }) => {
         message: `Upload failed (${statusCode}): ${errorMessage}`,
         error: {
           status: statusCode,
-          data: error.response?.data
-        }
+          data: error.response?.data,
+        },
       };
     }
-    
+
     return {
       success: false,
-      message: error.message || 'Unknown error occurred'
+      message: error.message || 'Unknown error occurred',
     };
   }
 });
@@ -3363,7 +3374,7 @@ const checkServerConnectivity = async (): Promise<boolean> => {
   try {
     const lookup = promisify(dns.lookup);
     const { address } = await lookup('www.rentmaster.markethubet.com');
-    
+
     return true;
   } catch (error) {
     console.error('Server connectivity check failed:', error);
@@ -3426,7 +3437,7 @@ ipcMain.handle(
 // File download handler with improved error handling
 ipcMain.handle('download-files', async (event, { userId }) => {
   const sendProgress = (progress: number) => {
-  //  event.sender.send('download-progress', progress);
+    //  event.sender.send('download-progress', progress);
   };
 
   try {

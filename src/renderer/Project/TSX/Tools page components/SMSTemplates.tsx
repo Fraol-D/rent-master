@@ -113,7 +113,7 @@ const { showAlert } = useAlert();
         </button>
         <button onClick={handleAddSMSTemplate}>Add an SMS template</button>
       </div>
-      {smsTemplates.map((template) => (
+      {smsTemplates.sort((a, b) => a.name.localeCompare(b.name)).map((template) => (
         <div
           key={template.id}
           className="email-template-container"
@@ -256,7 +256,7 @@ const { showAlert } = useAlert();
                 </div>
                 <hr />
                 <div style={{display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
-                <h3 >Send SMS</h3> will count as {calculateSMSInfo(replaceVariables(template.body)).count} SMS
+                <h3 >Send SMS</h3>Exmple format 0911223344 .Will count as {calculateSMSInfo(replaceVariables(template.body)).count} SMS
                 </div>
                 <p>
                   You will now send the above SMS to the phone number specified

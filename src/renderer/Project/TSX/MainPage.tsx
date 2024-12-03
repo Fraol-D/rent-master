@@ -313,7 +313,7 @@ const MainPage = ({
   setChangeMade,
   SelectedUserId,
   SelectedAppUser,
-  SelectedBranchId,
+  SelectedBranchId,signOutUserAndRestart
 }: any) => {
   const [floorFilter, setFloorFilter] = useState<string>('');
   const [TenantNameFilter, setTenantNameFilter] = useState<string>('');
@@ -2854,7 +2854,7 @@ const MainPage = ({
             />
           )}
           {SelectedPage === 'Tools' && (
-            <ToolsPage
+            <ToolsPage signOutUserAndRestart={signOutUserAndRestart}
               ToolsSelectedPage={ToolsSelectedPage}
               setToolsSelectedPage={setToolsSelectedPage}
               SelectedAppUser={SelectedAppUser}

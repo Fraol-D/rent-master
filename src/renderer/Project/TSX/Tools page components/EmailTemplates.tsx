@@ -11,6 +11,7 @@ import {
   getValuesWithSql_Online,
   updateValueOnline,
 } from 'Backend/OnlineServerApis';
+import { useAlert } from 'renderer/components/useAlert';
 
 interface EmailTemplatesProps {
   emailTemplates: EmailTemplate[];
@@ -236,7 +237,7 @@ const EmailTemplates: React.FC<EmailTemplatesProps> = ({
     setLandlordTelephone(originalValues.landlordTelephone);
     setHasChanges(false);
   };
-
+  const {showAlert} = useAlert()
   return (
     <div className="tools-page">
       <div
@@ -261,7 +262,7 @@ const EmailTemplates: React.FC<EmailTemplatesProps> = ({
         </button>
         <button onClick={handleAddEmailTemplate}>Add an email template</button>
       </div>
-      {emailTemplates.map((template) => (
+      {emailTemplates.sort((a, b) => a.name.localeCompare(b.name)).map((template) => (
         <div
           key={template.id}
           className="email-template-container"

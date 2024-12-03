@@ -124,7 +124,7 @@ const DashbRevenuePerSquareMeter = ({ RoomList }: { RoomList:RoomType[] }) => {
               padding: '3px 8px',
               borderRadius: '4px',
 
-              color: 'var(--Text-Color)'
+              
             }}
           >
             <option value="month">Monthly</option>

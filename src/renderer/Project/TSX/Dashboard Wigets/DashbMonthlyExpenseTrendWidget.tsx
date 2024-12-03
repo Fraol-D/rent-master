@@ -304,7 +304,11 @@ const DashbMonthlyExpenseTrendWidget: React.FC<
                 },
                 colors: ['red', 'red', 'red'],
               },
-            },
+            
+              valueFormatter: (value) =>
+                `${formatNumberWithSuffix(value?.toLocaleString())}${CurrencySign(currencyDisplay.includes('ETB') ? 'ETB' : 'USD')}`,
+           },
+            
           ]}
           dataset={dataset}
           onError={(error) => {

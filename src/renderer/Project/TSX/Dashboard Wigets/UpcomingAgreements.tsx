@@ -121,7 +121,7 @@ const UpcomingAgreements = ({
               <option value={365}>365 days</option>
             </select>
           </div>
-          <table className="InfoTable" style={{ width: '100%' }}>
+          <table className="InfoTable" style={{ width: '100%',margin:"0px" }}>
             <thead className="InfoTableThead">
               <tr className="InfoTableHeadTR">
                 <th className="InfoTableHeadTh">Tenants</th>

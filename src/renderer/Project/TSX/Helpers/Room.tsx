@@ -1742,7 +1742,7 @@ const Room = ({
                       );
                     }}
                   >
-                    {roomType.ShowPayTimeLine ? 'Hide' : 'Rent'}
+                    {roomType.ShowPayTimeLine ? 'Hide' : 'Payments'}
                   </button>
                 )}
                 {privileges.editUtilityPayments && (
@@ -3346,29 +3346,7 @@ const Room = ({
                                     />
                                     Show Payment Receipts
                                   </label>
-                                  <label
-                                    style={{
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      gap: 'var(--10px-V)',
-                                    }}
-                                  >
-                                    <input
-                                      type="checkbox"
-                                      checked={
-                                        roomType.TenantPortalShowTenantDetails ||
-                                        false
-                                      }
-                                      onChange={(e) =>
-                                        updateRoomProperty(
-                                          roomType.id,
-                                          'TenantPortalShowTenantDetails',
-                                          e.target.checked
-                                        )
-                                      }
-                                    />
-                                    Show Extended Tenant Details
-                                  </label>
+                                 
                                   <label
                                     style={{
                                       display: 'flex',

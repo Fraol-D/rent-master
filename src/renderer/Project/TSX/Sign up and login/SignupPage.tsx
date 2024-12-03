@@ -697,7 +697,7 @@ const SignupPage = ({
             marginBottom: 'var(--15px-V)',
           }}
         >
-          CheckOnlineDB: {CheckOnlineDB}
+          
           <h1
             style={{
               marginRight: 'var(--10px-V)',

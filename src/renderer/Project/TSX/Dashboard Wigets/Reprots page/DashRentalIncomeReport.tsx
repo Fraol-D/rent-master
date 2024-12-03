@@ -130,12 +130,15 @@ const DashRentalIncomeReport = ({
           payment.Day <= periodEnd.getTime()
       );
 
+      // Calculate total expected income including both paid and not paid
+      const totalExpectedIncome = periodPayments
+        .reduce((sum, p) => sum + processAmount(p.Value, p.roomId, p.Day), 0);
+
       return {
         madeIncome: periodPayments
           .filter((p) => p.Paid)
           .reduce((sum, p) => sum + processAmount(p.Value, p.roomId, p.Day), 0),
-        expectedIncome: periodPayments
-          .reduce((sum, p) => sum + processAmount(p.Value, p.roomId, p.Day), 0),
+        expectedIncome: totalExpectedIncome, // Include all payments, both paid and not paid
         remainingIncome: periodPayments
           .filter((p) => !p.Paid)
           .reduce((sum, p) => sum + processAmount(p.Value, p.roomId, p.Day), 0),

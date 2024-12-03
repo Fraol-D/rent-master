@@ -404,7 +404,7 @@ const CalendarGUI: React.FC<CalendarProps> = ({
           .attr('class', 'tooltip')
           .style('position', 'absolute')
           .style('visibility', 'hidden')
-          .style('background-color', 'var(--Secondary-Color60)')
+          .style('background-color', 'var(--Secondary-Color)')
           .style('color', 'var(--Text-Color)')
           .style('padding', `${10 * scaleFactor}px`)
           .style('border-radius', `${5 * scaleFactor}px`)
@@ -463,7 +463,7 @@ const CalendarGUI: React.FC<CalendarProps> = ({
                       `
                     <div style="color: var(--Text-Color);font-family: Arial, sans-serif; line-height: 1.6;">
                       <h3 style="color: var(--Text-Color); margin-bottom: var(--5px-V);">Room Details</h3>
-                      <p><em>Date:</em> <span style="color: var(--Primary-Color);">${paymentDate.toDateString()}</span></p>
+                      <p><em>Date:</em> <span style="color: var(--Text-Color);">${paymentDate.toDateString()}</span></p>
                       <p><strong style="font-size: 1.1em;">Tenant:</strong> ${
                         tenantList.find((t) => t.id === room.tenantId)?.name ||
                         'N/A'
@@ -474,10 +474,10 @@ const CalendarGUI: React.FC<CalendarProps> = ({
                       }</span></p>
                       <p><strong>Status:</strong> ${
                         payment.Paid
-                          ? '<span style="color: var(--Accent-Color);">Paid</span>'
+                          ? '<span style="color: var(--Text-Color);">Paid</span>'
                           : '<span style="color: var(--Text-Color-Reverse); font-weight: bold;">Unpaid</span>'
                       }</p>
-                      <p><em style="font-style: italic;">Agreed Price:</em> <span style="font-weight: bold; color: var(--Accent-Color);">${formatNumberWithSuffix(payment.Value.toLocaleString())} ${CurrencySign(room.Currency)}</span></p>
+                      <p><em style="font-style: italic;">Agreed Price:</em> <span style="font-weight: bold; color: var(--Text-Color);">${formatNumberWithSuffix(payment.Value.toLocaleString())} ${CurrencySign(room.Currency)}</span></p>
                       <p>Payment Cycle: <span style="background-color: var(--Accent-Color50); padding: var(--2px-V) var(--5px-V); border-radius: var(--3px-V);">${
                         room.PaymentCycleType
                       }</span></p>

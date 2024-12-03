@@ -10,6 +10,8 @@ import '../../CSS/ToolsPage.css';
 import {
   addValueOnline,
   getValuesWithSql_Online,
+  sendSMS,
+  sendSMSWithUserId,
   updateValueOnline,
 } from 'Backend/OnlineServerApis';
 import EmailTemplates from '../Tools page components/EmailTemplates';
@@ -49,7 +51,7 @@ const ToolsPage = ({
   setChangeMade,
   SelectedUserId,
   SelectedAppUser,
-  SelectedBranchId,
+  SelectedBranchId,signOutUserAndRestart
 }: any) => {
   const [emailTemplates, setEmailTemplates] = useState<EmailTemplate[]>([]);
   const [smsTemplates, setSMSTemplates] = useState<SMSTemplate[]>([]);
@@ -135,7 +137,7 @@ const ToolsPage = ({
     ShowDefaultNotificationsSettings,
     setShowDefaultNotificationsSettings,
   ] = useState(false);
-  const { showAlert } =   useAlert();
+  const { showAlert } = useAlert();
   const applyDefaultNotifications = async () => {
     if (sendEmail) {
       if (!emailDaysBefore || emailDaysBefore === '') {
@@ -492,33 +494,32 @@ const ToolsPage = ({
       setRecipientEmail('');
     }
   };
-
   const handleSendSMS = async () => {
     const template = smsTemplates.find((t) => t.id === tryOutMode);
     if (template) {
       const body = replaceVariables(template.body);
       const userDATA = await window.electron.store.get('users');
-      const userPhone = userDATA[0].phone;
-      const userPass = userDATA[0].password;
-      console.log(userPhone, userPass);
-      if (navigator.onLine) {
-        window.electron.ipcRenderer.send('SendCustomSMS', {
-          to: recipientEmail,
-          body: body,
-          userPhone: userPhone,
-          userPassword: userPass,
-        });
 
-        window.electron.ipcRenderer.once(
-          'SendCustomSMSResponse',
-          (response) => {
-            if (response.success) {
-              console.log('SMS sent successfully');
-            } else {
-              console.error('Failed to send SMS:', response.error);
-            }
+      if (navigator.onLine) {
+        if (recipientEmail.length === 10 && recipientEmail.startsWith('0')) {
+          // Call the sendSMS function from OnlineServerApis.js
+          const response = await sendSMSWithUserId(
+            recipientEmail,
+            body,
+            userDATA[0].id
+          );
+
+          if (response.success) {
+            console.log('SMS sent successfully');
+          } else {
+            showAlert('Failed to send SMS: ' + response.error, 'error');
+            console.error('Failed to send SMS:', response.error);
           }
-        );
+        } else {
+          showAlert(
+            'Invalid phone number format. Please enter a 10-digit number starting with 0.'
+          );
+        }
       }
     }
 
@@ -1124,9 +1125,9 @@ const ToolsPage = ({
   const handleSignOut = async () => {
     const choice = await confirm('Are you sure you want to sign out?', {
       title: 'Sign Out',
-      confirmText: 'Sign Out', 
+      confirmText: 'Sign Out',
       cancelText: 'Cancel',
-      type: 'warning'
+      type: 'warning',
     });
 
     if (choice) {
@@ -1962,7 +1963,6 @@ const ToolsPage = ({
                   {window.electron.store.get('users')[0].email} -{' '}
                   {window.electron.store.get('users')[0].companyName}
                   <button onClick={handleSignOut}>Sign Out</button>{' '}
-                
                 </div>
               </div>
               <div className="settings-container">
@@ -2024,25 +2024,26 @@ const ToolsPage = ({
                 <h2>Currency Settings</h2>
 
                 {/* Default Currency Selection */}
-               
 
                 {/* Exchange Rate Section */}
                 <div className="settings-inner-container">
-                <div>
-                  <label style={{ fontWeight: 500 }}>Default Currency: </label>
-                  <select
-                    onChange={(e) => {
-                      window.electron.store.set(
-                        'defaultCurrency',
-                        e.target.value
-                      );
-                      setRefresh(refresh + 1);
-                    }}
-                    value={GetDefaultCurrency()}
-                  >
-                    {GetCurrencyAsOptionsOnSelect()}
-                  </select>
-                </div>
+                  <div>
+                    <label style={{ fontWeight: 500 }}>
+                      Default Currency:{' '}
+                    </label>
+                    <select
+                      onChange={(e) => {
+                        window.electron.store.set(
+                          'defaultCurrency',
+                          e.target.value
+                        );
+                        setRefresh(refresh + 1);
+                      }}
+                      value={GetDefaultCurrency()}
+                    >
+                      {GetCurrencyAsOptionsOnSelect()}
+                    </select>
+                  </div>
                   {isOnline ? (
                     <div>
                       {/* Current Exchange Rate */}
@@ -2051,7 +2052,6 @@ const ToolsPage = ({
                           display: 'flex',
                           alignItems: 'center',
                           gap: 'var(--10px-V)',
-                          
                         }}
                       >
                         <span>Current Exchange Rate:</span>
@@ -2781,6 +2781,3 @@ const ToolsPage = ({
 };
 
 export default React.memo(ToolsPage);
-function signOutUserAndRestart() {
-  throw new Error('Function not implemented.');
-}

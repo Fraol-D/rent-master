@@ -37,6 +37,10 @@ import {
 } from './Project/TSX/Helpers/CurrencySign';
 import { AlertProvider, useAlert } from './components/useAlert';
 import { ConfirmProvider } from './components/useConfirm';
+import { getFromStore, setToStore } from './storeManager';
+function noop() {}
+//console.log = noop;
+
 declare global {}
 function Hello() {
   const [RoomList, setRoomList] = useState<RoomType[]>([]);
@@ -1248,7 +1252,7 @@ function Hello() {
   });
 
   const [ViewBranchManagementPage, setViewBranchManagementPage] =
-    useState(false);
+    useState(true);
   const [ViewBranchManagementPageNONAdm, setViewBranchManagementPageNONAdm] =
     useState(false);
   const [SelectedBranchId, setSelectedBranchId] = useState('');
@@ -1641,6 +1645,7 @@ function Hello() {
             AppUserManagerPromptPassword={AppUserManagerPromptPassword}
             setAppUserManagerPromptPassword={setAppUserManagerPromptPassword}
             setSelectedAppUser={setSelectedAppUser}
+            SelectedAppUser={SelectedAppUser}
             ViewBranchManagementPage={ViewBranchManagementPage}
             setViewBranchManagementPage={setViewBranchManagementPage}
             SelectedBranchId={SelectedBranchId}
@@ -1696,6 +1701,7 @@ function Hello() {
                 roomSpecificationAPI={roomSpecificationAPI}
                 SelectedPage={SelectedPage}
                 setSelectedPage={setSelectedPage}
+                signOutUserAndRestart={signOutUserAndRestart}
                 RoomList={RoomList}
                 setRoomList={setRoomList}
                 setTenantList={setTenantList}
@@ -1727,7 +1733,7 @@ function Hello() {
     </AlertProvider>
   );
 }
-//  <Route path="/" element={<Hello />} />
+
 export default function App() {
   return (
     <Router>
@@ -1737,142 +1743,7 @@ export default function App() {
     </Router>
   );
 }
-const TenantPortal = () => {
-  const room: RoomType = {
-    id: 'room123',
-    floor: 1,
-    roomIndex: 101,
-    status: 'Taken',
-    price: 1000,
-    AgreedPrice: 1000,
-    utilityPaymentEvery: 'monthly',
-    Currency: 'USD',
-    utilityPaymentStartDate: Date.now(),
-    utilityPaymentUseDifferentStartDate: false,
-    utilityPaymentEveryCustom: 0,
-    PaymentCycleType: 'monthly',
-    PaymentCycleCustomeDays: 0,
-    paymentShowAmount: 1000,
-    squareMeters: 50,
-    RoomSpecifications: [],
-    Archived: false,
-    tenantId: 'tenant123',
-    AddTenantState: false,
-    ViewAgreement: false,
-    ShowPayTimeLine: false,
-    ShowUtilityLine: false,
-    AllRoomPayInfo: { RoomPayInfo: [] },
-    selectedAgreementId: '',
-    notificationSettings: 0,
-    utilityPayments: [],
-    DaysTillNextPayment: 0,
-    branchId: 'branch123',
-    UtilityNotificationSettings: 0,
-    useTenantPortal: true,
-    TenantPortalShowTenantDetails: true,
-    TenantPortalShowReceipts: true,
-    TenantPortalAllowOnlinePayments: true,
-  };
 
-  const tenant: tenant = {
-    id: 'tenant123',
-    name: 'John Doe',
-    phoneNumber: '123-456-7890',
-    email: 'john@example.com',
-    description: 'Long term tenant',
-    SelectedAgreement: 'agreement1',
-    RentingOrOut: true,
-    startTime: Date.now(),
-    agreedPrice: '1000',
-    TIN: '123456789',
-    RentReason: 'Residential',
-    AddedTime: Date.now(),
-    Currency: 'USD',
-    branchId: 'branch123',
-  };
-
-  const agreements: agreements[] = [
-    {
-      id: 'agreement1',
-      roomId: 'room123',
-      tenantId: 'tenant123',
-      startTime: Date.now(),
-      endTime: Date.now() + 31536000000, // 1 year
-      signTime: Date.now(),
-      agreedPrice: 1000,
-      paymentCycleType: 'monthly',
-      branchId: 'branch123',
-      Memo: 'Initial agreement',
-      RentReserved: 1000,
-      representative: 'Manager',
-      Currency: 'USD',
-    },
-    {
-      id: 'agreement2',
-      roomId: 'room123',
-      tenantId: 'tenant123',
-      startTime: Date.now() + 31536000000, // Starts after first agreement
-      endTime: Date.now() + 63072000000, // 2 years from now
-      signTime: Date.now(),
-      agreedPrice: 1100,
-      paymentCycleType: 'monthly',
-      branchId: 'branch123',
-      Memo: 'First renewal',
-      RentReserved: 1100,
-      representative: 'Manager',
-      Currency: 'USD',
-    },
-    {
-      id: 'agreement3',
-      roomId: 'room123',
-      tenantId: 'tenant123',
-      startTime: Date.now() + 63072000000, // Starts after second agreement
-      endTime: Date.now() + 94608000000, // 3 years from now
-      signTime: Date.now(),
-      agreedPrice: 1200,
-      paymentCycleType: 'monthly',
-      branchId: 'branch123',
-      Memo: 'Second renewal',
-      RentReserved: 1200,
-      representative: 'Manager',
-      Currency: 'USD',
-    },
-  ];
-  const branch: BranchTypeWithData = {
-    id: 'branch123',
-    userId: 'user123',
-    name: 'Main Branch',
-    location: '123 Main Street, Anytown ST 12345',
-    description: 'Main office location with 50 rooms across 5 floors',
-    googleMapPinPoint: '40.7128,-74.0060',
-    totalRooms: 50,
-    totalFloors: 5,
-    totalTenants: 42,
-    occupiedRooms: 42,
-    vacantRooms: 8,
-    monthlyRevenue: 52000,
-    monthlyExpenses: 15000,
-    monthlyProfit: 37000,
-    userAccountsWhichHaveAccess: ['user123', 'manager456', 'staff789'],
-    lock: false,
-  };
-  return (
-    <>
-      <div className="MainContainerTP">
-        <div className="controls">
-          <div className="TopBranchAndRoomInfo">
-            <p>Branch: {branch.name}</p>
-            <p>
-              Room: {room.roomIndex} - Floor:{room.floor}
-            </p>
-            
-          </div>
-          <h1 className='TenantNameH1'>{tenant.name}</h1>
-        </div>
-      </div>
-    </>
-  );
-};
 export const getUserPrivileges = (
   selectedAppUser: appUser | null
 ): {

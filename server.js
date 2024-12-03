@@ -109,6 +109,7 @@ app.get('/logs', (req, res) => {
     <!DOCTYPE html>
     <html>
     <head>
+    
       <title>Log Viewer</title>
       <style>
         body {
@@ -340,6 +341,15 @@ app.get('/tenantPortal', (req, res) => {
     <!DOCTYPE html>
     <html>
     <head>
+    <!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-8VQZ0E1PPS"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-8VQZ0E1PPS');
+</script>
       <title>Tenant Portal</title>
       <style>${styles}</style>
     </head>
@@ -456,17 +466,39 @@ app.get('/tenantPortal/:BranchAndCompany/:TenantName', async (req, res) => {
       );
     });
 
-    // Get receipts
-    const [receipts] = await new Promise((resolve, reject) => {
-      pool.query(
-        'SELECT * FROM payment_receipts WHERE tenantId = ?',
-        [tenant.id],
-        (error, results) => {
-          if (error) reject(error);
-          else resolve([results]);
-        }
+    // Function to get receipt path for a payment
+    function getReceiptPath(payment) {
+      if (!payment?.Paid) return null;
+
+      const paymentDate = new Date(payment.Day);
+      const receiptFileName = `${paymentDate.getFullYear()}-${String(
+        paymentDate.getMonth() + 1
+      ).padStart(2, '0')}-${String(paymentDate.getDate()).padStart(2, '0')}_`;
+
+      // Construct the receipts folder path
+      const receiptsPath = path.join(
+        __dirname,
+        'User Files',
+        user.id,
+        'Room Documents',
+        `${tenant.name}, ${new Date(tenant.startTime).toDateString()}, ${
+          tenant.id
+        }`,
+        'receipts'
       );
-    });
+
+      // Find matching receipt file
+      try {
+        const files = fs.readdirSync(receiptsPath);
+        const receiptFile = files.find((file) =>
+          file.startsWith(receiptFileName)
+        );
+        return receiptFile ? receiptFile : null;
+      } catch (error) {
+        console.error('Error finding receipt:', error);
+        return null;
+      }
+    }
 
     // Function to calculate payments based on agreements and paid status
     function calculatePayments(room, tenant, agreements) {
@@ -483,6 +515,8 @@ app.get('/tenantPortal/:BranchAndCompany/:TenantName', async (req, res) => {
       const today = new Date();
 
       while (currentDate <= new Date(endDate)) {
+        // Get receipt filename if payment is paid
+
         // Find if payment exists for this date
         const paid = PaidPayments.find((p) => {
           const paymentDate = new Date(p.Day);
@@ -492,22 +526,23 @@ app.get('/tenantPortal/:BranchAndCompany/:TenantName', async (req, res) => {
             paymentDate.getFullYear() === currentDate.getFullYear()
           );
         });
+        const receiptFile = paid ? getReceiptPath(paid) : null;
 
         // Find receipt for this payment
-        const receipt = receipts.find((r) => r.paymentId === paid?.id);
 
         const payment = {
           date: currentDate.getTime(),
           amount: paid ? paid.Value : agreement.agreedPrice,
           paid: paid ? paid.Paid : false,
-          receiptId: receipt?.id,
-          status:
-            currentDate < today
-              ? 'past-due'
-              : currentDate <=
-                new Date(today.getTime() + 10 * 24 * 60 * 60 * 1000)
-              ? 'near-due'
-              : 'future',
+          receiptFile: receiptFile,
+          status: paid
+            ? 'paid'
+            : currentDate < today
+            ? 'past-due'
+            : currentDate <=
+              new Date(today.getTime() + 10 * 24 * 60 * 60 * 1000)
+            ? 'near-due'
+            : 'future',
         };
         payments.push(payment);
 
@@ -541,28 +576,35 @@ app.get('/tenantPortal/:BranchAndCompany/:TenantName', async (req, res) => {
 
       return payments;
     }
-
-    // Add checkout and receipt handling scripts
+    function formatDate(dateString) {
+      const date = new Date(dateString);
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(
+        2,
+        '0'
+      )}-${String(date.getDate()).padStart(2, '0')}`;
+    }
+    // Update the view receipt script
     const checkoutScript = `
-      <script>
-        async function handlePaymentClick(payment) {
-          // TODO: Implement payment processing
-          console.log('Processing payment:', payment);
+  <script>
+    async function viewReceipt(dateString) {
+      console.log(dateString);
+      try {
+        const date = new Date(dateString);
+        const formattedDate = \`\${date.getFullYear()}-\${String(date.getMonth() + 1).padStart(2, '0')}-\${String(date.getDate()).padStart(2, '0')}\`;
+        const response = await fetch('/receipt/${user.id}/${room.id}/${tenant.id}/' + formattedDate);
+        if (!response.ok) {
+          throw new Error('Receipt not found');
         }
-
-        async function viewReceipt(receiptId) {
-          try {
-            const response = await fetch('/receipt/' + receiptId);
-            const receipt = await response.blob();
-            const url = URL.createObjectURL(receipt);
-            window.open(url);
-          } catch (error) {
-            console.error('Error fetching receipt:', error);
-          }
-        }
-      </script>
-    `;
-
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        window.open(url);
+      } catch (error) {
+        console.error('Error fetching receipt:', error);
+        alert('Could not load receipt');
+      }
+    }
+  </script>
+`;
     const payments = calculatePayments(room, tenant, agreements);
     const agreement = agreements.find((a) => a.id === room.selectedAgreementId);
 
@@ -589,6 +631,15 @@ app.get('/tenantPortal/:BranchAndCompany/:TenantName', async (req, res) => {
     <!DOCTYPE html>
     <html lang="en">
       <head>
+      <!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-8VQZ0E1PPS"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-8VQZ0E1PPS');
+</script>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Tenant Portal</title>
@@ -925,21 +976,18 @@ app.get('/tenantPortal/:BranchAndCompany/:TenantName', async (req, res) => {
                       `
                           : ''
                       }
-
-                      ${
-                        room.TenantPortalShowReceipts &&
-                        payment.paid &&
-                        payment.receiptId
-                          ? `
-                        <button class="receipt-button" onclick="viewReceipt('${payment.receiptId}')">
-                          <span>View Receipt</span>
-                          <svg width="16" height="16" viewBox="0 0 16 16">
-                            <path d="M4 14h8v-1H4v1zm0-3h8v-1H4v1zm0-3h8V7H4v1zm0-3h8V4H4v1zm0-3h8V1H4v1z" />
-                          </svg>
-                        </button>
-                      `
-                          : ''
-                      }
+${
+  room.TenantPortalShowReceipts && payment.paid
+    ? `
+    <button class="receipt-button" onclick="viewReceipt(${payment.date})">
+      <span>View Receipt</span>
+      <svg width="16" height="16" viewBox="0 0 16 16">
+        <path d="M4 14h8v-1H4v1zm0-3h8v-1H4v1zm0-3h8V7H4v1zm0-3h8V4H4v1zm0-3h8V1H4v1z" />
+      </svg>
+    </button>
+    `
+    : ''
+}
                     </div>
                     ${
                       index < payments.length - 1 &&
@@ -1013,7 +1061,60 @@ app.get('/tenantPortal/:BranchAndCompany/:TenantName', async (req, res) => {
     res.send(errorContent);
   }
 });
+// Add route to serve receipt files
+app.get('/receipt/:userId/:roomId/:tenantId/:date', async (req, res) => {
+  try {
+    const { userId, roomId, tenantId, date } = req.params;
 
+    // Validate the date format (YYYY-MM-DD)
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      return res.status(400).send('Invalid date format. Use YYYY-MM-DD');
+    }
+
+    // Get tenant from database
+    const tenant = await new Promise((resolve, reject) => {
+      pool.query(
+        'SELECT * FROM tenants WHERE id = ?',
+        [tenantId],
+        (error, results) => {
+          if (error) reject(error);
+          else resolve(results[0]);
+        }
+      );
+    });
+
+    if (!tenant) {
+      return res
+        .status(404)
+        .send(`Tenant not found, ${tenantId}, ${tenant.name}`);
+    }
+
+    const receiptDir = path.join(
+      __dirname,
+      'User Files',
+      userId,
+      'Room Documents',
+      roomId,
+      `${tenant.name}, ${new Date(
+        new Date(tenant.startTime).getTime() + 24 * 60 * 60 * 1000
+      ).toDateString()}, ${tenantId}`,
+      'receipts'
+    );
+
+    // Read directory and filter files by date
+    const files = fs.readdirSync(receiptDir);
+    const matchingFile = files.find((file) => file.startsWith(date));
+
+    if (matchingFile) {
+      res.sendFile(path.join(receiptDir, matchingFile));
+    } else {
+      res.status(404).send(`No receipt found for date ${date}`);
+    }
+  } catch (error) {
+    console.error('Error serving receipt:', error);
+    res.status(500).send('Error serving receipt');
+  }
+});
 // Add a route to clear logs
 // Add a route to clear logs
 // Add a route to clear logs
@@ -1035,6 +1136,132 @@ app.post('/clear-logs', (req, res) => {
     res.sendStatus(500);
   }
 });
+const sendSMSWithUserId = async (phoneNumber, message, userId) => {
+  const user = await new Promise((resolve, reject) => {
+    pool.query(
+      'SELECT * FROM users WHERE id = ?',
+      [userId],
+      (error, results) => {
+        if (error) reject(error);
+        else resolve(results[0]);
+      }
+    );
+  });
+
+  let formattedPhone = phoneNumber;
+  if (phoneNumber.startsWith('0')) {
+    // Remove leading 0 and add 2519
+    formattedPhone = `251${phoneNumber.substring(1)}`;
+  } else if (!phoneNumber.startsWith('251')) {
+    // If doesn't start with 251, assume it needs full prefix
+    formattedPhone = `251${phoneNumber}`;
+  }
+
+  logger.debug(
+    `Attempting to send SMS to: ${formattedPhone}, checking limit.. MAX LIMIT IS ${user.SMSMonthlyLimit}`
+  );
+  const history = await new Promise((resolve, reject) => {
+    const startOfMonth = Math.floor(
+      new Date(new Date().getFullYear(), new Date().getMonth(), 1).getTime()
+    );
+    const endOfMonth = Math.floor(
+      new Date(
+        new Date().getFullYear(),
+        new Date().getMonth() + 1,
+        0,
+        23,
+        59,
+        59
+      ).getTime()
+    );
+    logger.debug(
+      `Checking SMS history for user ${user.id} from ${startOfMonth} to ${endOfMonth} FOR MANUAL SMS`
+    );
+    pool.query(
+      `SELECT * FROM sms_history WHERE userId = ? AND sentDate BETWEEN ? AND ?`,
+      [user.id, startOfMonth, endOfMonth],
+      (error, results) => {
+        if (error) reject(error);
+        else resolve(results);
+      }
+    );
+  });
+
+  if (user.SMSMonthlyLimit <= history.length) {
+    logger.debug(
+      `SMS limit reached for user ${user.id}. Current limit: ${history.length}, Max limit: ${user.SMSMonthlyLimit}`
+    );
+    return {
+      success: false,
+      log: 'data.log',
+      error: `Limit Reached ${history.length}/${user.SMSMonthlyLimit}`,
+      api_log_id: 'data.api_log_id',
+    };
+  }
+  logger.debug('SMS SENT (is suppose to) 🙃');
+  const smsHistoryId = `${userId}_${Date.now()}_Manual_SMS`;
+  await new Promise((resolve, reject) => {
+    pool.query(
+      `INSERT INTO sms_history (id, receiver, body, templateId, sentDate, mode, userId)
+VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [
+        smsHistoryId,
+        formattedPhone,
+        `[REP] ${message}`,
+        "Manual_SMS",
+        moment().valueOf(),
+        'Manual_SMS',
+        userId,
+      ],
+      (error) => {
+        if (error) reject(error);
+        else resolve(true);
+      }
+    );
+  });
+  return {
+    success: true,
+    log: 'data.log',
+    api_log_id: 'data.api_log_id',
+  };
+  if (!user.SmsToken) {
+    logger.debug('SMS token not configured');
+    return { success: false, error: 'SMS token not configured' };
+  }
+
+  // Format phone number to start with 251 and 9
+
+  const params = new URLSearchParams({
+    token: user.SmsToken,
+    phone: formattedPhone,
+    msg: message,
+    ...(user.SmsShortCode && { shortcode_id: user.SmsShortCode }),
+  });
+
+  try {
+    logger.debug(`Sending SMS with message length: ${message.length}`);
+    const response = await fetch(
+      `https://api.geezsms.com/api/v1/sms/send?${params.toString()}`
+    );
+    const data = await response.json();
+
+    if (data && data.message_status === 'success') {
+      logger.debug(`SMS sent successfully to: ${phoneNumber}`);
+      return {
+        success: true,
+        log: data.log,
+        api_log_id: data.api_log_id,
+      };
+    } else {
+      throw new Error(data?.message || 'Unknown error');
+    }
+  } catch (error) {
+    logger.debug(
+      `Failed to send SMS to: ${phoneNumber}. Error: ${error.message}`
+    );
+    return { success: false, error: error.message };
+  }
+};
 const sendSMS = async (phoneNumber, message, user) => {
   let formattedPhone = phoneNumber;
   if (phoneNumber.startsWith('0')) {
@@ -1050,8 +1277,25 @@ const sendSMS = async (phoneNumber, message, user) => {
   );
 
   const history = await new Promise((resolve, reject) => {
+    const startOfMonth = Math.floor(
+      new Date(new Date().getFullYear(), new Date().getMonth(), 1).getTime()
+    );
+    const endOfMonth = Math.floor(
+      new Date(
+        new Date().getFullYear(),
+        new Date().getMonth() + 1,
+        0,
+        23,
+        59,
+        59
+      ).getTime()
+    );
+    logger.debug(
+      `Checking SMS history for user ${user.id} from ${startOfMonth} to ${endOfMonth} FOR MANUAL SMS`
+    );
     pool.query(
-      `SELECT * FROM sms_history WHERE userId = '${user.id}'`,
+      `SELECT * FROM sms_history WHERE userId = ? AND sentDate BETWEEN ? AND ?`,
+      [user.id, startOfMonth, endOfMonth],
       (error, results) => {
         if (error) reject(error);
         else resolve(results);
@@ -1309,6 +1553,52 @@ app.post('/api/trigger-exchange-rate-update', async (req, res) => {
   }
 });
 // Add this endpoint to your server.js file
+
+// Send SMS endpoint
+app.post('/api/send-sms', async (req, res) => {
+  const { phoneNumber, message, user } = req.body;
+
+  // Validate required fields
+  if (!phoneNumber || !message || !user) {
+    return res.status(400).json({
+      success: false,
+      error: 'Missing required fields: phoneNumber, message, user',
+    });
+  }
+
+  try {
+    const result = await sendSMS(phoneNumber, message, user);
+    res.json(result);
+  } catch (error) {
+    logger.error(`Failed to send SMS to: ${phoneNumber}. Error:`, error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+app.post('/api/send-sms-with-id', async (req, res) => {
+  const { phoneNumber, message, userId } = req.body;
+
+  // Validate required fields
+  if (!phoneNumber || !message || !userId) {
+    return res.status(400).json({
+      success: false,
+      error: 'Missing required fields: phoneNumber, message, userId',
+    });
+  }
+
+  try {
+    const result = await sendSMSWithUserId(phoneNumber, message, userId);
+    res.json(result);
+  } catch (error) {
+    logger.error(`Failed to send SMS to: ${phoneNumber}. Error:`, error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
 app.post('/api/send-email', async (req, res) => {
   const { email, subject, text, user } = req.body;
 
@@ -2268,6 +2558,7 @@ const processUtilityNotifications = async () => {
         
            t.name as tenantName,
            t.email as tenantEmail,
+           t.phoneNumber as tenantPhone,
            t.startTime as startTime,
            u.selectedEmailToSendWith,
            u.selectedEmailToSendWithPassword,
@@ -2843,7 +3134,9 @@ Total: ${totalAmountText.replace(/\.00/g, '')}`;
             }
           }
         }
-
+        logger.debug(
+          `│ │ ✗ Failed But continue: ${utilities[0].tenantPhone}, ${shouldSendTenantSMS}`
+        );
         if (shouldSendTenantSMS && utilities[0].tenantPhone) {
           const tenantPhone = utilities[0].tenantPhone;
           if (validateAndLogPhone(tenantPhone, logger)) {
