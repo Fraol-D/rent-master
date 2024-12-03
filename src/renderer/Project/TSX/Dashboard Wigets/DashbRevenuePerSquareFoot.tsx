@@ -1,14 +1,24 @@
 import React, { useMemo, useState } from 'react';
-import { formatNumberWithSuffix, GetDefaultCurrency, CurrencySign, getRateByDate, convertCurrency } from '../Helpers/CurrencySign';
+import {
+  formatNumberWithSuffix,
+  GetDefaultCurrency,
+  CurrencySign,
+  getRateByDate,
+  convertCurrency,
+} from '../Helpers/CurrencySign';
 
-const DashbRevenuePerSquareMeter = ({ RoomList }: { RoomList:RoomType[] }) => {
+const DashbRevenuePerSquareMeter = ({ RoomList }: { RoomList: RoomType[] }) => {
   const [viewBy, setViewBy] = useState<'month' | 'year'>('month');
   const [currencyDisplay, setCurrencyDisplay] = useState<
     'ETB_ONLY' | 'USD_ONLY' | 'ALL_ETB' | 'ALL_USD'
   >(GetDefaultCurrency() === 'ETB' ? 'ALL_ETB' : 'ALL_USD');
 
   // Helper function to process currency values
-  const processValueByCurrency = (value: number, currency: string, date: number) => {
+  const processValueByCurrency = (
+    value: number,
+    currency: string,
+    date: number
+  ) => {
     const { rate } = getRateByDate(date);
 
     if (!rate) {
@@ -42,7 +52,7 @@ const DashbRevenuePerSquareMeter = ({ RoomList }: { RoomList:RoomType[] }) => {
     RoomList.forEach((room) => {
       if (room.squareMeters && room.squareMeters > 0 && room.tenantId) {
         let annualRevenue = 0;
-        
+
         // Process room price with currency conversion
         const roomPrice = processValueByCurrency(
           room.AgreedPrice,
@@ -78,23 +88,24 @@ const DashbRevenuePerSquareMeter = ({ RoomList }: { RoomList:RoomType[] }) => {
             annualRevenue = roomPrice * 12; // Default to monthly
         }
 
-        const revenueForPeriod = viewBy === 'month' ? annualRevenue / 12 : annualRevenue;
+        const revenueForPeriod =
+          viewBy === 'month' ? annualRevenue / 12 : annualRevenue;
         totalRevenue += revenueForPeriod;
         totalSquareMeters += room.squareMeters;
       }
     });
 
-    const result = totalSquareMeters > 0 ? (totalRevenue / totalSquareMeters) : 0;
-    return { 
-      totalRevenue: parseFloat(totalRevenue.toFixed(2)), 
-      totalSquareMeters: parseFloat(totalSquareMeters.toFixed(2)), 
-      result: parseFloat(result.toFixed(2))
+    const result = totalSquareMeters > 0 ? totalRevenue / totalSquareMeters : 0;
+    return {
+      totalRevenue: parseFloat(totalRevenue.toFixed(2)),
+      totalSquareMeters: parseFloat(totalSquareMeters.toFixed(2)),
+      result: parseFloat(result.toFixed(2)),
     };
   }, [RoomList, viewBy, currencyDisplay]);
 
   // Get current exchange rate for display
   const getCurrentExchangeRate = () => {
-    const storedRates = window.electron.store.get('exchangeRate');
+    const storedRates = storageManager.get('exchangeRate');
     if (!storedRates || storedRates.length === 0) return null;
     return storedRates[storedRates.length - 1].rates;
   };
@@ -113,37 +124,52 @@ const DashbRevenuePerSquareMeter = ({ RoomList }: { RoomList:RoomType[] }) => {
           justifyContent: 'space-between',
           alignItems: 'center',
           padding: 'var(--10px-V)',
-          gap: 'var(--10px-V)'
+          gap: 'var(--10px-V)',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--10px-V)' }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 'var(--10px-V)',
+          }}
+        >
           <select
             value={viewBy}
             onChange={(e) => setViewBy(e.target.value as 'month' | 'year')}
             style={{
               padding: '3px 8px',
               borderRadius: '4px',
-
-              
             }}
           >
             <option value="month">Monthly</option>
             <option value="year">Yearly</option>
           </select>
-
-          
         </div>
 
         <div style={{ textAlign: 'right' }}>
-          <div style={{ fontSize: 'var(--12px-V)', color: 'var(--Text-Color-Grey)' }}>
+          <div
+            style={{
+              fontSize: 'var(--12px-V)',
+              color: 'var(--Text-Color-Grey)',
+            }}
+          >
             {formatNumberWithSuffix(revenuePerSquareMeter.totalRevenue)}{' '}
-            {currencyDisplay.includes('ETB') ? 'ETB' : 'USD'} / {revenuePerSquareMeter.totalSquareMeters} m²
+            {currencyDisplay.includes('ETB') ? 'ETB' : 'USD'} /{' '}
+            {revenuePerSquareMeter.totalSquareMeters} m²
           </div>
-          <div style={{ fontSize: 'var(--24px-V)', color: 'var(--Accent-Color)' }}>
+          <div
+            style={{ fontSize: 'var(--24px-V)', color: 'var(--Accent-Color)' }}
+          >
             {formatNumberWithSuffix(revenuePerSquareMeter.result)}{' '}
             {currencyDisplay.includes('ETB') ? 'ETB' : 'USD'}
           </div>
-          <div style={{ fontSize: 'var(--12px-V)', color: 'var(--Text-Color-Grey)' }}>
+          <div
+            style={{
+              fontSize: 'var(--12px-V)',
+              color: 'var(--Text-Color-Grey)',
+            }}
+          >
             Rate: 1 USD = {getCurrentExchangeRate()?.toFixed(2) || 'N/A'} ETB
           </div>
         </div>

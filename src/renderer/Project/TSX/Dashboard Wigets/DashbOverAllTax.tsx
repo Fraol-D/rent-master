@@ -5,7 +5,12 @@ import { axisClasses } from '@mui/x-charts/ChartsAxis';
 import { getValuesWithSql } from 'Backend/localServerApis';
 import { addDays, addMonths, addYears, startOfYear, endOfYear } from 'date-fns';
 import { Input } from '../Helpers/CustomReactComponents';
-import { formatNumberWithSuffix, GetDefaultCurrency, CurrencySign, getRateByDate } from '../Helpers/CurrencySign';
+import {
+  formatNumberWithSuffix,
+  GetDefaultCurrency,
+  CurrencySign,
+  getRateByDate,
+} from '../Helpers/CurrencySign';
 
 interface Payment {
   id: string;
@@ -29,20 +34,28 @@ const DashbOverAllTax = ({
     new Date().getFullYear().toString()
   );
   const [predictedPayments, setPredictedPayments] = useState<Payment[]>([]);
-  const [currencyDisplay, setCurrencyDisplay] = useState<'ETB_ONLY' | 'USD_ONLY' | 'ALL_ETB' | 'ALL_USD'>(
-    GetDefaultCurrency() === 'ETB' ? 'ALL_ETB' : 'ALL_USD'
-  );
+  const [currencyDisplay, setCurrencyDisplay] = useState<
+    'ETB_ONLY' | 'USD_ONLY' | 'ALL_ETB' | 'ALL_USD'
+  >(GetDefaultCurrency() === 'ETB' ? 'ALL_ETB' : 'ALL_USD');
 
-  const processValueByCurrency = (value: number, currency: string, date: number) => {
+  const processValueByCurrency = (
+    value: number,
+    currency: string,
+    date: number
+  ) => {
     const { rate, direction } = getRateByDate(date);
 
     if (!rate) {
-      console.warn('No rate available for tax calculation, using original value');
+      console.warn(
+        'No rate available for tax calculation, using original value'
+      );
       return value;
     }
 
-    if ((currencyDisplay === 'ETB_ONLY' && currency === 'ETB') ||
-        (currencyDisplay === 'USD_ONLY' && currency === 'USD')) {
+    if (
+      (currencyDisplay === 'ETB_ONLY' && currency === 'ETB') ||
+      (currencyDisplay === 'USD_ONLY' && currency === 'USD')
+    ) {
       return value;
     } else if (currencyDisplay === 'ALL_ETB') {
       if (currency === 'USD') {
@@ -166,7 +179,7 @@ const DashbOverAllTax = ({
   };
 
   const calculateTax = (value: number) =>
-    value * (window.electron.store.get('taxPercentage') / 100 || 0.15);
+    value * (storageManager.get('taxPercentage') / 100 || 0.15);
 
   const aggregateMonthlyData = useMemo(() => {
     const selectedYear = parseInt(selectedDate);
@@ -177,10 +190,10 @@ const DashbOverAllTax = ({
     const monthlyData = d3.rollups(
       filteredData,
       (v) => ({
-        expectedValue: d3.sum(v, (d) => 
+        expectedValue: d3.sum(v, (d) =>
           processValueByCurrency(
             d.Value,
-            RoomList.find(r => r.id === d.roomId)?.Currency || 'ETB',
+            RoomList.find((r) => r.id === d.roomId)?.Currency || 'ETB',
             d.Day
           )
         ),
@@ -201,12 +214,12 @@ const DashbOverAllTax = ({
 
     return allMonths;
   }, [selectedDate, predictedPayments, currencyDisplay]);
-// Add this to display current exchange rate
-const getCurrentExchangeRate = () => {
-  const storedRates = window.electron.store.get('exchangeRate');
-  if (!storedRates || storedRates.length === 0) return null;
-  return storedRates[storedRates.length - 1].rates;
-};
+  // Add this to display current exchange rate
+  const getCurrentExchangeRate = () => {
+    const storedRates = storageManager.get('exchangeRate');
+    if (!storedRates || storedRates.length === 0) return null;
+    return storedRates[storedRates.length - 1].rates;
+  };
   const aggregateYearlyData = useMemo(() => {
     const yearlyData = d3.rollups(
       predictedPayments,
@@ -273,7 +286,9 @@ const getCurrentExchangeRate = () => {
       className="DashboardWigetMainContainer"
       style={{ width: 'var(--710px-V)', height: 'var(--500px-V)' }}
     >
-      <p className="DashboardWigetPieChartTextHeader">Overall Tax ({window.electron.store.get('taxPercentage') || 0.15}%)</p>
+      <p className="DashboardWigetPieChartTextHeader">
+        Overall Tax ({storageManager.get('taxPercentage') || 0.15}%)
+      </p>
       <div
         className="DashboardTotalCollectedTopPart"
         style={{ marginBottom: '0' }}
@@ -290,53 +305,71 @@ const getCurrentExchangeRate = () => {
           </select>
         </div>
         <div className="YearInputContainer">
-        <div className="ShowByContainer"> <span className="YearLabel">Year</span>
-          <input
-            className="YearInput"
-            type="number"
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            min="1900"
-            max="2100"
-            step="1"
-          />
+          <div className="ShowByContainer">
+            {' '}
+            <span className="YearLabel">Year</span>
+            <input
+              className="YearInput"
+              type="number"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              min="1900"
+              max="2100"
+              step="1"
+            />
           </div>
-          <span className="TotalLabel">Total Tax:   <span className="TotalValue">
-            {formatNumberWithSuffix(taxStats.totalTaxAmount)}
-            {CurrencySign(currencyDisplay.includes('ETB') ? 'ETB' : 'USD')}
-          </span></span>
-        
-        <div style={{display:'flex',flexDirection:'column'}}>  <select
-            value={currencyDisplay}
-            onChange={(e) => setCurrencyDisplay(e.target.value as typeof currencyDisplay)}
-            style={{
-              padding: '3px 8px',
-              borderRadius: '4px',
-              border: '1px solid var(--Border-Color)',
-              backgroundColor: 'var(--Secondary-Color)',
-              color: 'var(--Text-Color)',
-              marginLeft: 'var(--10px-V)',
-            }}
-          >
-            <option value="ETB_ONLY">Show Only Birr</option>
-            <option value="USD_ONLY">Show Only Dollar</option>
-            <option value="ALL_ETB">Show All in Birr</option>
-            <option value="ALL_USD">Show All in Dollar</option>
-          </select>
-          <span style={{ fontSize: 'var(--12px-V)', color: 'var(--Text-Color-Grey)', marginLeft: 'var(--10px-V)' }}>
-            Rate: 1 USD = {getCurrentExchangeRate()?.toFixed(2) || 'N/A'} ETB
-          </span></div>
+          <span className="TotalLabel">
+            Total Tax:{' '}
+            <span className="TotalValue">
+              {formatNumberWithSuffix(taxStats.totalTaxAmount)}
+              {CurrencySign(currencyDisplay.includes('ETB') ? 'ETB' : 'USD')}
+            </span>
+          </span>
+
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            {' '}
+            <select
+              value={currencyDisplay}
+              onChange={(e) =>
+                setCurrencyDisplay(e.target.value as typeof currencyDisplay)
+              }
+              style={{
+                padding: '3px 8px',
+                borderRadius: '4px',
+                border: '1px solid var(--Border-Color)',
+                backgroundColor: 'var(--Secondary-Color)',
+                color: 'var(--Text-Color)',
+                marginLeft: 'var(--10px-V)',
+              }}
+            >
+              <option value="ETB_ONLY">Show Only Birr</option>
+              <option value="USD_ONLY">Show Only Dollar</option>
+              <option value="ALL_ETB">Show All in Birr</option>
+              <option value="ALL_USD">Show All in Dollar</option>
+            </select>
+            <span
+              style={{
+                fontSize: 'var(--12px-V)',
+                color: 'var(--Text-Color-Grey)',
+                marginLeft: 'var(--10px-V)',
+              }}
+            >
+              Rate: 1 USD = {getCurrentExchangeRate()?.toFixed(2) || 'N/A'} ETB
+            </span>
+          </div>
         </div>
       </div>
       <BarChart
-        dataset={dataset}  slotProps={{
+        dataset={dataset}
+        slotProps={{
           legend: {
             hidden: true,
           },
         }}
         xAxis={[
           {
-            scaleType: 'band', tickLabelStyle: {
+            scaleType: 'band',
+            tickLabelStyle: {
               fill: 'var(--Text-Color)',
               fontSize: 'var(--12px-V)',
             },
@@ -345,31 +378,35 @@ const getCurrentExchangeRate = () => {
         ]}
         yAxis={[
           {
-            fill: 'var(--Text-Color)', tickLabelStyle: {
+            fill: 'var(--Text-Color)',
+            tickLabelStyle: {
               fill: 'var(--Text-Color)',
               fontSize: 'var(--12px-V)',
             },
-            valueFormatter: (value: any) => 
-              `${formatNumberWithSuffix(value)}${CurrencySign(currencyDisplay.includes('ETB') ? 'ETB' : 'USD')}`,
+            valueFormatter: (value: any) =>
+              `${formatNumberWithSuffix(value)}${CurrencySign(
+                currencyDisplay.includes('ETB') ? 'ETB' : 'USD'
+              )}`,
           },
         ]}
         series={[
           {
             dataKey: 'tax',
-            label: `Tax (${
-              window.electron.store.get('taxPercentage') || 0.15
-            }%)`,
-            valueFormatter: (value: any) => 
-              `${formatNumberWithSuffix(value)}${CurrencySign(currencyDisplay.includes('ETB') ? 'ETB' : 'USD')}`,
+            label: `Tax (${storageManager.get('taxPercentage') || 0.15}%)`,
+            valueFormatter: (value: any) =>
+              `${formatNumberWithSuffix(value)}${CurrencySign(
+                currencyDisplay.includes('ETB') ? 'ETB' : 'USD'
+              )}`,
 
             color: 'var(--Accent-Color50)',
           },
         ]}
-    
         margin={{
-          left: 40 + (window.electron.store.get("abbreiviateBigNumbers") ? 30 : Math.max(
-            ...dataset.map(d => d.tax.toString().length * 6)
-          )),
+          left:
+            40 +
+            (storageManager.get('abbreiviateBigNumbers')
+              ? 30
+              : Math.max(...dataset.map((d) => d.tax.toString().length * 6))),
           right: 30,
           top: 10,
           bottom: 55,
@@ -410,15 +447,15 @@ const getCurrentExchangeRate = () => {
         <p className="ExpenseStatItem">
           Highest {showBy === 'Monthly' ? 'Monthly' : 'Yearly'} Tax:{' '}
           <em className="ExpenseStatValue">
-           {formatNumberWithSuffix(taxStats.highestTax.toLocaleString())}
-           {CurrencySign(currencyDisplay.includes('ETB') ? 'ETB' : 'USD')}
+            {formatNumberWithSuffix(taxStats.highestTax.toLocaleString())}
+            {CurrencySign(currencyDisplay.includes('ETB') ? 'ETB' : 'USD')}
           </em>
         </p>
         <p className="ExpenseStatItem">
           Average {showBy === 'Monthly' ? 'Monthly' : 'Yearly'} Tax:{' '}
           <em className="ExpenseStatValue">
             {formatNumberWithSuffix(taxStats.averageTax.toLocaleString())}
-          {CurrencySign(currencyDisplay.includes('ETB') ? 'ETB' : 'USD')}
+            {CurrencySign(currencyDisplay.includes('ETB') ? 'ETB' : 'USD')}
           </em>
         </p>
         <p className="ExpenseStatItem">

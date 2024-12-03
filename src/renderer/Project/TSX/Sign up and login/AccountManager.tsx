@@ -129,7 +129,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
 
     console.log(`[${getSeconds()}s] Starting checkIfSignedIn...`);
     setInitialLoading(true);
-    const allUsers = window.electron.store.get('users') || [];
+    const allUsers = storageManager.get('users') || [];
     console.log(
       `[${getSeconds()}s] Got users from store:`,
       allUsers.length > 0
@@ -172,7 +172,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
           setIsAllowedState(allUsers[0].Allowed);
           setSelectedUserId(allUsers[0].id);
 
-          if (!window.electron.store.get('SelectedAppUserId')) {
+          if (!storageManager.get('SelectedAppUserId')) {
             console.log(`[${getSeconds()}s] Setting app user manager show`);
             setAppUserManagerShow(true);
           }
@@ -240,7 +240,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                       }
                     : user
                 );
-                window.electron.store.set('users', updatedUsers);
+                storageManager.set('users', updatedUsers);
                 setChangeMade(true);
                 console.log(`[${getSeconds()}s] Updated local user data`);
               } catch (error) {
@@ -264,7 +264,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
           await check();
           setSelectedUserId(allUsers[0].id);
 
-          if (!window.electron.store.get('SelectedAppUserId')) {
+          if (!storageManager.get('SelectedAppUserId')) {
             console.log(`[${getSeconds()}s] Setting app user manager show`);
             setAppUserManagerShow(true);
           }
@@ -274,9 +274,9 @@ const AccountManager = (React.FC<MyComponentProps> = ({
           await appUsersManagement();
           if (
             navigator.onLine &&
-            window.electron.store.get('users')[0].Allowed &&
+            storageManager.get('users')[0].Allowed &&
             !ViewBranchManagementPage &&
-            window.electron.store.get('SelectedBranchId') !== ''
+            storageManager.get('SelectedBranchId') !== ''
           ) {
             console.log(
               `[${getSeconds()}s] Sync conditions met but sync disabled`
@@ -295,7 +295,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
           setHasNotPaid(allUsers[0].LockBcNotPaid || false);
           setSelectedUserId(allUsers[0].id);
 
-          if (!window.electron.store.get('SelectedAppUserId')) {
+          if (!storageManager.get('SelectedAppUserId')) {
             console.log(`[${getSeconds()}s] Setting app user manager show`);
             setAppUserManagerShow(true);
           }
@@ -321,22 +321,22 @@ const AccountManager = (React.FC<MyComponentProps> = ({
       console.log(`[${getSeconds()}s] Online mode - fetching app users...`);
       const appUsers = await getValuesWithSql_Online(
         'app_users',
-        `WHERE userId = '${window.electron.store.get('users')[0].id}'`
+        `WHERE userId = '${storageManager.get('users')[0].id}'`
       );
       if (appUsers) {
         console.log(
           `[${getSeconds()}s] Got app users, updating local store...`
         );
-        await window.electron.store.set('app_users', appUsers);
+        await storageManager.set('app_users', appUsers);
         setAppUsers(appUsers);
-        if (window.electron.store.get('SelectedAppUserId')) {
+        if (storageManager.get('SelectedAppUserId')) {
           console.log(`[${getSeconds()}s] Setting selected app user...`);
-          if (window.electron.store.get('SelectedAppUserId') == 'admin') {
+          if (storageManager.get('SelectedAppUserId') == 'admin') {
             setSelectedAppUser({
               id: 'admin',
               roleName: 'admin',
               privileges: '',
-              userId: window.electron.store.get('users')[0].id,
+              userId: storageManager.get('users')[0].id,
               addedDate: Date.now(),
               AllowedBranches: 'ALL',
             });
@@ -344,8 +344,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
             setSelectedAppUser(
               appUsers.find(
                 async (user: any) =>
-                  (await user.id) ===
-                  window.electron.store.get('SelectedAppUserId')
+                  (await user.id) === storageManager.get('SelectedAppUserId')
               )
             );
           }
@@ -353,19 +352,19 @@ const AccountManager = (React.FC<MyComponentProps> = ({
       }
     } else {
       console.log(`[${getSeconds()}s] Offline mode - using local app users`);
-      const appUsers = window.electron.store.get('app_users');
+      const appUsers = storageManager.get('app_users');
 
       setAppUsers(appUsers);
-      if (window.electron.store.get('SelectedAppUserId')) {
+      if (storageManager.get('SelectedAppUserId')) {
         console.log(
           `[${getSeconds()}s] Setting selected app user from local data...`
         );
-        if (window.electron.store.get('SelectedAppUserId') == 'admin') {
+        if (storageManager.get('SelectedAppUserId') == 'admin') {
           setSelectedAppUser({
             id: 'admin',
             roleName: 'admin',
             privileges: '',
-            userId: window.electron.store.get('users')[0].id,
+            userId: storageManager.get('users')[0].id,
             addedDate: Date.now(),
             AllowedBranches: 'ALL',
           });
@@ -373,8 +372,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
           setSelectedAppUser(
             appUsers.find(
               async (user: any) =>
-                (await user.id) ===
-                window.electron.store.get('SelectedAppUserId')
+                (await user.id) === storageManager.get('SelectedAppUserId')
             )
           );
         }
@@ -403,7 +401,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
         id: accountId,
         roleName: newUserName,
         privileges: privileges.join(','),
-        userId: window.electron.store.get('users')[0].id,
+        userId: storageManager.get('users')[0].id,
         addedDate: Date.now(),
         AllowedBranches: Branches.map((branch) => branch.id).join(','),
       };
@@ -460,7 +458,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
     setIsSyncing(true);
     syncOnlineToLocalBranchWithBool(
       selectedUserId,
-      window.electron.store.get('SelectedBranchId'),
+      storageManager.get('SelectedBranchId'),
       setIsSyncing,
       setSyncProgress,
       RefreshDataFromSqlite
@@ -470,7 +468,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
   useEffect(() => {
     if (isSignedIn === true) {
       const check = async () => {
-        const users = window.electron.store.get('users') || [];
+        const users = storageManager.get('users') || [];
         const userRaw = users[0];
 
         if (userRaw.packageType === '7daytrial') {
@@ -503,7 +501,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const handleFullSignOutAndDeleteUser = async () => {
-    const usersId = await window.electron.store.get('users')[0].id;
+    const usersId = await storageManager.get('users')[0].id;
     console.log(usersId);
     await deleteValueOnline('users', usersId);
 
@@ -524,7 +522,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
           <h2>Congratulations! Your account has been successfully created.</h2>{' '}
           <p className="signOutAndIfNot">
             Is this your email:{' '}
-            <strong>{window.electron.store.get('users')[0].email || ''}</strong>
+            <strong>{storageManager.get('users')[0].email || ''}</strong>
             ?
             <br />
             If not,{' '}
@@ -576,7 +574,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
           <h2>Your account has been locked due to payment issues</h2>
           <p className="signOutAndIfNot">
             Logged in as:{' '}
-            <strong>{window.electron.store.get('users')[0].email || ''}</strong>
+            <strong>{storageManager.get('users')[0].email || ''}</strong>
             <br />
             <button
               onClick={handleFullSignOutAndDeleteUser}
@@ -632,7 +630,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
     if (navigator.onLine) {
       setIsCheckingPassword(true);
       setPasswordError('');
-      const localUser = window.electron.store.get('users')[0];
+      const localUser = storageManager.get('users')[0];
 
       try {
         console.log(localUser.email, PasswordCheckInput, 'PASSWORD AND EMAIL');
@@ -666,7 +664,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
     if (navigator.onLine) {
       setIsCheckingPassword(true);
       setPasswordError('');
-      const localUser = window.electron.store.get('users')[0];
+      const localUser = storageManager.get('users')[0];
 
       try {
         const isValid = await verifyCredentials(
@@ -701,7 +699,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
     if (navigator.onLine) {
       setIsCheckingPassword(true);
       setPasswordError('');
-      const localUser = window.electron.store.get('users')[0];
+      const localUser = storageManager.get('users')[0];
 
       try {
         const isValid = await verifyCredentials(
@@ -711,7 +709,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
 
         if (isValid) {
           setViewBranchManagementPageNONAdm(false);
-          window.electron.store.set('LockBranchToPc', false);
+          storageManager.set('LockBranchToPc', false);
         } else {
           setPasswordError('Incorrect password. Please try again.');
         }
@@ -739,23 +737,29 @@ const AccountManager = (React.FC<MyComponentProps> = ({
   const handleSaveEdit = async (userId: string) => {
     if (navigator.onLine) {
       try {
-        if(!appUsers.some(user => user.roleName.toUpperCase() === editingUserName.toUpperCase())) {
-        await updateValueOnline(
-          'app_users',
-          userId,
-          'roleName',
-          editingUserName
-        );
+        if (
+          !appUsers.some(
+            (user) =>
+              user.roleName.toUpperCase() === editingUserName.toUpperCase()
+          )
+        ) {
+          await updateValueOnline(
+            'app_users',
+            userId,
+            'roleName',
+            editingUserName
+          );
 
-        const updatedAppUsers = appUsers.map((user) =>
-          user.id === userId ? { ...user, roleName: editingUserName } : user
-        );
-        setAppUsers(updatedAppUsers);
-        window.electron.store.set('app_users', updatedAppUsers);
+          const updatedAppUsers = appUsers.map((user) =>
+            user.id === userId ? { ...user, roleName: editingUserName } : user
+          );
+          setAppUsers(updatedAppUsers);
+          storageManager.set('app_users', updatedAppUsers);
 
-        setEditingUserId(null);
-        setEditingUserName('');} else {
-          showAlert('You can not set the same username for another user.')
+          setEditingUserId(null);
+          setEditingUserName('');
+        } else {
+          showAlert('You can not set the same username for another user.');
         }
       } catch (error) {
         console.error('Error updating user name:', error);
@@ -801,11 +805,11 @@ const AccountManager = (React.FC<MyComponentProps> = ({
 
   const handleSelectUser = (user: appUser) => {
     setSelectedAppUser(user);
-    window.electron.store.set('SelectedAppUserId', user.id);
+    storageManager.set('SelectedAppUserId', user.id);
     setAppUserManagerShow(false);
-    window.electron.store.set('SelectedBranchId', '');
-    window.electron.store.set('BranchName', 'not selected');
-    window.electron.store.set('LockBranchToPc', false);
+    storageManager.set('SelectedBranchId', '');
+    storageManager.set('BranchName', 'not selected');
+    storageManager.set('LockBranchToPc', false);
     setViewBranchManagementPage(true);
   };
 
@@ -816,7 +820,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
           const updatedAppUsers = appUsers.map((user) =>
             user.id === editingUser.id ? editingUser : user
           );
-          window.electron.store.set('app_users', updatedAppUsers);
+          storageManager.set('app_users', updatedAppUsers);
           await addValueOnline('app_users', editingUser);
           await appUsersManagement();
           setEditingUser(null);
@@ -904,7 +908,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
           u.id === user.id ? updatedUser : u
         );
         setAppUsers(updatedAppUsers);
-        window.electron.store.set('app_users', updatedAppUsers);
+        storageManager.set('app_users', updatedAppUsers);
       } catch (error) {
         console.error('Error updating privilege:', error);
         showAlert(
@@ -1077,7 +1081,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
         const updatedAppUsers = appUsers.map((u) =>
           u.id === user.id ? updatedUser : u
         );
-        window.electron.store.set('app_users', updatedAppUsers);
+        storageManager.set('app_users', updatedAppUsers);
         await appUsersManagement();
       } catch (error) {
         console.error('Error updating privileges:', error);
@@ -1119,7 +1123,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
         const updatedAppUsers = appUsers.map((u) =>
           u.id === user.id ? updatedUser : u
         );
-        window.electron.store.set('app_users', updatedAppUsers);
+        storageManager.set('app_users', updatedAppUsers);
         await appUsersManagement();
         setPrivilegeError('');
       } catch (error) {
@@ -1233,14 +1237,14 @@ const AccountManager = (React.FC<MyComponentProps> = ({
     setBranchName(
       Branches.find((branch) => branch.id === branchId)?.name || ''
     );
-    window.electron.store.set(
+    storageManager.set(
       'BranchName',
       Branches.find((branch) => branch.id === branchId)?.name || ''
     );
-    window.electron.store.set('SelectedBranchId', branchId);
+    storageManager.set('SelectedBranchId', branchId);
     if (Branches.find((branch) => branch.id === branchId)?.lock)
-      window.electron.store.set('LockBranchToPc', true);
-    else window.electron.store.set('LockBranchToPc', false);
+      storageManager.set('LockBranchToPc', true);
+    else storageManager.set('LockBranchToPc', false);
 
     setViewBranchManagementPage(false);
     RefreshDataFromSqlite();
@@ -1383,15 +1387,15 @@ const AccountManager = (React.FC<MyComponentProps> = ({
   const [BranchLimit, setBranchLimit] = useState(0);
   const getBranchLimitInfo = async () => {
     if (navigator.onLine) {
-      if (window.electron.store.get('users')) {
-        if (window.electron.store.get('users')[0]) {
+      if (storageManager.get('users')) {
+        if (storageManager.get('users')[0]) {
           const userMaxBranches = await getValuesWithSql_Online(
             'users',
-            `WHERE id = '${window.electron.store.get('users')[0].id}'`
+            `WHERE id = '${storageManager.get('users')[0].id}'`
           );
           const AllBranches = await getValuesWithSql_Online(
             'branches',
-            `WHERE userId = '${window.electron.store.get('users')[0].id}'`
+            `WHERE userId = '${storageManager.get('users')[0].id}'`
           );
 
           if (!userMaxBranches) {
@@ -1458,15 +1462,20 @@ const AccountManager = (React.FC<MyComponentProps> = ({
     await appUsersManagement();
   };
   const [ShowAppUserSignInPanel, setShowAppUserSignInPanel] = useState(false);
-  const [PasswordCheckInputAPPUSER, setPasswordCheckInputAPPUSER] = useState('');
-  const [usernameCheckInputAPPUSER, setUsernameCheckInputAPPUSER] = useState('');
-  const [isCheckingPasswordAPPUSER, setIsCheckingPasswordAPPUSER] = useState(false);
-    const [SelectedToLoginWith, setSelectedToLoginWith] = useState('App User');
+  const [PasswordCheckInputAPPUSER, setPasswordCheckInputAPPUSER] =
+    useState('');
+  const [usernameCheckInputAPPUSER, setUsernameCheckInputAPPUSER] =
+    useState('');
+  const [isCheckingPasswordAPPUSER, setIsCheckingPasswordAPPUSER] =
+    useState(false);
+  const [SelectedToLoginWith, setSelectedToLoginWith] = useState('App User');
 
-  const [passwordErrorAPPUSER, setPasswordErrorAPPUSER] = useState<string|null>(null);
+  const [passwordErrorAPPUSER, setPasswordErrorAPPUSER] = useState<
+    string | null
+  >(null);
   const handleSwitchUserInBranchManagement = async () => {
-    if(SelectedAppUser.id === "admin") {
-      setAppUserManagerShow(true)
+    if (SelectedAppUser.id === 'admin') {
+      setAppUserManagerShow(true);
     } else {
       setShowAppUserSignInPanel(true);
     }
@@ -1477,28 +1486,26 @@ const AccountManager = (React.FC<MyComponentProps> = ({
   const handleSwitchUserFromBranchManagement = async () => {
     setIsCheckingPasswordAPPUSER(true);
     try {
-      const userId = window.electron.store.get('users')[0].id;
-      const localUser = window.electron.store.get('users')[0];
-      if(SelectedToLoginWith === 'Admin'){
+      const userId = storageManager.get('users')[0].id;
+      const localUser = storageManager.get('users')[0];
+      if (SelectedToLoginWith === 'Admin') {
         const isValid = await verifyCredentials(
           localUser.email,
           PasswordCheckInputAPPUSER
         );
-    
-        if (isValid) {    handleSelectUser({
-          id: 'admin',
-          roleName: 'admin',
-          privileges: '',
-          userId:
-            window.electron.store.get(
-              'users'
-            )[0].id,
-          addedDate: Date.now(),
-          AllowedBranches: 'ALL',
-        }) ;
-        setShowAppUserSignInPanel(false);
+
+        if (isValid) {
+          handleSelectUser({
+            id: 'admin',
+            roleName: 'admin',
+            privileges: '',
+            userId: storageManager.get('users')[0].id,
+            addedDate: Date.now(),
+            AllowedBranches: 'ALL',
+          });
+          setShowAppUserSignInPanel(false);
           setViewBranchManagementPageNONAdm(false);
-          window.electron.store.set('LockBranchToPc', false);
+          storageManager.set('LockBranchToPc', false);
           showAlert('Admin login successful.', 'success');
         } else {
           setPasswordErrorAPPUSER('Incorrect password. Please try again.');
@@ -1506,51 +1513,55 @@ const AccountManager = (React.FC<MyComponentProps> = ({
         }
       } else {
         const rolenameCurrent = appUsers.find(
-          (appUser) =>
-            appUser.id ===
-            window.electron.store.get(
-              'SelectedAppUserId'
-            )
-        )?.roleName
-        if(rolenameCurrent?.toLocaleLowerCase()=== usernameCheckInputAPPUSER.toLocaleLowerCase()){
-            setPasswordErrorAPPUSER('You are currently signed in as this user.');
-            setIsCheckingPasswordAPPUSER(false);
-           return
-          }
-// Fetch user data if credentials are valid
+          (appUser) => appUser.id === storageManager.get('SelectedAppUserId')
+        )?.roleName;
+        if (
+          rolenameCurrent?.toLocaleLowerCase() ===
+          usernameCheckInputAPPUSER.toLocaleLowerCase()
+        ) {
+          setPasswordErrorAPPUSER('You are currently signed in as this user.');
+          setIsCheckingPasswordAPPUSER(false);
+          return;
+        }
+        // Fetch user data if credentials are valid
         const getAppUser = await getValuesWithSql_Online(
           'app_users',
           `WHERE roleName = "${usernameCheckInputAPPUSER}" AND password = "${PasswordCheckInputAPPUSER}" AND userId = '${userId}'`
         );
-        
-        console.log(getAppUser,usernameCheckInputAPPUSER, getAppUser[0].roleName )
+
+        console.log(
+          getAppUser,
+          usernameCheckInputAPPUSER,
+          getAppUser[0].roleName
+        );
         if (getAppUser.length > 0) {
-          console.log(SelectedAppUser.roleName.toUpperCase(), SelectedAppUser,usernameCheckInputAPPUSER.toUpperCase())
-          
-          if(getAppUser[0].EnterWithPassword){
-           
-            
-             
-              setSelectedAppUser(getAppUser[0]);
-              window.electron.store.set('SelectedAppUserId', getAppUser[0].id);
-             
-           
-              await appUsersManagement();
-              setShowAppUserSignInPanel(false);
-              showAlert('AppUser login successful.', 'success');
+          console.log(
+            SelectedAppUser.roleName.toUpperCase(),
+            SelectedAppUser,
+            usernameCheckInputAPPUSER.toUpperCase()
+          );
+
+          if (getAppUser[0].EnterWithPassword) {
+            setSelectedAppUser(getAppUser[0]);
+            storageManager.set('SelectedAppUserId', getAppUser[0].id);
+
+            await appUsersManagement();
+            setShowAppUserSignInPanel(false);
+            showAlert('AppUser login successful.', 'success');
           } else {
-            setPasswordErrorAPPUSER('This AppUser is not allowed to enter with password. Please contact Administrator.');
-            showAlert('This AppUser is not allowed to enter with password. Please contact Administrator.', 'error');
+            setPasswordErrorAPPUSER(
+              'This AppUser is not allowed to enter with password. Please contact Administrator.'
+            );
+            showAlert(
+              'This AppUser is not allowed to enter with password. Please contact Administrator.',
+              'error'
+            );
           }
-       
         } else {
           setPasswordErrorAPPUSER('Invalid Username or password');
           showAlert('Invalid Username or password', 'error');
         }
       }
-        
-
-    
     } finally {
       setIsCheckingPasswordAPPUSER(false);
     }
@@ -1826,9 +1837,8 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                               >
                                 Refresh
                               </button>
-                              {window.electron.store.get(
-                                'SelectedAppUserId'
-                              ) === '' ? (
+                              {storageManager.get('SelectedAppUserId') ===
+                              '' ? (
                                 <></>
                               ) : (
                                 <button
@@ -1881,9 +1891,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                             roleName: 'admin',
                                             privileges: '',
                                             userId:
-                                              window.electron.store.get(
-                                                'users'
-                                              )[0].id,
+                                              storageManager.get('users')[0].id,
                                             addedDate: Date.now(),
                                             AllowedBranches: 'ALL',
                                           })
@@ -2473,17 +2481,14 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                               {' '}
                               <h1 style={{ margin: 0 }}>Branch Management</h1>
                               <p style={{ margin: 0 }}>
-                                {window.electron.store.get(
-                                  'SelectedAppUserId'
-                                ) === 'admin' ? (
+                                {storageManager.get('SelectedAppUserId') ===
+                                'admin' ? (
                                   <>Admin</>
                                 ) : (
                                   appUsers.find(
                                     (appUser) =>
                                       appUser.id ===
-                                      window.electron.store.get(
-                                        'SelectedAppUserId'
-                                      )
+                                      storageManager.get('SelectedAppUserId')
                                   )?.roleName
                                 )}{' '}
                                 -{' '}
@@ -2495,9 +2500,8 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                               </p>
                             </div>
                             <p style={{ width: '40%' }}>
-                              {window.electron.store.get(
-                                'SelectedAppUserId'
-                              ) !== 'admin' && (
+                              {storageManager.get('SelectedAppUserId') !==
+                                'admin' && (
                                 <>
                                   You are only able to view the branches
                                   selected for your user account. If this is
@@ -2507,16 +2511,13 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                               )}
                             </p>{' '}
                             <div>
-                              {(window.electron.store.get(
-                                'SelectedAppUserId'
-                              ) === 'admin' ||
+                              {(storageManager.get('SelectedAppUserId') ===
+                                'admin' ||
                                 appUsers
                                   .find(
                                     (appUser) =>
                                       appUser.id ===
-                                      window.electron.store.get(
-                                        'SelectedAppUserId'
-                                      )
+                                      storageManager.get('SelectedAppUserId')
                                   )
                                   ?.privileges.includes('add a branch')) && (
                                 <>
@@ -2532,17 +2533,14 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                               >
                                 Refresh
                               </button>
-                              {window.electron.store.get(
-                                'SelectedAppUserId'
-                              ) === 'admin' ||
+                              {storageManager.get('SelectedAppUserId') ===
+                                'admin' ||
                               appUsers
                                 .find(
                                   (appUser) =>
                                     appUser.id === 'admin' ||
                                     appUser.id ===
-                                      window.electron.store.get(
-                                        'SelectedAppUserId'
-                                      )
+                                      storageManager.get('SelectedAppUserId')
                                 )
                                 ?.privileges.includes('add a branch') ? (
                                 <button
@@ -2556,12 +2554,8 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                 <></>
                               )}
                               {Branches.length > 0 &&
-                                window.electron.store.get(
-                                  'SelectedBranchId'
-                                ) !== '' &&
-                                window.electron.store.get(
-                                  'SelectedBranchId'
-                                ) && (
+                                storageManager.get('SelectedBranchId') !== '' &&
+                                storageManager.get('SelectedBranchId') && (
                                   <button
                                     onClick={() =>
                                       setViewBranchManagementPage(false)
@@ -2603,16 +2597,13 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                             >
                               {Branches.filter(
                                 (branch: any) =>
-                                  window.electron.store.get(
-                                    'SelectedAppUserId'
-                                  ) === 'admin' ||
+                                  storageManager.get('SelectedAppUserId') ===
+                                    'admin' ||
                                   appUsers
                                     .find(
                                       (appUser) =>
                                         appUser.id ===
-                                        window.electron.store.get(
-                                          'SelectedAppUserId'
-                                        )
+                                        storageManager.get('SelectedAppUserId')
                                     )
                                     ?.AllowedBranches.includes(branch.id)
                               ).length === 0 ? (
@@ -2623,14 +2614,13 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                               ) : (
                                 Branches.filter(
                                   (branch: any) =>
-                                    window.electron.store.get(
-                                      'SelectedAppUserId'
-                                    ) === 'admin' ||
+                                    storageManager.get('SelectedAppUserId') ===
+                                      'admin' ||
                                     appUsers
                                       .find(
                                         (appUser) =>
                                           appUser.id ===
-                                          window.electron.store.get(
+                                          storageManager.get(
                                             'SelectedAppUserId'
                                           )
                                       )
@@ -2789,14 +2779,14 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                           </div>
 
                                           {/* Financial Section */}
-                                          {window.electron.store.get(
+                                          {storageManager.get(
                                             'SelectedAppUserId'
                                           ) === 'admin' ||
                                           appUsers
                                             .find(
                                               (appUser) =>
                                                 appUser.id ===
-                                                window.electron.store.get(
+                                                storageManager.get(
                                                   'SelectedAppUserId'
                                                 )
                                             )
@@ -3422,7 +3412,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                 backgroundColor: 'var(--Background-Color)',
                 padding: 'var(--20px-V)',
                 borderRadius: 'var(--10px-V)',
-                transition: 'transform 0.2s ease 0s'
+                transition: 'transform 0.2s ease 0s',
               }}
             >
               <h1 style={{ marginBottom: 'var(--0px-V)' }}>Switch App User</h1>
@@ -3433,7 +3423,6 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                   gap: 'var(--20px-V)',
                 }}
               >
-                
                 <button
                   style={{
                     border:
@@ -3443,7 +3432,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                   }}
                   onClick={() => setSelectedToLoginWith('Admin')}
                 >
-                Admin
+                  Admin
                 </button>
                 <button
                   style={{
@@ -3454,7 +3443,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                   }}
                   onClick={() => setSelectedToLoginWith('App User')}
                 >
-               App user
+                  App user
                 </button>
               </div>
               {SelectedToLoginWith !== 'Admin' && (
@@ -3469,12 +3458,17 @@ const AccountManager = (React.FC<MyComponentProps> = ({
               )}
               <input
                 type="password"
-                placeholder={SelectedToLoginWith === "Admin" ? "Enter Admin Password" : "Password"}
+                placeholder={
+                  SelectedToLoginWith === 'Admin'
+                    ? 'Enter Admin Password'
+                    : 'Password'
+                }
                 value={PasswordCheckInputAPPUSER}
                 onChange={(e) => setPasswordCheckInputAPPUSER(e.target.value)}
                 className="userName-input"
                 style={{ marginBottom: 'var(--20px-V)' }}
-              />  {passwordErrorAPPUSER && (
+              />{' '}
+              {passwordErrorAPPUSER && (
                 <p
                   style={{
                     color: 'red',
@@ -3484,11 +3478,40 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                   {passwordErrorAPPUSER}
                 </p>
               )}
-              <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-around', width: '100%' }}>
-                <button style={{ width:"var(--150px-V)", marginRight: 'var(--10px-V)' }} onClick={() => setShowAppUserSignInPanel(false)}>Cancel</button>
-                <button style={{ width: 'var(--150px-V)',
-display: 'flex',
-justifyContent: 'center' }} onClick={handleSwitchUserFromBranchManagement}>Sign in {isCheckingPasswordAPPUSER && <img src={loadingGif} alt="Loading..." style={{ width: '20px', height: '20px' }} />}</button>
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'row',
+                  justifyContent: 'space-around',
+                  width: '100%',
+                }}
+              >
+                <button
+                  style={{
+                    width: 'var(--150px-V)',
+                    marginRight: 'var(--10px-V)',
+                  }}
+                  onClick={() => setShowAppUserSignInPanel(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  style={{
+                    width: 'var(--150px-V)',
+                    display: 'flex',
+                    justifyContent: 'center',
+                  }}
+                  onClick={handleSwitchUserFromBranchManagement}
+                >
+                  Sign in{' '}
+                  {isCheckingPasswordAPPUSER && (
+                    <img
+                      src={loadingGif}
+                      alt="Loading..."
+                      style={{ width: '20px', height: '20px' }}
+                    />
+                  )}
+                </button>
               </div>
             </div>
           </div>

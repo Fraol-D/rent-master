@@ -51,7 +51,8 @@ const ToolsPage = ({
   setChangeMade,
   SelectedUserId,
   SelectedAppUser,
-  SelectedBranchId,signOutUserAndRestart
+  SelectedBranchId,
+  signOutUserAndRestart,
 }: any) => {
   const [emailTemplates, setEmailTemplates] = useState<EmailTemplate[]>([]);
   const [smsTemplates, setSMSTemplates] = useState<SMSTemplate[]>([]);
@@ -454,7 +455,7 @@ const ToolsPage = ({
         if (template) {
           const subject = replaceVariables(template.subject);
           const body = replaceVariables(template.body);
-          const userDATA = await window.electron.store.get('users');
+          const userDATA = await storageManager.get('users');
           const userEmail = userDATA[0].email;
           const userPass = userDATA[0].password;
           console.log(userEmail, userPass);
@@ -498,7 +499,7 @@ const ToolsPage = ({
     const template = smsTemplates.find((t) => t.id === tryOutMode);
     if (template) {
       const body = replaceVariables(template.body);
-      const userDATA = await window.electron.store.get('users');
+      const userDATA = await storageManager.get('users');
 
       if (navigator.onLine) {
         if (recipientEmail.length === 10 && recipientEmail.startsWith('0')) {
@@ -574,7 +575,7 @@ const ToolsPage = ({
           await deleteValue('email_templates', template.id, setChangeMade);
         }
         // Get default templates and insert them
-        const userId = window.electron.store.get('SelectedUserId');
+        const userId = storageManager.get('SelectedUserId');
         const defaultTemplates = getEmailTemplates(userId);
 
         for (const template of defaultTemplates) {
@@ -605,7 +606,7 @@ const ToolsPage = ({
           await deleteValue('sms_templates', template.id, setChangeMade);
         }
         // Get default templates and insert them
-        const userId = window.electron.store.get('SelectedUserId');
+        const userId = storageManager.get('SelectedUserId');
         const defaultTemplates = getSmsTemplates(userId);
 
         for (const template of defaultTemplates) {
@@ -1327,9 +1328,7 @@ const ToolsPage = ({
 
         // Get tax percentage
         const taxPercentage = user[0].taxPercentage;
-        setTaxPercentage(
-          taxPercentage || window.electron.store.get('taxPercentage')
-        );
+        setTaxPercentage(taxPercentage || storageManager.get('taxPercentage'));
 
         // Get email settings
         const {
@@ -1365,7 +1364,7 @@ const ToolsPage = ({
       } catch (error) {
         console.error('Failed to fetch user settings:', error);
         // Fallback to stored tax percentage if online fetch fails
-        setTaxPercentage(window.electron.store.get('taxPercentage'));
+        setTaxPercentage(storageManager.get('taxPercentage'));
       } finally {
         setLoading(false);
       }
@@ -1523,8 +1522,8 @@ const ToolsPage = ({
       );
       if (exchangeRates2.length > 0) {
         const latestRate = exchangeRates2;
-        window.electron.store.set('exchangeRate', latestRate);
-        window.electron.store.set(
+        storageManager.set('exchangeRate', latestRate);
+        storageManager.set(
           'lastExchangeRateUpdate',
           latestRate[latestRate.length - 1].id * 1000
         );
@@ -1562,7 +1561,7 @@ const ToolsPage = ({
         }
       } else {
         // Get from local store if offline
-        const localRates = window.electron.store.get('exchangeRate');
+        const localRates = storageManager.get('exchangeRate');
         if (localRates && localRates.length > 0) {
           const targetDate = new Date(GetExchangeRateDate).getTime();
           // Find closest rate that's not after target date
@@ -1623,7 +1622,7 @@ const ToolsPage = ({
   const handleSaveEmailSettings = async () => {
     if (navigator.onLine) {
       try {
-        const userId = await window.electron.store.get('users')[0].id;
+        const userId = await storageManager.get('users')[0].id;
         if (!userId) {
           showAlert('ISSUES user data');
           return;
@@ -1703,7 +1702,7 @@ const ToolsPage = ({
     const review = reviewForm;
     const subject = 'Review';
     const body = review;
-    const userDATA = await window.electron.store.get('users');
+    const userDATA = await storageManager.get('users');
     const userEmail = userDATA[0].email;
     const userPass = userDATA[0].password;
     window.electron.ipcRenderer.send('SendCustomEmail', {
@@ -1726,7 +1725,7 @@ const ToolsPage = ({
     const feature = featureSuggestion;
     const subject = 'Feature Suggestion';
     const body = feature;
-    const userDATA = await window.electron.store.get('users');
+    const userDATA = await storageManager.get('users');
     const userEmail = userDATA[0].email;
     const userPass = userDATA[0].password;
     await window.electron.ipcRenderer.send('SendCustomEmail', {
@@ -1755,7 +1754,7 @@ const ToolsPage = ({
   const [isApplyingTaxPercentage, setIsApplyingTaxPercentage] = useState(false);
   const changeTaxPercentage = async (value: number) => {
     try {
-      window.electron.store.set('taxPercentage', value);
+      storageManager.set('taxPercentage', value);
       await updateValueOnline('users', SelectedUserId, 'taxPercentage', value);
     } catch (error) {
       console.error('Failed to change tax percentage:', error);
@@ -1768,7 +1767,7 @@ const ToolsPage = ({
     setIsApplyingTaxPercentage(false);
   };
   const CancelTaxPercentage = async () => {
-    setTaxPercentage(window.electron.store.get('taxPercentage'));
+    setTaxPercentage(storageManager.get('taxPercentage'));
     setHasChangedTaxPercentage(false);
   };
   return (
@@ -1960,8 +1959,8 @@ const ToolsPage = ({
                     gap: 'var(--10px-V)',
                   }}
                 >
-                  {window.electron.store.get('users')[0].email} -{' '}
-                  {window.electron.store.get('users')[0].companyName}
+                  {storageManager.get('users')[0].email} -{' '}
+                  {storageManager.get('users')[0].companyName}
                   <button onClick={handleSignOut}>Sign Out</button>{' '}
                 </div>
               </div>
@@ -2033,10 +2032,7 @@ const ToolsPage = ({
                     </label>
                     <select
                       onChange={(e) => {
-                        window.electron.store.set(
-                          'defaultCurrency',
-                          e.target.value
-                        );
+                        storageManager.set('defaultCurrency', e.target.value);
                         setRefresh(refresh + 1);
                       }}
                       value={GetDefaultCurrency()}
@@ -2060,11 +2056,9 @@ const ToolsPage = ({
                         </button>
                         <p style={{ fontSize: 'var(--13px-V)' }}>
                           Last Updated:{' '}
-                          {window.electron.store.get('lastExchangeRateUpdate')
+                          {storageManager.get('lastExchangeRateUpdate')
                             ? new Date(
-                                window.electron.store.get(
-                                  'lastExchangeRateUpdate'
-                                )
+                                storageManager.get('lastExchangeRateUpdate')
                               ).toDateString()
                             : 'Not updated yet'}
                           <br />
@@ -2072,16 +2066,14 @@ const ToolsPage = ({
                           {GetDefaultCurrency() === 'USD'
                             ? (
                                 1 /
-                                window.electron.store.get('exchangeRate')[
-                                  window.electron.store.get('exchangeRate')
-                                    .length - 1
+                                storageManager.get('exchangeRate')[
+                                  storageManager.get('exchangeRate').length - 1
                                 ].rates
                               ).toFixed(5)
                             : window.electron.store
                                 .get('exchangeRate')
                                 [
-                                  window.electron.store.get('exchangeRate')
-                                    .length - 1
+                                  storageManager.get('exchangeRate').length - 1
                                 ].rates.toFixed(5)}
                           {CurrencySign(GetDefaultCurrency())}
                         </p>
@@ -2302,14 +2294,14 @@ const ToolsPage = ({
                     type="checkbox"
                     name=""
                     id=""
-                    checked={window.electron.store.get('abbreiviateBigNumbers')}
+                    checked={storageManager.get('abbreiviateBigNumbers')}
                     onChange={(e) => {
-                      window.electron.store.set(
+                      storageManager.set(
                         'abbreiviateBigNumbers',
                         e.target.checked
                       );
                       if (e.target.checked) {
-                        window.electron.store.set('abbreviationDecimals', 2);
+                        storageManager.set('abbreviationDecimals', 2);
                       }
                       setRefresh(refresh + 1);
                     }}
@@ -2321,9 +2313,9 @@ const ToolsPage = ({
                     min="0"
                     max="4"
                     style={{ width: 'var(--60px-V)' }}
-                    value={window.electron.store.get('abbreviationDecimals')}
+                    value={storageManager.get('abbreviationDecimals')}
                     onChange={(e) => {
-                      window.electron.store.set(
+                      storageManager.set(
                         'abbreviationDecimals',
                         parseInt(e.target.value)
                       );

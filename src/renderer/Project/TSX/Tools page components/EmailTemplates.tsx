@@ -100,7 +100,7 @@ const EmailTemplates: React.FC<EmailTemplatesProps> = ({
       if (navigator.onLine) {
         try {
           setLoading(true);
-          const userId = await window.electron.store.get('users')[0].id;
+          const userId = await storageManager.get('users')[0].id;
 
           // Assuming there's an API call to get the values
           console.log('fetching email settings', userId);
@@ -167,7 +167,7 @@ const EmailTemplates: React.FC<EmailTemplatesProps> = ({
   const handleSaveEmailSettings = async () => {
     if (navigator.onLine) {
       try {
-        const userId = await window.electron.store.get('users')[0].id;
+        const userId = await storageManager.get('users')[0].id;
         if (!userId) {
           showAlert('ISSUES user data');
           return;
@@ -237,7 +237,7 @@ const EmailTemplates: React.FC<EmailTemplatesProps> = ({
     setLandlordTelephone(originalValues.landlordTelephone);
     setHasChanges(false);
   };
-  const {showAlert} = useAlert()
+  const { showAlert } = useAlert();
   return (
     <div className="tools-page">
       <div
@@ -262,217 +262,227 @@ const EmailTemplates: React.FC<EmailTemplatesProps> = ({
         </button>
         <button onClick={handleAddEmailTemplate}>Add an email template</button>
       </div>
-      {emailTemplates.sort((a, b) => a.name.localeCompare(b.name)).map((template) => (
-        <div
-          key={template.id}
-          className="email-template-container"
-          style={{
-            minHeight: openTemplateId === template.id ? 'var(--181px-V)' : '',
-          }}
-        >
+      {emailTemplates
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .map((template) => (
           <div
-            className="email-template-header"
+            key={template.id}
+            className="email-template-container"
             style={{
-              padding:
-                editingTemplateId === template.id
-                  ? 'var(--10px-V)'
-                  : 'var(--15px-V)',
+              minHeight: openTemplateId === template.id ? 'var(--181px-V)' : '',
             }}
           >
-            {editingTemplateId === template.id ? (
-              <input
-                value={editedTemplate?.name || ''}
-                style={{ width: '50%' }}
-                onChange={(e) => handleEditChange('name', e.target.value)}
-              />
-            ) : (
-              <h3>{template.name}</h3>
-            )}
-            <div className="email-template-buttons">
-              <button onClick={() => toggleTemplate(template.id)}>
-                {openTemplateId === template.id ? 'Close' : 'Open'}
-              </button>
+            <div
+              className="email-template-header"
+              style={{
+                padding:
+                  editingTemplateId === template.id
+                    ? 'var(--10px-V)'
+                    : 'var(--15px-V)',
+              }}
+            >
               {editingTemplateId === template.id ? (
-                <>
-                  <button onClick={saveChanges}>Save</button>
-                  <button onClick={cancelEditing}>Cancel</button>
-                  <button onClick={() => deleteEmailTemplate(template.id)}>
-                    Delete
-                  </button>
-                </>
+                <input
+                  value={editedTemplate?.name || ''}
+                  style={{ width: '50%' }}
+                  onChange={(e) => handleEditChange('name', e.target.value)}
+                />
               ) : (
-                <button onClick={() => startEditing(template)}>Edit</button>
+                <h3>{template.name}</h3>
               )}
-            </div>
-          </div>
-          {openTemplateId === template.id && (
-            <div className="email-template-content">
-              <div className="email-template-body">
-                <h4
-                  style={{
-                    margin:
-                      editingTemplateId === template.id ? 'var(--0px-V),' : '',
-                    marginTop:
-                      editingTemplateId === template.id ? 'var(--12px-V)' : '',
-                    marginBottom:
-                      editingTemplateId === template.id ? 'var(--14px-V)' : '',
-                    width: editingTemplateId === template.id ? '100%' : '',
-                    fontSize: 'var(--20px-V)',
-                  }}
-                >
-                  {editingTemplateId === template.id ? (
-                    <>
-                      Subject:
-                      <input
-                        ref={subjectInputRef}
-                        value={(editedTemplate as EmailTemplate)?.subject || ''}
-                        onChange={(e) =>
-                          handleEditChange('subject', e.target.value)
-                        }
-                        onFocus={() => setSelectedInput('subject')}
-                      />
-                    </>
-                  ) : (
-                    <p>Subject:{formatEmailBody(template.subject)}</p>
-                  )}
-                </h4>
+              <div className="email-template-buttons">
+                <button onClick={() => toggleTemplate(template.id)}>
+                  {openTemplateId === template.id ? 'Close' : 'Open'}
+                </button>
                 {editingTemplateId === template.id ? (
-                  <textarea
-                    ref={bodyTextareaRef}
-                    value={editedTemplate?.body || ''}
-                    onChange={(e) => handleEditChange('body', e.target.value)}
-                    onFocus={() => setSelectedInput('body')}
-                  />
+                  <>
+                    <button onClick={saveChanges}>Save</button>
+                    <button onClick={cancelEditing}>Cancel</button>
+                    <button onClick={() => deleteEmailTemplate(template.id)}>
+                      Delete
+                    </button>
+                  </>
                 ) : (
-                  <p>{formatEmailBody(template.body)}</p>
+                  <button onClick={() => startEditing(template)}>Edit</button>
                 )}
               </div>
-              <div className="email-template-variables">
-                <h4>
-                  {editingTemplateId === template.id
-                    ? 'Variables:'
-                    : 'Variables Used:'}
-                </h4>
-                {editingTemplateId === template.id ? (
-                  <div className="variable-buttons">
-                    {variables.map((variable) => (
-                      <button
-                        key={variable}
-                        onClick={() => insertVariable(variable)}
-                      >
-                        {variable}
+            </div>
+            {openTemplateId === template.id && (
+              <div className="email-template-content">
+                <div className="email-template-body">
+                  <h4
+                    style={{
+                      margin:
+                        editingTemplateId === template.id
+                          ? 'var(--0px-V),'
+                          : '',
+                      marginTop:
+                        editingTemplateId === template.id
+                          ? 'var(--12px-V)'
+                          : '',
+                      marginBottom:
+                        editingTemplateId === template.id
+                          ? 'var(--14px-V)'
+                          : '',
+                      width: editingTemplateId === template.id ? '100%' : '',
+                      fontSize: 'var(--20px-V)',
+                    }}
+                  >
+                    {editingTemplateId === template.id ? (
+                      <>
+                        Subject:
+                        <input
+                          ref={subjectInputRef}
+                          value={
+                            (editedTemplate as EmailTemplate)?.subject || ''
+                          }
+                          onChange={(e) =>
+                            handleEditChange('subject', e.target.value)
+                          }
+                          onFocus={() => setSelectedInput('subject')}
+                        />
+                      </>
+                    ) : (
+                      <p>Subject:{formatEmailBody(template.subject)}</p>
+                    )}
+                  </h4>
+                  {editingTemplateId === template.id ? (
+                    <textarea
+                      ref={bodyTextareaRef}
+                      value={editedTemplate?.body || ''}
+                      onChange={(e) => handleEditChange('body', e.target.value)}
+                      onFocus={() => setSelectedInput('body')}
+                    />
+                  ) : (
+                    <p>{formatEmailBody(template.body)}</p>
+                  )}
+                </div>
+                <div className="email-template-variables">
+                  <h4>
+                    {editingTemplateId === template.id
+                      ? 'Variables:'
+                      : 'Variables Used:'}
+                  </h4>
+                  {editingTemplateId === template.id ? (
+                    <div className="variable-buttons">
+                      {variables.map((variable) => (
+                        <button
+                          key={variable}
+                          onClick={() => insertVariable(variable)}
+                        >
+                          {variable}
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <div
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        height: '89%',
+                        justifyContent: 'space-between',
+                      }}
+                    >
+                      <ul>
+                        {extractVariables(template.body).map(
+                          (variable, index) => (
+                            <li key={index}>
+                              {variable.replaceAll('{', '').replaceAll('}', '')}
+                            </li>
+                          )
+                        )}
+                      </ul>
+                      <button onClick={() => handleTryOut(template.id)}>
+                        Send / Try Out
                       </button>
-                    ))}
-                  </div>
-                ) : (
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+            {tryOutMode === template.id && (
+              <>
+                <div
+                  className="try-out-container-Opacity"
+                  onClick={() => setTryOutMode(null)}
+                ></div>
+                <div className="try-out-container">
                   <div
                     style={{
                       display: 'flex',
-                      flexDirection: 'column',
-                      height: '89%',
+                      flexDirection: 'row',
                       justifyContent: 'space-between',
+                      alignItems: 'center',
                     }}
                   >
-                    <ul>
-                      {extractVariables(template.body).map(
-                        (variable, index) => (
-                          <li key={index}>
-                            {variable.replaceAll('{', '').replaceAll('}', '')}
-                          </li>
-                        )
-                      )}
-                    </ul>
-                    <button onClick={() => handleTryOut(template.id)}>
-                      Send / Try Out
+                    <h2>Send / Try Out</h2>
+                    <button onClick={() => setTryOutMode(null)}>
+                      Close Try Out
                     </button>
                   </div>
-                )}
-              </div>
-            </div>
-          )}
-          {tryOutMode === template.id && (
-            <>
-              <div
-                className="try-out-container-Opacity"
-                onClick={() => setTryOutMode(null)}
-              ></div>
-              <div className="try-out-container">
-                <div
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'row',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                  }}
-                >
-                  <h2>Send / Try Out</h2>
-                  <button onClick={() => setTryOutMode(null)}>
-                    Close Try Out
-                  </button>
-                </div>
-                <div className="try-out-preview">
-                  <h3>
-                    Subject:{' '}
-                    {formatEmailBody(replaceVariables(template.subject))}
-                  </h3>
-                  <p>{formatEmailBody(replaceVariables(template.body))}</p>
-                </div>
-                <hr />
-                <h3>Fill in to see email preview above </h3>
-                <div className="try-out-inputs">
-                  {Object.keys(variableValues).map((variable) => (
-                    <div key={variable} className="variable-input">
-                      <label>{variable}:</label>
-                      <input
-                        type="text"
-                        value={variableValues[variable]}
-                        className="try-out-container-input"
-                        onChange={(e) =>
-                          handleVariableValueChange(variable, e.target.value)
-                        }
-                      />
-                    </div>
-                  ))}
-                </div>
-                <hr />
-                <h3>Send Email</h3>
-                <p>
-                  You will now send the above email to the email address
-                  specified below
-                </p>
-                <input
-                  type="text"
-                  placeholder="Enter Email"
-                  value={recipientEmail}
-                  onChange={(e) => setRecipientEmail(e.target.value)}
-                />
-                <button
-                  onClick={handleSendEmail}
-                  disabled={isSending}
-                  style={{ opacity: isSending ? 0.7 : 1 }}
-                >
-                  {isSending ? 'Sending...' : 'Send'}
-                </button>
-                {isSending && (
-                  <img
-                    src={loadingGif}
-                    alt="Sending..."
-                    style={{
-                      width: 'var(--30px-V)',
-                      height: 'var(--30px-V)',
-                    }}
+                  <div className="try-out-preview">
+                    <h3>
+                      Subject:{' '}
+                      {formatEmailBody(replaceVariables(template.subject))}
+                    </h3>
+                    <p>{formatEmailBody(replaceVariables(template.body))}</p>
+                  </div>
+                  <hr />
+                  <h3>Fill in to see email preview above </h3>
+                  <div className="try-out-inputs">
+                    {Object.keys(variableValues).map((variable) => (
+                      <div key={variable} className="variable-input">
+                        <label>{variable}:</label>
+                        <input
+                          type="text"
+                          value={variableValues[variable]}
+                          className="try-out-container-input"
+                          onChange={(e) =>
+                            handleVariableValueChange(variable, e.target.value)
+                          }
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  <hr />
+                  <h3>Send Email</h3>
+                  <p>
+                    You will now send the above email to the email address
+                    specified below
+                  </p>
+                  <input
+                    type="text"
+                    placeholder="Enter Email"
+                    value={recipientEmail}
+                    onChange={(e) => setRecipientEmail(e.target.value)}
                   />
-                )}
-                {!isSending && emailSentSuccessstring && (
-                  <span style={{ color: 'var(--Success-Color)' }}>
-                    {emailSentSuccessstring}
-                  </span>
-                )}
-              </div>
-            </>
-          )}
-        </div>
-      ))}
+                  <button
+                    onClick={handleSendEmail}
+                    disabled={isSending}
+                    style={{ opacity: isSending ? 0.7 : 1 }}
+                  >
+                    {isSending ? 'Sending...' : 'Send'}
+                  </button>
+                  {isSending && (
+                    <img
+                      src={loadingGif}
+                      alt="Sending..."
+                      style={{
+                        width: 'var(--30px-V)',
+                        height: 'var(--30px-V)',
+                      }}
+                    />
+                  )}
+                  {!isSending && emailSentSuccessstring && (
+                    <span style={{ color: 'var(--Success-Color)' }}>
+                      {emailSentSuccessstring}
+                    </span>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+        ))}
       <p
         style={{
           fontFamily: 'Arial, sans-serif',

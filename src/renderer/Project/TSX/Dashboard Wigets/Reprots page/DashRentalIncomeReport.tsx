@@ -4,7 +4,6 @@ import '../../../CSS/Reports.css';
 import CurrencySign, {
   formatNumberWithSuffix,
   getRateByDate,
-  
   convertCurrency,
 } from '../../Helpers/CurrencySign';
 import {
@@ -32,7 +31,7 @@ const DashRentalIncomeReport = ({
     'ETB_ONLY' | 'USD_ONLY' | 'ALL_ETB' | 'ALL_USD'
   >('ALL_ETB');
   const getCurrentExchangeRate = () => {
-    const storedRates = window.electron.store.get('exchangeRate');
+    const storedRates = storageManager.get('exchangeRate');
     if (!storedRates || storedRates.length === 0) return null;
     return storedRates[storedRates.length - 1].rates;
   };
@@ -87,21 +86,23 @@ const DashRentalIncomeReport = ({
 
   // Add currency processing function
   const processAmount = (amount: number, roomId: string, date: number) => {
-    const room = RoomList.find(r => r.id === roomId);
+    const room = RoomList.find((r) => r.id === roomId);
     const originalCurrency = room?.Currency || 'ETB';
-    
-    if (currencyDisplay === 'ETB_ONLY' && originalCurrency === 'ETB') return amount;
-    if (currencyDisplay === 'USD_ONLY' && originalCurrency === 'USD') return amount;
-    
+
+    if (currencyDisplay === 'ETB_ONLY' && originalCurrency === 'ETB')
+      return amount;
+    if (currencyDisplay === 'USD_ONLY' && originalCurrency === 'USD')
+      return amount;
+
     const { rate } = getRateByDate(date);
-    
+
     if (currencyDisplay.includes('ETB') && originalCurrency === 'USD') {
       return amount * (rate || getCurrentExchangeRate());
     }
     if (currencyDisplay.includes('USD') && originalCurrency === 'ETB') {
       return amount / (rate || getCurrentExchangeRate());
     }
-    
+
     return amount;
   };
 
@@ -131,8 +132,10 @@ const DashRentalIncomeReport = ({
       );
 
       // Calculate total expected income including both paid and not paid
-      const totalExpectedIncome = periodPayments
-        .reduce((sum, p) => sum + processAmount(p.Value, p.roomId, p.Day), 0);
+      const totalExpectedIncome = periodPayments.reduce(
+        (sum, p) => sum + processAmount(p.Value, p.roomId, p.Day),
+        0
+      );
 
       return {
         madeIncome: periodPayments
@@ -146,7 +149,13 @@ const DashRentalIncomeReport = ({
     });
 
     return data;
-  }, [predictedPayments, tableHeaders, viewType, selectedDate, currencyDisplay]);
+  }, [
+    predictedPayments,
+    tableHeaders,
+    viewType,
+    selectedDate,
+    currencyDisplay,
+  ]);
 
   return (
     <div className="report-container">
@@ -176,7 +185,8 @@ const DashRentalIncomeReport = ({
               <option value="ALL_USD">Show All in Dollar</option>
             </select>
             <span className="exchange-rate-info">
-              Current Rate: 1 USD = {getCurrentExchangeRate()?.toFixed(2) || 'N/A'} ETB
+              Current Rate: 1 USD ={' '}
+              {getCurrentExchangeRate()?.toFixed(2) || 'N/A'} ETB
             </span>
           </div>
 
@@ -212,74 +222,160 @@ const DashRentalIncomeReport = ({
           <thead>
             <tr>
               <th>Period</th>
-              <th>Collected <br />Income</th>
-              <th>Expected <br />Income</th>
-              <th>Remaining <br />Income</th>
-             
+              <th>
+                Collected <br />
+                Income
+              </th>
+              <th>
+                Expected <br />
+                Income
+              </th>
+              <th>
+                Remaining <br />
+                Income
+              </th>
             </tr>
           </thead>
           <tbody>
             {tableHeaders.map((header, index) => (
               <tr key={header}>
                 <td>{header}</td>
-                <td title={incomeData[index].madeIncome.toLocaleString() + CurrencySign(currencyDisplay.includes('ETB') ? 'ETB' : 'USD')}>
+                <td
+                  title={
+                    incomeData[index].madeIncome.toLocaleString() +
+                    CurrencySign(
+                      currencyDisplay.includes('ETB') ? 'ETB' : 'USD'
+                    )
+                  }
+                >
                   {formatNumberWithSuffix(incomeData[index].madeIncome)}
-                  {CurrencySign(currencyDisplay.includes('ETB') ? 'ETB' : 'USD')}
+                  {CurrencySign(
+                    currencyDisplay.includes('ETB') ? 'ETB' : 'USD'
+                  )}
                 </td>
-                <td title={incomeData[index].expectedIncome.toLocaleString() + CurrencySign(currencyDisplay.includes('ETB') ? 'ETB' : 'USD')}>
+                <td
+                  title={
+                    incomeData[index].expectedIncome.toLocaleString() +
+                    CurrencySign(
+                      currencyDisplay.includes('ETB') ? 'ETB' : 'USD'
+                    )
+                  }
+                >
                   {formatNumberWithSuffix(incomeData[index].expectedIncome)}
-                  {CurrencySign(currencyDisplay.includes('ETB') ? 'ETB' : 'USD')}
+                  {CurrencySign(
+                    currencyDisplay.includes('ETB') ? 'ETB' : 'USD'
+                  )}
                 </td>
-                <td title={incomeData[index].remainingIncome.toLocaleString() + CurrencySign(currencyDisplay.includes('ETB') ? 'ETB' : 'USD')}>
+                <td
+                  title={
+                    incomeData[index].remainingIncome.toLocaleString() +
+                    CurrencySign(
+                      currencyDisplay.includes('ETB') ? 'ETB' : 'USD'
+                    )
+                  }
+                >
                   {formatNumberWithSuffix(incomeData[index].remainingIncome)}
-                  {CurrencySign(currencyDisplay.includes('ETB') ? 'ETB' : 'USD')}
+                  {CurrencySign(
+                    currencyDisplay.includes('ETB') ? 'ETB' : 'USD'
+                  )}
                 </td>
-              
               </tr>
             ))}
-            <tr style={{borderTop:"var(--5px-V) solid var(--Text-Color-Grey)"}}>
+            <tr
+              style={{ borderTop: 'var(--5px-V) solid var(--Text-Color-Grey)' }}
+            >
               <td>Total</td>
-              <td title={incomeData.reduce((sum, data) => sum + data.madeIncome, 0).toLocaleString() + CurrencySign(currencyDisplay.includes('ETB') ? 'ETB' : 'USD')}>
+              <td
+                title={
+                  incomeData
+                    .reduce((sum, data) => sum + data.madeIncome, 0)
+                    .toLocaleString() +
+                  CurrencySign(currencyDisplay.includes('ETB') ? 'ETB' : 'USD')
+                }
+              >
                 {formatNumberWithSuffix(
                   incomeData.reduce((sum, data) => sum + data.madeIncome, 0)
                 )}
                 {CurrencySign(currencyDisplay.includes('ETB') ? 'ETB' : 'USD')}
               </td>
-              <td title={incomeData.reduce((sum, data) => sum + data.expectedIncome, 0).toLocaleString() + CurrencySign(currencyDisplay.includes('ETB') ? 'ETB' : 'USD')}>
+              <td
+                title={
+                  incomeData
+                    .reduce((sum, data) => sum + data.expectedIncome, 0)
+                    .toLocaleString() +
+                  CurrencySign(currencyDisplay.includes('ETB') ? 'ETB' : 'USD')
+                }
+              >
                 {formatNumberWithSuffix(
                   incomeData.reduce((sum, data) => sum + data.expectedIncome, 0)
                 )}
                 {CurrencySign(currencyDisplay.includes('ETB') ? 'ETB' : 'USD')}
               </td>
-              <td title={incomeData.reduce((sum, data) => sum + data.remainingIncome, 0).toLocaleString() + CurrencySign(currencyDisplay.includes('ETB') ? 'ETB' : 'USD')}>
+              <td
+                title={
+                  incomeData
+                    .reduce((sum, data) => sum + data.remainingIncome, 0)
+                    .toLocaleString() +
+                  CurrencySign(currencyDisplay.includes('ETB') ? 'ETB' : 'USD')
+                }
+              >
                 {formatNumberWithSuffix(
-                  incomeData.reduce((sum, data) => sum + data.remainingIncome, 0)
+                  incomeData.reduce(
+                    (sum, data) => sum + data.remainingIncome,
+                    0
+                  )
                 )}
                 {CurrencySign(currencyDisplay.includes('ETB') ? 'ETB' : 'USD')}
               </td>
-             
             </tr>
             <tr>
               <td>Average</td>
-              <td title={incomeData.reduce((sum, data) => sum + data.madeIncome, 0).toLocaleString()+ CurrencySign(currencyDisplay.includes('ETB') ? 'ETB' : 'USD')}>
+              <td
+                title={
+                  incomeData
+                    .reduce((sum, data) => sum + data.madeIncome, 0)
+                    .toLocaleString() +
+                  CurrencySign(currencyDisplay.includes('ETB') ? 'ETB' : 'USD')
+                }
+              >
                 {formatNumberWithSuffix(
-                  incomeData.reduce((sum, data) => sum + data.madeIncome, 0) / incomeData.length
+                  incomeData.reduce((sum, data) => sum + data.madeIncome, 0) /
+                    incomeData.length
                 )}
                 {CurrencySign(currencyDisplay.includes('ETB') ? 'ETB' : 'USD')}
               </td>
-              <td title={incomeData.reduce((sum, data) => sum + data.expectedIncome, 0).toLocaleString()+ CurrencySign(currencyDisplay.includes('ETB') ? 'ETB' : 'USD')}>
+              <td
+                title={
+                  incomeData
+                    .reduce((sum, data) => sum + data.expectedIncome, 0)
+                    .toLocaleString() +
+                  CurrencySign(currencyDisplay.includes('ETB') ? 'ETB' : 'USD')
+                }
+              >
                 {formatNumberWithSuffix(
-                  incomeData.reduce((sum, data) => sum + data.expectedIncome, 0) / incomeData.length
+                  incomeData.reduce(
+                    (sum, data) => sum + data.expectedIncome,
+                    0
+                  ) / incomeData.length
                 )}
                 {CurrencySign(currencyDisplay.includes('ETB') ? 'ETB' : 'USD')}
               </td>
-              <td title={incomeData.reduce((sum, data) => sum + data.remainingIncome, 0).toLocaleString()+ CurrencySign(currencyDisplay.includes('ETB') ? 'ETB' : 'USD')}>
+              <td
+                title={
+                  incomeData
+                    .reduce((sum, data) => sum + data.remainingIncome, 0)
+                    .toLocaleString() +
+                  CurrencySign(currencyDisplay.includes('ETB') ? 'ETB' : 'USD')
+                }
+              >
                 {formatNumberWithSuffix(
-                  incomeData.reduce((sum, data) => sum + data.remainingIncome, 0) / incomeData.length
+                  incomeData.reduce(
+                    (sum, data) => sum + data.remainingIncome,
+                    0
+                  ) / incomeData.length
                 )}
                 {CurrencySign(currencyDisplay.includes('ETB') ? 'ETB' : 'USD')}
               </td>
-             
             </tr>
           </tbody>
         </table>

@@ -15,18 +15,19 @@ interface NotificationSettings {
 
 const NotificationPanel: React.FC = ({ RoomList }: any) => {
   const [selectedFilter, setSelectedFilter] = useState<string>('');
-  const [notificationSettings, setNotificationSettings] = useState<NotificationSettings>({
-    email: {
-      paymentDates: true,
-      expenseReminders: false,
-      contractEndDates: true,
-    },
-    sms: {
-      paymentDates: false,
-      expenseReminders: false,
-      contractEndDates: false,
-    },
-  });
+  const [notificationSettings, setNotificationSettings] =
+    useState<NotificationSettings>({
+      email: {
+        paymentDates: true,
+        expenseReminders: false,
+        contractEndDates: true,
+      },
+      sms: {
+        paymentDates: false,
+        expenseReminders: false,
+        contractEndDates: false,
+      },
+    });
 
   const handleSettingChange = (
     method: 'email' | 'sms',
@@ -43,73 +44,114 @@ const NotificationPanel: React.FC = ({ RoomList }: any) => {
   };
 
   return (
-    <div className="notification-panel" style={{
-      padding: 'var(--20px-V)',
-      backgroundColor: 'var(--Background-Color)',
-      borderRadius: 'var(--8px-V)',
-    }}>
-      <h2 style={{ 
-        color: 'var(--Text-Color)',
-        marginBottom: 'var(--20px-V)',
-      }}>Notification Settings</h2>
+    <div
+      className="notification-panel"
+      style={{
+        padding: 'var(--20px-V)',
+        backgroundColor: 'var(--Background-Color)',
+        borderRadius: 'var(--8px-V)',
+      }}
+    >
+      <h2
+        style={{
+          color: 'var(--Text-Color)',
+          marginBottom: 'var(--20px-V)',
+        }}
+      >
+        Notification Settings
+      </h2>
 
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: '1fr 1fr',
-        gap: 'var(--20px-V)',
-      }}>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gap: 'var(--20px-V)',
+        }}
+      >
         {/* Email Settings */}
-        <div style={{
-          padding: 'var(--16px-V)',
-          backgroundColor: 'var(--Secondary-Color60)',
-          borderRadius: 'var(--8px-V)',
-        }}>
-          <h3 style={{ 
-            color: 'var(--Text-Color)',
-            marginBottom: 'var(--16px-V)',
-          }}>Email Notifications</h3>
-          
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--12px-V)' }}>
-            <label style={{
-              display: 'flex',
-              alignItems: 'center',
+        <div
+          style={{
+            padding: 'var(--16px-V)',
+            backgroundColor: 'var(--Secondary-Color60)',
+            borderRadius: 'var(--8px-V)',
+          }}
+        >
+          <h3
+            style={{
               color: 'var(--Text-Color)',
-              cursor: 'pointer',
-            }}>
+              marginBottom: 'var(--16px-V)',
+            }}
+          >
+            Email Notifications
+          </h3>
+
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 'var(--12px-V)',
+            }}
+          >
+            <label
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                color: 'var(--Text-Color)',
+                cursor: 'pointer',
+              }}
+            >
               <input
                 type="checkbox"
                 checked={notificationSettings.email.paymentDates}
-                onChange={(e) => handleSettingChange('email', 'paymentDates', e.target.checked)}
+                onChange={(e) =>
+                  handleSettingChange('email', 'paymentDates', e.target.checked)
+                }
                 style={{ marginRight: 'var(--8px-V)' }}
               />
               Payment Dates
             </label>
 
-            <label style={{
-              display: 'flex',
-              alignItems: 'center',
-              color: 'var(--Text-Color)',
-              cursor: 'pointer',
-            }}>
+            <label
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                color: 'var(--Text-Color)',
+                cursor: 'pointer',
+              }}
+            >
               <input
                 type="checkbox"
                 checked={notificationSettings.email.expenseReminders}
-                onChange={(e) => handleSettingChange('email', 'expenseReminders', e.target.checked)}
+                onChange={(e) =>
+                  handleSettingChange(
+                    'email',
+                    'expenseReminders',
+                    e.target.checked
+                  )
+                }
                 style={{ marginRight: 'var(--8px-V)' }}
               />
               Expense Reminders
             </label>
 
-            <label style={{
-              display: 'flex',
-              alignItems: 'center',
-              color: 'var(--Text-Color)',
-              cursor: 'pointer',
-            }}>
+            <label
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                color: 'var(--Text-Color)',
+                cursor: 'pointer',
+              }}
+            >
               <input
                 type="checkbox"
                 checked={notificationSettings.email.contractEndDates}
-                onChange={(e) => handleSettingChange('email', 'contractEndDates', e.target.checked)}
+                onChange={(e) =>
+                  handleSettingChange(
+                    'email',
+                    'contractEndDates',
+                    e.target.checked
+                  )
+                }
                 style={{ marginRight: 'var(--8px-V)' }}
               />
               Contract End Dates
@@ -118,57 +160,89 @@ const NotificationPanel: React.FC = ({ RoomList }: any) => {
         </div>
 
         {/* SMS Settings */}
-        <div style={{
-          padding: 'var(--16px-V)',
-          backgroundColor: 'var(--Secondary-Color60)',
-          borderRadius: 'var(--8px-V)',
-        }}>
-          <h3 style={{ 
-            color: 'var(--Text-Color)',
-            marginBottom: 'var(--16px-V)',
-          }}>SMS Notifications</h3>
-          
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--12px-V)' }}>
-            <label style={{
-              display: 'flex',
-              alignItems: 'center',
+        <div
+          style={{
+            padding: 'var(--16px-V)',
+            backgroundColor: 'var(--Secondary-Color60)',
+            borderRadius: 'var(--8px-V)',
+          }}
+        >
+          <h3
+            style={{
               color: 'var(--Text-Color)',
-              cursor: 'pointer',
-            }}>
+              marginBottom: 'var(--16px-V)',
+            }}
+          >
+            SMS Notifications
+          </h3>
+
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 'var(--12px-V)',
+            }}
+          >
+            <label
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                color: 'var(--Text-Color)',
+                cursor: 'pointer',
+              }}
+            >
               <input
                 type="checkbox"
                 checked={notificationSettings.sms.paymentDates}
-                onChange={(e) => handleSettingChange('sms', 'paymentDates', e.target.checked)}
+                onChange={(e) =>
+                  handleSettingChange('sms', 'paymentDates', e.target.checked)
+                }
                 style={{ marginRight: 'var(--8px-V)' }}
               />
               Payment Dates
             </label>
 
-            <label style={{
-              display: 'flex',
-              alignItems: 'center',
-              color: 'var(--Text-Color)',
-              cursor: 'pointer',
-            }}>
+            <label
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                color: 'var(--Text-Color)',
+                cursor: 'pointer',
+              }}
+            >
               <input
                 type="checkbox"
                 checked={notificationSettings.sms.expenseReminders}
-                onChange={(e) => handleSettingChange('sms', 'expenseReminders', e.target.checked)}
+                onChange={(e) =>
+                  handleSettingChange(
+                    'sms',
+                    'expenseReminders',
+                    e.target.checked
+                  )
+                }
                 style={{ marginRight: 'var(--8px-V)' }}
               />
               Expense Reminders
             </label>
 
-            <label style={{
-              display: 'flex',
-              alignItems: 'center',
-              color: 'var(--Text-Color)',
-              cursor: 'pointer',
-            }}>
+            <label
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                color: 'var(--Text-Color)',
+                cursor: 'pointer',
+              }}
+            >
               <input
                 type="checkbox"
                 checked={notificationSettings.sms.contractEndDates}
-                onChange={(e) => handleSettingChange('sms', 'contractEndDates', e.target.checked)}
+                onChange={(e) =>
+                  handleSettingChange(
+                    'sms',
+                    'contractEndDates',
+                    e.target.checked
+                  )
+                }
                 style={{ marginRight: 'var(--8px-V)' }}
               />
               Contract End Dates
@@ -177,15 +251,17 @@ const NotificationPanel: React.FC = ({ RoomList }: any) => {
         </div>
       </div>
 
-      <div style={{
-        marginTop: 'var(--20px-V)',
-        display: 'flex',
-        justifyContent: 'flex-end',
-      }}>
+      <div
+        style={{
+          marginTop: 'var(--20px-V)',
+          display: 'flex',
+          justifyContent: 'flex-end',
+        }}
+      >
         <button
           onClick={() => {
             // Save notification settings to electron store
-            window.electron.store.set('notificationSettings', notificationSettings);
+            storageManager.set('notificationSettings', notificationSettings);
           }}
           style={{
             padding: 'var(--8px-V) var(--16px-V)',

@@ -18,33 +18,34 @@ export const GetCurrencyAsOptionsOnSelect = () => {
   ));
 };
 export const GetDefaultCurrency = () => {
-  return window.electron.store.get('defaultCurrency') || 'ETB';
+  return storageManager.get('defaultCurrency') || 'ETB';
 };
 export default CurrencySign;
 export function formatNumberWithSuffix(input: number | string): string {
-  if(input === undefined || input === null) return "0";
+  if (input === undefined || input === null) return '0';
   // Convert input to number if it's a string, removing any commas first
-  const num = typeof input === 'string' ? parseFloat(input.replace(/,/g, '')) : input;
-  
+  const num =
+    typeof input === 'string' ? parseFloat(input.replace(/,/g, '')) : input;
+
   // Handle invalid input
   if (isNaN(num)) return '0';
-  
+
   // Handle negative numbers
   const sign = num < 0 ? '-' : '';
   const absNum = Math.abs(num);
 
   // Get decimal places from electron store
-  const decimalPlaces = window.electron.store.get('abbreviationDecimals') || 2;
-  
+  const decimalPlaces = storageManager.get('abbreviationDecimals') || 2;
+
   // Define thresholds and suffixes
   const thresholds = [
-    { value: 1e9, suffix: 'B' },  // Billions
-    { value: 1e6, suffix: 'M' },  // Millions
-    { value: 1e3, suffix: 'K' },  // Thousands
+    { value: 1e9, suffix: 'B' }, // Billions
+    { value: 1e6, suffix: 'M' }, // Millions
+    { value: 1e3, suffix: 'K' }, // Thousands
   ];
-  
+
   // Check if abbreviation is enabled
-  const shouldAbbreviate = window.electron.store.get('abbreiviateBigNumbers');
+  const shouldAbbreviate = storageManager.get('abbreiviateBigNumbers');
   if (!shouldAbbreviate) {
     return num.toLocaleString('en-US');
   }
@@ -53,7 +54,7 @@ export function formatNumberWithSuffix(input: number | string): string {
   for (const { value, suffix } of thresholds) {
     if (absNum >= value) {
       const divided = absNum / value;
-      
+
       // Format number with configured decimal places
       if (decimalPlaces === 0) {
         return `${sign}${Math.round(divided)}${suffix}`;
@@ -62,7 +63,7 @@ export function formatNumberWithSuffix(input: number | string): string {
       return `${sign}${formatted}${suffix}`;
     }
   }
-  if(num === undefined || num === null) return input.toString();
+  if (num === undefined || num === null) return input.toString();
   // For smaller numbers, use regular formatting
   return num.toLocaleString('en-US');
 }
@@ -70,7 +71,7 @@ export function formatNumberWithSuffix(input: number | string): string {
 const findClosestRates = (targetDate: number, rates: any[]) => {
   // Sort rates by date
   const sortedRates = [...rates].sort((a, b) => a.id - b.id);
-  
+
   // Find the closest rate before and after the target date
   let beforeRate = null;
   let afterRate = null;
@@ -89,9 +90,9 @@ const findClosestRates = (targetDate: number, rates: any[]) => {
 
 // Modified conversion function
 export const convertCurrency = (params: {
-  amountToConvert: number,
-  currency: 'USD' | 'ETB'
-}): { convertedAmount: number | null, rateInfo: string } => {
+  amountToConvert: number;
+  currency: 'USD' | 'ETB';
+}): { convertedAmount: number | null; rateInfo: string } => {
   try {
     const amount = parseFloat(params.amountToConvert.toString());
     if (isNaN(amount)) {
@@ -99,14 +100,17 @@ export const convertCurrency = (params: {
       return { convertedAmount: null, rateInfo: '' };
     }
 
-    const storedRates = window.electron.store.get('exchangeRate');
+    const storedRates = storageManager.get('exchangeRate');
     if (!storedRates || storedRates.length === 0) {
       alert('No exchange rates available. Please update rates first.');
       return { convertedAmount: null, rateInfo: '' };
     }
 
     const currentDate = Math.floor(Date.now() / 1000); // Current time in seconds
-    const { beforeRate, afterRate } = findClosestRates(currentDate, storedRates);
+    const { beforeRate, afterRate } = findClosestRates(
+      currentDate,
+      storedRates
+    );
 
     let rateToUse;
     let rateDescription = '';
@@ -114,23 +118,30 @@ export const convertCurrency = (params: {
     if (beforeRate && !afterRate) {
       // Only have past rate
       rateToUse = beforeRate.rates;
-      rateDescription = `Using closest past rate from ${new Date(beforeRate.id * 1000).toLocaleDateString()}`;
+      rateDescription = `Using closest past rate from ${new Date(
+        beforeRate.id * 1000
+      ).toLocaleDateString()}`;
     } else if (!beforeRate && afterRate) {
       // Only have future rate
       rateToUse = afterRate.rates;
-      rateDescription = `Using closest future rate from ${new Date(afterRate.id * 1000).toLocaleDateString()}`;
+      rateDescription = `Using closest future rate from ${new Date(
+        afterRate.id * 1000
+      ).toLocaleDateString()}`;
     } else if (beforeRate && afterRate) {
       // Have both past and future rates, calculate weighted average
       const timeDiffBefore = currentDate - beforeRate.id;
       const timeDiffAfter = afterRate.id - currentDate;
       const totalDiff = timeDiffBefore + timeDiffAfter;
-      
+
       // Weight the rates based on their temporal distance
-      rateToUse = (
+      rateToUse =
         (beforeRate.rates * timeDiffAfter + afterRate.rates * timeDiffBefore) /
-        totalDiff
-      );
-      rateDescription = `Using weighted average of rates from ${new Date(beforeRate.id * 1000).toLocaleDateString()} and ${new Date(afterRate.id * 1000).toLocaleDateString()}`;
+        totalDiff;
+      rateDescription = `Using weighted average of rates from ${new Date(
+        beforeRate.id * 1000
+      ).toLocaleDateString()} and ${new Date(
+        afterRate.id * 1000
+      ).toLocaleDateString()}`;
     } else {
       // No rates found
       alert('No exchange rates available for conversion');
@@ -138,13 +149,16 @@ export const convertCurrency = (params: {
     }
 
     // Convert based on currency direction
-    const result = params.currency === 'ETB' 
-      ? amount / rateToUse  // ETB to USD
-      : amount * rateToUse; // USD to ETB
-      
-    return { 
-      convertedAmount: result, 
-      rateInfo: `${rateDescription} (${params.currency} to ${params.currency === 'ETB' ? 'USD' : 'ETB'})`
+    const result =
+      params.currency === 'ETB'
+        ? amount / rateToUse // ETB to USD
+        : amount * rateToUse; // USD to ETB
+
+    return {
+      convertedAmount: result,
+      rateInfo: `${rateDescription} (${params.currency} to ${
+        params.currency === 'ETB' ? 'USD' : 'ETB'
+      })`,
     };
   } catch (error) {
     console.error('Error converting currency:', error);
@@ -153,75 +167,82 @@ export const convertCurrency = (params: {
   }
 };
 // Add this new function to find rate by date
-export const getRateByDate = (targetDate: number): { 
-  rate: number | null, 
-  rateDate: number | null,
-  direction: 'exact' | 'past' | 'future' | 'none'
+export const getRateByDate = (
+  targetDate: number
+): {
+  rate: number | null;
+  rateDate: number | null;
+  direction: 'exact' | 'past' | 'future' | 'none';
 } => {
   try {
-    const storedRates = window.electron.store.get('exchangeRate');
-    
+    const storedRates = storageManager.get('exchangeRate');
+
     if (!storedRates || storedRates.length === 0) {
       return { rate: null, rateDate: null, direction: 'none' };
     }
 
     // Sort rates by date
     const sortedRates = [...storedRates].sort((a, b) => a.id - b.id);
-    
+
     // First check for exact match
-    const exactMatch = sortedRates.find(rate => rate.id === Math.floor(targetDate / 1000));
+    const exactMatch = sortedRates.find(
+      (rate) => rate.id === Math.floor(targetDate / 1000)
+    );
     if (exactMatch) {
-      return { 
-        rate: exactMatch.rates, 
+      return {
+        rate: exactMatch.rates,
         rateDate: exactMatch.id * 1000,
-        direction: 'exact'
+        direction: 'exact',
       };
     }
 
     // Find closest rate before target date
     const pastRate = [...sortedRates]
       .reverse()
-      .find(rate => rate.id <= Math.floor(targetDate / 1000));
+      .find((rate) => rate.id <= Math.floor(targetDate / 1000));
 
     // Find closest rate after target date
-    const futureRate = sortedRates
-      .find(rate => rate.id >= Math.floor(targetDate / 1000));
+    const futureRate = sortedRates.find(
+      (rate) => rate.id >= Math.floor(targetDate / 1000)
+    );
 
     // If we have both past and future rates, use the closest one
     if (pastRate && futureRate) {
       const pastDiff = Math.abs(Math.floor(targetDate / 1000) - pastRate.id);
-      const futureDiff = Math.abs(futureRate.id - Math.floor(targetDate / 1000));
-      
+      const futureDiff = Math.abs(
+        futureRate.id - Math.floor(targetDate / 1000)
+      );
+
       if (pastDiff <= futureDiff) {
-        return { 
-          rate: pastRate.rates, 
+        return {
+          rate: pastRate.rates,
           rateDate: pastRate.id * 1000,
-          direction: 'past'
+          direction: 'past',
         };
       } else {
-        return { 
-          rate: futureRate.rates, 
+        return {
+          rate: futureRate.rates,
           rateDate: futureRate.id * 1000,
-          direction: 'future'
+          direction: 'future',
         };
       }
     }
 
     // If we only have past rate
     if (pastRate) {
-      return { 
-        rate: pastRate.rates, 
+      return {
+        rate: pastRate.rates,
         rateDate: pastRate.id * 1000,
-        direction: 'past'
+        direction: 'past',
       };
     }
 
     // If we only have future rate
     if (futureRate) {
-      return { 
-        rate: futureRate.rates, 
+      return {
+        rate: futureRate.rates,
         rateDate: futureRate.id * 1000,
-        direction: 'future'
+        direction: 'future',
       };
     }
 

@@ -161,7 +161,7 @@ const NavBar = ({
   const [OnlineChanges, setOnlineChanges] = useState(0);
   const checkForChanges = async () => {
     try {
-      const localChange = window.electron.store.get('changeAmount');
+      const localChange = storageManager.get('changeAmount');
       const onlineUser = await getValuesWithSql_Online(
         'users',
         `WHERE id = '${SelectedUserId}'`
@@ -198,17 +198,19 @@ const NavBar = ({
     if (navigator.onLine) {
       const confirmDelete = await confirm(
         'Are you sure you want to reset all your offline changes?',
-        {title: 'Reset Changes',
+        {
+          title: 'Reset Changes',
           confirmText: 'Reset',
           cancelText: 'Keep',
-          type: 'danger'}
+          type: 'danger',
+        }
       );
       if (confirmDelete) {
         await dropAllRowsInTable('offline_changes');
         setChangeMade(0);
         await syncOnlineToLocalBranchWithBool(
           SelectedUserId,
-          window.electron.store.get('SelectedBranchId'),
+          storageManager.get('SelectedBranchId'),
           setIsSyncing,
           setSyncProgress,
           RefreshDataFromSqlite
@@ -219,7 +221,7 @@ const NavBar = ({
   const handleSyncOnlineToLocal = async () => {
     const done = await syncOnlineToLocalBranchWithBool(
       SelectedUserId,
-      window.electron.store.get('SelectedBranchId'),
+      storageManager.get('SelectedBranchId'),
       setIsSyncing,
       setSyncProgress,
       RefreshDataFromSqlite
@@ -275,7 +277,7 @@ const NavBar = ({
               onClick={() => {
                 if (navigator.onLine) {
                   setViewBranchManagementPage(true);
-                  if (window.electron.store.get('LockBranchToPc'))
+                  if (storageManager.get('LockBranchToPc'))
                     setViewBranchManagementPageNONAdm(true);
                 }
               }}
@@ -288,17 +290,16 @@ const NavBar = ({
             style={{ fontSize: 'var(--14px-V)', height: 'auto' }}
           >
             <span style={{ color: 'grey' }}>
-              {window.electron.store.get('users')[0].email} -{' '}
+              {storageManager.get('users')[0].email} -{' '}
             </span>
-            {window.electron.store.get('SelectedAppUserId') === 'admin' ? (
+            {storageManager.get('SelectedAppUserId') === 'admin' ? (
               <> Admin User</>
             ) : (
               window.electron.store
                 .get('app_users')
                 .find(
                   (appUser: appUser) =>
-                    appUser.id ===
-                    window.electron.store.get('SelectedAppUserId')
+                    appUser.id === storageManager.get('SelectedAppUserId')
                 )?.roleName
             )}{' '}
             <p
@@ -693,13 +694,13 @@ const NavBar = ({
                   <p>Load Backup</p>
                 </button>
               </div>{' '}
-              {window.electron.store.get('IsOnBackup') && (
+              {storageManager.get('IsOnBackup') && (
                 <>
                   <button
                     onClick={() => {
                       window.electron.ipcRenderer.invoke(
                         'load-specific-backup',
-                        window.electron.store.get('MainBackupPath')
+                        storageManager.get('MainBackupPath')
                       );
                     }}
                     style={{
@@ -716,8 +717,8 @@ const NavBar = ({
                       try {
                         const result = await SetBackUpAsMain(SelectedUserId);
                         console.log('Data sync completed:', result);
-                        window.electron.store.set('MainBackupPath', '');
-                        window.electron.store.set('IsOnBackup', false);
+                        storageManager.set('MainBackupPath', '');
+                        storageManager.set('IsOnBackup', false);
                       } catch (error) {
                         console.error('Error during sync:', error);
                         // Handle sync error (e.g., show an error message)
@@ -745,7 +746,6 @@ const NavBar = ({
           {ThemeMode === 'light' ? 'light' : ThemeMode === 'dark' ? 'dark' : ''}
         </button>
 
-        
         <div className="CurrentTimeContainer">
           <p className="CurrentTime">
             {currentHour}:{currentMinute}

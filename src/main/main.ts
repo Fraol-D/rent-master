@@ -1628,7 +1628,7 @@ ipcMain.handle('upload-user-files', async (event, { userId }) => {
 
           const fullPath = path.join(
             process.env.APPDATA || '',
-           appname,
+            appname,
             filePath
           );
           if (fs.existsSync(fullPath)) {
@@ -3263,7 +3263,7 @@ ipcMain.handle('sync-offline-changes', async () => {
     await mainWindow.webContents.executeJavaScript(`
       (async () => {
         try {
-          if (window.electron.store.get('SelectedUserId')) {
+          if (storageManager.get('SelectedUserId')) {
             await window.handleUploadChanges();
             return true;
           }

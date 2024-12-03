@@ -20,7 +20,11 @@ const LoginPage = ({
   setPassword,
   setUsername,
   username,
-  setSelectedAppUser,setAppUserManagerShow,fetchBranches,RefreshComponent,setViewBranchManagementPage
+  setSelectedAppUser,
+  setAppUserManagerShow,
+  fetchBranches,
+  RefreshComponent,
+  setViewBranchManagementPage,
 }: any) => {
   const [errorMessage, setErrorMessage] = useState('');
   const [loading, setLoading] = useState(false);
@@ -47,7 +51,6 @@ const LoginPage = ({
 
     try {
       if (SelectedToLoginWith === 'Admin') {
-      
         const isValid = await verifyCredentials(email, password);
         if (isValid) {
           // Fetch user data if credentials are valid
@@ -65,7 +68,6 @@ const LoginPage = ({
           setErrorMessage('Invalid email or password');
         }
       } else {
-     
         // Fetch user data if credentials are valid
         const getAppUser = await getValuesWithSql_Online(
           'app_users',
@@ -73,7 +75,7 @@ const LoginPage = ({
         );
 
         if (getAppUser.length > 0) {
-          if(getAppUser[0].EnterWithPassword){
+          if (getAppUser[0].EnterWithPassword) {
             const user = await getValuesWithSql_Online(
               'users',
               `WHERE id = '${getAppUser[0].userId}' AND email = '${email}'`
@@ -81,7 +83,7 @@ const LoginPage = ({
             if (user[0]) {
               handleLogin(user[0]);
               setSelectedAppUser(getAppUser[0]);
-              window.electron.store.set('SelectedAppUserId', getAppUser[0].id);
+              storageManager.set('SelectedAppUserId', getAppUser[0].id);
               setAppUserManagerShow(false);
               setViewBranchManagementPage(true);
               setTimeout(async () => {
@@ -93,9 +95,10 @@ const LoginPage = ({
               setErrorMessage('Error retrieving user data. Please try again.');
             }
           } else {
-            setErrorMessage('This AppUser is not allowed to enter with password. Please contact Administrator.');
+            setErrorMessage(
+              'This AppUser is not allowed to enter with password. Please contact Administrator.'
+            );
           }
-       
         } else {
           setErrorMessage('Invalid Username or password');
         }
@@ -109,7 +112,7 @@ const LoginPage = ({
   };
   const handleLogin = async (user: any) => {
     setErrorMessage('Login successful!');
-    window.electron.store.set('users', [
+    storageManager.set('users', [
       {
         id: user.id,
         Allowed: user.Allowed,
@@ -228,11 +231,12 @@ const LoginPage = ({
         {SelectedToLoginWith === 'App User' && (
           <input
             type="text"
-          placeholder="Username"
-          value={username}
-          onChange={handleUsernameChange}
-          className="userName-input"
-        />)}
+            placeholder="Username"
+            value={username}
+            onChange={handleUsernameChange}
+            className="userName-input"
+          />
+        )}
         <input
           type="password"
           placeholder="Password"

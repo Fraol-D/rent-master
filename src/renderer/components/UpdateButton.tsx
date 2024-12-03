@@ -14,9 +14,9 @@ interface UpdateStatus {
 export const UpdateButton = () => {
   const [status, setStatus] = useState<UpdateStatus>(() => {
     // Initialize from electron-store
-    const updateInfo = window.electron.store.get('updateInfo') || {};
-    const updateProgress = window.electron.store.get('updateProgress') || {};
-    const updateReady = window.electron.store.get('updateReady') || false;
+    const updateInfo = storageManager.get('updateInfo') || {};
+    const updateProgress = storageManager.get('updateProgress') || {};
+    const updateReady = storageManager.get('updateReady') || false;
 
     return {
       downloading: !!updateProgress.percent,
@@ -26,40 +26,43 @@ export const UpdateButton = () => {
       ready: updateReady,
       updateAvailable: updateInfo.available || false,
       newVersion: updateInfo.version || '',
-      releaseNotes: updateInfo.releaseNotes || ''
+      releaseNotes: updateInfo.releaseNotes || '',
     };
   });
-  
+
   const listenersSet = useRef(false);
 
   useEffect(() => {
     if (!listenersSet.current) {
       window.electron.ipcRenderer.on('update-available', (info: any) => {
-        setStatus(prev => ({ 
-          ...prev, 
+        setStatus((prev) => ({
+          ...prev,
           updateAvailable: true,
           newVersion: info.version,
-          releaseNotes: info.releaseNotes
+          releaseNotes: info.releaseNotes,
         }));
       });
 
-      window.electron.ipcRenderer.on('download-progress', (progressObj: any) => {
-        setStatus(prev => ({
-          ...prev,
-          downloading: true,
-          progress: progressObj.percent,
-          totalSize: progressObj.total,
-          downloadedSize: progressObj.transferred,
-          updateAvailable: true
-        }));
-      });
+      window.electron.ipcRenderer.on(
+        'download-progress',
+        (progressObj: any) => {
+          setStatus((prev) => ({
+            ...prev,
+            downloading: true,
+            progress: progressObj.percent,
+            totalSize: progressObj.total,
+            downloadedSize: progressObj.transferred,
+            updateAvailable: true,
+          }));
+        }
+      );
 
       window.electron.ipcRenderer.on('update-downloaded', () => {
-        setStatus(prev => ({
+        setStatus((prev) => ({
           ...prev,
           downloading: false,
           ready: true,
-          progress: 100
+          progress: 100,
         }));
       });
 
@@ -75,9 +78,9 @@ export const UpdateButton = () => {
   const handleUpdate = () => {
     if (status.ready) {
       // Clear stored update info
-      window.electron.store.set('updateInfo', null);
-      window.electron.store.set('updateProgress', null);
-      window.electron.store.set('updateReady', false);
+      storageManager.set('updateInfo', null);
+      storageManager.set('updateProgress', null);
+      storageManager.set('updateReady', false);
       window.electron.ipcRenderer.send('restart-app');
     }
   };
@@ -99,31 +102,34 @@ export const UpdateButton = () => {
     <div className="update-container">
       <div className="update-status">
         <div className="update-header">
-          {status.downloading ? `Downloading v${status.newVersion}...` : 
-           status.ready ? `Ready to Install v${status.newVersion}` : 
-           'Checking for Updates...'}
+          {status.downloading
+            ? `Downloading v${status.newVersion}...`
+            : status.ready
+            ? `Ready to Install v${status.newVersion}`
+            : 'Checking for Updates...'}
         </div>
-        
+
         {status.releaseNotes && (
           <div className="release-notes">
             <h4>What's New in v{status.newVersion}:</h4>
             <div dangerouslySetInnerHTML={{ __html: status.releaseNotes }} />
           </div>
         )}
-        
+
         {(status.downloading || status.ready) && (
           <>
             <div className="progress-bar-container">
-              <div 
-                className="progress-bar" 
+              <div
+                className="progress-bar"
                 style={{ width: `${status.progress}%` }}
               />
             </div>
-            
+
             <div className="progress-details">
               <span>{status.progress ? status.progress.toFixed(1) : 0}%</span>
               <span>
-                {formatBytes(status.downloadedSize)} / {formatBytes(status.totalSize)}
+                {formatBytes(status.downloadedSize)} /{' '}
+                {formatBytes(status.totalSize)}
               </span>
             </div>
           </>
@@ -131,10 +137,7 @@ export const UpdateButton = () => {
       </div>
 
       {status.ready && (
-        <button 
-          className="install-button"
-          onClick={handleUpdate}
-        >
+        <button className="install-button" onClick={handleUpdate}>
           Install & Restart
         </button>
       )}

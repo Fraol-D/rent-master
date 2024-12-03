@@ -9,20 +9,19 @@ export default function TrialEndedText({}) {
     >
       Your 7-day trial period has Ended. Started at{' '}
       {new Date(
-        window.electron.store.get('TrailEndDate') - 7 * 24 * 60 * 60 * 1000
+        storageManager.get('TrailEndDate') - 7 * 24 * 60 * 60 * 1000
       ).getMonth() + 1}
       /
       {new Date(
-        window.electron.store.get('TrailEndDate') - 7 * 24 * 60 * 60 * 1000
+        storageManager.get('TrailEndDate') - 7 * 24 * 60 * 60 * 1000
       ).getDate()}
       /
       {new Date(
-        window.electron.store.get('TrailEndDate') - 7 * 24 * 60 * 60 * 1000
+        storageManager.get('TrailEndDate') - 7 * 24 * 60 * 60 * 1000
       ).getFullYear()}{' '}
-      and ended at{' '}
-      {new Date(window.electron.store.get('TrailEndDate')).getMonth() + 1}/{' '}
-      {new Date(window.electron.store.get('TrailEndDate')).getDate()}/
-      {new Date(window.electron.store.get('TrailEndDate')).getFullYear()} <br />
+      and ended at {new Date(storageManager.get('TrailEndDate')).getMonth() + 1}
+      / {new Date(storageManager.get('TrailEndDate')).getDate()}/
+      {new Date(storageManager.get('TrailEndDate')).getFullYear()} <br />
       If you're interested in our application, you can purchase the full package
       by contacting us at the following phone number:"
       <br />

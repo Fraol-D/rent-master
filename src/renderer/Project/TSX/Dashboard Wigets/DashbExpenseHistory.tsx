@@ -212,7 +212,7 @@ const DashbExpenseHistory: React.FC<DashbExpenseHistoryProps> = ({
     roomFilter,
   ]);
   const getCurrentExchangeRate = () => {
-    const storedRates = window.electron.store.get('exchangeRate');
+    const storedRates = storageManager.get('exchangeRate');
     if (!storedRates || storedRates.length === 0) return null;
     return storedRates[storedRates.length - 1].rates;
   };
@@ -371,106 +371,108 @@ const DashbExpenseHistory: React.FC<DashbExpenseHistoryProps> = ({
       </div>
       <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
         {sortedExpenses.length > 0 ? (
-          sortedExpenses.filter((exp: Expense) =>
-            currencyDisplay === 'ETB_ONLY'
-              ? exp.Currency === 'ETB'
-              : currencyDisplay === 'USD_ONLY'
-              ? exp.Currency === 'USD'
-              : true
-          ).map((expense, index) => (
-            <div
-              key={`${expense.id}-${index}`}
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between', 
-                alignItems: 'center',
-                padding: 'var(--10px-V)',
-                marginBottom: 'var(--10px-V)',
-                borderBottom: 'var(--1px-V) solid var(--Secondary-Color)',
-                backgroundColor: 'var(--Secondary-Color60)',
-                borderRadius: 'var(--10px-V)',
-                marginLeft: 'var(--10px-V)',
-              }}
-            >
+          sortedExpenses
+            .filter((exp: Expense) =>
+              currencyDisplay === 'ETB_ONLY'
+                ? exp.Currency === 'ETB'
+                : currencyDisplay === 'USD_ONLY'
+                ? exp.Currency === 'USD'
+                : true
+            )
+            .map((expense, index) => (
               <div
+                key={`${expense.id}-${index}`}
                 style={{
-                  fontSize: 'var(--14px-V)',
-                  color: 'var(--Text-Color)',
-                  width: 'var(--100px-V)',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  padding: 'var(--10px-V)',
+                  marginBottom: 'var(--10px-V)',
+                  borderBottom: 'var(--1px-V) solid var(--Secondary-Color)',
+                  backgroundColor: 'var(--Secondary-Color60)',
+                  borderRadius: 'var(--10px-V)',
+                  marginLeft: 'var(--10px-V)',
                 }}
               >
-                {format(new Date(expense.date), 'MMM dd, yyyy')}
+                <div
+                  style={{
+                    fontSize: 'var(--14px-V)',
+                    color: 'var(--Text-Color)',
+                    width: 'var(--100px-V)',
+                  }}
+                >
+                  {format(new Date(expense.date), 'MMM dd, yyyy')}
+                </div>
+                <div
+                  style={{
+                    flex: '1 1 0%',
+                    fontSize: 'var(--16px-V)',
+                    fontWeight: 'bold',
+                    color: 'var(--Text-Color)',
+                  }}
+                >
+                  {expense.name}
+                </div>
+                <div
+                  style={{
+                    fontSize: 'var(--16px-V)',
+                    fontWeight: 'bold',
+                    color: 'var(--Text-Color-Grey)',
+                    textAlign: 'right',
+                  }}
+                >
+                  {currencyDisplay === 'ALL_ETB_USD' ? (
+                    <>
+                      {formatNumberWithSuffix(
+                        processValueByCurrency(
+                          expense.price,
+                          expense.Currency || 'ETB',
+                          expense.date
+                        ).toLocaleString()
+                      )}
+                      {CurrencySign(expense.Currency)}
+                    </>
+                  ) : (
+                    <>
+                      {formatNumberWithSuffix(
+                        processValueByCurrency(
+                          expense.price,
+                          expense.Currency || 'ETB',
+                          expense.date
+                        ).toLocaleString()
+                      )}
+                      {CurrencySign(
+                        currencyDisplay.includes('ETB') ? 'ETB' : 'USD'
+                      )}
+                    </>
+                  )}
+                </div>
+                <div
+                  style={{
+                    fontSize: 'var(--14px-V)',
+                    color: 'var(--Text-Color)',
+                    textAlign: 'center',
+                    marginLeft: '20px',
+                  }}
+                >
+                  {expense.fullBuilding ? (
+                    <strong>Full Building</strong>
+                  ) : (
+                    <em>{`Room ${expense.room}, Floor ${expense.floor}`}</em>
+                  )}
+                </div>
+                <div
+                  style={{
+                    fontSize: 'var(--12px-V)',
+                    color: 'var(--Accent-Color)',
+                    textAlign: 'right',
+                    marginLeft: 'var(--20px-V)',
+                  }}
+                >
+                  {expense.doesReoccur ? 'Recurring' : ''}
+                </div>
               </div>
-              <div
-                style={{
-                  flex: '1 1 0%',
-                  fontSize: 'var(--16px-V)',
-                  fontWeight: 'bold',
-                  color: 'var(--Text-Color)',
-                }}
-              >
-                {expense.name}
-              </div>
-              <div
-                style={{
-                  fontSize: 'var(--16px-V)',
-                  fontWeight: 'bold',
-                  color: 'var(--Text-Color-Grey)',
-                  textAlign: 'right',
-                }}
-              >
-                {currencyDisplay === 'ALL_ETB_USD' ? (
-                  <>
-                    {formatNumberWithSuffix(
-                      processValueByCurrency(
-                        expense.price,
-                        expense.Currency || 'ETB',
-                        expense.date
-                      ).toLocaleString()
-                    )}
-                    {CurrencySign(expense.Currency)}
-                  </>
-                ) : (
-                  <>
-                    {formatNumberWithSuffix(
-                      processValueByCurrency(
-                        expense.price,
-                        expense.Currency || 'ETB',
-                        expense.date
-                      ).toLocaleString()
-                    )}
-                    {CurrencySign(
-                      currencyDisplay.includes('ETB') ? 'ETB' : 'USD'
-                    )}
-                  </>
-                )}
-              </div>
-              <div
-                style={{
-                  fontSize: 'var(--14px-V)',
-                  color: 'var(--Text-Color)',
-                  textAlign: 'center',
-                  marginLeft: '20px',
-                }}
-              >
-                {expense.fullBuilding ? (
-                  <strong>Full Building</strong>
-                ) : (
-                  <em>{`Room ${expense.room}, Floor ${expense.floor}`}</em>
-                )}
-              </div>
-              <div
-                style={{
-                  fontSize: 'var(--12px-V)',
-                  color: 'var(--Accent-Color)',
-                  textAlign: 'right',
-                  marginLeft: 'var(--20px-V)',
-                }}
-              >
-                {expense.doesReoccur ? 'Recurring' : ''}
-              </div>
-            </div>
-          ))
+            ))
         ) : (
           <div
             style={{

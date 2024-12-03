@@ -1,5 +1,4 @@
 import os
-import re
 
 def get_relative_path(from_file, to_file):
     from_parts = os.path.normpath(from_file).split(os.sep)
@@ -19,12 +18,6 @@ def get_relative_path(from_file, to_file):
     # Join with forward slashes (for import statements)
     return '/'.join(relative_path).replace('.js', '')
 
-def fix_imports(content):
-    # Fix malformed imports
-    content = re.sub(r'import\s+(\w+)\s+from\s*{\s*([^}]+)\s*};', r'import { \2 } from', content)
-    content = re.sub(r'from;[\s\n]+([^;]+);', r'from "\1";', content)
-    return content
-
 def process_file(file_path, storage_manager_path):
     try:
         with open(file_path, 'r', encoding='utf-8') as f:
@@ -32,32 +25,15 @@ def process_file(file_path, storage_manager_path):
         
         # Check if file uses storageManager
         if 'storageManager.get' in content or 'storageManager.set' in content:
-            # Check if import already exists
-            import_pattern = r'import.*storageManager.*from'
-            if not re.search(import_pattern, content):
-                # Calculate relative path
-                relative_path = get_relative_path(file_path, storage_manager_path)
-                
-                # Create import statement
-                import_statement = f"import {{ storageManager }} from '{relative_path}';\n"
-                
-                # Add import statement after existing imports or at the start
-                import_section_end = 0
-                import_lines = re.finditer(r'^import.*?;?\n', content, re.MULTILINE)
-                for match in import_lines:
-                    import_section_end = max(import_section_end, match.end())
-                
-                if import_section_end > 0:
-                    new_content = (
-                        content[:import_section_end] +
-                        import_statement +
-                        content[import_section_end:]
-                    )
-                else:
-                    new_content = import_statement + content
-                
-                # Fix any malformed imports
-                new_content = fix_imports(new_content)
+            # Calculate relative path
+            relative_path = get_relative_path(file_path, storage_manager_path)
+            
+            # Create import statement
+            import_statement = f"import {{ storageManager }} from '{relative_path}';\n"
+            
+            # Add import at the start of the file
+            if not content.startswith(import_statement):
+                new_content = import_statement + content
                 
                 # Write the modified content back to the file
                 with open(file_path, 'w', encoding='utf-8') as f:

@@ -186,7 +186,7 @@ function Hello() {
   };
   class RoomApi {
     getRoomFromApi = async () => {
-      let useBranchId = window.electron.store.get('SelectedBranchId');
+      let useBranchId = storageManager.get('SelectedBranchId');
       const roomsRaw = await getValuesWithSql(
         'rooms',
         `WHERE 1 AND branchId = '${useBranchId}'`
@@ -475,7 +475,7 @@ function Hello() {
   class TenantApi {
     getTenantsApi = async () => {
       try {
-        let useBranchId = window.electron.store.get('SelectedBranchId');
+        let useBranchId = storageManager.get('SelectedBranchId');
 
         const tenantsRaw = await getValuesWithSql(
           'tenants',
@@ -712,7 +712,7 @@ function Hello() {
   class BrokerApi {
     getBrokersApi = async () => {
       try {
-        let useBranchId = window.electron.store.get('SelectedBranchId');
+        let useBranchId = storageManager.get('SelectedBranchId');
 
         const brokersRaw = await getValuesWithSql(
           'brokers',
@@ -991,9 +991,9 @@ function Hello() {
   // On start
   useEffect(() => {
     const init = async () => {
-      const branchId = window.electron.store.get('SelectedBranchId');
+      const branchId = storageManager.get('SelectedBranchId');
       setSelectedBranchId(branchId);
-      setBranches(window.electron.store.get('Branches'));
+      setBranches(storageManager.get('Branches'));
 
       RefreshDataFromSqlite();
     };
@@ -1002,12 +1002,12 @@ function Hello() {
 
   const RefreshDataFromSqlite = async () => {
     if (!navigator.onLine) {
-      setBranches(window.electron.store.get('Branches'));
+      setBranches(storageManager.get('Branches'));
     } else {
       await fetchBranches();
     }
 
-    const branchId = window.electron.store.get('SelectedBranchId');
+    const branchId = storageManager.get('SelectedBranchId');
     setSelectedBranchId(branchId);
     if (branchId) {
       roomAPI.getRoomFromApi();
@@ -1016,7 +1016,7 @@ function Hello() {
       pastTenantReviewApi.getPastTenantReviewLatestApi();
       brokersRecommendationListApi.getBrokerRecommendationsFromApi();
     } else {
-      if (!window.electron.store.get('LockBranchToPc'))
+      if (!storageManager.get('LockBranchToPc'))
         setViewBranchManagementPage(true);
       else {
         setViewBranchManagementPage(true);
@@ -1034,7 +1034,7 @@ function Hello() {
   const fetchExchangeRates = async () => {
     try {
       // Check last sync time
-      const lastUpdate = window.electron.store.get('lastExchangeRateUpdate');
+      const lastUpdate = storageManager.get('lastExchangeRateUpdate');
       const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
 
       // Fetch if online and either:
@@ -1047,8 +1047,8 @@ function Hello() {
         );
         if (exchangeRates2.length > 0) {
           const latestRate = exchangeRates2;
-          window.electron.store.set('exchangeRate', latestRate);
-          window.electron.store.set(
+          storageManager.set('exchangeRate', latestRate);
+          storageManager.set(
             'lastExchangeRateUpdate',
             latestRate[latestRate.length - 1].id * 1000
           );
@@ -1064,7 +1064,7 @@ function Hello() {
 
   useEffect(() => {
     const get = async () => {
-      const storedTheme = window.electron.store.get('ThemeMode');
+      const storedTheme = storageManager.get('ThemeMode');
       if (storedTheme) {
         setThemeMode(storedTheme);
         applyTheme(storedTheme);
@@ -1076,7 +1076,7 @@ function Hello() {
   }, []);
 
   const ChangeTheme = async (theme: 'light' | 'dark') => {
-    window.electron.store.set('ThemeMode', theme);
+    storageManager.set('ThemeMode', theme);
     setThemeMode(theme);
     applyTheme(theme);
   };
@@ -1093,11 +1093,11 @@ function Hello() {
   const [isSignedIn, setisSignedIn] = useState(false);
   const signOutUserAndRestart = async () => {
     await SignOutUser();
-    window.electron.store.set('MainBackupPath', '');
-    window.electron.store.set('SelectedBranchId', '');
-    window.electron.store.set('MainBackupPath', '');
-    window.electron.store.set('LockBranchToPc', false);
-    window.electron.store.set('users', []);
+    storageManager.set('MainBackupPath', '');
+    storageManager.set('SelectedBranchId', '');
+    storageManager.set('MainBackupPath', '');
+    storageManager.set('LockBranchToPc', false);
+    storageManager.set('users', []);
     setRefresh(Refresh + 1);
     setisSignedIn(false);
   };
@@ -1290,10 +1290,10 @@ function Hello() {
         }
       } catch (error) {
         console.error('Error fetching branch name:', error);
-        setBranchName(window.electron.store.get('BranchName'));
+        setBranchName(storageManager.get('BranchName'));
       }
     } else {
-      setBranchName(window.electron.store.get('BranchName'));
+      setBranchName(storageManager.get('BranchName'));
     }
   };
   const generateRecurringExpenses = (
@@ -1421,10 +1421,10 @@ function Hello() {
   };
   const fetchBranches = async () => {
     if (navigator.onLine) {
-      if (window.electron.store.get('users')?.[0]) {
+      if (storageManager.get('users')?.[0]) {
         const branches = await getValuesWithSql_Online(
           'branches',
-          `WHERE userId = '${window.electron.store.get('users')[0].id}'`
+          `WHERE userId = '${storageManager.get('users')[0].id}'`
         );
         if (branches)
           if (getBranchData) {
@@ -1539,15 +1539,15 @@ function Hello() {
             );
 
             setBranches(branchesWithData);
-            window.electron.store.set('Branches', branchesWithData);
+            storageManager.set('Branches', branchesWithData);
           } else {
             setBranches(branches);
-            window.electron.store.set('Branches', branches);
+            storageManager.set('Branches', branches);
           }
       }
     } else {
-      if (window.electron.store.get('Branches')) {
-        setBranches(window.electron.store.get('Branches'));
+      if (storageManager.get('Branches')) {
+        setBranches(storageManager.get('Branches'));
       }
     }
   };

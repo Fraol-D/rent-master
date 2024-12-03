@@ -278,7 +278,6 @@ const addRowToOfflineChanges = async (
   }
   // User history
   if (actionHis === true) {
-
     async function addToActionHistory(
       actionTable,
       actionType,
@@ -288,12 +287,16 @@ const addRowToOfflineChanges = async (
     ) {
       const id = uuidv4();
       const actionDate = Date.now();
-      const userInfos = await window.electron.ipcRenderer.invoke(
-        'os-info'
+      const userInfos = await window.electron.ipcRenderer.invoke('os-info');
+      const platform =
+        userInfos.platform === 'win32' ? 'Windows' : userInfos.platform;
+      const userInfoString =
+        platform + ' ' + userInfos.pcName + ' ' + userInfos.userInfo.username;
+      console.log(
+        userInfoString,
+        ':----------------------------------------------------------:',
+        userInfos
       );
-      const platform = userInfos.platform === "win32" ? "Windows" : userInfos.platform;
-      const userInfoString = platform + ' ' + userInfos.pcName + ' ' + userInfos.userInfo.username;
-      console.log(userInfoString, ":----------------------------------------------------------:", userInfos)
       await addValueActionHistory(
         'action_history',
         {
@@ -304,14 +307,14 @@ const addRowToOfflineChanges = async (
           performed_by: performedBy,
           action_date: actionDate,
           userInfo: userInfoString,
-          branchId: window.electron.store.get('SelectedBranchId'),
+          branchId: storageManager.get('SelectedBranchId'),
           userId: userId,
         },
         setChangeMade
       );
     }
     if (originalValue !== columnValueP) {
-      const users = await window.electron.store.get('users');
+      const users = await storageManager.get('users');
       let description = '...';
       if (typevalue === 'add') {
         description = 'Added ' + RowIdP + ' to the ' + tableName;
@@ -324,13 +327,12 @@ const addRowToOfflineChanges = async (
         description = 'deleted ' + RowIdP + ' from the ' + tableName;
       }
       const performedBy =
-        window.electron.store.get('SelectedAppUserId') === 'admin'
+        storageManager.get('SelectedAppUserId') === 'admin'
           ? 'Admin'
           : window.electron.store
               .get('app_users')
               .find(
-                (user) =>
-                  user.id === window.electron.store.get('SelectedAppUserId')
+                (user) => user.id === storageManager.get('SelectedAppUserId')
               )?.roleName || 'Unknown User';
 
       await addToActionHistory(
@@ -629,7 +631,10 @@ export const renameFolder = async (oldName, newName) => {
   }
 };
 // Add this new function to localServerApis.js
-export const duplicateRoomImagesFolder = async (sourceFolderName, newFolderName) => {
+export const duplicateRoomImagesFolder = async (
+  sourceFolderName,
+  newFolderName
+) => {
   try {
     const response = await fetch(`${baseUrl}/duplicate-room-images-folder`, {
       method: 'POST',
@@ -638,7 +643,7 @@ export const duplicateRoomImagesFolder = async (sourceFolderName, newFolderName)
       },
       body: JSON.stringify({
         sourceFolderName,
-        newFolderName
+        newFolderName,
       }),
     });
     const data = await response.json();
@@ -890,10 +895,14 @@ export const updateLocalRecordsBatch = async (tableName, records) => {
     const db = getDatabase();
     db.serialize(() => {
       db.run('BEGIN TRANSACTION');
-      
-      const stmt = db.prepare(`UPDATE ${tableName} SET ${Object.keys(records[0]).map(key => `${key} = ?`).join(', ')} WHERE id = ?`);
-      
-      records.forEach(record => {
+
+      const stmt = db.prepare(
+        `UPDATE ${tableName} SET ${Object.keys(records[0])
+          .map((key) => `${key} = ?`)
+          .join(', ')} WHERE id = ?`
+      );
+
+      records.forEach((record) => {
         const values = [...Object.values(record), record.id];
         stmt.run(values, (err) => {
           if (err) {
@@ -901,9 +910,9 @@ export const updateLocalRecordsBatch = async (tableName, records) => {
           }
         });
       });
-      
+
       stmt.finalize();
-      
+
       db.run('COMMIT', (err) => {
         if (err) {
           console.error('Error committing transaction:', err);
@@ -922,12 +931,16 @@ export const addLocalRecordsBatch = async (tableName, records) => {
     const db = getDatabase();
     db.serialize(() => {
       db.run('BEGIN TRANSACTION');
-      
+
       const columns = Object.keys(records[0]).join(', ');
-      const placeholders = Object.keys(records[0]).map(() => '?').join(', ');
-      const stmt = db.prepare(`INSERT INTO ${tableName} (${columns}) VALUES (${placeholders})`);
-      
-      records.forEach(record => {
+      const placeholders = Object.keys(records[0])
+        .map(() => '?')
+        .join(', ');
+      const stmt = db.prepare(
+        `INSERT INTO ${tableName} (${columns}) VALUES (${placeholders})`
+      );
+
+      records.forEach((record) => {
         const values = Object.values(record);
         stmt.run(values, (err) => {
           if (err) {
@@ -935,9 +948,9 @@ export const addLocalRecordsBatch = async (tableName, records) => {
           }
         });
       });
-      
+
       stmt.finalize();
-      
+
       db.run('COMMIT', (err) => {
         if (err) {
           console.error('Error committing transaction:', err);
@@ -956,19 +969,19 @@ export const deleteLocalRecordsBatch = async (tableName, ids) => {
     const db = getDatabase();
     db.serialize(() => {
       db.run('BEGIN TRANSACTION');
-      
+
       const stmt = db.prepare(`DELETE FROM ${tableName} WHERE id = ?`);
-      
-      ids.forEach(id => {
+
+      ids.forEach((id) => {
         stmt.run(id, (err) => {
           if (err) {
             console.error(`Error deleting record from ${tableName}:`, err);
           }
         });
       });
-      
+
       stmt.finalize();
-      
+
       db.run('COMMIT', (err) => {
         if (err) {
           console.error('Error committing transaction:', err);

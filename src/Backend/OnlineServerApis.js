@@ -215,7 +215,7 @@ export const Upload = async (
     changeAmountOnline[0].changeAmount + changeAmount
   );
 
-  window.electron.store.set(
+  storageManager.set(
     'changeAmount',
     changeAmountOnline[0].changeAmount + changeAmount
   );
@@ -278,7 +278,7 @@ const setChangeAmount = async (SelectedUserId) => {
     changeAmountOnline[0].changeAmount,
     '=========================================================================================='
   );
-  window.electron.store.set('changeAmount', changeAmountOnline[0].changeAmount);
+  storageManager.set('changeAmount', changeAmountOnline[0].changeAmount);
 };
 
 export const RevertOfflineChanges = async () => {
@@ -317,7 +317,11 @@ export const getAllUsers = async () => {
 
 export async function verifyCredentials(email, password) {
   try {
-    console.log(email, password, "PASSWORD AND EMAIL 222222222222222222222222222222222222");
+    console.log(
+      email,
+      password,
+      'PASSWORD AND EMAIL 222222222222222222222222222222222222'
+    );
     const url = `${baseUrl}/verify-credentials`;
     const headers = {
       'Content-Type': 'application/json',
@@ -1064,7 +1068,6 @@ export const UploadUserFilesToTheOnlineDatabase = async (
     );
 
     if (!result.success) {
-   
     }
 
     return result;
@@ -1086,12 +1089,15 @@ const retry = async (fn, maxRetries = 3, delay = 1000) => {
   }
   throw lastError;
 };
-export const DownloadUserFilesFromOnlineDatabase = async (userId, setProgressValue) => {
- let cleanup = null;
+export const DownloadUserFilesFromOnlineDatabase = async (
+  userId,
+  setProgressValue
+) => {
+  let cleanup = null;
   try {
-     console.log('Starting file download process...');
+    console.log('Starting file download process...');
     setProgressValue(0);
-    
+
     // Set up progress listener
     const handleProgress = (event, progress) => {
       if (typeof setProgressValue === 'function') {
@@ -1099,11 +1105,10 @@ export const DownloadUserFilesFromOnlineDatabase = async (userId, setProgressVal
       }
     };
 
-   
     const result = await window.electron.ipcRenderer.invoke('download-files', {
-      userId
+      userId,
     });
-    console.log(result)
+    console.log(result);
 
     setProgressValue(100);
   } catch (error) {
@@ -1111,7 +1116,6 @@ export const DownloadUserFilesFromOnlineDatabase = async (userId, setProgressVal
     setProgressValue(0);
   }
 };
-
 
 export const replaceUserData = async (userId, tables) => {
   const filteredTables = Object.fromEntries(
@@ -1141,7 +1145,6 @@ export const replaceUserData = async (userId, tables) => {
     });
 
     if (!data.ok) {
-    
     }
 
     return data;
@@ -1198,18 +1201,15 @@ export const fetchAndUpdateExchangeRates = async () => {
     const response = await axios.get(`${baseUrl}/exchange-rates`);
     const rates = response.data;
     const latestRate = rates[0]; // Assuming the latest rate comes first
-    const lastUpdate = window.electron.store.get('lastExchangeRateUpdate');
+    const lastUpdate = storageManager.get('lastExchangeRateUpdate');
 
     if (
       !lastUpdate ||
       new Date(latestRate.date * 1000).getTime() !==
         new Date(lastUpdate).getTime()
     ) {
-      window.electron.store.set('exchangeRate', latestRate.rates);
-      window.electron.store.set(
-        'lastExchangeRateUpdate',
-        latestRate.date * 1000
-      );
+      storageManager.set('exchangeRate', latestRate.rates);
+      storageManager.set('lastExchangeRateUpdate', latestRate.date * 1000);
       console.log('Exchange rates updated:', latestRate.rates);
     } else {
       console.log('Exchange rates are up to date.');

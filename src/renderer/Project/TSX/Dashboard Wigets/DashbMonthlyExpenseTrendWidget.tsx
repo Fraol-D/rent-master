@@ -16,7 +16,10 @@ import {
 } from 'date-fns';
 import { axisClasses } from '@mui/x-charts/ChartsAxis';
 import { subDays, differenceInDays, addMonths, addYears } from 'date-fns';
-import CurrencySign, { formatNumberWithSuffix, getRateByDate } from '../Helpers/CurrencySign';
+import CurrencySign, {
+  formatNumberWithSuffix,
+  getRateByDate,
+} from '../Helpers/CurrencySign';
 interface MonthlyExpenseTrendWidgetProps {
   expenses: expenses[];
   SelectedBranchId: any;
@@ -222,16 +225,26 @@ const DashbMonthlyExpenseTrendWidget: React.FC<
       yearEnd
     );
 
-    const filteredExpenses = allExpenses.filter((e) => {
-      const expenseDate = new Date(e.date);
-      return expenseDate >= yearStart && expenseDate <= yearEnd;
-    }).map(e => ({...e, price: processValueByCurrency(e.price, e.Currency, e.date)}));
+    const filteredExpenses = allExpenses
+      .filter((e) => {
+        const expenseDate = new Date(e.date);
+        return expenseDate >= yearStart && expenseDate <= yearEnd;
+      })
+      .map((e) => ({
+        ...e,
+        price: processValueByCurrency(e.price, e.Currency, e.date),
+      }));
 
-    const totalExpense = filteredExpenses.reduce((sum, e) => sum + e.price, 0)
+    const totalExpense = filteredExpenses.reduce((sum, e) => sum + e.price, 0);
 
     const monthlyExpenses = d3.rollup(
       filteredExpenses,
-      (v) => processValueByCurrency(d3.sum(v, (d) => d.price), v[0].Currency, v[0].date),
+      (v) =>
+        processValueByCurrency(
+          d3.sum(v, (d) => d.price),
+          v[0].Currency,
+          v[0].date
+        ),
       (d) => format(new Date(d.date), 'MMM')
     );
 
@@ -269,8 +282,7 @@ const DashbMonthlyExpenseTrendWidget: React.FC<
             {
               dataKey: 'date',
               scaleType: 'point',
-              valueFormatter: (value) =>
-                (value.toLocaleString()),
+              valueFormatter: (value) => value.toLocaleString(),
               tickLabelStyle: {
                 angle: 0,
                 textAnchor: 'middle',
@@ -286,9 +298,14 @@ const DashbMonthlyExpenseTrendWidget: React.FC<
               area: true,
 
               valueFormatter: (value) =>
-                `${formatNumberWithSuffix(value?.toLocaleString())}${CurrencySign(currencyDisplay.includes('ETB') ? 'ETB' : 'USD')}`,
+                `${formatNumberWithSuffix(
+                  value?.toLocaleString()
+                )}${CurrencySign(
+                  currencyDisplay.includes('ETB') ? 'ETB' : 'USD'
+                )}`,
             },
-          ]}   slotProps={{
+          ]}
+          slotProps={{
             legend: {
               hidden: true,
             },
@@ -304,20 +321,32 @@ const DashbMonthlyExpenseTrendWidget: React.FC<
                 },
                 colors: ['red', 'red', 'red'],
               },
-            
+
               valueFormatter: (value) =>
-                `${formatNumberWithSuffix(value?.toLocaleString())}${CurrencySign(currencyDisplay.includes('ETB') ? 'ETB' : 'USD')}`,
-           },
-            
+                `${formatNumberWithSuffix(
+                  value?.toLocaleString()
+                )}${CurrencySign(
+                  currencyDisplay.includes('ETB') ? 'ETB' : 'USD'
+                )}`,
+            },
           ]}
           dataset={dataset}
           onError={(error) => {
             console.error('Chart error:', error);
           }}
           grid={{ vertical: true, horizontal: true }}
-          margin={{ left: 40 + (window.electron.store.get("abbreiviateBigNumbers") ? 30 : Math.max(
-            ...dataset.map(d => d.expense.toString().length * 6)
-          )), right: 30, top: 30, bottom: 60 }}
+          margin={{
+            left:
+              40 +
+              (storageManager.get('abbreiviateBigNumbers')
+                ? 30
+                : Math.max(
+                    ...dataset.map((d) => d.expense.toString().length * 6)
+                  )),
+            right: 30,
+            top: 30,
+            bottom: 60,
+          }}
           sx={{
             '.MuiLineElement-root': {
               stroke: 'red',
@@ -348,7 +377,7 @@ const DashbMonthlyExpenseTrendWidget: React.FC<
     }
   };
   const getCurrentExchangeRate = () => {
-    const storedRates = window.electron.store.get('exchangeRate');
+    const storedRates = storageManager.get('exchangeRate');
     if (!storedRates || storedRates.length === 0) return null;
     return storedRates[storedRates.length - 1].rates;
   };
@@ -436,7 +465,7 @@ const DashbMonthlyExpenseTrendWidget: React.FC<
           Total Expense This Year:{' '}
           <em className="ExpenseStatValue">
             {formatNumberWithSuffix(expenseStats.totalExpense.toLocaleString())}
-          {CurrencySign(currencyDisplay.includes('ETB') ? 'ETB' : 'USD')}
+            {CurrencySign(currencyDisplay.includes('ETB') ? 'ETB' : 'USD')}
           </em>
         </p>
         <p className="ExpenseStatItem">

@@ -159,7 +159,7 @@ const DashbUpcomingExpensesWidget: React.FC<UpcomingExpensesWidgetProps> = ({
   const [monthsToShow, setMonthsToShow] = useState<number>(6);
   const [limit, setLimit] = useState<number>(500);
   const getCurrentExchangeRate = () => {
-    const storedRates = window.electron.store.get('exchangeRate');
+    const storedRates = storageManager.get('exchangeRate');
     if (!storedRates || storedRates.length === 0) return null;
     return storedRates[storedRates.length - 1].rates;
   };
@@ -335,7 +335,7 @@ const DashbUpcomingExpensesWidget: React.FC<UpcomingExpensesWidgetProps> = ({
               padding: '3px 8px',
               borderRadius: '4px',
               border: '1px solid var(--Border-Color)',
-            
+
               color: 'var(--Text-Color)',
               cursor: 'pointer',
             }}

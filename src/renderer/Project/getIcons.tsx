@@ -122,7 +122,7 @@ import ClearFiltersLight from '../assets/assets/Light mode/ClearFilters.png';
 import { LIMIT_LIKE_PATTERN_LENGTH } from 'sqlite3';
 
 export const IconsGUI = () => {
-  const DARKtheme = window.electron.store.get("ThemeMode") === "light";
+  const DARKtheme = storageManager.get("ThemeMode") === "light";
   return { 
     AdminSettingsMaleIcon: DARKtheme ? AdminSettingsMaleDark : AdminSettingsMaleLight,
     AdministratorMaleIcon: DARKtheme ? AdministratorMaleDark : AdministratorMaleLight,

@@ -540,11 +540,8 @@ const SignupPage = ({
     }
 
     const userID = uuidv4();
-    window.electron.store.set('abbreviationDecimals', 2);
-    window.electron.store.set(
-      'abbreiviateBigNumbers',
- true
-    );
+    storageManager.set('abbreviationDecimals', 2);
+    storageManager.set('abbreiviateBigNumbers', true);
     if (subscriptionType === '7daytrial') {
       const startDate = new Date();
       const endDate = new Date(startDate.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days later
@@ -552,7 +549,7 @@ const SignupPage = ({
       const daysUntilEnd = Math.ceil(
         (endDate.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24)
       );
-      window.electron.store.set('useLiveExchangeRates', true);
+      storageManager.set('useLiveExchangeRates', true);
       await AddUserOnline(
         JSON.stringify({
           id: userID,
@@ -568,7 +565,7 @@ const SignupPage = ({
         })
       );
 
-      window.electron.store.set('users', [
+      storageManager.set('users', [
         {
           id: userID,
           Allowed: 0,
@@ -603,7 +600,7 @@ const SignupPage = ({
         })
       );
 
-      window.electron.store.set('users', [
+      storageManager.set('users', [
         {
           id: userID,
           Allowed: 0,
@@ -643,21 +640,27 @@ const SignupPage = ({
   useEffect(() => {
     const check = async () => {
       try {
-        const response = await getValuesWithSql_Online('users', "WHERE 1");
-        window.electron.ipcRenderer.send('console-message', JSON.stringify({
-          type: 'info',
-          message: 'CheckOnlineDB',
-          data: response,
-          source: 'SignupPage'
-        }));
+        const response = await getValuesWithSql_Online('users', 'WHERE 1');
+        window.electron.ipcRenderer.send(
+          'console-message',
+          JSON.stringify({
+            type: 'info',
+            message: 'CheckOnlineDB',
+            data: response,
+            source: 'SignupPage',
+          })
+        );
         if (response) setCheckOnlineDB(response.length);
       } catch (error) {
-        window.electron.ipcRenderer.send('console-message', JSON.stringify({
-          type: 'error',
-          message: 'CheckOnlineDB Failed',
-          data: error,
-          source: 'SignupPage'
-        }));
+        window.electron.ipcRenderer.send(
+          'console-message',
+          JSON.stringify({
+            type: 'error',
+            message: 'CheckOnlineDB Failed',
+            data: error,
+            source: 'SignupPage',
+          })
+        );
       }
     };
     check();
@@ -697,7 +700,6 @@ const SignupPage = ({
             marginBottom: 'var(--15px-V)',
           }}
         >
-          
           <h1
             style={{
               marginRight: 'var(--10px-V)',
@@ -838,7 +840,7 @@ const SignupPage = ({
                   placeholder="Phone Number"
                   className="userName-input"
                 />
-               
+
                 <br />
                 <button onClick={handleSignUp} className="LoginButton">
                   Sign Up ▶

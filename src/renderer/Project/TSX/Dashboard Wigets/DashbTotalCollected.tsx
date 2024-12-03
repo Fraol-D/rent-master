@@ -170,7 +170,7 @@ const DashbTotalCollected = ({
 
   // Add this to display current exchange rate
   const getCurrentExchangeRate = () => {
-    const storedRates = window.electron.store.get('exchangeRate');
+    const storedRates = storageManager.get('exchangeRate');
     if (!storedRates || storedRates.length === 0) return null;
     return storedRates[storedRates.length - 1].rates;
   };
@@ -595,7 +595,7 @@ const DashbTotalCollected = ({
         margin={{
           left:
             40 +
-            (window.electron.store.get('abbreiviateBigNumbers')
+            (storageManager.get('abbreiviateBigNumbers')
               ? 30
               : Math.max(
                   ...dataset.map((d) =>
