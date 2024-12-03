@@ -1,5 +1,4 @@
-// Disable no-unused-vars, broken for spread args
-/* eslint no-unused-vars: off */
+
 import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron';
 
 export type Channels =
@@ -14,28 +13,13 @@ const electronHandler = {
     ipcRenderer.invoke('check-file-system', userId, localFileSystem),
 
   store: {
-    _get(key: any) {
+    get(key: any) {
       return ipcRenderer.sendSync('electron-store-get', key);
     },
-    _set(property: any, val: any) {
+    set(property: any, val: any) {
       ipcRenderer.send('electron-store-set', property, val);
     },
-    get implementation() {
-      return {
-        get: this._get,
-        set: this._set,
-      };
-    },
-    setImplementation(impl: { get: (key: any) => any; set: (key: any, val: any) => void }) {
-      this._get = impl.get;
-      this._set = impl.set;
-    },
-    get(key: any) {
-      return this._get(key);
-    },
-    set(property: any, val: any) {
-      this._set(property, val);
-    }
+    // Other method you want to add like has(), reset(), etc.
   },
   ipcRenderer: {
     sendMessage(channel: Channels, ...args: unknown[]) {
