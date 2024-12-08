@@ -84,17 +84,11 @@ const TopPerformingUnits = ({
         // Convert payment value if currencies don't match
         if (RoomList.find((r) => r.id === payment.roomId)?.Currency !== defaultCurrency) {
           const { rate, direction } = getRateByDate(payment.Day);
-          console.log(`Processing payment from ${new Date(payment.Day).toLocaleDateString()}`);
-          console.log(`Converting ${value} ${RoomList.find((r) => r.id === payment.roomId)?.Currency} to ${defaultCurrency}`);
-          console.log(`Using rate: ${rate} (${direction})`);
-          
           if (rate) {
             if (RoomList.find((r) => r.id === payment.roomId)?.Currency === 'USD' && defaultCurrency === 'ETB') {
               value = value * rate; // Convert USD to ETB
-              console.log(`Converted USD to ETB: ${value}`);
             } else if (RoomList.find((r) => r.id === payment.roomId)?.Currency === 'ETB' && defaultCurrency === 'USD') {
               value = value / rate; // Convert ETB to USD
-              console.log(`Converted ETB to USD: ${value}`);
             }
           } else {
             console.warn('No rate found for date, using original value');
@@ -134,12 +128,7 @@ const TopPerformingUnits = ({
       .slice(0, showAll ? Object.keys(roomIncomes).length : 5)
       .map(([roomId, data]) => {
         const room = RoomList.find((r) => r.id === roomId);
-        console.log(`Room ${room?.floor}-${room?.roomIndex} total income:`, {
-          originalPayments: data.payments,
-          totalIncome: data.totalIncome,
-          currency: defaultCurrency
-        });
-        
+       
         return {
           roomId,
           totalIncome: data.totalIncome,
@@ -347,15 +336,15 @@ const calculateAnnualRevenue = (room: RoomType) => {
     case 'monthly':
       annualRevenue = room.AgreedPrice;
       break;
-    case '30':
+   
     case '30':
       annualRevenue = room.AgreedPrice * 12;
       break;
-    case '15':
+    
     case '15':
       annualRevenue = room.AgreedPrice * 24;
       break;
-    case '7':
+
     case '7':
       annualRevenue = room.AgreedPrice * 52;
       break;

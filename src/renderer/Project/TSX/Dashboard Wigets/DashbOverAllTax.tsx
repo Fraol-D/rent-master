@@ -1,3 +1,4 @@
+import { storageManager } from '../../../storeManager';
 import React, { useState, useMemo, useEffect } from 'react';
 import * as d3 from 'd3';
 import { BarChart } from '@mui/x-charts/BarChart';

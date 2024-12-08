@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import '../../../CSS/AgreementViewerForRoom.css';
 import { Input } from '../CustomReactComponents';
-const { v4: uuidv4 } = require('uuid');
+import { v4 as uuidv4 } from 'uuid';
 
 import {
   convertToGC,
@@ -15,7 +15,11 @@ import {
   updateValue,
 } from 'Backend/localServerApis';
 import { addDays } from 'date-fns'; // Add this import
-import CurrencySign, { formatNumberWithSuffix, GetCurrencyAsOptionsOnSelect, GetDefaultCurrency } from '../CurrencySign';
+import CurrencySign, {
+  formatNumberWithSuffix,
+  GetCurrencyAsOptionsOnSelect,
+  GetDefaultCurrency,
+} from '../CurrencySign';
 import { useAlert } from 'renderer/components/useAlert';
 
 const AgreementViewerForRoom = ({
@@ -149,15 +153,15 @@ const AgreementViewerForRoom = ({
       showAlert('Please enter both start time and end time');
       return;
     }
-    if(signDate === ''){
+    if (signDate === '') {
       showAlert('Please enter a sign date');
       return;
     }
-    if(!paymentCycle){
+    if (!paymentCycle) {
       showAlert('Please enter a payment cycle');
       return;
     }
-    if(paymentCycle === 'custom' && !customDays){
+    if (paymentCycle === 'custom' && !customDays) {
       showAlert('Please enter a custom payment cycle');
       return;
     }
@@ -232,7 +236,7 @@ const AgreementViewerForRoom = ({
       paymentIntervals[paymentCycle as keyof typeof paymentIntervals] || 30;
 
     console.log('reached1', interval);
-// Create a new agreement ID first
+    // Create a new agreement ID first
 
     // Create a new agreement and add it to the agreements table
     agreementApi.addAgreementApi(
@@ -299,49 +303,51 @@ const AgreementViewerForRoom = ({
       <>
         <div className="AgreementMainContianer">
           <div>
-            
-              <div className="AgreementNavigationButtons">
-                {Agreements.length > 1 && (<button
+            <div className="AgreementNavigationButtons">
+              {Agreements.length > 1 && (
+                <button
                   onClick={handlePrevAgreement}
                   disabled={CurrentAgreementIndex === 0}
                 >
                   ◀
-                </button> )}
-                <strong
-                  style={{
-                    color: 'Black',
-                    background:
-                      Agreements[CurrentAgreementIndex].id ===
-                      roomType.selectedAgreementId
-                        ? 'var(--Primary-Color)'
-                        : '',
-                    padding: 'var(--5px-V) ',
-                    borderRadius: 'var(--5px-V)',
-                  }}
-                >
-                  {Agreements[CurrentAgreementIndex].id ===
-                  roomType.selectedAgreementId
-                    ? 'Current'
-                    : 'Expired ' +
-                      (Agreements.indexOf(Agreements[CurrentAgreementIndex]) +
-                        1)}
-                </strong>{' '}
-                {Agreements.length > 1 && (<button
+                </button>
+              )}
+              <strong
+                style={{
+                  color: 'Black',
+                  background:
+                    Agreements[CurrentAgreementIndex].id ===
+                    roomType.selectedAgreementId
+                      ? 'var(--Primary-Color)'
+                      : '',
+                  padding: 'var(--5px-V) ',
+                  borderRadius: 'var(--5px-V)',
+                }}
+              >
+                {Agreements[CurrentAgreementIndex].id ===
+                roomType.selectedAgreementId
+                  ? 'Current'
+                  : 'Expired ' +
+                    (Agreements.indexOf(Agreements[CurrentAgreementIndex]) + 1)}
+              </strong>{' '}
+              {Agreements.length > 1 && (
+                <button
                   onClick={handleNextAgreement}
                   disabled={CurrentAgreementIndex === Agreements.length - 1}
                 >
                   ▶
-                </button>)}
-                <button
-                  onClick={() => {
-                    setShowAddAgreementPannal(true);
-                  }}
-                  style={{marginLeft:"var(--20px-V)"}}
-                >
-                  Add an agreement
                 </button>
-              </div>
-           
+              )}
+              <button
+                onClick={() => {
+                  setShowAddAgreementPannal(true);
+                }}
+                style={{ marginLeft: 'var(--20px-V)' }}
+              >
+                Add an agreement
+              </button>
+            </div>
+
             <div className="AddTenantContainerinnerElement" style={{}}>
               <div>
                 Representative:
@@ -402,7 +408,7 @@ const AgreementViewerForRoom = ({
           <div className="AddTenantContainerinnerElement">
             Agreed Price:{' '}
             <em style={{ fontWeight: '600' }}>
-              {(Agreements[CurrentAgreementIndex].agreedPrice.toLocaleString())}
+              {Agreements[CurrentAgreementIndex].agreedPrice.toLocaleString()}
             </em>
             {CurrencySign(Agreements[CurrentAgreementIndex].Currency)} Every{' '}
             {getCorrectPaymentStatment(
@@ -425,7 +431,7 @@ const AgreementViewerForRoom = ({
             <input
               type="text"
               className="StartTime"
-              placeholder='Enter memo here...'
+              placeholder="Enter memo here..."
               value={
                 MemoText === 'INITIALLLI'
                   ? Agreements[CurrentAgreementIndex].Memo
@@ -527,7 +533,7 @@ const AgreementViewerForRoom = ({
                         checked={paymentOption === 'keepUnpaid'}
                         onChange={() => setPaymentOption('keepUnpaid')}
                       />
-                      Keep all unpaid future payments  (If any)
+                      Keep all unpaid future payments (If any)
                     </label>
                     <br />
                     <label>
@@ -538,22 +544,28 @@ const AgreementViewerForRoom = ({
                         checked={paymentOption === 'makeAllPaid'}
                         onChange={() => setPaymentOption('makeAllPaid')}
                       />
-                      Make all unpaid future payments paid   (If any)
+                      Make all unpaid future payments paid (If any)
                     </label>
                     <br />
                   </div>
                   <div
                     className="AddTenantContainerinnerElement"
-                    style={{ marginTop: 'var(--20px-V)',marginBottom:"var(--10px-V)", display:"flex", flexDirection:"column", alignItems:"flex-start", gap:"var(--10px-V)" }}
+                    style={{
+                      marginTop: 'var(--20px-V)',
+                      marginBottom: 'var(--10px-V)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'flex-start',
+                      gap: 'var(--10px-V)',
+                    }}
                   >
                     <div>
                       Representative:
                       <input
                         type="text"
-                        placeholder='Enter representative name'
+                        placeholder="Enter representative name"
                         value={Representative}
                         className="StartTime"
-                      
                         onChange={(e) => setRepresentative(e.target.value)}
                       />{' '}
                     </div>
@@ -709,34 +721,52 @@ const AgreementViewerForRoom = ({
                     )}
                   </div>
                   <div className="AddTenantContainerinnerElement">
-                  Currency:
-                      <select
-                        value={AddAgreementFormCurrency}
-                        onChange={(e) =>
-                          setAddAgreementFormCurrency(e.target.value)
-                        }
-                        className="AddANewRoomSelectMid StartTime"
-                      >
-                        {GetCurrencyAsOptionsOnSelect()}
-                      </select><br />
+                    Currency:
+                    <select
+                      value={AddAgreementFormCurrency}
+                      onChange={(e) =>
+                        setAddAgreementFormCurrency(e.target.value)
+                      }
+                      className="AddANewRoomSelectMid StartTime"
+                    >
+                      {GetCurrencyAsOptionsOnSelect()}
+                    </select>
+                    <br />
                     Agreed Price:{' '}
                     <input
                       type="number"
                       className="AddTenantContainerinnerInput StartTime"
-                      style={{ width: 'var(--70px-V)',marginTop:"var(--10px-V)" }}
+                      style={{
+                        width: 'var(--70px-V)',
+                        marginTop: 'var(--10px-V)',
+                      }}
                       placeholder="Enter price"
                       value={agreedPrice}
                       onChange={(e) => setAgreedPrice(parseInt(e.target.value))}
                     />
                     {CurrencySign(AddAgreementFormCurrency)}
-                    
                   </div>
                 </div>
               </div>
               <div></div>
-              <div style={{ display: 'flex', justifyContent:"space-around",width:"100%" }}>
-                <button onClick={HandleCancelAddAgreement} style={{width:"90%",marginRight: 'var(--30px-V)'}}>Cancel</button>
-                <button onClick={HandleAddAgreement} disabled={!!endDateError} style={{width:"90%"}}>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-around',
+                  width: '100%',
+                }}
+              >
+                <button
+                  onClick={HandleCancelAddAgreement}
+                  style={{ width: '90%', marginRight: 'var(--30px-V)' }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={HandleAddAgreement}
+                  disabled={!!endDateError}
+                  style={{ width: '90%' }}
+                >
                   Add
                 </button>
               </div>

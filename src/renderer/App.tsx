@@ -1,3 +1,4 @@
+import { storageManager } from './storeManager';
 import { MemoryRouter as Router, Routes, Route } from 'react-router-dom';
 import icon from '../../assets/icon.svg';
 import './App.css';
@@ -6,7 +7,7 @@ import { useEffect, useState } from 'react';
 import NavBar from './Project/TSX/Navbar/NavBar';
 import LogoImage from './assets/Insert Image Pic.png';
 
-const { v4: uuidv4 } = require('uuid');
+import { v4 as uuidv4 } from 'uuid';
 import {
   addValue,
   addValueROOM,
@@ -14,14 +15,14 @@ import {
   getValues,
   getValuesWithSql,
   updateValue,
-} from 'Backend/localServerApis';
+} from '../Backend/localServerApis';
 import AccountManager from './Project/TSX/Sign up and login/AccountManager';
 import {
   getValuesWithSql_Online,
   SignOutUser,
   Upload,
   UploadUserFilesToTheOnlineDatabase,
-} from 'Backend/OnlineServerApis';
+} from '../Backend/OnlineServerApis';
 import {
   addDays,
   addMonths,
@@ -38,12 +39,21 @@ import {
 import { AlertProvider, useAlert } from './components/useAlert';
 import { ConfirmProvider } from './components/useConfirm';
 import { getFromStore, setToStore } from './storeManager';
+import { GlobalProvider, useGlobal } from './components/GlobalContext';
 function noop() {}
 //console.log = noop;
 
 declare global {}
 function Hello() {
   const [RoomList, setRoomList] = useState<RoomType[]>([]);
+  const { 
+    AllRoomPayInfo, 
+    setAllRoomPayInfo,
+    AllAgreements,
+    setAllAgreements,
+    AllTenants,
+    setAllTenants 
+  } = useGlobal();
   const [TenantList, setTenantList] = useState<tenant[]>([]);
   const [BrokerList, setBrokerList] = useState<BrokerType[]>([]);
   const [PastTenantReviews, setPastTenantReviews] = useState<
@@ -1010,6 +1020,31 @@ function Hello() {
     const branchId = storageManager.get('SelectedBranchId');
     setSelectedBranchId(branchId);
     if (branchId) {
+      try {
+        const userId = storageManager.get('users')[0].id;
+        const branchId = storageManager.get('SelectedBranchId');
+
+        const AllRoomPayInfo = await getValuesWithSql(
+          'room_pay_info',
+          `WHERE userId = '${userId}' AND branchId = '${branchId}'`
+        );
+        setAllRoomPayInfo(AllRoomPayInfo);
+        console.log("AllRoomPayInfo: ",AllRoomPayInfo)
+        const AllAgreements = await getValuesWithSql(
+          'agreements',
+          `WHERE userId = '${userId}' AND branchId = '${branchId}'`
+        );
+        setAllAgreements(AllAgreements);
+        const AllTenants = await getValuesWithSql(
+          'tenants',
+          `WHERE userId = '${userId}' AND branchId = '${branchId}'`
+        );
+        setAllTenants(AllTenants);
+      } catch (error: any) {
+        alert('Error getting data: ' + error.message);
+        console.log(error.message);
+      }
+
       roomAPI.getRoomFromApi();
       brokerApi.getBrokersApi();
       tenantAPI.getTenantsApi();
@@ -1114,7 +1149,9 @@ function Hello() {
         setChangeMade(OfflineChanges.length);
       }
     };
-    getChanges();
+    if (window.electron) {
+      getChanges();
+    }
   }, [ChangeMade]);
   const [UploadingLoadingEffect, setUploadingLoadingEffect] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -1552,30 +1589,7 @@ function Hello() {
     }
   };
   const [Branches, setBranches] = useState<BranchTypeWithData[]>([]);
-  const [isConnected, setIsConnected] = useState(true);
 
-  useEffect(() => {
-    // Start heartbeat
-    window.electron.connectionMonitor.startHeartbeat();
-
-    // Listen for connection losses
-    window.electron.connectionMonitor.onConnectionLost(() => {
-      setIsConnected(false);
-
-      // Show disconnection alert
-      notification.error({
-        message: 'Connection Lost',
-        description:
-          'Lost connection to the main process. Attempting to reconnect...',
-        duration: 0, // Keep showing until connection is restored
-      });
-
-      // Optional: Attempt to reload the page after a delay
-      setTimeout(() => {
-        window.location.reload();
-      }, 5000);
-    });
-  }, []); // Add this to your App component
   useEffect(() => {
     const perfObserver = new PerformanceObserver((list) => {
       for (const entry of list.getEntries()) {
@@ -1595,140 +1609,126 @@ function Hello() {
   return (
     <AlertProvider>
       <ConfirmProvider>
-        <>
-          {' '}
-          {!isConnected && (
-            <div
-              style={{
-                position: 'fixed',
-                top: 0,
-                left: 0,
-                right: 0,
-                backgroundColor: '#ff4d4f',
-                color: 'white',
-                padding: '8px',
-                textAlign: 'center',
-                zIndex: 9999,
-              }}
+        {' '}
+      
+          <>
+            {' '}
+            {SyncProgress >= 1 && SyncProgress <= 99 && (
+              <>
+                <div className="progress-container">
+                  <div
+                    className="progress-bar"
+                    style={{
+                      width: `${SyncProgress}%`,
+                      position: 'absolute',
+                      zIndex: 10000,
+                    }}
+                  ></div>
+                </div>
+              </>
+            )}{' '}
+            <SyncLoadingPopup colors={colors} isVisible={isSyncing} />
+            <AccountManager
+              Refresh={Refresh}
+              isSignedIn={isSignedIn}
+              setisSignedIn={setisSignedIn}
+              setChangeMade={setChangeMade}
+              SelectedUserId={SelectedUserId}
+              setSelectedUserId={setSelectedUserId}
+              setIsSyncing={setIsSyncing}
+              RefreshDataFromSqlite={RefreshDataFromSqlite}
+              setSyncProgress={setSyncProgress}
+              signOutUserAndRestart={signOutUserAndRestart}
+              setAppUserManagerShow={setAppUserManagerShow}
+              AppUserManagerShow={AppUserManagerShow}
+              AppUserManagerPromptPassword={AppUserManagerPromptPassword}
+              setAppUserManagerPromptPassword={setAppUserManagerPromptPassword}
+              setSelectedAppUser={setSelectedAppUser}
+              SelectedAppUser={SelectedAppUser}
+              ViewBranchManagementPage={ViewBranchManagementPage}
+              setViewBranchManagementPage={setViewBranchManagementPage}
+              SelectedBranchId={SelectedBranchId}
+              setSelectedBranchId={setSelectedBranchId}
+              setViewBranchManagementPageNONAdm={
+                setViewBranchManagementPageNONAdm
+              }
+              ViewBranchManagementPageNONAdm={ViewBranchManagementPageNONAdm}
+              fetchBranches={fetchBranches}
+              Branches={Branches}
+              setBranches={setBranches}
+              setBranchName={setBranchName}
+              setGetBranchData={setGetBranchData}
+              getBranchData={getBranchData}
             >
-              Connection Lost - Attempting to reconnect...
-            </div>
-          )}
-          {SyncProgress >= 1 && SyncProgress <= 99 && (
-            <>
-              <div className="progress-container">
-                <div
-                  className="progress-bar"
-                  style={{
-                    width: `${SyncProgress}%`,
-                    position: 'absolute',
-                    zIndex: 10000,
-                  }}
-                ></div>
-              </div>
-            </>
-          )}{' '}
-          <SyncLoadingPopup colors={colors} isVisible={isSyncing} />
-          <AccountManager
-            Refresh={Refresh}
-            isSignedIn={isSignedIn}
-            setisSignedIn={setisSignedIn}
-            setChangeMade={setChangeMade}
-            SelectedUserId={SelectedUserId}
-            setSelectedUserId={setSelectedUserId}
-            setIsSyncing={setIsSyncing}
-            RefreshDataFromSqlite={RefreshDataFromSqlite}
-            setSyncProgress={setSyncProgress}
-            signOutUserAndRestart={signOutUserAndRestart}
-            setAppUserManagerShow={setAppUserManagerShow}
-            AppUserManagerShow={AppUserManagerShow}
-            AppUserManagerPromptPassword={AppUserManagerPromptPassword}
-            setAppUserManagerPromptPassword={setAppUserManagerPromptPassword}
-            setSelectedAppUser={setSelectedAppUser}
-            SelectedAppUser={SelectedAppUser}
-            ViewBranchManagementPage={ViewBranchManagementPage}
-            setViewBranchManagementPage={setViewBranchManagementPage}
-            SelectedBranchId={SelectedBranchId}
-            setSelectedBranchId={setSelectedBranchId}
-            setViewBranchManagementPageNONAdm={
-              setViewBranchManagementPageNONAdm
-            }
-            ViewBranchManagementPageNONAdm={ViewBranchManagementPageNONAdm}
-            fetchBranches={fetchBranches}
-            Branches={Branches}
-            setBranches={setBranches}
-            setBranchName={setBranchName}
-            setGetBranchData={setGetBranchData}
-            getBranchData={getBranchData}
-          >
-            <>
-              <NavBar
-                RefreshDataFromSqlite={RefreshDataFromSqlite}
-                UploadAssetsProgress={UploadAssetsProgress}
-                setUploadAssetsProgress={setUploadAssetsProgress}
-                setIsSyncing={setIsSyncing}
-                SelectedUserId={SelectedUserId}
-                isSyncing={isSyncing}
-                setSyncProgress={setSyncProgress}
-                ChangeMade={ChangeMade}
-                handleUpload={handleUploadChanges}
-                uploadProgress={uploadProgress}
-                UploadingLoadingEffect={UploadingLoadingEffect}
-                ProfileState={false}
-                SelectedPage={SelectedPage}
-                setSelectedPage={setSelectedPage}
-                ShowAdvancedUpload={ShowAdvancedUpload}
-                setShowAdvancedUpload={setShowAdvancedUpload}
-                Image={''}
-                ShopName={'The company'}
-                ThemeMode={ThemeMode}
-                setViewBranchManagementPageNONAdm={
-                  setViewBranchManagementPageNONAdm
-                }
-                branchName={branchName}
-                setThemeMode={ChangeTheme}
-                ChangeTheme={ChangeTheme}
-                signOutUserAndRestart={signOutUserAndRestart}
-                setAppUserManagerShow={setAppUserManagerShow}
-                setAppUserManagerPromptPassword={
-                  setAppUserManagerPromptPassword
-                }
-                SelectedAppUser={SelectedAppUser}
-                setChangeMade={setChangeMade}
-                setViewBranchManagementPage={setViewBranchManagementPage}
-              ></NavBar>
-              <MainPage
-                roomSpecificationAPI={roomSpecificationAPI}
-                SelectedPage={SelectedPage}
-                setSelectedPage={setSelectedPage}
-                signOutUserAndRestart={signOutUserAndRestart}
-                RoomList={RoomList}
-                setRoomList={setRoomList}
-                setTenantList={setTenantList}
-                TenantList={TenantList}
-                roomAPI={roomAPI}
-                tenantAPI={tenantAPI}
-                roomPaymentInfoApi={roomPaymentInfoApi}
-                isUpdatingTenantList={isUpdatingTenantList}
-                setIsUpdatingTenantList={setIsUpdatingTenantList}
-                pastTenantReviewApi={pastTenantReviewApi}
-                brokerApi={brokerApi}
-                BrokerList={BrokerList}
-                setBrokerList={setBrokerList}
-                PastTenantReviews={PastTenantReviews}
-                brokersRecommendationListApi={brokersRecommendationListApi}
-                RefreshDataFromSqlite={RefreshDataFromSqlite}
-                BrokerRecommendationList={BrokerRecommendationList}
-                agreementApi={agreementApi}
-                setChangeMade={setChangeMade}
-                SelectedAppUser={SelectedAppUser}
-                SelectedUserId={SelectedUserId}
-                SelectedBranchId={SelectedBranchId}
-              />
-            </>
-          </AccountManager>
-          {/**/}
-        </>
+              <>
+                <NavBar
+                  RefreshDataFromSqlite={RefreshDataFromSqlite}
+                  UploadAssetsProgress={UploadAssetsProgress}
+                  setUploadAssetsProgress={setUploadAssetsProgress}
+                  setIsSyncing={setIsSyncing}
+                  SelectedUserId={SelectedUserId}
+                  isSyncing={isSyncing}
+                  setSyncProgress={setSyncProgress}
+                  ChangeMade={ChangeMade}
+                  handleUpload={handleUploadChanges}
+                  uploadProgress={uploadProgress}
+                  UploadingLoadingEffect={UploadingLoadingEffect}
+                  ProfileState={false}
+                  SelectedPage={SelectedPage}
+                  setSelectedPage={setSelectedPage}
+                  ShowAdvancedUpload={ShowAdvancedUpload}
+                  setShowAdvancedUpload={setShowAdvancedUpload}
+                  Image={''}
+                  ShopName={'The company'}
+                  ThemeMode={ThemeMode}
+                  setViewBranchManagementPageNONAdm={
+                    setViewBranchManagementPageNONAdm
+                  }
+                  branchName={branchName}
+                  setThemeMode={ChangeTheme}
+                  ChangeTheme={ChangeTheme}
+                  signOutUserAndRestart={signOutUserAndRestart}
+                  setAppUserManagerShow={setAppUserManagerShow}
+                  setAppUserManagerPromptPassword={
+                    setAppUserManagerPromptPassword
+                  }
+                  SelectedAppUser={SelectedAppUser}
+                  setChangeMade={setChangeMade}
+                  setViewBranchManagementPage={setViewBranchManagementPage}
+                ></NavBar>
+                <MainPage
+                  roomSpecificationAPI={roomSpecificationAPI}
+                  SelectedPage={SelectedPage}
+                  setSelectedPage={setSelectedPage}
+                  signOutUserAndRestart={signOutUserAndRestart}
+                  RoomList={RoomList}
+                  setRoomList={setRoomList}
+                  setTenantList={setTenantList}
+                  TenantList={TenantList}
+                  roomAPI={roomAPI}
+                  tenantAPI={tenantAPI}
+                  roomPaymentInfoApi={roomPaymentInfoApi}
+                  isUpdatingTenantList={isUpdatingTenantList}
+                  setIsUpdatingTenantList={setIsUpdatingTenantList}
+                  pastTenantReviewApi={pastTenantReviewApi}
+                  brokerApi={brokerApi}
+                  BrokerList={BrokerList}
+                  setBrokerList={setBrokerList}
+                  PastTenantReviews={PastTenantReviews}
+                  brokersRecommendationListApi={brokersRecommendationListApi}
+                  RefreshDataFromSqlite={RefreshDataFromSqlite}
+                  BrokerRecommendationList={BrokerRecommendationList}
+                  agreementApi={agreementApi}
+                  setChangeMade={setChangeMade}
+                  SelectedAppUser={SelectedAppUser}
+                  SelectedUserId={SelectedUserId}
+                  SelectedBranchId={SelectedBranchId}
+                />
+              </>
+            </AccountManager>
+            {/**/}
+          </>
+        
       </ConfirmProvider>
     </AlertProvider>
   );
@@ -1738,7 +1738,7 @@ export default function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<Hello />} />
+        <Route path="/" element={  <GlobalProvider><Hello /></GlobalProvider>} />
       </Routes>
     </Router>
   );

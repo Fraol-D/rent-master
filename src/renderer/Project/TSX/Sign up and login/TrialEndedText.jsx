@@ -1,3 +1,4 @@
+import { storageManager } from '../../../storeManager';
 import React from 'react';
 export default function TrialEndedText({}) {
   return (

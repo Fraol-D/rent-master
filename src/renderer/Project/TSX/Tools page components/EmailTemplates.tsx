@@ -1,3 +1,4 @@
+import { storageManager } from '../../../storeManager';
 import React, { useEffect, useState } from 'react';
 import { Input } from '../Helpers/CustomReactComponents';
 interface EmailTemplate {

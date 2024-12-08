@@ -6,7 +6,7 @@ import {
 } from 'Backend/localServerApis';
 import React, { useState, useCallback } from 'react';
 import { GetCurrencyAsOptionsOnSelect } from './CurrencySign';
-const { v4: uuidv4 } = require('uuid');
+import { v4 as uuidv4 } from 'uuid';
 
 const UtilityPaymentsTable = ({
   roomId,
@@ -123,7 +123,13 @@ const UtilityPaymentsTable = ({
           <th style={{ padding: 'var(--5px-V)', textAlign: 'center' }}>
             Price
           </th>
-          <th style={{ padding: 'var(--5px-V)', textAlign: 'center', width: 'var(--10px-V)' }}>
+          <th
+            style={{
+              padding: 'var(--5px-V)',
+              textAlign: 'center',
+              width: 'var(--10px-V)',
+            }}
+          >
             Always Ask
           </th>
         </tr>
@@ -148,36 +154,61 @@ const UtilityPaymentsTable = ({
                 />
               </td>
               <td style={{ textAlign: 'center' }}>
-                {utility.useThis ? <><input
-                  type="number"
-                  value={tempPrices[utility.id]}
-                  onChange={(e) =>
-                    handlePriceChange(utility.id, e.target.value)
-                  }
-                  onBlur={() => handlePriceUpdate(index, utility)}
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter') {
-                      handlePriceUpdate(index, utility);
-                    }
-                  }}
-                  style={{ width: 'var(--70px-V)' }}
-                />
-                <select value={utility.Currency} onChange={(e) => handleUtilityChange(index, 'Currency', e.target.value, utility)} name="" id="">{GetCurrencyAsOptionsOnSelect()}</select>
-       </> : <></>}       </td>
+                {utility.useThis ? (
+                  <>
+                    <input
+                      type="number"
+                      value={tempPrices[utility.id]}
+                      onChange={(e) =>
+                        handlePriceChange(utility.id, e.target.value)
+                      }
+                      onBlur={() => handlePriceUpdate(index, utility)}
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter') {
+                          handlePriceUpdate(index, utility);
+                        }
+                      }}
+                      style={{ width: 'var(--70px-V)' }}
+                    />
+                    <select
+                      value={utility.Currency}
+                      onChange={(e) =>
+                        handleUtilityChange(
+                          index,
+                          'Currency',
+                          e.target.value,
+                          utility
+                        )
+                      }
+                      name=""
+                      id=""
+                    >
+                      {GetCurrencyAsOptionsOnSelect()}
+                    </select>
+                  </>
+                ) : (
+                  <></>
+                )}{' '}
+              </td>
               <td style={{ padding: 'var(--5px-V)', textAlign: 'center' }}>
-                {utility.useThis ? <><input
-                  type="checkbox"
-                  checked={utility.alwaysAsk}
-                  onChange={(e) =>
-                    handleUtilityChange(
-                      index,
-                      'alwaysAsk',
-                      e.target.checked,
-                      utility
-                    )
-                  }
-                /></> : <></>}
-                
+                {utility.useThis ? (
+                  <>
+                    <input
+                      type="checkbox"
+                      checked={utility.alwaysAsk}
+                      onChange={(e) =>
+                        handleUtilityChange(
+                          index,
+                          'alwaysAsk',
+                          e.target.checked,
+                          utility
+                        )
+                      }
+                    />
+                  </>
+                ) : (
+                  <></>
+                )}
               </td>
             </tr>
           )

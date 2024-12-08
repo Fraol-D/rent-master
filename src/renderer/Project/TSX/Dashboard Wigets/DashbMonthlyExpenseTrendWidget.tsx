@@ -1,3 +1,4 @@
+import { storageManager } from '../../../storeManager';
 import React, { useState, useMemo, useEffect } from 'react';
 import * as d3 from 'd3';
 import { LineChart } from '@mui/x-charts/LineChart';
@@ -315,13 +316,12 @@ const DashbMonthlyExpenseTrendWidget: React.FC<
               colorMap: {
                 type: 'piecewise',
                 thresholds: [0, 1000000],
-                tickLabelStyle: {
-                  fill: 'var(--Text-Color)',
-                  fontSize: 'var(--12px-V)',
-                },
                 colors: ['red', 'red', 'red'],
               },
-
+              tickLabelStyle: {
+                fill: 'var(--Text-Color)',
+                fontSize: 'var(--12px-V)',
+              },
               valueFormatter: (value) =>
                 `${formatNumberWithSuffix(
                   value?.toLocaleString()

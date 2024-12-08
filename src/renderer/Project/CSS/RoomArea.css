@@ -596,41 +596,42 @@
   margin-bottom: var(--4px-V);
 }.custom-alert {
   position: fixed;
-  top: 20px;
-  right: 20px;
+  top: var(--20px-V);
+  right: var(--20px-V);
   z-index: 9999;
-  min-width: 300px;
-  max-width: 450px;
-  padding: 16px;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  animation: slideIn 0.3s ease-out;
+  min-width: var(--300px-V);
+  max-width: var(--450px-V);
+  padding: var(--16px-V);
+  border-radius: var(--8px-V);
+  box-shadow: var(--0px-V) var(--4px-V) var(--12px-V) rgba(0, 0, 0, 0.15);
+  animation: slideIn var(--0.3s-V) ease-out;
 }
 
 .alert-content {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--12px-V);
 }
 
 .alert-message {
   flex-grow: 1;
-  font-size: 14px;
+  font-size: var(--14px-V);
 }
 
 .close-button {
   background: none;
   border: none;
-  font-size: 20px;
+  box-shadow: none;
+  font-size: var(--20px-V);
   cursor: pointer;
-  padding: 0;
+  padding: var(--5px-V);
   color: inherit;
-  opacity: 0.7;
+  opacity: var(--0.7-V);
 }
 
 .close-button:hover {
-  opacity: 1;
+  opacity: var(--1-V);
 }
 
 /* Alert Types */
@@ -656,20 +657,20 @@
 
 @keyframes slideIn {
   from {
-    transform: translateX(100%);
-    opacity: 0;
+    transform: translateX(var(--100-V));
+    opacity: var(--0-V);
   }
   to {
-    transform: translateX(0);
-    opacity: 1;
+    transform: translateX(var(--0-V));
+    opacity: var(--1-V);
   }
 }
 .confirm-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  top: var(--0-V);
+  left: var(--0-V);
+  right: var(--0-V);
+  bottom: var(--0-V);
   background-color: rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
@@ -680,16 +681,16 @@
 .confirm-dialog {
   background-color: var(--Background-Color);
 
-  border-radius: 8px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
-  width: 100%;
-  max-width: 400px;
-  animation: slideIn 0.2s ease-out;
+  border-radius: var(--8px-V);
+  box-shadow: var(--0-V) var(--2px-V) var(--12px-V) rgba(0, 0, 0, 0.15);
+  width: var(--100-V);
+  max-width: var(--400px-V);
+  animation: slideIn var(--0.2s-V) ease-out;
 }
 
 .confirm-header {
-  padding: 16px 20px;
-  border-bottom: 1px solid #eee;
+  padding: var(--16px-V) var(--20px-V);
+  border-bottom: var(--1px-V) solid #eee;
 }
 
 .confirm-header.info { border-bottom-color: #2196f3; }
@@ -697,33 +698,33 @@
 .confirm-header.danger { border-bottom-color: #f44336; }
 
 .confirm-header h3 {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 500;
+  margin: var(--0-V);
+  font-size: var(--18px-V);
+  font-weight: var(--500-V);
 }
 
 .confirm-content {
-  padding: 20px;
-  font-size: 16px;
-  line-height: 1.5;
+  padding: var(--20px-V);
+  font-size: var(--16px-V);
+  line-height: var(--1.5-V);
 }
 
 .confirm-actions {
-  padding: 16px 20px;
+  padding: var(--16px-V) var(--20px-V);
   display: flex;
   justify-content: flex-end;
-  gap: 12px;
-  border-top: 1px solid #eee;
+  gap: var(--12px-V);
+  border-top: var(--1px-V) solid #eee;
 }
 
 .confirm-button,
 .cancel-button {
-  padding: 8px 16px;
-  border-radius: 4px;
+  padding: var(--8px-V) var(--16px-V);
+  border-radius: var(--4px-V);
   border: none;
-  font-size: 14px;
+  font-size: var(--14px-V);
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: background-color var(--0.2s-V);
 }
 
 .cancel-button {
@@ -751,6 +752,5 @@
 }
 
 .confirm-button:hover {
-  opacity: 0.9;
+  opacity: var(--0.9-V);
 }
-

@@ -1,55 +1,45 @@
-class StorageManager {
-    constructor() {
-      this.isElectron = Boolean(window.electron);
-      this.webStorage = {
-        get: (key) => {
-          try {
-            const item = localStorage.getItem(key);
-            return item ? JSON.parse(item) : null;
-          } catch (error) {
-            console.warn(`Error reading ${key} from localStorage:`, error);
-            return null;
-          }
-        },
-        set: (key, value) => {
-          try {
-            localStorage.setItem(key, JSON.stringify(value));
-          } catch (error) {
-            console.error(`Error setting ${key} in localStorage:`, error);
-          }
-        }
-      };
+
+
+const isElectron = () => {
+  return window?.electron !== undefined;
+};
+
+const electronStorage = {
+  get: (key) => {
+    try {
+      return window.electron.store.get(key);
+    } catch (error) {
+      console.error('Error reading from electron store:', error);
+      return null;
     }
-  
-    initialize() {
-      if (this.isElectron) {
-        // In Electron environment
-        this.storage = {
-          get: (key) => window.electron.store.get(key),
-          set: (key, value) => window.electron.store.set(key, value)
-        };
-      } else {
-        // In web environment
-        this.storage = this.webStorage;
-      }
-  
-      // If in Electron, provide web storage fallback
-      if (this.isElectron) {
-        window.electron.store.setImplementation(this.webStorage);
-      }
+  },
+  set: (key, value) => {
+    try {
+      window.electron.store.set(key, value);
+    } catch (error) {
+      console.error('Error writing to electron store:', error);
     }
-  
-    get(key) {
-      return this.storage.get(key);
+  },
+};
+
+const webStorage = {
+  get: (key) => {
+    try {
+      const item = localStorage.getItem(key);
+      return item ? JSON.parse(item) : null;
+    } catch (error) {
+      console.error('Error reading from localStorage:', error);
+      return null;
     }
-  
-    set(key, value) {
-      this.storage.set(key, value);
+  },
+  set: (key, value) => {
+    try {
+      localStorage.setItem(key, JSON.stringify(value));
+    } catch (error) {
+      console.error('Error writing to localStorage:', error);
     }
-  }
-  
-  export const storageManager = new StorageManager();
-  storageManager.initialize();
-  
-  export const getFromStore = (key) => storageManager.get(key);
-  export const setToStore = (key, value) => storageManager.set(key, value);
+  },
+};
+
+// Export the appropriate storage implementation
+export const storageManager = isElectron() ? electronStorage : webStorage;

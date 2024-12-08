@@ -30,32 +30,26 @@ app.use((req, res, next) => {
 });
 app.use(
   cors({
-    origin: ['http://localhost:1212', 'https://www.rentmaster.markethubet.com'],
+    origin: [
+      'http://localhost:1212',
+      'http://localhost:5173',
+      'https://www.rentmaster.markethubet.com',
+    ],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key'],
     credentials: true,
   })
 );
 const corsOptions = {
-  origin: 'http://localhost:1212',
+  origin: [
+    'http://localhost:1212',
+    'http://localhost:5173',
+    'https://www.rentmaster.markethubet.com',
+  ],
   optionsSuccessStatus: 200,
 };
 app.use(cors(corsOptions));
-app.use((err, req, res, next) => {
-  logger.error('Unhandled error:', err);
 
-  if (err.code === 'ETIMEDOUT') {
-    return res.status(504).json({
-      error: 'Connection timed out',
-      message: 'Server is taking too long to respond. Please try again.',
-    });
-  }
-
-  res.status(500).json({
-    error: 'Internal server error',
-    message: process.env.NODE_ENV === 'development' ? err.message : undefined,
-  });
-});
 // API Key Middleware
 const checkApiKey = (req, res, next) => {
   const providedApiKey = req.headers['x-api-key'];
@@ -290,6 +284,347 @@ app.get('/logs', (req, res) => {
 });
 // Add a route to clear logs
 
+
+// Define base path for user files
+const baseUserPath = '/home/marketuz/rentmaster.markethubet.com/User Files';
+
+// File Management Routes
+const fileManagerRouter = express.Router();
+
+// Helper functions with error checking
+const getUserDirectory = (userId) => {
+  if (!userId) {
+    throw new Error('userId is required');
+  }
+  return path.join(baseDir, userId.toString());
+};
+
+const getRoomDocumentsPath = (userId) => {
+  if (!userId) {
+    throw new Error('userId is required');
+  }
+  return path.join(getUserDirectory(userId), 'Room Documents');
+};
+
+const getRoomPicturesPath = (userId) => {
+  if (!userId) {
+    throw new Error('userId is required');
+  }
+  return path.join(getUserDirectory(userId), 'Room Pictures');
+};
+
+// Middleware to check for userId
+const checkUserId = (req, res, next) => {
+  const userId = req.body.userId || req.query.userId || req.headers['user-id'];
+  if (!userId) {
+    return res.status(400).json({ error: 'userId is required' });
+  }
+  req.userId = userId;
+  next();
+};
+
+
+// Apply middleware to all routes
+fileManagerRouter.use(checkUserId);
+
+// 1. Upload Receipt Document
+fileManagerRouter.post('/upload-receipt-document', async (req, res) => {
+  try {
+    const { base64Document, fileName, roomId, tenantName, tenantId, formattedDate, AddedTimeText } = req.body;
+    const userId = req.userId;
+
+    if (!base64Document || !fileName || !roomId || !tenantName || !tenantId || !formattedDate || !AddedTimeText) {
+      return res.status(400).json({ error: 'Missing required parameters' });
+    }
+
+    const dirPath = path.join(
+      getRoomDocumentsPath(userId),
+      roomId,
+      `${tenantName}, ${AddedTimeText}, ${tenantId}`,
+      'receipts'
+    );
+
+    await fs.promises.mkdir(dirPath, { recursive: true });
+    const filePath = path.join(dirPath, fileName);
+    const base64Data = base64Document.replace(/^data:.*?;base64,/, '');
+    await fs.promises.writeFile(filePath, Buffer.from(base64Data, 'base64'));
+
+    res.json({ message: 'Receipt document uploaded successfully', fileName, filePath });
+  } catch (error) {
+    logger.error('Error uploading receipt document:', error);
+    res.status(500).json({ error: 'Failed to upload receipt document', details: error.message });
+  }
+});
+
+// 2. Upload Tenant Document V2
+fileManagerRouter.post('/upload-tenant-documentV2', async (req, res) => {
+  try {
+    const { base64Document, fileName, roomId, tenantName, tenantId, AddedTimeText } = req.body;
+    const userId = req.userId;
+
+    if (!base64Document || !fileName || !roomId || !tenantName || !tenantId || !AddedTimeText) {
+      return res.status(400).json({ error: 'Missing required parameters' });
+    }
+
+    const dirPath = path.join(
+      getRoomDocumentsPath(userId),
+      roomId,
+      `${tenantName}, ${AddedTimeText}, ${tenantId}`
+    );
+
+    await fs.promises.mkdir(dirPath, { recursive: true });
+    const filePath = path.join(dirPath, fileName);
+    const base64Data = base64Document.replace(/^data:.*?;base64,/, '');
+    await fs.promises.writeFile(filePath, Buffer.from(base64Data, 'base64'));
+
+    res.json({ message: 'Tenant document uploaded successfully', fileName, filePath });
+  } catch (error) {
+    logger.error('Error uploading tenant document:', error);
+    res.status(500).json({ error: 'Failed to upload tenant document' });
+  }
+});
+
+// 3. Delete Tenant Document Folder
+fileManagerRouter.delete('/delete-tenant-document-folder', async (req, res) => {
+  try {
+    const userId = req.userId;
+    const folderPath = path.join(
+      getRoomDocumentsPath(userId),
+      'Add a tenant documents',
+      'Add a tenant document'
+    );
+
+    if (await fs.promises.access(folderPath).then(() => true).catch(() => false)) {
+      await fs.promises.rm(folderPath, { recursive: true });
+      res.json({ message: 'Tenant document folder deleted successfully' });
+    } else {
+      res.status(404).json({ error: 'Tenant document folder not found' });
+    }
+  } catch (error) {
+    logger.error('Error deleting tenant document folder:', error);
+    res.status(500).json({ error: 'Failed to delete tenant document folder' });
+  }
+});
+
+// 4. Delete Single Tenant Document
+fileManagerRouter.delete('/room-document/delete-tenant-document/:fileName', async (req, res) => {
+  try {
+    const { fileName } = req.params;
+    const userId = req.userId;
+    
+    const filePath = path.join(
+      getRoomDocumentsPath(userId),
+      'Add a tenant documents',
+      'Add a tenant document',
+      fileName
+    );
+
+    if (await fs.promises.access(filePath).then(() => true).catch(() => false)) {
+      await fs.promises.unlink(filePath);
+      res.json({ message: 'Tenant document deleted successfully' });
+    } else {
+      res.status(404).json({ error: 'Tenant document not found' });
+    }
+  } catch (error) {
+    logger.error('Error deleting tenant document:', error);
+    res.status(500).json({ error: 'Failed to delete tenant document' });
+  }
+});
+
+// 5. Upload Room Image
+fileManagerRouter.post('/upload-room-image', async (req, res) => {
+  try {
+    const { base64Image, fileName, FolderText, FileId } = req.body;
+    const userId = req.userId;
+
+    if (!base64Image || !fileName || !FolderText || !FileId) {
+      return res.status(400).json({ error: 'Missing required parameters' });
+    }
+
+    const dirPath = path.join(getRoomPicturesPath(userId), FolderText);
+    await fs.promises.mkdir(dirPath, { recursive: true });
+    
+    const filePath = path.join(dirPath, `${FileId}-${fileName}`);
+    const base64Data = base64Image.replace(/^data:image\/\w+;base64,/, '');
+    await fs.promises.writeFile(filePath, Buffer.from(base64Data, 'base64'));
+
+    res.json({ message: 'Image uploaded successfully', fileName, FolderText, FileId });
+  } catch (error) {
+    logger.error('Error uploading image:', error);
+    res.status(500).json({ error: 'Failed to upload image' });
+  }
+});
+fileManagerRouter.get('/room-images/:roomId', async (req, res) => {
+  try {
+    const { roomId } = req.params;
+    const userId = req.headers['user-id'];
+    
+    logger.debug(`API called: GET /room-images/${roomId} for user ${userId}`);
+
+    // Base directory for user's room pictures
+    const userRoomPicturesPath = path.join(baseUserPath, userId, 'Room Pictures');
+
+    // Find the correct folder that ends with the roomId
+    let actualFolderName = null;
+    try {
+      const directories = await fs.promises.readdir(userRoomPicturesPath);
+      actualFolderName = directories.find(dir => dir.endsWith(`- ${roomId}`));
+      logger.debug(`Found folder: ${actualFolderName}`);
+    } catch (error) {
+      logger.error(`Error reading directories: ${error}`);
+      return res.json({ images: [], roomFolder: roomId });
+    }
+
+    // If no matching folder found, create one with the roomId
+    if (!actualFolderName) {
+      actualFolderName = roomId;
+      const newPath = path.join(userRoomPicturesPath, roomId);
+      fs.mkdirSync(newPath, { recursive: true });
+      logger.debug(`Created new directory: ${newPath}`);
+      return res.json({ images: [], roomFolder: roomId });
+    }
+
+    // Get images from the found folder
+    const roomImagesPath = path.join(userRoomPicturesPath, actualFolderName);
+    const files = await fs.promises.readdir(roomImagesPath);
+    
+    // Map files to URLs with the correct path structure
+    const images = files.map(file => ({
+      url: `/room-image/${encodeURIComponent(roomId)}/${encodeURIComponent(file)}/${encodeURIComponent(userId)}`,
+      name: file,
+      fullPath: path.join(roomImagesPath, file) // Add full path for debugging
+    }));
+
+    logger.debug(`Found ${images.length} images in ${actualFolderName}`);
+
+    res.json({ 
+      images,
+      roomFolder: actualFolderName
+    });
+    
+  } catch (error) {
+    logger.error('Error getting room images:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Add a new endpoint to serve the actual images
+app.get('/room-image/:roomId/:fileName/:userId', async (req, res) => {
+  try {
+    const { roomId, fileName, userId } = req.params;
+ 
+
+    // Find the correct folder
+    const userRoomPicturesPath = path.join(baseUserPath, userId, 'Room Pictures');
+    const directories = await fs.promises.readdir(userRoomPicturesPath);
+    const actualFolderName = directories.find(dir => dir.endsWith(`- ${roomId}`)) || roomId;
+
+    // Construct the full path to the image
+    const imagePath = path.join(userRoomPicturesPath, actualFolderName, fileName);
+
+    // Check if file exists
+    if (!fs.existsSync(imagePath)) {
+      logger.error(`Image not found: ${imagePath}`);
+      return res.status(404).send('Image not found');
+    }
+
+    // Send the file
+    res.sendFile(imagePath);
+    
+  } catch (error) {
+    logger.error('Error serving image:', error);
+    res.status(500).send('Error serving image');
+  }
+});
+fileManagerRouter.delete('/room-image/:roomId/:fileName', async (req, res) => {
+  try {
+    const { roomId, fileName } = req.params;
+    const userId = req.userId;
+    const roomPicturesPath = getRoomPicturesPath(userId);
+
+    const folders = await fs.promises.readdir(roomPicturesPath);
+    const roomFolder = folders.find(folder => folder.includes(roomId));
+
+    if (!roomFolder) {
+      return res.status(404).json({ error: 'Room folder not found' });
+    }
+
+    const filePath = path.join(roomPicturesPath, roomFolder, fileName);
+    await fs.promises.unlink(filePath);
+    res.json({ message: 'Image deleted successfully' });
+  } catch (error) {
+    logger.error('Error deleting image:', error);
+    res.status(500).json({ error: 'Failed to delete image' });
+  }
+});
+
+// 8. Rename Folder
+fileManagerRouter.put('/rename-folder', async (req, res) => {
+  try {
+    const { oldName, newName } = req.body;
+    const userId = req.userId;
+
+    const oldPath = path.join(getRoomPicturesPath(userId), oldName);
+    const newPath = path.join(getRoomPicturesPath(userId), newName);
+
+    await fs.promises.rename(oldPath, newPath);
+    res.json({ message: 'Folder renamed successfully' });
+  } catch (error) {
+    logger.error('Error renaming folder:', error);
+    res.status(500).json({ error: 'Failed to rename folder' });
+  }
+});
+
+// 9. Duplicate Room Images Folder
+fileManagerRouter.post('/duplicate-room-images-folder', async (req, res) => {
+  try {
+    const { sourceFolderName, newFolderName } = req.body;
+    const userId = req.userId;
+
+    const sourcePath = path.join(getRoomPicturesPath(userId), sourceFolderName);
+    const destPath = path.join(getRoomPicturesPath(userId), newFolderName);
+
+    if (!await fs.promises.access(sourcePath).then(() => true).catch(() => false)) {
+      return res.status(404).json({ error: 'Source folder not found' });
+    }
+
+    await fs.promises.mkdir(destPath, { recursive: true });
+    const files = await fs.promises.readdir(sourcePath);
+
+    await Promise.all(files.map(file => {
+      const sourceFile = path.join(sourcePath, file);
+      const destFile = path.join(destPath, file);
+      return fs.promises.copyFile(sourceFile, destFile);
+    }));
+
+    res.json({ message: 'Folder duplicated successfully' });
+  } catch (error) {
+    logger.error('Error duplicating folder:', error);
+    res.status(500).json({ error: 'Failed to duplicate folder' });
+  }
+});
+
+// 10. Delete Folder Images
+fileManagerRouter.delete('/delete-folder-images/:folderName', async (req, res) => {
+  try {
+    const { folderName } = req.params;
+    const userId = req.userId;
+    const folderPath = path.join(getRoomPicturesPath(userId), folderName);
+
+    const files = await fs.promises.readdir(folderPath);
+    await Promise.all(files.map(file => 
+      fs.promises.unlink(path.join(folderPath, file))
+    ));
+
+    res.json({ message: 'All images deleted successfully' });
+  } catch (error) {
+    logger.error('Error deleting images:', error);
+    res.status(500).json({ error: 'Failed to delete images' });
+  }
+});
+
+// Mount the router
+app.use('/api/filemanager', fileManagerRouter);
 // Add a route to clear logs
 // Add a route to clear logs
 // Add a route to clear logs
@@ -1208,7 +1543,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?)`,
         smsHistoryId,
         formattedPhone,
         `[REP] ${message}`,
-        "Manual_SMS",
+        'Manual_SMS',
         moment().valueOf(),
         'Manual_SMS',
         userId,
@@ -1600,7 +1935,16 @@ app.post('/api/send-sms-with-id', async (req, res) => {
   }
 });
 app.post('/api/send-email', async (req, res) => {
-  const { email, subject, text, user } = req.body;
+  const { email, subject, text, userId } = req.body;
+
+  const user = await new Promise((resolve, reject) => {
+    pool.query('SELECT * FROM users WHERE id = ?', [userId], (error, results) => {
+      if (error) reject(error);
+      else resolve(results[0]);
+    });
+  });
+  const selectedEmailToSendWith = user.selectedEmailToSendWith;
+  const selectedEmailToSendWithPassword = user.selectedEmailToSendWithPassword;
 
   // Fix typo in logger.debug
   logger.debug('Send email', subject, email?.slice(0, 100), text);
@@ -1611,8 +1955,8 @@ app.post('/api/send-email', async (req, res) => {
       !email ||
       !subject ||
       !text ||
-      !user?.selectedEmailToSendWith ||
-      !user?.selectedEmailToSendWithPassword
+      !selectedEmailToSendWith ||
+      !selectedEmailToSendWithPassword
     ) {
       return res.status(400).json({
         success: false,
@@ -1626,8 +1970,8 @@ app.post('/api/send-email', async (req, res) => {
       port: 465,
       secure: true, // use SSL
       auth: {
-        user: user.selectedEmailToSendWith,
-        pass: user.selectedEmailToSendWithPassword,
+        user: selectedEmailToSendWith,
+        pass: selectedEmailToSendWithPassword,
       },
       tls: {
         rejectUnauthorized: false, // Only during development/testing
@@ -1648,7 +1992,7 @@ app.post('/api/send-email', async (req, res) => {
     }
 
     const mailOptions = {
-      from: `"RentMaster" <${user.selectedEmailToSendWith}>`,
+      from: `"RentMaster" <${selectedEmailToSendWith}>`,
       to: email,
       subject: subject,
       text: text,
@@ -1794,6 +2138,15 @@ app.post('/api/verify-credentials', async (req, res) => {
         }
       );
     });
+
+    if (!user) {
+      return res.json({ isValid: false });
+    }
+
+    // Compare the provided password with the stored hash
+    const isPasswordValid = password === user.password;
+
+    res.json({ isValid: isPasswordValid });
   } catch (error) {
     logger.error('Error verifying credentials:', error);
     res.status(500).json({ error: 'Internal server error' });

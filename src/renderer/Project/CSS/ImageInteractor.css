@@ -57,7 +57,7 @@
 }
 
 .arrow-button {
-  background: rgba(0 0 0 / 0);
+  background: var(--Secondary-Color40);
   border: none;
   cursor: pointer;
   padding: var(--10px-V);
@@ -65,7 +65,7 @@
 }
 
 .arrow-button:hover {
-  background: rgba(0 0 0 / 0);
+  background: var(--Secondary-Color60);
   border: none;
 }
 

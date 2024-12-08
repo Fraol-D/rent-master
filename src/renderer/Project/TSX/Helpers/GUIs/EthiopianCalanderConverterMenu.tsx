@@ -4,9 +4,8 @@ import { Input } from '../CustomReactComponents';
 import {
   convertToGC,
   toEthiopianDateString,
-  toEthiopianMonthString,
-  toEthiopianDayString,
-} from 'renderer/Project/JS/Calendar Converter';
+
+} from 'renderer/Project/JS/Calendar Converter/index.js';
 interface EthiopianCalendarConverterProps {
   onConvert: (gregorianDate: string) => void;
   handleUse: (gagorianDate: number) => void;

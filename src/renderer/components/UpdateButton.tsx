@@ -1,3 +1,4 @@
+import { storageManager } from '../storeManager';
 import React, { useEffect, useState, useRef } from 'react';
 
 interface UpdateStatus {

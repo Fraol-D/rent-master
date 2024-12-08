@@ -1,3 +1,4 @@
+import { storageManager } from '../renderer/storeManager';
 import path from 'path';
 import { app, BrowserWindow, shell, ipcMain, Menu } from 'electron';
 import { autoUpdater } from 'electron-updater';
@@ -187,72 +188,6 @@ function setupConnectionMonitoring(window: BrowserWindow) {
 
   lastHeartbeat = Date.now();
   logDebug('Connection monitoring setup started');
-
-  // Log initial window state
-  logDebug(`Initial window state: 
-    isDestroyed: ${window.isDestroyed()}
-    isVisible: ${window.isVisible()}
-    isResponsive: ${!window.webContents.isLoadingMainFrame()}
-  `);
-
-  ipcMain.on('renderer-heartbeat', () => {
-    lastHeartbeat = Date.now();
-  });
-
-  connectionCheckInterval = setInterval(() => {
-    if (!window || window.isDestroyed()) {
-      logDebug('Window check failed: Window is null or destroyed');
-      cleanupConnectionMonitoring();
-      return;
-    }
-
-    const timeSinceLastHeartbeat = Date.now() - lastHeartbeat;
-
-    try {
-      // Check window state
-      const windowState = {
-        isDestroyed: window.isDestroyed(),
-        isVisible: window.isVisible(),
-        isResponsive: !window.webContents.isLoadingMainFrame(),
-        url: window.webContents.getURL(),
-      };
-
-      if (timeSinceLastHeartbeat > 5000) {
-        logDebug('Connection timeout detected');
-
-        // Check if renderer is actually running
-        window.webContents
-          .executeJavaScript(
-            `
-          window.electron?.connectionMonitor?.isActive || 'not-initialized'
-        `
-          )
-          .then((result) => {
-            logDebug(`Renderer check result: ${result}`);
-          })
-          .catch((error) => {
-            logDebug(`Renderer check failed: ${error.message}`);
-          });
-
-        if (!window.isDestroyed()) {
-          logDebug('Attempting to reload window...');
-
-          // Save debug logs before reload
-          const logsPath = path.join(
-            app.getPath('userData'),
-            'connection-debug.log'
-          );
-          fs.writeFileSync(logsPath, debugLog.join('\n'));
-
-          window.reload();
-        }
-      }
-
-      window.webContents.send('main-heartbeat');
-    } catch (error) {
-      logDebug(`Error during connection check: ${error.message}`);
-    }
-  }, 2000);
 }
 
 function cleanupConnectionMonitoring() {
@@ -549,19 +484,6 @@ const createWindow = async () => {
     return debugLog;
   });
 
-  // Add this to your renderer code to check connection status
-  function checkConnectionStatus() {
-    console.log('Checking connection status...');
-    window.electron.ipcRenderer
-      .invoke('get-connection-logs')
-      .then((logs) => {
-        console.log('Connection logs:', logs);
-      })
-      .catch((error) => {
-        console.error('Failed to get connection logs:', error);
-      });
-  }
-
   // Add error handlers for the window
   mainWindow.webContents.on('crashed', (event) => {
     logDebug('Renderer process crashed');
@@ -664,7 +586,7 @@ app
     setInterval(checkAndCreateBackup, 24 * 60 * 60 * 1000);
   })
   .catch(console.log);
-const { v4: uuidv4 } = require('uuid');
+import { v4 as uuidv4 } from 'uuid';
 // Sending verification codes
 ipcMain.on('SendCustomEmail', async (event, message) => {
   console.log('Send custom email:', message.to, message.subject, message.body);
@@ -676,76 +598,28 @@ ipcMain.on('SendCustomEmail', async (event, message) => {
     userEmail: any,
     userPassword: any
   ) => {
-    //Getemail and pass from online
-    const url = `${baseUrl}/${'users'}/${encodeURIComponent(
-      `WHERE email = '${userEmail}' AND password = '${userPassword}' AND Allowed = 1`
-    )}`;
-    const headers = {
-      'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-    };
-    const config = {
-      url: url,
-      method: 'get',
-      headers: {
-        ...headers,
-        'x-api-key': API_KEY, // Ensure API key is always included
+    
+    // Prepare data for API call
+    const data = {
+      email: email,
+      subject: subject,
+      text: text,
+      user: {
+        email: userEmail,
+        password: userPassword,
       },
-      data: {},
-      retry: MAX_RETRIES,
     };
 
-    const response = await axiosInstance.request(config);
-
-    const user = response.data;
-
-    if (user[0]) {
-      const transporter = nodemailer.createTransport({
-        host: 'rentmaster.markethubet.com',
-        port: 465,
-        secure: true,
-        auth: {
-          user: user[0].selectedEmailToSendWith,
-          pass: user[0].selectedEmailToSendWithPassword,
-        },
-      });
-
-      const mailOptions = {
-        from: user[0].selectedEmailToSendWith,
-        to: email,
-        subject: subject,
-        text: text,
-      };
-
-      try {
-        const ans = await transporter.sendMail(mailOptions);
-        const url = `${baseUrl}/${'email_history'}`;
-        const headers = {
-          'Content-Type': 'application/json',
-          'x-api-key': apiKey,
-        };
-        const ans2 = await axiosInstance.request({
-          url,
-          method: 'post',
-          headers,
-          data: {
-            id: uuidv4(),
-            receiver: message.to,
-            subject: message.subject,
-            body: message.body,
-            from: user[0].selectedEmailToSendWith,
-            sentDate: Date.now(),
-            templateId: message.templateId,
-            mode: 'Rent_Manually',
-            userId: user[0].id,
-            branchId: message.branchId,
-          },
-        });
-
+    try {
+      // Call the API to send the email
+      const response = await axios.post(`${baseUrl}/api/send-email`, data);
+      if (response.data.success) {
         return { success: true };
-      } catch (error) {
-        return { success: false, error: error.message };
+      } else {
+        return { success: false, error: response.data.error };
       }
+    } catch (error) {
+      return { success: false, error: error.message };
     }
   };
 
@@ -911,7 +785,7 @@ appDB.use(
   cors({
     origin: ['http://localhost:1212', 'https://www.rentmaster.markethubet.com'],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key', 'user-id'],
     credentials: true,
   })
 );
@@ -1532,9 +1406,9 @@ appDB.post(
 // Add these constants but keep existing ones
 const UPLOAD_TIMEOUT = 60000;
 
-ipcMain.handle('upload-user-files', async (event, { userId }) => {
+ipcMain.handle('upload-user-files', async (event, { userId }: { userId: string }) => {
   try {
-    // Send progress updates
+    // Send progress updates dynamically
     const updateProgress = (progress: number) => {
       event.sender.send('upload-progress', progress);
     };
@@ -1613,8 +1487,9 @@ ipcMain.handle('upload-user-files', async (event, { userId }) => {
       // Create zip file
       const zip = new JSZip();
       let totalSize = 0;
+      let filesProcessed = 0;
 
-      // Add files to zip
+      // Add files to zip and dynamically update progress
       for (const filePath of requiredFiles) {
         try {
           // Only process files from Room Pictures or Room Documents
@@ -1635,6 +1510,9 @@ ipcMain.handle('upload-user-files', async (event, { userId }) => {
             const fileContent = fs.readFileSync(fullPath);
             zip.file(filePath, fileContent);
             totalSize += fileContent.length;
+            filesProcessed++;
+            // Dynamically update progress based on the number of files processed
+            updateProgress(30 + (filesProcessed / requiredFiles.length) * 60);
           } else {
             console.warn(`File not found: ${fullPath}`);
           }
@@ -1644,7 +1522,7 @@ ipcMain.handle('upload-user-files', async (event, { userId }) => {
       }
 
       console.log(`Total upload size: ${totalSize} bytes`);
-      updateProgress(50);
+      updateProgress(90);
 
       if (totalSize === 0) {
         console.log('No valid files to upload');
@@ -1681,13 +1559,12 @@ ipcMain.handle('upload-user-files', async (event, { userId }) => {
       }
 
       console.log('Upload completed successfully:', uploadResponse.data);
-      updateProgress(90);
+      updateProgress(100);
     } else {
       console.log('No files need to be uploaded');
-      updateProgress(90);
+      updateProgress(100);
     }
 
-    updateProgress(100);
     return {
       success: true,
       message: 'Upload completed successfully',
@@ -1863,6 +1740,46 @@ appDB.delete(
     });
   }
 );
+appDB.delete(
+  '/drop-all-rows/:tableName',
+  (
+    req: { params: { tableName: any }; headers: { [x: string]: any } },
+    res: {
+      status: (arg0: number) => {
+        (): any;
+        new (): any;
+        send: { (arg0: string): void; new (): any };
+      };
+      send: (arg0: string) => void;
+    }
+  ) => {
+    const { tableName } = req.params;
+
+    // Validate the API key
+    const apiKey = req.headers['x-api-key'];
+    if (apiKey !== 'HH(CzZuQoW@tB$By)e') {
+      return res.status(401).send('Unauthorized');
+    }
+
+    // Validate the table name
+    if (!validateTableName(tableName)) {
+      return res.status(400).send('Invalid table name');
+    }
+
+    const query = `DELETE FROM ${tableName}`;
+    db.run(query, (err: { message: any }) => {
+      if (err) {
+        console.error(`Error dropping all rows from ${tableName}:`, err);
+        res
+          .status(500)
+          .send(`Error dropping all rows from ${tableName}: ${err.message}`);
+      } else {
+        res.send(`All rows dropped from ${tableName} successfully.`);
+      }
+    });
+  }
+);
+//----------------------------------File stuff
 appDB.post(
   '/upload-receipt-document',
   (
@@ -1942,47 +1859,6 @@ appDB.post(
     }
   }
 );
-
-appDB.delete(
-  '/drop-all-rows/:tableName',
-  (
-    req: { params: { tableName: any }; headers: { [x: string]: any } },
-    res: {
-      status: (arg0: number) => {
-        (): any;
-        new (): any;
-        send: { (arg0: string): void; new (): any };
-      };
-      send: (arg0: string) => void;
-    }
-  ) => {
-    const { tableName } = req.params;
-
-    // Validate the API key
-    const apiKey = req.headers['x-api-key'];
-    if (apiKey !== 'HH(CzZuQoW@tB$By)e') {
-      return res.status(401).send('Unauthorized');
-    }
-
-    // Validate the table name
-    if (!validateTableName(tableName)) {
-      return res.status(400).send('Invalid table name');
-    }
-
-    const query = `DELETE FROM ${tableName}`;
-    db.run(query, (err: { message: any }) => {
-      if (err) {
-        console.error(`Error dropping all rows from ${tableName}:`, err);
-        res
-          .status(500)
-          .send(`Error dropping all rows from ${tableName}: ${err.message}`);
-      } else {
-        res.send(`All rows dropped from ${tableName} successfully.`);
-      }
-    });
-  }
-);
-
 appDB.post(
   '/upload-tenant-documentV2',
   (
@@ -2511,7 +2387,7 @@ appDB.get(
     });
   }
 );
-// Add this new endpoint to main.ts
+
 appDB.post(
   '/duplicate-room-images-folder',
   (
@@ -2676,7 +2552,7 @@ appDB.post('/upload-room-image', (req: any, res: any) => {
     res.status(500).json({ error: 'Failed to upload image' });
   }
 });
-
+//----------------------Table stuff
 appDB.get(
   '/:tableName/:sqlCode',
   (

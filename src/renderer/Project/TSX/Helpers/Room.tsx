@@ -7,7 +7,7 @@ import React, {
   useMemo,
 } from 'react';
 import '../../CSS/Room.css';
-const { v4: uuidv4 } = require('uuid');
+import { v4 as uuidv4 } from 'uuid';
 import ImageInteractor2 from './GUIs/ImageInteractor2';
 import PaymentProgressBarGUI from './GUIs/PaymentProgressBarGUI';
 import EditIcon from '../../../assets/assets/Dark mode/Editicon.png';
@@ -23,12 +23,11 @@ import {
   updateValue,
   uploadTenantDocument,
   uploadTenantDocumentsV2,
-} from 'Backend/localServerApis';
+} from '../../../../Backend/localServerApis';
 import LeavePanel from './LeavePanel';
 import EthiopianCalanderConverterMenu from './GUIs/EthiopianCalanderConverterMenu';
 import AgreementViewerForRoom from './GUIs/AgreementViewerForRoom';
-import { toEthiopianDateString } from 'renderer/Project/JS/Calendar Converter';
-import { sendEmail } from 'Backend/Cpanel/Telegram bot paymentReminder/server';
+import { toEthiopianDateString } from '../../../Project/JS/Calendar Converter';
 import NotificationSettingsTable from './GUIs/NotificationSettingsProps';
 import UtilityPaymentsTable from './UtilityPaymentsTable';
 import UtilityPanel from './GUIs/UtilityPanel';
@@ -39,7 +38,9 @@ import CurrencySign, {
   GetDefaultCurrency,
 } from './CurrencySign';
 import { Input } from './CustomReactComponents';
-import { getUserPrivileges } from 'renderer/App';
+import { getUserPrivileges } from '../../../App';
+import { storageManager } from 'renderer/storeManager';
+import { useGlobal } from 'renderer/components/GlobalContext';
 const Room = ({
   roomType,
   updateRoomProperty,
@@ -166,7 +167,8 @@ const Room = ({
           event.target as Node
         ) &&
         roomType.ViewAgreement &&
-        !document.activeElement?.closest('.ViewAgreementContainer')
+        !document.activeElement?.closest('.ViewAgreementContainer') &&
+        !(event.target as HTMLElement).closest('#confirm-overlay')
       ) {
         updateRoomPropertyLocal(roomType.id, 'ViewAgreement', 0);
       }
@@ -1087,16 +1089,22 @@ const Room = ({
   const handleSearchBroker = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchBroker(event.target.value);
   };
-
+  const {
+    AllRoomPayInfo,
+    setAllRoomPayInfo,
+    AllAgreements,
+    setAllAgreements,
+    AllTenants,
+    setAllTenants,
+  } = useGlobal();
   const [isPercentCommission, setIsPercentCommission] = useState(true);
   const [commissionValue, setCommissionValue] = useState<number>(0);
   const [ShowReceipt, setShowReceipt] = useState(false);
   const [showUtilityPanel, setShowUtilityPanel] = useState(false);
 
   const handlePaymentRefresh = async () => {
-    const listOfPayments = await getValuesWithSql(
-      'room_pay_info',
-      `WHERE roomId = '${roomType.id}' AND tenantId = '${roomType.tenantId}'`
+    const listOfPayments = AllRoomPayInfo.filter(
+      (p) => p.roomId === roomType.id && p.tenantId === roomType.tenantId
     );
 
     const updatedRoomPayInfo: RoomPayInfo[] = listOfPayments.map(
@@ -1449,6 +1457,7 @@ const Room = ({
             <img
               onClick={() => {
                 setSelectedEditRoomId(roomType.id);
+                setTypeOfRoomState(true);
               }}
               src={EditIcon}
               style={{
@@ -1521,33 +1530,38 @@ const Room = ({
                       <>
                         {privileges.addTenant && (
                           <strong
-                            style={{
-                              fontWeight: '600',
-                              fontSize: 'var(--17px-V)',
-                              borderBottom: 'var(--1px-V) solid white',
-                            }}
-                            onClick={() => {
-                              /* TO DO */ handleAddTenant();
-                            }}
-                          >
-                            Add tenant
-                          </strong>
+                          className="PageNavigatorButtonSelected"
+                          style={{
+                            width: '77%',
+                            border: 'none',
+                            height: 'var(--22px-V)',
+                            marginTop: 'var(--0px-V)',
+                            paddingTop: 'var(--0px-V)',
+                          }}
+                         
+                        >
+                          Add a tenant
+                        </strong>
                         )}
                       </>
                     ) : (
                       <>
                         {privileges.addTenant && (
-                          <em
-                            style={{
-                              fontWeight: '400',
-                              borderBottom: 'var(--1px-V) solid white',
-                            }}
-                            onClick={() => {
-                              /* TO DO */ handleAddTenant();
-                            }}
-                          >
-                            Add tenant
-                          </em>
+                          <button
+                          className="PageNavigatorButtonSelected"
+                          style={{
+                            width: '77%',
+                            border: 'none',
+                            height: 'var(--22px-V)',
+                            marginTop: 'var(--10px-V)',
+                            paddingTop: 'var(--0px-V)',
+                          }}
+                          onClick={() => {
+                            handleAddTenant();
+                          }}
+                        >
+                          Add a tenant
+                        </button>
                         )}
                       </>
                     )}
@@ -1857,7 +1871,8 @@ const Room = ({
             ref={addTenantRef}
             style={{
               zIndex: roomType.AddTenantState ? '1' : '-1',
-              top: 'var(--286px-V)',
+              top: 'var(--260px-V)',
+              marginTop: 'var(--20px-V)',
             }}
           >
             <div
@@ -1880,21 +1895,6 @@ const Room = ({
                 <div className="TabsContainerForTenantAdding">
                   <button
                     onClick={() => {
-                      setTenantPageSelected('Select');
-                      setTransferTenantPageSelected(false);
-                    }}
-                    style={{
-                      width: TenantPageSelected === 'Select' ? '60%' : '40%',
-                      borderBottom:
-                        TenantPageSelected === 'Select'
-                          ? 'var(--1px-V) solid var(--Primary-Color)'
-                          : 'var(--1px-V) solid grey',
-                    }}
-                  >
-                    Select a tenant
-                  </button>
-                  <button
-                    onClick={() => {
                       setTenantPageSelected('New');
                       setTransferTenantPageSelected(false);
                     }}
@@ -1907,6 +1907,21 @@ const Room = ({
                     }}
                   >
                     New tenant
+                  </button>
+                  <button
+                    onClick={() => {
+                      setTenantPageSelected('Select');
+                      setTransferTenantPageSelected(false);
+                    }}
+                    style={{
+                      width: TenantPageSelected === 'Select' ? '60%' : '40%',
+                      borderBottom:
+                        TenantPageSelected === 'Select'
+                          ? 'var(--1px-V) solid var(--Primary-Color)'
+                          : 'var(--1px-V) solid grey',
+                    }}
+                  >
+                    Select a tenant
                   </button>
                 </div>
 
@@ -3245,14 +3260,14 @@ const Room = ({
                                     Page:{' '}
                                     <a
                                       href={`https://rentmaster.markethubet.com/tenantPortal/${
-                                        window.electron.store
+                                        storageManager
                                           .get('Branches')
                                           .find(
                                             (branch: any) =>
                                               branch.id === SelectedBranchId
                                           ).name
                                       }-${
-                                        window.electron.store
+                                        storageManager
                                           .get('users')
                                           .find(
                                             (user: any) =>
@@ -3270,7 +3285,7 @@ const Room = ({
                                       https://rentmaster.markethubet.com/tenantPortal/{' '}
                                       <br />
                                       {
-                                        window.electron.store
+                                        storageManager
                                           .get('Branches')
                                           .find(
                                             (branch: any) =>
@@ -3279,7 +3294,7 @@ const Room = ({
                                       }
                                       -
                                       {
-                                        window.electron.store
+                                        storageManager
                                           .get('users')
                                           .find(
                                             (user: any) =>
@@ -3299,14 +3314,14 @@ const Room = ({
                                   <button
                                     onClick={() => {
                                       const url = `https://rentmaster.markethubet.com/tenantPortal/${
-                                        window.electron.store
+                                        storageManager
                                           .get('Branches')
                                           .find(
                                             (branch: any) =>
                                               branch.id === SelectedBranchId
                                           ).name
                                       }-${
-                                        window.electron.store
+                                        storageManager
                                           .get('users')
                                           .find(
                                             (user: any) =>
@@ -3346,7 +3361,6 @@ const Room = ({
                                     />
                                     Show Payment Receipts
                                   </label>
-                                 
                                   <label
                                     style={{
                                       display: 'flex',

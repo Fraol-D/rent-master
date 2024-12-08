@@ -1,4 +1,4 @@
-const {ethDateTime,converterDateTime,converterString} = require('./date')
+import {ethDateTime, converterDateTime, converterString} from './date'
 
 /**
  * converts ethiopian date to gregorian calender 
@@ -10,7 +10,7 @@ const {ethDateTime,converterDateTime,converterString} = require('./date')
  * @param {*} sec -optional parameter
  * @returns gregorian in iso string
  */
-const convertToGC=(dd,mm,yyyy,hr,min,sec)=>{
+export const convertToGC=(dd,mm,yyyy,hr,min,sec)=>{
     let Hr=hr?hr:1
     let Min=min?min:0
     let Sec=sec?sec:0
@@ -20,7 +20,7 @@ const convertToGC=(dd,mm,yyyy,hr,min,sec)=>{
    const date=gr.toUTCString().slice(0,16)
    return date
 }
-const toEthiopianMonthString=DATE=>{
+export const toEthiopianMonthString=DATE=>{
     const date=new Date(DATE?DATE:Date.now())
     const Month=parseInt(converterDateTime.toEthiopian(date).month)
     const month=Month===1?'መስከረም':Month===2?'ጥቅምት':Month===3?'ህዳር':Month===4?'ታህሳስ':
@@ -28,7 +28,7 @@ const toEthiopianMonthString=DATE=>{
     Month===10?'ሰኔ':Month===11?'ሐምሌ':Month===12?'ነሐሴ':Month===13?'ጳጉሜ':'' 
     return month 
 }
-const toEthiopianDayString=DATE=>{
+export const toEthiopianDayString=DATE=>{
     const date=new Date(DATE?DATE:Date.now())
     const day=parseInt(date.getUTCDay())
     const ken=day===1?'ሰኞ':day===2?'ማክሰኞ':day===3?'ረቡዕ':day===4?'ሐሙስ':
@@ -39,7 +39,7 @@ const toEthiopianDayString=DATE=>{
  * @param {*} DATE- can be empty(returns to days date) or number or iso format 
  * @returns string- 20 የካቲት 2014 
  */
-const toEthiopianDateString=(DATE)=>{
+export const toEthiopianDateString=(DATE)=>{
     const date=new Date(DATE?DATE:Date.now())
     const day=parseInt(date.getUTCDay())
     const ken=day===1?'ሰኞ':day===2?'ማክሰኞ':day===3?'ረቡዕ':day===4?'ሐሙስ':
@@ -52,5 +52,3 @@ const toEthiopianDateString=(DATE)=>{
    Month===10?'ሰኔ':Month===11?'ሐምሌ':Month===12?'ነሐሴ':Month===13?'ጳጉሜ':''   
   return ken+' '+DAte+' '+month+' '+year  
 }
-
-module.exports={convertToGC,toEthiopianDateString,toEthiopianMonthString,toEthiopianDayString}

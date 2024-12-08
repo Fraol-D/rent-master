@@ -422,7 +422,7 @@ const DashbPastPayments = ({
           >
             Upcoming Payments (Next 10 Days)
           </p>
-          <table className="InfoTable" style={{ width: '100%' }}>
+          <table className="InfoTable" style={{ width: '100%',margin:"0px" }}>
             <thead className="InfoTableThead">
               <tr className="InfoTableHeadTR">
                 <th className="InfoTableHeadTh">Tenants</th>

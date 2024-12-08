@@ -1,3 +1,4 @@
+import { storageManager } from '../../../storeManager';
 import React, { useState } from 'react';
 
 interface NotificationSettings {

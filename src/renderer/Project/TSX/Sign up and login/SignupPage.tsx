@@ -1,17 +1,18 @@
+import { storageManager } from '../../../storeManager';
 import { useEffect, useState } from 'react';
 import { Input } from '../Helpers/CustomReactComponents';
 import {
   AddUserOnline,
   addValueOnline,
   getValuesWithSql_Online,
-} from 'Backend/OnlineServerApis';
+} from '../../../../Backend/OnlineServerApis';
 import '../../CSS/SignUpAndLogin.css';
 import {
   addValue,
   addValueWithOutOfflineChange,
   deleteValue,
   getValuesWithSql,
-} from 'Backend/localServerApis';
+} from '../../../../Backend/localServerApis';
 import { v4 as uuidv4 } from 'uuid';
 import React from 'react';
 import loadingGif from '../../../assets/assets/Loading/Rolling-1s-200px.gif';
@@ -636,35 +637,8 @@ const SignupPage = ({
     setisSignUpMode(false);
   };
 
-  const [CheckOnlineDB, setCheckOnlineDB] = useState(0);
-  useEffect(() => {
-    const check = async () => {
-      try {
-        const response = await getValuesWithSql_Online('users', 'WHERE 1');
-        window.electron.ipcRenderer.send(
-          'console-message',
-          JSON.stringify({
-            type: 'info',
-            message: 'CheckOnlineDB',
-            data: response,
-            source: 'SignupPage',
-          })
-        );
-        if (response) setCheckOnlineDB(response.length);
-      } catch (error) {
-        window.electron.ipcRenderer.send(
-          'console-message',
-          JSON.stringify({
-            type: 'error',
-            message: 'CheckOnlineDB Failed',
-            data: error,
-            source: 'SignupPage',
-          })
-        );
-      }
-    };
-    check();
-  }, [formStage]);
+  
+  
   return (
     <>
       {loading && (

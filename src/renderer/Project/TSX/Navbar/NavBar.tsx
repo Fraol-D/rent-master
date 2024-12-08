@@ -1,3 +1,4 @@
+import { storageManager } from '../../../storeManager';
 import React, { useState, useEffect, useMemo } from 'react';
 import '../../Css/NavBarCss.css';
 import { Input } from '../Helpers/CustomReactComponents';
@@ -10,10 +11,10 @@ import {
   SetBackUpAsMain,
   syncOnlineToLocalBranchWithBool,
   UploadUserFilesToTheOnlineDatabase,
-} from 'Backend/OnlineServerApis';
-import { getUserPrivileges } from 'renderer/App';
-import { dropAllRowsInTable } from 'Backend/localServerApis';
-import { useConfirm } from 'renderer/components/useConfirm';
+} from '../../../../Backend/OnlineServerApis';
+import { getUserPrivileges } from '../../../App';
+import { dropAllRowsInTable } from '../../../../Backend/localServerApis';
+import { useConfirm } from '../../../components/useConfirm';
 
 interface Props {
   Image: string;
@@ -180,6 +181,7 @@ const NavBar = ({
     }
   };
   useEffect(() => {
+    if(window.electron){
     const intervalId = setInterval(() => {
       if (navigator.onLine) {
         checkForChanges();
@@ -191,6 +193,7 @@ const NavBar = ({
 
     // Clean up the interval when the component unmounts
     return () => clearInterval(intervalId);
+  }
   }, []);
   const { confirm } = useConfirm();
 
@@ -255,14 +258,14 @@ const NavBar = ({
           )} */}{' '}
           <p className="Name-ofShop" style={{ height: 'var(--28px-V)' }}>
             Rent{' '}
-            <p
+            <span
               style={{
                 color: 'var(--Primary-Color)',
                 fontSize: 'var(--30px-V)',
               }}
             >
               Master
-            </p>
+            </span>
             <span
               style={{
                 color: '',
@@ -295,14 +298,14 @@ const NavBar = ({
             {storageManager.get('SelectedAppUserId') === 'admin' ? (
               <> Admin User</>
             ) : (
-              window.electron.store
+              storageManager
                 .get('app_users')
                 .find(
                   (appUser: appUser) =>
                     appUser.id === storageManager.get('SelectedAppUserId')
                 )?.roleName
             )}{' '}
-            <p
+            <span
               style={{
                 marginLeft: 'var(--10px-V)',
                 cursor: 'pointer',
@@ -317,7 +320,7 @@ const NavBar = ({
               }}
             >
               Switch
-            </p>
+            </span>
           </p>
         </div>
       </div>
@@ -398,7 +401,7 @@ const NavBar = ({
 
       <div className="RightSide">
         <div></div>
-        <div style={{ display: 'flex', alignItems: 'center' }}>
+       {window.electron &&<> <div style={{ display: 'flex', alignItems: 'center' }}>
           {' '}
           <button
             style={{
@@ -735,7 +738,7 @@ const NavBar = ({
           </>
         ) : (
           <></>
-        )}
+        )}</>}
         <button
           style={{ marginLeft: 'var(--10px-V)', marginRight: 'var(--10px-V)' }}
           onClick={() => {

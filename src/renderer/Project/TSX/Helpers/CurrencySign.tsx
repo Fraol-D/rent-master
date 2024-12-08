@@ -1,3 +1,4 @@
+import { storageManager } from '../../../storeManager';
 export const AllCurrencies = ['USD', 'ETB'];
 export const CurrencySign = (currency: string) => {
   if (!AllCurrencies.includes(currency)) {

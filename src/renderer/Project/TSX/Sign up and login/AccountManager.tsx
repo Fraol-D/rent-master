@@ -1,10 +1,10 @@
+import { storageManager } from '../../../storeManager';
 import React, { useEffect, useState } from 'react';
 import SignUpPage from './SignupPage';
-import { getValuesWithSql, updateValue } from 'Backend/localServerApis';
 import LoginPage from './LoginPage';
 import TrialExpiredPage from './TrialExpiredPage';
 import { Input } from '../Helpers/CustomReactComponents';
-const { v4: uuidv4 } = require('uuid');
+import { v4 as uuidv4 } from 'uuid';
 import {
   addValueOnline,
   deleteValueOnline,
@@ -15,14 +15,14 @@ import {
   syncOnlineToLocalBranchWithBool,
   updateValueOnline,
   verifyCredentials,
-} from 'Backend/OnlineServerApis';
+} from '../../../../Backend/OnlineServerApis';
 import NotAllowedScreen from './NotAllowedScreen';
 import TrialEndedText from './TrialEndedText';
 import loadingGif from '../../../assets/assets/Loading/Rolling-1s-200px.gif';
 import DashboardPage from '../Pages/DashboardPage';
 import { formatNumberWithSuffix } from '../Helpers/CurrencySign';
-import { useAlert } from 'renderer/components/useAlert';
-import { useConfirm } from 'renderer/components/useConfirm';
+import { useAlert } from '../../../components/useAlert';
+import { useConfirm } from '../../../components/useConfirm';
 
 interface MyComponentProps {
   children: React.ReactNode;
@@ -455,14 +455,14 @@ const AccountManager = (React.FC<MyComponentProps> = ({
     checkIfSignedIn();
   }, [isSignedIn, Refresh]);
   const syncWithOnline = async (selectedUserId: string) => {
-    setIsSyncing(true);
+    if(window.electron){setIsSyncing(true);
     syncOnlineToLocalBranchWithBool(
       selectedUserId,
       storageManager.get('SelectedBranchId'),
       setIsSyncing,
       setSyncProgress,
       RefreshDataFromSqlite
-    );
+    );}
   };
   // Effect to check trial status when signed in
   useEffect(() => {
@@ -1401,10 +1401,14 @@ const AccountManager = (React.FC<MyComponentProps> = ({
           if (!userMaxBranches) {
             return 'Failed to get user branch limit';
           }
-
-          return {
-            maxBranches: userMaxBranches[0].maxNumberOfBranches,
+          if (userMaxBranches[0].maxNumberOfBranches)
+            return {
+              maxBranches: userMaxBranches[0].maxNumberOfBranches,
             currentBranches: AllBranches.length,
+          };else 
+          return {
+            maxBranches: 0,
+            currentBranches: 0,
           };
         } else {
           return {
@@ -2086,6 +2090,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                           Allowed branches{' '}
                                           <select
                                             name=""
+                                            key={`select-${appUser.id}`}
                                             id=""
                                             onChange={(e) => {
                                               setSelectedBranchIdADD(
@@ -2108,7 +2113,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                                 )
                                             ).map((branch: any) => (
                                               <>
-                                                <option value={branch.id}>
+                                                <option value={branch.id} key={branch.id}>
                                                   {branch.name}
                                                 </option>
                                               </>
@@ -3403,7 +3408,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                 position: 'absolute',
                 top: '50%',
                 display: 'flex',
-                width: '330px',
+                width: 'var(--330px-V)',
                 flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'space-between',

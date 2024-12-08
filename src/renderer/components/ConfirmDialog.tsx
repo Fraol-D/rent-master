@@ -26,7 +26,7 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   } = options;
 
   return (
-    <div className="confirm-overlay">
+    <div className="confirm-overlay" id="confirm-overlay">
       <div className="confirm-dialog">
         <div className={`confirm-header ${type}`}>
           <h3>{title}</h3>

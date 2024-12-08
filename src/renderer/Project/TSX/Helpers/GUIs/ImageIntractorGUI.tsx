@@ -4,6 +4,7 @@ import RightArrow from '../../../../assets/assets/Dark mode/Right arrow.png';
 import {
   AddRoomImageToFiles,
   deleteRoomImage,
+  downloadImage,
   getRoomImages,
 } from 'Backend/localServerApis';
 import { useAlert } from 'renderer/components/useAlert';
@@ -14,7 +15,8 @@ interface ImageInteractorProps {
   onShowInExplorer: (path: string) => void;
   room: RoomType;
 }
-const { v4: uuidv4 } = require('uuid');
+import { v4 as uuidv4 } from 'uuid';
+import { useConfirm } from 'renderer/components/useConfirm';
 
 const ImageInteractor: React.FC<ImageInteractorProps> = ({
   onDeleteImage,
@@ -72,44 +74,60 @@ const ImageInteractor: React.FC<ImageInteractorProps> = ({
     input.onchange = async (event) => {
       const files = (event.target as HTMLInputElement).files;
       if (files && files.length > 0) {
-        const validFiles = Array.from(files).filter(file => file.size <= 5 * 1024 * 1024); // 5MB limit
-        if (validFiles.length === 0) {
-          showAlert('All selected files exceed the 5MB size limit. Please select smaller images.');
-          console.error('All selected files exceed the 5MB size limit');
+        const filteredFiles = Array.from(files).filter(file => file.size <= 5 * 1024 * 1024); // 5MB limit
+        if(filteredFiles.length === 0){
+          showAlert('All files are above the 5MB limit.', 'error');
           return;
+        } else if (filteredFiles.length < files.length) {
+          showAlert('Some files exceeded the 5MB limit and were not uploaded.', 'error');
         }
-        if (validFiles.length < files.length) {
-          showAlert(`${files.length - validFiles.length} file(s) were skipped because they exceed the 5MB size limit.`);
-        }
+
         try {
           const folderText = `Floor ${room.floor}, Room ${room.roomIndex} - ${room.id}`;
-          const results = await AddRoomImageToFiles(validFiles, folderText);
+          const results = await AddRoomImageToFiles(filteredFiles, folderText);
           if (results) {
-            console.log('Images uploaded successfully:', results);
-            fetchRoomImages();
+            
+              fetchRoomImages();
+          
+            showAlert('Images uploaded successfully!', 'success');
           } else {
             console.error('Failed to upload images');
             showAlert('Failed to upload images. Please try again.');
           }
         } catch (error) {
           console.error('Error uploading files:', error);
-          showAlert('An error occurred while uploading files. Please try again.');
+          showAlert(
+            'An error occurred while uploading files. Please try again.'
+          );
         }
       }
     };
 
     input.click();
   };
+  const { confirm } = useConfirm();
   const handleDeleteImage = async () => {
-    const currentImage = images[currentIndex];
+    const choice = await confirm('Are you sure you want to delete this image?', {
+      type: 'danger',
+      title: 'Delete Image',
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+    });
+    if(choice){
+    const currentImage = window.electron ? images[currentIndex] : images[currentIndex].fullPath;
     const fileName = currentImage.split('/').pop();
+    console.log(room.id, fileName, currentImage);
     const result = await deleteRoomImage(room.id, fileName);
+ 
     if (result && result.message === 'Image deleted successfully') {
+    console.log(result);
+      showAlert('Image deleted successfully', 'success');
       setImages((prevImages) =>
-        prevImages.filter((img) => img !== currentImage)
+        prevImages.filter((img) => window.electron ? img !== currentImage : img.fullPath !== currentImage)
       );
       if (currentIndex >= images.length - 1) {
         setCurrentIndex((prevIndex) => Math.max(0, prevIndex - 1));
+        }
       }
     }
   };
@@ -119,23 +137,55 @@ const ImageInteractor: React.FC<ImageInteractorProps> = ({
   const fetchRoomImages = async () => {
     const roomImages = await getRoomImages(room.id);
     if (roomImages && roomImages.images) {
-      setImages(roomImages.images);
+      if (window.electron) {
+       
+        const IMAGESS =   roomImages.images.map((image: any) => {
+          delete image.fullUrl;
+          delete image.url;
+          return Object.values(image).join('');
+        })
+        setImages(
+        IMAGESS
+        );
+       
+      } else {
+        setImages(roomImages.images);
+   
+      }
     }
   };
   const handleShowInExplorer = (imagePath: string) => {
-    window.electron.ipcRenderer.send('show-item-in-folder', imagePath);
-  };
+    if (window.electron) {
+      window.electron.ipcRenderer.send('show-item-in-folder', imagePath);
+    } else {
+      // Web version - download the image
+      // Web version - download the image
+    try {
+      const pathParts = imagePath.fullPath.split(/[/\\]/);
+      const fileName = pathParts[pathParts.length - 1];
+      const roomId = room?.id || 'Add a room images';
+      
+      if (fileName) {
+        downloadImage(roomId, fileName)
+          .catch(error => {
+            console.error('Error downloading image:', error);
+            alert('Failed to download image. Please try again.');
+          });
+      }
+    } catch (error) {
+      console.error('Error processing image path:', error);
+      alert('Failed to process image path. Please try again.');
+    }
+  }}
+
+
   return (
     <div className={`${isFullScreen ? 'fullscreen' : ''} image-interactor`}>
       {images.length > 0 ? (
         <>
           <div className="image-container">
             <button className="arrow-button left" onClick={prevImage}>
-              <img
-                src={RightArrow}
-                alt="Previous"
-                style={{ transform: 'rotate(180deg)' }}
-              />
+              ◀
             </button>
             <div className="image-wrapper">
               <button
@@ -143,28 +193,28 @@ const ImageInteractor: React.FC<ImageInteractorProps> = ({
                 className={`DeleteImageOnImageIntercator`}
                 style={
                   isFullScreen
-                    ? { marginLeft: 'var(--350px-V)', marginBottom: '85vh' }
+                    ? { marginLeft: 'var(--350px-V)', marginBottom: '82vh' }
                     : {}
                 }
               >
                 Del
               </button>
               <button
-  className={`ExplorerImageOnImageIntercator`}
-  onClick={() => handleShowInExplorer(images[currentIndex])}
-  style={
-    isFullScreen
-      ? { marginRight: 'var(--350px-V)', marginTop: '85vh' }
-      : {}
-  }
->
-  Files
-</button>
+                className={`ExplorerImageOnImageIntercator`}
+                onClick={() => handleShowInExplorer(images[currentIndex])}
+                style={
+                  isFullScreen
+                    ? { marginRight: window.electron ? 'var(--350px-V)' : 'var(--320px-V)', marginTop: '82vh' }
+                    : {marginRight: window.electron ? 'var(--350px-V)' : 'var(--320px-V)',}
+                }
+              >
+                {window.electron ? 'Files' : 'Download'}
+              </button>
 
               <button
                 onClick={handleOnAddImage}
                 className={`AddImageOnImageIntercator`}
-                style={isFullScreen ? { marginTop: '85vh' } : {}}
+                style={isFullScreen ? { marginTop: '82vh' } : {}}
               >
                 Add Image
               </button>
@@ -172,7 +222,9 @@ const ImageInteractor: React.FC<ImageInteractorProps> = ({
                 onClick={toggleFullScreen}
                 className={`FullScreenImageOnImageIntercator`}
                 style={
-                  isFullScreen ? { marginLeft: 'var(--305px-V)', marginTop: '85vh' } : {}
+                  isFullScreen
+                    ? { marginLeft: 'var(--305px-V)', marginTop: '82vh' }
+                    : {}
                 }
               >
                 {isFullScreen ? 'Exit Full Screen' : 'Full Screen'}
@@ -192,13 +244,17 @@ const ImageInteractor: React.FC<ImageInteractorProps> = ({
               </div>
               <img
                 ref={imageRef}
-                src={images[currentIndex]}
+                src={
+                  window.electron
+                    ? images[currentIndex]
+                    : images[currentIndex].fullUrl
+                }
                 alt={`Room image ${currentIndex + 1}`}
                 className="main-image"
               />
             </div>
             <button className="arrow-button right" onClick={nextImage}>
-              <img src={RightArrow} alt="Next" />
+            ▶
             </button>
           </div>
           <div className="controls"></div>
@@ -206,7 +262,15 @@ const ImageInteractor: React.FC<ImageInteractorProps> = ({
       ) : (
         <div className="no-images">
           <p>No images available</p>
-          <button onClick={handleOnAddImage} style={{boxShadow: 'var(--2px-V) var(--2px-V) var(--6px-V) var(--Text-Color-Reverse)'}}>Add Image</button>
+          <button
+            onClick={handleOnAddImage}
+            style={{
+              boxShadow:
+                'var(--2px-V) var(--2px-V) var(--6px-V) var(--Text-Color-Reverse)',
+            }}
+          >
+            Add Image
+          </button>
         </div>
       )}
     </div>

@@ -1,3 +1,4 @@
+import { storageManager } from '../../../storeManager';
 import React, { useMemo, useState } from 'react';
 import {
   formatNumberWithSuffix,

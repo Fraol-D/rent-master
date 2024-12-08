@@ -1,24 +1,26 @@
+import { storageManager } from '../../../storeManager';
 import { Input } from '../Helpers/CustomReactComponents';
 import {
   addValue,
   getValuesWithSql,
   updateValue,
   deleteValue,
-} from 'Backend/localServerApis';
+} from '../../../../Backend/localServerApis';
 import React, { useEffect, useState, useRef, useMemo } from 'react';
 import '../../CSS/ToolsPage.css';
 import {
   addValueOnline,
   getValuesWithSql_Online,
+  sendEmailAPI,
   sendSMS,
   sendSMSWithUserId,
   updateValueOnline,
-} from 'Backend/OnlineServerApis';
+} from '../../../../Backend/OnlineServerApis';
 import EmailTemplates from '../Tools page components/EmailTemplates';
 import SMSTemplates from '../Tools page components/SMSTemplates';
-import { getUserPrivileges } from 'renderer/App';
+import { getUserPrivileges } from '../../../App';
 import { addDays } from 'date-fns';
-const { v4: uuidv4 } = require('uuid');
+import { v4 as uuidv4 } from 'uuid';
 interface EmailTemplate {
   id: string;
   name: string;
@@ -461,16 +463,8 @@ const ToolsPage = ({
           console.log(userEmail, userPass);
           if (navigator.onLine) {
             try {
-              await window.electron.ipcRenderer.send('SendCustomEmail', {
-                to: recipientEmail,
-                subject: subject,
-                body: body,
-                userEmail: userEmail,
-                userPassword: userPass,
-                SelectedUserId: SelectedUserId,
-                branchId: SelectedBranchId,
-                templateId: template.id,
-              });
+              await sendEmailAPI(recipientEmail, subject, body, SelectedUserId);
+              
               setEmailSentSuccessstring('Email sent successfully');
               setEmailSentSuccessstring('Sent');
               setIsSending(false);
@@ -2070,7 +2064,7 @@ const ToolsPage = ({
                                   storageManager.get('exchangeRate').length - 1
                                 ].rates
                               ).toFixed(5)
-                            : window.electron.store
+                            : storageManager
                                 .get('exchangeRate')
                                 [
                                   storageManager.get('exchangeRate').length - 1

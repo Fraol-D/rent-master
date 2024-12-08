@@ -49,9 +49,7 @@ export function PeopleComponentPage({
     setMainSearch(event.target.value);
   };
 
-  const handleRefresh = () => {
-    RefreshDataFromSqlite();
-  };
+
 
   const getCorrectPaymentStatment = (text: string) => {
     switch (text) {
@@ -235,7 +233,7 @@ export function PeopleComponentPage({
                         style={{ color: 'var(--Text-Color-Grey)' }}
                       >
                                                {' '}
-                        {highlightText(index.toString(), mainSearch)}           
+                        {highlightText((index + 1).toString(), mainSearch)}           
                                  {' '}
                       </td>
                                            {' '}

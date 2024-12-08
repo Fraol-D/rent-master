@@ -1,15 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import '../../../CSS/DocumentInteractor.css';
-const { v4: uuidv4 } = require('uuid');
+import { v4 as uuidv4 } from 'uuid';
 
 import {
   AddRoomDocuments,
   deleteRoomDocument,
   deleteTenantDocument,
+  downloadDocument,
   getRoomDocuments,
   getTenantRoomDocuments,
   uploadTenantDocument,
 } from 'Backend/localServerApis';
+import { useConfirm } from 'renderer/components/useConfirm';
+import { useAlert } from 'renderer/components/useAlert';
 
 interface DocumentInteractorProps {
   room?: RoomType;
@@ -23,7 +26,7 @@ interface DocumentInteractorProps {
 const formatTenantName = (name: string) => {
   const spaceMatch = name.match(/^(.*?)\s+(\d+)$/);
   const parenthesesMatch = name.match(/^(.*?)\((\d+)\)$/);
-  
+
   if (spaceMatch) {
     return `${spaceMatch[1]}(${spaceMatch[2]})`;
   } else if (parenthesesMatch) {
@@ -56,14 +59,12 @@ const DocumentInteractor: React.FC<DocumentInteractorProps> = ({
     }
   }, [room?.id, isAddRoomDocument]);
 
-
   useEffect(() => {
-    if (isAddRoomDocument) {      
+    if (isAddRoomDocument) {
       fetchRoomDocuments2();
     }
   }, []);
   function convertUnixToDateString(unixTimestamp) {
-    
     const date = new Date(unixTimestamp);
     const options = {
       weekday: 'short',
@@ -73,7 +74,6 @@ const DocumentInteractor: React.FC<DocumentInteractorProps> = ({
     };
     console.log(date.toLocaleDateString('en-US', options).replace(/,/g, ''));
     return date.toLocaleDateString('en-US', options).replace(/,/g, '');
-  
   }
 
   const fetchRoomDocuments = async () => {
@@ -90,13 +90,15 @@ const DocumentInteractor: React.FC<DocumentInteractorProps> = ({
           day: '2-digit',
         };
         const formattedName = formatTenantName(tenant.name);
-        const formattedDate = date.toLocaleDateString('en-US', options).replace(/,/g, '');
-        
+        const formattedDate = date
+          .toLocaleDateString('en-US', options)
+          .replace(/,/g, '');
+
         const roomDocs = await getTenantRoomDocuments(
           room.id,
           `${formattedName}, ${formattedDate}, ${tenant.id}`
         );
-        
+        console.log(roomDocs);
         if (roomDocs && roomDocs.documents) {
           setDocuments(roomDocs.documents);
         }
@@ -112,6 +114,7 @@ const DocumentInteractor: React.FC<DocumentInteractorProps> = ({
       setDocuments([]);
     }
   };
+  const { showAlert } = useAlert(); 
   const handleOnAddDocument = () => {
     const input = document.createElement('input');
     input.type = 'file';
@@ -121,24 +124,37 @@ const DocumentInteractor: React.FC<DocumentInteractorProps> = ({
       const files = (event.target as HTMLInputElement).files;
       if (files && files.length > 0) {
         try {
+          const filteredFiles = Array.from(files).filter(file => file.size <= 5 * 1024 * 1024); // 5MB limit
+         console.log(filteredFiles.length,files.length)
+          if(filteredFiles.length === 0){
+            showAlert('All files are above the 5MB limit.', 'error');
+            return;
+          } else if (filteredFiles.length < files.length) {
+            showAlert('Some files exceeded the 5MB limit and were not uploaded.', 'error');
+          }
+          
           if (isAddRoomDocument) {
             const roomId = 'Add a tenant documents';
-            const uploadPromises = Array.from(files).map((file) =>
+            const uploadPromises = filteredFiles.map((file) =>
               uploadTenantDocument(file, roomId)
             );
             const results = await Promise.all(uploadPromises);
             if (results.every((result) => result)) {
+              showAlert('Documents uploaded successfully', 'success');
               console.log('Tenant documents uploaded successfully:', results);
               fetchRoomDocuments2();
             } else {
               console.error('Failed to upload some tenant documents');
+              showAlert('Failed to upload some tenant documents. Please try again.', 'error');
             }
           } else {
             const roomId = room?.id || 'default-room-id';
             const tenantId = room?.tenantId || '';
             const tenant = TenantsList.find((t: tenant) => t.id === tenantId);
             const tenantName = tenant ? formatTenantName(tenant.name) : '';
-            const AddedTimeReal = tenant ? new Date(tenant.startTime).toDateString() : '';
+            const AddedTimeReal = tenant
+              ? new Date(tenant.startTime).toDateString()
+              : '';
 
             if (!roomId || !tenantName || !tenantId) {
               console.error('Missing required room or tenant information');
@@ -146,18 +162,20 @@ const DocumentInteractor: React.FC<DocumentInteractorProps> = ({
             }
 
             const results = await AddRoomDocuments(
-              files,
+              filteredFiles,
               roomId,
               tenantName,
               tenantId,
               AddedTimeReal
             );
-            
+
             if (results) {
               console.log('Documents uploaded successfully:', results);
               fetchRoomDocuments();
+              showAlert('Documents uploaded successfully', 'success');
             } else {
               console.error('Failed to upload documents');
+              showAlert('Failed to upload documents. Please try again.', 'error');
             }
           }
         } catch (error) {
@@ -168,8 +186,15 @@ const DocumentInteractor: React.FC<DocumentInteractorProps> = ({
 
     input.click();
   };
-
+  const { confirm } = useConfirm();
   const handleDeleteDocument = async () => {
+    const choice = await confirm('Are you sure you want to delete this document?', {
+      type: 'danger',
+      title: 'Delete Document',
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+    });
+    if(choice)
     if (selectedDocument) {
       const fileName = selectedDocument.split('/').pop();
 
@@ -180,15 +205,17 @@ const DocumentInteractor: React.FC<DocumentInteractorProps> = ({
           result &&
           result.message === 'Tenant document deleted successfully'
         ) {
+          showAlert('Document deleted successfully', 'success');
           setDocuments((prevDocs) =>
             prevDocs.filter((doc) => doc !== selectedDocument)
           );
           setSelectedDocument(null);
         }
       } else {
-        const roomId = room ? room.id : 'Add a room documents';
+        const roomId = room ? room.id : 'Add a tenant documents';
         const result = await deleteRoomDocument(roomId, fileName);
         if (result && result.message === 'Document deleted successfully') {
+          showAlert('Document deleted successfully', 'success');
           setDocuments((prevDocs) =>
             prevDocs.filter((doc) => doc !== selectedDocument)
           );
@@ -204,21 +231,40 @@ const DocumentInteractor: React.FC<DocumentInteractorProps> = ({
     }
   };
 
-  const handleOpenDocument = () => {
-    if (selectedDocument) {
+  // Update the handleOpenDocument function
+const handleOpenDocument = async () => {
+  if (selectedDocument) {
+    if (window.electron) {
+      // Electron version - open file
       window.electron.ipcRenderer.send('open-document', selectedDocument);
+    } else {
+       // Web version - download file
+       try {
+        const fileName = getFileName(selectedDocument);
+        const roomId = room?.status === "Taken" ? room.id : 'Add a tenant documents';
+        
+        await downloadDocument(roomId, fileName);
+      } catch (error) {
+        console.error('Error downloading document:', error);
+        alert('Failed to download document. Please try again.');
+      }
     }
-  };
+  }
+};
+
   const getFileName = (filePath: string) => {
-    const lastBackslashIndex = filePath.lastIndexOf('\\');
-    if (lastBackslashIndex === -1) {
-      return '';
-    }
-    const fullFileName = filePath.substring(lastBackslashIndex + 1);
-    const match = fullFileName.match(/^(WIN_\d{8}_\d{2}_\d{2}_\d{2})/);
-    return match
-      ? match[1] + fullFileName.substring(match[1].length)
-      : fullFileName;
+    if (!filePath) return '';
+    
+    // Handle both Windows and Unix-style paths
+    const parts = filePath.split(/[/\\]/);
+    const fileName = parts[parts.length - 1];
+    
+    // Skip the receipts folder
+    if (fileName === 'receipts') return '';
+    
+    // Handle WIN_ prefix files
+    const match = fileName.match(/^(WIN_\d{8}_\d{2}_\d{2}_\d{2})/);
+    return match ? match[1] + fileName.substring(match[1].length) : fileName;
   };
   return (
     <div
@@ -246,26 +292,33 @@ const DocumentInteractor: React.FC<DocumentInteractorProps> = ({
     >
       <div
         className="document-list"
-        style={{ flex: 1, overflowY: 'auto', maxHeight: 'var(--183px-V)' }}
+        style={{ flex: 1, overflowY: 'auto', overflowX: 'auto', minHeight: 'var(--120px-V)', maxHeight: 'var(--183px-V)'}}
       >
+        <div style={{height: '100%', minHeight: 'var(--120px-V)',display: 'flex', flexDirection: 'column', overflowX: 'auto'}}>
         {documents.length > 0 ? (
-          documents.map((doc) => (
-            <div
-              key={uuidv4()}
-              className={`${
-                doc === selectedDocument
-                  ? 'document-itemSelected'
-                  : 'document-item`'
-              }`}
-              onClick={() => setSelectedDocument(doc)}
-              style={{ cursor: 'pointer' }}
-            >
-              {getFileName(doc)}
-            </div>
-          ))
+          documents
+            .filter(doc => {
+              const fileName = getFileName(doc);
+              return fileName && fileName !== 'receipts'; // Filter out empty names and receipts folder
+            })
+            .map((doc) => (
+              <div
+                key={uuidv4()}
+                className={`${
+                  doc === selectedDocument
+                    ? 'document-itemSelected'
+                    : 'document-item'
+                }`}
+                onClick={() => setSelectedDocument(doc)}
+                style={{ cursor: 'pointer', whiteSpace: 'nowrap',display: 'flex', justifyContent: 'flex-start', alignItems: 'center', minWidth: 'fit-content'}}
+              >
+                {getFileName(doc)}
+              </div>
+            ))
         ) : (
           <div>No documents added</div>
         )}
+        </div>
       </div>
       <div
         className="document-controls"
@@ -273,17 +326,19 @@ const DocumentInteractor: React.FC<DocumentInteractorProps> = ({
           display: 'flex',
           justifyContent: 'space-around',
           padding: 'var(--10px-V)',
+          borderRadius: 'var(--5px-V)',
+          background: 'var(--Secondary-Color30)'
         }}
       >
         <button onClick={handleOnAddDocument}>Add Document</button>
         {selectedDocument && (
           <>
             <button onClick={handleOpenDocument} disabled={!selectedDocument}>
-              Open
+              {window.electron ? 'Open' : 'Download'}
             </button>
-            <button onClick={handleShowInExplorer} disabled={!selectedDocument}>
+           {window.electron && <button onClick={handleShowInExplorer} disabled={!selectedDocument}>
               Open in Files
-            </button>
+            </button>}
             <button onClick={handleDeleteDocument} disabled={!selectedDocument}>
               Delete
             </button>

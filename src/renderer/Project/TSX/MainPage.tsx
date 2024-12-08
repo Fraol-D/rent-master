@@ -2,7 +2,7 @@ import { RoomListComponent } from './Pages/RoomListComponent';
 import { PeopleComponentPage } from './Pages/PeopleComponentPage';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Input } from './Helpers/CustomReactComponents';
-const { v4: uuidv4 } = require('uuid');
+import { v4 as uuidv4 } from 'uuid';
 import ImageInteractor from './Helpers/GUIs/ImageIntractorGUI';
 import LONGIMAGE from './Helpers/WIN_20240802_19_41_23_Pro.jpg';
 import Room from './Helpers/Room';
@@ -22,20 +22,21 @@ import {
   getValuesWithSql,
   renameFolder,
   updateValue,
-} from 'Backend/localServerApis';
+} from '../../../Backend/localServerApis';
 import ImageInteractor2 from './Helpers/GUIs/ImageInteractor2';
 import { set } from 'date-fns';
 import DashboardPage from './Pages/DashboardPage';
 import DatabasePage from './Pages/DatabasePage';
 import ToolsPage from './Pages/ToolsPage';
-import { getUserPrivileges } from 'renderer/App';
-import { UpdateButton } from 'renderer/components/UpdateButton';
+import { getUserPrivileges } from './../../App';
+import { UpdateButton } from './../../components/UpdateButton';
 import CurrencySign, {
   GetCurrencyAsOptionsOnSelect,
   GetDefaultCurrency,
 } from './Helpers/CurrencySign';
 import { IconsGUI } from '../getIcons';
-import { useAlert } from 'renderer/components/useAlert';
+import { useAlert } from '../../components/useAlert';
+import { useConfirm } from 'renderer/components/useConfirm';
 type FilterOption = {
   key: string;
   value: any;
@@ -204,6 +205,7 @@ declare global {
     id: string;
     roomId: string;
     branchId: string; // Added
+    userId: string;
     Day: number;
     Paid: boolean;
     Value: number;
@@ -313,7 +315,8 @@ const MainPage = ({
   setChangeMade,
   SelectedUserId,
   SelectedAppUser,
-  SelectedBranchId,signOutUserAndRestart
+  SelectedBranchId,
+  signOutUserAndRestart,
 }: any) => {
   const [floorFilter, setFloorFilter] = useState<string>('');
   const [TenantNameFilter, setTenantNameFilter] = useState<string>('');
@@ -1001,15 +1004,23 @@ const MainPage = ({
   const [SelectedEditRoomId, setSelectedEditRoomId] = useState('');
   const [DeleteConfimation, setDeleteConfimation] = useState(false);
   const { showAlert } = useAlert();
-  
+  const { confirm } = useConfirm();
   const handleDeleteFirst = async () => {
+    const choice = await confirm('Are you sure you want to delete this room?', {
+      type: 'danger',
+      title: 'Delete Room',
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+    });
+    if(choice)
     if (!DeleteConfimation) setInterval(() => setDeleteConfimation(true), 1000);
     if (DeleteConfimation) {
+      
       if (
         RoomList.find((r: RoomType) => r.id === SelectedEditRoomId).status ===
         'Taken'
       ) {
-        showAlert('You can not delete a room that is taken','error');
+        showAlert('You can not delete a room that is taken', 'error');
         return;
       }
       const listOfPayments = await getValuesWithSql(
@@ -1032,7 +1043,7 @@ const MainPage = ({
   const [HideSideBarForDashboard, setHideSideBarForDashboard] = useState(false);
   useEffect(() => {
     if (SelectedPage === 'People') {
-      RefreshDataFromSqlite();
+      //RefreshDataFromSqlite();
     }
     if (SelectedPage === 'Calendar' || SelectedPage === 'Database') {
       setHideSideBarForCalendar(true);
@@ -1793,6 +1804,7 @@ const MainPage = ({
                         <div style={{ marginTop: 'var(--10px-V)' }}>
                           Filter Currency:
                           <select
+                            key={uuidv4()}
                             value={selectedCurrency}
                             onChange={(e) => {
                               setSelectedCurrency(e.target.value);
@@ -1850,7 +1862,7 @@ const MainPage = ({
                     )}
                   </div>
                 </div>
-                <UpdateButton />
+                {window.electron && <UpdateButton />}
               </div>
 
               <div
@@ -2295,8 +2307,6 @@ const MainPage = ({
             </>
           ) : SelectedPage === 'People' ? (
             <>
-             
-
               <SideBarItem
                 page="TenantsList"
                 currentPage={PeopleSelectedPage}
@@ -2485,81 +2495,101 @@ const MainPage = ({
                   {
                     RoomList.find((r: RoomType) => r.id === SelectedEditRoomId)
                       .roomIndex
-                  } ({RoomList.find((r: RoomType) => r.id === SelectedEditRoomId).status})
-                </p><button
-              style={{width:"20%", marginLeft:"auto"}}
-                onClick={() => {
-                  handleDeleteFirst();
-                }}
-              >
-                {DeleteConfimation ? 'Confirm Delete' : 'Delete this room'}
-              </button>
+                  }{' '}
+                  (
+                  {
+                    RoomList.find((r: RoomType) => r.id === SelectedEditRoomId)
+                      .status
+                  }
+                  )
+                </p>
+                <button
+                  style={{ width: '20%', marginLeft: 'auto' }}
+                  onClick={() => {
+                    handleDeleteFirst();
+                  }}
+                >
+                  {DeleteConfimation ? 'Confirm Delete' : 'Delete this room'}
+                </button>
               </div>{' '}
-            {RoomList.find((r: RoomType) => r.id === SelectedEditRoomId).status === "Empty" && <>  <div
-                style={{
-                  display: 'flex',
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  justifyContent: 'space-around',
-                  width: '100%',
-                }}
-              >
-                <div className="AddaNewRoomRowObject">
-                  Payment Cycle :{' '}
-                  <select
-                    value={tempPaymentCycle}
-                    onChange={(e) => setTempPaymentCycle(e.target.value)}
-                    onBlur={handleBlurPaymentCycle}
+              {RoomList.find((r: RoomType) => r.id === SelectedEditRoomId)
+                .status === 'Empty' && (
+                <>
+                  {' '}
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'space-around',
+                      width: '100%',
+                    }}
                   >
-                    <option value="monthly">Monthly</option>
-                    <option value="weekly">Weekly</option>
-                    <option value="daily">Daily</option>
-                    <option value="30">30</option>
-                    <option value="15">15</option>
-                    <option value="7">7</option>
-                    <option value="Annually">Annually</option>
-                    <option value="custom">Custom</option>
-                  </select>
-                  {tempPaymentCycle === 'custom' && (
-                    <input
-                      type="number"
-                      value={tempPaymentCycleCustomDays}
-                      onBlur={handleBlurCustomePaymentCycle}
-                      onKeyDown={handleKeyDownCustomePaymentCycle}
-                      onChange={(e) =>
-                        setTempPaymentCycleCustomDays(e.target.value)
-                      }
-                    />
-                  )}
-                </div>
-                <div className="AddaNewRoomRowObject">
-                  Price :{' '}
-                  <input
-                    className="AddANewRoomInputsSmall"
-                    type="number"
-                    placeholder="Price"
-                    value={tempPrice}
-                    onChange={(e) => setTempPrice(e.target.value)}
-                    onBlur={handleBlurPrice}
-                    onKeyDown={handleKeyDownPrice}
-                  />
-                </div>
-                <div className="AddaNewRoomRowObject">
-                  Square Meters :{' '}
-                  <input
-                    className="AddANewRoomInputsSmall"
-                    type="number"
-                    placeholder="Square Meters"
-                    value={tempSquareMeters}
-                    onChange={(e) => setTempSquareMeters(e.target.value)}
-                    onBlur={handleBlur}
-                    onKeyDown={handleKeyDown}
-                  />
-                </div>{' '}
-              </div>{' '}</>}
+                    <div className="AddaNewRoomRowObject">
+                      Payment Cycle :{' '}
+                      <select
+                        value={tempPaymentCycle}
+                        onChange={(e) => setTempPaymentCycle(e.target.value)}
+                        onBlur={handleBlurPaymentCycle}
+                      >
+                        <option value="monthly">Monthly</option>
+                        <option value="weekly">Weekly</option>
+                        <option value="daily">Daily</option>
+                        <option value="30">30</option>
+                        <option value="15">15</option>
+                        <option value="7">7</option>
+                        <option value="Annually">Annually</option>
+                        <option value="custom">Custom</option>
+                      </select>
+                      {tempPaymentCycle === 'custom' && (
+                        <input
+                          type="number"
+                          value={tempPaymentCycleCustomDays}
+                          onBlur={handleBlurCustomePaymentCycle}
+                          onKeyDown={handleKeyDownCustomePaymentCycle}
+                          onChange={(e) =>
+                            setTempPaymentCycleCustomDays(e.target.value)
+                          }
+                        />
+                      )}
+                    </div>
+                    <div className="AddaNewRoomRowObject">
+                      Price :{' '}
+                      <input
+                        className="AddANewRoomInputsSmall"
+                        type="number"
+                        placeholder="Price"
+                        value={tempPrice}
+                        onChange={(e) => setTempPrice(e.target.value)}
+                        onBlur={handleBlurPrice}
+                        onKeyDown={handleKeyDownPrice}
+                      />
+                    </div>
+                    <div className="AddaNewRoomRowObject">
+                      Square Meters :{' '}
+                      <input
+                        className="AddANewRoomInputsSmall"
+                        type="number"
+                        placeholder="Square Meters"
+                        value={tempSquareMeters}
+                        onChange={(e) => setTempSquareMeters(e.target.value)}
+                        onBlur={handleBlur}
+                        onKeyDown={handleKeyDown}
+                      />
+                    </div>{' '}
+                  </div>{' '}
+                </>
+              )}
               <div style={{ display: 'flex' }}>
                 <div
-                style={{height:RoomList.find((r: RoomType) => r.id === SelectedEditRoomId).status === "Empty" ? "var(--440px-V)" : "var(--480px-V)"}}
+                  style={{
+                    height:
+                      RoomList.find(
+                        (r: RoomType) => r.id === SelectedEditRoomId
+                      ).status === 'Empty'
+                        ? 'var(--440px-V)'
+                        : 'var(--480px-V)',
+                  }}
                   className={`RoomSpecficationsMainContainer ${
                     highlightedFields.includes('specifications')
                       ? 'highlight-reset-field'
@@ -2789,7 +2819,6 @@ const MainPage = ({
                   )}
                 />
               </div>
-              
             </div>
           </>
         )}
@@ -2854,7 +2883,8 @@ const MainPage = ({
             />
           )}
           {SelectedPage === 'Tools' && (
-            <ToolsPage signOutUserAndRestart={signOutUserAndRestart}
+            <ToolsPage
+              signOutUserAndRestart={signOutUserAndRestart}
               ToolsSelectedPage={ToolsSelectedPage}
               setToolsSelectedPage={setToolsSelectedPage}
               SelectedAppUser={SelectedAppUser}

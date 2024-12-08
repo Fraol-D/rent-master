@@ -1,3 +1,4 @@
+import { storageManager } from '../storeManager';
 // Dark Mode Icons
 import AdminSettingsMaleDark from '../assets/assets/Dark mode/Admin Settings Male.png';
 import AdministratorMaleDark from '../assets/assets/Dark mode/Administrator Male.png';

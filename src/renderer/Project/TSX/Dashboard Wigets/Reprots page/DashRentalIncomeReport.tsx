@@ -1,3 +1,4 @@
+import { storageManager } from '../../../../storeManager';
 import React, { useState, useMemo, useEffect } from 'react';
 import { getValuesWithSql } from 'Backend/localServerApis';
 import '../../../CSS/Reports.css';

@@ -1,3 +1,4 @@
+import { storageManager } from '../renderer/storeManager';
 import {
   deleteAllFromTable,
   getLocalUserDirectory,
@@ -8,6 +9,33 @@ const baseUrl = 'https://www.rentmaster.markethubet.com/api';
 const baseUrlLocal = 'http://localhost:8100';
 const apiKey = 'HH(CzZuQoW@tB$By)e';
 import axios from 'axios';
+
+let sendApiFunction = async (string, {url, method, headers, data} ) => {
+  if (window.electron) {
+    return await window.electron.ipcRenderer.invoke(string, {
+      url,
+      method,
+      headers,
+      data,
+    });
+  } else {
+   
+    if (method === 'post') {
+      const response = await axios.post(url, data, { headers });
+      return response.data;
+    } else if (method === 'get') {
+      const response = await axios.get(url, { headers });
+      return response.data;
+    } else if (method === 'delete') {
+      const response = await axios.delete(url, { headers });
+      return response.data;
+    } else if (method === 'put') {
+      const response = await axios.put(url, data, { headers });
+      return response.data;
+    }
+  }
+};
+
 const deleteValue = async (tableName, id) => {
   try {
     const { data } = await axios.delete(`${baseUrlLocal}/${tableName}/${id}`);
@@ -30,7 +58,7 @@ export const updateValueOnline = async (
       'Content-Type': 'application/json',
       'x-api-key': apiKey,
     };
-    return await window.electron.ipcRenderer.invoke('api-request', {
+    return await sendApiFunction('api-request', {
       url,
       method: 'put',
       headers,
@@ -49,7 +77,7 @@ export const deleteValueOnline = async (tableName, id) => {
       'Content-Type': 'application/json',
       'x-api-key': apiKey,
     };
-    return await window.electron.ipcRenderer.invoke('api-request', {
+    return await sendApiFunction('api-request', {
       url,
       method: 'delete',
       headers,
@@ -62,7 +90,7 @@ export const deleteValueOnline = async (tableName, id) => {
 
 const handleSignOut = async () => {
   try {
-    await window.electron.ipcRenderer.invoke('cleanup-on-sign-out');
+    await sendApiFunction('cleanup-on-sign-out');
     console.log('Cleanup completed successfully');
     // Perform any additional sign-out logic here
   } catch (error) {
@@ -82,7 +110,7 @@ export const AddUserOnline = async (json) => {
       'Content-Type': 'application/json',
       'x-api-key': apiKey,
     };
-    return await window.electron.ipcRenderer.invoke('api-request', {
+    return await sendApiFunction('api-request', {
       url,
       method: 'post',
       headers,
@@ -153,7 +181,7 @@ export const Upload = async (
               console.log(
                 `Row ${rowData.id} exists, updating instead of adding`
               );
-              await window.electron.ipcRenderer.invoke('api-request', {
+              await sendApiFunction('api-request', {
                 url: `${baseUrl}/${change.tableName}/${rowData.id}`,
                 method: 'put',
                 headers,
@@ -161,7 +189,7 @@ export const Upload = async (
               });
             } else {
               // Row doesn't exist, add it
-              await window.electron.ipcRenderer.invoke('api-request', {
+              await sendApiFunction('api-request', {
                 url: `${baseUrl}/${change.tableName}`,
                 method: 'post',
                 headers,
@@ -172,7 +200,7 @@ export const Upload = async (
           break;
 
         case 'edit':
-          await window.electron.ipcRenderer.invoke('api-request', {
+          await sendApiFunction('api-request', {
             url: `${baseUrl}/${change.tableName}/${change.rowId}/${change.columnName}`,
             method: 'put',
             headers,
@@ -181,7 +209,7 @@ export const Upload = async (
           break;
 
         case 'delete':
-          await window.electron.ipcRenderer.invoke('api-request', {
+          await sendApiFunction('api-request', {
             url: `${baseUrl}/${change.tableName}/${change.rowId}`,
             method: 'delete',
             headers,
@@ -284,7 +312,7 @@ const setChangeAmount = async (SelectedUserId) => {
 export const RevertOfflineChanges = async () => {
   try {
     const url = `${baseUrlLocal}/offline_changes`;
-    return await window.electron.ipcRenderer.invoke('api-request', {
+    return await sendApiFunction('api-request', {
       url,
       method: 'delete',
       headers: {
@@ -304,7 +332,7 @@ export const getAllUsers = async () => {
       'Content-Type': 'application/json',
       'x-api-key': apiKey,
     };
-    return await window.electron.ipcRenderer.invoke('api-request', {
+    return await sendApiFunction('api-request', {
       url,
       method: 'get',
       headers,
@@ -327,7 +355,7 @@ export async function verifyCredentials(email, password) {
       'Content-Type': 'application/json',
       'x-api-key': apiKey,
     };
-    const response = await window.electron.ipcRenderer.invoke('api-request', {
+    const response = await sendApiFunction('api-request', {
       url,
       method: 'post',
       headers,
@@ -347,7 +375,7 @@ export async function verifyAppUserCredentials(email, password) {
       'Content-Type': 'application/json',
       'x-api-key': apiKey,
     };
-    const response = await window.electron.ipcRenderer.invoke('api-request', {
+    const response = await sendApiFunction('api-request', {
       url,
       method: 'post',
       headers,
@@ -368,7 +396,7 @@ export const getValuesWithSql_Online = async (tableName, sqlCode) => {
         'Content-Type': 'application/json',
         'x-api-key': apiKey,
       };
-      return await window.electron.ipcRenderer.invoke('api-request', {
+      return await sendApiFunction('api-request', {
         url,
         method: 'get',
         headers,
@@ -387,7 +415,7 @@ export const getValuesFromOnlineDatabase = async (tableName) => {
       'Content-Type': 'application/json',
       'x-api-key': apiKey,
     };
-    return await window.electron.ipcRenderer.invoke('api-request', {
+    return await sendApiFunction('api-request', {
       url,
       method: 'get',
       headers,
@@ -930,7 +958,7 @@ export const syncOnlineToLocalBranchWithBool = async (
 export const getValues = async (tableName) => {
   try {
     const url = `${baseUrlLocal}/${tableName}`;
-    return await window.electron.ipcRenderer.invoke('api-request', {
+    return await sendApiFunction('api-request', {
       url,
       method: 'get',
       headers: {
@@ -987,7 +1015,7 @@ const deleteLocalRecord = async (tableName, id) => {
 export const addValue = async (tableName, value) => {
   try {
     const url = `${baseUrlLocal}/${tableName}`;
-    return await window.electron.ipcRenderer.invoke('api-request', {
+    return await sendApiFunction('api-request', {
       url,
       method: 'post',
       headers: {
@@ -1008,7 +1036,7 @@ export const addValueOnline = async (tableName, value) => {
       'Content-Type': 'application/json',
       'x-api-key': apiKey,
     };
-    return await window.electron.ipcRenderer.invoke('api-request', {
+    return await sendApiFunction('api-request', {
       url,
       method: 'post',
       headers,
@@ -1058,17 +1086,16 @@ export const UploadUserFilesToTheOnlineDatabase = async (
       'upload-user-files',
       {
         userId,
-      }
-    );
+    });
 
     // Clean up listener
     window.electron.ipcRenderer.removeListener(
       'upload-progress',
       handleProgress
     );
+    setProgressValue(100);
 
-    if (!result.success) {
-    }
+    
 
     return result;
   } catch (error) {
@@ -1104,12 +1131,19 @@ export const DownloadUserFilesFromOnlineDatabase = async (
         setProgressValue(progress);
       }
     };
+    window.electron.ipcRenderer.on('download-progress', handleProgress);
 
     const result = await window.electron.ipcRenderer.invoke('download-files', {
       userId,
-    });
+      }
+    );
     console.log(result);
 
+    // Clean up listener
+    window.electron.ipcRenderer.removeListener(
+      'download-progress',
+      handleProgress
+    );
     setProgressValue(100);
   } catch (error) {
     console.error('Error during file download process:', error);
@@ -1134,7 +1168,7 @@ export const replaceUserData = async (userId, tables) => {
       'Content-Type': 'application/json',
       'x-api-key': apiKey,
     };
-    const data = await window.electron.ipcRenderer.invoke('api-request', {
+    const data = await sendApiFunction('api-request', {
       url,
       method: 'post',
       headers,
@@ -1232,7 +1266,7 @@ export const sendSMS = async (phoneNumber, message, user) => {
       user,
     };
 
-    const response = await window.electron.ipcRenderer.invoke('api-request', {
+    const response = await sendApiFunction('api-request', {
       url,
       method: 'post',
       headers,
@@ -1258,7 +1292,7 @@ export const sendSMSWithUserId = async (phoneNumber, message, userId) => {
       userId,
     };
 
-    const response = await window.electron.ipcRenderer.invoke('api-request', {
+    const response = await sendApiFunction('api-request', {
       url,
       method: 'post',
       headers,
@@ -1268,6 +1302,32 @@ export const sendSMSWithUserId = async (phoneNumber, message, userId) => {
     return response; // Return the response from the API
   } catch (error) {
     console.error('Error sending SMS:', error);
+    return { success: false, error: error.message };
+  }
+};
+export const sendEmailAPI = async (email, subject, text, userId) => {
+  try {
+    const url = `${baseUrl}/send-email`;
+    const headers = {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+    };
+    const data = {
+      email,
+      subject,
+      text,
+      userId,
+    };
+
+    const response = await sendApiFunction('api-request', {
+      url,
+      method: 'post',
+      headers,
+      data,
+    });
+    return response;
+  } catch (error) {
+    console.error('Error sending email:', error);
     return { success: false, error: error.message };
   }
 };
