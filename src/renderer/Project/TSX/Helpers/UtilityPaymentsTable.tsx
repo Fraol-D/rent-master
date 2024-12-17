@@ -7,6 +7,7 @@ import {
 import React, { useState, useCallback } from 'react';
 import { GetCurrencyAsOptionsOnSelect } from './CurrencySign';
 import { v4 as uuidv4 } from 'uuid';
+import { useGlobal } from 'renderer/components/GlobalContext';
 
 const UtilityPaymentsTable = ({
   roomId,
@@ -22,7 +23,10 @@ const UtilityPaymentsTable = ({
       return acc;
     }, {})
   );
-
+  const {
+    AllUtilityPaymentsSettings,
+    setAllUtilityPaymentsSettings,
+  } = useGlobal();
   const handleUtilityChange = useCallback(
     async (
       index: number,
@@ -56,9 +60,8 @@ const UtilityPaymentsTable = ({
       );
       console.log(`Updated room property locally for utilityPayments`);
 
-      const utilityPaymentRaw = await getValuesWithSql(
-        'utility_payments_settings',
-        `WHERE type = '${utility.type}' AND roomId = '${roomId}'`
+      const utilityPaymentRaw = AllUtilityPaymentsSettings.filter(
+        (utility) => utility.type === utility.type && utility.roomId === roomId
       );
       console.log(
         `Fetched utility payment raw data: ${JSON.stringify(utilityPaymentRaw)}`
@@ -80,6 +83,20 @@ const UtilityPaymentsTable = ({
           },
           setChangeMade
         );
+        setAllUtilityPaymentsSettings([
+          ...AllUtilityPaymentsSettings,
+          {
+            id: uuidv4(),
+            roomId: roomId,
+            type: utility.type,
+            useThis: field === 'useThis' ? value : utility.useThis,
+            price: field === 'price' ? value || 0 : utility.price || 0,
+            alwaysAsk: field === 'alwaysAsk' ? value : utility.alwaysAsk,
+            Currency: field === 'Currency' ? value : utility.Currency,
+            userId: userId,
+            branchId: SelectedBranchId,
+          },
+        ]);
         console.log(`Added a new utility payment setting.`);
       } else {
         console.log(
@@ -92,6 +109,13 @@ const UtilityPaymentsTable = ({
           value,
           setChangeMade,
           utility[field]
+        );
+        setAllUtilityPaymentsSettings(
+          AllUtilityPaymentsSettings.map((utility) =>
+            utility.id === utilityPaymentRaw[0].id
+              ? { ...utility, [field]: value }
+              : utility
+          )
         );
         console.log(`Updated utility payment setting.`);
       }

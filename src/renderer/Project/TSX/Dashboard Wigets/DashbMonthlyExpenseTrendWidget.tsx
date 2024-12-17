@@ -21,6 +21,7 @@ import CurrencySign, {
   formatNumberWithSuffix,
   getRateByDate,
 } from '../Helpers/CurrencySign';
+import { useGlobal } from 'renderer/components/GlobalContext';
 interface MonthlyExpenseTrendWidgetProps {
   expenses: expenses[];
   SelectedBranchId: any;
@@ -37,6 +38,10 @@ const DashbMonthlyExpenseTrendWidget: React.FC<
   const [currencyDisplay, setCurrencyDisplay] = useState<
     'ETB_ONLY' | 'USD_ONLY' | 'ALL_ETB' | 'ALL_USD'
   >('ALL_ETB');
+  const {
+    AllExpenses,
+    setAllExpenses,
+  } = useGlobal();
   const processValueByCurrency = (
     value: number,
     currency: string,
@@ -61,10 +66,7 @@ const DashbMonthlyExpenseTrendWidget: React.FC<
   };
   useEffect(() => {
     const fetchExpenses = async () => {
-      const expensesData = await getValuesWithSql(
-        'expenses',
-        `WHERE 1 AND branchId = '${SelectedBranchId}'`
-      );
+      const expensesData = AllExpenses;
       setExpensesData(expensesData);
     };
     fetchExpenses();
@@ -341,10 +343,12 @@ const DashbMonthlyExpenseTrendWidget: React.FC<
               (storageManager.get('abbreiviateBigNumbers')
                 ? 30
                 : Math.max(
-                    ...dataset.map((d) => d.expense.toString().length * 6)
-                  )),
+                    ...(Array.isArray(dataset) 
+                      ? dataset.map((d) => d.expense || 0)
+                      : [dataset.totalExpense || 0])
+                  ).toString().length * 6)+50,
             right: 30,
-            top: 30,
+            top: 10,
             bottom: 60,
           }}
           sx={{
@@ -430,7 +434,7 @@ const DashbMonthlyExpenseTrendWidget: React.FC<
               padding: '3px 8px',
               borderRadius: '4px',
               border: '1px solid var(--Border-Color)',
-              color: 'var(--Text-Color)',
+              
               cursor: 'pointer',
             }}
           >

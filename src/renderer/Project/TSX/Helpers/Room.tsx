@@ -6,11 +6,12 @@ import React, {
   useCallback,
   useMemo,
 } from 'react';
-import '../../CSS/Room.css';
+
 import { v4 as uuidv4 } from 'uuid';
 import ImageInteractor2 from './GUIs/ImageInteractor2';
 import PaymentProgressBarGUI from './GUIs/PaymentProgressBarGUI';
-import EditIcon from '../../../assets/assets/Dark mode/Editicon.png';
+import EditIconDark from '../../../assets/assets/Dark mode/Editicon.png';
+import EditIconLight from '../../../assets/assets/Light mode/Editicon.png';
 import DocumentInteractor from './GUIs/DocumentInteractor';
 import {
   AddRoomDocuments,
@@ -66,6 +67,7 @@ const Room = ({
   SelectedUserId,
   SelectedBranchId,
   SelectedAppUser,
+  setChangeProgress,changeProgress
 }: {
   roomType: RoomType;
   updateRoomProperty: any;
@@ -90,6 +92,8 @@ const Room = ({
   SelectedUserId: any;
   SelectedBranchId: any;
   SelectedAppUser: any;
+  setChangeProgress: any;
+  changeProgress: any;
 }) => {
   const handleAddTenant = () => {
     turnOffAddTenantStateForAll();
@@ -153,6 +157,9 @@ const Room = ({
   const utilityShowerRefHider = useRef(null);
   const utilityShowerRef = useRef(null);
   useEffect(() => {
+
+    
+
     const handleClickOutside = (event: MouseEvent) => {
       if (
         addTenantRef.current &&
@@ -181,7 +188,8 @@ const Room = ({
         !(hideButtonRef.current as HTMLElement).contains(
           event.target as Node
         ) &&
-        roomType.ShowPayTimeLine
+        roomType.ShowPayTimeLine&&
+        !(event.target as HTMLElement).closest('#confirm-overlay')
       ) {
         updateRoomPropertyLocal(roomType.id, 'ShowPayTimeLine', 0);
       }
@@ -608,24 +616,18 @@ const Room = ({
     const allPayments = [];
     const today = new Date();
     const yearEnd = new Date(today.getFullYear() + 1, 11, 31);
-    const tenant = await getValuesWithSql(
-      'tenants',
-      `WHERE id = '${room.tenantId}' AND branchId = '${SelectedBranchId}'`
-    );
-    let startDate = new Date(tenant[0]?.startTime || Date.now()).getTime();
+    const tenant =  AllTenants.find(t => t.id === room.tenantId);
+    let startDate = new Date(tenant?.startTime || Date.now()).getTime();
 
     let endDate = null;
     if (room.selectedAgreementId) {
-      const agreements = await getValuesWithSql(
-        'agreements',
-        `WHERE id = '${room.selectedAgreementId}'`
-      );
-      if (agreements.length > 0) {
-        startDate = agreements[0].startTime;
+      const agreements = AllAgreements.find(a => a.id === room.selectedAgreementId);
+      if (agreements) {
+        startDate = agreements.startTime;
       }
-      if (tenant[0]?.SelectedAgreement === 'Fixed-Term') {
-        if (agreements.length > 0) {
-          endDate = agreements[0].endTime;
+      if (tenant?.SelectedAgreement === 'Fixed-Term') {
+        if (agreements) {
+          endDate = agreements.endTime;
         }
       }
     }
@@ -1274,10 +1276,15 @@ const Room = ({
     );
     if (tenant) {
       tenantAPI.EditTenantApi(tenant.id, field, newValue);
+      setTenantList((prev) =>
+        prev.map((tenant) =>
+          tenant.id === tenant.id ? { ...tenant, [field]: newValue } : tenant
+        )
+      );
     }
     setTimeout(() => {
       updateRoomPropertyLocal(roomType.id, 'ViewAgreement', true);
-    }, 500);
+    }, 200);
   };
   const renderInfoItem = (label: string, value: string, title?: string) => (
     <div
@@ -1459,7 +1466,7 @@ const Room = ({
                 setSelectedEditRoomId(roomType.id);
                 setTypeOfRoomState(true);
               }}
-              src={EditIcon}
+              src={storageManager.get('ThemeMode') === 'dark' ? EditIconLight : EditIconDark}
               style={{
                 width: 'var(--23px-V)',
                 height: 'var(--23px-V)',
@@ -1827,7 +1834,7 @@ const Room = ({
                     fontSize: 'var(--17px-V)',
                   }}
                 >
-                  {roomType.squareMeters} square meters
+                 {roomType.squareMeters} Square Meters
                 </p>
               </div>
             </>
@@ -3857,6 +3864,8 @@ const Room = ({
               }}
             >
               <PaymentProgressBarGUI
+                setChangeProgress={setChangeProgress}
+                changeProgress={changeProgress}
                 paymentData={roomType.AllRoomPayInfo.RoomPayInfo || []}
                 roomPaymentInfoApi={roomPaymentInfoApi}
                 roomType={roomType}

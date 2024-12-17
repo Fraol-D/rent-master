@@ -4,13 +4,13 @@ import {
   getLocalUserDirectory,
   getValuesWithSql,
 } from './localServerApis';
-
+import { makeProxyRequest } from './viteApiHandler';
 const baseUrl = 'https://www.rentmaster.markethubet.com/api';
 const baseUrlLocal = 'http://localhost:8100';
-const apiKey = 'HH(CzZuQoW@tB$By)e';
+
 import axios from 'axios';
 
-let sendApiFunction = async (string, {url, method, headers, data} ) => {
+let sendApiFunction = async (string, { url, method, headers, data }) => {
   if (window.electron) {
     return await window.electron.ipcRenderer.invoke(string, {
       url,
@@ -19,20 +19,15 @@ let sendApiFunction = async (string, {url, method, headers, data} ) => {
       data,
     });
   } else {
-   
-    if (method === 'post') {
-      const response = await axios.post(url, data, { headers });
-      return response.data;
-    } else if (method === 'get') {
-      const response = await axios.get(url, { headers });
-      return response.data;
-    } else if (method === 'delete') {
-      const response = await axios.delete(url, { headers });
-      return response.data;
-    } else if (method === 'put') {
-      const response = await axios.put(url, data, { headers });
-      return response.data;
-    }
+    const response = await makeProxyRequest(
+      'online',
+      url,
+      method,
+      headers,
+      data
+    );
+
+    return response;
   }
 };
 
@@ -56,7 +51,6 @@ export const updateValueOnline = async (
     const url = `${baseUrl}/${tableName}/${id}/${columnName}`;
     const headers = {
       'Content-Type': 'application/json',
-      'x-api-key': apiKey,
     };
     return await sendApiFunction('api-request', {
       url,
@@ -75,7 +69,6 @@ export const deleteValueOnline = async (tableName, id) => {
     const url = `${baseUrl}/${tableName}/${id}`;
     const headers = {
       'Content-Type': 'application/json',
-      'x-api-key': apiKey,
     };
     return await sendApiFunction('api-request', {
       url,
@@ -90,7 +83,8 @@ export const deleteValueOnline = async (tableName, id) => {
 
 const handleSignOut = async () => {
   try {
-    await sendApiFunction('cleanup-on-sign-out');
+    if (window.electron) await sendApiFunction('cleanup-on-sign-out');
+    else storageManager.clear();
     console.log('Cleanup completed successfully');
     // Perform any additional sign-out logic here
   } catch (error) {
@@ -108,7 +102,6 @@ export const AddUserOnline = async (json) => {
     const url = `${baseUrl}/users`;
     const headers = {
       'Content-Type': 'application/json',
-      'x-api-key': apiKey,
     };
     return await sendApiFunction('api-request', {
       url,
@@ -154,7 +147,6 @@ export const Upload = async (
 
   const headers = {
     'Content-Type': 'application/json',
-    'x-api-key': apiKey,
   };
 
   // Process changes in original order
@@ -330,7 +322,6 @@ export const getAllUsers = async () => {
     const url = `${baseUrl}/users`;
     const headers = {
       'Content-Type': 'application/json',
-      'x-api-key': apiKey,
     };
     return await sendApiFunction('api-request', {
       url,
@@ -353,7 +344,6 @@ export async function verifyCredentials(email, password) {
     const url = `${baseUrl}/verify-credentials`;
     const headers = {
       'Content-Type': 'application/json',
-      'x-api-key': apiKey,
     };
     const response = await sendApiFunction('api-request', {
       url,
@@ -373,7 +363,6 @@ export async function verifyAppUserCredentials(email, password) {
     const url = `${baseUrl}/verify-credentials-app-user`;
     const headers = {
       'Content-Type': 'application/json',
-      'x-api-key': apiKey,
     };
     const response = await sendApiFunction('api-request', {
       url,
@@ -394,7 +383,6 @@ export const getValuesWithSql_Online = async (tableName, sqlCode) => {
       const url = `${baseUrl}/${tableName}/${encodeURIComponent(sqlCode)}`;
       const headers = {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey,
       };
       return await sendApiFunction('api-request', {
         url,
@@ -413,7 +401,6 @@ export const getValuesFromOnlineDatabase = async (tableName) => {
     const url = `${baseUrl}/${tableName}`;
     const headers = {
       'Content-Type': 'application/json',
-      'x-api-key': apiKey,
     };
     return await sendApiFunction('api-request', {
       url,
@@ -432,7 +419,6 @@ const fetchDataFromOnlineDatabase = async (tableName) => {
     const { data } = await axios.get(`${baseUrl}/${tableName}`, {
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey,
       },
     });
     return data;
@@ -1034,7 +1020,6 @@ export const addValueOnline = async (tableName, value) => {
     const url = `${baseUrl}/${tableName}`;
     const headers = {
       'Content-Type': 'application/json',
-      'x-api-key': apiKey,
     };
     return await sendApiFunction('api-request', {
       url,
@@ -1086,7 +1071,8 @@ export const UploadUserFilesToTheOnlineDatabase = async (
       'upload-user-files',
       {
         userId,
-    });
+      }
+    );
 
     // Clean up listener
     window.electron.ipcRenderer.removeListener(
@@ -1094,8 +1080,6 @@ export const UploadUserFilesToTheOnlineDatabase = async (
       handleProgress
     );
     setProgressValue(100);
-
-    
 
     return result;
   } catch (error) {
@@ -1135,8 +1119,7 @@ export const DownloadUserFilesFromOnlineDatabase = async (
 
     const result = await window.electron.ipcRenderer.invoke('download-files', {
       userId,
-      }
-    );
+    });
     console.log(result);
 
     // Clean up listener
@@ -1166,7 +1149,6 @@ export const replaceUserData = async (userId, tables) => {
     const url = `${baseUrl}/replace-user-data`;
     const headers = {
       'Content-Type': 'application/json',
-      'x-api-key': apiKey,
     };
     const data = await sendApiFunction('api-request', {
       url,
@@ -1258,7 +1240,6 @@ export const sendSMS = async (phoneNumber, message, user) => {
     const url = `${baseUrl}/send-sms`; // Adjust the endpoint as necessary
     const headers = {
       'Content-Type': 'application/json',
-      'x-api-key': apiKey,
     };
     const data = {
       phoneNumber,
@@ -1284,7 +1265,6 @@ export const sendSMSWithUserId = async (phoneNumber, message, userId) => {
     const url = `${baseUrl}/send-sms-with-id`; // Adjust the endpoint as necessary
     const headers = {
       'Content-Type': 'application/json',
-      'x-api-key': apiKey,
     };
     const data = {
       phoneNumber,
@@ -1310,7 +1290,6 @@ export const sendEmailAPI = async (email, subject, text, userId) => {
     const url = `${baseUrl}/send-email`;
     const headers = {
       'Content-Type': 'application/json',
-      'x-api-key': apiKey,
     };
     const data = {
       email,
@@ -1328,6 +1307,171 @@ export const sendEmailAPI = async (email, subject, text, userId) => {
     return response;
   } catch (error) {
     console.error('Error sending email:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+export const sendEmailAPIForVerify = async (email, code) => {
+  try {
+    const url = `${baseUrl}/send-email-for-verify`;
+    const headers = {
+      'Content-Type': 'application/json',
+    };
+    const text = `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Email Verification</title>
+      <style>
+     
+      body,
+      h1,
+      p {
+        margin: 0;
+        padding: 0;
+      }
+  
+      body {
+        font-family: Arial, sans-serif;
+        line-height: 1.6;
+        background-color: #f5f5f5;
+      }
+  
+      .container {
+        max-width: 600px;
+        margin: 20px auto;
+        padding: 20px;
+        background-color: #ffffff;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      }
+  
+      h1 {
+        font-size: 24px;
+        color: #333333;
+        margin-bottom: 10px;
+      }
+  
+      p {
+        font-size: 16px;
+        color: #666666;
+        margin-bottom: 20px;
+      }
+  
+      .verification-code {
+        margin-bottom: 30px;
+      }
+  
+      .btn {
+        display: inline-block;
+        padding: 10px 20px;
+        background-color: #007bff;
+        color: #ffffff;
+        text-decoration: none;
+        border-radius: 4px;
+      }
+  
+      .footer {
+        margin-top: 20px;
+        border-top: 1px solid #cccccc;
+        padding-top: 20px;
+      }
+  
+      .footer p {
+        margin-bottom: 10px;
+      }
+  
+      .footer a {
+        color: #007bff;
+        text-decoration: none;
+        margin-right: 10px;
+      }
+    </style>
+    </head>
+    <body>
+      <div class="container">
+        <h1>Email Verification</h1>
+        <p>Thank you for signing up with RentMaster. Please verify your email address to complete your registration.</p>
+        <p class="verification-code"><strong>Your Verification Code:</strong> <span style="font-weight: bold; font-size: 18px;">${code}</span></p>
+     
+        <div class="footer">
+          <p>Contact us at <a href="mailto:support@markethubet.com">rentmaster.et@gmail.com</a> for assistance.</p>
+          <p>Visit our website: <a href="https://www.rentmaster.markethubet.com">www.rentmaster.markethubet.com</a></p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  const subject = 'Email Verification';
+    const data = {
+      email,
+      subject2,
+      text,
+    };
+
+    const response = await sendApiFunction('api-request', {
+      url,
+      method: 'post',
+      headers,
+      data,
+    });
+    return response;
+  } catch (error) {
+    console.error('Error sending email:', error);
+    return { success: false, error: error.message };
+  }
+};
+export const sendEmailAPIForWebsite = async (email2, text, subject) => {
+  try {
+    const url = `${baseUrl}/send-email-without-user`;
+    const headers = {
+      'Content-Type': 'application/json',
+    };
+  
+ 
+    const data = {
+      email: "rentmaster.et@gmail.com",
+      subject,
+      text,
+    };
+
+    const response = await sendApiFunction('api-request', {
+      url,
+      method: 'post',
+      headers,
+      data,
+    });
+    return response;
+  } catch (error) {
+    console.error('Error sending email:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+export const checkIfCompanyNameExists = async (companyName) => {
+  try {
+    const url = `${baseUrl}/check-company-name`;
+    const headers = {
+      'Content-Type': 'application/json',
+    };
+    const data = {
+      companyName,
+    };
+
+    const response = await sendApiFunction('api-request', {
+      url,
+      method: 'post',
+      headers,
+      data,
+    });
+    console.log(response);
+    const result = await response;
+    return response;
+  } catch (error) {
+    console.error('Error checking company name:', error);
     return { success: false, error: error.message };
   }
 };

@@ -1,10 +1,11 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import * as d3 from 'd3';
-import '../../../CSS/Calendar.css';
+
 import { addDays, addMonths, startOfYear, endOfYear, addYears } from 'date-fns';
 import { getValuesWithSql } from '../../../../../Backend/localServerApis';
 import { Input } from '../CustomReactComponents';
 import { CurrencySign, formatNumberWithSuffix } from '../CurrencySign';
+import { useGlobal } from 'renderer/components/GlobalContext';
 
 interface CalendarProps {
   rooms: RoomType[];
@@ -39,7 +40,14 @@ const CalendarGUI: React.FC<CalendarProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const ref = useRef<SVGSVGElement | null>(null);
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
-
+  const {
+    AllRoomPayInfoHistory,
+    setAllRoomPayInfoHistory,
+    AllRoomPayInfo,
+    setAllRoomPayInfo,
+    AllAgreements,
+    setAllAgreements,
+  } = useGlobal();
   useEffect(() => {
     const handleResize = () => setWindowWidth(window.innerWidth);
     window.addEventListener('resize', handleResize);
@@ -74,15 +82,19 @@ const CalendarGUI: React.FC<CalendarProps> = ({
         let yearEnd = endOfYear(new Date(currentYear + 3, 11, 31));
 
         // Get all actual payments for the selected years
-        const actualPayments = await getValuesWithSql(
-          'room_pay_info',
-          `WHERE Day >= ${yearStart.getTime()} AND Day <= ${yearEnd.getTime()} AND branchId = '${SelectedBranchId}'`
+        const actualPayments = AllRoomPayInfo.filter(
+          (payment) =>
+            payment.Day >= yearStart.getTime() &&
+            payment.Day <= yearEnd.getTime() &&
+            payment.branchId === SelectedBranchId
         );
 
         // Get historical payments
-        const historicalPayments = await getValuesWithSql(
-          'room_pay_info_history',
-          `WHERE Day >= ${yearStart.getTime()} AND Day <= ${yearEnd.getTime()} AND branchId = '${SelectedBranchId}'`
+        const historicalPayments = AllRoomPayInfoHistory.filter(
+          (payment) =>
+            payment.Day >= yearStart.getTime() &&
+            payment.Day <= yearEnd.getTime() &&
+            payment.branchId === SelectedBranchId
         );
 
         // Combine actual and historical payments
@@ -107,9 +119,8 @@ const CalendarGUI: React.FC<CalendarProps> = ({
           ).getTime();
           let endDate = yearEnd.getTime();
           if (room.selectedAgreementId) {
-            const agreements = await getValuesWithSql(
-              'agreements',
-              `WHERE id = '${room.selectedAgreementId}'`
+            const agreements = AllAgreements.filter(
+              (agreement) => agreement.id === room.selectedAgreementId
             );
             if (agreements.length > 0) {
               startDate = Math.max(
@@ -287,7 +298,7 @@ const CalendarGUI: React.FC<CalendarProps> = ({
               : '';
           })
           .tickSize(10 * scaleFactor)
-          .tickPadding(5 * scaleFactor);
+          .tickPadding(5 * scaleFactor)
 
         if (filteredRooms.length > 0) {
           svg

@@ -18,6 +18,7 @@ import CurrencySign, {
   getRateByDate,
 } from '../Helpers/CurrencySign';
 import { convertCurrency } from '../Helpers/CurrencySign';
+import { useGlobal } from 'renderer/components/GlobalContext';
 
 interface Payment {
   id: string;
@@ -40,6 +41,14 @@ const DashbTotalCollected = ({
   const [selectedDate, setSelectedDate] = useState(
     new Date().getFullYear().toString()
   );
+  const {
+    AllRoomPayInfoHistory,
+    setAllRoomPayInfoHistory,
+    AllRoomPayInfo,
+    setAllRoomPayInfo,
+    AllAgreements,
+    setAllAgreements,
+  } = useGlobal();
   const [predictedPayments, setPredictedPayments] = useState<Payment[]>([]);
   const [visibleSeries, setVisibleSeries] = useState({
     collected: true,
@@ -64,15 +73,19 @@ const DashbTotalCollected = ({
       let yearEnd = endOfYear(new Date(selectedYear + 2, 11, 31));
 
       // Get all actual payments for the selected year range
-      const actualPayments = await getValuesWithSql(
-        'room_pay_info',
-        `WHERE Day >= ${yearStart.getTime()} AND Day <= ${yearEnd.getTime()} AND branchId = '${SelectedBranchId}'`
+      const actualPayments = AllRoomPayInfo.filter(
+        (payment) =>
+          payment.Day >= yearStart.getTime() &&
+          payment.Day <= yearEnd.getTime() &&
+          payment.branchId === SelectedBranchId
       );
 
       // Get historical payments
-      const historicalPayments = await getValuesWithSql(
-        'room_pay_info_history',
-        `WHERE Day >= ${yearStart.getTime()} AND Day <= ${yearEnd.getTime()} AND branchId = '${SelectedBranchId}'`
+      const historicalPayments = AllRoomPayInfoHistory.filter(
+        (payment) =>
+          payment.Day >= yearStart.getTime() &&
+          payment.Day <= yearEnd.getTime() &&
+          payment.branchId === SelectedBranchId
       );
 
       // Add ALL payments (both paid and unpaid) from actual and historical
@@ -81,7 +94,7 @@ const DashbTotalCollected = ({
           id: payment.id,
           Day: payment.Day,
           Value: payment.Value,
-          Paid: payment.Paid === 1,
+          Paid: payment.Paid,
           roomId: payment.roomId,
         })
       );
@@ -102,9 +115,8 @@ const DashbTotalCollected = ({
 
         // Get agreement details if exists
         if (room.selectedAgreementId) {
-          const agreements = await getValuesWithSql(
-            'agreements',
-            `WHERE id = '${room.selectedAgreementId}'`
+          const agreements = AllAgreements.filter(
+            (agreement) => agreement.id === room.selectedAgreementId
           );
           if (agreements.length > 0) {
             startDate = Math.max(agreements[0].startTime, yearStart.getTime());

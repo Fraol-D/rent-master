@@ -6,7 +6,7 @@ import {
 } from 'Backend/localServerApis';
 import React, { useEffect, useMemo, useState } from 'react';
 import { getUserPrivileges } from 'renderer/App';
-
+import loadingGif from '../../../assets/assets/Loading/Rolling-1s-200px.gif';
 const DatabasePage = ({
   setChangeMade,
   SelectedAppUser,
@@ -21,12 +21,14 @@ const DatabasePage = ({
   } | null>(null);
   const [editValue, setEditValue] = useState('');
   const [highlightedRow, setHighlightedRow] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false); // Added state for loading indicator
   const privileges = useMemo(
     () => getUserPrivileges(SelectedAppUser),
     [SelectedAppUser]
   );
  
 const GetDataBaseData = async (TableName: string) => {
+  setIsLoading(true); // Set loading state to true
   try {
     // Only add branchId filter if the table supports it
     const whereClause = tablesWithBranchId.includes(TableName) 
@@ -42,6 +44,8 @@ const GetDataBaseData = async (TableName: string) => {
     } else {
       console.log('An unknown error occurred');
     }
+  } finally {
+    setIsLoading(false); // Set loading state to false
   }
 };
 
@@ -229,6 +233,10 @@ const GetDataBaseData = async (TableName: string) => {
     }
   };
 
+  const handleRefresh = () => {
+    GetDataBaseData(SelectedTable);
+  };
+
   return (
     <div className="CalenderContainer">
       <div
@@ -263,6 +271,9 @@ const GetDataBaseData = async (TableName: string) => {
             onChange={(e) => setMainSearch(e.target.value)}
             placeholder="Main search"
           />
+          <button onClick={handleRefresh} style={{ marginLeft: 'var(--5px-V)' }}>
+            Refresh
+          </button>
         </div>
         <div
           style={{
@@ -271,7 +282,19 @@ const GetDataBaseData = async (TableName: string) => {
             marginTop: 'var(--5px-V)',
           }}
         >
-          {Data.length === 0 ? (
+          {isLoading ? (
+            <div style={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              height: '100%',
+              fontSize: 'var(--16px-V)',
+              color: 'var(--Text-Color)'
+            }}>
+              <img src={loadingGif} alt="Loading..." style={{ width: 'var(--30px-V)', height: 'var(--30px-V)' }} />
+              Loading...
+            </div>
+          ) : Data.length === 0 ? (
             <div style={{
               display: 'flex',
               justifyContent: 'center',
@@ -350,7 +373,8 @@ const GetDataBaseData = async (TableName: string) => {
                                 'email_template_id',
                                 'selectedAgreementId',
                               ].includes(key) &&
-                                value && (
+                                value && 
+                                value !== 'DEFAULT' && (
                                   <button
                                     onClick={() => handleGoTo(key, String(value))}
                                     style={{ marginLeft: 'var(--5px-V)' }}

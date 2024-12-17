@@ -3,6 +3,7 @@ import { getValuesWithSql } from 'Backend/localServerApis';
 import { addDays, addMonths, startOfYear, endOfYear, addYears } from 'date-fns';
 import PaymentProgressBarGUI from '../Helpers/GUIs/PaymentProgressBarGUI';
 import { formatNumberWithSuffix, GetDefaultCurrency } from '../Helpers/CurrencySign';
+import { useGlobal } from 'renderer/components/GlobalContext';
 
 interface Payment {
   id: string;
@@ -31,6 +32,14 @@ const DashbPastPayments = ({
   updateRoomProperty: any;
   SelectedUserId: string;
 }) => {
+  const {
+    AllRoomPayInfoHistory,
+    setAllRoomPayInfoHistory,
+    AllRoomPayInfo,
+    setAllRoomPayInfo,
+    AllAgreements,
+    setAllAgreements,
+  } = useGlobal();
   const [PastPaymentList, setPastPaymentList] = useState<
     { tenant: tenant; NumOfPayments: number; PastBy: number }[]
   >([]);
@@ -49,9 +58,11 @@ const DashbPastPayments = ({
       const yearEnd = endOfYear(addYears(new Date(currentYear, 11, 31), 3));
 
       // Get all actual payments for the current year
-      const actualPayments = await getValuesWithSql(
-        'room_pay_info',
-        `WHERE Day >= ${yearStart.getTime()} AND Day <= ${yearEnd.getTime()} AND branchId = '${SelectedBranchId}'`
+      const actualPayments = AllRoomPayInfo.filter(
+        (payment) =>
+          payment.Day >= yearStart.getTime() &&
+          payment.Day <= yearEnd.getTime() &&
+          payment.branchId === SelectedBranchId
       );
 
       for (const room of RoomList) {
@@ -62,9 +73,8 @@ const DashbPastPayments = ({
 
         // Handle fixed-term agreements
         if (room.selectedAgreementId) {
-          const agreements = await getValuesWithSql(
-            'agreements',
-            `WHERE id = '${room.selectedAgreementId}'`
+          const agreements = AllAgreements.filter(
+            (agreement) => agreement.id === room.selectedAgreementId
           );
           if (agreements.length > 0) {
             startDate = agreements[0].startTime;
@@ -226,9 +236,8 @@ const DashbPastPayments = ({
     );
 
     if (roomType) {
-      const listOfPayments = await getValuesWithSql(
-        'room_pay_info',
-        `WHERE roomId = '${roomType.id}'`
+      const listOfPayments = AllRoomPayInfo.filter(
+        (payment) => payment.roomId === roomType.id
       );
 
       const updatedRoomPayInfo: RoomPayInfo[] = listOfPayments.map(

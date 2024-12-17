@@ -537,44 +537,7 @@ app
     app.on('activate', () => {
       if (mainWindow === null) createWindow();
     });
-    ipcMain.on('renderer-to-main', (event, message) => {
-      const sendEmail = async (email: any, subject: any, text: any) => {
-        // Create a transporter using SMTP
-
-        const transporter = nodemailer.createTransport({
-          host: 'rentmaster.markethubet.com',
-          port: 465,
-          secure: true,
-          auth: {
-            user: 'seblewenglesbuilding@rentmaster.markethubet.com',
-            pass: 'Plp5H9:Li(UO#6[y+26E',
-          },
-        });
-
-        // Define the email options
-        const mailOptions = {
-          from: 'seblewenglesbuilding@rentmaster.markethubet.com',
-          to: email,
-          subject: subject,
-          text: text,
-        };
-
-        try {
-          // Send the email
-          await transporter.sendMail(mailOptions);
-          return { success: true };
-        } catch (error) {
-          return { success: false, error: error.message };
-        }
-      };
-      sendEmail(
-        'christian.b.taye@gmail.com',
-        'Bro this is so cool',
-        'this is ht ebody'
-      )
-        .then((result) => console.log(result))
-        .catch((error) => console.error(error));
-    });
+   
     // Check for backup on app start
     if (store.get('users'))
       if (store.get('users')[0])
@@ -660,13 +623,13 @@ ipcMain.on('SendVerificationCode', (event, message) => {
       port: 465,
       secure: true, // true for 465, false for other ports
       auth: {
-        user: 'verify@markethubet.com',
-        pass: 'Plp5H9:Li(UO#6[y+26E',
+          user: process.env.VITE_VERIFY_EMAIL_USER,
+          pass: process.env.VITE_VERIFY_EMAIL_PASS,
       },
     });
 
     let mailOptions = {
-      from: 'verify@markethubet.com',
+      from: process.env.VITE_VERIFY_EMAIL_USER,
       to: to,
       subject: 'Email Verification',
       html: `
@@ -778,7 +741,7 @@ const fs = require('fs');
 const appDB = express();
 appDB.use(express.static(path.join(__dirname, 'src/renderer')));
 
-const port = 8100;
+const port =8100;
 const dev = false;
 const appname = dev ? 'Electron' : 'rent-master';
 appDB.use(
@@ -796,7 +759,12 @@ appDB.use(cors({ origin: '*' }));
 appDB.use(bodyParser.urlencoded({ extended: false }));
 appDB.use(bodyParser.json());
 
-const apiKey = 'HH(CzZuQoW@tB$By)e';
+// To:
+require('dotenv').config({
+  path: path.resolve(__dirname, '../../.env')
+});
+const apiKey = process.env.VITE_AppCodeElectronString;  // Add VITE_ prefix
+
 
 // Function to validate table names
 const validateTableName = (tableName: string) => {
@@ -1105,6 +1073,8 @@ const tableStructures = [
       'emailTo TEXT',
       'smsTo TEXT',
       'Currency TEXT DEFAULT "ETB"',
+      'category TEXT DEFAULT "Other"',
+      'beforeTax BOOLEAN DEFAULT 0',
     ],
   },
 
@@ -1755,12 +1725,7 @@ appDB.delete(
   ) => {
     const { tableName } = req.params;
 
-    // Validate the API key
-    const apiKey = req.headers['x-api-key'];
-    if (apiKey !== 'HH(CzZuQoW@tB$By)e') {
-      return res.status(401).send('Unauthorized');
-    }
-
+   
     // Validate the table name
     if (!validateTableName(tableName)) {
       return res.status(400).send('Invalid table name');
@@ -3189,7 +3154,7 @@ import { promisify } from 'util';
 import { AxiosInstance } from 'axios';
 // Constants
 const BASE_URL = 'https://www.rentmaster.markethubet.com/api';
-const API_KEY = 'HH(CzZuQoW@tB$By)e';
+
 const MAX_RETRIES = 3;
 const TIMEOUT = 30000;
 
@@ -3205,7 +3170,7 @@ const createAxiosInstance = (): AxiosInstance => {
     }),
     headers: {
       'Content-Type': 'application/json',
-      'x-api-key': API_KEY,
+      'x-api-key': apiKey,
     },
   });
 
@@ -3278,7 +3243,7 @@ ipcMain.handle(
         method,
         headers: {
           ...headers,
-          'x-api-key': API_KEY, // Ensure API key is always included
+          'x-api-key': apiKey, // Ensure API key is always included
         },
         data,
         retry: MAX_RETRIES,

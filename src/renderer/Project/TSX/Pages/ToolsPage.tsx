@@ -7,7 +7,7 @@ import {
   deleteValue,
 } from '../../../../Backend/localServerApis';
 import React, { useEffect, useState, useRef, useMemo } from 'react';
-import '../../CSS/ToolsPage.css';
+
 import {
   addValueOnline,
   getValuesWithSql_Online,
@@ -21,13 +21,7 @@ import SMSTemplates from '../Tools page components/SMSTemplates';
 import { getUserPrivileges } from '../../../App';
 import { addDays } from 'date-fns';
 import { v4 as uuidv4 } from 'uuid';
-interface EmailTemplate {
-  id: string;
-  name: string;
-  subject: string;
-  body: string;
-  Type: string;
-}
+
 import loadingGif from '../../../assets/assets/Loading/Rolling-1s-200px.gif';
 import {
   AllCurrencies,
@@ -39,13 +33,7 @@ import {
 import ExpenseManager from '../Tools page components/ExpenseManager';
 import { useAlert } from 'renderer/components/useAlert';
 import { useConfirm } from 'renderer/components/useConfirm';
-
-interface SMSTemplate {
-  id: string;
-  name: string;
-  body: string;
-  Type: string;
-}
+import { useGlobal } from 'renderer/components/GlobalContext';
 
 const ToolsPage = ({
   setToolsSelectedPage,
@@ -135,6 +123,7 @@ const ToolsPage = ({
   const [emailTo, setEmailTo] = useState('');
   const [smsTo, setSmsTo] = useState('');
   const [isApplyingNotifications, setIsApplyingNotifications] = useState(false);
+  const [isResetingTemplates, setIsResetingTemplates] = useState(false);
 
   const [
     ShowDefaultNotificationsSettings,
@@ -180,6 +169,11 @@ const ToolsPage = ({
         // Update local database
         for (const [key, value] of Object.entries(notificationSettings)) {
           await updateValue('expenses', expense.id, key, value, setChangeMade);
+          setAllExpenses(
+            AllExpenses.map((expense) =>
+              expense.id === expense.id ? { ...expense, [key]: value } : expense
+            )
+          );
         }
       }
 
@@ -194,7 +188,14 @@ const ToolsPage = ({
       setIsApplyingNotifications(false);
     }
   };
-
+  const {
+    AllEmailTemplates,
+    setAllEmailTemplates,
+    AllSmsTemplates,
+    setAllSmsTemplates,
+    AllExpenses,
+    setAllExpenses,AllRoomSpecifications, setAllRoomSpecifications
+  } = useGlobal();
   const validateEmail = (email: string) => {
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     return emailRegex.test(email);
@@ -205,11 +206,11 @@ const ToolsPage = ({
     return phoneNumberRegex.test(phoneNumber);
   };
   const fetchEmailTemplates = async () => {
-    const templates = await getValuesWithSql('email_templates', 'WHERE 1');
+    const templates = AllEmailTemplates;
     setEmailTemplates(templates);
   };
   const getSMSTemplates = async () => {
-    const templates = await getValuesWithSql('sms_templates', 'WHERE 1');
+    const templates = AllSmsTemplates;
     setSMSTemplates(templates);
   };
   useEffect(() => {
@@ -222,10 +223,7 @@ const ToolsPage = ({
     }
   }, [ToolsSelectedPage]);
   const getExpenses = async () => {
-    const rawExpenses = await getValuesWithSql(
-      'expenses',
-      `WHERE 1 AND branchId = '${SelectedBranchId}'`
-    );
+    const rawExpenses = AllExpenses;
 
     const mappedExpenses = rawExpenses.map((expense: any) => ({
       id: expense.id,
@@ -294,6 +292,13 @@ const ToolsPage = ({
       setChangeMade,
       originalTemplate?.name
     );
+    setAllEmailTemplates(
+      AllEmailTemplates.map((template) =>
+        template.id === id
+          ? { ...template, name, subject, body, Type }
+          : template
+      )
+    );
     setEditingTemplateId(null);
     setEditedTemplate(null);
   };
@@ -324,17 +329,28 @@ const ToolsPage = ({
       setChangeMade,
       originalTemplate?.name
     );
+    setAllSmsTemplates(
+      AllSmsTemplates.map((template) =>
+        template.id === id ? { ...template, name, body } : template
+      )
+    );
     setEditingTemplateId(null);
     setEditedTemplate(null);
   };
 
   const deleteEmailTemplate = async (id: string) => {
     await deleteValue('email_templates', id, setChangeMade);
+    setAllEmailTemplates(
+      AllEmailTemplates.filter((template) => template.id !== id)
+    );
     setEmailTemplates(emailTemplates.filter((template) => template.id !== id));
   };
 
   const deleteSMSTemplate = async (id: string) => {
     await deleteValue('sms_templates', id, setChangeMade);
+    setAllSmsTemplates(
+      AllSmsTemplates.filter((template) => template.id !== id)
+    );
     setSMSTemplates(smsTemplates.filter((template) => template.id !== id));
   };
 
@@ -460,11 +476,10 @@ const ToolsPage = ({
           const userDATA = await storageManager.get('users');
           const userEmail = userDATA[0].email;
           const userPass = userDATA[0].password;
-          console.log(userEmail, userPass);
           if (navigator.onLine) {
             try {
               await sendEmailAPI(recipientEmail, subject, body, SelectedUserId);
-              
+
               setEmailSentSuccessstring('Email sent successfully');
               setEmailSentSuccessstring('Sent');
               setIsSending(false);
@@ -529,7 +544,7 @@ const ToolsPage = ({
       body: 'New Template',
       created_at: Date.now(),
       updated_at: Date.now(),
-      userId: SelectedUserId,
+      userId: storageManager.get('users')[0].id,
     };
     await addValue(
       'email_templates',
@@ -544,6 +559,18 @@ const ToolsPage = ({
       },
       setChangeMade
     );
+    setAllEmailTemplates([
+      ...AllEmailTemplates,
+      {
+        id: newTemplate.id,
+        name: newTemplate.name,
+        subject: newTemplate.subject,
+        body: newTemplate.body,
+        created_at: newTemplate.created_at,
+        updated_at: newTemplate.updated_at,
+        userId: newTemplate.userId,
+      },
+    ]);
     setEmailTemplates([...emailTemplates, newTemplate]);
     setEditingTemplateId(newTemplate.id);
     setEditedTemplate(newTemplate);
@@ -564,19 +591,25 @@ const ToolsPage = ({
       );
 
       if (choice) {
+        setIsResetingTemplates(true);
         // User clicked "Yes, Replace All"
         for (const template of emailTemplates) {
           await deleteValue('email_templates', template.id, setChangeMade);
+          setAllEmailTemplates(
+            AllEmailTemplates.filter((t) => t.id !== template.id)
+          );
         }
         // Get default templates and insert them
-        const userId = storageManager.get('SelectedUserId');
+        const userId = storageManager.get('users')[0].id;
         const defaultTemplates = getEmailTemplates(userId);
 
         for (const template of defaultTemplates) {
           await addValue('email_templates', template, setChangeMade);
+          setAllEmailTemplates([...AllEmailTemplates, template]);
         }
 
         fetchEmailTemplates();
+        setIsResetingTemplates(false);
       }
     } catch (error) {
       console.error('Error replacing templates:', error);
@@ -595,19 +628,25 @@ const ToolsPage = ({
       );
 
       if (choice) {
+        setIsResetingTemplates(true);
         // User clicked "Yes, Replace All"
         for (const template of smsTemplates) {
           await deleteValue('sms_templates', template.id, setChangeMade);
+          setAllSmsTemplates(
+            AllSmsTemplates.filter((t) => t.id !== template.id)
+          );
         }
         // Get default templates and insert them
-        const userId = storageManager.get('SelectedUserId');
+        const userId = storageManager.get('users')[0].id;
         const defaultTemplates = getSmsTemplates(userId);
 
         for (const template of defaultTemplates) {
           await addValue('sms_templates', template, setChangeMade);
+          setAllSmsTemplates([...AllSmsTemplates, template]);
         }
 
-        getSMSTemplates();
+        await getSMSTemplates();
+        setIsResetingTemplates(false);
       }
     } catch (error) {
       console.error('Error replacing templates:', error);
@@ -1026,6 +1065,17 @@ const ToolsPage = ({
       },
       setChangeMade
     );
+    setAllSmsTemplates([
+      ...AllSmsTemplates,
+      {
+        id: newTemplate.id,
+        name: newTemplate.name,
+        body: newTemplate.body,
+        created_at: newTemplate.created_at,
+        updated_at: newTemplate.updated_at,
+        userId: newTemplate.userId,
+      },
+    ]);
     setSMSTemplates([...smsTemplates, newTemplate]);
     setEditingTemplateId(newTemplate.id);
     setEditedTemplate(newTemplate);
@@ -1062,6 +1112,7 @@ const ToolsPage = ({
     setEditingExpenseId(newExpense.id);
     setEditedExpense(newExpense);
     await addValue('expenses', newExpense, setChangeMade);
+    setAllExpenses([...AllExpenses, newExpense]);
     setExpenses([...expenses, newExpense]);
   };
 
@@ -1102,7 +1153,9 @@ const ToolsPage = ({
         editedExpense.smsDaysBefore || 0,
         editedExpense.emailTo || null,
         editedExpense.smsTo || null,
-        editedExpense.Currency || 'ETB'
+        editedExpense.Currency || 'ETB',
+        editedExpense.category || 'Other',
+        editedExpense.beforeTax || false
       );
       setEditingExpenseId(null);
       setEditedExpense(null);
@@ -1149,7 +1202,9 @@ const ToolsPage = ({
     smsDaysBefore: number = 0,
     emailTo: string | null = null,
     smsTo: string | null = null,
-    Currency: string = 'ETB'
+    Currency: string = 'ETB',
+    category: string = 'Other',
+    beforeTax: boolean = false
   ) => {
     const originalExpense = expenses.find((e) => e.id === id);
     if (!originalExpense) return;
@@ -1174,6 +1229,8 @@ const ToolsPage = ({
       emailTo,
       smsTo,
       Currency,
+      category,
+      beforeTax
     };
 
     // Update only changed fields
@@ -1197,6 +1254,9 @@ const ToolsPage = ({
         value,
         setChangeMade,
         originalExpense[field as keyof typeof originalExpense]
+      );
+      setAllExpenses(
+        updatedExpenses
       );
     }
 
@@ -1332,14 +1392,6 @@ const ToolsPage = ({
           LandlordEmail,
           LandlordTelephone,
         } = user[0];
-
-        console.log('Fetched settings:', {
-          RepresentativeEmails,
-          RepresentativePhoneNumbers,
-          LandlordName,
-          LandlordEmail,
-          LandlordTelephone,
-        });
 
         // Update all states
         setRepresentativeEmails(RepresentativeEmails);
@@ -1540,16 +1592,11 @@ const ToolsPage = ({
 
           // If we found a rate, use it
           if (rates.length > 0) {
-            console.log('Found rate:', rates[0]);
             setGetExchangeRate(rates[0].rates);
             // Optionally show when this rate is from if it's not the exact date
             if (rates[0].id !== targetDate) {
-              console.log(
-                `Using rate from ${new Date(rates[0].id).toLocaleDateString()}`
-              );
             }
           } else {
-            console.log('No historical rates found for this date');
             setGetExchangeRate(0);
           }
         }
@@ -1699,16 +1746,14 @@ const ToolsPage = ({
     const userDATA = await storageManager.get('users');
     const userEmail = userDATA[0].email;
     const userPass = userDATA[0].password;
-    window.electron.ipcRenderer.send('SendCustomEmail', {
-      to: 'rentmaster.et@gmail.com',
-      subject: 'Review From ' + userEmail,
-      body: review,
-      userEmail: userEmail,
-      userPassword: userPass,
-      SelectedUserId: SelectedUserId,
-      branchId: SelectedBranchId,
-      templateId: '',
-    });
+    
+      await sendEmailAPI(
+        'rentmaster.et@gmail.com',
+        'Review From ' + userEmail,
+        review,
+        SelectedUserId
+      );
+    
     setReviewForm('');
     setInterval(() => {
       setIsSendingReview(false);
@@ -1722,16 +1767,15 @@ const ToolsPage = ({
     const userDATA = await storageManager.get('users');
     const userEmail = userDATA[0].email;
     const userPass = userDATA[0].password;
-    await window.electron.ipcRenderer.send('SendCustomEmail', {
-      to: 'rentmaster.et@gmail.com',
-      subject: 'Feature Suggestion From ' + userEmail,
-      body: feature,
-      userEmail: userEmail,
-      userPassword: userPass,
-      SelectedUserId: SelectedUserId,
-      branchId: SelectedBranchId,
-      templateId: '',
-    });
+    
+      await sendEmailAPI(
+        'rentmaster.et@gmail.com',
+        'Feature Suggestion From ' + userEmail,
+        feature,
+        SelectedUserId
+      );
+    
+
     setFeatureSuggestion('');
 
     setInterval(() => {
@@ -1763,6 +1807,143 @@ const ToolsPage = ({
   const CancelTaxPercentage = async () => {
     setTaxPercentage(storageManager.get('taxPercentage'));
     setHasChangedTaxPercentage(false);
+  };
+  const [specifications, setSpecifications] = useState<RoomSpecificationType[]>([]);
+  const [hasChangedSpecs, setHasChangedSpecs] = useState(false);
+  const [isApplyingSpecs, setIsApplyingSpecs] = useState(false);
+
+  // Load initial specifications from global context
+  useEffect(() => {
+    const defaultSpecs = AllRoomSpecifications.filter(spec => spec.roomId === 'DEFAULT');
+    setSpecifications(defaultSpecs);
+  }, [AllRoomSpecifications]);
+
+  // Track pending changes
+  const [pendingChanges, setPendingChanges] = useState<{
+    added: RoomSpecificationType[],
+    updated: {id: string, changes: Partial<RoomSpecificationType>}[],
+    deleted: string[]
+  }>({
+    added: [],
+    updated: [],
+    deleted: []
+  });
+
+  const addSpecification = () => {
+    const newSpec = {
+      id: uuidv4(),
+      type: 'bool',
+      Detail: '',
+      Boolean: false,
+      Number: 0,
+      branchId: SelectedBranchId,
+      roomId: 'DEFAULT',
+      userId: SelectedUserId
+    };
+    setSpecifications(prevSpecs => [...prevSpecs, newSpec]);
+    setPendingChanges(prev => ({
+      ...prev,
+      added: [...prev.added, newSpec]
+    }));
+    setHasChangedSpecs(true);
+  };
+
+  const removeSpecification = (index: number) => {
+    const specToRemove = specifications[index];
+    setSpecifications(prevSpecs => prevSpecs.filter((_, i) => i !== index));
+    
+    // If it was a newly added spec, remove from added list
+    if (pendingChanges.added.find(s => s.id === specToRemove.id)) {
+      setPendingChanges(prev => ({
+        ...prev,
+        added: prev.added.filter(s => s.id !== specToRemove.id)
+      }));
+    } else {
+      // Otherwise add to deleted list
+      setPendingChanges(prev => ({
+        ...prev,
+        deleted: [...prev.deleted, specToRemove.id]
+      }));
+    }
+    setHasChangedSpecs(true);
+  };
+
+  const handleSpecificationChange = (index: number, field: string, value: any) => {
+    const spec = specifications[index];
+    setSpecifications(prevSpecs =>
+      prevSpecs.map((s, i) =>
+        i === index ? { ...s, [field]: value } : s
+      )
+    );
+
+    // Don't track changes for newly added specs
+    if (!pendingChanges.added.find(s => s.id === spec.id)) {
+      const existingChange = pendingChanges.updated.find(u => u.id === spec.id);
+      if (existingChange) {
+        setPendingChanges(prev => ({
+          ...prev,
+          updated: prev.updated.map(u => 
+            u.id === spec.id 
+              ? { ...u, changes: { ...u.changes, [field]: value }}
+              : u
+          )
+        }));
+      } else {
+        setPendingChanges(prev => ({
+          ...prev,
+          updated: [...prev.updated, {
+            id: spec.id,
+            changes: { [field]: value }
+          }]
+        }));
+      }
+    }
+    setHasChangedSpecs(true);
+  };
+
+  const saveSpecs = async () => {
+    setIsApplyingSpecs(true);
+    try {
+      // Handle deletions
+      for (const id of pendingChanges.deleted) {
+        await deleteValue('room_specifications', id);
+      }
+
+      // Handle additions
+      for (const spec of pendingChanges.added) {
+        await addValue('room_specifications', spec);
+      }
+
+      // Handle updates
+      for (const {id, changes} of pendingChanges.updated) {
+        for (const [field, value] of Object.entries(changes)) {
+          await updateValue('room_specifications', id, field, value);
+        }
+      }
+
+      // Update global context with current specifications
+      const updatedSpecs = [...AllRoomSpecifications.filter(spec => spec.roomId !== 'DEFAULT'), ...specifications];
+      setAllRoomSpecifications(updatedSpecs);
+      
+      // Reset pending changes
+      setPendingChanges({
+        added: [],
+        updated: [],
+        deleted: []
+      });
+      setHasChangedSpecs(false);
+
+    } catch (error) {
+      console.error('Failed to save specifications:', error);
+    }
+    setIsApplyingSpecs(false);
+  };
+
+  const cancelSpecs = async () => {
+    // Reset to original specifications from global context
+    const defaultSpecs = AllRoomSpecifications.filter(spec => spec.roomId === 'DEFAULT');
+    setSpecifications(defaultSpecs);
+    setHasChangedSpecs(false);
   };
   return (
     <>
@@ -1936,6 +2117,39 @@ const ToolsPage = ({
               </p>
             </div>
           )}
+          {isResetingTemplates && (
+            <div
+              style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+                alignItems: 'center',
+                zIndex: 9999,
+              }}
+            >
+              <img
+                src={loadingGif}
+                alt="Loading..."
+                style={{ width: '50px', height: '50px' }}
+              />
+              <p
+                style={{
+                  color: 'white',
+                  marginTop: '20px',
+                  fontSize: 'var(--16px-V)',
+                  fontWeight: '500',
+                }}
+              >
+                Reseting Templates...
+              </p>
+            </div>
+          )}
           {ToolsSelectedPage === 'Settings' && (
             <div className="settings-main-container">
               <div
@@ -2012,7 +2226,123 @@ const ToolsPage = ({
                   </div>
                 )}
               </div>
+              <div className="settings-container">
+                {' '}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--10px-V)' }}>
+                  <h2 style={{ fontSize: 'var(--25px-V)' }}>Default Room Specifications</h2>
+                  <button onClick={addSpecification}>Add</button>
+                  {hasChangedSpecs ? (
+                    <>
+                      {isApplyingSpecs ? (
+                    <img
+                          src={loadingGif}
+                          alt="Loading..."
+                          style={{
+                            width: 'var(--20px-V)',
+                            height: 'var(--20px-V)',
+                          }}
+                        />
+                      ) : (
+                        <>
+                          <button onClick={saveSpecs}>Save</button>
+                          <button onClick={cancelSpecs}>Cancel</button>
+                        </>
+                      )}
+                    </>
+                  ) : (
+                   <></> )}
+                 
+                </div>
 
+                <div style={{ marginLeft: 'var(--20px-V)' }}>
+                <span style={{color: 'var(--Text-Color-Grey)', marginBottom: 'var(--10px-V)',fontStyle: 'italic'}}>These specifications will be shown when adding a new room, so you don't have to enter them repeatedly.</span>
+                  
+                  {specifications.length === 0 ? (
+                    <div style={{ color: 'var(--Text-Color-Grey)', fontStyle: 'italic' }}>
+                      <div>Click "Add" above to add specifications</div>
+                      Example specifications:
+                      <div>• Bedrooms: 3</div>
+                      <div>• Balcony: Yes</div>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', overflowX: 'auto', gap: 'var(--10px-V)' }}>
+                    {specifications.map((spec, index) => (
+                      <div key={index} className="AddANewRoomSpecObjectMainContainer" style={{ minWidth: 'var(--240px-V)' }}>
+                        <div>
+                          Name:
+                          <input
+                            className="AddANewRoomInputsMid"
+                            value={spec.Detail}
+                            placeholder="Enter name"
+                            onChange={(e) => {
+                              setHasChangedSpecs(true);
+                              handleSpecificationChange(index, 'Detail', e.target.value);
+                            }}
+                          />
+                          {spec.type === 'bool' ? (
+                            <>
+                              <input
+                                type="checkbox"
+                                checked={spec.Boolean}
+                                onChange={(e) => {
+                                  setHasChangedSpecs(true);
+                                  handleSpecificationChange(index, 'Boolean', e.target.checked);
+                                }}
+                              />{' '}
+                              {spec.Boolean ? 'Yes' : 'No'}
+                            </>
+                          ) : (
+                            <input
+                              type="number"
+                              className="AddANewRoomInputsSmall"
+                              value={spec.Number}
+                              onChange={(e) => {
+                                setHasChangedSpecs(true);
+                                handleSpecificationChange(index, 'Number', e.target.value);
+                              }}
+                            />
+                          )}
+                        </div>
+                        <div style={{ marginTop: 'var(--5px-V)', display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <div style={{display: 'flex', flexDirection: 'row', alignItems: 'center'}}>
+                            <input
+                              type="radio"
+                              name={`spec-${index}`}
+                              value="bool"
+                              checked={spec.type === 'bool'}
+                              onChange={() => {
+                                setHasChangedSpecs(true);
+                                handleSpecificationChange(index, 'type', 'bool');
+                              }}
+                            />{' '}
+                            Yes/No
+                          </div>
+                          <div style={{display: 'flex', flexDirection: 'row', alignItems: 'center'}}>
+                            <input
+                              type="radio"
+                              name={`spec-${index}`}
+                              value="number"
+                              checked={spec.type === 'number'}
+                              onChange={() => {
+                                setHasChangedSpecs(true);
+                                handleSpecificationChange(index, 'type', 'number');
+                              }}
+                            />{' '}
+                            Number
+                          </div>
+                          <button onClick={() => {
+                            setHasChangedSpecs(true);
+                            removeSpecification(index);
+                          }}>
+                            Delete
+                          </button>
+                        </div>
+                        
+                      </div>
+                    ))}</div>
+                  )}
+                </div>
+              </div>
               <div className="settings-container">
                 <h2>Currency Settings</h2>
 
@@ -2639,6 +2969,7 @@ const ToolsPage = ({
                   </div>
                 )}
               </div>
+              
             </div>
           )}
           {ToolsSelectedPage === 'Support' && (
@@ -2760,7 +3091,458 @@ const ToolsPage = ({
           )}
         </>
       ) : (
-        <>Non of the pages are allowed</>
+        <>
+          {' '}
+          {ToolsSelectedPage === 'Settings' && (
+            <div className="settings-main-container">
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                }}
+              >
+                <h1>Settings</h1>{' '}
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 'var(--10px-V)',
+                  }}
+                >
+                  {storageManager.get('users')[0].email} -{' '}
+                  {storageManager.get('users')[0].companyName}
+                  <button onClick={handleSignOut}>Sign Out</button>{' '}
+                </div>
+              </div>
+
+              <div className="settings-container">
+                <h2>Currency Settings</h2>
+
+                {/* Default Currency Selection */}
+
+                {/* Exchange Rate Section */}
+                <div className="settings-inner-container">
+                  <div>
+                    <label style={{ fontWeight: 500 }}>
+                      Default Currency:{' '}
+                    </label>
+                    <select
+                      onChange={(e) => {
+                        storageManager.set('defaultCurrency', e.target.value);
+                        setRefresh(refresh + 1);
+                      }}
+                      value={GetDefaultCurrency()}
+                    >
+                      {GetCurrencyAsOptionsOnSelect()}
+                    </select>
+                  </div>
+                  {isOnline ? (
+                    <div>
+                      {/* Current Exchange Rate */}
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 'var(--10px-V)',
+                        }}
+                      >
+                        <span>Current Exchange Rate:</span>
+                        <button onClick={updateExchangeRates}>
+                          Update Now
+                        </button>
+                        <p style={{ fontSize: 'var(--13px-V)' }}>
+                          Last Updated:{' '}
+                          {storageManager.get('lastExchangeRateUpdate')
+                            ? new Date(
+                                storageManager.get('lastExchangeRateUpdate')
+                              ).toDateString()
+                            : 'Not updated yet'}
+                          <br />
+                          Rate:{' '}
+                          {GetDefaultCurrency() === 'USD'
+                            ? (
+                                1 /
+                                storageManager.get('exchangeRate')[
+                                  storageManager.get('exchangeRate').length - 1
+                                ].rates
+                              ).toFixed(5)
+                            : storageManager
+                                .get('exchangeRate')
+                                [
+                                  storageManager.get('exchangeRate').length - 1
+                                ].rates.toFixed(5)}
+                          {CurrencySign(GetDefaultCurrency())}
+                        </p>
+                      </div>
+
+                      {/* Check Historical Rate */}
+                      <div style={{ marginBottom: 'var(--15px-V)' }}>
+                        <div
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 'var(--10px-V)',
+                          }}
+                        >
+                          <span>Check Historical Rate: </span>
+                          <input
+                            type="date"
+                            onChange={(e) => {
+                              const selectedDate =
+                                new Date(e.target.value).getTime() / 1000;
+                              if (
+                                selectedDate <
+                                new Date('2015-01-01').getTime() / 1000
+                              ) {
+                                showAlert('Please select a date after 2015');
+                                return;
+                              }
+                              setGetExchangeRateDate(selectedDate);
+                            }}
+                          />
+                          <button onClick={() => fetchExchangeRateOfThatDate()}>
+                            Get Rate
+                          </button>
+                        </div>
+                        {GetExchangeRate !== 0 && (
+                          <div style={{ marginTop: 'var(--5px-V)' }}>
+                            Rate on{' '}
+                            {new Date(
+                              GetExchangeRateDate * 1000
+                            ).toDateString()}
+                            : {GetExchangeRate}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Recent Rates Section */}
+                      <div>
+                        <div
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 'var(--10px-V)',
+                            marginBottom: 'var(--10px-V)',
+                          }}
+                        >
+                          <h3 style={{ margin: 0 }}>Recent Exchange Rates</h3>
+                          <button
+                            onClick={() => setShowRecentRates(!showRecentRates)}
+                          >
+                            {showRecentRates ? 'Hide' : 'Show'}
+                          </button>
+                        </div>
+
+                        {showRecentRates && (
+                          <div
+                            style={{
+                              backgroundColor: 'var(--Secondary-Color60)',
+                              padding: 'var(--10px-V)',
+                              borderRadius: 'var(--5px-V)',
+                            }}
+                          >
+                            {/* Date Range Selection */}
+                            <div style={{ marginBottom: 'var(--10px-V)' }}>
+                              <div
+                                style={{
+                                  display: 'flex',
+                                  gap: 'var(--10px-V)',
+                                  alignItems: 'center',
+                                }}
+                              >
+                                <div>
+                                  <span>From: </span>
+                                  <input
+                                    type="date"
+                                    value={startDate}
+                                    onChange={(e) =>
+                                      setStartDate(e.target.value)
+                                    }
+                                  />
+                                </div>
+                                <div>
+                                  <span>To: </span>
+                                  <input
+                                    type="date"
+                                    value={endDate}
+                                    onChange={(e) => setEndDate(e.target.value)}
+                                  />
+                                </div>
+                                <button
+                                  onClick={() => {
+                                    setStartDate('');
+                                    setEndDate('');
+                                  }}
+                                >
+                                  Clear
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* Rates List */}
+                            {exchangeRates.map((rate, index) => {
+                              const nextRate =
+                                index < exchangeRates.length - 1
+                                  ? exchangeRates[index + 1].rates
+                                  : rate.rates;
+                              const difference = rate.rates - nextRate;
+                              const differenceText =
+                                difference !== 0
+                                  ? `(${
+                                      difference > 0 ? '+' : ''
+                                    }${difference.toFixed(2)})`
+                                  : '';
+
+                              return (
+                                <div
+                                  key={rate.id}
+                                  style={{
+                                    padding: 'var(--8px-V)',
+                                    borderBottom: 'var(--1px-V) solid #eee',
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                  }}
+                                >
+                                  <span>
+                                    {new Date(
+                                      rate.id * 1000
+                                    ).toLocaleDateString('en-US', {
+                                      month: 'short',
+                                      day: 'numeric',
+                                      year: 'numeric',
+                                    })}
+                                  </span>
+                                  <span
+                                    style={{
+                                      color:
+                                        difference > 0
+                                          ? 'green'
+                                          : difference < 0
+                                          ? 'red'
+                                          : 'inherit',
+                                    }}
+                                  >
+                                    {rate.rates} ETB {differenceText}
+                                  </span>
+                                </div>
+                              );
+                            })}
+
+                            {/* Pagination */}
+                            <div
+                              style={{
+                                display: 'flex',
+                                justifyContent: 'center',
+                                gap: 'var(--10px-V)',
+                                marginTop: 'var(--10px-V)',
+                              }}
+                            >
+                              <button
+                                onClick={() => setCurrentPage(1)}
+                                disabled={currentPage === 1}
+                              >
+                                First
+                              </button>
+                              <button
+                                onClick={() =>
+                                  setCurrentPage((p) => Math.max(1, p - 1))
+                                }
+                                disabled={currentPage === 1}
+                              >
+                                Previous
+                              </button>
+                              <span>
+                                Page {currentPage} of {totalPages || 1}
+                              </span>
+                              <button
+                                onClick={() =>
+                                  setCurrentPage((p) =>
+                                    Math.min(totalPages, p + 1)
+                                  )
+                                }
+                                disabled={currentPage >= totalPages}
+                              >
+                                Next
+                              </button>
+                              <button
+                                onClick={() => setCurrentPage(totalPages)}
+                                disabled={currentPage >= totalPages}
+                              >
+                                Last
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div>Please connect to internet to see exchange rates</div>
+                  )}
+                </div>
+              </div>
+              <div className="settings-container">
+                {' '}
+                <h2 style={{ fontSize: 'var(--25px-V)' }}>Formating numbers</h2>
+                <div style={{ marginLeft: 'var(--20px-V)' }}>
+                  Make long numbers like 100,000, 1,000,000 or 10,000,000 to
+                  100k, 1M or 10M:{' '}
+                  <input
+                    type="checkbox"
+                    name=""
+                    id=""
+                    checked={storageManager.get('abbreiviateBigNumbers')}
+                    onChange={(e) => {
+                      storageManager.set(
+                        'abbreiviateBigNumbers',
+                        e.target.checked
+                      );
+                      if (e.target.checked) {
+                        storageManager.set('abbreviationDecimals', 2);
+                      }
+                      setRefresh(refresh + 1);
+                    }}
+                  />
+                  <br />
+                  Number of decimal places to show:{' '}
+                  <input
+                    type="number"
+                    min="0"
+                    max="4"
+                    style={{ width: 'var(--60px-V)' }}
+                    value={storageManager.get('abbreviationDecimals')}
+                    onChange={(e) => {
+                      storageManager.set(
+                        'abbreviationDecimals',
+                        parseInt(e.target.value)
+                      );
+                      setRefresh(refresh + 1);
+                    }}
+                  />
+                  <br />
+                </div>
+              </div>
+             
+            </div>
+          )}
+          {ToolsSelectedPage === 'Support' && (
+            <div className="settings-main-container">
+              <h1>Support</h1>
+              <div className="settings-container">
+                <h2 style={{ fontSize: 'var(--25px-V)' }}>Contact</h2>
+                <div style={{ marginLeft: 'var(--20px-V)' }}>
+                  <div
+                    style={{
+                      display: 'flex',
+                      gap: 'var(--10px-V)',
+                      alignItems: 'center',
+                    }}
+                  >
+                    <span>Phone Number:</span>
+                    <span>094450-9999</span>
+                  </div>
+                  <div
+                    style={{
+                      display: 'flex',
+                      gap: 'var(--10px-V)',
+                      alignItems: 'center',
+                    }}
+                  >
+                    <span>Email:</span>
+                    <span>rentmaster.et@gmail.com</span>
+                  </div>
+                  <div
+                    style={{
+                      display: 'flex',
+                      gap: 'var(--10px-V)',
+                      alignItems: 'center',
+                    }}
+                  >
+                    <span>Telegram:</span>
+                    <span>@Rent_Master</span>
+                  </div>
+                </div>
+              </div>
+              <div className="settings-container">
+                <h2 style={{ fontSize: 'var(--25px-V)' }}>Feedback</h2>
+                <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+                  <div
+                    style={{
+                      marginLeft: 'var(--20px-V)',
+                      width: 'var(--300px-V)',
+                      flexDirection: 'column',
+                      gap: 'var(--10px-V)',
+                      display: 'flex',
+                    }}
+                  >
+                    <label>Leave a review</label>
+                    <textarea
+                      value={reviewForm}
+                      onChange={(e) => setReviewForm(e.target.value)}
+                      id="review"
+                      name="review"
+                      placeholder="Tell us what you think about RentMaster..."
+                      style={{ height: 'var(--100px-V)', resize: 'vertical' }}
+                    ></textarea>
+                    <button onClick={handleSubmit}>
+                      {isSendingReview ? (
+                        <>
+                          <img
+                            src={loadingGif}
+                            alt="Loading..."
+                            style={{
+                              width: 'var(--20px-V)',
+                              height: 'var(--20px-V)',
+                            }}
+                          />
+                          Sending...
+                        </>
+                      ) : (
+                        'Submit'
+                      )}
+                    </button>
+                  </div>
+                  <div
+                    style={{
+                      marginLeft: 'var(--20px-V)',
+                      width: 'var(--300px-V)',
+                      flexDirection: 'column',
+                      gap: 'var(--10px-V)',
+                      display: 'flex',
+                    }}
+                  >
+                    <label>Suggest a feature</label>
+                    <textarea
+                      value={featureSuggestion}
+                      onChange={(e) => setFeatureSuggestion(e.target.value)}
+                      id="featureSuggestion"
+                      name="featureSuggestion"
+                      placeholder="Tell us what features you would like to see in RentMaster..."
+                      style={{ height: 'var(--100px-V)', resize: 'vertical' }}
+                    ></textarea>
+                    <button onClick={handleSubmitFeatureSuggestion}>
+                      {isSendingFeatureSuggestion ? (
+                        <>
+                          <img
+                            src={loadingGif}
+                            alt="Loading..."
+                            style={{
+                              width: 'var(--20px-V)',
+                              height: 'var(--20px-V)',
+                            }}
+                          />
+                          Sending...
+                        </>
+                      ) : (
+                        'Submit'
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </>
       )}
     </>
   );

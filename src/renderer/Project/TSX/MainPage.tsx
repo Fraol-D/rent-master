@@ -6,7 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 import ImageInteractor from './Helpers/GUIs/ImageIntractorGUI';
 import LONGIMAGE from './Helpers/WIN_20240802_19_41_23_Pro.jpg';
 import Room from './Helpers/Room';
-import '../CSS/RoomArea.css';
+
 import SortIcon from '../../assets/icons8-sort-100.png';
 import DoubleArrowIconDark from '../../assets/assets/Dark mode/Left2Arrow.png';
 import DoubleArrowIconDarkb from '../../assets/assets/Dark mode/Admin Settings Male.png';
@@ -37,6 +37,7 @@ import CurrencySign, {
 import { IconsGUI } from '../getIcons';
 import { useAlert } from '../../components/useAlert';
 import { useConfirm } from 'renderer/components/useConfirm';
+import { useGlobal } from 'renderer/components/GlobalContext';
 type FilterOption = {
   key: string;
   value: any;
@@ -150,13 +151,25 @@ declare global {
     id: string;
     roomId: string;
     type: string;
-    price: string;
+    price: number;
     custom: boolean;
     branchId: string; // Added
     Currency: string;
     userId: string;
   };
-
+  type SMSTemplate = {
+    id: string;
+    name: string;
+    body: string;
+    Type: string;
+  };
+  type EmailTemplate = {
+    id: string;
+    name: string;
+    subject: string;
+    body: string;
+    Type: string;
+  };
   type BrokerRecommendationType = {
     id: string;
     roomId: string;
@@ -197,6 +210,17 @@ declare global {
     AgreedCommission: string;
     rating: number;
     notes: string;
+  };
+  type AllRoomPayInfoHistory = {
+    id: string;
+    roomId: string;
+    Day: number;
+    Value: number;
+    Paid: boolean;
+    userId: string;
+    branchId: string; // Added
+    agreementId: string;
+    tenantId: string;
   };
   type AllRoomPayInfo = {
     RoomPayInfo: RoomPayInfo[];
@@ -279,6 +303,14 @@ declare global {
     smsTo: string | null;
     Currency: string;
   };
+  type notification_template_selections = {
+    id: string;
+    notification_type: string;
+    email_template_id: string;
+    sms_template_id: string;
+    userId: string;
+    branchId: string; // Added
+  };
   type appUser = {
     id: string;
     roleName: string;
@@ -317,6 +349,7 @@ const MainPage = ({
   SelectedAppUser,
   SelectedBranchId,
   signOutUserAndRestart,
+  setChangeProgress,changeProgress
 }: any) => {
   const [floorFilter, setFloorFilter] = useState<string>('');
   const [TenantNameFilter, setTenantNameFilter] = useState<string>('');
@@ -767,7 +800,7 @@ const MainPage = ({
     | 'Expense Manager'
     | 'Settings'
     | 'Support'
-  >('EmailTemplates');
+  >(privileges.editEmailTemplates ? 'EmailTemplates' : privileges.editSmsTemplates ? 'SMSTemplates' : privileges.editExpenses ? 'Expense Manager' : 'Settings');
   const [DashboardSelectedPage, setDashboardSelectedPage] = useState<
     | 'Overview'
     | 'Email History'
@@ -789,9 +822,11 @@ const MainPage = ({
     AddRoomFormPaymentCycleCustomDays,
     setAddRoomFormPaymentCycleCustomDays,
   ] = useState(0);
+  const {AllRoomSpecifications} = useGlobal()
+
   const [AddRoomFormSquareMeters, setAddRoomFormSquareMeters] = useState(0);
   const [AddRoomFormRoomSpecifications, setAddRoomFormRoomSpecifications] =
-    useState<RoomSpecificationType[]>([]);
+    useState<RoomSpecificationType[]>(AllRoomSpecifications.filter(spec => spec.roomId === 'DEFAULT'));
 
   const handleAddRoomFormSpecificationChange = (
     index: number,
@@ -902,6 +937,7 @@ const MainPage = ({
       // Update states in correct order
       if (!continueAdding) {
         setAddARoomState(false);
+        handleDeleteFolderImages('Add a room images');
       }
 
       setRoomExistsWarning(false);
@@ -944,7 +980,7 @@ const MainPage = ({
       }
 
       if (resetRoomSpecifications) {
-        setAddRoomFormRoomSpecifications([]);
+        setAddRoomFormRoomSpecifications(AllRoomSpecifications.filter(spec => spec.roomId === 'DEFAULT'));
         fieldsToHighlight.push('specifications');
       }
 
@@ -963,11 +999,10 @@ const MainPage = ({
       setAddRoomFormRoomIndex('');
       setAddRoomFormPrice(0);
       setAddRoomFormSquareMeters(0);
-      setAddRoomFormRoomSpecifications([]);
+      setAddRoomFormRoomSpecifications(AllRoomSpecifications.filter(spec => spec.roomId === 'DEFAULT'));
       setRefreshInspectorForAddRoom(true);
     }
   };
-
   const ResetAddRoomForumVariables2 = () => {
     // Handle room number and floor increments
     setAddRoomFormRoomIndex(1);
@@ -978,7 +1013,7 @@ const MainPage = ({
     setAddRoomFormPaymentCycleType('monthly');
     setAddRoomFormPaymentCycleCustomDays(0);
     setAddRoomFormSquareMeters(0);
-    setAddRoomFormRoomSpecifications([]);
+    setAddRoomFormRoomSpecifications(AllRoomSpecifications.filter(spec => spec.roomId === 'DEFAULT'));
     handleDeleteFolderImages('Add a room images');
   };
   const handleRenameFolder = async (oldName: string, newName: string) => {
@@ -1006,16 +1041,19 @@ const MainPage = ({
   const { showAlert } = useAlert();
   const { confirm } = useConfirm();
   const handleDeleteFirst = async () => {
-    const choice = await confirm('Are you sure you want to delete this room?', {
-      type: 'danger',
-      title: 'Delete Room',
-      confirmText: 'Delete',
-      cancelText: 'Cancel',
-    });
-    if(choice)
-    if (!DeleteConfimation) setInterval(() => setDeleteConfimation(true), 1000);
+    if (!DeleteConfimation) {
+      const choice = await confirm(
+        'Are you sure you want to delete this room?',
+        {
+          type: 'danger',
+          title: 'Delete Room',
+          confirmText: 'Delete',
+          cancelText: 'Cancel',
+        }
+      );
+      if (choice) setInterval(() => setDeleteConfimation(true), 1000);
+    }
     if (DeleteConfimation) {
-      
       if (
         RoomList.find((r: RoomType) => r.id === SelectedEditRoomId).status ===
         'Taken'
@@ -1063,6 +1101,8 @@ const MainPage = ({
   }, [SelectedPage]);
 
   const handleAddRoomButtonInitial = (state: boolean, plusOne?: boolean) => {
+    setAddRoomFormRoomSpecifications(AllRoomSpecifications.filter(spec => spec.roomId === 'DEFAULT'));
+
     setAddARoomState(state);
     if (RoomList.length > 0 && RoomList) {
       const sortedRoomList = [...RoomList].sort(
@@ -1132,13 +1172,9 @@ const MainPage = ({
   useEffect(() => {
     if (SelectedPage === 'Database') {
       setOnDataBase(true);
+      //RefreshDataFromSqlite();
     } else {
-      if (OnDataBase) {
-        RefreshDataFromSqlite();
-
-        setOnDataBase(false);
-      } else {
-      }
+      setOnDataBase(false)
     }
   }, [SelectedPage]);
 
@@ -1996,7 +2032,7 @@ const MainPage = ({
                       </div>
 
                       <div className="RoomSpecficationsMainContainer">
-                        <h3>
+                        <h3 style={{marginTop: '0px'}}>
                           Room Specifications{' - '}
                           <button onClick={addAddRoomFormSpecification}>
                             Add
@@ -2066,8 +2102,8 @@ const MainPage = ({
                                   />
                                 )}
                               </div>
-                              <div style={{ marginTop: '10px' }}>
-                                <input
+                              <div style={{ marginTop: 'var(--5px-V)', display: 'flex', flexDirection: 'row', justifyContent: 'space-between',alignItems: 'center' }}>
+                               <div style={{display: 'flex', flexDirection: 'row', alignItems: 'center'}}><input
                                   type="radio"
                                   name={`spec-${index}`}
                                   value="bool"
@@ -2080,8 +2116,8 @@ const MainPage = ({
                                     )
                                   }
                                 />{' '}
-                                Yes/No
-                                <input
+                                Yes/No</div> 
+                                <div style={{display: 'flex', flexDirection: 'row', alignItems: 'center'}}><input
                                   type="radio"
                                   name={`spec-${index}`}
                                   value="number"
@@ -2094,7 +2130,7 @@ const MainPage = ({
                                     )
                                   }
                                 />{' '}
-                                Number{' - - '}
+                                Number</div>
                                 <button
                                   onClick={() =>
                                     removeAddRoomFormSpecification(index)
@@ -2109,6 +2145,7 @@ const MainPage = ({
                       </div>
                       <div className="AddARoomImageMainContainer">
                         <ImageInteractor2
+                          sidebarState={AddARoomState}
                           isAddRoomImage={true}
                           refreshState={RefreshInspectorForAddRoom}
                           SetRefreshState={setRefreshInspectorForAddRoom}
@@ -2358,7 +2395,7 @@ const MainPage = ({
                   Expense Manager
                 </SideBarItem>
               )}
-              <br />
+              {(privileges.editExpenses||privileges.editSmsTemplates||privileges.editEmailTemplates) && (<br />)}
 
               <SideBarItem
                 page="Support"
@@ -2368,7 +2405,7 @@ const MainPage = ({
                 Support
               </SideBarItem>
 
-              {privileges.editSettings && (
+              
                 <SideBarItem
                   page="Settings"
                   currentPage={ToolsSelectedPage}
@@ -2376,7 +2413,7 @@ const MainPage = ({
                 >
                   Settings
                 </SideBarItem>
-              )}
+              
             </>
           ) : SelectedPage === 'Dashboard' ? (
             <>
@@ -2596,7 +2633,7 @@ const MainPage = ({
                       : ''
                   }`}
                 >
-                  <h3>
+                  <h3 style={{marginTop: '0px'}}>
                     Room Specifications{' - '}
                     <button
                       onClick={() => {
@@ -2836,6 +2873,8 @@ const MainPage = ({
         >
           {SelectedPage === 'Rooms' && (
             <RoomListComponent
+              setChangeProgress={setChangeProgress}
+              changeProgress={changeProgress}
               SelectedAppUser={SelectedAppUser}
               updateRoomProperty={updateRoomProperty}
               updateRoomPropertyWithOutRefresh={

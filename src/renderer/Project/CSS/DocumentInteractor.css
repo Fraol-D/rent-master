@@ -104,9 +104,11 @@
   } */
 .document-item {
   padding: var(--3px-V);
-  color: rgb(255, 255, 255);
+  color: var(--Text-Color);
 }
 .document-itemSelected {
+  padding: var(--3px-V);
+
   background: var(--Primary-Color);
   border-radius: var(--5px-V);
   color: black;

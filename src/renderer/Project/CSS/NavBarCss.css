@@ -203,6 +203,13 @@
 }
 
 .PageNavigatorButton {
+ 
+  
+    border-radius: 5px;
+    border: 1px solid var(--Secondary-Color);
+    background: var(--Background-Color);
+    color: var(--Text-Color);
+    cursor: pointer;
 
 }
 

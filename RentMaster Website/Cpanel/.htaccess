@@ -1,0 +1,22 @@
+# DO NOT REMOVE. CLOUDLINUX PASSENGER CONFIGURATION BEGIN
+PassengerAppRoot "/home/marketuz/rentmaster.markethubet.com"
+PassengerBaseURI "/"
+PassengerNodejs "/home/marketuz/nodevenv/rentmaster.markethubet.com/20/bin/node"
+PassengerAppType node
+PassengerStartupFile server.js
+# DO NOT REMOVE. CLOUDLINUX PASSENGER CONFIGURATION END
+# DO NOT REMOVE OR MODIFY. CLOUDLINUX ENV VARS CONFIGURATION BEGIN
+<IfModule Litespeed>
+</IfModule>
+# DO NOT REMOVE OR MODIFY. CLOUDLINUX ENV VARS CONFIGURATION END
+<Files "server.js">
+Order allow,deny
+Deny from all
+</Files>
+<Files "package.json">
+Order allow,deny
+Deny from all
+</Files><Files "User Files">
+Order allow,deny
+Deny from all
+</Files>

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { getValuesWithSql } from 'Backend/localServerApis';
 import { format } from 'date-fns';
 import { Input } from '../Helpers/CustomReactComponents';
+import loadingGif from "./../../../assets/assets/Loading/Rolling-1s-200px.gif"
 
 interface ActionHistoryItem {
   id: string;
@@ -34,9 +35,11 @@ const DashbActionHistoryDashboard: React.FC = ({ SelectedBranchId }: any) => {
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [isValidDate, setIsValidDate] = useState(true);
   const [limit, setLimit] = useState(50);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     const fetchActionHistory = async () => {
+      setIsLoading(true);
       try {
         const result = await getValuesWithSql(
           'action_history',
@@ -44,8 +47,10 @@ const DashbActionHistoryDashboard: React.FC = ({ SelectedBranchId }: any) => {
         );
         setHistory(result);
         setFilteredHistory(result.slice(0, limit));
+        setIsLoading(false);
       } catch (error) {
         console.error('Failed to fetch action history:', error);
+        setIsLoading(false);
       }
     };
 
@@ -168,8 +173,28 @@ const DashbActionHistoryDashboard: React.FC = ({ SelectedBranchId }: any) => {
         boxShadow: '0 var(--10px-V) var(--30px-V) rgba(0, 0, 0, 0.1)',
         borderRadius: 'var(--15px-V)',
         transition: 'all 0.3s ease',
+        position: 'relative',
+        height: '100%',
       }}
     >
+      {isLoading && <div
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          backgroundColor: 'rgba(0, 0, 0, 0.2)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 1000,
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flexDirection: 'column' }}>
+          <img src={loadingGif} alt="Loading..." style={{width:'100px',height:'100px'}}/>
+        </div>
+      </div>}
       <h2
         style={{
           marginBottom: 'var(--24px-V)',

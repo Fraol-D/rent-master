@@ -14,8 +14,10 @@ export const CurrencySign = (currency: string) => {
   }
 };
 export const GetCurrencyAsOptionsOnSelect = () => {
-  return AllCurrencies.map((currency) => (
-    <option value={currency}>{currency}</option>
+  return AllCurrencies.map((currency, index) => (
+    <option key={`${currency}-${index}`} value={currency}>
+      {currency}
+    </option>
   ));
 };
 export const GetDefaultCurrency = () => {

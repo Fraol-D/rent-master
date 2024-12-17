@@ -127,7 +127,7 @@ const DashbUpcomingExpensesWidget: React.FC<UpcomingExpensesWidgetProps> = ({
   );
   const [currencyDisplay, setCurrencyDisplay] = useState<
     'ETB_ONLY' | 'USD_ONLY' | 'ALL_ETB' | 'ALL_USD' | 'ALL_ETB_USD'
-  >('ALL_ETB');
+  >('ALL_ETB_USD');
 
   // Add currency conversion function
   const processValueByCurrency = (
@@ -417,7 +417,7 @@ const DashbUpcomingExpensesWidget: React.FC<UpcomingExpensesWidgetProps> = ({
                             color: 'var(--Text-Color)',
                           }}
                         >
-                          {expense.name}
+                          {expense.name} <br /> <span style={{fontSize: 'var(--12px-V)', color: 'var(--Text-Color-Grey)'}}>{expense.category}</span>
                         </div>
                         <div
                           style={{

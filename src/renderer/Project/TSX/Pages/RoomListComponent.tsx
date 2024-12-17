@@ -24,6 +24,7 @@ export function RoomListComponent({
   handleAddRoomButtonInitial,
   updateRoomPropertyLocal,
   agreementApi,
+  setChangeProgress,changeProgress,
   ShowArchived,setChangeMade,SelectedUserId,SelectedAppUser,roomListContainerRef,SelectedBranchId
 }: any) {
   // Sort the rooms based on floor and room number
@@ -92,7 +93,8 @@ export function RoomListComponent({
               .filter((r: RoomType) => r.Archived == ShowArchived)
               .map((room: any, index: any) => (
                 <Room
-              
+                  setChangeProgress={setChangeProgress}
+                  changeProgress={changeProgress}
                   agreementApi={agreementApi}
                   SelectedUserId={SelectedUserId}
                   setChangeMade={setChangeMade}

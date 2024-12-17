@@ -23,6 +23,7 @@ import CurrencySign, {
   getRateByDate,
 } from '../Helpers/CurrencySign';
 import { Payment } from 'electron';
+import { useGlobal } from 'renderer/components/GlobalContext';
 
 interface Payment {
   id: string;
@@ -43,6 +44,15 @@ const DashbNetProfitTotalCollected = ({
   tenantList: tenant[];
   SelectedBranchId: any;
 }) => {
+ const {
+    AllRoomPayInfoHistory,
+    setAllRoomPayInfoHistory,
+    AllRoomPayInfo,
+    setAllRoomPayInfo,
+    AllAgreements,
+    setAllAgreements,
+    AllExpenses
+  } = useGlobal();
   const [showBy, setShowBy] = useState<'Monthly' | 'Yearly'>('Monthly');
   const [selectedDate, setSelectedDate] = useState(
     new Date().getFullYear().toString()
@@ -65,50 +75,59 @@ const DashbNetProfitTotalCollected = ({
   };
 
   useEffect(() => {
+    console.log(AllExpenses, 'AllExpenses');
+    setExpenses(AllExpenses);
     const calculatePayments = async () => {
       const allPayments: Payment[] = [];
       const selectedYear = parseInt(selectedDate);
       let yearStart = startOfYear(new Date(selectedYear - 2, 0, 1));
       let yearEnd = endOfYear(new Date(selectedYear + 2, 11, 31));
 
-      // Get all actual payments
-      const actualPayments = await getValuesWithSql(
-        'room_pay_info',
-        `WHERE Day >= ${yearStart.getTime()} AND Day <= ${yearEnd.getTime()} AND branchId = '${SelectedBranchId}'`
+      // Get all actual payments for the selected year range
+      const actualPayments = AllRoomPayInfo.filter(
+        (payment) =>
+          payment.Day >= yearStart.getTime() &&
+          payment.Day <= yearEnd.getTime() &&
+          payment.branchId === SelectedBranchId
       );
 
       // Get historical payments
-      const historicalPayments = await getValuesWithSql(
-        'room_pay_info_history',
-        `WHERE Day >= ${yearStart.getTime()} AND Day <= ${yearEnd.getTime()} AND branchId = '${SelectedBranchId}'`
+      const historicalPayments = AllRoomPayInfoHistory.filter(
+        (payment) =>
+          payment.Day >= yearStart.getTime() &&
+          payment.Day <= yearEnd.getTime() &&
+          payment.branchId === SelectedBranchId
       );
 
-      // Add ALL payments (both paid and unpaid)
+      // Add ALL payments (both paid and unpaid) from actual and historical
       const combinedPayments = [...actualPayments, ...historicalPayments].map(
         (payment) => ({
           id: payment.id,
           Day: payment.Day,
           Value: payment.Value,
-          Paid: payment.Paid === 1,
+          Paid: payment.Paid,
           roomId: payment.roomId,
         })
       );
 
+      // Add all payments to allPayments
       allPayments.push(...combinedPayments);
 
-      // Generate future payments
+      // Only generate predictions if we have payment history
       for (const room of RoomList) {
+        // Skip rooms without tenants
         if (!room.tenantId) continue;
+
         const tenant = tenantList.find((t) => t.id === room.tenantId);
         if (!tenant) continue;
 
         let startDate = new Date(tenant.startTime || Date.now()).getTime();
         let endDate = yearEnd.getTime();
 
+        // Get agreement details if exists
         if (room.selectedAgreementId) {
-          const agreements = await getValuesWithSql(
-            'agreements',
-            `WHERE id = '${room.selectedAgreementId}'`
+          const agreements = AllAgreements.filter(
+            (agreement) => agreement.id === room.selectedAgreementId
           );
           if (agreements.length > 0) {
             startDate = Math.max(agreements[0].startTime, yearStart.getTime());
@@ -122,9 +141,13 @@ const DashbNetProfitTotalCollected = ({
         }
 
         let currentDate = new Date(startDate);
+
         while (currentDate.getTime() <= endDate) {
           const paymentId = `${room.id}-${currentDate.getTime()}`;
+
+          // Only add if payment doesn't already exist
           if (!allPayments.some((p) => p.id === paymentId)) {
+            // Add as unpaid prediction
             allPayments.push({
               id: paymentId,
               Day: currentDate.getTime(),
@@ -133,17 +156,18 @@ const DashbNetProfitTotalCollected = ({
               roomId: room.id,
             });
           }
+
+          // Calculate next payment date
           currentDate = calculateNextPaymentDate(currentDate, room);
         }
       }
 
       setPredictedPayments(allPayments);
-      setExpenses(expenses2);
     };
 
     calculatePayments();
-  }, [RoomList, tenantList, selectedDate, showBy, expenses2]);
-
+  }, [RoomList, tenantList, selectedDate, showBy]);
+  // Helper function to calculate next payment date
   const calculateNextPaymentDate = (currentDate: Date, room: any) => {
     switch (room.PaymentCycleType) {
       case '30':
@@ -258,47 +282,47 @@ const DashbNetProfitTotalCollected = ({
     // Sort expenses by date
     return allExpenses.sort((a, b) => a.date - b.date);
   };
+// Add this to display current exchange rate
+const getCurrentExchangeRate = () => {
+  const storedRates = storageManager.get('exchangeRate');
+  if (!storedRates || storedRates.length === 0) return null;
+  return storedRates[storedRates.length - 1].rates;
+};
 
-  const processValueByCurrency = (
-    value: number,
-    currency: string | undefined,
-    date: number
-  ) => {
-    const { rate, direction } = getRateByDate(date);
-    console.log(value, currency || GetDefaultCurrency(), currencyDisplay);
-    if (!rate) {
-      console.warn('No rate available, using current rate as fallback');
-      return 0; // Return 0 if no rate found to be consistent
+// Replace processValueByCurrency function with this updated version
+const processValueByCurrency = (
+  value: number,
+  currency: string,
+  date: number
+) => {
+  const { rate, direction } = getRateByDate(date);
+
+  if (!rate) {
+    console.warn('No rate available, using current rate as fallback');
+    return value; // Return original value if no rate found
+  }
+
+  if (
+    (currencyDisplay === 'ETB_ONLY' && currency === 'ETB') ||
+    (currencyDisplay === 'USD_ONLY' && currency === 'USD')
+  ) {
+    return value;
+  } else if (currencyDisplay === 'ALL_ETB') {
+    if (currency === 'USD') {
+      const convertedValue = value * rate;
+      return convertedValue;
     }
-
-    // For ETB_ONLY, only show ETB values, return 0 for USD
-    if (currencyDisplay === 'ETB_ONLY') {
-      return currency === 'ETB' ? value : 0;
+    return value;
+  } else if (currencyDisplay === 'ALL_USD') {
+    if (currency === 'ETB') {
+      const convertedValue = value / rate;
+      return convertedValue;
     }
+    return value;
+  }
+  return 0;
+};
 
-    // For USD_ONLY, only show USD values, return 0 for ETB
-    if (currencyDisplay === 'USD_ONLY') {
-      return currency === 'USD' ? value : 0;
-    }
-
-    // For ALL_ETB, convert USD to ETB
-    if (currencyDisplay === 'ALL_ETB') {
-      if (currency === 'USD') {
-        return value * rate;
-      }
-      return value;
-    }
-
-    // For ALL_USD, convert ETB to USD
-    if (currencyDisplay === 'ALL_USD') {
-      if (currency === 'ETB') {
-        return value / rate;
-      }
-      return value;
-    }
-
-    return 0;
-  };
   const formatChartValue = (value: number) => {
     if (currencyDisplay === 'ETB_ONLY' || currencyDisplay === 'ALL_ETB') {
       const formatted = `${formatNumberWithSuffix(value)} ${CurrencySign(
@@ -322,43 +346,27 @@ const DashbNetProfitTotalCollected = ({
     const monthlyData = d3.rollups(
       filteredData,
       (v) => ({
-        value: d3.sum(v, (d) => {
-          const room = RoomList.find((r) => r.id === d.roomId);
-          return d.Paid
-            ? processValueByCurrency(d.Value, room?.Currency, d.Day)
-            : 0;
-        }),
-        expectedValue: d3.sum(v, (d) => {
-          const room = RoomList.find((r) => r.id === d.roomId);
-          return processValueByCurrency(d.Value, room?.Currency, d.Day);
-        }),
-        expenses: d3.sum(
-          expenses.filter(
-            (e) => new Date(e.date).getMonth() === new Date(v[0].Day).getMonth()
-          ),
-          (e) => {
-            const expense = expenses.find((r) => r.id === e.id);
-            console.log(
-              'agregated monthly expenses',
-              processValueByCurrency(
-                e.price,
-                expense?.Currency,
-                new Date(e.date).getTime()
+        value: d3.sum(v, (d) =>
+          d.Paid
+            ? processValueByCurrency(
+                d.Value,
+                RoomList.find((r) => r.id === d.roomId)?.Currency || 'ETB',
+                d.Day
               )
-            );
-            return processValueByCurrency(
-              e.price,
-              expense?.Currency,
-              new Date(e.date).getTime()
-            );
-          }
+            : 0
+        ),
+        expectedValue: d3.sum(v, (d) =>
+          processValueByCurrency(
+            d.Value,
+            RoomList.find((r) => r.id === d.roomId)?.Currency || 'ETB',
+            d.Day
+          )
         ),
       }),
       (d) => new Date(d.Day).getMonth()
     );
     const startDate = startOfYear(new Date(selectedYear, 0, 1));
     const endDate = endOfYear(new Date(selectedYear, 11, 31));
-
     const allExpenses = generateRecurringExpenses(expenses, startDate, endDate);
 
     const allMonths = d3.range(0, 12).map((month: any) => {
@@ -394,12 +402,7 @@ const DashbNetProfitTotalCollected = ({
         expectedValue: expectedIncome - monthlyExpenses,
       };
     });
-
-    return allMonths.map((month) => ({
-      ...month,
-      value: month.value,
-      expectedValue: month.expectedValue,
-    }));
+    return allMonths;
   }, [selectedDate, predictedPayments, expenses, RoomList, currencyDisplay]);
 
   const aggregateYearlyData = useMemo(() => {
@@ -445,11 +448,6 @@ const DashbNetProfitTotalCollected = ({
   const dataset =
     showBy === 'Monthly' ? aggregateMonthlyData : aggregateYearlyData;
   // Add this to display current exchange rate
-  const getCurrentExchangeRate = () => {
-    const storedRates = storageManager.get('exchangeRate');
-    if (!storedRates || storedRates.length === 0) return null;
-    return storedRates[storedRates.length - 1].rates;
-  };
 
   const totalCollected = useMemo(() => {
     const selectedYear = parseInt(selectedDate);

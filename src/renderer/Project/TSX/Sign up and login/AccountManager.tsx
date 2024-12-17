@@ -55,6 +55,8 @@ interface MyComponentProps {
   getBranchData: boolean;
   setGetBranchData: (newval: boolean) => void;
   SelectedAppUser: appUser;
+  ProvidedInitialUsername: string;
+  ForceSignUp: string;
 }
 
 const timeoutPromise = (ms: number) => {
@@ -95,6 +97,8 @@ const AccountManager = (React.FC<MyComponentProps> = ({
   setGetBranchData,
   getBranchData,
   SelectedAppUser,
+  ProvidedInitialUsername,
+  ForceSignUp,
 }: any) => {
   const [TrialExpiredState, setTrialExpiredState] = useState(false);
   const [IsAllowedState, setIsAllowedState] = useState(false);
@@ -122,6 +126,9 @@ const AccountManager = (React.FC<MyComponentProps> = ({
   };
   const [initialLoading, setInitialLoading] = useState(true);
   const [hasNotPaid, setHasNotPaid] = useState(false);
+
+  const [providedUserNameErrorMessage, setProvidedUserNameErrorMessage] =
+    useState('');
   // Function to check if a user is signed in
   const checkIfSignedIn = async () => {
     const startTime = Date.now();
@@ -129,6 +136,125 @@ const AccountManager = (React.FC<MyComponentProps> = ({
 
     console.log(`[${getSeconds()}s] Starting checkIfSignedIn...`);
     setInitialLoading(true);
+
+    if (ProvidedInitialUsername === 'login') {
+    } else if (ProvidedInitialUsername === 'signup') {
+    }
+
+    //     const checkProvidedUserName = async () => {
+    //       if (ProvidedInitialUsername !== 'none_provided') {
+    //         const allUsers = storageManager.get('users') || [];
+
+    //         if (allUsers) {
+    //           if (allUsers.companyName !== ProvidedInitialUsername) {
+    //             setProvidedUserNameErrorMessage("User credentials not found please login again");
+    //             return "User Credentials Not Found";
+    //           }
+    //           const userCheck = async () => {
+    //             const userONLINE = await getValuesWithSql_Online(
+    //               'users',
+    //               `WHERE id = '${allUsers[0].id}' AND password = '${allUsers[0].password}'`
+    //             );
+    //             console.log(`[${getSeconds()}s] Online SQL query complete`);
+    //             return userONLINE;
+    //           };
+    //           const user = await userCheck();
+    //           if(user) {
+    //             setProvidedUserNameErrorMessage("");
+    //             setisSignedIn(true);
+
+    //             const check = async () => {
+    //               console.log(`[${getSeconds()}s] Starting user check...`);
+    //               const userRaw = allUsers[0];
+
+    //               if (userRaw.packageType === '7daytrial') {
+    //                 console.log(`[${getSeconds()}s] Checking trial status...`);
+    //                 if (userRaw.TrailEndDate < Date.now()) {
+    //                   setTrialExpiredState(true);
+    //                   console.log(`[${getSeconds()}s] Trial expired`);
+    //                 }
+
+    //                 if (userRaw.TrailEndDate - 7 * 24 * 60 * 60 * 1000 > Date.now()) {
+    //                   setTrialExpiredState(true);
+    //                   console.log(
+    //                     `[${getSeconds()}s] Trial Has expired bc invalid date input`
+    //                   );
+    //                 }
+
+    //                 if (
+    //                   userRaw.TrailEndDate > Date.now() &&
+    //                   userRaw.TrailEndDate - 7 * 24 * 60 * 60 * 1000 < Date.now()
+    //                 ) {
+    //                   setTrialExpiredState(false);
+    //                   console.log(`[${getSeconds()}s] Trial is still active`);
+    //                 }
+    //               }
+
+    //               if (navigator.onLine) {
+    //                 console.log(
+    //                   `[${getSeconds()}s] Online mode - fetching latest user data...`
+    //                 );
+    //                 try {
+    //                   console.log(`[${getSeconds()}s] Got online user data`);
+    //                   setIsAllowedState(userONLINE[0].Allowed);
+    //                   setHasNotPaid(userONLINE[0].LockBcNotPaid || false);
+
+    //                   const updatedUsers = allUsers.map((user: any) =>
+    //                     user.id === userRaw.id
+    //                       ? {
+    //                           ...user,
+    //                           Allowed: userONLINE[0].Allowed,
+    //                           LockBcNotPaid: userONLINE[0].LockBcNotPaid,
+    //                         }
+    //                       : user
+    //                   );
+    //                   storageManager.set('users', updatedUsers);
+    //                   setChangeMade(true);
+    //                   console.log(`[${getSeconds()}s] Updated local user data`);
+    //                 } catch (error) {
+    //                   console.log(
+    //                     `[${getSeconds()}s] Error fetching online user data:`,
+    //                     error
+    //                   );
+    //                   setIsAllowedState(userRaw.Allowed);
+    //                   setHasNotPaid(userRaw.LockBcNotPaid || false);
+    //                 }
+    //               } else {
+    //                 console.log(
+    //                   `[${getSeconds()}s] Offline mode - using local allowed state`
+    //                 );
+    //                 setIsAllowedState(userRaw.Allowed);
+    //                 setHasNotPaid(userRaw.LockBcNotPaid || false);
+    //               }
+    //             };
+
+    //             console.log(`[${getSeconds()}s] Running user check...`);
+    //             await check();
+    //             setSelectedUserId(allUsers[0].id);
+
+    //             if (!storageManager.get('SelectedAppUserId')) {
+    //               console.log(`[${getSeconds()}s] Setting app user manager show`);
+    //               setAppUserManagerShow(true);
+    //             }
+    //             console.log(`[${getSeconds()}s] Fetching branches...`);
+    //             await handleFetchBranches();
+    //             console.log(`[${getSeconds()}s] Managing app users...`);
+    //             await appUsersManagement();
+    //             return "Signed in";
+
+    //           } else {
+    //             setProvidedUserNameErrorMessage("User Credentials Not Found");
+    //             return "User Credentials Not Found";
+    //           }
+    //         }
+    //       }
+    //     };
+    // const result = await checkProvidedUserName();
+    // console.log(result,"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAaa")
+    // if(result === 'Signed in') {
+    //   console.log("SIGNED IN WITH THE USRE NAME ABOVE ----------------------------------------------")
+    //   return;
+    // }
     const allUsers = storageManager.get('users') || [];
     console.log(
       `[${getSeconds()}s] Got users from store:`,
@@ -153,7 +279,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
         );
         const userONLINE = await Promise.race([
           userCheck(),
-          timeoutPromise(10000),
+          timeoutPromise(25000),
         ]).catch((error) => {
           console.log(
             `[${getSeconds()}s] Online check failed or timed out:`,
@@ -223,20 +349,16 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                 `[${getSeconds()}s] Online mode - fetching latest user data...`
               );
               try {
-                const OnlineUser = await getValuesWithSql_Online(
-                  'users',
-                  `WHERE id = '${userRaw.id}'`
-                );
                 console.log(`[${getSeconds()}s] Got online user data`);
-                setIsAllowedState(OnlineUser[0].Allowed);
-                setHasNotPaid(OnlineUser[0].LockBcNotPaid || false);
+                setIsAllowedState(userONLINE[0].Allowed);
+                setHasNotPaid(userONLINE[0].LockBcNotPaid || false);
 
                 const updatedUsers = allUsers.map((user: any) =>
                   user.id === userRaw.id
                     ? {
                         ...user,
-                        Allowed: OnlineUser[0].Allowed,
-                        LockBcNotPaid: OnlineUser[0].LockBcNotPaid,
+                        Allowed: userONLINE[0].Allowed,
+                        LockBcNotPaid: userONLINE[0].LockBcNotPaid,
                       }
                     : user
                 );
@@ -272,6 +394,8 @@ const AccountManager = (React.FC<MyComponentProps> = ({
           await handleFetchBranches();
           console.log(`[${getSeconds()}s] Managing app users...`);
           await appUsersManagement();
+          document.title = userONLINE[0].companyName + ' - RentMaster';
+
           if (
             navigator.onLine &&
             storageManager.get('users')[0].Allowed &&
@@ -455,14 +579,16 @@ const AccountManager = (React.FC<MyComponentProps> = ({
     checkIfSignedIn();
   }, [isSignedIn, Refresh]);
   const syncWithOnline = async (selectedUserId: string) => {
-    if(window.electron){setIsSyncing(true);
-    syncOnlineToLocalBranchWithBool(
-      selectedUserId,
-      storageManager.get('SelectedBranchId'),
-      setIsSyncing,
-      setSyncProgress,
-      RefreshDataFromSqlite
-    );}
+    if (window.electron) {
+      setIsSyncing(true);
+      syncOnlineToLocalBranchWithBool(
+        selectedUserId,
+        storageManager.get('SelectedBranchId'),
+        setIsSyncing,
+        setSyncProgress,
+        RefreshDataFromSqlite
+      );
+    }
   };
   // Effect to check trial status when signed in
   useEffect(() => {
@@ -503,7 +629,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
   const handleFullSignOutAndDeleteUser = async () => {
     const usersId = await storageManager.get('users')[0].id;
     console.log(usersId);
-    await deleteValueOnline('users', usersId);
+    // await deleteValueOnline('users', usersId);
 
     signOutUserAndRestart();
   };
@@ -1162,7 +1288,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
 
       // Validate required fields
       if (!newBranchData.name?.trim()) {
-        showAlert('Branch name is required');
+        showAlert('Property name is required');
         return;
       }
 
@@ -1220,7 +1346,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
       setShowAddBranchModal(false);
 
       // Show success message
-      showAlert('Branch added successfully!');
+      showAlert('Property added successfully!', 'success');
     } catch (error) {
       console.error('Detailed error adding branch:', error);
       showAlert(`Failed to add branch: ${error.message}`);
@@ -1247,7 +1373,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
     else storageManager.set('LockBranchToPc', false);
 
     setViewBranchManagementPage(false);
-    RefreshDataFromSqlite();
+    if (!window.electron) RefreshDataFromSqlite();
     syncWithOnline(SelectedUserId);
   };
   const [isEditingBranch, setIsEditingBranch] = useState(false);
@@ -1260,7 +1386,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
 
       // Validate required fields
       if (!editingBranch.name?.trim()) {
-        showAlert('Branch name is required');
+        showAlert('Property name is required');
         return;
       }
 
@@ -1293,7 +1419,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
     const choice = await confirm(
       'Are you sure you want to delete this branch?',
       {
-        title: 'Delete Branch',
+        title: 'Delete Property',
         confirmText: 'Delete',
         cancelText: 'Keep',
         type: 'danger',
@@ -1397,19 +1523,23 @@ const AccountManager = (React.FC<MyComponentProps> = ({
             'branches',
             `WHERE userId = '${storageManager.get('users')[0].id}'`
           );
-
+          console.log(userMaxBranches, AllBranches);
           if (!userMaxBranches) {
-            return 'Failed to get user branch limit';
+            return {
+              maxBranches: 0,
+              currentBranches: 0,
+            };
           }
           if (userMaxBranches[0].maxNumberOfBranches)
             return {
               maxBranches: userMaxBranches[0].maxNumberOfBranches,
-            currentBranches: AllBranches.length,
-          };else 
-          return {
-            maxBranches: 0,
-            currentBranches: 0,
-          };
+              currentBranches: AllBranches.length,
+            };
+          else
+            return {
+              maxBranches: 0,
+              currentBranches: 0,
+            };
         } else {
           return {
             maxBranches: 0,
@@ -1437,7 +1567,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
 
       if (maxBranches <= currentBranches) {
         showAlert(
-          'You have reached the maximum number of branches allowed for your account. Please contact support to increase your limit. +2519 4450 9999 or +2519 4450 8888, or email rentmaster.et@gmail.com',
+          'You have reached the maximum number of properties allowed for your account. Please contact support to increase your limit. +2519 4450 9999 or +2519 4450 8888, or email rentmaster.et@gmail.com',
           'error'
         );
 
@@ -1478,7 +1608,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
     string | null
   >(null);
   const handleSwitchUserInBranchManagement = async () => {
-    if (SelectedAppUser.id === 'admin') {
+    if (storageManager.get('SelectedAppUserId') === 'admin') {
       setAppUserManagerShow(true);
     } else {
       setShowAppUserSignInPanel(true);
@@ -1570,6 +1700,197 @@ const AccountManager = (React.FC<MyComponentProps> = ({
       setIsCheckingPasswordAPPUSER(false);
     }
   };
+  const handleSwitchUserFromMainAPP = async () => {
+    setIsCheckingPasswordAPPUSER(true);
+
+    try {
+      const userId = storageManager.get('users')[0].id;
+      const localUser = storageManager.get('users')[0];
+      if (SelectedToLoginWith === 'Admin') {
+        const isValid = await verifyCredentials(
+          localUser.email,
+          PasswordCheckInputAPPUSER
+        );
+
+        if (isValid) {
+          handleSelectUser({
+            id: 'admin',
+            roleName: 'admin',
+            privileges: '',
+            userId: storageManager.get('users')[0].id,
+            addedDate: Date.now(),
+            AllowedBranches: 'ALL',
+          });
+          //setShowAppUserSignInPanel(false);
+          setAppUserManagerShow(false);
+          setViewBranchManagementPageNONAdm(false);
+          setViewBranchManagementPage(false);
+
+          storageManager.set('LockBranchToPc', false);
+          showAlert('Admin login successful.', 'success');
+        } else {
+          setPasswordErrorAPPUSER('Incorrect password. Please try again.');
+          showAlert('Incorrect password. Please try again.', 'error');
+        }
+      } else {
+        const rolenameCurrent = appUsers.find(
+          (appUser) => appUser.id === storageManager.get('SelectedAppUserId')
+        )?.roleName;
+        if (
+          rolenameCurrent?.toLocaleLowerCase() ===
+          usernameCheckInputAPPUSER.toLocaleLowerCase()
+        ) {
+          setPasswordErrorAPPUSER('You are currently signed in as this user.');
+          setIsCheckingPasswordAPPUSER(false);
+          return;
+        }
+        // Fetch user data if credentials are valid
+        const getAppUser = await getValuesWithSql_Online(
+          'app_users',
+          `WHERE roleName = "${usernameCheckInputAPPUSER}" AND password = "${PasswordCheckInputAPPUSER}" AND userId = '${userId}'`
+        );
+
+        console.log(
+          getAppUser,
+          usernameCheckInputAPPUSER,
+          getAppUser[0].roleName
+        );
+        if (getAppUser.length > 0) {
+          console.log(
+            SelectedAppUser.roleName.toUpperCase(),
+            SelectedAppUser,
+            usernameCheckInputAPPUSER.toUpperCase()
+          );
+
+          if (getAppUser[0].EnterWithPassword) {
+            setSelectedAppUser(getAppUser[0]);
+            storageManager.set('SelectedAppUserId', getAppUser[0].id);
+
+            await appUsersManagement();
+            //setShowAppUserSignInPanel(false);
+            setAppUserManagerShow(false);
+            showAlert('AppUser login successful.', 'success');
+          } else {
+            setPasswordErrorAPPUSER(
+              'This AppUser is not allowed to enter with password. Please contact Administrator.'
+            );
+            showAlert(
+              'This AppUser is not allowed to enter with password. Please contact Administrator.',
+              'error'
+            );
+          }
+        } else {
+          setPasswordErrorAPPUSER('Invalid Username or password');
+          showAlert('Invalid Username or password', 'error');
+        }
+      }
+    } finally {
+    }
+    setIsCheckingPasswordAPPUSER(false);
+  };
+  const SignUp = () => {
+    return (
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: '100%',
+          flexDirection: 'column',
+        }}
+      >
+        {isSignedIn && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              marginBottom: 'var(--10px-V)',
+              marginTop: 'var(--10px-V)',
+              background: 'var(--Secondary-Color20)',
+              padding: 'var(--7px-V)',
+              borderRadius: 'var(--5px-V)',
+              boxShadow:
+                'var(--0px-V) var(--4px-V) var(--4px-V) var(--0px-V) rgba(0, 0, 0, 0.25)',
+            }}
+          >
+            Found an account: {storageManager.get('users')[0].companyName}{' '}
+            <button
+              style={{ marginLeft: 'var(--10px-V)' }}
+              onClick={() => {
+                window.location.pathname = '/app';
+              }}
+            >
+              Open
+            </button>
+          </div>
+        )}
+        <SignUpPage
+          setisSignUpMode={setisSignUpMode}
+          setisSignedIn={setisSignedIn}
+          setChangeMade={setChangeMade}
+          email={email}
+          password={password}
+          setEmail={setEmail}
+          setPassword={setPassword}
+        />
+      </div>
+    );
+  };
+  const LogIn = () => {
+    return (
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: '100%',
+          flexDirection: 'column',
+        }}
+      >
+        {isSignedIn && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              marginBottom: 'var(--10px-V)',
+              marginTop: 'var(--10px-V)',
+              background: 'var(--Secondary-Color20)',
+              padding: 'var(--7px-V)',
+              borderRadius: 'var(--5px-V)',
+              boxShadow:
+                'var(--0px-V) var(--4px-V) var(--4px-V) var(--0px-V) rgba(0, 0, 0, 0.25)',
+            }}
+          >
+            Found an account: {storageManager.get('users')[0].companyName}{' '}
+            <button
+              style={{ marginLeft: 'var(--10px-V)' }}
+              onClick={() => {
+                window.location.pathname = '/app';
+              }}
+            >
+              Open
+            </button>
+          </div>
+        )}
+        <LoginPage
+          setisSignUpMode={setisSignUpMode}
+          setisSignedIn={setisSignedIn}
+          setChangeMade={setChangeMade}
+          email={email}
+          password={password}
+          setEmail={setEmail}
+          username={username}
+          setUsername={setUsername}
+          setPassword={setPassword}
+          setSelectedAppUser={setSelectedAppUser}
+          setAppUserManagerShow={setAppUserManagerShow}
+          fetchBranches={handleShowBranches}
+          RefreshComponent={RefreshComponent}
+          setViewBranchManagementPage={setViewBranchManagementPage}
+        />
+      </div>
+    );
+  };
   return (
     <>
       {(loading || initialLoading) && (
@@ -1597,764 +1918,17 @@ const AccountManager = (React.FC<MyComponentProps> = ({
       <div style={{ height: '100%' }}>
         {!initialLoading && (
           <>
-            {isSignedIn ? (
-              TrialExpiredState ? (
-                <TrialEndedText />
-              ) : IsAllowedState ? (
-                !hasNotPaid ? (
-                  <AccountLockedBcNotPaid />
-                ) : (
-                  <>
-                    {AppUserManagerShow ? (
-                      CheckIfTureAdmin ? (
-                        <div
-                          style={{
-                            display: 'flex',
-                            justifyContent: 'center',
-                            alignItems: 'center',
-                            height: '100%',
-                          }}
-                        >
-                          <div
-                            className="SignUpMainContainer"
-                            style={{
-                              width: 'auto',
-                              maxWidth: 'var(--400px-V)',
-                              height: 'auto',
-                              margin: 'auto',
-                              background: 'var(--Secondary-Color20)',
-                              borderRadius: 'var(--8px-V)',
-                              display: 'flex',
-                              flexDirection: 'column',
-                              alignItems: 'center',
-                              boxShadow:
-                                'var(--0px-V) var(--4px-V) var(--4px-V) var(--0px-V) rgba(0, 0, 0, 0.25)',
-                              padding: 'var(--20px-V)',
-                            }}
-                          >
-                            <div
-                              style={{
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                width: '100%',
-                                alignItems: 'center',
-                                height: 'auto',
-                                marginBottom: 'var(--15px-V)',
-                              }}
-                            >
-                              <h1
-                                style={{
-                                  marginRight: 'var(--10px-V)',
-                                  marginTop: 'var(--0px-V)',
-                                  marginBottom: 'var(--0px-V)',
-                                  fontSize: 'var(--45px-V)',
-                                }}
-                              >
-                                Security Check Extra
-                              </h1>
-                              <button
-                                onClick={() => {
-                                  setCheckIfTureAdmin(false);
-                                  setIsTrueAdmin(false);
-                                }}
-                              >
-                                Back
-                              </button>
-                            </div>
-                            <p
-                              style={{
-                                color: 'var(--Text-Color)',
-                                marginBottom: 'var(--25px-V)',
-                              }}
-                            >
-                              Please enter the account password to see App user
-                              passwords
-                            </p>
-                            <input
-                              type="password"
-                              placeholder="Admin Password"
-                              className="userName-input"
-                              value={PasswordCheckInput}
-                              onChange={(e) =>
-                                setPasswordCheckInput(e.target.value)
-                              }
-                            />
-                            <br />
-                            {passwordError && (
-                              <p
-                                style={{
-                                  color: 'red',
-                                  marginBottom: 'var(--10px-V)',
-                                }}
-                              >
-                                {passwordError}
-                              </p>
-                            )}
-                            <button
-                              className="LoginButton"
-                              onClick={handleSubmitAdminPasswordTrueAdmin}
-                              disabled={isCheckingPassword}
-                            >
-                              {isCheckingPassword ? (
-                                <img
-                                  src={loadingGif}
-                                  alt="Loading..."
-                                  style={{
-                                    width: 'var(--20px-V)',
-                                    height: 'var(--20px-V)',
-                                  }}
-                                />
-                              ) : (
-                                <>Submit {' ▶'}</>
-                              )}
-                            </button>
-                          </div>{' '}
-                        </div>
-                      ) : AppUserManagerPromptPassword ? (
-                        <div
-                          style={{
-                            display: 'flex',
-                            justifyContent: 'center',
-                            alignItems: 'center',
-                            height: '100%',
-                          }}
-                        >
-                          <div
-                            className="SignUpMainContainer"
-                            style={{
-                              width: 'auto',
-                              maxWidth: 'var(--400px-V)',
-                              height: 'auto',
-                              margin: 'auto',
-                              background: 'var(--Secondary-Color20)',
-                              borderRadius: 'var(--8px-V)',
-                              display: 'flex',
-                              flexDirection: 'column',
-                              alignItems: 'center',
-                              boxShadow:
-                                'var(--0px-V) var(--4px-V) var(--4px-V) var(--0px-V) rgba(0, 0, 0, 0.25)',
-                              padding: 'var(--20px-V)',
-                            }}
-                          >
-                            <div
-                              style={{
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                width: '100%',
-                                alignItems: 'center',
-                                height: 'auto',
-                                marginBottom: 'var(--15px-V)',
-                              }}
-                            >
-                              <h1
-                                style={{
-                                  marginRight: 'var(--10px-V)',
-                                  marginTop: 'var(--0px-V)',
-                                  marginBottom: 'var(--0px-V)',
-                                  fontSize: 'var(--45px-V)',
-                                }}
-                              >
-                                Security Check
-                              </h1>
-                              <button
-                                onClick={() => setAppUserManagerShow(false)}
-                              >
-                                Back
-                              </button>
-                            </div>
-                            <p
-                              style={{
-                                color: 'var(--Text-Color)',
-                                marginBottom: 'var(--25px-V)',
-                              }}
-                            >
-                              Please enter the account password to open appusers
-                            </p>
-                            <input
-                              type="password"
-                              placeholder="Admin Password"
-                              className="userName-input"
-                              value={PasswordCheckInput}
-                              onChange={(e) =>
-                                setPasswordCheckInput(e.target.value)
-                              }
-                            />
-                            <br />
-                            {passwordError && (
-                              <p
-                                style={{
-                                  color: 'red',
-                                  marginBottom: 'var(--10px-V)',
-                                }}
-                              >
-                                {passwordError}
-                              </p>
-                            )}
-                            <button
-                              className="LoginButton"
-                              onClick={handleSubmitAdminPassword}
-                              disabled={isCheckingPassword}
-                            >
-                              {isCheckingPassword ? (
-                                <img
-                                  src={loadingGif}
-                                  alt="Loading..."
-                                  style={{
-                                    width: 'var(--20px-V)',
-                                    height: 'var(--20px-V)',
-                                  }}
-                                />
-                              ) : (
-                                <>Submit {' ▶'}</>
-                              )}
-                            </button>
-                          </div>{' '}
-                        </div>
-                      ) : (
-                        <>
-                          <div
-                            style={{
-                              display: 'flex',
-                              justifyContent: 'space-between',
-                              alignItems: 'center',
-                              marginBottom: 'var(--20px-V)',
-                              padding: 'var(--20px-V)',
-                            }}
-                          >
-                            <div>
-                              <h1 style={{ margin: 0 }}>User Management</h1>
-                              <p
-                                style={{
-                                  margin: 'var(--10px-V) 0 0 0',
-                                  color: 'var(--Text-Color-60)',
-                                }}
-                              >
-                                Select the user this PC will be assigned to
-                              </p>
-                            </div>
-                            <div>
-                              <button
-                                onClick={() => {
-                                  handleFetchBranches();
-                                  appUsersManagement();
-                                }}
-                              >
-                                Refresh
-                              </button>
-                              {storageManager.get('SelectedAppUserId') ===
-                              '' ? (
-                                <></>
-                              ) : (
-                                <button
-                                  className="appUserButtons"
-                                  onClick={() => setAppUserManagerShow(false)}
-                                  style={{ marginRight: 'var(--10px-V)' }}
-                                >
-                                  Back
-                                </button>
-                              )}
-                              <button
-                                className="appUserButtons"
-                                onClick={handleAddNewAppUser}
-                              >
-                                Add New User
-                              </button>
-                            </div>
-                          </div>
-                          <div
-                            style={{
-                              height: 'calc(100% - var(--105px-V))',
-                              overflowY: 'auto',
-                            }}
-                          >
-                            <div
-                              style={{
-                                display: 'flex',
-                                flexDirection: 'row',
-                                overflowX: 'auto',
-                              }}
-                              className="appUserItemContainer"
-                            >
-                              <div
-                                style={{ display: 'flex' }}
-                                className="abcScroll"
-                              >
-                                <div className="appUserItemM appUserItem">
-                                  <div>
-                                    <div className="appUserHeader">
-                                      <span
-                                        style={{ fontSize: 'var(--25px-V)' }}
-                                      >
-                                        Admin
-                                      </span>
-                                      <button
-                                        className="appUserButtons"
-                                        onClick={() =>
-                                          handleSelectUser({
-                                            id: 'admin',
-                                            roleName: 'admin',
-                                            privileges: '',
-                                            userId:
-                                              storageManager.get('users')[0].id,
-                                            addedDate: Date.now(),
-                                            AllowedBranches: 'ALL',
-                                          })
-                                        }
-                                      >
-                                        Select
-                                      </button>
-                                    </div>
-                                    <p
-                                      style={{
-                                        margin: 'var(--5px-V) 0',
-                                        color: 'var(--Text-Color-60)',
-                                      }}
-                                    >
-                                      Full system access with all privileges
-                                      enabled.
-                                    </p>
-                                    <p
-                                      style={{
-                                        margin: 'var(--5px-V) 0',
-                                        color: 'var(--Text-Color-60)',
-                                      }}
-                                    >
-                                      Full access to all branches.
-                                    </p>
-                                  </div>
-                                </div>
-                                {appUsers
-                                  .sort((a, b) =>
-                                    a.roleName.localeCompare(b.roleName)
-                                  )
-                                  .map((appUser) => (
-                                    <div
-                                      id={`app-user-${appUser.id}`}
-                                      className="appUserItem"
-                                    >
-                                      <div>
-                                        <div
-                                          className="appUserHeader"
-                                          style={{
-                                            display: 'flex',
-                                            justifyContent: 'space-between',
-                                            alignItems: 'flex-start',
-                                            flexDirection:
-                                              editingUserId === appUser.id
-                                                ? 'column'
-                                                : 'row',
-                                          }}
-                                        >
-                                          {editingUserId === appUser.id ? (
-                                            <>
-                                              <input
-                                                type="text"
-                                                value={editingUserName}
-                                                onChange={(e) =>
-                                                  setEditingUserName(
-                                                    e.target.value
-                                                  )
-                                                }
-                                                style={{
-                                                  fontSize: 'var(--20px-V)',
-                                                  marginRight: 'var(--10px-V)',
-                                                  width: '100%',
-                                                  marginBottom: '10px',
-                                                }}
-                                              />
-
-                                              <div>
-                                                <button
-                                                  className="appUserButtons"
-                                                  onClick={() =>
-                                                    handleSaveEdit(appUser.id)
-                                                  }
-                                                >
-                                                  Save
-                                                </button>
-                                                <button
-                                                  className="appUserButtons"
-                                                  onClick={() =>
-                                                    handleDeleteUser(appUser.id)
-                                                  }
-                                                >
-                                                  {deletingUser
-                                                    ? 'Confirm Delete'
-                                                    : 'Delete'}
-                                                </button>
-                                                <button
-                                                  className="appUserButtons"
-                                                  onClick={handleCancelEdit}
-                                                >
-                                                  Cancel
-                                                </button>
-                                              </div>
-                                            </>
-                                          ) : (
-                                            <>
-                                              <span
-                                                style={{
-                                                  fontSize: 'var(--25px-V)',
-                                                }}
-                                              >
-                                                {appUser.roleName}
-                                              </span>
-                                              <div>
-                                                <button
-                                                  className="appUserButtons"
-                                                  onClick={() =>
-                                                    handleSelectUser(appUser)
-                                                  }
-                                                >
-                                                  Select
-                                                </button>
-                                                <button
-                                                  className="appUserButtons"
-                                                  onClick={() =>
-                                                    handleEditUser(appUser)
-                                                  }
-                                                >
-                                                  Edit
-                                                </button>
-                                              </div>
-                                            </>
-                                          )}
-                                        </div>
-                                        <div className="privileges-list">
-                                          {privilegeHierarchy.map(
-                                            (privilege) => (
-                                              <PrivilegeItem
-                                                key={privilege.name}
-                                                privilege={privilege}
-                                                appUser={appUser}
-                                                handleTogglePrivilege={
-                                                  handleTogglePrivilege
-                                                }
-                                                loadingPrivileges={
-                                                  loadingPrivileges
-                                                }
-                                              />
-                                            )
-                                          )}
-                                        </div>
-                                        <div className="privilege-actions">
-                                          <button
-                                            onClick={() =>
-                                              handleCheckAll(appUser)
-                                            }
-                                            disabled={isCheckingAll}
-                                          >
-                                            {isCheckingAll ? (
-                                              <img
-                                                src={loadingGif}
-                                                alt="Loading..."
-                                                style={{
-                                                  width: 'var(--20px-V)',
-                                                  height: 'var(--20px-V)',
-                                                }}
-                                              />
-                                            ) : (
-                                              'Check All'
-                                            )}
-                                          </button>
-                                          <button
-                                            onClick={() =>
-                                              handleUncheckAll(appUser)
-                                            }
-                                            disabled={isUncheckingAll}
-                                          >
-                                            {isUncheckingAll ? (
-                                              <img
-                                                src={loadingGif}
-                                                alt="Loading..."
-                                                style={{
-                                                  width: 'var(--20px-V)',
-                                                  height: 'var(--20px-V)',
-                                                }}
-                                              />
-                                            ) : (
-                                              'Uncheck All'
-                                            )}
-                                          </button>
-                                        </div>
-                                        <hr />
-                                      </div>
-                                      <div>
-                                        <h2
-                                          style={{
-                                            textAlign: 'left',
-                                            width: '100%',
-                                            marginBottom: 'var(--10px-V)',
-                                          }}
-                                        >
-                                          Allowed branches{' '}
-                                          <select
-                                            name=""
-                                            key={`select-${appUser.id}`}
-                                            id=""
-                                            onChange={(e) => {
-                                              setSelectedBranchIdADD(
-                                                e.target.value
-                                              );
-                                            }}
-                                            value={SelectedBranchIdADD}
-                                          >
-                                            <option
-                                              value={
-                                                'Select NON SELECTED PLEASE SELECT OKOK'
-                                              }
-                                            >
-                                              Select
-                                            </option>
-                                            {Branches.filter(
-                                              (branch: any) =>
-                                                !appUser.AllowedBranches.includes(
-                                                  branch.id
-                                                )
-                                            ).map((branch: any) => (
-                                              <>
-                                                <option value={branch.id} key={branch.id}>
-                                                  {branch.name}
-                                                </option>
-                                              </>
-                                            ))}
-                                          </select>
-                                          <button
-                                            onClick={() => {
-                                              handleAddBranchToUser(appUser);
-                                            }}
-                                          >
-                                            {!AddBranchToUserIsAdding && 'Add'}
-                                          </button>
-                                        </h2>
-                                        <div
-                                          style={{
-                                            display: 'flex',
-                                            justifyContent: 'center',
-                                          }}
-                                        >
-                                          {AddBranchToUserIsAdding ? (
-                                            <img
-                                              src={loadingGif}
-                                              alt="Loading..."
-                                              style={{
-                                                width: 'var(--30px-V)',
-                                                height: 'var(--30px-V)',
-                                              }}
-                                            />
-                                          ) : (
-                                            ''
-                                          )}
-                                        </div>
-
-                                        {appUser.AllowedBranches.match(
-                                          /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/g
-                                        )?.map((branchId: string) => (
-                                          <span
-                                            key={branchId}
-                                            style={{
-                                              display: 'flex',
-                                              justifyContent: 'space-between',
-                                              alignItems: 'center',
-                                              width: '60%',
-                                              backgroundColor:
-                                                'var(--Secondary-Color60)',
-                                              marginTop: 'auto',
-                                              marginRight: 'auto',
-                                              marginBottom: 'var(--5px-V)',
-                                              marginLeft: 'auto',
-                                              paddingLeft: 'var(--5px-V)',
-                                              borderRadius: 'var(--5px-V)',
-                                            }}
-                                          >
-                                            {Branches.find(
-                                              (branch: any) =>
-                                                branch.id === branchId
-                                            )?.name || 'Unknown'}{' '}
-                                            <button
-                                              onClick={() => {
-                                                handleRemoveBranchFromUser(
-                                                  appUser,
-                                                  branchId
-                                                );
-                                              }}
-                                            >
-                                              x
-                                            </button>
-                                          </span>
-                                        ))}
-                                        <hr />
-                                        <h2
-                                          style={{
-                                            textAlign: 'left',
-                                            width: '100%',
-                                            marginBottom: 'var(--10px-V)',
-                                          }}
-                                        >
-                                          Sign in with password
-                                        </h2>
-                                        {appUser.EnterWithPassword ? (
-                                          <div>
-                                            <button
-                                              onClick={() => {
-                                                if (IsTrueAdmin) {
-                                                  setIsTrueAdmin(false);
-                                                } else {
-                                                  setCheckIfTureAdmin(true);
-                                                }
-                                              }}
-                                              style={{
-                                                marginRight: 'var(--10px-V)',
-                                              }}
-                                            >
-                                              {IsTrueAdmin ? 'Hide' : 'Show'}
-                                            </button>
-                                            User password:{' '}
-                                            {IsTrueAdmin
-                                              ? appUser.password
-                                              : '********'}
-                                            <div style={{ display: 'flex' }}>
-                                              {IsTrueAdmin &&
-                                                ChangingPasswordId !==
-                                                  appUser.id && (
-                                                  <button
-                                                    onClick={() =>
-                                                      setChangingPasswordId(
-                                                        appUser.id
-                                                      )
-                                                    }
-                                                  >
-                                                    Change Password
-                                                  </button>
-                                                )}
-                                              {ChangingPasswordId !==
-                                                appUser.id && (
-                                                <button
-                                                  onClick={() => {
-                                                    handleDisallowEnterWithPassword(
-                                                      appUser
-                                                    );
-                                                  }}
-                                                >
-                                                  Don't allow entering with
-                                                  password
-                                                </button>
-                                              )}
-                                              {ChangingPasswordId ===
-                                                appUser.id && (
-                                                <>
-                                                  <input
-                                                    type={'text'}
-                                                    placeholder="New Password"
-                                                    style={{
-                                                      width: 'var(--180px-V)',
-                                                    }}
-                                                    value={NewAdminPassword}
-                                                    onChange={(e) =>
-                                                      setNewAdminPassword(
-                                                        e.target.value
-                                                      )
-                                                    }
-                                                  />
-                                                  <button
-                                                    onClick={() => {
-                                                      handleApplyPASSWORD();
-                                                    }}
-                                                    style={{
-                                                      marginRight:
-                                                        'var(--10px-V)',
-                                                    }}
-                                                  >
-                                                    Done
-                                                  </button>
-                                                  <button
-                                                    onClick={() => {
-                                                      setChangingPasswordId('');
-                                                    }}
-                                                  >
-                                                    Cancel
-                                                  </button>
-                                                </>
-                                              )}
-                                            </div>
-                                          </div>
-                                        ) : (
-                                          <>
-                                            <button
-                                              onClick={() => {
-                                                if (IsTrueAdmin) {
-                                                  if (
-                                                    appUser.EnterWithPassword
-                                                  ) {
-                                                    handleDisallowEnterWithPassword(
-                                                      appUser
-                                                    );
-                                                  } else {
-                                                    handleAllowEnterWithPassword(
-                                                      appUser
-                                                    );
-                                                    if (
-                                                      appUser.password === ''
-                                                    ) {
-                                                      setChangingPasswordId(
-                                                        appUser.id
-                                                      );
-                                                    }
-                                                  }
-                                                } else {
-                                                  setCheckIfTureAdmin(true);
-                                                  if (
-                                                    appUser.EnterWithPassword
-                                                  ) {
-                                                    handleDisallowEnterWithPassword(
-                                                      appUser
-                                                    );
-                                                  } else {
-                                                    handleAllowEnterWithPassword(
-                                                      appUser
-                                                    );
-                                                  }
-                                                }
-                                              }}
-                                              style={{
-                                                marginRight: 'var(--10px-V)',
-                                              }}
-                                            >
-                                              {IsTrueAdmin
-                                                ? appUser.EnterWithPassword
-                                                  ? 'Disallow'
-                                                  : 'Allow'
-                                                : appUser.EnterWithPassword
-                                                ? 'Allow'
-                                                : 'Allow'}
-                                            </button>
-                                            Enter with password:{' '}
-                                            {appUser.EnterWithPassword
-                                              ? 'Yes'
-                                              : 'No'}
-                                          </>
-                                        )}
-                                      </div>
-                                    </div>
-                                  ))}
-                              </div>
-                            </div>
-                            {privilegeError && (
-                              <div
-                                style={{
-                                  color: 'red',
-                                  marginTop: 'var(--10px-V)',
-                                }}
-                              >
-                                {privilegeError}
-                              </div>
-                            )}
-                          </div>
-                        </>
-                      )
-                    ) : ViewBranchManagementPage ? (
-                      ViewBranchManagementPageNONAdm ? (
-                        <>
+            {ForceSignUp === '' ? (
+              isSignedIn ? (
+                TrialExpiredState ? (
+                  <TrialEndedText />
+                ) : IsAllowedState ? (
+                  !hasNotPaid ? (
+                    <AccountLockedBcNotPaid />
+                  ) : (
+                    <>
+                      {AppUserManagerShow ? (
+                        CheckIfTureAdmin ? (
                           <div
                             style={{
                               display: 'flex',
@@ -2398,12 +1972,13 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                     fontSize: 'var(--45px-V)',
                                   }}
                                 >
-                                  Security Check
+                                  Security Check Extra
                                 </h1>
                                 <button
-                                  onClick={() =>
-                                    setViewBranchManagementPage(false)
-                                  }
+                                  onClick={() => {
+                                    setCheckIfTureAdmin(false);
+                                    setIsTrueAdmin(false);
+                                  }}
                                 >
                                   Back
                                 </button>
@@ -2414,8 +1989,8 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                   marginBottom: 'var(--25px-V)',
                                 }}
                               >
-                                Please enter the account password to see the
-                                branch list as admin
+                                Please enter the account password to see App
+                                user passwords
                               </p>
                               <input
                                 type="password"
@@ -2439,7 +2014,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                               )}
                               <button
                                 className="LoginButton"
-                                onClick={handleSubmitAdminPasswordBranch}
+                                onClick={handleSubmitAdminPasswordTrueAdmin}
                                 disabled={isCheckingPassword}
                               >
                                 {isCheckingPassword ? (
@@ -2457,110 +2032,750 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                               </button>
                             </div>{' '}
                           </div>
-                        </>
-                      ) : (
-                        <div
-                          className="branch-management-container"
-                          style={{
-                            padding: 'var(--20px-V)',
-                            height: '100%',
-                            display: 'flex',
-                            flexDirection: 'column',
-                          }}
-                        >
+                        ) : AppUserManagerPromptPassword ? (
                           <div
                             style={{
-                              display: 'flex',
-                              justifyContent: 'space-between',
-                              alignItems: 'center',
-                              marginBottom: 'var(--20px-V)',
+                              position: 'fixed',
+                              top: 0,
+                              left: 0,
+                              right: 0,
+                              bottom: 0,
+                              backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                              zIndex: 9999,
                             }}
                           >
                             <div
                               style={{
+                                position: 'absolute',
+                                top: '50%',
                                 display: 'flex',
+                                width: 'var(--330px-V)',
                                 flexDirection: 'column',
-                                gap: 'var(--5px-V)',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                left: '50%',
+                                transform: 'translate(-50%, -50%)',
+                                backgroundColor: 'var(--Background-Color)',
+                                padding: 'var(--20px-V)',
+                                borderRadius: 'var(--10px-V)',
+                                transition: 'transform 0.2s ease 0s',
                               }}
                             >
-                              {' '}
-                              <h1 style={{ margin: 0 }}>Branch Management</h1>
-                              <p style={{ margin: 0 }}>
-                                {storageManager.get('SelectedAppUserId') ===
-                                'admin' ? (
-                                  <>Admin</>
-                                ) : (
-                                  appUsers.find(
-                                    (appUser) =>
-                                      appUser.id ===
-                                      storageManager.get('SelectedAppUserId')
-                                  )?.roleName
-                                )}{' '}
-                                -{' '}
-                                <button
-                                  onClick={handleSwitchUserInBranchManagement}
-                                >
-                                  Switch user
-                                </button>
-                              </p>
-                            </div>
-                            <p style={{ width: '40%' }}>
-                              {storageManager.get('SelectedAppUserId') !==
-                                'admin' && (
-                                <>
-                                  You are only able to view the branches
-                                  selected for your user account. If this is
-                                  incorrect, please contact the administrator to
-                                  enable access to more branches.
-                                </>
-                              )}
-                            </p>{' '}
-                            <div>
-                              {(storageManager.get('SelectedAppUserId') ===
-                                'admin' ||
-                                appUsers
-                                  .find(
-                                    (appUser) =>
-                                      appUser.id ===
-                                      storageManager.get('SelectedAppUserId')
-                                  )
-                                  ?.privileges.includes('add a branch')) && (
-                                <>
-                                  Limit {Branches.length}/{BranchLimit}
-                                </>
-                              )}
-                              <button
-                                className="appUserButtons"
-                                style={{ marginRight: 'var(--20px-V)' }}
-                                onClick={() => {
-                                  handleFetchBranches();
+                              <h1
+                                style={{
+                                  marginBottom: 'var(--10px-V)',
+                                  marginTop: '0px',
                                 }}
                               >
-                                Refresh
-                              </button>
-                              {storageManager.get('SelectedAppUserId') ===
-                                'admin' ||
-                              appUsers
-                                .find(
-                                  (appUser) =>
-                                    appUser.id === 'admin' ||
-                                    appUser.id ===
-                                      storageManager.get('SelectedAppUserId')
-                                )
-                                ?.privileges.includes('add a branch') ? (
+                                Switch App User
+                              </h1>
+                              <div
+                                style={{
+                                  margin: 'var(--10px-V)',
+                                  display: 'flex',
+                                  gap: 'var(--20px-V)',
+                                }}
+                              >
+                                <button
+                                  style={{
+                                    border:
+                                      SelectedToLoginWith === 'Admin'
+                                        ? 'var(--3px-V) solid var(--Accent-Color)'
+                                        : 'none',
+                                  }}
+                                  onClick={() =>
+                                    setSelectedToLoginWith('Admin')
+                                  }
+                                >
+                                  Admin
+                                </button>
+                                <button
+                                  style={{
+                                    border:
+                                      SelectedToLoginWith === 'App User'
+                                        ? 'var(--3px-V) solid var(--Accent-Color)'
+                                        : 'none',
+                                  }}
+                                  onClick={() =>
+                                    setSelectedToLoginWith('App User')
+                                  }
+                                >
+                                  App user
+                                </button>
+                              </div>
+                              {SelectedToLoginWith !== 'Admin' && (
+                                <input
+                                  type="text"
+                                  placeholder="Username"
+                                  value={usernameCheckInputAPPUSER}
+                                  onChange={(e) =>
+                                    setUsernameCheckInputAPPUSER(e.target.value)
+                                  }
+                                  className="userName-input"
+                                  style={{ marginBottom: 'var(--10px-V)' }}
+                                />
+                              )}
+                              <input
+                                type="password"
+                                placeholder={
+                                  SelectedToLoginWith === 'Admin'
+                                    ? 'Enter Admin Password'
+                                    : 'Password'
+                                }
+                                value={PasswordCheckInputAPPUSER}
+                                onChange={(e) =>
+                                  setPasswordCheckInputAPPUSER(e.target.value)
+                                }
+                                className="userName-input"
+                                style={{ marginBottom: 'var(--20px-V)' }}
+                              />{' '}
+                              {passwordErrorAPPUSER && (
+                                <p
+                                  style={{
+                                    color: 'red',
+                                    marginBottom: 'var(--10px-V)',
+                                  }}
+                                >
+                                  {passwordErrorAPPUSER}
+                                </p>
+                              )}
+                              <div
+                                style={{
+                                  display: 'flex',
+                                  flexDirection: 'row',
+                                  justifyContent: 'space-around',
+                                  width: '100%',
+                                }}
+                              >
+                                <button
+                                  style={{
+                                    width: 'var(--150px-V)',
+                                    marginRight: 'var(--10px-V)',
+                                  }}
+                                  onClick={() => setAppUserManagerShow(false)}
+                                >
+                                  Cancel
+                                </button>
+                                <button
+                                  style={{
+                                    width: 'var(--150px-V)',
+                                    display: 'flex',
+                                    justifyContent: 'center',
+                                  }}
+                                  onClick={handleSwitchUserFromMainAPP}
+                                >
+                                  Sign in{' '}
+                                  {isCheckingPasswordAPPUSER && (
+                                    <img
+                                      src={loadingGif}
+                                      alt="Loading..."
+                                      style={{ width: '20px', height: '20px' }}
+                                    />
+                                  )}
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            <div
+                              style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                marginBottom: 'var(--20px-V)',
+                                padding: 'var(--20px-V)',
+                              }}
+                            >
+                              <div>
+                                <h1 style={{ margin: 0 }}>User Management</h1>
+                                <p
+                                  style={{
+                                    margin: 'var(--10px-V) 0 0 0',
+                                    color: 'var(--Text-Color-60)',
+                                  }}
+                                >
+                                  Select the user this PC will be assigned to
+                                </p>
+                              </div>
+                              <div>
+                                <button
+                                  onClick={() => {
+                                    handleFetchBranches();
+                                    appUsersManagement();
+                                  }}
+                                >
+                                  Refresh
+                                </button>
+                                {storageManager.get('SelectedAppUserId') ===
+                                '' ? (
+                                  <></>
+                                ) : (
+                                  <button
+                                    className="appUserButtons"
+                                    onClick={() => setAppUserManagerShow(false)}
+                                    style={{ marginRight: 'var(--10px-V)' }}
+                                  >
+                                    Back
+                                  </button>
+                                )}
                                 <button
                                   className="appUserButtons"
-                                  style={{ marginRight: 'var(--20px-V)' }}
-                                  onClick={() => handleAddBranchFunction()}
+                                  onClick={handleAddNewAppUser}
                                 >
-                                  Add New Branch
+                                  Add New User
                                 </button>
-                              ) : (
-                                <></>
+                              </div>
+                            </div>
+                            <div
+                              style={{
+                                height: 'calc(100% - var(--105px-V))',
+                                overflowY: 'auto',
+                              }}
+                            >
+                              <div
+                                style={{
+                                  display: 'flex',
+                                  flexDirection: 'row',
+                                  overflowX: 'auto',
+                                }}
+                                className="appUserItemContainer"
+                              >
+                                <div
+                                  style={{ display: 'flex' }}
+                                  className="abcScroll"
+                                >
+                                  <div className="appUserItemM appUserItem">
+                                    <div>
+                                      <div className="appUserHeader">
+                                        <span
+                                          style={{ fontSize: 'var(--25px-V)' }}
+                                        >
+                                          Admin
+                                        </span>
+                                        <button
+                                          className="appUserButtons"
+                                          onClick={() =>
+                                            handleSelectUser({
+                                              id: 'admin',
+                                              roleName: 'admin',
+                                              privileges: '',
+                                              userId:
+                                                storageManager.get('users')[0]
+                                                  .id,
+                                              addedDate: Date.now(),
+                                              AllowedBranches: 'ALL',
+                                            })
+                                          }
+                                        >
+                                          Select
+                                        </button>
+                                      </div>
+                                      <p
+                                        style={{
+                                          margin: 'var(--5px-V) 0',
+                                          color: 'var(--Text-Color-60)',
+                                        }}
+                                      >
+                                        Full system access with all privileges
+                                        enabled.
+                                      </p>
+                                      <p
+                                        style={{
+                                          margin: 'var(--5px-V) 0',
+                                          color: 'var(--Text-Color-60)',
+                                        }}
+                                      >
+                                        Full access to all properties.
+                                      </p>
+                                    </div>
+                                  </div>
+                                  {appUsers
+                                    .sort((a, b) =>
+                                      a.roleName.localeCompare(b.roleName)
+                                    )
+                                    .map((appUser) => (
+                                      <div
+                                        id={`app-user-${appUser.id}`}
+                                        className="appUserItem"
+                                      >
+                                        <div>
+                                          <div
+                                            className="appUserHeader"
+                                            style={{
+                                              display: 'flex',
+                                              justifyContent: 'space-between',
+                                              alignItems: 'flex-start',
+                                              flexDirection:
+                                                editingUserId === appUser.id
+                                                  ? 'column'
+                                                  : 'row',
+                                            }}
+                                          >
+                                            {editingUserId === appUser.id ? (
+                                              <>
+                                                <input
+                                                  type="text"
+                                                  value={editingUserName}
+                                                  onChange={(e) =>
+                                                    setEditingUserName(
+                                                      e.target.value
+                                                    )
+                                                  }
+                                                  style={{
+                                                    fontSize: 'var(--20px-V)',
+                                                    marginRight:
+                                                      'var(--10px-V)',
+                                                    width: '100%',
+                                                    marginBottom: '10px',
+                                                  }}
+                                                />
+
+                                                <div>
+                                                  <button
+                                                    className="appUserButtons"
+                                                    onClick={() =>
+                                                      handleSaveEdit(appUser.id)
+                                                    }
+                                                  >
+                                                    Save
+                                                  </button>
+                                                  <button
+                                                    className="appUserButtons"
+                                                    onClick={() =>
+                                                      handleDeleteUser(
+                                                        appUser.id
+                                                      )
+                                                    }
+                                                  >
+                                                    {deletingUser
+                                                      ? 'Confirm Delete'
+                                                      : 'Delete'}
+                                                  </button>
+                                                  <button
+                                                    className="appUserButtons"
+                                                    onClick={handleCancelEdit}
+                                                  >
+                                                    Cancel
+                                                  </button>
+                                                </div>
+                                              </>
+                                            ) : (
+                                              <>
+                                                <span
+                                                  style={{
+                                                    fontSize: 'var(--25px-V)',
+                                                  }}
+                                                >
+                                                  {appUser.roleName}
+                                                </span>
+                                                <div>
+                                                  <button
+                                                    className="appUserButtons"
+                                                    onClick={() =>
+                                                      handleSelectUser(appUser)
+                                                    }
+                                                  >
+                                                    Select
+                                                  </button>
+                                                  <button
+                                                    className="appUserButtons"
+                                                    onClick={() =>
+                                                      handleEditUser(appUser)
+                                                    }
+                                                  >
+                                                    Edit
+                                                  </button>
+                                                </div>
+                                              </>
+                                            )}
+                                          </div>
+                                          <div className="privileges-list">
+                                            {privilegeHierarchy.map(
+                                              (privilege) => (
+                                                <PrivilegeItem
+                                                  key={privilege.name}
+                                                  privilege={privilege}
+                                                  appUser={appUser}
+                                                  handleTogglePrivilege={
+                                                    handleTogglePrivilege
+                                                  }
+                                                  loadingPrivileges={
+                                                    loadingPrivileges
+                                                  }
+                                                />
+                                              )
+                                            )}
+                                          </div>
+                                          <div className="privilege-actions">
+                                            <button
+                                              onClick={() =>
+                                                handleCheckAll(appUser)
+                                              }
+                                              disabled={isCheckingAll}
+                                            >
+                                              {isCheckingAll ? (
+                                                <img
+                                                  src={loadingGif}
+                                                  alt="Loading..."
+                                                  style={{
+                                                    width: 'var(--20px-V)',
+                                                    height: 'var(--20px-V)',
+                                                  }}
+                                                />
+                                              ) : (
+                                                'Check All'
+                                              )}
+                                            </button>
+                                            <button
+                                              onClick={() =>
+                                                handleUncheckAll(appUser)
+                                              }
+                                              disabled={isUncheckingAll}
+                                            >
+                                              {isUncheckingAll ? (
+                                                <img
+                                                  src={loadingGif}
+                                                  alt="Loading..."
+                                                  style={{
+                                                    width: 'var(--20px-V)',
+                                                    height: 'var(--20px-V)',
+                                                  }}
+                                                />
+                                              ) : (
+                                                'Uncheck All'
+                                              )}
+                                            </button>
+                                          </div>
+                                          <hr />
+                                        </div>
+                                        <div>
+                                          <h2
+                                            style={{
+                                              textAlign: 'left',
+                                              width: '100%',
+                                              marginBottom: 'var(--10px-V)',
+                                            }}
+                                          >
+                                            Allowed Properties{' '}
+                                            <select
+                                              name=""
+                                              key={`select-${appUser.id}`}
+                                              id=""
+                                              onChange={(e) => {
+                                                setSelectedBranchIdADD(
+                                                  e.target.value
+                                                );
+                                              }}
+                                              value={SelectedBranchIdADD}
+                                            >
+                                              <option
+                                                value={
+                                                  'Select NON SELECTED PLEASE SELECT OKOK'
+                                                }
+                                              >
+                                                Select
+                                              </option>
+                                              {Branches.filter(
+                                                (branch: any) =>
+                                                  !appUser.AllowedBranches.includes(
+                                                    branch.id
+                                                  )
+                                              ).map((branch: any) => (
+                                                <>
+                                                  <option
+                                                    value={branch.id}
+                                                    key={branch.id}
+                                                  >
+                                                    {branch.name}
+                                                  </option>
+                                                </>
+                                              ))}
+                                            </select>
+                                            <button
+                                              onClick={() => {
+                                                handleAddBranchToUser(appUser);
+                                              }}
+                                            >
+                                              {!AddBranchToUserIsAdding &&
+                                                'Add'}
+                                            </button>
+                                          </h2>
+                                          <div
+                                            style={{
+                                              display: 'flex',
+                                              justifyContent: 'center',
+                                            }}
+                                          >
+                                            {AddBranchToUserIsAdding ? (
+                                              <img
+                                                src={loadingGif}
+                                                alt="Loading..."
+                                                style={{
+                                                  width: 'var(--30px-V)',
+                                                  height: 'var(--30px-V)',
+                                                }}
+                                              />
+                                            ) : (
+                                              ''
+                                            )}
+                                          </div>
+
+                                          {appUser.AllowedBranches.match(
+                                            /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/g
+                                          )?.map((branchId: string) => (
+                                            <span
+                                              key={branchId}
+                                              style={{
+                                                display: 'flex',
+                                                justifyContent: 'space-between',
+                                                alignItems: 'center',
+                                                width: '60%',
+                                                backgroundColor:
+                                                  'var(--Secondary-Color60)',
+                                                marginTop: 'auto',
+                                                marginRight: 'auto',
+                                                marginBottom: 'var(--5px-V)',
+                                                marginLeft: 'auto',
+                                                paddingLeft: 'var(--5px-V)',
+                                                borderRadius: 'var(--5px-V)',
+                                              }}
+                                            >
+                                              {Branches.find(
+                                                (branch: any) =>
+                                                  branch.id === branchId
+                                              )?.name || 'Unknown'}{' '}
+                                              <button
+                                                onClick={() => {
+                                                  handleRemoveBranchFromUser(
+                                                    appUser,
+                                                    branchId
+                                                  );
+                                                }}
+                                              >
+                                                x
+                                              </button>
+                                            </span>
+                                          ))}
+                                          <hr />
+                                          <h2
+                                            style={{
+                                              textAlign: 'left',
+                                              width: '100%',
+                                              marginBottom: 'var(--10px-V)',
+                                            }}
+                                          >
+                                            Sign in with password
+                                          </h2>
+                                          {appUser.EnterWithPassword ? (
+                                            <div>
+                                              <button
+                                                onClick={() => {
+                                                  if (IsTrueAdmin) {
+                                                    setIsTrueAdmin(false);
+                                                  } else {
+                                                    setCheckIfTureAdmin(true);
+                                                  }
+                                                }}
+                                                style={{
+                                                  marginRight: 'var(--10px-V)',
+                                                }}
+                                              >
+                                                {IsTrueAdmin ? 'Hide' : 'Show'}
+                                              </button>
+                                              User password:{' '}
+                                              {IsTrueAdmin
+                                                ? appUser.password
+                                                : '********'}
+                                              <div style={{ display: 'flex' }}>
+                                                {IsTrueAdmin &&
+                                                  ChangingPasswordId !==
+                                                    appUser.id && (
+                                                    <button
+                                                      onClick={() =>
+                                                        setChangingPasswordId(
+                                                          appUser.id
+                                                        )
+                                                      }
+                                                    >
+                                                      Change Password
+                                                    </button>
+                                                  )}
+                                                {ChangingPasswordId !==
+                                                  appUser.id && (
+                                                  <button
+                                                    onClick={() => {
+                                                      handleDisallowEnterWithPassword(
+                                                        appUser
+                                                      );
+                                                    }}
+                                                  >
+                                                    Don't allow entering with
+                                                    password
+                                                  </button>
+                                                )}
+                                                {ChangingPasswordId ===
+                                                  appUser.id && (
+                                                  <>
+                                                    <input
+                                                      type={'text'}
+                                                      placeholder="New Password"
+                                                      style={{
+                                                        width: 'var(--180px-V)',
+                                                      }}
+                                                      value={NewAdminPassword}
+                                                      onChange={(e) =>
+                                                        setNewAdminPassword(
+                                                          e.target.value
+                                                        )
+                                                      }
+                                                    />
+                                                    <button
+                                                      onClick={() => {
+                                                        handleApplyPASSWORD();
+                                                      }}
+                                                      style={{
+                                                        marginRight:
+                                                          'var(--10px-V)',
+                                                      }}
+                                                    >
+                                                      Done
+                                                    </button>
+                                                    <button
+                                                      onClick={() => {
+                                                        setChangingPasswordId(
+                                                          ''
+                                                        );
+                                                      }}
+                                                    >
+                                                      Cancel
+                                                    </button>
+                                                  </>
+                                                )}
+                                              </div>
+                                            </div>
+                                          ) : (
+                                            <>
+                                              <button
+                                                onClick={() => {
+                                                  if (IsTrueAdmin) {
+                                                    if (
+                                                      appUser.EnterWithPassword
+                                                    ) {
+                                                      handleDisallowEnterWithPassword(
+                                                        appUser
+                                                      );
+                                                    } else {
+                                                      handleAllowEnterWithPassword(
+                                                        appUser
+                                                      );
+                                                      if (
+                                                        appUser.password === ''
+                                                      ) {
+                                                        setChangingPasswordId(
+                                                          appUser.id
+                                                        );
+                                                      }
+                                                    }
+                                                  } else {
+                                                    setCheckIfTureAdmin(true);
+                                                    if (
+                                                      appUser.EnterWithPassword
+                                                    ) {
+                                                      handleDisallowEnterWithPassword(
+                                                        appUser
+                                                      );
+                                                    } else {
+                                                      handleAllowEnterWithPassword(
+                                                        appUser
+                                                      );
+                                                    }
+                                                  }
+                                                }}
+                                                style={{
+                                                  marginRight: 'var(--10px-V)',
+                                                }}
+                                              >
+                                                {IsTrueAdmin
+                                                  ? appUser.EnterWithPassword
+                                                    ? 'Disallow'
+                                                    : 'Allow'
+                                                  : appUser.EnterWithPassword
+                                                  ? 'Allow'
+                                                  : 'Allow'}
+                                              </button>
+                                              Enter with password:{' '}
+                                              {appUser.EnterWithPassword
+                                                ? 'Yes'
+                                                : 'No'}
+                                            </>
+                                          )}
+                                        </div>
+                                      </div>
+                                    ))}
+                                </div>
+                              </div>
+                              {privilegeError && (
+                                <div
+                                  style={{
+                                    color: 'red',
+                                    marginTop: 'var(--10px-V)',
+                                  }}
+                                >
+                                  {privilegeError}
+                                </div>
                               )}
-                              {Branches.length > 0 &&
-                                storageManager.get('SelectedBranchId') !== '' &&
-                                storageManager.get('SelectedBranchId') && (
+                            </div>
+                          </>
+                        )
+                      ) : ViewBranchManagementPage ? (
+                        ViewBranchManagementPageNONAdm ? (
+                          <>
+                            <div
+                              style={{
+                                display: 'flex',
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                                height: '100%',
+                              }}
+                            >
+                              <div
+                                className="SignUpMainContainer"
+                                style={{
+                                  width: 'auto',
+                                  maxWidth: 'var(--400px-V)',
+                                  height: 'auto',
+                                  margin: 'auto',
+                                  background: 'var(--Secondary-Color20)',
+                                  borderRadius: 'var(--8px-V)',
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                  alignItems: 'center',
+                                  boxShadow:
+                                    'var(--0px-V) var(--4px-V) var(--4px-V) var(--0px-V) rgba(0, 0, 0, 0.25)',
+                                  padding: 'var(--20px-V)',
+                                }}
+                              >
+                                <div
+                                  style={{
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    width: '100%',
+                                    alignItems: 'center',
+                                    height: 'auto',
+                                    marginBottom: 'var(--15px-V)',
+                                  }}
+                                >
+                                  <h1
+                                    style={{
+                                      marginRight: 'var(--10px-V)',
+                                      marginTop: 'var(--0px-V)',
+                                      marginBottom: 'var(--0px-V)',
+                                      fontSize: 'var(--45px-V)',
+                                    }}
+                                  >
+                                    Security Check
+                                  </h1>
                                   <button
                                     onClick={() =>
                                       setViewBranchManagementPage(false)
@@ -2568,56 +2783,203 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                   >
                                     Back
                                   </button>
+                                </div>
+                                <p
+                                  style={{
+                                    color: 'var(--Text-Color)',
+                                    marginBottom: 'var(--25px-V)',
+                                  }}
+                                >
+                                  Please enter the account password to see the
+                                  branch list as admin
+                                </p>
+                                <input
+                                  type="password"
+                                  placeholder="Admin Password"
+                                  className="userName-input"
+                                  value={PasswordCheckInput}
+                                  onChange={(e) =>
+                                    setPasswordCheckInput(e.target.value)
+                                  }
+                                />
+                                <br />
+                                {passwordError && (
+                                  <p
+                                    style={{
+                                      color: 'red',
+                                      marginBottom: 'var(--10px-V)',
+                                    }}
+                                  >
+                                    {passwordError}
+                                  </p>
                                 )}
+                                <button
+                                  className="LoginButton"
+                                  onClick={handleSubmitAdminPasswordBranch}
+                                  disabled={isCheckingPassword}
+                                >
+                                  {isCheckingPassword ? (
+                                    <img
+                                      src={loadingGif}
+                                      alt="Loading..."
+                                      style={{
+                                        width: 'var(--20px-V)',
+                                        height: 'var(--20px-V)',
+                                      }}
+                                    />
+                                  ) : (
+                                    <>Submit {' ▶'}</>
+                                  )}
+                                </button>
+                              </div>{' '}
                             </div>
-                          </div>
-
-                          {isBranchesLoading ? (
+                          </>
+                        ) : (
+                          <div
+                            className="branch-management-container"
+                            style={{
+                              padding: 'var(--20px-V)',
+                              height: '100%',
+                              display: 'flex',
+                              flexDirection: 'column',
+                            }}
+                          >
                             <div
                               style={{
                                 display: 'flex',
-                                justifyContent: 'center',
+                                justifyContent: 'space-between',
                                 alignItems: 'center',
-                                minHeight: '200px',
+                                marginBottom: 'var(--20px-V)',
                               }}
                             >
-                              <img
-                                src={loadingGif}
+                              <div
                                 style={{
-                                  width: 'var(--50px-V)',
-                                  height: 'var(--50px-V)',
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                  gap: 'var(--5px-V)',
                                 }}
-                                alt="Loading branches..."
-                              />
-                            </div>
-                          ) : (
-                            <div
-                              className="branch-list"
-                              style={{
-                                display: 'flex',
-                                flexWrap: 'wrap',
-                                gap: 'var(--20px-V)',
-                                overflowY: 'auto',
-                              }}
-                            >
-                              {Branches.filter(
-                                (branch: any) =>
-                                  storageManager.get('SelectedAppUserId') ===
-                                    'admin' ||
+                              >
+                                {' '}
+                                <h1 style={{ margin: 0 }}>
+                                  Property Management
+                                </h1>
+                                <p style={{ margin: 0 }}>
+                                  {storageManager.get('SelectedAppUserId') ===
+                                  'admin' ? (
+                                    <>Admin</>
+                                  ) : (
+                                    appUsers.find(
+                                      (appUser) =>
+                                        appUser.id ===
+                                        storageManager.get('SelectedAppUserId')
+                                    )?.roleName
+                                  )}{' '}
+                                  -{' '}
+                                  <button
+                                    onClick={handleSwitchUserInBranchManagement}
+                                  >
+                                    Switch user
+                                  </button>
+                                </p>
+                              </div>
+                              <p style={{ width: '40%' }}>
+                                {storageManager.get('SelectedAppUserId') !==
+                                  'admin' && (
+                                  <>
+                                    You are only able to view the properties
+                                    selected for your user account. If this is
+                                    incorrect, please contact the administrator
+                                    to enable access to more properties.
+                                  </>
+                                )}
+                              </p>{' '}
+                              <div>
+                                {(storageManager.get('SelectedAppUserId') ===
+                                  'admin' ||
                                   appUsers
                                     .find(
                                       (appUser) =>
                                         appUser.id ===
                                         storageManager.get('SelectedAppUserId')
                                     )
-                                    ?.AllowedBranches.includes(branch.id)
-                              ).length === 0 ? (
-                                <div>
-                                  Could not find any branches. Please try
-                                  clicking refresh.
-                                </div>
-                              ) : (
-                                Branches.filter(
+                                    ?.privileges.includes('add a branch')) && (
+                                  <>
+                                    Limit {Branches.length}/{BranchLimit}
+                                  </>
+                                )}
+                                <button
+                                  className="appUserButtons"
+                                  style={{ marginRight: 'var(--20px-V)' }}
+                                  onClick={() => {
+                                    handleFetchBranches();
+                                  }}
+                                >
+                                  Refresh
+                                </button>
+                                {storageManager.get('SelectedAppUserId') ===
+                                  'admin' ||
+                                appUsers
+                                  .find(
+                                    (appUser) =>
+                                      appUser.id === 'admin' ||
+                                      appUser.id ===
+                                        storageManager.get('SelectedAppUserId')
+                                  )
+                                  ?.privileges.includes('add a branch') ? (
+                                  <button
+                                    className="appUserButtons"
+                                    style={{ marginRight: 'var(--20px-V)' }}
+                                    onClick={() => handleAddBranchFunction()}
+                                  >
+                                    Add New Property
+                                  </button>
+                                ) : (
+                                  <></>
+                                )}
+                                {Branches.length > 0 &&
+                                  storageManager.get('SelectedBranchId') !==
+                                    '' &&
+                                  storageManager.get('SelectedBranchId') && (
+                                    <button
+                                      onClick={() =>
+                                        setViewBranchManagementPage(false)
+                                      }
+                                    >
+                                      Back
+                                    </button>
+                                  )}
+                              </div>
+                            </div>
+
+                            {isBranchesLoading ? (
+                              <div
+                                style={{
+                                  display: 'flex',
+                                  justifyContent: 'center',
+                                  alignItems: 'center',
+                                  minHeight: '200px',
+                                }}
+                              >
+                                <img
+                                  src={loadingGif}
+                                  style={{
+                                    width: 'var(--50px-V)',
+                                    height: 'var(--50px-V)',
+                                  }}
+                                  alt="Loading properties..."
+                                />
+                              </div>
+                            ) : (
+                              <div
+                                className="branch-list"
+                                style={{
+                                  display: 'flex',
+                                  flexWrap: 'wrap',
+                                  gap: 'var(--20px-V)',
+                                  overflowY: 'auto',
+                                }}
+                              >
+                                {Branches.filter(
                                   (branch: any) =>
                                     storageManager.get('SelectedAppUserId') ===
                                       'admin' ||
@@ -2630,366 +2992,355 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                           )
                                       )
                                       ?.AllowedBranches.includes(branch.id)
-                                ).map((branch: any) => (
-                                  <div
-                                    key={branch.id}
-                                    className="branch-card"
-                                    style={{
-                                      backgroundColor:
-                                        'var(--Secondary-Color20)',
-                                      borderRadius: 'var(--12px-V)',
-                                      padding: 'var(--25px-V)',
-                                      width: 'var(--390px-V)',
-                                      boxShadow:
-                                        '0 var(--2px-V) var(--15px-V) rgba(0, 0, 0, 0.08)',
-                                      display: 'flex',
-                                      flexDirection: 'column',
-                                      gap: 'var(--20px-V)',
-                                      transition:
-                                        'transform 0.2s, box-shadow 0.2s',
-                                      cursor: 'default',
-
-                                      position: 'relative',
-                                    }}
-                                  >
-                                    {/* Header Section */}
+                                ).length === 0 ? (
+                                  <div>
+                                    Could not find any properties. Please try
+                                    clicking refresh.
+                                  </div>
+                                ) : (
+                                  Branches.filter(
+                                    (branch: any) =>
+                                      storageManager.get(
+                                        'SelectedAppUserId'
+                                      ) === 'admin' ||
+                                      appUsers
+                                        .find(
+                                          (appUser) =>
+                                            appUser.id ===
+                                            storageManager.get(
+                                              'SelectedAppUserId'
+                                            )
+                                        )
+                                        ?.AllowedBranches.includes(branch.id)
+                                  ).map((branch: any) => (
                                     <div
+                                      key={branch.id}
+                                      className="branch-card"
                                       style={{
-                                        display: 'flex',
-                                        justifyContent: 'space-between',
-                                        alignItems: 'center',
-                                        borderBottom:
-                                          '1px solid var(--Border-Color)',
-                                        paddingBottom: 'var(--15px-V)',
-                                      }}
-                                    >
-                                      <h3
-                                        style={{
-                                          margin: 0,
-                                          fontSize: 'var(--24px-V)',
-                                          fontWeight: '600',
-                                          color: 'var(--Text-Color)',
-                                        }}
-                                      >
-                                        {branch.name}
-                                      </h3>
-                                      <div
-                                        style={{
-                                          display: 'flex',
-                                          gap: 'var(--8px-V)',
-                                        }}
-                                      >
-                                        <button
-                                          className="appUserButtons"
-                                          onClick={() =>
-                                            handleStartEdit(branch)
-                                          }
-                                          style={{
-                                            padding:
-                                              'var(--8px-V) var(--12px-V)',
-                                            fontSize: 'var(--14px-V)',
-                                          }}
-                                        >
-                                          Edit
-                                        </button>
-                                        <button
-                                          className="appUserButtons"
-                                          onClick={() =>
-                                            handleDeleteBranch(branch.id)
-                                          }
-                                          style={{
-                                            padding:
-                                              'var(--8px-V) var(--12px-V)',
-                                            fontSize: 'var(--14px-V)',
-                                          }}
-                                        >
-                                          Delete
-                                        </button>
-                                      </div>
-                                    </div>
-
-                                    {/* Info Sections */}
-                                    <div
-                                      style={{
+                                        backgroundColor:
+                                          'var(--Secondary-Color20)',
+                                        borderRadius: 'var(--12px-V)',
+                                        padding: 'var(--25px-V)',
+                                        width: 'var(--390px-V)',
+                                        boxShadow:
+                                          '0 var(--2px-V) var(--15px-V) rgba(0, 0, 0, 0.08)',
                                         display: 'flex',
                                         flexDirection: 'column',
                                         gap: 'var(--20px-V)',
+                                        transition:
+                                          'transform 0.2s, box-shadow 0.2s',
+                                        cursor: 'default',
+
+                                        position: 'relative',
                                       }}
                                     >
-                                      {/* Location Section */}
+                                      {/* Header Section */}
+                                      <div
+                                        style={{
+                                          display: 'flex',
+                                          justifyContent: 'space-between',
+                                          alignItems: 'center',
+                                          borderBottom:
+                                            '1px solid var(--Border-Color)',
+                                          paddingBottom: 'var(--15px-V)',
+                                        }}
+                                      >
+                                        <h3
+                                          style={{
+                                            margin: 0,
+                                            fontSize: 'var(--24px-V)',
+                                            fontWeight: '600',
+                                            color: 'var(--Text-Color)',
+                                          }}
+                                        >
+                                          {branch.name}
+                                        </h3>
+                                        <div
+                                          style={{
+                                            display: 'flex',
+                                            gap: 'var(--8px-V)',
+                                          }}
+                                        >
+                                          <button
+                                            className="appUserButtons"
+                                            onClick={() =>
+                                              handleStartEdit(branch)
+                                            }
+                                            style={{
+                                              padding:
+                                                'var(--8px-V) var(--12px-V)',
+                                              fontSize: 'var(--14px-V)',
+                                            }}
+                                          >
+                                            Edit
+                                          </button>
+                                          <button
+                                            className="appUserButtons"
+                                            onClick={() =>
+                                              handleDeleteBranch(branch.id)
+                                            }
+                                            style={{
+                                              padding:
+                                                'var(--8px-V) var(--12px-V)',
+                                              fontSize: 'var(--14px-V)',
+                                            }}
+                                          >
+                                            Delete
+                                          </button>
+                                        </div>
+                                      </div>
+
+                                      {/* Info Sections */}
                                       <div
                                         style={{
                                           display: 'flex',
                                           flexDirection: 'column',
-                                          gap: 'var(--5px-V)',
+                                          gap: 'var(--20px-V)',
                                         }}
                                       >
-                                        <h4
+                                        {/* Location Section */}
+                                        <div
                                           style={{
-                                            margin: 0,
-                                            fontSize: 'var(--16px-V)',
-                                            color: 'var(--Text-Color-80)',
-                                            fontWeight: '600',
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            gap: 'var(--5px-V)',
                                           }}
                                         >
-                                          Location
-                                        </h4>
-                                        <p
-                                          style={{
-                                            margin: 0,
-                                            fontSize: 'var(--15px-V)',
-                                            color: 'var(--Text-Color-60)',
-                                            lineHeight: '1.4',
-                                          }}
-                                        >
-                                          {branch.location}
-                                        </p>
-                                      </div>
-
-                                      {/* Building Stats Section */}
-                                      {getBranchData && (
-                                        <>
-                                          <div
+                                          <h4
                                             style={{
-                                              display: 'grid',
-                                              gridTemplateColumns:
-                                                'repeat(2, 1fr)',
-                                              gap: 'var(--15px-V)',
-                                              backgroundColor:
-                                                'var(--Background-Color)',
-                                              padding: 'var(--15px-V)',
-                                              borderRadius: 'var(--8px-V)',
+                                              margin: 0,
+                                              fontSize: 'var(--16px-V)',
+                                              color: 'var(--Text-Color-80)',
+                                              fontWeight: '600',
                                             }}
                                           >
-                                            <StatItem
-                                              label="Total Floors"
-                                              value={branch.totalFloors || 0}
-                                            />
-                                            <StatItem
-                                              label="Total Rooms"
-                                              value={branch.totalRooms || 0}
-                                            />
-                                            <StatItem
-                                              label="Total Tenants"
-                                              value={branch.totalTenants || 0}
-                                            />
-                                            <StatItem
-                                              label="Occupied Rooms"
-                                              value={branch.occupiedRooms || 0}
-                                            />
-                                            <StatItem
-                                              label="Vacant Rooms"
-                                              value={branch.vacantRooms || 0}
-                                            />
-                                          </div>
+                                            Location
+                                          </h4>
+                                          <p
+                                            style={{
+                                              margin: 0,
+                                              fontSize: 'var(--15px-V)',
+                                              color: 'var(--Text-Color-60)',
+                                              lineHeight: '1.4',
+                                            }}
+                                          >
+                                            {branch.location}
+                                          </p>
+                                        </div>
 
-                                          {/* Financial Section */}
-                                          {storageManager.get(
-                                            'SelectedAppUserId'
-                                          ) === 'admin' ||
-                                          appUsers
-                                            .find(
-                                              (appUser) =>
-                                                appUser.id ===
-                                                storageManager.get(
-                                                  'SelectedAppUserId'
-                                                )
-                                            )
-                                            ?.privileges.includes(
-                                              'View dashboard page'
-                                            ) ? (
+                                        {/* Building Stats Section */}
+                                        {getBranchData && (
+                                          <>
                                             <div
                                               style={{
+                                                display: 'grid',
+                                                gridTemplateColumns:
+                                                  'repeat(2, 1fr)',
+                                                gap: 'var(--15px-V)',
                                                 backgroundColor:
                                                   'var(--Background-Color)',
                                                 padding: 'var(--15px-V)',
                                                 borderRadius: 'var(--8px-V)',
                                               }}
                                             >
-                                              <h4
-                                                style={{
-                                                  margin: 0,
-                                                  marginBottom: 'var(--10px-V)',
-                                                  fontSize: 'var(--16px-V)',
-                                                  color: 'var(--Text-Color-80)',
-                                                  fontWeight: '600',
-                                                }}
-                                              >
-                                                Financial Overview
-                                              </h4>
+                                              <StatItem
+                                                label="Total Floors"
+                                                value={branch.totalFloors || 0}
+                                              />
+                                              <StatItem
+                                                label="Total Rooms"
+                                                value={branch.totalRooms || 0}
+                                              />
+                                              <StatItem
+                                                label="Total Tenants"
+                                                value={branch.totalTenants || 0}
+                                              />
+                                              <StatItem
+                                                label="Occupied Rooms"
+                                                value={
+                                                  branch.occupiedRooms || 0
+                                                }
+                                              />
+                                              <StatItem
+                                                label="Vacant Rooms"
+                                                value={branch.vacantRooms || 0}
+                                              />
+                                            </div>
+
+                                            {/* Financial Section */}
+                                            {storageManager.get(
+                                              'SelectedAppUserId'
+                                            ) === 'admin' ||
+                                            appUsers
+                                              .find(
+                                                (appUser) =>
+                                                  appUser.id ===
+                                                  storageManager.get(
+                                                    'SelectedAppUserId'
+                                                  )
+                                              )
+                                              ?.privileges.includes(
+                                                'View dashboard page'
+                                              ) ? (
                                               <div
                                                 style={{
-                                                  display: 'flex',
-                                                  justifyContent:
-                                                    'space-between',
+                                                  backgroundColor:
+                                                    'var(--Background-Color)',
+                                                  padding: 'var(--15px-V)',
+                                                  borderRadius: 'var(--8px-V)',
                                                 }}
                                               >
-                                                <FinancialItem
-                                                  label="This Month Revenue"
-                                                  value={
-                                                    formatNumberWithSuffix(
-                                                      branch.monthlyRevenue?.toLocaleString()
-                                                    ) || 0
-                                                  }
-                                                />
-                                                <FinancialItem
-                                                  label="This Month Expenses"
-                                                  value={
-                                                    formatNumberWithSuffix(
-                                                      branch.monthlyExpenses?.toLocaleString()
-                                                    ) || 0
-                                                  }
-                                                />
-                                                <FinancialItem
-                                                  label="This Month Profit"
-                                                  value={
-                                                    formatNumberWithSuffix(
-                                                      branch.monthlyProfit?.toLocaleString()
-                                                    ) || 0
-                                                  }
-                                                />
-                                              </div>
-                                            </div>
-                                          ) : (
-                                            <></>
-                                          )}
-                                        </>
-                                      )}
-                                    </div>
-
-                                    {/* Actions Section */}
-                                    <div
-                                      style={{
-                                        marginTop: 'auto',
-                                        display: 'flex',
-                                        flexDirection: 'column',
-                                        gap: 'var(--10px-V)',
-                                        borderTop:
-                                          '1px solid var(--Border-Color)',
-                                        paddingTop: 'var(--15px-V)',
-                                      }}
-                                    >
-                                      <button
-                                        className="appUserButtons"
-                                        onClick={() =>
-                                          handleSelectBranch(branch.id)
-                                        }
-                                        style={{
-                                          width: '100%',
-                                          padding: 'var(--12px-V)',
-                                          fontSize: 'var(--16px-V)',
-                                          fontWeight: '500',
-                                          background: 'var(--Primary-Color)',
-                                          color: 'var(--Text-Color-Reverse)',
-                                        }}
-                                      >
-                                        Select Branch
-                                      </button>
-
-                                      <label
-                                        style={{
-                                          display: 'flex',
-                                          alignItems: 'center',
-                                          gap: 'var(--8px-V)',
-                                          fontSize: 'var(--14px-V)',
-                                          color: 'var(--Text-Color-60)',
-                                          justifyContent: 'center',
-                                        }}
-                                      >
-                                        <input
-                                          type="checkbox"
-                                          checked={branch?.lock || false}
-                                          onChange={(e) => {
-                                            setBranches((prev) =>
-                                              prev.map((brancha) =>
-                                                brancha.id === branch.id
-                                                  ? {
-                                                      ...brancha,
-                                                      lock: e.target.checked,
+                                                <h4
+                                                  style={{
+                                                    margin: 0,
+                                                    marginBottom:
+                                                      'var(--10px-V)',
+                                                    fontSize: 'var(--16px-V)',
+                                                    color:
+                                                      'var(--Text-Color-80)',
+                                                    fontWeight: '600',
+                                                  }}
+                                                >
+                                                  Financial Overview
+                                                </h4>
+                                                <div
+                                                  style={{
+                                                    display: 'flex',
+                                                    justifyContent:
+                                                      'space-between',
+                                                  }}
+                                                >
+                                                  <FinancialItem
+                                                    label="This Month Revenue"
+                                                    value={
+                                                      formatNumberWithSuffix(
+                                                        branch.monthlyRevenue?.toLocaleString()
+                                                      ) || 0
                                                     }
-                                                  : brancha
-                                              )
-                                            );
-                                          }}
-                                          style={{ margin: 0 }}
-                                        />
-                                        Lock this PC to this branch
-                                      </label>
-                                    </div>
-                                  </div>
-                                ))
-                              )}
+                                                  />
+                                                  <FinancialItem
+                                                    label="This Month Expenses"
+                                                    value={
+                                                      formatNumberWithSuffix(
+                                                        branch.monthlyExpenses?.toLocaleString()
+                                                      ) || 0
+                                                    }
+                                                  />
+                                                  <FinancialItem
+                                                    label="This Month Profit"
+                                                    value={
+                                                      formatNumberWithSuffix(
+                                                        branch.monthlyProfit?.toLocaleString()
+                                                      ) || 0
+                                                    }
+                                                  />
+                                                </div>
+                                              </div>
+                                            ) : (
+                                              <></>
+                                            )}
+                                          </>
+                                        )}
+                                      </div>
 
-                              {Branches.length === 0 && (
-                                <div
-                                  style={{
-                                    width: '100%',
-                                    textAlign: 'center',
-                                    padding: 'var(--20px-V)',
-                                    color: 'var(--Text-Color-60)',
-                                  }}
-                                >
-                                  No branches found. Click "Add New Branch" to
-                                  create one.
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      )
-                    ) : (
-                      children
-                    )}
-                  </>
+                                      {/* Actions Section */}
+                                      <div
+                                        style={{
+                                          marginTop: 'auto',
+                                          display: 'flex',
+                                          flexDirection: 'column',
+                                          gap: 'var(--10px-V)',
+                                          borderTop:
+                                            '1px solid var(--Border-Color)',
+                                          paddingTop: 'var(--15px-V)',
+                                        }}
+                                      >
+                                        <button
+                                          className="appUserButtons"
+                                          onClick={() =>
+                                            handleSelectBranch(branch.id)
+                                          }
+                                          style={{
+                                            width: '100%',
+                                            padding: 'var(--12px-V)',
+                                            fontSize: 'var(--16px-V)',
+                                            fontWeight: '500',
+                                            background: 'var(--Primary-Color)',
+                                            color: 'var(--Text-Color-Reverse)',
+                                          }}
+                                        >
+                                          Select Property
+                                        </button>
+
+                                        <label
+                                          style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 'var(--8px-V)',
+                                            fontSize: 'var(--14px-V)',
+                                            color: 'var(--Text-Color-60)',
+                                            justifyContent: 'center',
+                                          }}
+                                        >
+                                          <input
+                                            type="checkbox"
+                                            checked={branch?.lock || false}
+                                            onChange={(e) => {
+                                              setBranches((prev) =>
+                                                prev.map((brancha) =>
+                                                  brancha.id === branch.id
+                                                    ? {
+                                                        ...brancha,
+                                                        lock: e.target.checked,
+                                                      }
+                                                    : brancha
+                                                )
+                                              );
+                                            }}
+                                            style={{ margin: 0 }}
+                                          />
+                                          Lock this PC to this branch
+                                        </label>
+                                      </div>
+                                    </div>
+                                  ))
+                                )}
+
+                                {Branches.length === 0 && (
+                                  <div
+                                    style={{
+                                      width: '100%',
+                                      textAlign: 'center',
+                                      padding: 'var(--20px-V)',
+                                      color: 'var(--Text-Color-60)',
+                                    }}
+                                  >
+                                    No Property found. Click "Add New Property"
+                                    to create one.
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        )
+                      ) : (
+                        children
+                      )}
+                    </>
+                  )
+                ) : (
+                  <AccountCheck />
                 )
+              ) : isSignUpMode ? (
+                <SignUp />
               ) : (
-                <AccountCheck />
+                <LogIn />
               )
-            ) : isSignUpMode ? (
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  height: '100%',
-                }}
-              >
-                <SignUpPage
-                  setisSignUpMode={setisSignUpMode}
-                  setisSignedIn={setisSignedIn}
-                  setChangeMade={setChangeMade}
-                  email={email}
-                  password={password}
-                  setEmail={setEmail}
-                  setPassword={setPassword}
-                />
-              </div>
             ) : (
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  height: '100%',
-                }}
-              >
-                <LoginPage
-                  setisSignUpMode={setisSignUpMode}
-                  setisSignedIn={setisSignedIn}
-                  setChangeMade={setChangeMade}
-                  email={email}
-                  password={password}
-                  setEmail={setEmail}
-                  username={username}
-                  setUsername={setUsername}
-                  setPassword={setPassword}
-                  setSelectedAppUser={setSelectedAppUser}
-                  setAppUserManagerShow={setAppUserManagerShow}
-                  fetchBranches={handleShowBranches}
-                  RefreshComponent={RefreshComponent}
-                  setViewBranchManagementPage={setViewBranchManagementPage}
-                />
-              </div>
+              <>
+                {ForceSignUp === 'in' && <LogIn />}
+                {ForceSignUp === 'up' && <SignUp />}
+              </>
             )}
           </>
         )}
@@ -3028,7 +3379,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                   marginBottom: 'var(--20px-V)',
                 }}
               >
-                <h2 style={{ margin: 0 }}>Add New Branch</h2>
+                <h2 style={{ margin: 0 }}>Add New Property</h2>
                 <button
                   className="appUserButtons"
                   onClick={() => setShowAddBranchModal(false)}
@@ -3041,7 +3392,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                 <label
                   style={{ display: 'block', marginBottom: 'var(--5px-V)' }}
                 >
-                  Branch Name:
+                  Property Name:
                 </label>
                 <input
                   type="text"
@@ -3052,7 +3403,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                       name: e.target.value,
                     }))
                   }
-                  placeholder="Enter Branch Name"
+                  placeholder="Enter Property Name"
                   style={{
                     width: '95%',
                     padding: 'var(--8px-V)',
@@ -3076,7 +3427,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                       location: e.target.value,
                     }))
                   }
-                  placeholder="Enter Branch Location"
+                  placeholder="Enter Property Location"
                   style={{
                     width: '95%',
                     padding: 'var(--8px-V)',
@@ -3099,7 +3450,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                       description: e.target.value,
                     }))
                   }
-                  placeholder="Enter Branch Description"
+                  placeholder="Enter Property Description"
                   style={{
                     width: '95%',
                     padding: 'var(--8px-V)',
@@ -3155,7 +3506,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                       style={{ width: '20px', height: '20px' }}
                     />
                   ) : (
-                    'Add Branch'
+                    'Add Property'
                   )}
                 </button>
               </div>
@@ -3206,7 +3557,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                     fontWeight: 600,
                   }}
                 >
-                  Edit Branch
+                  Edit Property
                 </h2>
                 <button
                   className="appUserButtons"
@@ -3238,7 +3589,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                     color: 'var(--Text-Color-80)',
                   }}
                 >
-                  Branch Name
+                  Property Name
                 </label>
                 <input
                   type="text"
@@ -3420,7 +3771,14 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                 transition: 'transform 0.2s ease 0s',
               }}
             >
-              <h1 style={{ marginBottom: 'var(--0px-V)' }}>Switch App User</h1>
+              <h1
+                style={{
+                  marginBottom: 'var(--0px-V)',
+                  marginTop: 'var(--10px-V)',
+                }}
+              >
+                Switch App User
+              </h1>
               <div
                 style={{
                   margin: 'var(--10px-V)',

@@ -1,3 +1,26 @@
+@import url('./Project/CSS/RoomArea.css');
+@import url('./Project/CSS/ToolsPage.css');
+@import url('./Project/CSS/Reports.css');
+@import url('./Project/CSS/Room.css');
+@import url('./Project/CSS/AgreementViewerForRoom.css');
+@import url('./Project/CSS/Calendar.css');
+@import url('./Project/CSS/DocumentInteractor.css');
+@import url('./Project/CSS/ImageInteractor.css');
+@import url('./Project/CSS/NavBarCss.css');
+@import url('./Project/CSS/Dashboard.css');
+@import url('./Project/CSS/SignUpAndLogin.css');
+
+
+section {
+  opacity: 1;
+  transform: none;
+}
+* {
+  margin: revert; 
+    padding: revert; 
+     box-sizing:revert; 
+    font-family: inherit;
+}
 :root {
   --Text-Color-Grey: rgba(128, 128, 128);
   --Text-Color: rgb(255, 255, 255);
@@ -121,6 +144,7 @@
   --250px-V: 250px;
   --256px-V: 256px;
   --260px-V: 260px;
+  --270px-V: 270px;
   --280px-V: 280px;
   --284px-V: 284px;
   --286px-V: 286px;
@@ -446,28 +470,28 @@ em {
 }
 
 /* Base size (1920px width) */
-input[type='checkbox'] {
+input[type='checkbox'], input[type='radio'] {
   transform: scale(1);
-  transform-origin: left center; /* This keeps the checkbox aligned properly */
+  transform-origin: left center; /* This keeps the checkbox/radio aligned properly */
 }
 
 /* 1280px screen width */
 @media screen and (max-width: 1280px) {
-  input[type='checkbox'] {
+  input[type='checkbox'], input[type='radio'] {
     transform: scale(0.67); /* 1280/1920 = ~0.67 */
   }
 }
 
 /* 1366 screen width */
 @media screen and (min-width: 1281px) and (max-width: 1366px) {
-  input[type='checkbox'] {
+  input[type='checkbox'], input[type='radio'] {
     transform: scale(0.71); /* 1366/1920 = ~0.71 */
   }
 }
 
 /* 4K screen width */
 @media screen and (min-width: 2560px) {
-  input[type='checkbox'] {
+  input[type='checkbox'], input[type='radio'] {
     transform: scale(2); /* 3840/1920 = 2 */
   }
 }
@@ -574,6 +598,7 @@ input[type='checkbox'] {
     --250px-V: 166.7px;
     --256px-V: 170.7px;
     --260px-V: 173.3px;
+    --270px-V: 180px;
     --280px-V: 186.7px;
     --284px-V: 189.3px;
     --286px-V: 190.7px;
@@ -729,6 +754,7 @@ input[type='checkbox'] {
     --250px-V: 176.4px;
     --256px-V: 180.7px;
     --260px-V: 183.5px;
+    --270px-V: 191.5px;
     --510px-V: 360px;
     --280px-V: 197.6px;
     --284px-V: 200.4px;
@@ -881,6 +907,7 @@ input[type='checkbox'] {
     --250px-V: 500px;
     --256px-V: 512px;
     --260px-V: 520px;
+    --270px-V: 540px;
     --280px-V: 560px;
     --284px-V: 568px;
     --286px-V: 572px;

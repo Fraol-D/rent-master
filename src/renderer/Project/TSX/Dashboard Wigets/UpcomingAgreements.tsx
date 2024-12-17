@@ -1,5 +1,5 @@
-import { getValuesWithSql } from 'Backend/localServerApis';
 import React, { useEffect, useState } from 'react';
+import { useGlobal } from 'renderer/components/GlobalContext';
 
 const UpcomingAgreements = ({
   RoomList,
@@ -14,22 +14,29 @@ const UpcomingAgreements = ({
   const [expiredAgreements, setExpiredAgreements] = useState<agreements[]>([]);
   const [daysThreshold, setDaysThreshold] = useState(30);
   const [activeTab, setActiveTab] = useState('upcoming');
-
+  const {
+    
+    AllAgreements,
+    setAllAgreements,
+  } = useGlobal();
   useEffect(() => {
     const fetchAgreements = async () => {
       const currentTime = new Date().getTime();
       const thresholdTime = currentTime + daysThreshold * 24 * 60 * 60 * 1000;
 
       // Fetch upcoming agreements
-      const upcomingData = await getValuesWithSql(
-        'agreements',
-        `WHERE endTime > ${currentTime} AND endTime <= ${thresholdTime} AND branchId = '${SelectedBranchId}'`
+      const upcomingData = AllAgreements.filter(
+        (agreement) =>
+          agreement.endTime > currentTime &&
+          agreement.endTime <= thresholdTime &&
+          agreement.branchId === SelectedBranchId
       );
       
       // Fetch expired agreements
-      const expiredData = await getValuesWithSql(
-        'agreements',
-        `WHERE endTime <= ${currentTime} AND branchId = '${SelectedBranchId}'`
+      const expiredData = AllAgreements.filter(
+        (agreement) =>
+          agreement.endTime <= currentTime &&
+          agreement.branchId === SelectedBranchId
       );
 
       // Filter agreements that are currently selected for rooms

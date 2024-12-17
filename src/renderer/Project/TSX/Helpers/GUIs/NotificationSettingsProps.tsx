@@ -5,6 +5,7 @@ import {
   getValuesWithSql,
   updateValue,
 } from 'Backend/localServerApis';
+import { useGlobal } from 'renderer/components/GlobalContext';
 
 interface NotificationSettingsProps {
   notificationSettings: number;
@@ -58,21 +59,25 @@ const NotificationSettingsTable: React.FC<NotificationSettingsProps> = ({
     '5 days after due',
     '7 days after due',
   ];
-
+  const {
+    AllEmailTemplates,
+    setAllEmailTemplates,
+    AllSmsTemplates,
+    setAllSmsTemplates,
+    AllNotificationTemplateSelections,
+    setAllNotificationTemplateSelections,
+  } = useGlobal();
   useEffect(() => {
     const fetchEmailTemplates = async () => {
-      const templates = await getValuesWithSql('email_templates', 'WHERE 1');
+      const templates = AllEmailTemplates;
       setEmailTemplates(templates);
     };
     const fetchSmsTemplates = async () => {
-      const templates = await getValuesWithSql('sms_templates', 'WHERE 1');
+      const templates = AllSmsTemplates;
       setSmsTemplates(templates);
     };
     const fetchSelectedTemplates = async () => {
-      const selections = await getValuesWithSql(
-        'notification_template_selections',
-        `WHERE userId = '${userId}' AND branchId = '${SelectedBranchId}'`
-      );
+      const selections = AllNotificationTemplateSelections;
       const selectionsMap = selections.reduce((acc, selection) => {
         const expectedId = `${roomId}_${selection.notification_type}`;
         if (selection.id === expectedId) {
@@ -137,9 +142,8 @@ const NotificationSettingsTable: React.FC<NotificationSettingsProps> = ({
       smsSelf: 'sms_self_template_id'
     };
 
-    const NotificationSettingsSelectionRaw = await getValuesWithSql(
-      'notification_template_selections',
-      `WHERE id = '${roomId}_${notificationType}' AND notification_type = '${notificationType}'`
+    const NotificationSettingsSelectionRaw = AllNotificationTemplateSelections.filter(
+      (selection) => selection.id === `${roomId}_${notificationType}` && selection.notification_type === notificationType
     );
 
     if (NotificationSettingsSelectionRaw.length === 0) {
@@ -154,6 +158,13 @@ const NotificationSettingsTable: React.FC<NotificationSettingsProps> = ({
         },
         setChangeMade
       );
+      setAllNotificationTemplateSelections([...AllNotificationTemplateSelections, {
+        id: `${roomId}_${notificationType}`,
+        notification_type: notificationType,
+        [dbFieldMap[type]]: templateId,
+        userId: userId,
+        branchId: SelectedBranchId,
+      },]);
     } else {
       await updateValue(
         'notification_template_selections',
@@ -163,6 +174,11 @@ const NotificationSettingsTable: React.FC<NotificationSettingsProps> = ({
         setChangeMade,
         selectedTemplates[notificationType]
       );
+      setAllNotificationTemplateSelections(AllNotificationTemplateSelections.map(selection =>
+        selection.id === `${roomId}_${notificationType}`
+          ? { ...selection, [dbFieldMap[type]]: templateId }
+          : selection
+      ));
     }
   };
 

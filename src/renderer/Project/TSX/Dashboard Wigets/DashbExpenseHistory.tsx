@@ -412,7 +412,7 @@ const DashbExpenseHistory: React.FC<DashbExpenseHistoryProps> = ({
                     color: 'var(--Text-Color)',
                   }}
                 >
-                  {expense.name}
+                  {expense.name} <br /> <span style={{fontSize: 'var(--12px-V)', color: 'var(--Text-Color-Grey)'}}>{expense.category}</span>
                 </div>
                 <div
                   style={{

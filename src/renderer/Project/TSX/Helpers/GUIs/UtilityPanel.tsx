@@ -7,6 +7,7 @@ import {
 import React, { useEffect, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import CurrencySign, { convertCurrency, formatNumberWithSuffix, GetDefaultCurrency, getRateByDate } from '../CurrencySign';
+import { useGlobal } from 'renderer/components/GlobalContext';
 
 type PaymentType = {
   id: string;
@@ -46,7 +47,11 @@ const UtilityPanel: React.FC<props> = ({
   const [visiblePastUtilities, setVisiblePastUtilities] = useState(10);
   const [visibleFutureUtilities, setVisibleFutureUtilities] = useState(10);
   const [tempPrice, setTempPrice] = useState<{ [key: string]: string }>({});
-
+  const { 
+    
+    AllUtilityPayments,
+    setAllUtilityPayments
+  } = useGlobal();
   useEffect(() => {
     const SetTheUtilityData = async () => {
       const ListOfUtilities: UtilityDateObject[] = [];
@@ -66,7 +71,6 @@ const UtilityPanel: React.FC<props> = ({
           startDate = utilityPaymentStartDate;
         }
       }
-      console.log(startDate, "TENANT START", tenant?.startTime, "utility payment start", roomType.utilityPaymentStartDate);
 
       let endDate: Date;
       if (tenant?.SelectedAgreement === 'Open-Ended') {
@@ -79,9 +83,8 @@ const UtilityPanel: React.FC<props> = ({
       let currentDate = new Date(startDate);
       let i = 0;
 
-      const utilityDataFromDatabase = await getValuesWithSql(
-        'utility_payments',
-        `WHERE roomId = '${roomType.id}'`
+      const utilityDataFromDatabase = AllUtilityPayments.filter(
+        (utility) => utility.roomId === roomType.id
       );
 
       // Calculate past utilities from the current date
@@ -225,7 +228,6 @@ const UtilityPanel: React.FC<props> = ({
       );
       ListOfUtilities.length = 0;
       ListOfUtilities.push(...uniqueUtilities);
-      console.log(ListOfUtilities);
       setUtilityData(ListOfUtilities);
 
       // Scroll to the current date
@@ -263,18 +265,14 @@ const UtilityPanel: React.FC<props> = ({
   };
 
   const handlePaidChange = async (utilityId: string, paymentId: string) => {
-    console.log('handlePaidChange called with:', { utilityId, paymentId });
 
     let updatedPayment: PaymentType | undefined;
     let changeTo = false;
     setUtilityData((prevData) => {
-      console.log('Previous utility data:', prevData);
       const newData = prevData.map((utility) => {
         if (utility.id === utilityId) {
-          console.log('Updating utility:', utility);
           const updatedPaymentTypes = utility.PaymentTypes.map((payment) => {
             if (payment.id === paymentId) {
-              console.log('Updating payment:', payment);
               changeTo = !payment.paid;
               updatedPayment = { ...payment, paid: !payment.paid };
               return updatedPayment;
@@ -285,7 +283,6 @@ const UtilityPanel: React.FC<props> = ({
         }
         return utility;
       });
-      console.log('New utility data:', newData);
       return newData;
     });
 
@@ -303,18 +300,13 @@ const UtilityPanel: React.FC<props> = ({
         return utility;
       });
     });
-    console.log('Fetching existing payment from database');
-    const existingPayment = await getValuesWithSql(
-      'utility_payments',
-      `WHERE id = '${paymentId}'`
+    const existingPayment = AllUtilityPayments.find(
+      (utility) => utility.id === paymentId
     );
-    console.log('Existing payment:', existingPayment);
 
-    console.log('Updated payment:', updatedPayment);
 
     if (updatedPayment) {
-      if (existingPayment.length > 0) {
-        console.log('Updating existing payment in database');
+      if (existingPayment) {
         await updateValue(
           'utility_payments',
           paymentId,
@@ -323,8 +315,12 @@ const UtilityPanel: React.FC<props> = ({
           setChangeMade,
           !updatedPayment.paid ? 1 : 0
         );
+        setAllUtilityPayments((prev) =>
+          prev.map((utility) =>
+            utility.id === paymentId ? { ...utility, paid: updatedPayment.paid } : utility
+          )
+        );
       } else {
-        console.log('Adding new payment to database');
         await addValue(
           'utility_payments',
           {
@@ -341,6 +337,18 @@ const UtilityPanel: React.FC<props> = ({
           },
           setChangeMade
         );
+        setAllUtilityPayments((prev) => [...prev,  {
+          id: paymentId,
+            type: updatedPayment.type,
+            price: updatedPayment.price || 0,
+            custom: updatedPayment.custom ? 1 : 0,
+            paid: updatedPayment.paid ? 1 : 0,
+            date: updatedPayment.ParentDate,
+            Currency: updatedPayment.Currency,
+            roomId: roomType.id,
+            userId: selectedUserId,
+            branchId: SelectedBranchId,
+        }]);
       }
     }
     console.log('handlePaidChange completed');
@@ -394,16 +402,15 @@ const UtilityPanel: React.FC<props> = ({
       });
     });
     console.log('Fetching existing payment from database');
-    const existingPayment = await getValuesWithSql(
-      'utility_payments',
-      `WHERE id = '${paymentId}'`
+    const existingPayment = AllUtilityPayments.find(
+      (utility) => utility.id === paymentId
     );
     console.log('Existing payment:', existingPayment);
 
     console.log('Updated payment:', updatedPayment);
 
     if (updatedPayment) {
-      if (existingPayment.length > 0) {
+      if (existingPayment) {
         console.log('Updating existing payment in database');
         await updateValue(
           'utility_payments',
@@ -412,6 +419,11 @@ const UtilityPanel: React.FC<props> = ({
           updatedPayment.paid ? 1 : 0,
           setChangeMade,
           !updatedPayment.paid ? 1 : 0
+        );
+        setAllUtilityPayments((prev) =>
+          prev.map((utility) =>
+            utility.id === paymentId ? { ...utility, paid: updatedPayment.paid } : utility
+          )
         );
       } else {
         console.log('Adding new payment to database');
@@ -431,6 +443,18 @@ const UtilityPanel: React.FC<props> = ({
           },
           setChangeMade
         );
+        setAllUtilityPayments((prev) => [...prev,  {
+          id: paymentId,
+          type: updatedPayment.type,
+          price: updatedPayment.price || 0,
+          custom: updatedPayment.custom ? 1 : 0,
+          paid: updatedPayment.paid ? 1 : 0,
+          date: updatedPayment.ParentDate,
+          Currency: updatedPayment.Currency,
+          roomId: roomType.id,
+          userId: selectedUserId,
+          branchId: SelectedBranchId,
+        }]);
       }
     }
     console.log('handlePaidChangeWithValue completed');
@@ -474,16 +498,15 @@ const UtilityPanel: React.FC<props> = ({
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     console.log('Fetching existing payment from database');
-    const existingPayment = await getValuesWithSql(
-      'utility_payments',
-      `WHERE id = '${paymentId}'`
+    const existingPayment = AllUtilityPayments.find(
+      (utility) => utility.id === paymentId
     );
     console.log('Existing payment:', existingPayment);
 
     console.log('Updated payment:', updatedPayment);
 
     if (updatedPayment) {
-      if (existingPayment.length > 0) {
+      if (existingPayment) {
         console.log('Updating existing payment in database');
         await updateValue(
           'utility_payments',
@@ -493,6 +516,11 @@ const UtilityPanel: React.FC<props> = ({
           setChangeMade,
           !updatedPayment.custom ? 1 : 0
         );
+        setAllUtilityPayments((prev) =>
+          prev.map((utility) =>
+            utility.id === paymentId ? { ...utility, custom: updatedPayment.custom } : utility
+          )
+        );
         if (!updatedPayment.custom) {
           await updateValue(
             'utility_payments',
@@ -501,6 +529,11 @@ const UtilityPanel: React.FC<props> = ({
             updatedPayment.price,
             setChangeMade,
             existingPayment[0].price
+          );
+          setAllUtilityPayments((prev) =>
+            prev.map((utility) =>
+              utility.id === paymentId ? { ...utility, price: updatedPayment.price } : utility
+            )
           );
         }
       } else {
@@ -521,6 +554,18 @@ const UtilityPanel: React.FC<props> = ({
           },
           setChangeMade
         );
+        setAllUtilityPayments((prev) => [...prev,  {
+          id: paymentId,
+          type: updatedPayment.type,
+          price: updatedPayment.price || 0,
+          custom: updatedPayment.custom ? 1 : 0,
+          paid: updatedPayment.paid ? 1 : 0,
+          date: updatedPayment.ParentDate,
+          Currency: updatedPayment.Currency,
+          roomId: roomType.id,
+          branchId: SelectedBranchId,
+          userId: selectedUserId,
+        }]);
       }
     }
     console.log('handleCustomChange completed');
@@ -564,16 +609,15 @@ const UtilityPanel: React.FC<props> = ({
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     console.log('Fetching existing payment from database');
-    const existingPayment = await getValuesWithSql(
-      'utility_payments',
-      `WHERE id = '${paymentId}'`
+    const existingPayment = AllUtilityPayments.find(
+      (utility) => utility.id === paymentId
     );
     console.log('Existing payment:', existingPayment);
 
     console.log('Updated payment:', updatedPayment);
 
     if (updatedPayment) {
-      if (existingPayment.length > 0) {
+      if (existingPayment) {
         console.log('Updating existing payment in database');
         await updateValue(
           'utility_payments',
@@ -581,7 +625,15 @@ const UtilityPanel: React.FC<props> = ({
           'price',
           newPrice,
           setChangeMade,
-          existingPayment[0].price
+          existingPayment.price
+        );
+        setAllUtilityPayments((prev) =>
+          prev.map((utility) =>
+            utility.id === paymentId ? {
+              ...utility,
+              price: newPrice
+            } : utility
+          )
         );
       } else {
         console.log('Adding new payment to database');
@@ -601,72 +653,125 @@ const UtilityPanel: React.FC<props> = ({
           },
           setChangeMade
         );
+        setAllUtilityPayments((prev) => [...prev,  {
+          id: paymentId,
+          type: updatedPayment.type,
+          price: newPrice || 0,
+          custom: updatedPayment.custom ? 1 : 0,
+          paid: updatedPayment.paid ? 1 : 0,
+          date: updatedPayment.ParentDate,
+          roomId: roomType.id,
+          branchId: SelectedBranchId,
+          Currency: updatedPayment.Currency,
+            userId: selectedUserId,
+          },
+        ]);
       }
     }
     console.log('handlePriceChange completed');
   };
 
   const handleFullCompleteChange = async (utilityId: string) => {
-    console.log('handleFullCompleteChange called with utilityId:', utilityId);
-    let allPaid2 = false;
-    let updatedUtilityData;
+    try {
+      console.log('handleFullCompleteChange called with utilityId:', utilityId);
+      let allPaid2 = false;
+      let updatedUtilityData;
 
-    setUtilityData((prevData) => {
-      console.log('Updating utility data state');
-      updatedUtilityData = prevData.map((element) => {
-        if (element.id === utilityId) {
-          console.log('Found matching utilityId:', utilityId);
-          const allPaid = element.PaymentTypes.every((payment) => payment.paid);
-          console.log('All payments paid:', allPaid);
+      // First, determine the new state (all paid or all unpaid)
+      const currentUtility = utilityData.find(element => element.id === utilityId);
+      const currentAllPaid = currentUtility?.PaymentTypes.every(payment => payment.paid);
+      allPaid2 = !currentAllPaid; // This will be the new state for all payments
 
-          if (allPaid) {
-            console.log('Setting all payments to unpaid');
-            element.PaymentTypes = element.PaymentTypes.map((payment) => ({
-              ...payment,
-              paid: false,
-            }));
-          } else {
-            console.log('Setting all payments to paid');
-            element.PaymentTypes = element.PaymentTypes.map((payment) => ({
-              ...payment,
-              paid: true,
-            }));
+      // Update the UI state
+      setUtilityData(prevData => {
+        updatedUtilityData = prevData.map(element => {
+          if (element.id === utilityId) {
+            return {
+              ...element,
+              FullComplete: allPaid2,
+              PaymentTypes: element.PaymentTypes.map(payment => ({
+                ...payment,
+                paid: allPaid2
+              }))
+            };
           }
-          allPaid2 = !allPaid;
-          element.FullComplete = !allPaid;
-          console.log('Updated FullComplete status to:', element.FullComplete);
-        }
-        return element;
-      });
-      return updatedUtilityData;
-    });
-
-    // Wait for state update to complete
-    await new Promise((resolve) => setTimeout(resolve, 0));
-
-    updatedUtilityData.forEach((utility) => {
-      if (utility.id === utilityId) {
-        utility.PaymentTypes.forEach((payment) => {
-          console.log(payment.paid, allPaid2);
-          handlePaidChangeWithValue(utilityId, payment.id, allPaid2);
+          return element;
         });
-      }
-    });
-
-    // Sync the state change with the database
-    const updatedUtility = updatedUtilityData.find(
-      (utility) => utility.id === utilityId
-    );
-    if (updatedUtility) {
-      updatedUtility.PaymentTypes.forEach(async (payment) => {
-        await updateValue(
-          'utility_payments',
-          payment.id,
-          'paid',
-          payment.paid,
-          setChangeMade
-        );
+        return updatedUtilityData;
       });
+
+      // Wait for state update
+      await new Promise(resolve => setTimeout(resolve, 0));
+
+      // Update database for each payment
+      const utility = updatedUtilityData?.find(u => u.id === utilityId);
+      if (utility) {
+        const updatePromises = utility.PaymentTypes.map(async payment => {
+          const existingPayment = AllUtilityPayments.find(
+            up => up.id === payment.id
+          );
+
+          if (existingPayment) {
+            // Update existing payment
+            await updateValue(
+              'utility_payments',
+              payment.id,
+              'paid',
+              allPaid2 ? 1 : 0,
+              setChangeMade,
+              !allPaid2 ? 1 : 0
+            );
+          } else {
+            // Add new payment
+            await addValue(
+              'utility_payments',
+              {
+                id: payment.id,
+                type: payment.type,
+                price: payment.price || 0,
+                custom: payment.custom ? 1 : 0,
+                paid: allPaid2 ? 1 : 0,
+                date: payment.ParentDate,
+                Currency: payment.Currency,
+                roomId: roomType.id,
+                userId: selectedUserId,
+                branchId: SelectedBranchId,
+              },
+              setChangeMade
+            );
+          }
+
+          // Update local state
+          setAllUtilityPayments(prev => {
+            const paymentExists = prev.some(p => p.id === payment.id);
+            if (paymentExists) {
+              return prev.map(p =>
+                p.id === payment.id ? { ...p, paid: allPaid2 } : p
+              );
+            } else {
+              return [...prev, {
+                id: payment.id,
+                type: payment.type,
+                price: payment.price || 0,
+                custom: payment.custom ? 1 : 0,
+                paid: allPaid2,
+                date: payment.ParentDate,
+                Currency: payment.Currency,
+                roomId: roomType.id,
+                userId: selectedUserId,
+                branchId: SelectedBranchId,
+              }];
+            }
+          });
+        });
+
+        // Wait for all updates to complete
+        await Promise.all(updatePromises);
+      }
+
+    } catch (error) {
+      console.error('Error in handleFullCompleteChange:', error);
+      showAlert?.('error', 'Failed to update payments');
     }
   };
 
@@ -943,16 +1048,12 @@ const UtilityPanel: React.FC<props> = ({
     // Only convert if currencies don't match
     if (paymentType.Currency !== defaultCurrency) {
       const { rate, direction } = getRateByDate(paymentType.ParentDate);
-      console.log(`Converting ${amount} ${paymentType.Currency} from ${new Date(paymentType.ParentDate).toLocaleDateString()}`);
-      console.log(`Using rate: ${rate} (${direction})`);
       
       if (rate) {
         if (paymentType.Currency === 'USD') {
           amount = amount * rate; // Convert USD to ETB
-          console.log(`Converted USD to ETB: ${amount}`);
         } else {
           amount = amount / rate; // Convert ETB to USD
-          console.log(`Converted ETB to USD: ${amount}`);
         }
       } else {
         console.warn('No rate found for date, using original amount');

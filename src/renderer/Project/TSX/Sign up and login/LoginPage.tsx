@@ -131,7 +131,8 @@ const LoginPage = ({
   };
 
   const handleOrLoginButtonClick = () => {
-    setisSignUpMode(true);
+    if(window.electron)    setisSignUpMode(true);
+    else     window.location.pathname = "/signup";
   };
   const [SelectedToLoginWith, setSelectedToLoginWith] = useState('App User');
   return (

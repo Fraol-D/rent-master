@@ -1,11 +1,13 @@
 import { getValuesWithSql_Online } from 'Backend/OnlineServerApis';
 import React, { useEffect, useState, useMemo } from 'react';
-import '../../CSS/ToolsPage.css';
+
 import { Input } from '../Helpers/CustomReactComponents';
 import { LineChart } from '@mui/x-charts/LineChart';
 import { axisClasses } from '@mui/x-charts/ChartsAxis';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns';
 import { getValuesWithSql } from 'Backend/localServerApis';
+import { useGlobal } from 'renderer/components/GlobalContext';
+import loadingGif from "./../../../assets/assets/Loading/Rolling-1s-200px.gif"
 
 interface props {
   SelectedUserId: string;
@@ -42,19 +44,25 @@ const DashbEmailHistory = ({ SelectedUserId, RoomList, tenantList }: props) => {
   const [advancedSearchVisible, setAdvancedSearchVisible] = useState(false);
   const [applyFiltersToGraph, setApplyFiltersToGraph] = useState(false);
   const [emailTemplates, setEmailTemplates] = useState<emailTemplate[]>([]);
-
+  const {
+    AllEmailTemplates,
+    setAllEmailTemplates,
+  } = useGlobal();
+  const [isLoading, setIsLoading] = useState(false);
   useEffect(() => {
     const fetchEmailHistory = async () => {
+      setIsLoading(true);
       const emailHistoryRaw = await getValuesWithSql_Online(
         'email_history',
         `WHERE userId = '${SelectedUserId}'`
       );
-      const emailTemplates = await getValuesWithSql('email_templates', `WHERE 1`);
+      const emailTemplates = AllEmailTemplates;
       setEmailTemplates(emailTemplates);
       const sortedEmailHistory = emailHistoryRaw.sort(
         (a: emailHistoryType, b: emailHistoryType) => b.sentDate - a.sentDate
       );
       setEmailHistory(sortedEmailHistory);
+      setIsLoading(false);
     };
     if (navigator.onLine) fetchEmailHistory();
   }, [SelectedUserId]);
@@ -208,8 +216,27 @@ const DashbEmailHistory = ({ SelectedUserId, RoomList, tenantList }: props) => {
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
+        position: 'relative',
       }}
     >
+      {isLoading && <div
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          backgroundColor: 'rgba(0, 0, 0, 0.2)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 1000,
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flexDirection: 'column' }}>
+          <img src={loadingGif} alt="Loading..." style={{width:'100px',height:'100px'}}/>
+        </div>
+      </div>}
       <h1 style={{ margin: 'var(--10px-V)' }}>Email History</h1>
 
       <div
@@ -580,7 +607,7 @@ const DashbEmailHistory = ({ SelectedUserId, RoomList, tenantList }: props) => {
               display: 'flex',
               justifyContent: 'center',
               alignItems: 'center',
-              height: '150px',
+              height: 'var(--50px-V)',
               color: 'var(--Text-Color-Grey)',
               fontSize: 'var(--16px-V)',
               fontStyle: 'italic',

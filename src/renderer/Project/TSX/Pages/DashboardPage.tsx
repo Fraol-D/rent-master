@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import DashbRoomSummary from '../Dashboard Wigets/DashbRoomSummary';
-import '../../CSS/Dashboard.css';
+
 import DashbTotalCollected from '../Dashboard Wigets/DashbTotalCollected';
 import DashbPastPayments from '../Dashboard Wigets/DashbPastPayments';
 import DashbOverAllTax from '../Dashboard Wigets/DashbOverAllTax';
@@ -18,6 +18,7 @@ import DashbActionHistoryDashboard from '../Dashboard Wigets/DashbActionHistoryD
 import DashbSmsDetails from '../Dashboard Wigets/DashbSmsDetails';
 import loadingGif from '../../../assets/assets/Loading/Rolling-1s-200px.gif';
 import DashRentalIncomeReport from '../Dashboard Wigets/Reprots page/DashRentalIncomeReport';
+import DashbExpenseDistribution from '../Dashboard Wigets/DashbExpenseDistribution';
 interface props {
   RoomList: RoomType[];
   tenantList: tenant[];
@@ -109,6 +110,8 @@ const DashboardPage: React.FC<props> = ({
           <DashbMonthlyExpenseTrendWidget expenses={expenses} SelectedBranchId={SelectedBranchId}/>
           <DashbExpenseHistory expenses={expenses} />
           <DashbUpcomingExpensesWidget expenses={expenses} />
+         
+{/* {<DashbExpenseDistribution expenses={expenses} />} */}
         </div>
       ) : DashboardSelectedPage === 'SMS Details' ? (
         <><DashbSmsDetails

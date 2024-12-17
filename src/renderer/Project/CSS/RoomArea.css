@@ -1,3 +1,4 @@
+
 .RoomContainer {
   display: flex;
   flex-direction: row;
@@ -313,11 +314,17 @@
   transition: all 0.2s;
   border-radius: var(--5px-V);    padding: var(--8px-V);
   font-size: var(--18px-V);
+ 
+    border-radius: 5px;
+    border: 1px solid var(--Secondary-Color);
+    background: var(--Background-Color);
+    color: var(--Text-Color);
+    cursor: pointer;
 }
 .sideBarItemComponentMainSelected {
   width: 95%;
 
-  background-color: var(--Primary-Color25);
+  background-color: var(--Secondary-Color);
   margin: var(--5px-V);
   display: flex;
 
@@ -596,42 +603,41 @@
   margin-bottom: var(--4px-V);
 }.custom-alert {
   position: fixed;
-  top: var(--20px-V);
-  right: var(--20px-V);
+  top: 20px;
+  right: 20px;
   z-index: 9999;
-  min-width: var(--300px-V);
-  max-width: var(--450px-V);
-  padding: var(--16px-V);
-  border-radius: var(--8px-V);
-  box-shadow: var(--0px-V) var(--4px-V) var(--12px-V) rgba(0, 0, 0, 0.15);
-  animation: slideIn var(--0.3s-V) ease-out;
+  min-width: 300px;
+  max-width: 450px;
+  padding: 16px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  animation: slideIn 0.3s ease-out;
 }
 
 .alert-content {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--12px-V);
+  gap: 12px;
 }
 
 .alert-message {
   flex-grow: 1;
-  font-size: var(--14px-V);
+  font-size: 14px;
 }
 
 .close-button {
   background: none;
   border: none;
-  box-shadow: none;
-  font-size: var(--20px-V);
+  font-size: 20px;
   cursor: pointer;
-  padding: var(--5px-V);
+  padding: 0;
   color: inherit;
-  opacity: var(--0.7-V);
+  opacity: 0.7;
 }
 
 .close-button:hover {
-  opacity: var(--1-V);
+  opacity: 1;
 }
 
 /* Alert Types */
@@ -657,20 +663,20 @@
 
 @keyframes slideIn {
   from {
-    transform: translateX(var(--100-V));
-    opacity: var(--0-V);
+    transform: translateX(100%);
+    opacity: 0;
   }
   to {
-    transform: translateX(var(--0-V));
-    opacity: var(--1-V);
+    transform: translateX(0);
+    opacity: 1;
   }
 }
 .confirm-overlay {
   position: fixed;
-  top: var(--0-V);
-  left: var(--0-V);
-  right: var(--0-V);
-  bottom: var(--0-V);
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   background-color: rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
@@ -681,16 +687,16 @@
 .confirm-dialog {
   background-color: var(--Background-Color);
 
-  border-radius: var(--8px-V);
-  box-shadow: var(--0-V) var(--2px-V) var(--12px-V) rgba(0, 0, 0, 0.15);
-  width: var(--100-V);
-  max-width: var(--400px-V);
-  animation: slideIn var(--0.2s-V) ease-out;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+  width: 100%;
+  max-width: 400px;
+  animation: slideIn 0.2s ease-out;
 }
 
 .confirm-header {
-  padding: var(--16px-V) var(--20px-V);
-  border-bottom: var(--1px-V) solid #eee;
+  padding: 16px 20px;
+  border-bottom: 1px solid #eee;
 }
 
 .confirm-header.info { border-bottom-color: #2196f3; }
@@ -698,33 +704,33 @@
 .confirm-header.danger { border-bottom-color: #f44336; }
 
 .confirm-header h3 {
-  margin: var(--0-V);
-  font-size: var(--18px-V);
-  font-weight: var(--500-V);
+  margin: 0;
+  font-size: 18px;
+  font-weight: 500;
 }
 
 .confirm-content {
-  padding: var(--20px-V);
-  font-size: var(--16px-V);
-  line-height: var(--1.5-V);
+  padding: 20px;
+  font-size: 16px;
+  line-height: 1.5;
 }
 
 .confirm-actions {
-  padding: var(--16px-V) var(--20px-V);
+  padding: 16px 20px;
   display: flex;
   justify-content: flex-end;
-  gap: var(--12px-V);
-  border-top: var(--1px-V) solid #eee;
+  gap: 12px;
+  border-top: 1px solid #eee;
 }
 
 .confirm-button,
 .cancel-button {
-  padding: var(--8px-V) var(--16px-V);
-  border-radius: var(--4px-V);
+  padding: 8px 16px;
+  border-radius: 4px;
   border: none;
-  font-size: var(--14px-V);
+  font-size: 14px;
   cursor: pointer;
-  transition: background-color var(--0.2s-V);
+  transition: background-color 0.2s;
 }
 
 .cancel-button {
@@ -752,5 +758,5 @@
 }
 
 .confirm-button:hover {
-  opacity: var(--0.9-V);
+  opacity: 0.9;
 }

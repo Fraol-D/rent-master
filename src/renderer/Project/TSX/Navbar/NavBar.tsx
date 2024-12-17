@@ -1,6 +1,6 @@
 import { storageManager } from '../../../storeManager';
 import React, { useState, useEffect, useMemo } from 'react';
-import '../../Css/NavBarCss.css';
+
 import { Input } from '../Helpers/CustomReactComponents';
 
 import InsertImageIcon from '../../../assets/assets/Dark mode/Insert Image Pic.png';
@@ -181,19 +181,19 @@ const NavBar = ({
     }
   };
   useEffect(() => {
-    if(window.electron){
-    const intervalId = setInterval(() => {
-      if (navigator.onLine) {
-        checkForChanges();
-      } else {
-        setOnlineChanges(0);
-      }
-      console.log('This function runs every minute');
-    }, 10000);
+    if (window.electron) {
+      const intervalId = setInterval(() => {
+        if (navigator.onLine) {
+          checkForChanges();
+        } else {
+          setOnlineChanges(0);
+        }
+        console.log('This function runs every minute');
+      }, 10000);
 
-    // Clean up the interval when the component unmounts
-    return () => clearInterval(intervalId);
-  }
+      // Clean up the interval when the component unmounts
+      return () => clearInterval(intervalId);
+    }
   }, []);
   const { confirm } = useConfirm();
 
@@ -285,7 +285,7 @@ const NavBar = ({
                 }
               }}
             >
-              Switch Branch
+              Switch Property
             </button>
           </p>
           <p
@@ -314,6 +314,11 @@ const NavBar = ({
               }}
               onClick={() => {
                 if (navigator.onLine) {
+                  console.log(storageManager.get('SelectedAppUserId'));
+                  if (storageManager.get('SelectedAppUserId') === 'admin') {
+                    setAppUserManagerShow(true);
+                    return;
+                  }
                   setAppUserManagerShow(true);
                   setAppUserManagerPromptPassword(true);
                 }
@@ -401,103 +406,141 @@ const NavBar = ({
 
       <div className="RightSide">
         <div></div>
-       {window.electron &&<> <div style={{ display: 'flex', alignItems: 'center' }}>
-          {' '}
-          <button
-            style={{
-              marginLeft: 'var(--10px-V)',
-              borderRadius:
-                'var(--10px-V) var(--0px-V) var(--0px-V) var(--10px-V)',
-            }}
-            onClick={() => {
-              if (navigator.onLine) handleUpload();
-            }}
-            disabled={ChangeMade <= 0}
-            title="Upload Local Changes to Server"
-          >
-            <p>
-              {ChangeMade >= 1 ? (
-                uploadProgress === 100 || uploadProgress === 0 ? (
-                  <>
-                    Upload <br />
-                    <span style={{ fontSize: 'var(--10px-V)' }}>
-                      {ChangeMade} change
-                    </span>
-                  </>
-                ) : uploadProgress >= 50 ? (
-                  'Syncing'
-                ) : (
-                  'Uploading'
-                )
-              ) : (
-                'No Change'
-              )}
-            </p>
-            {UploadingLoadingEffect && (
-              <p
+        {window.electron && (
+          <>
+            {' '}
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              {' '}
+              <button
                 style={{
-                  fontSize: 'var(--20px-V)',
                   marginLeft: 'var(--10px-V)',
+                  borderRadius:
+                    'var(--10px-V) var(--0px-V) var(--0px-V) var(--10px-V)',
                 }}
+                onClick={() => {
+                  if (navigator.onLine) handleUpload();
+                }}
+                disabled={ChangeMade <= 0}
+                title="Upload Local Changes to Server"
               >
-                {uploadProgress.toString().slice(0, 5)}%
-              </p>
-            )}
-          </button>
-          <style>
-            {`
+                <p>
+                  {ChangeMade >= 1 ? (
+                    uploadProgress === 100 || uploadProgress === 0 ? (
+                      <>
+                        Upload <br />
+                        <span style={{ fontSize: 'var(--10px-V)' }}>
+                          {ChangeMade} change
+                        </span>
+                      </>
+                    ) : uploadProgress >= 50 ? (
+                      'Syncing'
+                    ) : (
+                      'Uploading'
+                    )
+                  ) : (
+                    'No Change'
+                  )}
+                </p>
+                {UploadingLoadingEffect && (
+                  <p
+                    style={{
+                      fontSize: 'var(--20px-V)',
+                      marginLeft: 'var(--10px-V)',
+                    }}
+                  >
+                    {uploadProgress.toString().slice(0, 5)}%
+                  </p>
+                )}
+              </button>
+              <style>
+                {`
                 @keyframes blinkingBorder {
                   0% { border-color: var(--Accent-Color); }
                   50% { border-color: transparent; }
                   100% { border-color: var(--Accent-Color); }
                 }
               `}
-          </style>
-          <button
-            style={{
-              borderRadius: ShowAdvancedUpload
-                ? 'var(--0px-V) var(--10px-V) var(--0px-V) var(--0px-V)'
-                : 'var(--0px-V) var(--10px-V) var(--10px-V) var(--0px-V)',
-              height:
-                ChangeMade >= 1
-                  ? uploadProgress === 100 || uploadProgress === 0
-                    ? 'var(--48px-V)'
-                    : uploadProgress >= 50
-                    ? 'var(--48px-V)'
-                    : 'var(--48px-V)'
-                  : 'var(--28px-V)',
-              paddingTop: 'var(--7px-V)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              borderTop:
-                OnlineChanges > 0
-                  ? 'var(--3px-V) solid var(--Accent-Color)'
-                  : 'none',
-              borderRight:
-                OnlineChanges > 0
-                  ? 'var(--3px-V) solid var(--Accent-Color)'
-                  : 'none',
-              borderBottom:
-                OnlineChanges > 0
-                  ? 'var(--3px-V) solid var(--Accent-Color)'
-                  : 'none',
-              borderLeft: 'none',
-              animation:
-                OnlineChanges > 0 ? 'blinkingBorder 1s infinite' : 'none',
-            }}
-            onClick={() => {
-              setShowAdvancedUpload(!ShowAdvancedUpload);
-            }}
-          >
-            {ShowAdvancedUpload ? <>▲</> : <>▼</>}
-          </button>
-        </div>
-        {ShowAdvancedUpload ? (
-          <>
-            <div className="AdvancedUploadPanel">
-              {ChangeMade >= 1 && (
-                <>
+              </style>
+              <button
+                style={{
+                  borderRadius: ShowAdvancedUpload
+                    ? 'var(--0px-V) var(--10px-V) var(--0px-V) var(--0px-V)'
+                    : 'var(--0px-V) var(--10px-V) var(--10px-V) var(--0px-V)',
+                  height:
+                    ChangeMade >= 1
+                      ? uploadProgress === 100 || uploadProgress === 0
+                        ? 'var(--48px-V)'
+                        : uploadProgress >= 50
+                        ? 'var(--48px-V)'
+                        : 'var(--48px-V)'
+                      : 'var(--28px-V)',
+                  paddingTop: 'var(--7px-V)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderTop:
+                    OnlineChanges > 0
+                      ? 'var(--3px-V) solid var(--Accent-Color)'
+                      : 'none',
+                  borderRight:
+                    OnlineChanges > 0
+                      ? 'var(--3px-V) solid var(--Accent-Color)'
+                      : 'none',
+                  borderBottom:
+                    OnlineChanges > 0
+                      ? 'var(--3px-V) solid var(--Accent-Color)'
+                      : 'none',
+                  borderLeft: 'none',
+                  animation:
+                    OnlineChanges > 0 ? 'blinkingBorder 1s infinite' : 'none',
+                }}
+                onClick={() => {
+                  setShowAdvancedUpload(!ShowAdvancedUpload);
+                }}
+              >
+                {ShowAdvancedUpload ? <>▲</> : <>▼</>}
+              </button>
+            </div>
+            {ShowAdvancedUpload ? (
+              <>
+                <div className="AdvancedUploadPanel">
+                  {ChangeMade >= 1 && (
+                    <>
+                      <h3
+                        style={{
+                          margin: '0',
+                          display: 'flex',
+                          alignItems: 'center',
+                        }}
+                      >
+                        Upload{' '}
+                      </h3>
+                      <div
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          width: '100%',
+                        }}
+                      >
+                        <button
+                          onClick={() => {
+                            handleResetOfflineChanges();
+                          }}
+                          style={{
+                            width: '100%',
+                            marginTop: 'var(--10px-V)',
+                            color: 'red',
+                            fontWeight: 'bold',
+                          }}
+                          title="Discard All Local Changes"
+                          aria-label="Discard All Local Changes"
+                        >
+                          <p>Reset {ChangeMade} Offline Changes</p>
+                        </button>
+                      </div>
+                      <hr style={{ margin: 'var(--10px-V)', width: '100%' }} />
+                    </>
+                  )}
                   <h3
                     style={{
                       margin: '0',
@@ -505,240 +548,233 @@ const NavBar = ({
                       alignItems: 'center',
                     }}
                   >
-                    Upload{' '}
+                    Complete Sync{' '}
                   </h3>
-                  <div
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      width: '100%',
-                    }}
-                  >
-                    <button
-                      onClick={() => {
-                        handleResetOfflineChanges();
-                      }}
-                      style={{
-                        width: '100%',
-                        marginTop: 'var(--10px-V)',
-                        color: 'red',
-                        fontWeight: 'bold',
-                      }}
-                      title="Discard All Local Changes"
-                      aria-label="Discard All Local Changes"
-                    >
-                      <p>Reset {ChangeMade} Offline Changes</p>
-                    </button>
-                  </div>
-                  <hr style={{ margin: 'var(--10px-V)', width: '100%' }} />
-                </>
-              )}
-              <h3
-                style={{ margin: '0', display: 'flex', alignItems: 'center' }}
-              >
-                Complete Sync{' '}
-              </h3>
-              <button
-                onClick={() => {
-                  if (navigator.onLine) {
-                    handleSyncOnlineToLocal();
-                  }
-                }}
-                style={{
-                  width: '100%',
-                  marginTop: 'var(--10px-V)',
-                  border:
-                    OnlineChanges > 0
-                      ? 'var(--3px-V) solid var(--Accent-Color)'
-                      : '',
-                  animation:
-                    OnlineChanges > 0 ? 'blinkingBorder 1s infinite' : '',
-                }}
-                title="Download and Apply Server Updates"
-                aria-label="Download and Apply Server Updates"
-              >
-                <p>
-                  Sync{' '}
-                  {OnlineChanges === 0 &&
-                  ChangeMade == null &&
-                  ChangeMade == undefined &&
-                  Number.isNaN(ChangeMade) ? (
-                    <></>
-                  ) : (
-                    <>{OnlineChanges} incoming changes</>
-                  )}
-                </p>
-              </button>
-              {ChangeMade >= 1 && (
-                <button
-                  onClick={() => {
-                    if (navigator.onLine) {
-                      handleSyncOnlineToLocal();
-                    }
-                  }}
-                  style={{
-                    width: '100%',
-                    marginTop: 'var(--10px-V)',
-                  }}
-                  title="Synchronizes the local database with the online server, overwriting the server data with the current local data, including any offline changes."
-                >
-                  <p>Set as main</p>
-                </button>
-              )}
-              <hr style={{ margin: 'var(--10px-V)', width: '100%' }} />
-              <h3
-                style={{ margin: '0', display: 'flex', alignItems: 'center' }}
-              >
-                Assets{' '}
-                <span style={{ fontSize: 'var(--12px-V)' }}>
-                  (Room Pictures,Documents)
-                </span>
-              </h3>
-              <div className="AdvancedUploadButtons">
-                <button
-                  className="AdvancedUploadButtonsUploadButton"
-                  onClick={() => {
-                    if (navigator.onLine)
-                      UploadUserFilesToTheOnlineDatabase(
-                        SelectedUserId,
-                        setUploadAssetsProgress
-                      );
-                  }}
-                  style={{
-                    position: 'relative',
-                    overflow: 'hidden',
-                  }}
-                  title="Synchronize Local Room Assets to Server"
-                >
-                  <span className="AdvancedUploadButtonsButtonText">
-                    Upload Room Assets
-                  </span>
-                  <span className="AdvancedUploadButtonsProgressText">
-                    {UploadAssetsProgress === 100 || UploadAssetsProgress === 0
-                      ? ''
-                      : UploadAssetsProgress + '%'}
-                  </span>
-                  <div
-                    style={{
-                      position: 'absolute',
-                      bottom: 0,
-                      left: 0,
-                      width: `${UploadAssetsProgress}%`,
-                      height: 'var(--3px-V)',
-                      backgroundColor: 'var(--Primary-Color)',
-                      transition: 'width 0.3s ease-in-out',
-                    }}
-                  />
-                </button>
-                <button
-                  className="AdvancedUploadButtonsUploadButton"
-                  onClick={() => {
-                    if (navigator.onLine)
-                      DownloadUserFilesFromOnlineDatabase(
-                        SelectedUserId,
-                        setDownloadAssetsProgress
-                      );
-                  }}
-                  style={{
-                    position: 'relative',
-                    overflow: 'hidden',
-                  }}
-                  title="Retrieve Room Assets from Server"
-                >
-                  <span className="AdvancedUploadButtonsButtonText">
-                    Download Room Assets
-                  </span>
-                  <span className="AdvancedUploadButtonsProgressText">
-                    {DownloadAssetsProgress === 100 ||
-                    DownloadAssetsProgress === 0
-                      ? ''
-                      : DownloadAssetsProgress.toFixed(2) + '%'}
-                  </span>
-                  <div
-                    style={{
-                      position: 'absolute',
-                      bottom: 0,
-                      left: 0,
-                      width: `${DownloadAssetsProgress}%`,
-                      height: 'var(--3px-V)',
-                      backgroundColor: 'var(--Primary-Color)',
-                      transition: 'width 0.3s ease-in-out',
-                    }}
-                  />
-                </button>
-              </div>
-              <hr style={{ margin: 'var(--10px-V)', width: '100%' }} />
-              <h3
-                style={{ margin: '0', display: 'flex', alignItems: 'center' }}
-              >
-                Backup{' '}
-              </h3>
-              <div style={{ display: 'flex', width: '100%' }}>
-                <button
-                  onClick={() => {
-                    window.electron.ipcRenderer.send('create-backup', false);
-                  }}
-                  style={{
-                    width: '100%',
-                    marginTop: 'var(--10px-V)',
-                    marginRight: 'var(--10px-V)',
-                  }}
-                  title="Create Local Data Backup"
-                >
-                  <p>Create Backup</p>
-                </button>
-                <button
-                  onClick={() => {
-                    window.electron.ipcRenderer.send('load-backup');
-                  }}
-                  style={{ width: '100%', marginTop: 'var(--10px-V)' }}
-                  title="Restore from Local Backup"
-                >
-                  <p>Load Backup</p>
-                </button>
-              </div>{' '}
-              {storageManager.get('IsOnBackup') && (
-                <>
                   <button
                     onClick={() => {
-                      window.electron.ipcRenderer.invoke(
-                        'load-specific-backup',
-                        storageManager.get('MainBackupPath')
-                      );
+                      if (navigator.onLine) {
+                        handleSyncOnlineToLocal();
+                      }
                     }}
                     style={{
                       width: '100%',
                       marginTop: 'var(--10px-V)',
-                      marginRight: 'var(--10px-V)',
+                      border:
+                        OnlineChanges > 0
+                          ? 'var(--3px-V) solid var(--Accent-Color)'
+                          : '',
+                      animation:
+                        OnlineChanges > 0 ? 'blinkingBorder 1s infinite' : '',
                     }}
-                    title="Return to Current Main Data"
+                    title="Download and Apply Server Updates"
+                    aria-label="Download and Apply Server Updates"
                   >
-                    <p>Revert to old</p>
+                    <p>
+                      Sync{' '}
+                      {OnlineChanges === 0 &&
+                      ChangeMade == null &&
+                      ChangeMade == undefined &&
+                      Number.isNaN(ChangeMade) ? (
+                        <></>
+                      ) : (
+                        <>{OnlineChanges} incoming changes</>
+                      )}
+                    </p>
                   </button>
-                  <button
-                    onClick={async () => {
-                      try {
-                        const result = await SetBackUpAsMain(SelectedUserId);
-                        console.log('Data sync completed:', result);
-                        storageManager.set('MainBackupPath', '');
-                        storageManager.set('IsOnBackup', false);
-                      } catch (error) {
-                        console.error('Error during sync:', error);
-                        // Handle sync error (e.g., show an error message)
-                      }
+                  {ChangeMade >= 1 && (
+                    <button
+                      onClick={() => {
+                        if (navigator.onLine) {
+                          handleSyncOnlineToLocal();
+                        }
+                      }}
+                      style={{
+                        width: '100%',
+                        marginTop: 'var(--10px-V)',
+                      }}
+                      title="Synchronizes the local database with the online server, overwriting the server data with the current local data, including any offline changes."
+                    >
+                      <p>Set as main</p>
+                    </button>
+                  )}
+                  <hr style={{ margin: 'var(--10px-V)', width: '100%' }} />
+                  <h3
+                    style={{
+                      margin: '0',
+                      display: 'flex',
+                      alignItems: 'center',
                     }}
-                    style={{ width: '100%', marginTop: 'var(--10px-V)' }}
-                    title="Make This Backup the Main Data"
                   >
-                    <p>Set as main</p>
-                  </button>
-                </>
-              )}
-            </div>
+                    Assets{' '}
+                    <span style={{ fontSize: 'var(--12px-V)' }}>
+                      (Room Pictures,Documents)
+                    </span>
+                  </h3>
+                  <div className="AdvancedUploadButtons">
+                    <button
+                      className="AdvancedUploadButtonsUploadButton"
+                      onClick={() => {
+                        if (navigator.onLine)
+                          UploadUserFilesToTheOnlineDatabase(
+                            SelectedUserId,
+                            setUploadAssetsProgress
+                          );
+                      }}
+                      style={{
+                        position: 'relative',
+                        overflow: 'hidden',
+                      }}
+                      title="Synchronize Local Room Assets to Server"
+                    >
+                      <span className="AdvancedUploadButtonsButtonText">
+                        Upload Room Assets
+                      </span>
+                      <span className="AdvancedUploadButtonsProgressText">
+                        {UploadAssetsProgress === 100 ||
+                        UploadAssetsProgress === 0
+                          ? ''
+                          : UploadAssetsProgress + '%'}
+                      </span>
+                      <div
+                        style={{
+                          position: 'absolute',
+                          bottom: 0,
+                          left: 0,
+                          width: `${UploadAssetsProgress}%`,
+                          height: 'var(--3px-V)',
+                          backgroundColor: 'var(--Primary-Color)',
+                          transition: 'width 0.3s ease-in-out',
+                        }}
+                      />
+                    </button>
+                    <button
+                      className="AdvancedUploadButtonsUploadButton"
+                      onClick={() => {
+                        if (navigator.onLine)
+                          DownloadUserFilesFromOnlineDatabase(
+                            SelectedUserId,
+                            setDownloadAssetsProgress
+                          );
+                      }}
+                      style={{
+                        position: 'relative',
+                        overflow: 'hidden',
+                      }}
+                      title="Retrieve Room Assets from Server"
+                    >
+                      <span className="AdvancedUploadButtonsButtonText">
+                        Download Room Assets
+                      </span>
+                      <span className="AdvancedUploadButtonsProgressText">
+                        {DownloadAssetsProgress === 100 ||
+                        DownloadAssetsProgress === 0
+                          ? ''
+                          : DownloadAssetsProgress.toFixed(2) + '%'}
+                      </span>
+                      <div
+                        style={{
+                          position: 'absolute',
+                          bottom: 0,
+                          left: 0,
+                          width: `${DownloadAssetsProgress}%`,
+                          height: 'var(--3px-V)',
+                          backgroundColor: 'var(--Primary-Color)',
+                          transition: 'width 0.3s ease-in-out',
+                        }}
+                      />
+                    </button>
+                  </div>
+                  <hr style={{ margin: 'var(--10px-V)', width: '100%' }} />
+                  <h3
+                    style={{
+                      margin: '0',
+                      display: 'flex',
+                      alignItems: 'center',
+                    }}
+                  >
+                    Backup{' '}
+                  </h3>
+                  <div style={{ display: 'flex', width: '100%' }}>
+                    <button
+                      onClick={() => {
+                        window.electron.ipcRenderer.send(
+                          'create-backup',
+                          false
+                        );
+                      }}
+                      style={{
+                        width: '100%',
+                        marginTop: 'var(--10px-V)',
+                        marginRight: 'var(--10px-V)',
+                      }}
+                      title="Create Local Data Backup"
+                    >
+                      <p>Create Backup</p>
+                    </button>
+                    <button
+                      onClick={() => {
+                        window.electron.ipcRenderer.send('load-backup');
+                      }}
+                      style={{ width: '100%', marginTop: 'var(--10px-V)' }}
+                      title="Restore from Local Backup"
+                    >
+                      <p>Load Backup</p>
+                    </button>
+                  </div>{' '}
+                  {storageManager.get('IsOnBackup') && (
+                    <>
+                      <button
+                        onClick={() => {
+                          window.electron.ipcRenderer.invoke(
+                            'load-specific-backup',
+                            storageManager.get('MainBackupPath')
+                          );
+                        }}
+                        style={{
+                          width: '100%',
+                          marginTop: 'var(--10px-V)',
+                          marginRight: 'var(--10px-V)',
+                        }}
+                        title="Return to Current Main Data"
+                      >
+                        <p>Revert to old</p>
+                      </button>
+                      <button
+                        onClick={async () => {
+                          try {
+                            const result = await SetBackUpAsMain(
+                              SelectedUserId
+                            );
+                            console.log('Data sync completed:', result);
+                            storageManager.set('MainBackupPath', '');
+                            storageManager.set('IsOnBackup', false);
+                          } catch (error) {
+                            console.error('Error during sync:', error);
+                            // Handle sync error (e.g., show an error message)
+                          }
+                        }}
+                        style={{ width: '100%', marginTop: 'var(--10px-V)' }}
+                        title="Make This Backup the Main Data"
+                      >
+                        <p>Set as main</p>
+                      </button>
+                    </>
+                  )}
+                </div>
+              </>
+            ) : (
+              <></>
+            )}
           </>
-        ) : (
-          <></>
-        )}</>}
+        )}
+        {window.electron ? <></> : <> <button
+          style={{ marginLeft: 'var(--10px-V)', marginRight: 'var(--10px-V)' }}
+          onClick={() => {
+          RefreshDataFromSqlite();
+          }}
+        >
+          Refresh Data
+        </button></>}
         <button
           style={{ marginLeft: 'var(--10px-V)', marginRight: 'var(--10px-V)' }}
           onClick={() => {

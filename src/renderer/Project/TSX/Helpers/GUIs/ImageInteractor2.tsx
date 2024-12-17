@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import '../../../CSS/ImageInteractor.css';
+
 import RightArrow from '../../../../assets/assets/Dark mode/Right arrow.png';
 import {
   AddRoomImageToFiles,
@@ -18,6 +18,7 @@ interface ImageInteractorProps {
   SetRefreshState?: (newval: boolean) => void;
   AddRoomState?: boolean;
   setIsMoreThanOneImage?: any;
+  sidebarState?: boolean;
 }
 
 const ImageInteractor2: React.FC<ImageInteractorProps> = ({
@@ -27,6 +28,7 @@ const ImageInteractor2: React.FC<ImageInteractorProps> = ({
   SetRefreshState,
   AddRoomState,
   setIsMoreThanOneImage,
+  sidebarState,
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [images, setImages] = useState([]);
@@ -47,7 +49,9 @@ const ImageInteractor2: React.FC<ImageInteractorProps> = ({
   }, [room?.id, isAddRoomImage]);
   useEffect(() => {
     if (isAddRoomImage) {
-      fetchRoomImages2();
+      if(sidebarState){
+        fetchRoomImages2();
+      }
     }
   }, []);
   useEffect(() => {
@@ -63,7 +67,7 @@ const ImageInteractor2: React.FC<ImageInteractorProps> = ({
     let interval: NodeJS.Timeout;
     if (images.length > 1) {
       interval = setInterval(() => {
-        //setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length);
+        //fz((prevIndex) => (prevIndex + 1) % images.length);
       }, 5000);
     }
     return () => clearInterval(interval);
@@ -89,8 +93,16 @@ const ImageInteractor2: React.FC<ImageInteractorProps> = ({
       }
     }
   };
+  useEffect(() => {
+    if(AddRoomState){
+      if(sidebarState){
+        fetchRoomImages2();
+      }
+    }
+  }, [sidebarState]);
   const fetchRoomImages2 = async () => {
     if (AddRoomState) {
+      if(sidebarState){
       const roomImages = await getRoomImages('Add a room images');
       console.log(roomImages);
       if (roomImages && roomImages.images) {
@@ -108,7 +120,7 @@ const ImageInteractor2: React.FC<ImageInteractorProps> = ({
         }
       } else {
         setImages([]);
-      }
+      }}
     }
   };
   const nextImage = () => {

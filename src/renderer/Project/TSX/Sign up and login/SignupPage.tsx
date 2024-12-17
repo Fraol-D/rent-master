@@ -4,9 +4,11 @@ import { Input } from '../Helpers/CustomReactComponents';
 import {
   AddUserOnline,
   addValueOnline,
+  checkIfCompanyNameExists,
   getValuesWithSql_Online,
+  sendEmailAPIForVerify,
 } from '../../../../Backend/OnlineServerApis';
-import '../../CSS/SignUpAndLogin.css';
+
 import {
   addValue,
   addValueWithOutOfflineChange,
@@ -102,14 +104,15 @@ const SignupPage = ({
     setCodeSent(true);
     setCodeExpired(false);
     setErrorMessage('Verification code sent to your email.');
-    window.electron.ipcRenderer.send('SendVerificationCode', {
+    if(window.electron) window.electron.ipcRenderer.send('SendVerificationCode', {
       to: email,
       code: code,
-    });
+    }); 
+    else sendEmailAPIForVerify(email, code);
+    setLoading(false);
     setTimeout(() => {
       setCodeExpired(true);
     }, 360000); // 3 minutes
-    setLoading(false);
     setFormStage('verification'); // Move to verification stage
   };
 
@@ -533,13 +536,19 @@ const SignupPage = ({
 
   const handleSignUp = async () => {
     setLoading(true);
-
+    
     if (!fullName || !companyName || !phoneNumber) {
       setErrorMessage('Please fill out all fields.');
       setLoading(false);
       return;
     }
-
+    const checkIfExists = await checkIfCompanyNameExists(companyName);
+    console.log(checkIfExists.valid);
+    if(!checkIfExists.valid) {
+      setErrorMessage('Company name already exists.');
+      setLoading(false);
+      return;
+    }
     const userID = uuidv4();
     storageManager.set('abbreviationDecimals', 2);
     storageManager.set('abbreiviateBigNumbers', true);
@@ -619,13 +628,13 @@ const SignupPage = ({
     for (let i = 0; i < getEmailTemplates2(userID).length; i++) {
       const element = getEmailTemplates2(userID)[i];
       await addValueOnline('email_templates', element);
-      await addValueWithOutOfflineChange('email_templates', element);
+      if(window.electron)await addValueWithOutOfflineChange('email_templates', element);
     }
 
     for (let i = 0; i < getSmsTemplates(userID).length; i++) {
       const element = getSmsTemplates(userID)[i];
       await addValueOnline('sms_templates', element);
-      await addValueWithOutOfflineChange('sms_templates', element);
+      if(window.electron) await addValueWithOutOfflineChange('sms_templates', element);
     }
 
     setisSignedIn(true);
@@ -634,7 +643,8 @@ const SignupPage = ({
   };
 
   const handleOrLoginButtonClick = () => {
-    setisSignUpMode(false);
+    if(window.electron) setisSignUpMode(false);
+    else window.location.pathname = "/login";
   };
 
   
@@ -738,7 +748,7 @@ const SignupPage = ({
 
         {formStage === 'verification' && (
           <>
-            <button onClick={handleBack} className="LoginButton">
+            <button onClick={handleBack} className="LoginButton" style={{border:'none'}}>
               Back
             </button>
             {!verificationSuccess && (
@@ -791,7 +801,7 @@ const SignupPage = ({
                   }}
                 >
                   Verification successful! <br />
-                  Now enter your info.
+                  Now enter your info
                 </p>
                 <input
                   type="text"
@@ -800,20 +810,24 @@ const SignupPage = ({
                   placeholder="Full Name"
                   className="userName-input"
                 />
-                <input
+              <div style={{width: '92%',
+display: 'flex',
+justifyContent: 'space-between' }}> <input
                   type="text"
                   value={companyName}
                   onChange={handleCompanyNameChange}
                   placeholder="Company Name"
+                  style={{width:"55%",marginBottom:"0px"}}
                   className="userName-input"
                 />
                 <input
                   type="text"
                   value={phoneNumber}
                   onChange={handlePhoneNumberChange}
+                  style={{width:"36%",marginBottom:"0px"}}
                   placeholder="Phone Number"
                   className="userName-input"
-                />
+                /></div> 
 
                 <br />
                 <button onClick={handleSignUp} className="LoginButton">

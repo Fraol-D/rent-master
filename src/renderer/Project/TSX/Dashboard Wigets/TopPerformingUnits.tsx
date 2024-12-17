@@ -1,6 +1,7 @@
 import { getValuesWithSql } from 'Backend/localServerApis';
 import React, { useEffect, useMemo, useState } from 'react';
 import { formatNumberWithSuffix, GetDefaultCurrency, CurrencySign, getRateByDate } from '../Helpers/CurrencySign';
+import { useGlobal } from 'renderer/components/GlobalContext';
 //"search bar for all" where this is make a search bar which is deffrent for each one and that search bar makes it search through to find the one you want , And also make not filter insted jump to that element or scroll to that element, only show the search bar if the show all is on
 const TopPerformingUnits = ({
   RoomList,
@@ -60,10 +61,16 @@ const TopPerformingUnits = ({
       .slice(0, showAll ? TenantList.length : 5);
   }, [TenantList, showAll]);
   const [RoomPayInfo, setRoomPayInfo] = useState<RoomPayInfo[]>([]);
+  const {
+    AllRoomPayInfo,
+    setAllRoomPayInfo,
+  } = useGlobal();
   useEffect(() => {
     const GetRoomPayment = async () => {
       try {
-        const rawPayment = await getValuesWithSql('room_pay_info',`WHERE branchId = '${SelectedBranchId}'`);
+        const rawPayment = AllRoomPayInfo.filter(
+          (payment) => payment.branchId === SelectedBranchId
+        );
         if (rawPayment.length > 0) {
           setRoomPayInfo(rawPayment);
         }

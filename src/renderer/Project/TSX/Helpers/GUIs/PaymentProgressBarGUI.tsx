@@ -16,9 +16,11 @@ import {
   addValue,
   deleteReceipt2,
   deleteValue,
+  GetReceiptFileApi,
   getValuesWithSql,
   updateValue,
   uploadReceiptDocuments,
+  uploadReceiptDocumentsOnline,
 } from 'Backend/localServerApis';
 import UtilityPanel from './UtilityPanel';
 import { Payment } from 'electron';
@@ -44,9 +46,12 @@ interface Props {
   updateRoomPropertyLocal: any;
   SelectedBranchId: any;
   Currency: string;
+  changeProgress: any;
+  setChangeProgress: any;
 }
 import { v4 as uuidv4 } from 'uuid';
 import { useGlobal } from 'renderer/components/GlobalContext';
+import { useConfirm } from 'renderer/components/useConfirm';
 
 const PaymentProgressBarGUI: React.FC<Props> = ({
   paymentData,
@@ -63,6 +68,8 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
   updateRoomPropertyLocal,
   SelectedBranchId,
   Currency,
+  setChangeProgress,
+  changeProgress,
 }) => {
   const {
     AllRoomPayInfo,
@@ -83,7 +90,7 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
 
   // Add window width state
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
-
+ const { showAlert } = useAlert(); 
   // Add window resize listener
   useEffect(() => {
     const handleResize = () => setWindowWidth(window.innerWidth);
@@ -327,8 +334,11 @@ const calculatePayments = async () => {
     );
     console.log("Existing payment: ",existingPayment)
     const newPaidStatus = !payment.Paid ;
+    //setChangeProgress(0);
+    
     if (existingPayment) {
       if (newPaidStatus) {
+        //setChangeProgress(25);
         await updateValue(
           'room_pay_info',
           payment.id,
@@ -338,11 +348,17 @@ const calculatePayments = async () => {
           0
         );
         setAllRoomPayInfo((prevInfo:any) => prevInfo.map((p:any) => p.id === payment.id ? { ...p, Paid: 1 } : p));
+       // setChangeProgress(75);
       } else {
+       // setChangeProgress(25);
         await deleteValue('room_pay_info', payment.id, setChangeMade);
         setAllRoomPayInfo((prevInfo:any) => prevInfo.filter((p:any) => p.id !== payment.id));
+       // setChangeProgress(75);
+
       }
     } else if (newPaidStatus) {
+  //    setChangeProgress(25);
+
       await addValue(
         'room_pay_info',
         {
@@ -360,6 +376,8 @@ const calculatePayments = async () => {
         tenantId: roomType.tenantId,
         branchId: SelectedBranchId,
       })
+     // setChangeProgress(75);
+
     }
 
     setPayments((prevPayments) =>
@@ -376,8 +394,10 @@ const calculatePayments = async () => {
       'DaysTillNextPayment',
       calculateDaysTillNextPayment(await calculatePredictedPayments(roomType))
     );
+  //  setChangeProgress(98);
+   
   };
-  const { showAlert } = useAlert();
+  const {confirm} = useConfirm();
   useEffect(() => {
     if (payments.length > 0 && svgRef.current) {
       const scaleFactor = getScaleFactor();
@@ -613,6 +633,7 @@ const calculatePayments = async () => {
           // Remove tooltip
           svg.selectAll('.price-tooltip').remove();
         });
+      
       const selectButtons = svg
         .selectAll('rect.select-button')
         .data(sortedPaymentData)
@@ -718,11 +739,11 @@ const calculatePayments = async () => {
         contextMenuGroup
           .append('rect')
           .attr('width', 120 * scaleFactor)
-          .attr('height', 70 * scaleFactor)
+          .attr('height', window.electron ? 70 * scaleFactor : 50 * scaleFactor)
           .attr('fill', 'var(--Secondary-Color)')
           .attr('stroke', 'var(--Text-Color)');
 
-        const menuItems = ['Open', 'File explorer', 'Delete'];
+        const menuItems = [window.electron ?'Open' : "Download", 'Delete',window.electron && 'File explorer' ];
         contextMenuGroup
           .selectAll('.menu-item')
           .data(menuItems)
@@ -761,7 +782,8 @@ const calculatePayments = async () => {
           .each(function (d: any) {
             const element = d3.select(this);
             GetReceiptFile(d.Day).then((receiptFile) => {
-              if (!receiptFile) {
+            
+              if (!receiptFile || receiptFile==='Add receipt' || receiptFile==='COMUNDEFINED') {
                 element.html('Add receipt');
                 return;
               }
@@ -796,7 +818,7 @@ const calculatePayments = async () => {
           })
           .on('click', async function (event: Event, d: any) {
             const receiptFile = await GetReceiptFile(d.Day);
-            if (!receiptFile) {
+            if (!receiptFile || receiptFile==='Add receipt'||receiptFile==='COMUNDEFINED') {
               AddAReceipt(d);
               console.log('Add receipt');
             } else {
@@ -806,8 +828,10 @@ const calculatePayments = async () => {
           .on('contextmenu', async function (event: Event, d: any) {
             event.preventDefault();
             const receiptFile = await GetReceiptFile(d.Day);
-
-            if (!receiptFile) {
+            if(receiptFile==='Add receipt'||receiptFile==='COMUNDEFINED'){
+              return;
+            }
+            if (!receiptFile || receiptFile==='Add receipt') {
               // If there's no receipt, don't show the context menu
               return;
             }
@@ -849,6 +873,7 @@ const calculatePayments = async () => {
             const action = d3.select(this).text();
             switch (action) {
               case 'Open':
+              case 'Download':
                 openInPhotos(currentContextData);
                 break;
               case 'File explorer':
@@ -856,6 +881,7 @@ const calculatePayments = async () => {
                 break;
 
               case 'Delete':
+                
                 deleteReceipt(currentContextData.Day);
                 break;
             }
@@ -863,81 +889,72 @@ const calculatePayments = async () => {
           });
 
         function GetReceiptFile(date: Date) {
-          return window.electron.ipcRenderer.invoke(
-            'GetReceiptFile',
-            date,
-            roomType.id,
-            tenantList.find((t: tenant) => t.id === roomType.tenantId)
-          );
+          console.log(tenantList)
+          return window.electron
+            ? window.electron.ipcRenderer.invoke(
+                'GetReceiptFile',
+                date,
+                roomType.id,
+                tenantList.find((t: tenant) => t.id === roomType.tenantId)
+              )
+            : GetReceiptFileApi(date, roomType.id, tenantList.find((t: tenant) => t.id === roomType.tenantId));
         }
 
-        const { showAlert } = useAlert(); 
+       
         function AddAReceipt(d: any) {
           const input = document.createElement('input');
           input.type = 'file';
-          input.multiple = true;
           input.accept = 'image/*,.pdf,.doc,.docx,.txt';
 
           input.onchange = async (event) => {
-            const files = (event.target as HTMLInputElement).files;
-            if (files && files.length > 0) {
-              const totalFilesSize = files.reduce((acc, file) => acc + file.size, 0);
-              const totalFilesSizeMB = totalFilesSize / (1024 * 1024);
+            const file = (event.target as HTMLInputElement).files[0];
+            if (file) {
+              const totalFileSizeMB = file.size / (1024 * 1024);
               const maxFileSizeMB = 5; // 5MB limit
 
-              if (totalFilesSizeMB > maxFileSizeMB) {
-                showAlert(`Total file size exceeds the ${maxFileSizeMB}MB limit.`);
+              if (totalFileSizeMB > maxFileSizeMB) {
+                showAlert(`File size exceeds the ${maxFileSizeMB}MB limit.`);
                 return;
               }
 
-              const validFiles = Array.from(files).filter(
-                (file) => file.size <= maxFileSizeMB * 1024 * 1024
-              );
-
-              if (validFiles.length !== files.length) {
-                showAlert(
-                  'Some files were skipped because they exceed the 5MB size limit.'
+              try {
+                const roomId = roomType.id;
+                const tenantId = roomType.tenantId || '';
+                const tenantName =
+                  tenantList.find((t: tenant) => t.id === tenantId)?.name ||
+                  '';
+                const formattedDate = format(d.Day, 'yyyy-MM-dd');
+                const AddedTimeText = format(
+                  new Date(
+                    tenantList.find((t: tenant) => t.id === tenantId)
+                      ?.startTime || 0
+                  ),
+                  'EEE MMM dd yyyy'
                 );
-              }
 
-              if (validFiles.length > 0) {
-                try {
-                  const roomId = roomType.id;
-                  const tenantId = roomType.tenantId || '';
-                  const tenantName =
-                    tenantList.find((t: tenant) => t.id === tenantId)?.name ||
-                    '';
-                  const formattedDate = format(d.Day, 'yyyy-MM-dd');
-                  const AddedTimeText = format(
-                    new Date(
-                      tenantList.find((t: tenant) => t.id === tenantId)
-                        ?.startTime || 0
-                    ),
-                    'EEE MMM dd yyyy'
-                  );
+                const results = window.electron ? await uploadReceiptDocuments(
+                  [file],
+                  roomId,
+                  tenantName,
+                  tenantId,
+                  formattedDate,
+                  AddedTimeText
+                ) : await uploadReceiptDocumentsOnline(
+                  file,
+                  roomId,
+                  tenantList,
+                  tenantId,
+                  formattedDate,AddedTimeText
+                );
 
-                  const results = await uploadReceiptDocuments(
-                    validFiles,
-                    roomId,
-                    tenantName,
-                    tenantId,
-                    formattedDate,
-                    AddedTimeText
-                  );
-
-                  if (results) {
-                    console.log('Receipts uploaded successfully:', results);
-                    refresh(); // Assuming you have a refresh function to update the UI
-                  } else {
-                    console.error('Failed to upload receipts');
-                  }
-                } catch (error) {
-                  console.error('Error uploading files:', error);
+                if (results) {
+                  console.log('Receipt uploaded successfully:', results);
+                  refresh(); // Assuming you have a refresh function to update the UI
+                } else {
+                  console.error('Failed to upload receipt');
                 }
-              } else {
-                showAlert(
-                  'No valid files selected. Please choose files under 5MB in size.'
-                );
+              } catch (error) {
+                console.error('Error uploading file:', error);
               }
             }
           };
@@ -946,10 +963,30 @@ const calculatePayments = async () => {
         }
 
         async function openInPhotos(d: any) {
-          console.log('Open in photos', d);
-          const receiptFile = await GetReceiptFile(d.Day);
-          if (receiptFile) {
-            window.electron.ipcRenderer.send('open-document', receiptFile);
+          try {
+            if (window.electron) {
+              // Electron version
+              const receiptFile = await GetReceiptFile(d.Day);
+              if (receiptFile) {
+                window.electron.ipcRenderer.send('open-document', receiptFile);
+              }
+            } else {
+              // Web version
+              const receiptFile = await GetReceiptFile(
+                d.Day,
+              
+              );
+              
+              if (receiptFile && receiptFile !== 'Add receipt') {
+                // Open in new tab
+                window.open(receiptFile, '_blank');
+              } else {
+                showAlert('error', 'No receipt found');
+              }
+            }
+          } catch (error) {
+            console.error('Error opening receipt:', error);
+            showAlert('error', 'Failed to open receipt');
           }
         }
 
@@ -963,9 +1000,17 @@ const calculatePayments = async () => {
           }
           console.log('Open in file explorer');
         }
-        function deleteReceipt(date: number) {
+        async function deleteReceipt (date: number) {
+          const choice = await confirm('Are you sure you want to delete this receipt?', {
+            title: 'Delete receipt',
+            confirmText: 'Delete',
+            cancelText:'Cancel',
+            type:'danger'
+          });
+          if(choice) {
           GetReceiptFile(date).then((receiptFile) => {
             if (receiptFile) {
+              if(window.electron){
               window.electron.ipcRenderer.send('delete-receipt', receiptFile);
               window.electron.ipcRenderer.once(
                 'receipt-deleted',
@@ -977,9 +1022,12 @@ const calculatePayments = async () => {
                     console.error('Failed to delete receipt:', result.error);
                   }
                 }
-              );
+              );} else {
+                deleteReceipt2(date,roomType.id,tenantList.find((t: tenant) => t.id === roomType.tenantId))
+                refresh(); // Refresh the UI
+              }
             }
-          });
+          });}
         }
       }
       /////////////////////////////////////////////

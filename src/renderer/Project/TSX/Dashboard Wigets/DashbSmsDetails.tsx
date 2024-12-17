@@ -1,12 +1,13 @@
 import { getValuesWithSql_Online } from 'Backend/OnlineServerApis';
 import React, { useEffect, useState, useMemo } from 'react';
-import '../../CSS/ToolsPage.css';
+
 import { Input } from '../Helpers/CustomReactComponents';
 import { LineChart } from '@mui/x-charts/LineChart';
 import { axisClasses } from '@mui/x-charts/ChartsAxis';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns';
 import { getValuesWithSql } from 'Backend/localServerApis';
-
+import { useGlobal } from 'renderer/components/GlobalContext';
+import loadingGif from "./../../../assets/assets/Loading/Rolling-1s-200px.gif"
 interface props {
   SelectedUserId: string;
   RoomList: RoomType[];
@@ -40,9 +41,16 @@ const DashbSmsDetails = ({ SelectedUserId, RoomList, tenantList }: props) => {
   const [SMSMonthlyLimit, setSMSMonthlyLimit] = useState(0);
   const [applyFiltersToGraph, setApplyFiltersToGraph] = useState(false);
   const [smsTemplates, setSmsTemplates] = useState<smsTemplate[]>([]);
+  const {
+    AllSmsTemplates,
+    setAllSmsTemplates,
+  } = useGlobal();
+  const [isLoading, setIsLoading] = useState(false);
   useEffect(() => {
+    
+
     const fetchSmsHistory = async () => {
-      const user = await getValuesWithSql_Online(
+      setIsLoading(true);const user = await getValuesWithSql_Online(
         'users',
         `WHERE id = '${SelectedUserId}'`
       );
@@ -52,14 +60,17 @@ const DashbSmsDetails = ({ SelectedUserId, RoomList, tenantList }: props) => {
         'sms_history',
         `WHERE userId = '${SelectedUserId}'`
       );
-      const smsTemplates = await getValuesWithSql('sms_templates', `WHERE 1`);
+      const smsTemplates = AllSmsTemplates;
       setSmsTemplates(smsTemplates);
       const sortedSmsHistory = smsHistoryRaw.sort(
         (a: smsHistoryType, b: smsHistoryType) => b.sentDate - a.sentDate
       );
-      setSmsHistory(sortedSmsHistory);
+      setSmsHistory(sortedSmsHistory); setIsLoading(false);
     };
     if (navigator.onLine) fetchSmsHistory();
+
+   
+
   }, [SelectedUserId]);
 
   const toggleExpand = (id: string) => {
@@ -211,8 +222,27 @@ const DashbSmsDetails = ({ SelectedUserId, RoomList, tenantList }: props) => {
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
+        position: 'relative',
       }}
     >
+      {isLoading && <div
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          backgroundColor: 'rgba(0, 0, 0, 0.2)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 1000,
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flexDirection: 'column' }}>
+          <img src={loadingGif} alt="Loading..." style={{width:'100px',height:'100px'}}/>
+        </div>
+      </div>}
       <h1 style={{ margin: 'var(--10px-V)' }}>SMS History</h1>
 
       <div
@@ -578,7 +608,7 @@ const DashbSmsDetails = ({ SelectedUserId, RoomList, tenantList }: props) => {
               display: 'flex',
               justifyContent: 'center',
               alignItems: 'center',
-              height: '150px',
+              height: 'var(--50px-V)',
               color: 'var(--Text-Color-Grey)',
               fontSize: 'var(--16px-V)',
               fontStyle: 'italic',

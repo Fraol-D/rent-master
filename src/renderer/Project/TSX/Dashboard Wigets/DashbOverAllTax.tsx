@@ -12,6 +12,7 @@ import {
   CurrencySign,
   getRateByDate,
 } from '../Helpers/CurrencySign';
+import { useGlobal } from 'renderer/components/GlobalContext';
 
 interface Payment {
   id: string;
@@ -34,6 +35,14 @@ const DashbOverAllTax = ({
   const [selectedDate, setSelectedDate] = useState(
     new Date().getFullYear().toString()
   );
+  const {
+    AllRoomPayInfoHistory,
+    setAllRoomPayInfoHistory,
+    AllRoomPayInfo,
+    setAllRoomPayInfo,
+    AllAgreements,
+    setAllAgreements,
+  } = useGlobal();
   const [predictedPayments, setPredictedPayments] = useState<Payment[]>([]);
   const [currencyDisplay, setCurrencyDisplay] = useState<
     'ETB_ONLY' | 'USD_ONLY' | 'ALL_ETB' | 'ALL_USD'
@@ -80,15 +89,19 @@ const DashbOverAllTax = ({
       let yearEnd = endOfYear(new Date(selectedYear + 2, 11, 31));
 
       // Get all actual payments for the selected year range
-      const actualPayments = await getValuesWithSql(
-        'room_pay_info',
-        `WHERE Day >= ${yearStart.getTime()} AND Day <= ${yearEnd.getTime()} AND branchId = '${SelectedBranchId}'`
+      const actualPayments = AllRoomPayInfo.filter(
+        (payment) =>
+          payment.Day >= yearStart.getTime() &&
+          payment.Day <= yearEnd.getTime() &&
+          payment.branchId === SelectedBranchId
       );
 
       // Get historical payments
-      const historicalPayments = await getValuesWithSql(
-        'room_pay_info_history',
-        `WHERE Day >= ${yearStart.getTime()} AND Day <= ${yearEnd.getTime()} AND branchId = '${SelectedBranchId}'`
+      const historicalPayments = AllRoomPayInfoHistory.filter(
+        (payment) =>
+          payment.Day >= yearStart.getTime() &&
+          payment.Day <= yearEnd.getTime() &&
+          payment.branchId === SelectedBranchId
       );
 
       // Map all payments (including unpaid ones for tax calculation)
@@ -116,9 +129,8 @@ const DashbOverAllTax = ({
         let endDate = yearEnd.getTime();
 
         if (room.selectedAgreementId) {
-          const agreements = await getValuesWithSql(
-            'agreements',
-            `WHERE id = '${room.selectedAgreementId}'`
+          const agreements = AllAgreements.filter(
+            (agreement) => agreement.id === room.selectedAgreementId
           );
           if (agreements.length > 0) {
             startDate = Math.max(agreements[0].startTime, yearStart.getTime());

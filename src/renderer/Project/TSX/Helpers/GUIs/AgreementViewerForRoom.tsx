@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import '../../../CSS/AgreementViewerForRoom.css';
+
 import { Input } from '../CustomReactComponents';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -11,7 +11,7 @@ import EthiopianCalanderConverterMenu from './EthiopianCalanderConverterMenu';
 import {
   addValue,
   deleteValue,
-  getValuesWithSql,
+
   updateValue,
 } from 'Backend/localServerApis';
 import { addDays } from 'date-fns'; // Add this import
@@ -21,6 +21,7 @@ import CurrencySign, {
   GetDefaultCurrency,
 } from '../CurrencySign';
 import { useAlert } from 'renderer/components/useAlert';
+import { useGlobal } from 'renderer/components/GlobalContext';
 
 const AgreementViewerForRoom = ({
   TenantList,
@@ -121,13 +122,16 @@ const AgreementViewerForRoom = ({
       setCustomDays('');
     }
   };
+  const {
+    AllRoomPayInfo,
+    setAllRoomPayInfo,
+  } = useGlobal();
   const movePaymentsToHistory = async (
     roomId: string,
     newAgreementId: string
   ) => {
-    const existingPayments = await getValuesWithSql(
-      'room_pay_info',
-      `WHERE roomId = '${roomId}' AND tenantId = '${roomType.tenantId}'`
+    const existingPayments = AllRoomPayInfo.filter(
+      (payment) => payment.roomId === roomId && payment.tenantId === roomType.tenantId
     );
 
     for (const payment of existingPayments) {
@@ -142,6 +146,9 @@ const AgreementViewerForRoom = ({
           setChangeMade
         );
       await deleteValue('room_pay_info', payment.id, setChangeMade);
+      setAllRoomPayInfo((prev) =>
+        prev.filter((payment) => payment.id !== payment.id)
+      );
     }
 
     // Now delete only the paid payments from room_pay_info
@@ -180,26 +187,23 @@ const AgreementViewerForRoom = ({
 
     // Deal with deleting, keeping, and makeing true of payments
     if (paymentOption === 'deleteUnpaid') {
-      const FutruePaymentsRaw = await getValuesWithSql(
-        'room_pay_info',
-        `WHERE roomId = '${roomType.id}' AND tenantId = '${
-          roomType.tenantId
-        }' AND Day >= '${Date.now()}' AND Paid = '0'`
+      const FutruePaymentsRaw = AllRoomPayInfo.filter(
+        (payment) => payment.roomId === roomType.id && payment.tenantId === roomType.tenantId && payment.Day >= Date.now() && payment.Paid === 0
       );
 
       if (FutruePaymentsRaw.length >= 1) {
         for (let i = 0; i < FutruePaymentsRaw.length; i++) {
           const element = FutruePaymentsRaw[i];
           await deleteValue('room_pay_info', element.id);
+          setAllRoomPayInfo((prev) =>
+            prev.filter((payment) => payment.id !== element.id)
+          );
         }
       }
     } else if (paymentOption === 'keepUnpaid') {
     } else if (paymentOption === 'makeAllPaid') {
-      const FutruePaymentsRaw = await getValuesWithSql(
-        'room_pay_info',
-        `WHERE roomId = '${roomType.id}' AND tenantId = '${
-          roomType.tenantId
-        }' AND Day >= '${Date.now()}' AND Paid = '0'`
+      const FutruePaymentsRaw = AllRoomPayInfo.filter(
+        (payment) => payment.roomId === roomType.id && payment.tenantId === roomType.tenantId && payment.Day >= Date.now() && payment.Paid === 0
       );
       console.log(FutruePaymentsRaw.length, 'length');
       if (FutruePaymentsRaw.length >= 1) {
@@ -212,6 +216,11 @@ const AgreementViewerForRoom = ({
             1,
             setChangeMade,
             0
+          );
+          setAllRoomPayInfo((prev) =>
+            prev.map((payment) =>
+              payment.id === element.id ? { ...payment, Paid: true } : payment
+            )
           );
         }
       }
