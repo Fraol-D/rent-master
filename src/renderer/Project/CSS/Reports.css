@@ -1,0 +1,552 @@
+
+.currency-selector {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  margin-left: var(--10px-V);
+}
+
+.currency-select {
+  padding: var(--3px-V) var(--8px-V);
+  border-radius: var(--4px-V);
+  border: var(--1px-V) solid var(--Border-Color);
+  background-color: var(--Background-Color);
+  color: var(--Text-Color);
+  cursor: pointer;
+}
+
+.exchange-rate {
+  font-size: var(--12px-V);
+  color: var(--Text-Color-Grey);
+  margin-top: var(--5px-V);
+}
+
+.report-controls {
+  display: flex;
+  gap: var(--10px-V);
+  align-items: flex-start;
+}
+.report-container {
+  padding: var(--20px-V);
+
+  border-radius: var(--4px-V);
+}
+
+.report-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--20px-V);
+}
+
+.report-controls {
+  display: flex;
+  gap: var(--10px-Va);
+  align-items: center;
+}
+
+.view-type-select,
+.date-picker,
+.year-picker {
+  padding: 10px;
+  border: var(--1px-V) solid var(--Text-Color-Grey);
+  border-radius: var(--4px-V);
+  margin: 5px;
+}
+
+.report-table-container {
+  overflow-x: auto;
+  margin-top: var(--20px-V);
+}
+
+.report-table {
+  border-collapse: collapse;
+  text-align: right;
+}
+.report-table thead {
+  background-color: var(--Secondary-Color20);
+}
+.report-table th {
+  background-color: var(--Secondary-Color20);
+  padding: var(--8px-V) var(--12px-V);
+  border: var(--1px-V) solid var(--Text-Color-Grey);
+  color: var(--Text-Color);
+  border-bottom: var(--4px-V) solid var(--Text-Color-Grey);
+  text-align: left;
+}
+.report-table td {
+  padding: var(--8px-V) var(--12px-V);
+  border: var(--1px-V) solid var(--Text-Color-Grey);
+  color: var(--Text-Color);
+  text-align: left;
+}
+
+.report-table th {
+  background: var(--Secondary-Background);
+  font-weight: bold;
+  text-align: left;
+}
+
+.total-header {
+  border-left: var(--5px-V) solid var(--Text-Color-Grey);
+}
+.currency-control {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--5px-V);
+}
+
+.currency-select {
+  padding: var(--3px-V) var(--8px-V);
+  border-radius: var(--4px-V);
+  border: var(--1px-V) solid var(--Border-Color);
+  background-color: var(--Background-Color);
+  color: var(--Text-Color);
+  cursor: pointer;
+}
+
+.exchange-rate-info {
+  font-size: var(--12px-V);
+  color: var(--Text-Color-Grey);
+}
+
+.report-controls {
+  display: flex;
+  gap: var(--10px-V);
+  align-items: flex-start;
+}
+
+.report-table td {
+  white-space: nowrap;
+  text-align: right;
+}
+
+.report-table td:first-child {
+  text-align: left;
+}
+
+.rental-report-container {
+  padding: var(--5px-V);
+
+  border-radius: var(--8px-V);
+  color: var(--Text-Color);
+}
+
+.report-header {
+  margin-bottom: var(--20px-V);
+}
+
+.report-header h2 {
+  margin-bottom: var(--15px-V);
+  color: var(--Text-Color);
+}
+
+.report-controls {
+  display: flex;
+  gap: var(--20px-V);
+
+  flex-wrap: wrap;
+}
+
+.period-controls {
+  display: flex;
+  gap: var(--10px-V);
+}
+
+.period-controls button {
+  padding: var(--8px-V) var(--15px-V);
+ 
+  border-radius: var(--4px-V);
+  background: var(--Secondary-Color);
+  color: var(--Text-Color);
+  cursor: pointer;
+}
+
+.period-controls button:hover {
+  /*background: var(--Hover-Color);*/
+}
+
+.date-range {
+  display: flex;
+  align-items: center;
+  gap: var(--10px-V);
+}
+
+.date-range input {
+  padding: var(--6px-V);
+
+  border-radius: var(--4px-V);
+  background: var(--Secondary-Color);
+  color: var(--Text-Color);
+}
+
+.report-sections {
+  display: flex;
+  flex-direction: column;
+  gap: var(--20px-V);
+}
+.rental-report-container h3 {
+  margin: 0px;
+}
+
+.report-sections section {
+  background: var(--Secondary-Color20);
+  padding: var(--15px-V);
+  border-radius: var(--8px-V);
+  border: 1px solid var(--Border-Color);
+}
+
+.report-sections h3 {
+  margin-bottom: var(--15px-V);
+  color: var(--Text-Color);
+  border-bottom: 1px solid var(--Border-Color);
+  padding-bottom: var(--8px-V);
+}
+
+.stat-item {
+  display: flex;
+  justify-content: space-between;
+  flex-direction: column;
+  margin-bottom: var(--8px-V);
+}
+
+.expenses-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: var(--8px-V);
+}
+
+.expense-item {
+  display: flex;
+  justify-content: space-between;
+  padding: var(--4px-V) 0;
+}
+
+.expense-item.total {
+  border-top: 1px solid var(--Border-Color);
+  margin-top: var(--8px-V);
+  padding-top: var(--8px-V);
+  font-weight: bold;
+}
+
+.summary-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--15px-V);
+}
+
+.summary-stats .stat-item {
+  padding: var(--10px-V);
+  background: var(--Secondary-Color30);
+
+  border-radius: var(--4px-V);
+  margin-bottom: 0;
+}
+
+.report-header-section {
+  display: flex;
+  gap: var(--20px-V);
+  margin-bottom: var(--20px-V);
+}
+
+.report-info,
+.report-summary {
+  flex: 1;
+  background: var(--Secondary-Color20);
+  padding: var(--15px-V);
+  border-radius: var(--8px-V);
+  border: 1px solid var(--Border-Color);
+}
+
+.info-grid,
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--10px-V);
+  margin-top: var(--10px-V);
+}
+
+.info-item,
+.summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--5px-V);
+}
+
+.info-item label,
+.summary-item label {
+  color: var(--Text-Color-Grey);
+  font-size: var(--12px-V);
+}
+
+.info-item span,
+.summary-item span {
+  font-size: var(--14px-V);
+  font-weight: bold;
+}
+
+.predicted-payments-section,
+.predicted-expenses-section {
+  background: var(--Secondary-Color);
+  padding: var(--15px-V);
+  border-radius: var(--8px-V);
+  border: 1px solid var(--Border-Color);
+  margin-top: var(--20px-V);
+}
+
+.predictions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: var(--10px-V);
+  margin-top: var(--10px-V);
+}
+
+.prediction-item {
+  background: var(--Secondary-Color30);
+  padding: var(--10px-V);
+  border-radius: var(--4px-V);
+  display: flex;
+  flex-direction: column;
+  gap: var(--5px-V);
+}
+
+.prediction-date {
+  font-size: var(--12px-V);
+  color: var(--Text-Color-Grey);
+}
+
+.prediction-details {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: bold;
+}
+
+.prediction-status,
+.prediction-category {
+  font-size: var(--12px-V);
+  color: var(--Accent-Color);
+  text-align: right;
+}
+
+.income-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+
+}
+
+.income-stats .stat-item {
+  background: var(--Secondary-Color30);
+  padding: var(--15px-V);
+  border-radius: var(--8px-V);
+  border: 1px solid var(--Border-Color);
+}
+
+.income-stats .stat-item label {
+  color: var(--Text-Color-Grey);
+  font-size: var(--12px-V);
+  display: block;
+  margin-bottom: var(--5px-V);
+}
+
+.income-stats .stat-item span {
+  font-size: var(--16px-V);
+  font-weight: bold;
+  display: block;
+}
+
+.income-stats .stat-item span.collected {
+  color: var(--Success-Color);
+}
+
+.income-stats .stat-item span.uncollected {
+  color: var(--Warning-Color);
+}
+
+.income-stats .stat-item span.warning {
+  color: var(--Warning-Color);
+}
+
+.uncollected-payments-section .prediction-item {
+  border-left: 3px solid var(--Warning-Color);
+}
+
+.uncollected-payments-section .prediction-item.overdue {
+  border-left-color: var(--Error-Color);
+}
+
+.prediction-item .overdue-tag {
+  background: var(--Error-Color);
+  color: var(--Text-Color);
+  font-size: var(--12px-V);
+  padding: var(--2px-V) var(--6px-V);
+  border-radius: var(--4px-V);
+  margin-left: var(--8px-V);
+}
+
+.prediction-item .tenant-info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--2px-V);
+}
+
+.prediction-item .tenant-info span:last-child {
+  font-size: var(--12px-V);
+  color: var(--Text-Color-Grey);
+}
+
+.prediction-item .amount {
+  font-weight: bold;
+  color: var(--Warning-Color);
+}
+
+/* Add print styles */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  
+  #rental-report,
+  #rental-report * {
+    visibility: visible;
+    background: white !important;
+    color: black !important;
+  }
+
+  #rental-report {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+
+  .report-controls-section {
+    display: none;
+  }
+}
+
+/* Update existing styles */
+.rental-report-wrapper {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--20px-V);
+}
+
+.report-controls-section {
+  background: var(--Secondary-Color40);
+  padding: var(--10px-V);
+  border-radius: var(--8px-V);
+  margin-bottom: var(--20px-V);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.date-controls {
+  flex: 1;
+}
+
+.date-controls h3 {
+  font-size: var(--18px-V);
+  margin-bottom: var(--10px-V);
+}
+
+.date-inputs {
+  display: flex;
+  align-items: center;
+  gap: var(--10px-V);
+}
+
+.date-input {
+  padding: var(--8px-V) var(--12px-V);
+  border: 1px solid var(--Border-Color);
+  border-radius: var(--4px-V);
+  font-size: var(--14px-V);
+}
+
+.report-actions {
+  display: flex;
+  gap: var(--10px-V);
+}
+
+.action-button {
+  padding: var(--8px-V) var(--16px-V);
+  border: none;
+  border-radius: var(--4px-V);
+  background: var(--Primary-Color);
+  color: var(--Text-Color-Reverse);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.action-button:hover {
+  background: var(--Accent-Color-Hover);
+}
+
+/* Fix spacing in stat items */
+.stat-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--15px-V);
+  background: var(--Secondary-Color30);
+  border-radius: var(--8px-V);
+  max-width: 400px;
+}
+
+.stat-item label {
+  margin-right: var(--15px-V);
+  color: var(--Text-Color-Grey);
+  font-size: var(--14px-V);
+}
+
+.stat-item span {
+  font-size: var(--16px-V);
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+/* Make sections more compact */
+.income-section,.overview-section,
+.expenses-section,
+.summary-section {
+  background: var(--Secondary-Color);
+  padding: var(--20px-V);
+  border-radius: var(--8px-V);
+  margin-bottom: var(--20px-V);
+  max-width: 800px;
+
+}
+
+.expenses-breakdown {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--10px-V);
+}
+
+.expense-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--10px-V) var(--15px-V);
+  background: var(--Secondary-Color30);
+  border-radius: var(--4px-V);
+}
+
+.expense-item label {
+  margin-right: var(--15px-V);
+}
+
+h4 {
+  margin: var(--20px-V) 0 var(--10px-V);
+  color: var(--Text-Color-Grey);
+}
+
+/* Add to existing styles */
+.vacancy-details {
+  font-size: var(--12px-V);
+  color: var(--Text-Color-Grey);
+  font-weight: normal;
+  margin-top: var(--5px-V);
+}

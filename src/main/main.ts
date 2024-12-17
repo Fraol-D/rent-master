@@ -1,5 +1,6 @@
+import { storageManager } from '../renderer/storeManager';
 import path from 'path';
-import { app, BrowserWindow, shell, ipcMain } from 'electron';
+import { app, BrowserWindow, shell, ipcMain, Menu } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import MenuBuilder from './menu';
@@ -10,12 +11,16 @@ import { dialog } from 'electron';
 import mime from 'mime';
 //const nodemailer = require('nodemailer');
 const nodemailer = require('nodemailer');
-
+const { translate, detectLanguage } = require('afrotranslate');
 const Store = require('electron-store');
 const store = new Store();
 const getStoreValue = (key: string) => {
   return store.get(key);
 };
+// Replace console with electron-log
+Object.assign(console, log);
+// Capture renderer logs
+
 const setStoreValue = (key: string, value: any) => {
   store.set(key, value);
 };
@@ -25,19 +30,106 @@ ipcMain.on('electron-store-get', async (event, val) => {
 ipcMain.on('electron-store-set', async (event, key, val) => {
   setStoreValue(key, val);
 });
+
 class AppUpdater {
   constructor() {
     log.transports.file.level = 'info';
+    store.set('updateReady', false);
     autoUpdater.logger = log;
-    autoUpdater.checkForUpdatesAndNotify();
+
+    // Disable auto downloading
+    autoUpdater.autoDownload = false;
+
+    // Set the GitHub configuration directly
+    autoUpdater.setFeedURL({
+      provider: 'github',
+      owner: 'Doorlock06',
+      repo: 'rentmaster',
+      private: true,
+      token: process.env.GH_TOKEN, // Make sure you have this set
+    });
+
+    // Handle update available with more info
+    autoUpdater.on('update-available', (info) => {
+      log.info('Update available:', info);
+      // Store update info
+      store.set('updateInfo', {
+        available: true,
+        version: info.version,
+        releaseNotes: info.releaseNotes,
+        releaseDate: info.releaseDate,
+      });
+      mainWindow?.webContents.send('update-available', {
+        version: info.version,
+        releaseNotes: info.releaseNotes,
+        releaseDate: info.releaseDate,
+        path: info.path,
+      });
+      autoUpdater.downloadUpdate();
+    });
+
+    // Add error logging
+    autoUpdater.on('error', (err) => {
+      log.error('Update error:', err);
+    });
+
+    autoUpdater.on('download-progress', (progressObj) => {
+      log.info(`Download progress: ${progressObj.percent}%`);
+      // Store progress
+      store.set('updateProgress', {
+        percent: progressObj.percent,
+        transferred: progressObj.transferred,
+        total: progressObj.total,
+      });
+      mainWindow?.webContents.send('download-progress', {
+        percent: progressObj.percent,
+        transferred: progressObj.transferred,
+        total: progressObj.total,
+        bytesPerSecond: progressObj.bytesPerSecond,
+      });
+    });
+
+    // Handle update downloaded
+    autoUpdater.on('update-downloaded', () => {
+      log.info('Update downloaded');
+      store.set('updateReady', true);
+      mainWindow?.webContents.send('update-downloaded');
+    });
+
+    // Add this IPC handler
+    ipcMain.on('restart-app', () => {
+      autoUpdater.quitAndInstall(false, true);
+    });
+
+    // Check for updates
+    try {
+      autoUpdater.checkForUpdates().catch((err) => {
+        log.error('Error checking for updates:', err);
+      });
+    } catch (err) {
+      log.error('Error in update check:', err);
+    }
   }
 }
 
+// Add this helper method to install updates
+export function installUpdate() {
+  autoUpdater.quitAndInstall(false, true);
+}
+
 let mainWindow: BrowserWindow | null = null;
+let connectionCheckInterval: NodeJS.Timeout | null = null;
+let lastHeartbeat = Date.now();
+let debugLog: string[] = [];
+
+function logDebug(message: string) {
+  const timestamp = new Date().toISOString();
+  const logMessage = `[${timestamp}] ${message}`;
+  debugLog.push(logMessage);
+}
 
 ipcMain.on('ipc-example', async (event, arg) => {
   const msgTemplate = (pingPong: string) => `IPC test: ${pingPong}`;
-  console.log(msgTemplate(arg));
   event.reply('ipc-example', msgTemplate('pong'));
 });
 
@@ -65,10 +157,49 @@ const installExtensions = async () => {
     )
     .catch(console.log);
 };
+const os = require('os');
+// Serve static files from the 'src/renderer' directory
+// Add this near the top of main.ts
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
+  dialog.showErrorBox(
+    'Critical Error',
+    `An unexpected error occurred: ${error.message}\n\nThe application will try to restart.`
+  );
+  app.relaunch();
+  app.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+// Connection monitoring functions
+function setupConnectionMonitoring(window: BrowserWindow) {
+  if (!window) {
+    logDebug('Setup failed: Window is null');
+    return;
+  }
+
+  if (connectionCheckInterval) {
+    logDebug('Clearing existing interval');
+    clearInterval(connectionCheckInterval);
+  }
+
+  lastHeartbeat = Date.now();
+  logDebug('Connection monitoring setup started');
+}
+
+function cleanupConnectionMonitoring() {
+  if (connectionCheckInterval) {
+    clearInterval(connectionCheckInterval);
+    connectionCheckInterval = null;
+  }
+}
 
 const createWindow = async () => {
   if (isDebug) {
-    await installExtensions();
+    // await installExtensions();
   }
 
   const RESOURCES_PATH = app.isPackaged
@@ -102,9 +233,9 @@ const createWindow = async () => {
     finalX = Math.floor((screenWidth - finalWidth) / 2);
     finalY = Math.floor((screenHeight - finalHeight) / 2);
   }
-  
-  if(finalX >=1800) {
-    finalX=0;
+
+  if (finalX >= 1800) {
+    finalX = 0;
   }
   mainWindow = new BrowserWindow({
     show: false,
@@ -114,31 +245,69 @@ const createWindow = async () => {
     x: finalX,
     y: finalY,
     icon: getAssetPath('icon.png'),
+    autoOpenDevTools: false,
+    title: `RentMaster v${app.getVersion()}`,
     webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: true,
       preload: app.isPackaged
         ? path.join(__dirname, 'preload.js')
         : path.join(__dirname, '../../.erb/dll/preload.js'),
     },
+    autoHideMenuBar: true,
+  }).on('error', (error) => {
+    console.error('Window creation error:', error);
   });
 
-  mainWindow.loadURL(resolveHtmlPath('index.html'));
+  // Add error handler for window load
+  mainWindow.webContents.on(
+    'did-fail-load',
+    (event, errorCode, errorDescription) => {
+      console.error('Window failed to load:', errorDescription);
+      dialog.showErrorBox(
+        'Application Error',
+        `Failed to load the application: ${errorDescription}`
+      );
+    }
+  );
+  Menu.setApplicationMenu(null);
+  try {
+    mainWindow.loadURL(resolveHtmlPath('index.html'));
+  } catch (error) {
+    console.error('Error loading main window:', error);
+  }
+  // Get the PC name
 
   mainWindow.on('ready-to-show', () => {
-    if (!mainWindow) {
-      throw new Error('"mainWindow" is not defined');
-    }
-    if (process.env.START_MINIMIZED) {
-      mainWindow.minimize();
-    } else {
-      mainWindow.show();
+    try {
+      if (!mainWindow) {
+        throw new Error('"mainWindow" is not defined');
+      }
+
+      if (process.env.START_MINIMIZED) {
+        mainWindow.minimize();
+      } else {
+        mainWindow.show();
+      }
+    } catch (error: any) {
+      console.log(error);
     }
   });
 
-  mainWindow.on('closed', () => {
-    mainWindow = null;
-  });
-  mainWindow.on('close', () => {
-    if (mainWindow) {
+  // Modify the window close handler
+  mainWindow.on('close', async (e) => {
+    console.log('Close event triggered');
+    if (dev) return;
+    // Immediately prevent closing
+    e.preventDefault();
+
+    if (!mainWindow) {
+      console.log('No mainWindow, allowing close');
+      return;
+    }
+
+    try {
+      // Save window state
       const { width, height } = mainWindow.getBounds();
       store.set('windowState', {
         width,
@@ -147,7 +316,139 @@ const createWindow = async () => {
         y: mainWindow.getPosition()[1],
         FullScreen: mainWindow.isFullScreen(),
       });
-      console.log('Window closed', mainWindow.isFullScreen());
+      console.log('Window state saved');
+
+      // Check conditions
+      const isOnline = await mainWindow.webContents.executeJavaScript(
+        'navigator.onLine'
+      );
+      console.log('Is online:', isOnline);
+
+      const hasChanges = await hasOfflineChanges();
+      console.log('Has changes:', hasChanges);
+
+      if (isOnline && hasChanges) {
+        console.log('Showing dialog');
+        const choice = await dialog.showMessageBox(mainWindow, {
+          type: 'question',
+          buttons: [
+            'Upload Changes then Keep Working',
+            'Upload Changes then Close App',
+            'Close Anyway',
+            'Cancel',
+          ],
+          defaultId: 1,
+          title: 'Unuploaded Changes',
+          message:
+            'There are offline changes that can be uploaded. Would you like to upload before closing?',
+          detail:
+            'Your changes will remain in the on your local pc if you choose "Close Anyway".',
+          noLink: true, // Prevents the dialog from closing when clicking outside
+        });
+
+        console.log('Dialog response:', choice.response);
+
+        switch (choice.response) {
+          case 0: // Upload & Keep Working
+            console.log('Syncing changes and keeping app open');
+            try {
+              await mainWindow.webContents.executeJavaScript(`
+                (async () => {
+                  try {
+                    await window.handleUploadChanges();
+                    return true;
+                  } catch (error) {
+                    console.error('Upload error:', error);
+                    return false;
+                  }
+                })()
+              `);
+              console.log('Sync complete, keeping app open');
+            } catch (error) {
+              console.error('Sync error:', error);
+              dialog.showMessageBox(mainWindow, {
+                type: 'error',
+                title: 'Sync Error',
+                message: 'Failed to upload changes. You can try again later.',
+                buttons: ['OK'],
+              });
+            }
+            break;
+
+          case 1: // Upload & Close
+            console.log('Syncing changes and closing');
+            try {
+              const success = await mainWindow.webContents.executeJavaScript(`
+                (async () => {
+                  try {
+                    await window.handleUploadChanges();
+                    return true;
+                  } catch (error) {
+                    console.error('Upload error:', error);
+                    return false;
+                  }
+                })()
+              `);
+
+              if (success) {
+                console.log('Sync complete, closing app');
+                mainWindow.destroy();
+              } else {
+                const retryChoice = await dialog.showMessageBox(mainWindow, {
+                  type: 'error',
+                  buttons: ['Try Again', 'Close Anyway'],
+                  defaultId: 0,
+                  title: 'Sync Failed',
+                  message:
+                    'Failed to upload changes. Would you like to try again?',
+                });
+
+                if (retryChoice.response === 1) {
+                  mainWindow.destroy();
+                }
+              }
+            } catch (error) {
+              console.error('Sync error:', error);
+              mainWindow.destroy();
+            }
+            break;
+
+          case 2: // Close Without Uploading
+            console.log('Closing without upload');
+            mainWindow.destroy();
+            break;
+
+          case 3: // Cancel
+            console.log('Cancelled close');
+            break;
+
+          default:
+            console.log('Dialog closed, keeping app open');
+            break;
+        }
+      } else {
+        console.log('No changes or offline, closing directly');
+        mainWindow.destroy();
+      }
+    } catch (error) {
+      console.error('Error in close handler:', error);
+      mainWindow.destroy();
+    }
+  });
+
+  // Add this to handle the actual window destruction
+  mainWindow.on('closed', () => {
+    console.log('Window closed event');
+    cleanupConnectionMonitoring();
+    mainWindow = null;
+  });
+
+  // Add this to handle app quit
+  app.on('before-quit', (e) => {
+    console.log('Before quit event');
+    if (mainWindow) {
+      e.preventDefault();
+      mainWindow.close();
     }
   });
   const menuBuilder = new MenuBuilder(mainWindow);
@@ -159,14 +460,76 @@ const createWindow = async () => {
   });
 
   new AppUpdater();
+
+  // Initialize monitoring after window is ready
+  mainWindow.webContents.on('did-finish-load', () => {
+    setupConnectionMonitoring(mainWindow);
+  });
+
+  // Add these near other IPC handlers
+  ipcMain.handle('check-for-updates', async () => {
+    return autoUpdater.checkForUpdates();
+  });
+
+  ipcMain.handle('install-update', () => {
+    autoUpdater.quitAndInstall(false, true);
+  });
+
+  ipcMain.handle('is-update-ready', () => {
+    return store.get('updateReady', false);
+  });
+
+  // Add diagnostic IPC handlers
+  ipcMain.handle('get-connection-logs', () => {
+    return debugLog;
+  });
+
+  // Add error handlers for the window
+  mainWindow.webContents.on('crashed', (event) => {
+    logDebug('Renderer process crashed');
+    console.error('Renderer crashed:', event);
+  });
+
+  mainWindow.on('unresponsive', () => {
+    logDebug('Window became unresponsive');
+  });
+
+  mainWindow.webContents.on(
+    'did-fail-load',
+    (event, errorCode, errorDescription) => {
+      logDebug(`Page failed to load: ${errorDescription} (${errorCode})`);
+    }
+  );
 };
 
 app.on('window-all-closed', () => {
+  cleanupConnectionMonitoring();
   if (process.platform !== 'darwin') {
     app.quit();
   }
-});
+}); // Add this function to check offline changes
 
+ipcMain.handle('os-info', () => {
+  const userInfo = os.userInfo();
+  const pcName = os.hostname();
+  const platform = os.platform();
+  const architecture = os.arch();
+  const cpuInfo = os.cpus();
+  const totalMemory = os.totalmem();
+  const freeMemory = os.freemem();
+  const homeDirectory = os.homedir();
+
+  return {
+    userInfo,
+    pcName,
+    platform,
+    architecture,
+    cpuInfo,
+    totalMemory,
+    freeMemory,
+    homeDirectory,
+  };
+});
 app
   .whenReady()
   .then(() => {
@@ -174,169 +537,19 @@ app
     app.on('activate', () => {
       if (mainWindow === null) createWindow();
     });
-    ipcMain.on('renderer-to-main', (event, message) => {
-      const sendEmail = async (email: any, subject: any, text: any) => {
-        // Create a transporter using SMTP
-
-        const transporter = nodemailer.createTransport({
-          host: 'rentmaster.markethubet.com',
-          port: 465,
-          secure: true,
-          auth: {
-            user: 'seblewenglesbuilding@rentmaster.markethubet.com',
-            pass: 'Plp5H9:Li(UO#6[y+26E',
-          },
-        });
-
-        // Define the email options
-        const mailOptions = {
-          from: 'seblewenglesbuilding@rentmaster.markethubet.com',
-          to: email,
-          subject: subject,
-          text: text,
-        };
-
-        try {
-          // Send the email
-          await transporter.sendMail(mailOptions);
-          return { success: true };
-        } catch (error) {
-          return { success: false, error: error.message };
-        }
-      };
-      sendEmail(
-        'christian.b.taye@gmail.com',
-        'Bro this is so cool',
-        'this is ht ebody'
-      )
-        .then((result) => console.log(result))
-        .catch((error) => console.error(error));
-    });
+   
     // Check for backup on app start
-    checkAndCreateBackup();
+    if (store.get('users'))
+      if (store.get('users')[0])
+        if (store.get('users')[0].allowed === 1) checkAndCreateBackup();
     ipcMain.on('reload-app', () => {
       reloadApp();
     });
     // Set up daily check for backup
     setInterval(checkAndCreateBackup, 24 * 60 * 60 * 1000);
-    ipcMain.on('SendVerificationCode', (event, message) => {
-      console.log('Send verfication code:', message.to, message.code);
-      async function sendVerificationEmail(to: any, code: any) {
-        let transporter = nodemailer.createTransport({
-          host: 'mail.markethubet.com',
-          port: 465,
-          secure: true, // true for 465, false for other ports
-          auth: {
-            user: 'verify@markethubet.com',
-            pass: 'Plp5H9:Li(UO#6[y+26E',
-          },
-        });
-
-        let mailOptions = {
-          from: 'verify@markethubet.com',
-          to: to,
-          subject: 'Email Verification',
-          html: `
-            <!DOCTYPE html>
-            <html lang="en">
-            <head>
-              <meta charset="UTF-8">
-              <meta name="viewport" content="width=device-width, initial-scale=1.0">
-              <title>Email Verification</title>
-              <style>
-             
-              body,
-              h1,
-              p {
-                margin: 0;
-                padding: 0;
-              }
-          
-              body {
-                font-family: Arial, sans-serif;
-                line-height: 1.6;
-                background-color: #f5f5f5;
-              }
-          
-              .container {
-                max-width: 600px;
-                margin: 20px auto;
-                padding: 20px;
-                background-color: #ffffff;
-                border-radius: 8px;
-                box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-              }
-          
-              h1 {
-                font-size: 24px;
-                color: #333333;
-                margin-bottom: 10px;
-              }
-          
-              p {
-                font-size: 16px;
-                color: #666666;
-                margin-bottom: 20px;
-              }
-          
-              .verification-code {
-                margin-bottom: 30px;
-              }
-          
-              .btn {
-                display: inline-block;
-                padding: 10px 20px;
-                background-color: #007bff;
-                color: #ffffff;
-                text-decoration: none;
-                border-radius: 4px;
-              }
-          
-              .footer {
-                margin-top: 20px;
-                border-top: 1px solid #cccccc;
-                padding-top: 20px;
-              }
-          
-              .footer p {
-                margin-bottom: 10px;
-              }
-          
-              .footer a {
-                color: #007bff;
-                text-decoration: none;
-                margin-right: 10px;
-              }
-            </style>
-            </head>
-            <body>
-              <div class="container">
-                <h1>Email Verification</h1>
-                <p>Thank you for signing up with RentMaster. Please verify your email address to complete your registration.</p>
-                <p class="verification-code"><strong>Your Verification Code:</strong> <span style="font-weight: bold; font-size: 18px;">${code}</span></p>
-                <a href="#" class="btn">Verify Email</a>
-                <div class="footer">
-                  <p>Contact us at <a href="mailto:support@markethubet.com">support@markethubet.com</a> for assistance.</p>
-                  <p>Visit our website: <a href="https://www.rentmaster.markethubet.com">www.markethubet.com</a></p>
-                </div>
-              </div>
-            </body>
-            </html>
-          `,
-        };
-
-        try {
-          let info = await transporter.sendMail(mailOptions);
-          console.log('Email sent: ' + info.response);
-        } catch (error) {
-          console.error('Error while sending email:', error);
-        }
-      }
-      sendVerificationEmail(message.to, message.code);
-    });
   })
   .catch(console.log);
-  const { v4: uuidv4 } = require('uuid');
+import { v4 as uuidv4 } from 'uuid';
 // Sending verification codes
 ipcMain.on('SendCustomEmail', async (event, message) => {
   console.log('Send custom email:', message.to, message.subject, message.body);
@@ -348,53 +561,28 @@ ipcMain.on('SendCustomEmail', async (event, message) => {
     userEmail: any,
     userPassword: any
   ) => {
-    //Getemail and pass from online
-    const user = await getValuesWithSql_Online(
-      'users',
-      `WHERE email = '${userEmail}' AND password = '${userPassword}' AND Allowed = 1`
-    );
-    console.log(
-      'user',
-      user,
-      `WHERE email = '${userEmail}' AND password = '${userPassword}' AND Allowed = 1`
-    );
-    console.log(user[0].selectedEmailToSendWith);
-    console.log(user[0].selectedEmailToSendWithPassword);
-    if (user[0]) {
-      const transporter = nodemailer.createTransport({
-        host: 'rentmaster.markethubet.com',
-        port: 465,
-        secure: true,
-        auth: {
-          user: user[0].selectedEmailToSendWith,
-          pass: user[0].selectedEmailToSendWithPassword,
-        },
-      });
+    
+    // Prepare data for API call
+    const data = {
+      email: email,
+      subject: subject,
+      text: text,
+      user: {
+        email: userEmail,
+        password: userPassword,
+      },
+    };
 
-      const mailOptions = {
-        from: user[0].selectedEmailToSendWith,
-        to: email,
-        subject: subject,
-        text: text,
-      };
-
-      try {
-        await transporter.sendMail(mailOptions);
-        await addValueOnline('email_history', {
-          id: uuidv4(),
-          receiver: message.to,
-          subject: message.subject,
-          body: message.body,
-          from:user[0].selectedEmailToSendWith,
-          sentDate: Date.now(),
-         templateId:message.templateId,
-         mode:'Manually',
-          userId: user[0].id,
-        })
+    try {
+      // Call the API to send the email
+      const response = await axios.post(`${baseUrl}/api/send-email`, data);
+      if (response.data.success) {
         return { success: true };
-      } catch (error) {
-        return { success: false, error: error.message };
+      } else {
+        return { success: false, error: response.data.error };
       }
+    } catch (error) {
+      return { success: false, error: error.message };
     }
   };
 
@@ -407,7 +595,6 @@ ipcMain.on('SendCustomEmail', async (event, message) => {
       message.userPassword
     );
     if (result.success) {
-    
       event.reply('SendCustomEmailResponse', {
         success: true,
         message: 'Email sent successfully',
@@ -428,7 +615,121 @@ ipcMain.on('SendCustomEmail', async (event, message) => {
     });
   }
 });
+ipcMain.on('SendVerificationCode', (event, message) => {
+  console.log('Send verfication code:', message.to, message.code);
+  async function sendVerificationEmail(to: any, code: any) {
+    let transporter = nodemailer.createTransport({
+      host: 'mail.markethubet.com',
+      port: 465,
+      secure: true, // true for 465, false for other ports
+      auth: {
+          user: process.env.VITE_VERIFY_EMAIL_USER,
+          pass: process.env.VITE_VERIFY_EMAIL_PASS,
+      },
+    });
 
+    let mailOptions = {
+      from: process.env.VITE_VERIFY_EMAIL_USER,
+      to: to,
+      subject: 'Email Verification',
+      html: `
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Email Verification</title>
+          <style>
+         
+          body,
+          h1,
+          p {
+            margin: 0;
+            padding: 0;
+          }
+      
+          body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            background-color: #f5f5f5;
+          }
+      
+          .container {
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+          }
+      
+          h1 {
+            font-size: 24px;
+            color: #333333;
+            margin-bottom: 10px;
+          }
+      
+          p {
+            font-size: 16px;
+            color: #666666;
+            margin-bottom: 20px;
+          }
+      
+          .verification-code {
+            margin-bottom: 30px;
+          }
+      
+          .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: #ffffff;
+            text-decoration: none;
+            border-radius: 4px;
+          }
+      
+          .footer {
+            margin-top: 20px;
+            border-top: 1px solid #cccccc;
+            padding-top: 20px;
+          }
+      
+          .footer p {
+            margin-bottom: 10px;
+          }
+      
+          .footer a {
+            color: #007bff;
+            text-decoration: none;
+            margin-right: 10px;
+          }
+        </style>
+        </head>
+        <body>
+          <div class="container">
+            <h1>Email Verification</h1>
+            <p>Thank you for signing up with RentMaster. Please verify your email address to complete your registration.</p>
+            <p class="verification-code"><strong>Your Verification Code:</strong> <span style="font-weight: bold; font-size: 18px;">${code}</span></p>
+            <a href="#" class="btn">Verify Email</a>
+            <div class="footer">
+              <p>Contact us at <a href="mailto:support@markethubet.com">support@markethubet.com</a> for assistance.</p>
+              <p>Visit our website: <a href="https://www.rentmaster.markethubet.com">www.markethubet.com</a></p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `,
+    };
+
+    try {
+      let info = await transporter.sendMail(mailOptions);
+      console.log('Email sent: ' + info.response);
+    } catch (error) {
+      console.error('Error while sending email:', error);
+    }
+  }
+  sendVerificationEmail(message.to, message.code);
+});
 // Server
 const express = require('express');
 const bodyParser = require('body-parser');
@@ -438,13 +739,16 @@ const sqlite3 = require('sqlite3').verbose();
 const fs = require('fs');
 
 const appDB = express();
-const port = 8100;
-const appname = 'BMS';
+appDB.use(express.static(path.join(__dirname, 'src/renderer')));
+
+const port =8100;
+const dev = false;
+const appname = dev ? 'Electron' : 'rent-master';
 appDB.use(
   cors({
     origin: ['http://localhost:1212', 'https://www.rentmaster.markethubet.com'],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key', 'user-id'],
     credentials: true,
   })
 );
@@ -455,7 +759,12 @@ appDB.use(cors({ origin: '*' }));
 appDB.use(bodyParser.urlencoded({ extended: false }));
 appDB.use(bodyParser.json());
 
-const apiKey = 'HH(CzZuQoW@tB$By)e';
+// To:
+require('dotenv').config({
+  path: path.resolve(__dirname, '../../.env')
+});
+const apiKey = process.env.VITE_AppCodeElectronString;  // Add VITE_ prefix
+
 
 // Function to validate table names
 const validateTableName = (tableName: string) => {
@@ -477,6 +786,17 @@ const tableStructures = [
       'maxNumberOfBranches INTEGER  DEFAULT 3',
       'packageType TEXT  DEFAULT "Free"',
       'TrailEndDate INTEGER  DEFAULT 1',
+    ],
+  },
+  {
+    name: 'branches',
+    columns: [
+      'id TEXT PRIMARY KEY',
+      'name TEXT',
+      'location TEXT',
+      'description TEXT',
+      'googleMapPinPoint TEXT',
+      'userId TEXT',
     ],
   },
   {
@@ -502,8 +822,15 @@ const tableStructures = [
       'utilityPaymentEvery TEXT DEFAULT 30',
       'utilityPaymentEveryCustom INTEGER DEFAULT 0',
       'utilityPaymentStartDate INTEGER DEFAULT 0',
-      'utilityPaymentUseDifferentStartDate BOOLEAN',
+      'utilityPaymentUseDifferentStartDate BOOLEAN DEFAULT 0',
+      'UtilityNotificationSettings INTEGER DEFAULT 0',
+      'Currency TEXT DEFAULT "ETB"',
+      'useTenantPortal BOOLEAN DEFAULT 0',
+      'TenantPortalShowTenantDetails BOOLEAN DEFAULT 0',
+      'TenantPortalShowReceipts BOOLEAN DEFAULT 0',
+      'TenantPortalAllowOnlinePayments BOOLEAN DEFAULT 0',
       'userId TEXT',
+      'branchId TEXT', // Added
     ],
   },
   {
@@ -516,6 +843,7 @@ const tableStructures = [
       'type TEXT ',
       'Boolean BOOLEAN',
       'userId TEXT',
+      'branchId TEXT', // Added
     ],
   },
   {
@@ -526,6 +854,7 @@ const tableStructures = [
       'phoneNumber TEXT ',
       'phoneNumber2 TEXT',
       'email TEXT',
+      'description TEXT ',
       'SelectedAgreement TEXT ',
       'RentingOrOut BOOLEAN ',
       'startTime INTEGER ', // Assuming storing as UNIX timestamp
@@ -534,7 +863,9 @@ const tableStructures = [
       'TIN TEXT',
       'RentReason TEXT',
       'AddedTime INTEGER',
+      'Currency TEXT DEFAULT "ETB"',
       'userId TEXT',
+      'branchId TEXT', // Added
     ],
   },
   {
@@ -542,13 +873,15 @@ const tableStructures = [
     columns: [
       'id TEXT PRIMARY KEY',
       'roomId TEXT ',
+      'tenantId TEXT ',
       'Day INTEGER ', // Assuming storing as UNIX timestamp
       'Paid BOOLEAN ',
       'Value REAL DEFAULT 0',
       'userId TEXT',
+      'branchId TEXT', // Added
     ],
   },
-  
+
   {
     name: 'room_pay_info_history',
     columns: [
@@ -558,9 +891,12 @@ const tableStructures = [
       'Value REAL',
       'Paid INTEGER',
       'userId TEXT',
-      'agreementId TEXT'
-    ]
-  },{
+      'branchId TEXT', // Added
+      'agreementId TEXT',
+      'tenantId TEXT ',
+    ],
+  },
+  {
     name: 'brokers',
     columns: [
       'id TEXT PRIMARY KEY',
@@ -574,6 +910,7 @@ const tableStructures = [
       'rating REAL DEFAULT 0',
       'notes TEXT',
       'userId TEXT',
+      'branchId TEXT', // Added
     ],
   },
   {
@@ -582,10 +919,11 @@ const tableStructures = [
       'id TEXT PRIMARY KEY',
       'roomId TEXT',
       'brokerId TEXT ',
-
+      'recommendedTenantId TEXT ',
       'AddedTime INTEGER ',
       'AgreedCommission INTEGER ',
       'userId TEXT',
+      'branchId TEXT', // Added
     ],
   },
   {
@@ -604,7 +942,9 @@ const tableStructures = [
       'Stars INTEGER ',
       'description TEXT ',
       'endReason TEXT ',
+      'Currency TEXT DEFAULT "ETB"',
       'userId TEXT',
+      'branchId TEXT', // Added
     ],
   },
   {
@@ -621,7 +961,9 @@ const tableStructures = [
       'Memo TEXT',
       'RentReserved REAL DEFAULT 0',
       'representative TEXT',
+      'Currency TEXT DEFAULT "ETB"',
       'userId TEXT',
+      'branchId TEXT', // Added
     ],
   },
   {
@@ -648,7 +990,8 @@ const tableStructures = [
       'updated_at REAL DEFAULT 0',
       'userId TEXT',
     ],
-  },{
+  },
+  {
     name: 'sms_templates',
     columns: [
       'id TEXT PRIMARY KEY',
@@ -665,7 +1008,9 @@ const tableStructures = [
       'id TEXT PRIMARY KEY',
       'notification_type TEXT',
       'email_template_id TEXT',
+      'sms_template_id TEXT',
       'userId  TEXT',
+      'branchId TEXT', // Added
     ],
   },
   {
@@ -677,7 +1022,9 @@ const tableStructures = [
       'useThis BOOLEAN',
       'price REAL DEFAULT 0',
       'alwaysAsk BOOLEAN',
+      'Currency TEXT DEFAULT "ETB"',
       'userId TEXT',
+      'branchId TEXT', // Added
     ],
   },
   {
@@ -688,14 +1035,16 @@ const tableStructures = [
       'type TEXT',
       'price REAL DEFAULT 0',
       'custom BOOLEAN',
+      'Currency TEXT DEFAULT "ETB"',
       'paid BOOLEAN',
       'date INTEGER',
       'userId TEXT',
+      'branchId TEXT', // Added
     ],
   },
   {
-    name:'expenses',
-    columns:[
+    name: 'expenses',
+    columns: [
       'id TEXT PRIMARY KEY',
 
       'fullBuilding BOOLEAN',
@@ -703,16 +1052,46 @@ const tableStructures = [
       'room INTEGER',
       'name TEXT',
       'description TEXT',
-      
+
       'doesReoccur BOOLEAN',
       'recurringCycle INTEGER',
       'price REAL DEFAULT 0',
-
+      'recurringType TEXT',
+      'EndDate INTEGER',
+      'HasEndDate BOOLEAN',
       'date INTEGER',
       'userId TEXT',
-    ]
-  }
-  
+      'branchId TEXT',
+
+      // New notification fields
+      'sendEmail BOOLEAN DEFAULT 0',
+
+      'emailDaysBefore INTEGER DEFAULT 0',
+      'sendSms BOOLEAN DEFAULT 0',
+
+      'smsDaysBefore INTEGER DEFAULT 0',
+      'emailTo TEXT',
+      'smsTo TEXT',
+      'Currency TEXT DEFAULT "ETB"',
+      'category TEXT DEFAULT "Other"',
+      'beforeTax BOOLEAN DEFAULT 0',
+    ],
+  },
+
+  {
+    name: 'action_history',
+    columns: [
+      'id TEXT PRIMARY KEY',
+      'action_table TEXT',
+      'action_type TEXT',
+      'description TEXT',
+      'performed_by TEXT',
+      'action_date INTEGER',
+      'userInfo TEXT',
+      'userId TEXT',
+      'branchId TEXT', // Added
+    ],
+  },
 ];
 
 // Function to initialize tables
@@ -746,6 +1125,29 @@ const initializeTables = (db: any) => {
     );
   });
 };
+import https from 'https';
+import axios from 'axios';
+const secureAgent = new https.Agent({
+  secureProtocol: 'TLS_method',
+  rejectUnauthorized: false,
+});
+import FormData from 'form-data';
+
+const baseUrl = 'https://www.rentmaster.markethubet.com/api';
+
+// Add IPC handler for secure HTTPS agent configuration
+ipcMain.handle('get-https-agent', () => {
+  try {
+    const agent = new https.Agent({
+      secureProtocol: 'TLS_method',
+      rejectUnauthorized: false,
+    });
+    return agent;
+  } catch (error) {
+    console.error('Error creating HTTPS agent:', error);
+    throw error;
+  }
+});
 
 // Function to check and update table structure
 const checkAndUpdateTableStructure = (
@@ -821,6 +1223,8 @@ const updateTableStructure = (
     console.log(`Table ${table.name} structure updated successfully.`);
   });
 };
+// Add helper for reading files
+
 const NodeClam = require('clamscan');
 const JSZip = require('jszip');
 const fs2 = require('fs').promises;
@@ -969,69 +1373,272 @@ appDB.post(
   }
 );
 
-appDB.post(
-  '/prepare-upload-files',
-  async (
-    req: { body: { userId: any; requiredFiles: any } },
-    res: {
-      send: (arg0: any) => void;
-      status: (arg0: number) => {
-        (): any;
-        new (): any;
-        json: { (arg0: { error: string; details: any }): void; new (): any };
+// Add these constants but keep existing ones
+const UPLOAD_TIMEOUT = 60000;
+
+ipcMain.handle('upload-user-files', async (event, { userId }: { userId: string }) => {
+  try {
+    // Send progress updates dynamically
+    const updateProgress = (progress: number) => {
+      event.sender.send('upload-progress', progress);
+    };
+    const getLocalUserDirectory2 = async () => {
+      const userDataPath = process.env.APPDATA || app.getPath('userData');
+      const bmsFolderPath = path.join(userDataPath, appname);
+
+      function directoryToJson(dir: string) {
+        const result = {
+          name: path.basename(dir),
+          type: 'directory',
+          children: [],
+        };
+        const files = fs.readdirSync(dir, { withFileTypes: true });
+
+        files.forEach((file: { name: string; isDirectory: () => any }) => {
+          const filePath = path.join(dir, file.name);
+          if (file.isDirectory()) {
+            result.children.push(directoryToJson(filePath));
+          } else {
+            result.children.push({ name: file.name, type: 'file' });
+          }
+        });
+
+        return result;
+      }
+
+      try {
+        const directoryStructure = directoryToJson(bmsFolderPath);
+        return directoryStructure;
+      } catch (error) {
+        console.error('Error reading directory structure:', error);
+        return null;
+      }
+    };
+    updateProgress(0);
+    console.log('Getting local directory...');
+    const localDirectory = await getLocalUserDirectory2();
+    const filteredDirectory = {
+      name: localDirectory.name,
+      type: 'directory',
+      children: localDirectory.children.filter((child) =>
+        ['Room Pictures', 'Room Documents'].includes(child.name)
+      ),
+    };
+
+    console.log(
+      'Filtered directory structure:',
+      JSON.stringify(filteredDirectory, null, 2)
+    );
+    updateProgress(10);
+
+    console.log('Sending directory data to online database...');
+    const checkResponse = await axios.post(
+      `${baseUrl}/check-user-directory`,
+      {
+        userId,
+        directory: filteredDirectory,
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+        },
+        httpsAgent: secureAgent,
+      }
+    );
+
+    const { requiredFiles } = checkResponse.data;
+    console.log('Response received from online database:', requiredFiles);
+    updateProgress(30);
+
+    if (requiredFiles?.length > 0) {
+      console.log('Required files missing:', requiredFiles);
+
+      // Create zip file
+      const zip = new JSZip();
+      let totalSize = 0;
+      let filesProcessed = 0;
+
+      // Add files to zip and dynamically update progress
+      for (const filePath of requiredFiles) {
+        try {
+          // Only process files from Room Pictures or Room Documents
+          if (
+            !filePath.startsWith('Room Pictures/') &&
+            !filePath.startsWith('Room Documents/')
+          ) {
+            console.log('Skipping non-room file:', filePath);
+            continue;
+          }
+
+          const fullPath = path.join(
+            process.env.APPDATA || '',
+            appname,
+            filePath
+          );
+          if (fs.existsSync(fullPath)) {
+            const fileContent = fs.readFileSync(fullPath);
+            zip.file(filePath, fileContent);
+            totalSize += fileContent.length;
+            filesProcessed++;
+            // Dynamically update progress based on the number of files processed
+            updateProgress(30 + (filesProcessed / requiredFiles.length) * 60);
+          } else {
+            console.warn(`File not found: ${fullPath}`);
+          }
+        } catch (error) {
+          console.warn(`Error adding file ${filePath} to zip:`, error);
+        }
+      }
+
+      console.log(`Total upload size: ${totalSize} bytes`);
+      updateProgress(90);
+
+      if (totalSize === 0) {
+        console.log('No valid files to upload');
+        return {
+          success: true,
+          message: 'No files needed to be uploaded',
+        };
+      }
+
+      const zipBuffer = await zip.generateAsync({ type: 'nodebuffer' });
+
+      console.log('Sending zip file to online database...');
+      const form = new FormData();
+      form.append('files', zipBuffer, {
+        filename: 'required_files.zip',
+        contentType: 'application/zip',
+      });
+      form.append('userId', userId);
+      const uploadResponse = await axios.post(
+        `${baseUrl}/upload-missing-files`,
+        form,
+        {
+          headers: {
+            'x-api-key': apiKey,
+            ...form.getHeaders(),
+          },
+          maxContentLength: Infinity,
+          maxBodyLength: Infinity,
+          httpsAgent: secureAgent,
+        }
+      );
+
+      if (!uploadResponse.data?.success) {
+      }
+
+      console.log('Upload completed successfully:', uploadResponse.data);
+      updateProgress(100);
+    } else {
+      console.log('No files need to be uploaded');
+      updateProgress(100);
+    }
+
+    return {
+      success: true,
+      message: 'Upload completed successfully',
+    };
+  } catch (error) {
+    console.error('Upload error:', error);
+
+    if (axios.isAxiosError(error)) {
+      const errorMessage = error.response?.data?.message || error.message;
+      const statusCode = error.response?.status;
+      return {
+        success: false,
+        message: `Upload failed (${statusCode}): ${errorMessage}`,
+        error: {
+          status: statusCode,
+          data: error.response?.data,
+        },
       };
     }
-  ) => {
-    const { userId, requiredFiles } = req.body;
 
+    return {
+      success: false,
+      message: error.message || 'Unknown error occurred',
+    };
+  }
+});
+
+// Add helper function for retrying uploads
+const retryUpload = async (
+  uploadFn: () => Promise<any>,
+  maxRetries = 3
+): Promise<any> => {
+  let lastError;
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
-      const zip = new JSZip();
+      return await uploadFn();
+    } catch (error) {
+      console.error(`Upload attempt ${attempt + 1} failed:`, error);
+      lastError = error;
 
-      for (const filePath of requiredFiles) {
+      if (attempt < maxRetries - 1) {
+        const delay = Math.pow(2, attempt) * 1000; // Exponential backoff
+        await new Promise((resolve) => setTimeout(resolve, delay));
+      }
+    }
+  }
+  throw lastError;
+};
+
+// Add error handling for the existing prepare-upload-files endpoint
+appDB.post('/prepare-upload-files', async (req, res) => {
+  const { userId, requiredFiles } = req.body;
+
+  try {
+    const zip = new JSZip();
+    let totalSize = 0;
+
+    for (const filePath of requiredFiles) {
+      try {
         const fullPath = path.join(process.env.APPDATA, appname, filePath);
-        const relativePath = path.relative(process.env.APPDATA, fullPath);
 
-        const normalizedPath = relativePath.substring(
-          relativePath.indexOf('/') + 1
-        );
-        if (!allowedFolders.some((folder) => normalizedPath.includes(folder))) {
-          console.log(`Skipping file not in allowed folder: ${relativePath}`);
+        if (
+          !(await fs2
+            .access(fullPath)
+            .then(() => true)
+            .catch(() => false))
+        ) {
+          console.warn(`File not found: ${fullPath}`);
           continue;
         }
 
         const fileStats = await fs2.stat(fullPath);
-        const fileType = mime2.lookup(fullPath);
-
-        if (!isAllowedFileType({ type: fileType })) {
-          console.log(`Skipping file with disallowed type: ${filePath}`);
+        if (fileStats.size === 0) {
+          console.warn(`Empty file skipped: ${filePath}`);
           continue;
         }
-
-        if (!isAllowedFileSize({ size: fileStats.size })) {
-          console.log(`Skipping file that exceeds size limit: ${filePath}`);
-          continue;
-        }
-
-        /*  if (!(await isFileClean(fullPath))) {
-        console.log(`Skipping file that failed virus scan: ${filePath}`);
-        continue;
-      }*/
 
         const fileContent = await fs2.readFile(fullPath);
         zip.file(filePath, fileContent);
+        totalSize += fileContent.length;
+      } catch (error) {
+        console.error(`Error processing file ${filePath}:`, error);
       }
-
-      const zipContent = await zip.generateAsync({ type: 'nodebuffer' });
-      res.send(zipContent);
-    } catch (error) {
-      console.error('Error preparing files for upload:', error);
-      res.status(500).json({
-        error: 'Failed to prepare files for upload',
-        details: error.message,
-      });
     }
+
+    if (totalSize === 0) {
+      return res.send(null);
+    }
+
+    const zipContent = await zip.generateAsync({
+      type: 'nodebuffer',
+      compression: 'DEFLATE',
+      compressionOptions: { level: 6 },
+    });
+
+    res.send(zipContent);
+  } catch (error) {
+    console.error('Error preparing files for upload:', error);
+    res.status(500).json({
+      error: 'Failed to prepare files for upload',
+      details: error.message,
+    });
   }
-);
+});
 
 appDB.get(
   '/local-user-directory',
@@ -1103,6 +1710,41 @@ appDB.delete(
     });
   }
 );
+appDB.delete(
+  '/drop-all-rows/:tableName',
+  (
+    req: { params: { tableName: any }; headers: { [x: string]: any } },
+    res: {
+      status: (arg0: number) => {
+        (): any;
+        new (): any;
+        send: { (arg0: string): void; new (): any };
+      };
+      send: (arg0: string) => void;
+    }
+  ) => {
+    const { tableName } = req.params;
+
+   
+    // Validate the table name
+    if (!validateTableName(tableName)) {
+      return res.status(400).send('Invalid table name');
+    }
+
+    const query = `DELETE FROM ${tableName}`;
+    db.run(query, (err: { message: any }) => {
+      if (err) {
+        console.error(`Error dropping all rows from ${tableName}:`, err);
+        res
+          .status(500)
+          .send(`Error dropping all rows from ${tableName}: ${err.message}`);
+      } else {
+        res.send(`All rows dropped from ${tableName} successfully.`);
+      }
+    });
+  }
+);
+//----------------------------------File stuff
 appDB.post(
   '/upload-receipt-document',
   (
@@ -1182,7 +1824,6 @@ appDB.post(
     }
   }
 );
-
 appDB.post(
   '/upload-tenant-documentV2',
   (
@@ -1460,7 +2101,7 @@ appDB.post(
         .toISOString()
         .replace(/:/g, '_')
         .replace(/\./g, '-');
-      const safeTenantName = tenantName.replace(/[^a-z0-9]/gi, ' ');
+      const safeTenantName = tenantName;
       const dirPath = path.join(
         process.env.APPDATA || '',
         appname || '',
@@ -1540,27 +2181,43 @@ appDB.get(
 appDB.get(
   '/room-documents/:roomId/:string',
   (
-    req: { params: { roomId: string; string:string } },
+    req: { params: { roomId: string; string: string } },
     res: {
       status: (arg0: number) => {
         (): any;
         new (): any;
         json: { (arg0: { error: string }): any; new (): any };
       };
-      json: (arg0: { documents: string[]; roomFolder: string | null; tenantFolder: string | null }) => void;
+      json: (arg0: {
+        documents: string[];
+        roomFolder: string | null;
+        tenantFolder: string | null;
+      }) => void;
     }
   ) => {
-    const { roomId, string} = req.params;
-    const roomDocumentsPath = path.join(process.env.APPDATA, appname, 'Room Documents');
+    const { roomId, string } = req.params;
+    const roomDocumentsPath = path.join(
+      process.env.APPDATA,
+      appname,
+      'Room Documents'
+    );
 
     fs.readdir(roomDocumentsPath, (err: any, folders: string[]) => {
       if (err) {
-        return res.status(500).json({ error: 'Failed to read room documents directory' });
+        return res
+          .status(500)
+          .json({ error: 'Failed to read room documents directory' });
       }
 
-      const roomFolder = folders.find((folder: string) => folder.includes(roomId));
+      const roomFolder = folders.find((folder: string) =>
+        folder.includes(roomId)
+      );
       if (!roomFolder) {
-        return res.json({ documents: [], roomFolder: null, tenantFolder: null });
+        return res.json({
+          documents: [],
+          roomFolder: null,
+          tenantFolder: null,
+        });
       }
 
       const roomFolderPath = path.join(roomDocumentsPath, roomFolder);
@@ -1570,7 +2227,9 @@ appDB.get(
         }
 
         console.log(string);
-        const tenantFolder = tenantFolders.find((folder: string) => folder === string);
+        const tenantFolder = tenantFolders.find(
+          (folder: string) => folder === string
+        );
 
         if (!tenantFolder) {
           return res.json({ documents: [], roomFolder, tenantFolder: null });
@@ -1579,11 +2238,14 @@ appDB.get(
         const tenantFolderPath = path.join(roomFolderPath, tenantFolder);
         fs.readdir(tenantFolderPath, (err: any, files: string[]) => {
           if (err) {
-            return res.status(500).json({ error: 'Failed to read tenant folder' });
+            return res
+              .status(500)
+              .json({ error: 'Failed to read tenant folder' });
           }
 
-          const documents = files.map((file: string) => 
-            `local-resource://${path.join(tenantFolderPath, file)}`
+          const documents = files.map(
+            (file: string) =>
+              `local-resource://${path.join(tenantFolderPath, file)}`
           );
 
           res.json({ documents, roomFolder, tenantFolder });
@@ -1688,6 +2350,59 @@ appDB.get(
         res.json({ images: imageFiles, roomFolder: roomFolder });
       });
     });
+  }
+);
+
+appDB.post(
+  '/duplicate-room-images-folder',
+  (
+    req: { body: { sourceFolderName: string; newFolderName: string } },
+    res: {
+      status: (arg0: number) => {
+        (): any;
+        new (): any;
+        json: { (arg0: { error: string }): void; new (): any };
+      };
+      json: (arg0: { message: string }) => void;
+    }
+  ) => {
+    try {
+      const { sourceFolderName, newFolderName } = req.body;
+
+      const sourcePath = path.join(
+        process.env.APPDATA,
+        appname,
+        'Room Pictures',
+        sourceFolderName
+      );
+
+      const destPath = path.join(
+        process.env.APPDATA,
+        appname,
+        'Room Pictures',
+        newFolderName
+      );
+
+      // Check if source exists
+      if (!fs.existsSync(sourcePath)) {
+        return res.status(404).json({ error: 'Source folder not found' });
+      }
+
+      // Create destination folder
+      fs.mkdirSync(destPath, { recursive: true });
+
+      // Copy all files from source to destination
+      fs.readdirSync(sourcePath).forEach((file) => {
+        const sourceFile = path.join(sourcePath, file);
+        const destFile = path.join(destPath, file);
+        fs.copyFileSync(sourceFile, destFile);
+      });
+
+      res.json({ message: 'Folder duplicated successfully' });
+    } catch (error) {
+      console.error('Error duplicating folder:', error);
+      res.status(500).json({ error: 'Failed to duplicate folder' });
+    }
   }
 );
 appDB.put(
@@ -1802,7 +2517,7 @@ appDB.post('/upload-room-image', (req: any, res: any) => {
     res.status(500).json({ error: 'Failed to upload image' });
   }
 });
-
+//----------------------Table stuff
 appDB.get(
   '/:tableName/:sqlCode',
   (
@@ -1978,11 +2693,15 @@ appDB.put(
     );
   }
 );
+
 export const cleanupOnSignOut = async () => {
   const userDataPath = process.env.APPDATA || app.getPath('userData');
   const dbPath = path.join(userDataPath, appname, 'database.db');
   const bmsPath = path.join(userDataPath, appname);
   store.set('users', []);
+  store.set('app_users', []);
+  store.set('SelectedAppUserId', '');
+  store.set('changeAmount', 0);
   //So it can be deleted
   // Close the database connection
   db.close((err: Error | null) => {
@@ -2156,7 +2875,7 @@ export async function loadBackup() {
 
   createBackup(true);
   const bmsPath = path.join(process.env.APPDATA || '', appname);
-  console.log('BMS path:', bmsPath);
+  console.log('rent-master path:', bmsPath);
 
   console.log('Clearing existing data...');
   try {
@@ -2244,7 +2963,7 @@ export async function loadSpecificBackup(backupFileName: string) {
 
   //createBackup(true,2);
   const bmsPath = path.join(process.env.APPDATA || '', appname);
-  console.log('BMS path:', bmsPath);
+  console.log('rent-master path:', bmsPath);
 
   console.log('Clearing existing data...');
   try {
@@ -2317,7 +3036,11 @@ ipcMain.on('delete-receipt', (event, filePath) => {
 });
 
 import { format, isBefore, isAfter, subDays, differenceInDays } from 'date-fns';
-import { addValueOnline, getValuesWithSql_Online } from '../Backend/OnlineServerApis';
+import {
+  addValueOnline,
+  getValuesWithSql_Online,
+} from '../Backend/OnlineServerApis';
+import { getLocalUserDirectory } from '../Backend/localServerApis';
 ipcMain.handle('GetReceiptFile', (event, date, roomId, tenant) => {
   const formattedDate = format(new Date(date), 'yyyy-MM-dd');
   const addedTimeText = format(
@@ -2356,3 +3079,342 @@ ipcMain.handle('GetReceiptFile', (event, date, roomId, tenant) => {
 function reloadApp() {
   BrowserWindow.getFocusedWindow()?.webContents.reload();
 }
+async function hasOfflineChanges(): Promise<boolean> {
+  return new Promise((resolve) => {
+    db.get('SELECT COUNT(*) as count FROM offline_changes', [], (err, row) => {
+      if (err) {
+        console.error('Error checking offline changes:', err);
+        resolve(false);
+        return;
+      }
+
+      console.log('Raw offline changes data:', row);
+      const count = row ? row.count : 0;
+      console.log('Offline changes count:', count);
+      resolve(count > 0);
+    });
+  });
+}
+// Add IPC handler for sync-offline-changes
+ipcMain.handle('sync-offline-changes', async () => {
+  if (!mainWindow) return false;
+
+  try {
+    // Call the renderer's handleUploadChanges function
+    await mainWindow.webContents.executeJavaScript(`
+      (async () => {
+        try {
+          if (storageManager.get('SelectedUserId')) {
+            await window.handleUploadChanges();
+            return true;
+          }
+          return false;
+        } catch (error) {
+          console.error('Upload error:', error);
+          return false;
+        }
+      })()
+    `);
+
+    return true;
+  } catch (error) {
+    console.error('Error syncing changes:', error);
+    return false;
+  }
+});
+const formatFolderName = (name: string) => {
+  const spaceMatch = name.match(/^(.*?)\s+(\d+)$/);
+  const parenthesesMatch = name.match(/^(.*?)\((\d+)\)$/);
+
+  if (spaceMatch) {
+    return `${spaceMatch[1]}(${spaceMatch[2]})`;
+  } else if (parenthesesMatch) {
+    return name;
+  }
+  return name;
+};
+ipcMain.on('console-message', (event, messageData) => {
+  const data = JSON.parse(messageData);
+  log.info('Renderer:', {
+    type: data.type,
+    message: data.message,
+    data: data.data,
+    source: data.source,
+  });
+});
+process.on('uncaughtException', (error) => {
+  log.error('Uncaught Exception:', error);
+});
+
+process.on('unhandledRejection', (error) => {
+  log.error('Unhandled Rejection:', error);
+}); // Add this with your other IPC handlers
+import dns from 'dns';
+import { promisify } from 'util';
+import { AxiosInstance } from 'axios';
+// Constants
+const BASE_URL = 'https://www.rentmaster.markethubet.com/api';
+
+const MAX_RETRIES = 3;
+const TIMEOUT = 30000;
+
+// Create axios instance with default config
+const createAxiosInstance = (): AxiosInstance => {
+  const instance = axios.create({
+    baseURL: BASE_URL,
+    timeout: TIMEOUT,
+    httpsAgent: new https.Agent({
+      rejectUnauthorized: true,
+      keepAlive: true,
+      timeout: TIMEOUT,
+    }),
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+    },
+  });
+
+  // Add request interceptor for logging
+  instance.interceptors.request.use((config) => {
+    console.log(
+      `Making ${config.method?.toUpperCase()} request to: ${config.url}`
+    );
+    return config;
+  });
+
+  // Add response interceptor for retries
+  instance.interceptors.response.use(
+    (response) => response,
+    async (error) => {
+      const config = error.config;
+
+      if (!config || !config.retry) {
+        return Promise.reject(error);
+      }
+
+      config.retry -= 1;
+
+      if (error.code === 'ETIMEDOUT' || error.code === 'ECONNREFUSED') {
+        const delay = (MAX_RETRIES - config.retry) * 2000;
+        await new Promise((resolve) => setTimeout(resolve, delay));
+        return instance(config);
+      }
+
+      return Promise.reject(error);
+    }
+  );
+
+  return instance;
+};
+
+// Create a single axios instance
+const axiosInstance = createAxiosInstance();
+
+// Helper function to check server connectivity
+const checkServerConnectivity = async (): Promise<boolean> => {
+  try {
+    const lookup = promisify(dns.lookup);
+    const { address } = await lookup('www.rentmaster.markethubet.com');
+
+    return true;
+  } catch (error) {
+    console.error('Server connectivity check failed:', error);
+    return false;
+  }
+};
+
+// Main API request handler
+ipcMain.handle(
+  'api-request',
+  async (event, { url, method, headers = {}, data }) => {
+    try {
+      // Check server connectivity first
+      const isConnected = await checkServerConnectivity();
+      if (!isConnected) {
+        return {
+          error: true,
+          message:
+            'Cannot connect to server. Please check your internet connection.',
+        };
+      }
+
+      const config = {
+        url: url.replace(BASE_URL, ''), // Remove base URL if included
+        method,
+        headers: {
+          ...headers,
+          'x-api-key': apiKey, // Ensure API key is always included
+        },
+        data,
+        retry: MAX_RETRIES,
+      };
+
+      const response = await axiosInstance.request(config);
+
+      return response.data;
+    } catch (error) {
+      console.error('API Request Failed:', {
+        url,
+        method,
+        error: {
+          message: error.message,
+          code: error.code,
+          response: error.response?.data,
+        },
+      });
+
+      // Return structured error response
+      return {
+        error: true,
+        message: error.message,
+        code: error.code,
+        status: error.response?.status,
+        details: error.response?.data,
+      };
+    }
+  }
+);
+
+// File download handler with improved error handling
+ipcMain.handle('download-files', async (event, { userId }) => {
+  const sendProgress = (progress: number) => {
+    //  event.sender.send('download-progress', progress);
+  };
+
+  try {
+    // Check connectivity first
+    const isConnected = await checkServerConnectivity();
+    if (!isConnected) {
+      throw new Error('Cannot connect to server');
+    }
+
+    console.log('Starting file download process for user:', userId);
+    sendProgress(10);
+
+    // Get local directory structure
+    const localDirectory = await getLocalUserDirectory2();
+    sendProgress(20);
+
+    // Request file list with timeout and retry
+    const fileListResponse = await axiosInstance.post('/check-missing-files', {
+      userId,
+      localDirectory,
+    });
+
+    const { missingFiles } = fileListResponse.data;
+    sendProgress(40);
+
+    if (missingFiles.length === 0) {
+      return {
+        success: true,
+        message: 'No files needed to be downloaded',
+      };
+    }
+
+    // Download missing files
+    const downloadResponse = await axiosInstance.post(
+      '/download-missing-files',
+      { userId, missingFiles },
+      { responseType: 'arraybuffer' }
+    );
+
+    sendProgress(70);
+
+    // Extract files
+    await extractDownloadedFiles(Buffer.from(downloadResponse.data), userId);
+    sendProgress(100);
+
+    return {
+      success: true,
+      message: 'Files downloaded and extracted successfully',
+      filesCount: missingFiles.length,
+    };
+  } catch (error) {
+    console.error('Download process failed:', error);
+    sendProgress(0);
+
+    return {
+      success: false,
+      message: error.message || 'Download failed',
+      error: {
+        code: error.code,
+        status: error.response?.status,
+        details: error.response?.data,
+      },
+    };
+  }
+});
+const getLocalUserDirectory2 = async () => {
+  const userDataPath = process.env.APPDATA || app.getPath('userData');
+  const bmsFolderPath = path.join(userDataPath, appname);
+
+  function directoryToJson(dir: string) {
+    const result = {
+      name: path.basename(dir),
+      type: 'directory',
+      children: [],
+    };
+    const files = fs.readdirSync(dir, { withFileTypes: true });
+
+    files.forEach((file: { name: string; isDirectory: () => any }) => {
+      const filePath = path.join(dir, file.name);
+      if (file.isDirectory()) {
+        result.children.push(directoryToJson(filePath));
+      } else {
+        result.children.push({ name: file.name, type: 'file' });
+      }
+    });
+
+    return result;
+  }
+
+  try {
+    const directoryStructure = directoryToJson(bmsFolderPath);
+    return directoryStructure;
+  } catch (error) {
+    console.error('Error reading directory structure:', error);
+    return null;
+  }
+};
+
+// Helper retry function
+const retry = async (fn: () => Promise<any>, maxRetries = 3, delay = 1000) => {
+  let lastError;
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error;
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+  }
+  throw lastError;
+};
+
+const baseUrlLocal = 'http://localhost:8100';
+
+const extractDownloadedFiles = async (zipBuffer: Buffer, userId: string) => {
+  try {
+    const response = await axios.post(
+      `${baseUrlLocal}/extract-downloaded-files`,
+      zipBuffer,
+      {
+        headers: {
+          'Content-Type': 'application/octet-stream',
+        },
+        maxBodyLength: Infinity, // Allow large file uploads
+        maxContentLength: Infinity,
+      }
+    );
+
+    if (response.status !== 200) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+
+    console.log('Files extracted successfully:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error extracting files:', error);
+    throw error;
+  }
+};

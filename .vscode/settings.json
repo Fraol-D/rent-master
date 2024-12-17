@@ -3,5 +3,8 @@
     "Intercator"
   ],
 
+"editor.minimap.enabled": false,
+"debug.showInlineBreakpointCounts": false,
+"editor.glyphMargin": false,
 
 }

@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { Input } from './CustomReactComponents';
+import CurrencySign from './CurrencySign';
 
 interface LeavePanelProps {
   tenant: tenant;
@@ -43,6 +45,8 @@ const LeavePanel = ({
         return 'month';
       case 'weekly':
         return 'week';
+      case 'Annually':
+        return 'year';
       case 'daily':
         return 'day';
       case 'custom':
@@ -56,23 +60,26 @@ const LeavePanel = ({
     <div
       style={{
         width: '90%',
-        padding: '10px',
-        borderRadius: '10px',
-        color: '#fff',
+        padding: 'var(--10px-V)',
+        
+        
       }}
     >
-      <section style={{ marginBottom: '20px' }}>
+      <section style={{ marginBottom: 'var(--20px-V)' }}>
         <h3>Tenant Information</h3>
         <p>Name: {tenant.name}</p>
         <p>Telephone 1: {tenant.phoneNumber}</p>
         <p>Telephone 2: {tenant.phoneNumber2 || 'N/A'}</p>
         <p>Email: {tenant.email || 'N/A'}</p>
+        <p>Description: {tenant.description || 'N/A'}</p>
+        <p>TIN: {tenant.TIN || 'N/A'}</p>
+        <p>Rent Reason: {tenant.RentReason || 'N/A'}</p>
       </section>
 
-      <section style={{ marginBottom: '20px' }}>
+      <section style={{ marginBottom: 'var(--20px-V)' }}>
         <h3>Agreed Terms</h3>
         <p>
-          Payment cycle: {tenant.agreedPrice} per {getCycle()}
+          Payment cycle: {room.AgreedPrice}{CurrencySign(room.Currency)} per {getCycle()}
         </p>
         <p>Started on: {new Date(tenant.startTime).toLocaleDateString()}</p>
         <p>
@@ -80,10 +87,10 @@ const LeavePanel = ({
         </p>
       </section>
 
-      <section style={{ marginBottom: '20px' }}>
+      <section style={{ marginBottom: 'var(--20px-V)' }}>
         <h3>Payments</h3>
         <p>Total payments till now: {paymentNumbers}</p>
-        <p>Total Income till now: ${totalIncome}</p>
+        <p>Total Income till now: {totalIncome.toLocaleString()}{CurrencySign(room.Currency)}</p>
         <p>Unpaid payments : {incompletePastPayments}</p>
         <label>
           Extra Payments (damages?):
@@ -96,7 +103,7 @@ const LeavePanel = ({
         </label>
       </section>
 
-      <section style={{ marginBottom: '20px' }}>
+      <section style={{ marginBottom: 'var(--20px-V)' }}>
         <h3>Tenant Details</h3>
         <label>
           Rate the tenant:
@@ -113,7 +120,7 @@ const LeavePanel = ({
             </span>
           ))}
         </label>
-        <div style={{ marginTop: '10px' }}>
+        <div style={{ marginTop: 'var(--10px-V)' }}>
           <label>
             Description of tenant's stay:
             <textarea
@@ -121,15 +128,15 @@ const LeavePanel = ({
               onChange={(e) => setTenantDescription(e.target.value)}
               style={{
                 width: '100%',
-                height: '80px',
-                borderRadius: '10px',
+                height: 'var(--80px-V)',
+                borderRadius: 'var(--10px-V)',
                 backgroundColor: 'var(--Secondary-Color)',
-                color: 'white',
+             
               }}
             />
           </label>
         </div>
-        <div style={{ marginTop: '10px' }}>
+        <div style={{ marginTop: 'var(--10px-V)' }}>
           <label>
             End Reason:
             <input

@@ -1,10 +1,39 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { PieChart } from '@mui/x-charts/PieChart';
 import { axisClasses } from '@mui/x-charts/ChartsAxis';
 import { getValuesWithSql } from 'Backend/localServerApis';
-import { Console } from 'console';
+import loadingGif from '../../../assets/assets/Loading/Rolling-1s-200px.gif';
 
 const DashbRoomSummary = ({ RoomList }: { RoomList: RoomType[] }) => {
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+  
+  useEffect(() => {
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener('resize', handleResize);
+    
+   
+
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Calculate scale factor based on window width
+  const getScaleFactor = () => {
+    if (windowWidth <= 1280) return 1280 / 1920;
+    if (windowWidth <= 1366) return 1366 / 1920;
+    if (windowWidth >= 2560) return 3840 / 1920;
+    return 1;
+  };
+
+  const scaleFactor = getScaleFactor();
+
+  // Base dimensions
+  const baseWidth = 400;
+  const baseHeight = 350;
+
+  // Scaled dimensions
+  const scaledWidth = baseWidth * scaleFactor;
+  const scaledHeight = baseHeight * scaleFactor;
+
   const takenRoomsCount = RoomList.filter(
     (room) => room.status === 'Taken' && !room.Archived
   ).length;
@@ -13,46 +42,69 @@ const DashbRoomSummary = ({ RoomList }: { RoomList: RoomType[] }) => {
   ).length;
 
   const roomSummaryData = [
-    { id: 0, value: takenRoomsCount, label: 'Taken Rooms', color: 'var(--Primary-Color)' },
-    { id: 1, value: emptyRoomsCount, label: 'Empty Rooms', color: 'var(--Accent-Color50)' },
+    {
+      id: 0,
+      value: takenRoomsCount,
+      label: 'Taken Rooms',
+      color: 'var(--Primary-Color)',
+    },
+    {
+      id: 1,
+      value: emptyRoomsCount,
+      label: 'Empty Rooms',
+      color: 'var(--Accent-Color50)',
+    },
   ];
 
+  
   return (
-    <div className="DashboardWigetMainContainer" style={{ width: '400px' }}>
-      <p className="DashboardWigetPieChartTextHeader">Rooms Status</p>
+    <div
+      className="DashboardWigetMainContainer"
+      style={{
+        width: 'var(--400px-V)',
+        height: 'var(--510px-V)',
+      }}
+    >
+      <p
+        className="DashboardWigetPieChartTextHeader"
+        style={{
+          marginBottom: 'var(--10px-V)',
+        }}
+      >
+        Rooms Status
+      </p>
       <PieChart
         series={[
           {
             data: roomSummaryData,
             arcLabel: (item) => `${item.label} (${item.value})`,
             arcLabelMinAngle: 45,
+            
           },
         ]}
-        width={400}
-        height={350}
         colors={roomSummaryData.map((item) => item.color)}
-        sx={(theme) => ({
-          [`.${axisClasses.root}`]: {
-            [`.${axisClasses.tick}, .${axisClasses.line}`]: {
-              stroke: 'white',
+        sx={{
+          [`& .${axisClasses.root}`]: {
+            [`& .${axisClasses.tick}, .${axisClasses.line}`]: {
+              stroke: 'var(--Text-Color)',
               strokeWidth: 1,
+              fontSize: 'var(--12px-V)',
             },
-            [`.${axisClasses.tickLabel}`]: {
-              fill: 'white',
+            [`& .${axisClasses.tickLabel}`]: {
+              fill: 'var(--Text-Color)',
+              fontSize: 'var(--12px-V)',
             },
           },
-          '.MuiChartsLegend-label': {
-            fill: 'white',
+          '& .MuiChartsLegend-label': {
+            fill: 'var(--Text-Color)',
+            fontSize: 'var(--12px-V)',
           },
-          '.MuiChartsLegend-mark': {
-            rx: 10,
-            ry: 10,
-          },
-          '.MuiChartsArcLabel-root': {
-            fill: 'white',
+          '& .MuiChartsArcLabel-root': {
+            fill: 'var(--Text-Color)',
             fontWeight: 'bold',
+            fontSize: 'var(--12px-V)',
           },
-        })}
+        }}
       />
       <p className="DashboardWigetPieChartText">
         {RoomList.length} Total rooms

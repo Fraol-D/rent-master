@@ -1,11 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
-import '../../../CSS/ImageInteractor.css';
+
 import RightArrow from '../../../../assets/assets/Dark mode/Right arrow.png';
 import {
   AddRoomImageToFiles,
   deleteRoomImage,
+  downloadImage,
+  getRealFile,
   getRoomImages,
 } from 'Backend/localServerApis';
+import { useAlert } from 'renderer/components/useAlert';
+import { useConfirm } from 'renderer/components/useConfirm';
 
 interface ImageInteractorProps {
   room?: RoomType;
@@ -13,18 +17,21 @@ interface ImageInteractorProps {
   refreshState?: boolean;
   SetRefreshState?: (newval: boolean) => void;
   AddRoomState?: boolean;
-  setIsMoreThanOneImage?:any;
-  
+  setIsMoreThanOneImage?: any;
+  sidebarState?: boolean;
 }
 
 const ImageInteractor2: React.FC<ImageInteractorProps> = ({
   room,
   isAddRoomImage = false,
   refreshState,
-  SetRefreshState,AddRoomState,setIsMoreThanOneImage
+  SetRefreshState,
+  AddRoomState,
+  setIsMoreThanOneImage,
+  sidebarState,
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [images, setImages] = useState<string[]>([]);
+  const [images, setImages] = useState([]);
   const containerRef = useRef<HTMLDivElement>(null);
   const [isHovering, setIsHovering] = useState(false);
   useEffect(() => {
@@ -42,23 +49,25 @@ const ImageInteractor2: React.FC<ImageInteractorProps> = ({
   }, [room?.id, isAddRoomImage]);
   useEffect(() => {
     if (isAddRoomImage) {
-      fetchRoomImages2();
+      if(sidebarState){
+        fetchRoomImages2();
+      }
     }
   }, []);
-useEffect(() => {
-  if (AddRoomState) {
-    if (images.length > 1) {
-      setIsMoreThanOneImage(true)
-    } else {
-      setIsMoreThanOneImage(false)
+  useEffect(() => {
+    if (AddRoomState) {
+      if (images.length > 0) {
+        setIsMoreThanOneImage(true);
+      } else {
+        setIsMoreThanOneImage(false);
+      }
     }
-  }
-}, [AddRoomState, images])  
-useEffect(() => {
+  }, [AddRoomState, images]);
+  useEffect(() => {
     let interval: NodeJS.Timeout;
     if (images.length > 1) {
       interval = setInterval(() => {
-        setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length);
+        //fz((prevIndex) => (prevIndex + 1) % images.length);
       }, 5000);
     }
     return () => clearInterval(interval);
@@ -68,21 +77,51 @@ useEffect(() => {
     if (room) {
       const roomImages = await getRoomImages(room.id);
       if (roomImages && roomImages.images) {
-        setImages(roomImages.images);
+        if (window.electron)
+          setImages(
+            roomImages.images.map((image: any) => {
+              delete image.fullUrl;
+              delete image.url;
+              return Object.values(image).join('');
+            })
+          );
+        else {
+          setImages(roomImages.images);
+        }
       } else {
         setImages([]);
       }
     }
   };
-  const fetchRoomImages2 = async () => {
+  useEffect(() => {
     if(AddRoomState){
+      if(sidebarState){
+        fetchRoomImages2();
+      }
+    }
+  }, [sidebarState]);
+  const fetchRoomImages2 = async () => {
+    if (AddRoomState) {
+      if(sidebarState){
       const roomImages = await getRoomImages('Add a room images');
- 
-    if (roomImages && roomImages.images) {
-      setImages(roomImages.images);
-    } else {
-      setImages([]);
-    }}
+      console.log(roomImages);
+      if (roomImages && roomImages.images) {
+        console.log(roomImages.images);
+        if (window.electron) {
+          setImages(
+            roomImages.images.map((image: any) => {
+              delete image.fullUrl;
+              delete image.url;
+              return Object.values(image).join('');
+            })
+          );
+        } else {
+          setImages(roomImages.images);
+        }
+      } else {
+        setImages([]);
+      }}
+    }
   };
   const nextImage = () => {
     setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length);
@@ -93,68 +132,83 @@ useEffect(() => {
       (prevIndex) => (prevIndex - 1 + images.length) % images.length
     );
   };
-    const handleOnAddImage = () => {
-      const input = document.createElement('input');
-      input.type = 'file';
-      input.accept = 'image/jpeg,image/png,image/gif,image/svg+xml';
-      input.multiple = true;
+  const { showAlert } = useAlert();
+  const handleOnAddImage = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/jpeg,image/png,image/gif,image/svg+xml';
+    input.multiple = true;
 
-      input.onchange = async (event) => {
-        const files = (event.target as HTMLInputElement).files;
-        if (files && files.length > 0) {
-          const oversizedFiles = Array.from(files).filter(file => file.size > 5 * 1024 * 1024);
-          if (oversizedFiles.length > 0) {
-            alert('Some files exceed the 5MB size limit. Please select smaller files.');
-            return;
-          }
-
-          try {
-            const folderText = isAddRoomImage
-              ? 'Add a room images'
-              : room
-              ? `Floor ${room.floor}, Room ${room.roomIndex} - ${room.id}`
-              : '';
-            const results = await AddRoomImageToFiles(files, folderText);
-            if (results) {
-              if (!isAddRoomImage && room) {
-                fetchRoomImages();
-              } else {
-                fetchRoomImages2();
-              }
-              alert('Images uploaded successfully!');
-            } else {
-              console.error('Failed to upload images');
-              alert('Failed to upload images. Please try again.');
-            }
-          } catch (error) {
-            console.error('Error uploading files:', error);
-            alert('An error occurred while uploading files. Please try again.');
-          }
+    input.onchange = async (event) => {
+      const files = (event.target as HTMLInputElement).files;
+      if (files && files.length > 0) {
+        const filteredFiles = Array.from(files).filter(file => file.size <= 5 * 1024 * 1024); // 5MB limit
+        if(filteredFiles.length === 0){
+          showAlert('All files are above the 5MB limit.', 'error');
+          return;
+        } else if (filteredFiles.length < files.length) {
+          showAlert('Some files exceeded the 5MB limit and were not uploaded.', 'error');
         }
-      };
 
-      input.click();
+        try {
+          const folderText = isAddRoomImage
+            ? 'Add a room images'
+            : room
+            ? `Floor ${room.floor}, Room ${room.roomIndex} - ${room.id}`
+            : '';
+          const results = await AddRoomImageToFiles(filteredFiles, folderText);
+          if (results) {
+            if (!isAddRoomImage && room) {
+              fetchRoomImages();
+            } else {
+              fetchRoomImages2();
+            }
+            showAlert('Images uploaded successfully!', 'success');
+          } else {
+            console.error('Failed to upload images');
+            showAlert('Failed to upload images. Please try again.');
+          }
+        } catch (error) {
+          console.error('Error uploading files:', error);
+          showAlert(
+            'An error occurred while uploading files. Please try again.'
+          );
+        }
+      }
     };
+
+    input.click();
+  };
+  const { confirm } = useConfirm();
   const handleDeleteImage = async () => {
-    if (room) {
-      const currentImage = images[currentIndex];
+    const choice = await confirm('Are you sure you want to delete this image?', {
+      type: 'danger',
+      title: 'Delete Image',
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+    });
+    if(choice)if (room) {
+      const currentImage = window.electron ? images[currentIndex] : images[currentIndex].fullPath;
       const fileName = currentImage.split('/').pop();
       const result = await deleteRoomImage(room.id, fileName);
       if (result && result.message === 'Image deleted successfully') {
+        showAlert('Image deleted successfully', 'success');
         setImages((prevImages) =>
-          prevImages.filter((img) => img !== currentImage)
+          prevImages.filter((img) => window.electron ? img !== currentImage : img.fullPath !== currentImage)
         );
         if (currentIndex >= images.length - 1) {
           setCurrentIndex((prevIndex) => Math.max(0, prevIndex - 1));
         }
       }
     } else {
-      const currentImage = images[currentIndex];
+      console.log(images[currentIndex]);
+      const currentImage = window.electron ? images[currentIndex] : images[currentIndex].fullPath;
       const fileName = currentImage.split('/').pop();
       const result = await deleteRoomImage('Add a room images', fileName);
       if (result && result.message === 'Image deleted successfully') {
+        showAlert('Image deleted successfully', 'success');
         setImages((prevImages) =>
-          prevImages.filter((img) => img !== currentImage)
+          prevImages.filter((img) => window.electron ? img !== currentImage : img.fullPath !== currentImage)
         );
         if (currentIndex >= images.length - 1) {
           setCurrentIndex((prevIndex) => Math.max(0, prevIndex - 1));
@@ -164,8 +218,28 @@ useEffect(() => {
   };
 
   const handleShowInExplorer = (imagePath: string) => {
-    window.electron.ipcRenderer.send('show-item-in-folder', imagePath);
-  };
+    if (window.electron) {
+      window.electron.ipcRenderer.send('show-item-in-folder', imagePath);
+    } else {
+      // Web version - download the image
+      // Web version - download the image
+    try {
+      const pathParts = imagePath.fullPath.split(/[/\\]/);
+      const fileName = pathParts[pathParts.length - 1];
+      const roomId = room?.id || 'Add a room images';
+      
+      if (fileName) {
+        downloadImage(roomId, fileName)
+          .catch(error => {
+            console.error('Error downloading image:', error);
+            alert('Failed to download image. Please try again.');
+          });
+      }
+    } catch (error) {
+      console.error('Error processing image path:', error);
+      alert('Failed to process image path. Please try again.');
+    }
+  }}
 
   return (
     <div
@@ -182,27 +256,27 @@ useEffect(() => {
             style={{ position: 'relative', width: '100%', height: '100%' }}
           >
             <img
-              src={images[currentIndex]}
+              src={
+                window.electron
+                  ? images[currentIndex]
+                  : images[currentIndex].fullUrl
+              }
               alt={`Room image ${currentIndex + 1}`}
               style={{ width: '100%', height: '100%', objectFit: 'contain' }}
             />
             <button
               className="arrow-button left"
               onClick={prevImage}
-              style={{ position: 'absolute', left: 0, top: '50%' }}
+              style={{ position: 'absolute', left: 0, top: '25%' }}
             >
-              <img
-                src={RightArrow}
-                alt="Previous"
-                style={{ transform: 'rotate(180deg)' }}
-              />
+              ◀
             </button>
             <button
               className="arrow-button right"
               onClick={nextImage}
-              style={{ position: 'absolute', right: 0, top: '50%' }}
+              style={{ position: 'absolute', right: 0, top: '25%' }}
             >
-              <img src={RightArrow} alt="Next" />
+            ▶
             </button>
             <div
               className="controls"
@@ -219,10 +293,14 @@ useEffect(() => {
               <button
                 onClick={() => handleShowInExplorer(images[currentIndex])}
               >
-                Files
+               {window.electron ? 'Files' : 'Download'}
               </button>
               <div
-                style={{ marginTop: '-15px', flexWrap:"wrap", justifyContent:"flex-start" }}
+                style={{
+                  marginTop: 'var(---15px-V)',
+                  flexWrap: 'wrap',
+                  justifyContent: 'flex-start',
+                }}
                 className="CounterImageOnImageIntercator image-counter"
               >
                 {images.map((_, index) => (
@@ -241,7 +319,9 @@ useEffect(() => {
       ) : (
         <div className="no-images">
           <p>No images available</p>
-          <button onClick={handleOnAddImage} style={{boxShadow: '2px 2px 6px var(--Text-Color-Reverse)'}}>Add Image</button>
+          <button onClick={handleOnAddImage} style={{}}>
+            Add Image
+          </button>
         </div>
       )}
     </div>

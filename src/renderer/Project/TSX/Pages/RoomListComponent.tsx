@@ -24,22 +24,31 @@ export function RoomListComponent({
   handleAddRoomButtonInitial,
   updateRoomPropertyLocal,
   agreementApi,
-  ShowArchived,setChangeMade,SelectedUserId
+  setChangeProgress,changeProgress,
+  ShowArchived,setChangeMade,SelectedUserId,SelectedAppUser,roomListContainerRef,SelectedBranchId
 }: any) {
+  // Sort the rooms based on floor and room number
+  const sortedRooms = sortedAndFilteredRooms.sort((a, b) => {
+    if (a.floor === b.floor) {
+      return a.roomIndex - b.roomIndex;
+    }
+    return a.floor - b.floor;
+  });
+
   return (
     <>
       <div className="SecondNavBarContainer" style={{ width: '100%' }}>
         <div className="FilterOptions">
-          <strong style={{ marginRight: '10px' }}>
-            Showing {ShowArchived ? sortedAndFilteredRooms.filter((r:RoomType)=>r.Archived).length : sortedAndFilteredRooms.filter((r:RoomType)=>!r.Archived).length} {ShowArchived && 'archived'}{' '}
+          <strong style={{ marginRight: 'var(--10px-V)' }}>
+            Showing {ShowArchived ? sortedRooms.filter((r:RoomType)=>r.Archived).length : sortedRooms.filter((r:RoomType)=>!r.Archived).length} {ShowArchived && 'archived'}{' '}
             room
-            {ShowArchived ? sortedAndFilteredRooms.filter((r:RoomType)=>r.Archived).length != 1 && 's': sortedAndFilteredRooms.filter((r:RoomType)=>!r.Archived).length != 1 && 's'}
+            {ShowArchived ? sortedRooms.filter((r:RoomType)=>r.Archived).length != 1 && 's': sortedRooms.filter((r:RoomType)=>!r.Archived).length != 1 && 's'}
           </strong>
           {filterOptions.length > 0 && <strong>Filter options:</strong>}
           {filterOptions.map((option: any, index: any) => (
             <>
               <div
-                style={{ marginRight: '10px', marginLeft: '10px' }}
+                style={{ marginRight: 'var(--10px-V)', marginLeft: 'var(--10px-V)' }}
                 key={index}
               >
                 <span>
@@ -47,11 +56,11 @@ export function RoomListComponent({
                 </span>
                 <button
                   style={{
-                    width: '20px',
-                    height: '20px',
+                    width: 'var(--20px-V)',
+                    height: 'var(--20px-V)',
                     textAlign: 'center',
-                    padding: '0px',
-                    marginLeft: '5px',
+                    padding: 'var(--0px-V)',
+                    marginLeft: 'var(--5px-V)',
                   }}
                   onClick={() => removeFilterOption(index)}
                 >
@@ -66,24 +75,26 @@ export function RoomListComponent({
         className="RoomContainerContainer"
         style={{
           width: '100%',
-          height: 'calc(100% - 60px)',
-        }}
+          height: 'calc(100% - var(--60px-V))',
+        }}ref={roomListContainerRef}
       >
         <div
           style={{
-            height: '25px',
+            height: 'var(--25px-V)',
           }}
         ></div>
-        <div className="RoomContainer">
-          {sortedAndFilteredRooms.filter((r: RoomType) => r.Archived == ShowArchived).length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '20px',width:'100%', color:'var(--Text-Color-Grey)'}}>
+        <div className="RoomContainer" >
+          {sortedRooms.filter((r: RoomType) => r.Archived == ShowArchived).length === 0 ? (
+            <div style={{ textAlign: 'center', padding: 'var(--20px-V)',width:'100%', color:'var(--Text-Color-Grey)'}}>
               <p>There are no rooms. Add a room by clicking the "Add room" button on the left.</p>
             </div>
           ) : (
-            sortedAndFilteredRooms
+            sortedRooms
               .filter((r: RoomType) => r.Archived == ShowArchived)
               .map((room: any, index: any) => (
                 <Room
+                  setChangeProgress={setChangeProgress}
+                  changeProgress={changeProgress}
                   agreementApi={agreementApi}
                   SelectedUserId={SelectedUserId}
                   setChangeMade={setChangeMade}
@@ -144,8 +155,8 @@ export function RoomListComponent({
                   key={room.id}
                   setTenantList={setTenantList}
                   TenantList={TenantList}
-                  tenantAPI={tenantAPI}
-                  pastTenantReviewApi={pastTenantReviewApi}
+                  tenantAPI={tenantAPI}SelectedBranchId={SelectedBranchId}
+                  pastTenantReviewApi={pastTenantReviewApi}SelectedAppUser={SelectedAppUser}
                 />
               ))
           )}

@@ -1,15 +1,15 @@
 .MainContainer {
-  margin: 5px;
-  width: 557px;
-  height: 151px;
-  min-width: 536px;
-  min-height: 151px;
+  margin: var(--5px-V);
+  width: var(--557px-V);
+  height: var(--151px-V);
+  min-width: var(--536px-V);
+  min-height: var(--151px-V);
   display: flex;
   flex-direction: row;
   align-items: center;
-  padding: 10px;
-  border-radius: 10px;
-
+  padding: var(--10px-V);
+  border-radius: var(--10px-V);
+  box-shadow: var(--2px-V) var(--2px-V) var(--1px-V) var(--1px-V) var(--Secondary-Color30);
   transition: all 0.2s;
   user-select: none;
 }
@@ -18,51 +18,51 @@
   width: 35%;
 }
 .FloorText {
-  background-color: var(--Secondary-Color);
-  height: 25px;
-  width: 100px;
-  font-size: 20px;
-  margin: 0px;
-  padding-left: 5px;
+  background-color: var(--Secondary-Color60);
+  height: var(--25px-V);
+  width: var(--100px-V);
+  font-size: var(--20px-V);
+  margin: var(--0px-V);
+  padding-left: var(--5px-V);
   display: flex;
   justify-content: left;
-  border-radius: 10px 10px 0px 0px;
+  border-radius: var(--10px-V) var(--10px-V) var(--0px-V) var(--0px-V);
   align-items: center;
-  border-bottom: 1px solid white;
+
   color: var(--Text-Color);
 }
 .RoomText {
-  background-color: var(--Secondary-Color);
-  height: 35px;
-  font-size: 30px;
+  background-color: var(--Secondary-Color60);
+  height: var(--35px-V);
+  font-size: var(--30px-V);
   color: var(--Text-Color);
-  margin: 0px;
-  padding-left: 5px;
+  margin: var(--0px-V);
+  padding-left: var(--5px-V);
   display: flex;
   justify-content: left;
-  border-radius: 0px 10px 10px 10px;
+  border-radius: var(--0px-V) var(--10px-V) var(--10px-V) var(--10px-V);
   align-items: center;
 }
 .StatusContainer {
-  background-color: var(--Secondary-Color);
-  height: 81px;
-  font-size: 18px;
+  background-color: var(--Secondary-Color60);
+  height: var(--81px-V);
+  font-size: var(--18px-V);
   color: var(--Text-Color);
-  margin: 0px;
-  margin-top: 10px;
-  padding-left: 5px;
+  margin: var(--0px-V);
+  margin-top: var(--10px-V);
+  padding-left: var(--5px-V);
   display: flex;
   justify-content: center;
-  border-radius: 10px 10px 10px 10px;
+  border-radius: var(--10px-V) var(--10px-V) var(--10px-V) var(--10px-V);
   align-items: top;
   text-align: center;
 }
 .StatusText {
-  margin: 0px;
-  margin-top: 5px;
+  margin: var(--0px-V);
+  margin-top: var(--5px-V);
   display: flex;
   flex-direction: column;
-  font-size: 15px;
+  font-size: var(--15px-V);
 }
 .SecondLine {
   width: 35%;
@@ -76,66 +76,65 @@
   width: 30%;
 }
 .RoomTypeContainer {
-  background-color: var(--Secondary-Color);
-  height: 120px;
-  font-size: 20px;
+  background-color: var(--Secondary-Color60);
+  height: var(--120px-V);
+  font-size: var(--20px-V);
   color: var(--Text-Color);
-  margin: 0px;
-  padding-top: 5px;
+  margin: var(--0px-V);
+  padding-top: var(--5px-V);
   display: flex;
   justify-content: flex-start;
-  border-radius: 10px 10px 0px 0px;
+  border-radius: var(--10px-V) var(--10px-V) var(--0px-V) var(--0px-V);
   align-items: top;
   text-align: center;
   flex-direction: column;
-  border-bottom: 1px dashed white;
+  border-bottom: var(--1px-V) solid var(--Text-Color-Grey);
 }
 .RoomImageContainer {
-  background-color: var(--Secondary-Color);
-  height: 145px;
-  font-size: 20px;
+  background-color: var(--Secondary-Color60);
+  height: var(--145px-V);
+  font-size: var(--20px-V);
   color: var(--Text-Color);
-  margin: 0px;
-  padding-top: 5px;
+  margin: var(--0px-V);
+  padding-top: var(--5px-V);
   display: flex;
   justify-content: flex-start;
-  border-radius: 10px;
+  border-radius: var(--10px-V);
   align-items: center;
   text-align: center;
   flex-direction: column;
 }
 .RoomTypeContainerBottom {
-  background-color: var(--Secondary-Color);
-  height: 20px;
-  font-size: 20px;
-  margin: 0px;
-  padding-top: 5px;
+  background-color: var(--Secondary-Color60);
+  height: var(--20px-V);
+  font-size: var(--20px-V);
+  margin: var(--0px-V);
   color: var(--Text-Color);
   display: flex;
   justify-content: flex-start;
-  border-radius: 0px 0px 10px 10px;
+  border-radius: var(--0px-V) var(--0px-V) var(--10px-V) var(--10px-V);
   align-items: top;
   text-align: center;
   flex-direction: column;
 }
 .RoomTypeContainertext {
-  font-size: 15px;
-  margin: 0px;
+  font-size: var(--15px-V);
+  margin: var(--0px-V);
   text-align: left;
-  padding-left: 5px;
+  padding-left: var(--5px-V);
 }
 
 .PriceContainer {
-  background-color: var(--Secondary-Color);
-  height: 25px;
+  background-color: var(--Secondary-Color60);
+  height: var(--25px-V);
   width: 100%;
-  font-size: 17px;
+  font-size: var(--17px-V);
   color: var(--Text-Color);
-  margin: 0px;
-  padding-top: 5px;
+  margin: var(--0px-V);
+  padding-top: var(--5px-V);
   display: flex;
   justify-content: flex-end;
-  border-radius: 10px 10px 10px 10px;
+  border-radius: var(--10px-V) var(--10px-V) var(--10px-V) var(--10px-V);
   text-align: center;
   flex-direction: column;
   flex-wrap: wrap;
@@ -143,121 +142,114 @@
 }
 .ChangePriceButtonContianer {
   background-color: var(--Secondary-Color);
-  height: 25px;
-  margin-right: 10px;
+  height: var(--25px-V);
+  margin-right: var(--10px-V);
   width: 20%;
-  font-size: 17px;
-  margin: 0px;
+  font-size: var(--17px-V);
+  margin: var(--0px-V);
 
   display: flex;
   justify-content: center;
   align-items: center;
-  border-radius: 10px 10px 10px 10px;
+  border-radius: var(--10px-V) var(--10px-V) var(--10px-V) var(--10px-V);
   text-align: center;
   flex-direction: column;
   flex-wrap: wrap;
   align-content: center;
-  margin-left: 10px;
+  margin-left: var(--10px-V);
 }
 .ChangePriceButton {
-  max-width: 10px;
-  max-height: 10px;
+  max-width: var(--10px-V);
+  max-height: var(--10px-V);
 }
 .PriceMainContainer {
   width: 90%;
   display: flex;
-  margin-right: 10px;
-  margin-left: 10px;
+  margin-right: var(--10px-V);
+  margin-left: var(--10px-V);
 }
 .PopOutContainer {
   width: 0;
   position: relative;
-  top: 180px;
-  left: -536px;
+  top: var(--180px-V);
+  left: var(---536px-V);
   z-index: 1;
 }
 .AddTenantContainerinner {
-  width: 280px;
-  height: 260px;
+  width: var(--280px-V);
+  height: var(--260px-V);
   background: var(--Background-Color);
   display: flex;
   align-content: flex-start;
   justify-content: space-between;
-  border-radius: 0px 10px 10px 10px;
+  border-radius: var(--0px-V) var(--10px-V) var(--10px-V) var(--10px-V);
   color: var(--Text-Color);
   align-content: space-between;
   transition: all 0.3s;
-  border: 1px solid white;
-  border-top: 1px dashed white;
+  border: var(--1px-V) solid white;
+  border-top: var(--1px-V) dashed white;
   flex-direction: column;
 }
 .ViewAgreementContainer {
-  width: 280px;
-  height: 260px;
+  width: var(--280px-V);
+  height: var(--260px-V);
   background: var(--Background-Color);
   display: flex;
   align-content: flex-start;
   justify-content: space-between;
-  border-radius: 10px;
+  border-radius: var(--10px-V);
   color: var(--Text-Color);
   align-content: space-between;
   transition: all 0.3s;
-  border: 1px solid rgb(255, 255, 255);
+  border: var(--1px-V) solid rgb(255, 255, 255);
   flex-direction: column;
   user-select: text;
-  margin-top: 10px;
-  padding-top: 10px;
-  padding-bottom: 10px;
+  margin-top: var(--10px-V);
+  padding-top: var(--10px-V);
+  padding-bottom: var(--10px-V);
   overflow-y: auto;
   overflow-x: hidden;
-  box-shadow: 2px 2px 6px 2px #68686833;
+  box-shadow: var(--2px-V) var(--2px-V) var(--6px-V) var(--2px-V) #68686833;
 }
 .AddTenantContainerinnerInput {
-  width: 140px;
+  width: var(--180px-V);
   background-color: var(--Secondary-Color);
-  border: 1px solid grey;
-  box-shadow: 2px 2px 2px lab(0 0 0 / 0.21);
   color: var(--Text-Color);
-  border-radius: 5px;
+  border-radius: var(--5px-V);
 }
 .StartTime {
-  background-color: var(--Secondary-Color);
-  border: 1px solid grey;
-  box-shadow: 2px 2px 2px lab(0 0 0 / 0.21);
-  border-radius: 5px;
-  color: var(--Text-Color);
+
 }
 .Agreementtype {
-  border-radius: 5px;
-  box-shadow: 2px 2px 2px lab(0 0 0 / 0.21);
+  border-radius: var(--5px-V);
+  box-shadow: var(--2px-V) var(--2px-V) var(--2px-V) lab(0 0 0 / 0.21);
   background-color: var(--Secondary-Color);
   color: var(--Text-Color);
 }
 .AddTenantContainerinnerElement {
-  margin-bottom: 5px;
+  margin-bottom: var(--5px-V);
 }
 .AddTenantButton {
-  width: 80px;
-  height: 30px;
+  width: var(--80px-V);
+  height: var(--30px-V);
 }
 .PayAndDueShowerContainer {
-  background-color: var(--Secondary-Color);
-  height: 110px;
+  background-color: var(--Secondary-Color30);
+  height: var(--110px-V);
   width: 90%;
-  font-size: 17px;
-  margin: 0px;
-  padding-top: 5px;
+  font-size: var(--17px-V);
+  margin: var(--0px-V);
+  padding-top: var(--5px-V);
   display: flex;
   justify-content: space-evenly;
-  border-radius: 10px 10px 10px 10px;
+  border-radius: var(--10px-V) var(--10px-V) var(--10px-V) var(--10px-V);
   text-align: center;
   flex-direction: column;
   flex-wrap: nowrap;
   align-content: center;
-  margin-top: 10px;
+  margin-top: var(--10px-V);
   align-items: center;
   color: var(--Text-Color);
-  border: 1px dashed deepskyblue;
 }
 .PaymentCardContianer {
   height: 80%;
@@ -269,62 +261,62 @@
 }
 .PaymentCard {
   background-color: #1e1f28;
-  border-radius: 10px;
-  box-shadow: 2px 2px 3px black;
+  border-radius: var(--10px-V);
+  box-shadow: var(--2px-V) var(--2px-V) var(--3px-V) black;
   color: var(--Text-Color);
-  font-size: 16px;
-  margin-left: 5px;
-  margin-right: 5px;
+  font-size: var(--16px-V);
+  margin-left: var(--5px-V);
+  margin-right: var(--5px-V);
 }
 .Show-button-Pay {
-  width: 100px;
-  height: 40px;
+  width: var(--100px-V);
+  height: var(--40px-V);
 }
 .TimeLineMainContaner {
   background: var(--Background-Color);
     z-index: 1;
     transition: all 0.2s;
-    border-radius: 5px;
-    /* border: 1px solid black; */
-    padding: 5px;
+    border-radius: var(--5px-V);
+    /* border: var(--1px-V) solid black; */
+    padding: var(--5px-V);
     overflow-x: auto;
     overflow-y: hidden;
-    color: var(--Text-Color);    border: 1px solid grey;
+    color: var(--Text-Color);    border: var(--1px-V) solid grey;
 }
 .TabsContainerForTenantAdding {
   width: 100%;
   display: flex;
-  margin-bottom: 10px;
+  margin-bottom: var(--10px-V);
 }
 .ButtonTabsContainerForTenantAdding {
   width: 40%;
   display: flex;
-  border-radius: 0px;
-  height: 20px;
+  border-radius: var(--0px-V);
+  height: var(--20px-V);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 2px 2px 2px lab(0 0 0 / 0.21);
-  border-bottom: 1px solid var(--Primary-Color);
+  box-shadow: var(--2px-V) var(--2px-V) var(--2px-V) lab(0 0 0 / 0.21);
+  border-bottom: var(--1px-V) solid var(--Primary-Color);
   background-color: var(--Secondary-Color);
-  border-right: 1px solid white;
-  border-left: 1px solid white;
-  border-top: 1px solid white;
+  border-right: var(--1px-V) solid white;
+  border-left: var(--1px-V) solid white;
+  border-top: var(--1px-V) solid white;
   color: var(--Text-Color);
 }
 .TenantRow {
-  box-shadow: 2px 2px 2px lab(0 0 0 / 0.21);
-  width: 260px;
-  height: 40px;
-  padding-left: 5px;
-  margin-top: 5px;
+  box-shadow: var(--2px-V) var(--2px-V) var(--2px-V) lab(0 0 0 / 0.21);
+  width: 95%;
+  height: var(--40px-V);
+  padding-left: var(--5px-V);
+  margin-top: var(--5px-V);
   display: flex;
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 5px;
-  background-color: var(--Secondary-Color);
-  border-radius: 5px;
+  margin-bottom: var(--5px-V);
+  background-color: var(--Secondary-Color40);
+  border-radius: var(--5px-V);
   color: var(--Text-Color);
 }
 .TenantRow:hover {
@@ -341,11 +333,12 @@
 }
 .TenantLeavePannelScreen {
   width: 50%;
-  height: 95%;
+  height: auto;
+  padding-bottom: var(--10px-V);
   background-color: var(--Background-Color);
   position: absolute;
   left: 50%;
-  top: 50%;
+  top: 50%;border-radius: var(--10px-V);
   z-index: 2;
   transform: translate(-50%, -50%);
   overflow-y: auto;
@@ -353,9 +346,9 @@
 /*/*/
 .UtilityPriceInput {
   background-color: var(--Secondary-Color);
-  border: 1px solid grey;
-  box-shadow: 2px 2px 2px lab(0 0 0 / 0.21);
-  border-radius: 5px;
+  border: var(--1px-V) solid grey;
+  box-shadow: var(--2px-V) var(--2px-V) var(--2px-V) lab(0 0 0 / 0.21);
+  border-radius: var(--5px-V);
   color: var(--Text-Color);
 }
 .UtilityPriceInputDisabled {
@@ -365,4 +358,17 @@
 .UtilityPriceInputDisabled:hover {
   background-color: var(--Secondary-Color);
   color: var(--Text-Color-Grey);
+}.highlight-new-room {
+  animation: highlightRoom 2s ease-out;
+}
+
+@keyframes highlightRoom {
+  0% {
+    background-color: var(--Accent-Color);
+    transform: scale(1.02);
+  }
+  100% {
+    background-color: var(--Secondary-Color20);
+    transform: scale(1);
+  }
 }

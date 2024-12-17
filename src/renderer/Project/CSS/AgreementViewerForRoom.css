@@ -1,8 +1,8 @@
 .AgreementMainContianer {
-  background-color: var(--Secondary-Color);
-  padding: 5px;
-  border-radius: 5px;
-  margin: 5px;
+  background-color: var(--Secondary-Color30);
+  padding: var(--5px-V);
+  border-radius: var(--5px-V);
+  margin: var(--5px-V);
   overflow-y: auto;
 }
 .AgreementNavigationButtons {
@@ -12,21 +12,25 @@
   align-items: center;
 }
 .AgreementPopUpContainer {
-  width: 450px;
-  height: 500px;
-  border-radius: 5px;
+  width: var(--450px-V);
+  height: var(--500px-V);
+  border-radius: var(--5px-V);
   background-color: var(--Background-Color);
   position: absolute;
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
   z-index: 3;
-  border: 1px solid grey;
+ 
   display: flex;
   align-items: center;
   flex-direction: column;
-  padding: 5px;
+  padding: var(--15px-V);
   justify-content: space-between;
+}
+.AgreementPopUpContainer h2 {
+  margin: var(--0px-V);
+  margin-bottom: var(--10px-V);
 }
 .AgreementPopUpContainerOpacity {
   background-color: #000000a9;

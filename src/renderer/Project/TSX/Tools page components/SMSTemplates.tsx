@@ -1,9 +1,11 @@
 import React from 'react';
+import { Input } from '../Helpers/CustomReactComponents';
+import { useAlert } from 'renderer/components/useAlert';
 interface SMSTemplate {
-    id: string;
-    name: string;
-    body: string;
-  }
+  id: string;
+  name: string;
+  body: string;
+}
 interface SMSTemplatesProps {
   smsTemplates: SMSTemplate[];
   openTemplateId: string | null;
@@ -31,6 +33,7 @@ interface SMSTemplatesProps {
   handleSendSMS: () => void;
   bodyTextareaRef: React.RefObject<HTMLTextAreaElement>;
   setSelectedInput: (input: string) => void;
+  handleReplaceWithDefaultSms: () => void;
 }
 
 const SMSTemplates: React.FC<SMSTemplatesProps> = ({
@@ -60,7 +63,31 @@ const SMSTemplates: React.FC<SMSTemplatesProps> = ({
   handleSendSMS,
   bodyTextareaRef,
   setSelectedInput,
+  handleReplaceWithDefaultSms,
 }) => {
+  // Add this helper function at the top of your file
+// Add this helper function at the top of your file
+const calculateSMSInfo = (text: string) => {
+  // Function to check if text contains ANY Amharic characters
+  const containsAmharic = (text: string): boolean => {
+    const amharicRange = /[\u1200-\u137F]/; // Unicode range for Amharic
+    return amharicRange.test(text);
+  };
+
+  const messageLength = text.length;
+  const isAmharic = containsAmharic(text);
+  
+  // If there's ANY Amharic character, use 69 limit for the entire message
+  const charLimit = isAmharic ? 69 : 159;
+  const smsCount = Math.ceil(messageLength / charLimit);
+
+  return {
+    count: smsCount,
+    total: messageLength
+  };
+};
+const { showAlert } = useAlert();
+// Then in your JSX, replace the "counts as 5 SMS" part with:
   return (
     <div className="tools-page">
       <div
@@ -70,21 +97,37 @@ const SMSTemplates: React.FC<SMSTemplatesProps> = ({
           alignItems: 'center',
         }}
       >
-        <h2>Your SMS Templates (SMS sending is currently not available)</h2>
+        <h2>Your SMS Templates</h2>
+        <p style={{fontSize: 'var(--13px-V)', color: 'var(--Text-Color-Grey)', width: 'var(--150px-V)'}}>69 characters for Amharic and 159 for English counts as 1 SMS</p>
+        <button
+          onClick={() => {
+            if (navigator.onLine) handleReplaceWithDefaultSms();
+            else showAlert('You are offline, cannot reset to default');
+          }}
+          style={{
+            fontSize: 'var(--10px-V)',
+            border: 'var(--1px-V) dashed red',
+          }}
+        >
+          Reset to Default
+        </button>
         <button onClick={handleAddSMSTemplate}>Add an SMS template</button>
       </div>
-      {smsTemplates.map((template) => (
+      {smsTemplates.sort((a, b) => a.name.localeCompare(b.name)).map((template) => (
         <div
           key={template.id}
           className="email-template-container"
           style={{
-            minHeight: openTemplateId === template.id ? '181px' : '',
+            minHeight: openTemplateId === template.id ? 'var(--181px-V)' : '',
           }}
         >
           <div
             className="email-template-header"
             style={{
-              padding: editingTemplateId === template.id ? '10px' : '15px',
+              padding:
+                editingTemplateId === template.id
+                  ? 'var(--10px-V)'
+                  : 'var(--15px-V)',
             }}
           >
             {editingTemplateId === template.id ? (
@@ -161,6 +204,8 @@ const SMSTemplates: React.FC<SMSTemplatesProps> = ({
                         )
                       )}
                     </ul>
+                    Counts as {calculateSMSInfo(template.body).count} SMS
+                   
                     <button onClick={() => handleTryOut(template.id)}>
                       Send / Try Out
                     </button>
@@ -210,7 +255,9 @@ const SMSTemplates: React.FC<SMSTemplatesProps> = ({
                   ))}
                 </div>
                 <hr />
-                <h3>Send SMS</h3>
+                <div style={{display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
+                <h3 >Send SMS</h3>Exmple format 0911223344 .Will count as {calculateSMSInfo(replaceVariables(template.body)).count} SMS
+                </div>
                 <p>
                   You will now send the above SMS to the phone number specified
                   below

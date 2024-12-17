@@ -1,11 +1,12 @@
 import { RoomListComponent } from './Pages/RoomListComponent';
 import { PeopleComponentPage } from './Pages/PeopleComponentPage';
-import React, { useEffect, useState } from 'react';
-const { v4: uuidv4 } = require('uuid');
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Input } from './Helpers/CustomReactComponents';
+import { v4 as uuidv4 } from 'uuid';
 import ImageInteractor from './Helpers/GUIs/ImageIntractorGUI';
 import LONGIMAGE from './Helpers/WIN_20240802_19_41_23_Pro.jpg';
 import Room from './Helpers/Room';
-import '../CSS/RoomArea.css';
+
 import SortIcon from '../../assets/icons8-sort-100.png';
 import DoubleArrowIconDark from '../../assets/assets/Dark mode/Left2Arrow.png';
 import DoubleArrowIconDarkb from '../../assets/assets/Dark mode/Admin Settings Male.png';
@@ -17,15 +18,26 @@ import {
   addValue,
   deleteFolderImages,
   deleteValue,
+  duplicateRoomImagesFolder,
   getValuesWithSql,
   renameFolder,
   updateValue,
-} from 'Backend/localServerApis';
+} from '../../../Backend/localServerApis';
 import ImageInteractor2 from './Helpers/GUIs/ImageInteractor2';
 import { set } from 'date-fns';
 import DashboardPage from './Pages/DashboardPage';
 import DatabasePage from './Pages/DatabasePage';
 import ToolsPage from './Pages/ToolsPage';
+import { getUserPrivileges } from './../../App';
+import { UpdateButton } from './../../components/UpdateButton';
+import CurrencySign, {
+  GetCurrencyAsOptionsOnSelect,
+  GetDefaultCurrency,
+} from './Helpers/CurrencySign';
+import { IconsGUI } from '../getIcons';
+import { useAlert } from '../../components/useAlert';
+import { useConfirm } from 'renderer/components/useConfirm';
+import { useGlobal } from 'renderer/components/GlobalContext';
 type FilterOption = {
   key: string;
   value: any;
@@ -37,6 +49,41 @@ interface RoomCategory {
   rooms?: string[];
 }
 declare global {
+  type BranchType = {
+    // Primary identifiers
+    id: string;
+    userId: string;
+    // Added
+
+    // Basic information
+    name: string;
+    location: string;
+    description: string;
+    lock?: boolean;
+    googleMapPinPoint: string;
+  };
+  type BranchTypeWithData = {
+    // Primary identifiers
+    id: string;
+    userId: string;
+
+    // Basic information
+    name: string;
+    location: string;
+    description: string;
+    googleMapPinPoint: string;
+
+    totalRooms?: number;
+    totalFloors?: number;
+    totalTenants?: number;
+    occupiedRooms?: number;
+    vacantRooms?: number;
+    monthlyRevenue?: number;
+    monthlyExpenses?: number;
+    monthlyProfit?: number;
+    userAccountsWhichHaveAccess?: string[];
+    lock?: boolean;
+  };
   type RoomType = {
     id: string;
     floor: number;
@@ -45,6 +92,7 @@ declare global {
     price: number;
     AgreedPrice: number;
     utilityPaymentEvery: string;
+    Currency: string;
     utilityPaymentStartDate: number;
     utilityPaymentUseDifferentStartDate: boolean;
     utilityPaymentEveryCustom: number;
@@ -55,6 +103,7 @@ declare global {
       | 'monthly'
       | 'weekly'
       | 'daily'
+      | 'Annually'
       | 'custom';
     PaymentCycleCustomeDays: number;
     paymentShowAmount: number;
@@ -71,12 +120,21 @@ declare global {
     notificationSettings: number;
     utilityPayments: UtilityPaymentSettings[];
     DaysTillNextPayment: number;
+    branchId: string; // Added
+    UtilityNotificationSettings: number;
+
+    // Tenant Portal
+    useTenantPortal: boolean;
+    TenantPortalShowTenantDetails: boolean;
+    TenantPortalShowReceipts: boolean;
+    TenantPortalAllowOnlinePayments: boolean;
   };
   type RoomSpecificationType = {
     id: string;
     Detail: string;
     Number: number;
     type: 'bool' | 'number';
+    branchId: string; // Added
     Boolean: boolean;
   };
   type UtilityPaymentSettings = {
@@ -85,23 +143,39 @@ declare global {
     price: string;
     alwaysAsk: boolean;
     id: string;
+    branchId: string; // Added
     userId: string;
+    Currency: string;
   };
   type UtilityPayment = {
     id: string;
     roomId: string;
     type: string;
-    price: string;
+    price: number;
     custom: boolean;
-
+    branchId: string; // Added
+    Currency: string;
     userId: string;
   };
-
+  type SMSTemplate = {
+    id: string;
+    name: string;
+    body: string;
+    Type: string;
+  };
+  type EmailTemplate = {
+    id: string;
+    name: string;
+    subject: string;
+    body: string;
+    Type: string;
+  };
   type BrokerRecommendationType = {
     id: string;
     roomId: string;
     brokerId: string;
     recommendedTenantId: string;
+    branchId: string; // Added
     AddedTime: number;
     AgreedCommission: number;
   };
@@ -112,6 +186,7 @@ declare global {
     phoneNumber: string;
     phoneNumber2?: string;
     email?: string;
+    description?: string;
     SelectedAgreement: string;
     RentingOrOut: boolean;
     startTime: number;
@@ -120,6 +195,8 @@ declare global {
     TIN: string;
     RentReason: string;
     AddedTime: number;
+    Currency: string;
+    branchId: string; // Added
   };
   type BrokerType = {
     id: string;
@@ -127,11 +204,23 @@ declare global {
     phoneNumber: string;
     phoneNumber2?: string;
     email?: string;
+    branchId: string; // Added
 
     AddedTime: number;
     AgreedCommission: string;
     rating: number;
     notes: string;
+  };
+  type AllRoomPayInfoHistory = {
+    id: string;
+    roomId: string;
+    Day: number;
+    Value: number;
+    Paid: boolean;
+    userId: string;
+    branchId: string; // Added
+    agreementId: string;
+    tenantId: string;
   };
   type AllRoomPayInfo = {
     RoomPayInfo: RoomPayInfo[];
@@ -139,6 +228,8 @@ declare global {
   type RoomPayInfo = {
     id: string;
     roomId: string;
+    branchId: string; // Added
+    userId: string;
     Day: number;
     Paid: boolean;
     Value: number;
@@ -156,7 +247,9 @@ declare global {
     AgreedCommission: number;
     AgreedPrice: number;
     Stars: number;
+    branchId: string; // Added
     description: string;
+    Currency: string;
     endReason: string;
   };
   type agreements = {
@@ -168,9 +261,11 @@ declare global {
     signTime: number;
     agreedPrice: number;
     paymentCycleType: string;
+    branchId: string; // Added
     Memo: string;
     RentReserved: number;
     representative: string;
+    Currency: string;
   };
   type email_templates = {
     id: string;
@@ -186,13 +281,45 @@ declare global {
     fullBuilding: boolean;
     floor: number;
     room: number;
+    branchId: string;
     name: string;
     description: string;
     doesReoccur: boolean;
     recurringCycle: number;
+    recurringType: 'Day' | 'Monthly' | 'Yearly';
+    showNotifySettings: boolean;
+    EndDate: number;
+    HasEndDate: boolean;
     price: number;
     date: number;
     userId: string;
+
+    // New notification fields
+    sendEmail: boolean;
+    emailDaysBefore: number;
+    sendSms: boolean;
+    smsDaysBefore: number;
+    emailTo: string | null;
+    smsTo: string | null;
+    Currency: string;
+  };
+  type notification_template_selections = {
+    id: string;
+    notification_type: string;
+    email_template_id: string;
+    sms_template_id: string;
+    userId: string;
+    branchId: string; // Added
+  };
+  type appUser = {
+    id: string;
+    roleName: string;
+    privileges: string;
+    userId: string;
+    addedDate: number;
+    AllowedBranches: string;
+    password: string;
+    EnterWithPassword: boolean;
   };
 }
 const MainPage = ({
@@ -219,12 +346,20 @@ const MainPage = ({
   roomSpecificationAPI,
   setChangeMade,
   SelectedUserId,
+  SelectedAppUser,
+  SelectedBranchId,
+  signOutUserAndRestart,
+  setChangeProgress,changeProgress
 }: any) => {
   const [floorFilter, setFloorFilter] = useState<string>('');
   const [TenantNameFilter, setTenantNameFilter] = useState<string>('');
   const [roomFilter, setRoomFilter] = useState<string>('');
   const [sortType, setSortType] = useState<string>('name');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const privileges = useMemo(
+    () => getUserPrivileges(SelectedAppUser),
+    [SelectedAppUser]
+  );
 
   // Add state variables for filtering
   const [filterStatus, setFilterStatus] = useState<
@@ -243,6 +378,7 @@ const MainPage = ({
   >('None');
   const [filterSquareFeetValue, setFilterSquareFeetValue] =
     useState<string>('');
+  const [selectedCurrency, setSelectedCurrency] = useState<string>('all');
   const [filterOptions, setFilterOptions] = useState<FilterOption[]>([]);
   const getOriginlPropertyValue = (
     list: any[],
@@ -376,6 +512,8 @@ const MainPage = ({
         setFilterDueDateValue(''); // Reset the filter price value
       } else if (removedOption.key === 'filterSquareFeetValue') {
         setFilterSquareFeetValue(''); // Reset the filter square feet value
+      } else if (removedOption.key === 'selectedCurrency') {
+        setSelectedCurrency('all');
       }
       // If none of the above conditions are met, it will handle unknown keys by doing nothing
 
@@ -434,6 +572,7 @@ const MainPage = ({
                 ?.name.toLowerCase()
                 .includes(value.toLowerCase())
             );
+
           break;
         case 'room':
           filteredRooms = filteredRooms.filter(
@@ -549,6 +688,12 @@ const MainPage = ({
             }
           }
           break;
+        case 'selectedCurrency':
+          if (value !== 'all')
+            filteredRooms = filteredRooms.filter(
+              (room: { Currency: string }) => room.Currency === value
+            );
+          break;
         case 'sort':
           // You can decide how to handle sorting here
           break;
@@ -611,6 +756,9 @@ const MainPage = ({
         case 'filterSquareFeetValue':
           setFilterSquareFeetValue(''); // Reset the filter square feet value
           break;
+        case 'selectedCurrency':
+          setSelectedCurrency('all');
+          break;
         default:
           // Handle unknown key
           break;
@@ -628,6 +776,7 @@ const MainPage = ({
       removeFilterOptionByName('filterPriceValue');
     if (filterSquareFeetValue == '' || filterSquareFeetValue == '0')
       removeFilterOptionByName('filterSquareFeetValue');
+    if (selectedCurrency == 'all') removeFilterOptionByName('selectedCurrency');
     if (FilterDueDateValue == '' || FilterDueDateValue == '0')
       removeFilterOptionByName('filterDueDateValue');
   }, [
@@ -636,6 +785,7 @@ const MainPage = ({
     roomFilter,
     filterPriceValue,
     filterSquareFeetValue,
+    selectedCurrency,
     FilterDueDateValue,
   ]);
 
@@ -645,14 +795,26 @@ const MainPage = ({
     'TenantsList' | 'BrokersList' | 'TenantReviews'
   >('TenantsList');
   const [ToolsSelectedPage, setToolsSelectedPage] = useState<
-    'EmailTemplates' | 'SMSTemplates' | 'Expense Manager'
-  >('EmailTemplates');
+    | 'EmailTemplates'
+    | 'SMSTemplates'
+    | 'Expense Manager'
+    | 'Settings'
+    | 'Support'
+  >(privileges.editEmailTemplates ? 'EmailTemplates' : privileges.editSmsTemplates ? 'SMSTemplates' : privileges.editExpenses ? 'Expense Manager' : 'Settings');
   const [DashboardSelectedPage, setDashboardSelectedPage] = useState<
-    'Overview' | 'Email History' | 'Expenses'
+    | 'Overview'
+    | 'Email History'
+    | 'Expenses'
+    | 'Action History'
+    | 'SMS Details'
+    | 'Basic Rental income report'
   >('Overview');
   const [AddARoomState, setAddARoomState] = useState(false);
   const [AddRoomFormFloor, setAddRoomFormFloor] = useState(1);
   const [AddRoomFormRoomIndex, setAddRoomFormRoomIndex] = useState(1);
+  const [AddRoomFormCurrency, setAddRoomFormCurrency] = useState(
+    GetDefaultCurrency()
+  );
   const [AddRoomFormPrice, setAddRoomFormPrice] = useState(0);
   const [AddRoomFormPaymentCycleType, setAddRoomFormPaymentCycleType] =
     useState('monthly');
@@ -660,9 +822,11 @@ const MainPage = ({
     AddRoomFormPaymentCycleCustomDays,
     setAddRoomFormPaymentCycleCustomDays,
   ] = useState(0);
+  const {AllRoomSpecifications} = useGlobal()
+
   const [AddRoomFormSquareMeters, setAddRoomFormSquareMeters] = useState(0);
   const [AddRoomFormRoomSpecifications, setAddRoomFormRoomSpecifications] =
-    useState<RoomSpecificationType[]>([]);
+    useState<RoomSpecificationType[]>(AllRoomSpecifications.filter(spec => spec.roomId === 'DEFAULT'));
 
   const handleAddRoomFormSpecificationChange = (
     index: number,
@@ -689,91 +853,168 @@ const MainPage = ({
     );
   };
   const [RoomExistsWarning, setRoomExistsWarning] = useState(false);
+  const roomListContainerRef = useRef<HTMLDivElement>(null);
 
-  const handleAddRoom = async (continueAdding: boolean) => {
-    // Check if the room already exists
-    const roomExists = sortedAndFilteredRooms.some(
-      (room: any) =>
-        room.floor === AddRoomFormFloor &&
-        room.roomIndex === AddRoomFormRoomIndex
-    );
+  // Add a loading state
+  const [isAddingRoom, setIsAddingRoom] = useState(false);
+  const newRoomRef = useRef<HTMLDivElement>(null);
 
-    if (roomExists) {
-      // Room already exists, show an error message or handle as needed
-      console.error(
-        `Room ${AddRoomFormRoomIndex} on floor ${AddRoomFormFloor} already exists.`
+  // Modify the handleAddRoom function
+  const handleAddRoom = async (continueAdding = false) => {
+    if (isAddingRoom) return; // Prevent multiple clicks
+
+    try {
+      setIsAddingRoom(true); // Start loading
+
+      // Check if room exists
+      const roomExists = sortedAndFilteredRooms.some(
+        (room: any) =>
+          room.floor === AddRoomFormFloor &&
+          room.roomIndex === AddRoomFormRoomIndex
       );
-      setRoomExistsWarning(true);
-      return;
-    }
 
-    // If the room doesn't exist, proceed with adding the new room
-    const newRoom: RoomType = {
-      id: uuidv4(),
-      floor: AddRoomFormFloor,
-      roomIndex: AddRoomFormRoomIndex,
-      price: AddRoomFormPrice,
-      PaymentCycleType: AddRoomFormPaymentCycleType as
-        | '30'
-        | '15'
-        | '7'
-        | 'monthly'
-        | 'weekly'
-        | 'daily'
-        | 'custom',
-      PaymentCycleCustomeDays: AddRoomFormPaymentCycleCustomDays,
-      squareMeters: AddRoomFormSquareMeters,
-      RoomSpecifications: AddRoomFormRoomSpecifications,
-      status: 'Empty',
-      AgreedPrice: AddRoomFormPrice,
-      AllRoomPayInfo: { RoomPayInfo: [] },
-      selectedAgreementId: '',
-      Archived: false,
-    };
+      if (roomExists) {
+        console.error(
+          `Room ${AddRoomFormRoomIndex} on floor ${AddRoomFormFloor} already exists.`
+        );
+        setRoomExistsWarning(true);
+        return;
+      }
 
-    // Add to sqlite database
-    await roomAPI.AddRoomApi(
-      newRoom.id,
-      AddRoomFormFloor,
-      AddRoomFormRoomIndex,
-      AddRoomFormPrice,
-      AddRoomFormPaymentCycleType,
-      AddRoomFormPaymentCycleCustomDays,
-      AddRoomFormSquareMeters,
-      AddRoomFormRoomSpecifications
-    );
-    if (isMoreThanOneImage) {
-      handleRenameFolder(
-        'Add a room images',
-        `Room ${AddRoomFormFloor}, Floor ${AddRoomFormRoomIndex} - ${newRoom.id}`
+      // Create and add the new room
+      const newRoom: RoomType = {
+        id: uuidv4(),
+        floor: AddRoomFormFloor,
+        roomIndex: AddRoomFormRoomIndex,
+        price: AddRoomFormPrice,
+        PaymentCycleType: AddRoomFormPaymentCycleType,
+        PaymentCycleCustomeDays: AddRoomFormPaymentCycleCustomDays,
+        squareMeters: AddRoomFormSquareMeters,
+        RoomSpecifications: AddRoomFormRoomSpecifications,
+        status: 'Empty',
+        AgreedPrice: AddRoomFormPrice,
+        AllRoomPayInfo: { RoomPayInfo: [] },
+        selectedAgreementId: '',
+        Archived: false,
+        Currency: AddRoomFormCurrency || GetDefaultCurrency(),
+      };
+
+      // Add to database
+      await roomAPI.AddRoomApi(
+        newRoom.id,
+        AddRoomFormFloor,
+        AddRoomFormRoomIndex,
+        AddRoomFormPrice,
+        AddRoomFormPaymentCycleType,
+        AddRoomFormPaymentCycleCustomDays,
+        AddRoomFormSquareMeters,
+        AddRoomFormRoomSpecifications,
+        AddRoomFormCurrency || GetDefaultCurrency()
       );
+
+      // Handle images if needed
+      if (isMoreThanOneImage) {
+        if (!resetRoomImages) {
+          await duplicateRoomImagesFolder(
+            'Add a room images',
+            'New Room Images Folder'
+          );
+          await handleRenameFolder(
+            'New Room Images Folder',
+            `Room ${AddRoomFormFloor}, Floor ${AddRoomFormRoomIndex} - ${newRoom.id}`
+          );
+        } else {
+          await handleRenameFolder(
+            'Add a room images',
+            `Room ${AddRoomFormFloor}, Floor ${AddRoomFormRoomIndex} - ${newRoom.id}`
+          );
+        }
+      }
+
+      // Reset form and update UI
+      ResetAddRoomForumVariables(continueAdding);
+
+      // Update states in correct order
+      if (!continueAdding) {
+        setAddARoomState(false);
+        handleDeleteFolderImages('Add a room images');
+      }
+
+      setRoomExistsWarning(false);
+      setIsMoreThanOneImage(false);
+      setRefreshInspectorForAddRoom(true);
+    } catch (error) {
+      console.error('Error adding room:', error);
+    } finally {
+      setIsAddingRoom(false); // End loading
     }
-
-    // Reset the variables
-    ResetAddRoomForumVariables();
-    setRefreshInspectorForAddRoom(true);
-    if (!continueAdding) setAddARoomState(false);
-
-    setRoomExistsWarning(false);
-    setIsMoreThanOneImage(false);
   };
+
   const handleCancelAddRoom = () => {
-    ResetAddRoomForumVariables();
+    ResetAddRoomForumVariables2();
+    setAddARoomState(false);
     handleDeleteFolderImages('Add a room images');
   };
-  const ResetAddRoomForumVariables = () => {
-    setRoomExistsWarning(false);
 
-    setAddARoomState(false);
-    setAddRoomFormFloor(1);
+  const [showContinueAddingSettings, setShowContinueAddingSettings] =
+    useState(false);
+  const ResetAddRoomForumVariables = (continueAdding = false) => {
+    if (continueAdding) {
+      const fieldsToHighlight: string[] = [];
+
+      if (!incrementRoomNumber) {
+        setAddRoomFormRoomIndex(0);
+        fieldsToHighlight.push('roomNumber');
+      } else {
+        setAddRoomFormRoomIndex((prev) => (parseInt(prev) + 1).toString());
+      }
+
+      if (resetPrice) {
+        setAddRoomFormPrice(0);
+        fieldsToHighlight.push('roomPrice');
+      }
+
+      if (resetSquareMeters) {
+        setAddRoomFormSquareMeters(0);
+        fieldsToHighlight.push('squareMeters');
+      }
+
+      if (resetRoomSpecifications) {
+        setAddRoomFormRoomSpecifications(AllRoomSpecifications.filter(spec => spec.roomId === 'DEFAULT'));
+        fieldsToHighlight.push('specifications');
+      }
+
+      if (resetRoomImages) {
+        setRefreshInspectorForAddRoom(true);
+        fieldsToHighlight.push('images');
+      }
+
+      // Set the highlighted fields and remove them after animation
+      setHighlightedFields(fieldsToHighlight);
+      setTimeout(() => {
+        setHighlightedFields([]);
+      }, 2000);
+    } else {
+      // Reset all fields without highlighting
+      setAddRoomFormRoomIndex('');
+      setAddRoomFormPrice(0);
+      setAddRoomFormSquareMeters(0);
+      setAddRoomFormRoomSpecifications(AllRoomSpecifications.filter(spec => spec.roomId === 'DEFAULT'));
+      setRefreshInspectorForAddRoom(true);
+    }
+  };
+  const ResetAddRoomForumVariables2 = () => {
+    // Handle room number and floor increments
     setAddRoomFormRoomIndex(1);
+    setAddRoomFormFloor(AddRoomFormFloor);
+
+    // Reset other fields based on settings
     setAddRoomFormPrice(0);
     setAddRoomFormPaymentCycleType('monthly');
     setAddRoomFormPaymentCycleCustomDays(0);
     setAddRoomFormSquareMeters(0);
-    setAddRoomFormRoomSpecifications([
-      { type: 'bool', Detail: '', Boolean: false, Number: 0, id: 'avx' },
-    ]);
+    setAddRoomFormRoomSpecifications(AllRoomSpecifications.filter(spec => spec.roomId === 'DEFAULT'));
+    handleDeleteFolderImages('Add a room images');
   };
   const handleRenameFolder = async (oldName: string, newName: string) => {
     const result = await renameFolder(oldName, newName);
@@ -797,14 +1038,27 @@ const MainPage = ({
 
   const [SelectedEditRoomId, setSelectedEditRoomId] = useState('');
   const [DeleteConfimation, setDeleteConfimation] = useState(false);
+  const { showAlert } = useAlert();
+  const { confirm } = useConfirm();
   const handleDeleteFirst = async () => {
-    if (!DeleteConfimation) setDeleteConfimation(true);
+    if (!DeleteConfimation) {
+      const choice = await confirm(
+        'Are you sure you want to delete this room?',
+        {
+          type: 'danger',
+          title: 'Delete Room',
+          confirmText: 'Delete',
+          cancelText: 'Cancel',
+        }
+      );
+      if (choice) setInterval(() => setDeleteConfimation(true), 1000);
+    }
     if (DeleteConfimation) {
       if (
         RoomList.find((r: RoomType) => r.id === SelectedEditRoomId).status ===
         'Taken'
       ) {
-        alert('You can not delete a room that is taken');
+        showAlert('You can not delete a room that is taken', 'error');
         return;
       }
       const listOfPayments = await getValuesWithSql(
@@ -827,7 +1081,7 @@ const MainPage = ({
   const [HideSideBarForDashboard, setHideSideBarForDashboard] = useState(false);
   useEffect(() => {
     if (SelectedPage === 'People') {
-      RefreshDataFromSqlite();
+      //RefreshDataFromSqlite();
     }
     if (SelectedPage === 'Calendar' || SelectedPage === 'Database') {
       setHideSideBarForCalendar(true);
@@ -847,6 +1101,8 @@ const MainPage = ({
   }, [SelectedPage]);
 
   const handleAddRoomButtonInitial = (state: boolean, plusOne?: boolean) => {
+    setAddRoomFormRoomSpecifications(AllRoomSpecifications.filter(spec => spec.roomId === 'DEFAULT'));
+
     setAddARoomState(state);
     if (RoomList.length > 0 && RoomList) {
       const sortedRoomList = [...RoomList].sort(
@@ -883,6 +1139,7 @@ const MainPage = ({
     setFilterDueDateValue('');
     setFilterSquareFeetOperator('None');
     setFilterSquareFeetValue('');
+    setSelectedCurrency('all');
     setSortType('name');
     setSortDirection('asc');
   }
@@ -904,8 +1161,8 @@ const MainPage = ({
     console.log('Show in explorer', path);
   };
   const [isMoreThanOneImage, setIsMoreThanOneImage] = useState<boolean>(false);
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(true);
+  const [isFilterOpen, setIsFilterOpen] = useState(true);
 
   const toggleSearch = () => setIsSearchOpen(!isSearchOpen);
   const toggleFilter = () => setIsFilterOpen(!isFilterOpen);
@@ -915,18 +1172,14 @@ const MainPage = ({
   useEffect(() => {
     if (SelectedPage === 'Database') {
       setOnDataBase(true);
+      //RefreshDataFromSqlite();
     } else {
-      if (OnDataBase) {
-        RefreshDataFromSqlite();
-
-        setOnDataBase(false);
-      } else {
-      }
+      setOnDataBase(false)
     }
   }, [SelectedPage]);
 
   const SideBarItem = ({ page, currentPage, onClick, children }: any) => (
-    <div
+    <button
       onClick={onClick}
       className={
         currentPage === page
@@ -936,14 +1189,27 @@ const MainPage = ({
     >
       <div>{children}</div>
       {currentPage !== page && <div>{'-▶'}</div>}
-    </div>
+    </button>
   );
   const [tempSquareMeters, setTempSquareMeters] = useState(
-    RoomList.find((r: RoomType) => r.id === SelectedEditRoomId)?.squareMeters || 0
+    RoomList.find((r: RoomType) => r.id === SelectedEditRoomId)?.squareMeters ||
+      0
+  );
+  const [tempPrice, setTempPrice] = useState(
+    RoomList.find((r: RoomType) => r.id === SelectedEditRoomId)?.price || 0
+  );
+  const [tempPaymentCycle, setTempPaymentCycle] = useState(
+    RoomList.find((r: RoomType) => r.id === SelectedEditRoomId)?.paymentCycle ||
+      'monthly'
+  );
+  const [tempPaymentCycleCustomDays, setTempPaymentCycleCustomDays] = useState(
+    RoomList.find((r: RoomType) => r.id === SelectedEditRoomId)
+      ?.PaymentCycleCustomeDays || 0
   );
   useEffect(() => {
     setTempSquareMeters(
-      RoomList.find((r: RoomType) => r.id === SelectedEditRoomId)?.squareMeters || 0
+      RoomList.find((r: RoomType) => r.id === SelectedEditRoomId)
+        ?.squareMeters || 0
     );
   }, [SelectedEditRoomId]);
   const handleBlur = () => {
@@ -953,24 +1219,278 @@ const MainPage = ({
       parseInt(tempSquareMeters.toString())
     );
   };
-
+  const handleBlurPrice = () => {
+    updateRoomProperty(
+      SelectedEditRoomId,
+      'price',
+      parseInt(tempPrice.toString())
+    );
+  };
+  const handleBlurCustomePaymentCycle = () => {
+    updateRoomProperty(
+      SelectedEditRoomId,
+      'PaymentCycleCustomeDays',
+      parseInt(tempPaymentCycleCustomDays.toString())
+    );
+  };
+  const handleBlurPaymentCycle = () => {
+    updateRoomProperty(
+      SelectedEditRoomId,
+      'PaymentCycleType',
+      tempPaymentCycle
+    );
+  };
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       handleBlur();
     }
   };
+  const handleKeyDownPrice = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleBlurPrice();
+    }
+  };
+  const handleKeyDownCustomePaymentCycle = (
+    e: React.KeyboardEvent<HTMLInputElement>
+  ) => {
+    if (e.key === 'Enter') {
+      handleBlurCustomePaymentCycle();
+    }
+  };
+  const [incrementRoomNumber, setIncrementRoomNumber] = useState(true);
+  const [incrementFloor, setIncrementFloor] = useState(false);
+  const [resetPrice, setResetPrice] = useState(false);
+  const [resetCurrency, setResetCurrency] = useState(false);
+  const [resetPaymentCycle, setResetPaymentCycle] = useState(false);
+  const [resetSquareMeters, setResetSquareMeters] = useState(false);
+  const [resetRoomSpecifications, setResetRoomSpecifications] = useState(false);
+  const [resetRoomImages, setResetRoomImages] = useState(false);
+
+  const resetAllValuesContinueAddingVariables = () => {
+    setIncrementRoomNumber(true);
+    setIncrementFloor(false);
+    setResetPrice(false);
+    setResetCurrency(false);
+    setResetPaymentCycle(false);
+    setResetSquareMeters(false);
+    setResetRoomSpecifications(false);
+    setResetRoomImages(false);
+  };
+
+  const [addMultipleRoomsState, setAddMultipleRoomsState] = useState(false);
+  const [floorCount, setFloorCount] = useState(0);
+  const [roomsPerFloor, setRoomsPerFloor] = useState(0);
+  const [floorRoomData, setFloorRoomData] = useState([]);
+  const AddMultipleRooms = () => {
+    const handleContinue = () => {
+      if (floorCount > 0 && roomsPerFloor > 0) {
+        const newFloorRoomData = Array(floorCount)
+          .fill()
+          .map((_, floorIndex) => ({
+            floor: floorIndex + 1,
+            rooms: Array(roomsPerFloor)
+              .fill()
+              .map((_, roomIndex) => ({
+                roomIndex: roomIndex + 1,
+                paymentCycle: '30',
+                price: 0,
+                squareMeters: 0,
+              })),
+          }));
+        setFloorRoomData(newFloorRoomData);
+      }
+    };
+
+    const updateRoomData = (
+      floorIndex: number,
+      roomIndex: string | number,
+      field: string,
+      value: string | number
+    ) => {
+      setFloorRoomData((prevData) => {
+        const newData = [...prevData];
+        newData[floorIndex].rooms[roomIndex][field] = value;
+        return newData;
+      });
+    };
+
+    const handleAddRooms = () => {
+      floorRoomData.forEach((floor) => {
+        floor.rooms.forEach(
+          (room: {
+            roomIndex: any;
+            price: any;
+            paymentCycle: any;
+            squareMeters: any;
+          }) => {
+            roomAPI.AddRoomApi(
+              uuidv4(),
+              floor.floor,
+              room.roomIndex,
+              room.price,
+              room.paymentCycle,
+              0, // PaymentCycleCustomDays
+              room.squareMeters,
+              [] // RoomSpecifications
+            );
+          }
+        );
+      });
+      setAddMultipleRoomsState(false);
+      setFloorRoomData([]);
+    };
+
+    return (
+      <div>
+        <input
+          type="number"
+          placeholder="Number of floors"
+          value={floorCount}
+          onChange={(e) => setFloorCount(parseInt(e.target.value))}
+        />
+        <input
+          type="number"
+          placeholder="Rooms per floor"
+          value={roomsPerFloor}
+          onChange={(e) => setRoomsPerFloor(parseInt(e.target.value))}
+        />
+        <button onClick={handleContinue}>Continue</button>
+
+        {floorRoomData.map((floor, floorIndex) => (
+          <div key={floorIndex}>
+            <h3>Floor {floor.floor}</h3>
+            <input
+              type="number"
+              value={floor.rooms.length}
+              onChange={(e) => {
+                const newRoomCount = parseInt(e.target.value);
+                setFloorRoomData((prevData) => {
+                  const newData = [...prevData];
+                  newData[floorIndex].rooms = Array(newRoomCount)
+                    .fill()
+                    .map((_, i) => ({
+                      roomIndex: i + 1,
+                      paymentCycle: '30',
+                      price: 0,
+                      squareMeters: 0,
+                    }));
+                  return newData;
+                });
+              }}
+            />
+            <button
+              onClick={() =>
+                setFloorRoomData((prevData) => {
+                  const newData = [...prevData];
+                  newData[floorIndex].showRooms =
+                    !newData[floorIndex].showRooms;
+                  return newData;
+                })
+              }
+            >
+              {floor.showRooms ? 'Hide' : 'Show'}
+            </button>
+            {floor.showRooms &&
+              floor.rooms.map(
+                (
+                  room: {
+                    roomIndex:
+                      | string
+                      | number
+                      | boolean
+                      | React.ReactElement<
+                          any,
+                          string | React.JSXElementConstructor<any>
+                        >
+                      | Iterable<React.ReactNode>
+                      | React.ReactPortal
+                      | null
+                      | undefined;
+                    paymentCycle:
+                      | string
+                      | number
+                      | readonly string[]
+                      | undefined;
+                    price: string | number | readonly string[] | undefined;
+                    squareMeters:
+                      | string
+                      | number
+                      | readonly string[]
+                      | undefined;
+                  },
+                  roomIndex: React.Key | null | undefined
+                ) => (
+                  <div key={roomIndex}>
+                    <span>Room {room.roomIndex}</span>
+                    <select
+                      value={room.paymentCycle}
+                      onChange={(e) =>
+                        updateRoomData(
+                          floorIndex,
+                          roomIndex,
+                          'paymentCycle',
+                          e.target.value
+                        )
+                      }
+                    >
+                      <option value="30">30 days</option>
+                      <option value="15">15 days</option>
+                      <option value="7">7 days</option>
+                      <option value="monthly">Monthly</option>
+                    </select>
+                    <input
+                      type="number"
+                      placeholder="Price"
+                      value={room.price}
+                      onChange={(e) =>
+                        updateRoomData(
+                          floorIndex,
+                          roomIndex,
+                          'price',
+                          parseInt(e.target.value)
+                        )
+                      }
+                    />
+                    <input
+                      type="number"
+                      placeholder="Square Meters"
+                      value={room.squareMeters}
+                      onChange={(e) =>
+                        updateRoomData(
+                          floorIndex,
+                          roomIndex,
+                          'squareMeters',
+                          parseInt(e.target.value)
+                        )
+                      }
+                    />
+                  </div>
+                )
+              )}
+          </div>
+        ))}
+        <button onClick={handleAddRooms}>Add Rooms</button>
+      </div>
+    );
+  };
+  const [highlightedFields, setHighlightedFields] = useState<string[]>([]);
+
   return (
     <>
       <div
         className="MainContainerMain"
         style={{
-          height: SelectedPage === 'Dashboard' ? 'calc(100% - 60px)' : '100%',
+          height:
+            SelectedPage === 'Dashboard'
+              ? 'calc(100% - var(--60px-V))'
+              : '100%',
         }}
       >
         <button
           className="SideBarShowButton"
           onClick={handleCloseSideBar}
           style={{
+            zIndex: 2,
             visibility: SideBarShowState
               ? 'hidden'
               : HideSideBarForCalendar
@@ -985,7 +1505,9 @@ const MainPage = ({
         <div
           className="SideBarContainer"
           style={{
-            width: HideSideBarForCalendar ? '0px' : `${SideBarWidth}px`,
+            width: HideSideBarForCalendar
+              ? 'var(--0px-V)'
+              : `var(--${SideBarWidth}px-V)`,
             transition: 'all .2s',
             visibility: HideSideBarForCalendar ? 'hidden' : 'visible',
           }}
@@ -993,529 +1515,646 @@ const MainPage = ({
           {SelectedPage === 'Rooms' ? (
             <>
               <div
-                className="SideBarRoomPageTopPart"
-                style={{ height: AddARoomState ? '40%' : '100%' }}
+                className="SideBarTopContainer"
+                style={{
+                  borderBottom: SideBarShowState
+                    ? 'var(--1px-V) solid var(--Text-Color-Grey)'
+                    : 'none',
+                }}
               >
-                <div className="SideBarTopContainer">
-                  <button
-                    className="SideBarTopButton"
-                    onClick={handleCloseSideBar}
-                  >
-                    <img src={DoubleArrowIconDark} alt="" />
-                  </button>
+                <button
+                  className="SideBarTopButton"
+                  onClick={handleCloseSideBar}
+                  title="Close Sidebar"
+                >
+                  close sidebar
+                </button>
+                {privileges.addRoom ? (
                   <button
                     className="SideBarTopButton"
                     onClick={() => {
                       handleAddRoomButtonInitial(!AddARoomState);
                     }}
+                    title="Add room"
                   >
                     Add room
                   </button>
-                  <button
-                    className="SideBarTopButton"
-                    onClick={handleClearFilters}
-                  >
-                    Clear Filters
-                  </button>
-                  <button
-                    className="SideBarTopButton"
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                    }}
-                    onClick={() => {
-                      setShowArchived(!ShowArchived);
-                    }}
-                  >
-                    {ShowArchived ? 'Show unarchived' : 'Show archived'}
-                  </button>{' '}
-                </div>
-                <div
-                  className="SearchBarContainer"
-                  style={{ height: isSearchOpen ? '115px' : '50px' }}
+                ) : (
+                  <></>
+                )}
+                <button
+                  className="SideBarTopButton"
+                  onClick={handleClearFilters}
+                  style={{
+                    visibility: SideBarShowState ? 'visible' : 'hidden',
+                  }}
+                  title="Clear filters"
                 >
+                  Clear Filters
+                </button>
+                <button
+                  className="SideBarTopButton"
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    visibility: SideBarShowState ? 'visible' : 'hidden',
+                  }}
+                  onClick={() => {
+                    setShowArchived(!ShowArchived);
+                  }}
+                >
+                  {ShowArchived ? 'Show unarchived' : 'Show archived'}
+                </button>{' '}
+              </div>
+              <div
+                className="SideBarRoomPageTopPart"
+                style={{
+                  height: AddARoomState ? '0%' : 'calc(100% - var(--135px-V))',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  flexDirection: 'column',
+                }}
+              >
+                <div>
                   <div
-                    onClick={toggleSearch}
+                    className="SearchBarContainer"
                     style={{
-                      cursor: 'pointer',
-                      fontSize: '22px',
-                      marginLeft: '10px',
-                      color: 'var(--Accent-Color)',
+                      backgroundColor: 'var(--Secondary-Color30)',
+                      margin: 'var(--10px-V)',
+                      borderRadius: 'var(--10px-V)',
+                      padding: 'var(--10px-V)',
+                      boxShadow:
+                        'var(--3px-V) var(--3px-V) var(--5px-V) var(---1px-V) var(--Secondary-Color30)',
                     }}
                   >
-                    {isSearchOpen ? '▼' : '▶'} Search rooms
-                  </div>
-                  {isSearchOpen && (
                     <div
+                      onClick={toggleSearch}
                       style={{
-                        width: '100%',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        marginLeft: '30px',
-                        alignItems: 'flex-start',
+                        cursor: 'pointer',
+                        fontSize: 'var(--22px-V)',
                       }}
                     >
-                      {' '}
-                      <div className="TenantSearchBarContainer">
-                        {' '}
-                        Tenant name:
-                        <input
-                          type="text1"
-                          className="TenantSearchBar"
-                          placeholder="Search tenant name"
-                          value={TenantNameFilter}
-                          style={{ width: '145px' }}
-                          onChange={(e) => {
-                            setTenantNameFilter(e.target.value);
-                            addFilterOption('tenantName', e.target.value);
-                          }}
-                        />
-                      </div>
-                      <div className="RoomAndFloorContainer">
-                        <div>
-                          Floor:
-                          <input
-                            type="number"
-                            placeholder="0"
-                            className="FloorSearchBar"
-                            value={floorFilter}
-                            onChange={(e) => {
-                              setFloorFilter(e.target.value);
-                              addFilterOption('floor', e.target.value);
-                            }}
-                          />
-                        </div>
-                        <div>
-                          {' '}
-                          Room:
-                          <input
-                            placeholder="0"
-                            type="number"
-                            className="RoomSearchBar"
-                            value={roomFilter}
-                            onChange={(e) => {
-                              setRoomFilter(e.target.value);
-                              addFilterOption('room', e.target.value);
-                            }}
-                          />
-                        </div>
-                      </div>
+                      Search rooms
                     </div>
-                  )}
-                </div>
-                <div className="AdvanceRoomFinding">
-                  <div
-                    onClick={toggleFilter}
-                    style={{
-                      cursor: 'pointer',
-                      fontSize: '22px',
-                      marginLeft: '10px',
-                      color: 'var(--Accent-Color)',
-                    }}
-                  >
-                    {isFilterOpen ? '▼' : '▶'} Filter rooms
-                  </div>
-                  {isFilterOpen && (
-                    <div>
+                    {isSearchOpen && (
                       <div
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          marginRight: '10px',
-                          flexDirection: 'row',
-                          justifyContent: 'flex-start',
-                          marginLeft: '30px',
-                          marginTop: '10px',
-                        }}
-                      >
-                        Room status:
-                        <select
-                          value={filterStatus}
-                          onChange={(e) => {
-                            setFilterStatus(
-                              e.target.value as 'all' | 'Taken' | 'Empty'
-                            );
-                            addFilterOption(
-                              'filterstatus',
-                              e.target.value as 'all' | 'Taken' | 'Empty'
-                            );
-                          }}
-                          className="filter-drop"
-                          style={{ width: '90px', height: '30px' }}
-                        >
-                          <option value="Taken">Taken</option>
-                          <option value="Empty">Empty</option>
-                        </select>
-                      </div>
-                      <div
-                        className="AdvanceRoomFindingINPUTCONTAINER"
                         style={{
                           width: '100%',
                           display: 'flex',
                           flexDirection: 'column',
+                          marginLeft: 'var(--10px-V)',
+                          marginTop: 'var(--10px-V)',
                           alignItems: 'flex-start',
-                          justifyContent: 'flex-start',
-                          marginLeft: '30px',
                         }}
                       >
-                        <div style={{ marginTop: '10px' }}>
+                        {' '}
+                        <div className="TenantSearchBarContainer">
+                          {' '}
+                          Tenant:
+                          <input
+                            type="text1"
+                            className="TenantSearchBar"
+                            placeholder="Search tenant name"
+                            value={TenantNameFilter}
+                            style={{ width: 'var(--145px-V)' }}
+                            onChange={(e) => {
+                              setTenantNameFilter(e.target.value);
+                              addFilterOption('tenantName', e.target.value);
+                            }}
+                          />
+                        </div>
+                        <div className="RoomAndFloorContainer">
                           <div>
-                            Filter Price:
-                            <select
-                              value={filterPriceOperator}
-                              onChange={(e) => {
-                                setFilterPriceOperator(
-                                  e.target.value as '=' | '<' | '>'
-                                );
-                                addFilterOption(
-                                  'filterPriceOperator',
-                                  e.target.value as '=' | '<' | '>'
-                                );
-                              }}
-                              style={{ width: '30px', height: '30px' }}
-                              className="filter-drop"
-                            >
-                              <option value="=">{'='}</option>
-                              <option value="<">{'<'}</option>
-                              <option value=">">{'>'}</option>
-                              <option value="none">none</option>
-                            </select>
+                            Floor:
                             <input
                               type="number"
-                              className="AdvanceRoomFindingInput"
-                              value={filterPriceValue}
+                              placeholder="0"
+                              className="FloorSearchBar"
+                              value={floorFilter}
                               onChange={(e) => {
-                                setFilterPriceValue(e.target.value);
-                                addFilterOption(
-                                  'filterPriceValue',
-                                  e.target.value
-                                );
+                                setFloorFilter(e.target.value);
+                                addFilterOption('floor', e.target.value);
                               }}
                             />
                           </div>
-                        </div>
-                        <div
-                          style={{ marginBottom: '10px', marginTop: '10px' }}
-                        >
                           <div>
-                            Filter due dates:
-                            <select
-                              value={FilterDueDateOperator}
-                              onChange={(e) => {
-                                setFilterDueDateOperator(
-                                  e.target.value as '=' | '<' | '>'
-                                );
-                                addFilterOption(
-                                  'filterDueDateOperator',
-                                  e.target.value as '=' | '<' | '>'
-                                );
-                              }}
-                              style={{ width: '30px', height: '30px' }}
-                              className="filter-drop"
-                            >
-                              <option value="=">{'='}</option>
-                              <option value="<">{'<'}</option>
-                              <option value=">">{'>'}</option>
-                              <option value="none">none</option>
-                            </select>
+                            {' '}
+                            Room:
                             <input
+                              placeholder="0"
                               type="number"
-                              className="AdvanceRoomFindingInput"
-                              value={FilterDueDateValue}
+                              className="RoomSearchBar"
+                              value={roomFilter}
                               onChange={(e) => {
-                                setFilterDueDateValue(e.target.value);
-                                setFilterStatus('Taken');
-                                addFilterOption('filterstatus', 'Taken');
-                                addFilterOption(
-                                  'filterDueDateValue',
-                                  e.target.value
-                                );
-                              }}
-                            />
-                          </div>
-                        </div>
-                        <div>
-                          <div>
-                            Filter SMeters:
-                            <select
-                              value={filterSquareFeetOperator}
-                              onChange={(e) => {
-                                setFilterSquareFeetOperator(
-                                  e.target.value as '=' | '<' | '>'
-                                );
-                                addFilterOption(
-                                  'filterSquareFeetOperator',
-                                  e.target.value as '=' | '<' | '>'
-                                );
-                              }}
-                              style={{ width: '30px', height: '30px' }}
-                              className="filter-drop"
-                            >
-                              <option value="=">{'='}</option>
-                              <option value="<">{'<'}</option>
-                              <option value=">">{'>'}</option>
-                              <option value="none">none</option>
-                            </select>
-                            <input
-                              type="number"
-                              className="AdvanceRoomFindingInput"
-                              value={filterSquareFeetValue}
-                              onChange={(e) => {
-                                setFilterSquareFeetValue(e.target.value);
-                                addFilterOption(
-                                  'filterSquareFeetValue',
-                                  e.target.value
-                                );
+                                setRoomFilter(e.target.value);
+                                addFilterOption('room', e.target.value);
                               }}
                             />
                           </div>
                         </div>
                       </div>
+                    )}
+                  </div>
+                  <div
+                    className="SearchBarContainer"
+                    style={{
+                      backgroundColor: 'var(--Secondary-Color30)',
+                      margin: 'var(--10px-V)',
+                      borderRadius: 'var(--10px-V)',
+                      padding: 'var(--10px-V)',
+                      boxShadow:
+                        'var(--3px-V) var(--3px-V) var(--5px-V) var(---1px-V) var(--Secondary-Color30)',
+                    }}
+                  >
+                    <div
+                      onClick={toggleFilter}
+                      style={{
+                        cursor: 'pointer',
+                        fontSize: 'var(--22px-V)',
+                      }}
+                    >
+                      Filter rooms
+                    </div>
+                    {isFilterOpen && (
                       <div
                         style={{
+                          width: '100%',
                           display: 'flex',
-                          alignItems: 'center',
-                          visibility: 'hidden',
+                          flexDirection: 'column',
+                          marginLeft: 'var(--10px-V)',
+                          marginTop: 'var(--10px-V)',
+                          alignItems: 'flex-start',
                         }}
                       >
-                        <button
-                          className="sort-button"
-                          onClick={() => {
-                            if (sortDirection === 'asc') {
-                              setSortDirection('desc');
-                            } else {
-                              setSortDirection('asc');
-                            }
-                          }}
-                        >
-                          <img
-                            src={SortIcon}
-                            className={
-                              sortDirection === 'asc'
-                                ? 'sort-button-img'
-                                : 'sort-button-img-Flip'
-                            }
-                          ></img>
-                        </button>
-                        <select
-                          value={sortType}
-                          onChange={(e) => {
-                            setSortType(e.target.value);
-                            addFilterOption('sort', e.target.value);
-                          }}
-                          className="sort-drop"
-                        >
-                          <option value="price">Sort by Price</option>
-                          <option value="floor">Sort by Floor</option>
-                          <option value="room">Sort by Room</option>
-                        </select>
+                        <div>
+                          Room status:
+                          <select
+                            value={filterStatus}
+                            onChange={(e) => {
+                              setFilterStatus(
+                                e.target.value as 'all' | 'Taken' | 'Empty'
+                              );
+                              addFilterOption(
+                                'filterstatus',
+                                e.target.value as 'all' | 'Taken' | 'Empty'
+                              );
+                            }}
+                            className="filter-drop"
+                            style={{
+                              width: 'var(--90px-V)',
+                              height: 'var(--30px-V)',
+                              marginLeft: 'var(--10px-V)',
+                            }}
+                          >
+                            <option value="Taken">Taken</option>
+                            <option value="Empty">Empty</option>
+                          </select>
+                        </div>
+
+                        <div style={{ marginTop: 'var(--10px-V)' }}>
+                          Price:
+                          <select
+                            value={filterPriceOperator}
+                            onChange={(e) => {
+                              setFilterPriceOperator(
+                                e.target.value as '=' | '<' | '>'
+                              );
+                              addFilterOption(
+                                'filterPriceOperator',
+                                e.target.value as '=' | '<' | '>'
+                              );
+                            }}
+                            style={{
+                              width: 'var(--50px-V)',
+                              height: 'var(--25px-V)',
+                              marginLeft: 'var(--10px-V)',
+                              marginRight: 'var(--10px-V)',
+                            }}
+                            className="filter-drop"
+                          >
+                            <option value="=">{'='}</option>
+                            <option value="<">{'<'}</option>
+                            <option value=">">{'>'}</option>
+                            <option value="none">none</option>
+                          </select>
+                          <input
+                            type="number"
+                            className="RoomSearchBar"
+                            placeholder="2500"
+                            value={filterPriceValue}
+                            onChange={(e) => {
+                              setFilterPriceValue(e.target.value);
+                              addFilterOption(
+                                'filterPriceValue',
+                                e.target.value
+                              );
+                            }}
+                          />
+                        </div>
+
+                        <div style={{ marginTop: 'var(--10px-V)' }}>
+                          Due dates:
+                          <select
+                            value={FilterDueDateOperator}
+                            onChange={(e) => {
+                              setFilterDueDateOperator(
+                                e.target.value as '=' | '<' | '>'
+                              );
+                              addFilterOption(
+                                'filterDueDateOperator',
+                                e.target.value as '=' | '<' | '>'
+                              );
+                            }}
+                            style={{
+                              width: 'var(--50px-V)',
+                              height: 'var(--25px-V)',
+                              marginLeft: 'var(--10px-V)',
+                              marginRight: 'var(--10px-V)',
+                            }}
+                            className="filter-drop"
+                          >
+                            <option value="=">{'='}</option>
+                            <option value="<">{'<'}</option>
+                            <option value=">">{'>'}</option>
+                            <option value="none">none</option>
+                          </select>
+                          <input
+                            type="number"
+                            className="RoomSearchBar"
+                            placeholder="5 days"
+                            value={FilterDueDateValue}
+                            onChange={(e) => {
+                              setFilterDueDateValue(e.target.value);
+                              setFilterStatus('Taken');
+                              addFilterOption('filterstatus', 'Taken');
+                              addFilterOption(
+                                'filterDueDateValue',
+                                e.target.value
+                              );
+                            }}
+                          />
+                        </div>
+
+                        <div style={{ marginTop: 'var(--10px-V)' }}>
+                          SMeters:
+                          <select
+                            value={filterSquareFeetOperator}
+                            onChange={(e) => {
+                              setFilterSquareFeetOperator(
+                                e.target.value as '=' | '<' | '>'
+                              );
+                              addFilterOption(
+                                'filterSquareFeetOperator',
+                                e.target.value as '=' | '<' | '>'
+                              );
+                            }}
+                            style={{
+                              width: 'var(--50px-V)',
+                              height: 'var(--25px-V)',
+                              marginLeft: 'var(--10px-V)',
+                              marginRight: 'var(--10px-V)',
+                            }}
+                            className="filter-drop"
+                          >
+                            <option value="=">{'='}</option>
+                            <option value="<">{'<'}</option>
+                            <option value=">">{'>'}</option>
+                            <option value="none">none</option>
+                          </select>
+                          <input
+                            type="number"
+                            className="RoomSearchBar"
+                            placeholder="35m²"
+                            value={filterSquareFeetValue}
+                            onChange={(e) => {
+                              setFilterSquareFeetValue(e.target.value);
+                              addFilterOption(
+                                'filterSquareFeetValue',
+                                e.target.value
+                              );
+                            }}
+                          />
+                        </div>
+
+                        <div style={{ marginTop: 'var(--10px-V)' }}>
+                          Filter Currency:
+                          <select
+                            key={uuidv4()}
+                            value={selectedCurrency}
+                            onChange={(e) => {
+                              setSelectedCurrency(e.target.value);
+                              addFilterOption(
+                                'selectedCurrency',
+                                e.target.value
+                              );
+                            }}
+                            className="filter-drop"
+                            style={{
+                              width: 'var(--130px-V)',
+                              height: 'var(--25px-V)',
+                              marginLeft: 'var(--10px-V)',
+                            }}
+                          >
+                            <option value="all">All Currencies</option>
+                            {GetCurrencyAsOptionsOnSelect()}
+                          </select>
+                        </div>
+
+                        {/** <div style={{ visibility: 'hidden', marginTop: 'var(--10px-V)' }}>
+                          <button
+                            className="sort-button"
+                            onClick={() => {
+                              if (sortDirection === 'asc') {
+                                setSortDirection('desc');
+                              } else {
+                                setSortDirection('asc');
+                              }
+                            }}
+                          >
+                            <img
+                              src={SortIcon}
+                              className={
+                                sortDirection === 'asc'
+                                  ? 'sort-button-img'
+                                  : 'sort-button-img-Flip'
+                              }
+                            ></img>
+                          </button>
+                          <select
+                            value={sortType}
+                            onChange={(e) => {
+                              setSortType(e.target.value);
+                              addFilterOption('sort', e.target.value);
+                            }}
+                            className="sort-drop"
+                          >
+                            <option value="price">Sort by Price</option>
+                            <option value="floor">Sort by Floor</option>
+                            <option value="room">Sort by Room</option>
+                          </select>
+                        </div> */}
                       </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
+                {window.electron && <UpdateButton />}
               </div>
+
               <div
                 className="SideBarRoomPageBottomPartAddRoom"
-                style={{ height: AddARoomState ? 'calc(60% - 61px)' : '0%' }}
+                style={{
+                  height: AddARoomState ? 'calc(100% - var(--130px-V))' : '0%',
+                }}
               >
                 <div>
                   <h1 style={{ display: 'flex', justifyContent: 'center' }}>
                     Add a room
+                    {/** <button onClick={() => setAddMultipleRoomsState(true)}>
+                      Add Multiple Rooms
+                    </button> */}
                   </h1>
-                  <div>
-                    <div className="AddaNewRoomRowObject">
-                      <input
-                        className="AddANewRoomInputsSmall"
-                        type="number"
-                        placeholder="Floor"
-                        value={AddRoomFormFloor}
-                        onChange={(e) =>
-                          setAddRoomFormFloor(parseInt(e.target.value))
-                        }
-                      />
-                      :Floor number
-                    </div>
-                    <div className="AddaNewRoomRowObject">
-                      <input
-                        className="AddANewRoomInputsSmall"
-                        type="number"
-                        placeholder="Room Index"
-                        value={AddRoomFormRoomIndex}
-                        onChange={(e) =>
-                          setAddRoomFormRoomIndex(parseInt(e.target.value))
-                        }
-                      />
-                      :Room number{' '}
-                      {RoomExistsWarning && (
-                        <em style={{ color: 'red' }}>Already exist</em>
-                      )}{' '}
-                    </div>
-                    <div className="AddaNewRoomRowObject">
-                      Price (month, inc VAT):
-                      <input
-                        className="AddANewRoomInputsSmall"
-                        type="number"
-                        placeholder="Price"
-                        value={AddRoomFormPrice}
-                        onChange={(e) =>
-                          setAddRoomFormPrice(parseInt(e.target.value))
-                        }
-                      />
-                      $
-                    </div>
-                    <div className="AddaNewRoomRowObject">
-                      Payment cycle:{' '}
-                      <select
-                        value={AddRoomFormPaymentCycleType}
-                        onChange={(e) =>
-                          setAddRoomFormPaymentCycleType(e.target.value)
-                        }
-                        className="AddANewRoomSelectMid"
-                      >
-                        <option value="Every 30 days">30 days</option>
-                        <option value="Every 15 days">15 days</option>
-                        <option value="Every 7 days">7 days</option>
-                        <option value="daily">daily</option>
-
-                        <option value="monthly">monthly</option>
-                        <option value="custom">custom days</option>
-                      </select>
-                    </div>
-                    {AddRoomFormPaymentCycleType === 'custom' && (
-                      <div style={{ marginLeft: '10px' }}>
-                        Custom Days:
+                  {addMultipleRoomsState ? (
+                    <AddMultipleRooms />
+                  ) : (
+                    <div>
+                      <div className="AddaNewRoomRowObject">
                         <input
-                          className="AddANewRoomInputsSmall"
+                          className={`AddANewRoomInputsSmall ${
+                            highlightedFields.includes('floor')
+                              ? 'highlight-reset-field'
+                              : ''
+                          }`}
                           type="number"
-                          placeholder="Custom Days"
-                          value={AddRoomFormPaymentCycleCustomDays}
+                          placeholder="Floor"
+                          value={AddRoomFormFloor}
                           onChange={(e) =>
-                            setAddRoomFormPaymentCycleCustomDays(
-                              parseInt(e.target.value)
-                            )
+                            setAddRoomFormFloor(parseInt(e.target.value))
+                          }
+                        />
+                        :Floor number
+                      </div>
+                      <div className="AddaNewRoomRowObject">
+                        <input
+                          className={`AddANewRoomInputsSmall ${
+                            highlightedFields.includes('roomIndex')
+                              ? 'highlight-reset-field'
+                              : ''
+                          }`}
+                          type="number"
+                          placeholder="Room Index"
+                          value={AddRoomFormRoomIndex}
+                          onChange={(e) =>
+                            setAddRoomFormRoomIndex(parseInt(e.target.value))
+                          }
+                        />
+                        :Room number{' '}
+                        {RoomExistsWarning && (
+                          <em style={{ color: 'red' }}>Already exist</em>
+                        )}{' '}
+                      </div>
+
+                      <div className="AddaNewRoomRowObject">
+                        Price (inc. VAT):
+                        <input
+                          style={{ width: 'var(--100px-V)' }}
+                          className={`AddANewRoomInputsSmall ${
+                            highlightedFields.includes('roomPrice')
+                              ? 'highlight-reset-field'
+                              : ''
+                          }`}
+                          type="number"
+                          placeholder="Price"
+                          value={AddRoomFormPrice}
+                          onChange={(e) =>
+                            setAddRoomFormPrice(parseInt(e.target.value))
+                          }
+                        />
+                        <select
+                          value={AddRoomFormCurrency}
+                          onChange={(e) =>
+                            setAddRoomFormCurrency(e.target.value)
+                          }
+                          className="AddANewRoomSelectMid"
+                        >
+                          {GetCurrencyAsOptionsOnSelect()}
+                        </select>
+                      </div>
+                      <div className="AddaNewRoomRowObject">
+                        Payment cycle:{' '}
+                        <select
+                          value={AddRoomFormPaymentCycleType}
+                          onChange={(e) =>
+                            setAddRoomFormPaymentCycleType(e.target.value)
+                          }
+                          className="AddANewRoomSelectMid"
+                        >
+                          <option value="30">30 days</option>
+                          <option value="15">15 days</option>
+                          <option value="7">7 days</option>
+                          <option value="daily">daily</option>
+
+                          <option value="monthly">monthly</option>
+                          <option value="custom">custom days</option>
+                        </select>
+                      </div>
+                      {AddRoomFormPaymentCycleType === 'custom' && (
+                        <div style={{ marginLeft: 'var(--10px-V)' }}>
+                          Custom Days:
+                          <input
+                            className="AddANewRoomInputsSmall"
+                            type="number"
+                            placeholder="Custom Days"
+                            value={AddRoomFormPaymentCycleCustomDays}
+                            onChange={(e) =>
+                              setAddRoomFormPaymentCycleCustomDays(
+                                parseInt(e.target.value)
+                              )
+                            }
+                          />
+                        </div>
+                      )}
+                      <div className="AddaNewRoomRowObject">
+                        Square Meters:
+                        <input
+                          className={`AddANewRoomInputsSmall ${
+                            highlightedFields.includes('squareMeters')
+                              ? 'highlight-reset-field'
+                              : ''
+                          }`}
+                          type="number"
+                          placeholder="Square Meters"
+                          value={AddRoomFormSquareMeters}
+                          onChange={(e) =>
+                            setAddRoomFormSquareMeters(parseInt(e.target.value))
                           }
                         />
                       </div>
-                    )}
-                    <div className="AddaNewRoomRowObject">
-                      <input
-                        className="AddANewRoomInputsSmall"
-                        type="number"
-                        placeholder="Square Meters"
-                        value={AddRoomFormSquareMeters}
-                        onChange={(e) =>
-                          setAddRoomFormSquareMeters(parseInt(e.target.value))
-                        }
-                      />
-                      : Square Meters
-                    </div>
-                   
-                    <div className="RoomSpecficationsMainContainer">
-                      <h3>
-                        Room Specifications{' - '}
-                        <button onClick={addAddRoomFormSpecification}>
-                          Add
-                        </button>
-                      </h3>
-                      {AddRoomFormRoomSpecifications.map((spec, index) => (
-                        <div
-                          key={index}
-                          className="AddANewRoomSpecObjectMainContainer"
-                        >
-                          <div>
-                            Name:
-                            <input
-                              className="AddANewRoomInputsMid"
-                              value={spec.Detail}
-                              onChange={(e) =>
-                                handleAddRoomFormSpecificationChange(
-                                  index,
-                                  'Detail',
-                                  e.target.value
-                                )
-                              }
-                            />
-                            {spec.type === 'bool' ? (
-                              <>
+
+                      <div className="RoomSpecficationsMainContainer">
+                        <h3 style={{marginTop: '0px'}}>
+                          Room Specifications{' - '}
+                          <button onClick={addAddRoomFormSpecification}>
+                            Add
+                          </button>
+                        </h3>
+                        {AddRoomFormRoomSpecifications.length === 0 ? (
+                          <div className="AddANewRoomSpecObjectMainContainer">
+                            <div
+                              style={{
+                                color: 'var(--Text-Color-Grey)',
+                                fontStyle: 'italic',
+                              }}
+                            >
+                              <div>Click "Add" above to add specifications</div>
+                              Example specifications:
+                              <div>• Bedrooms: 3</div>
+                              <div>• Balcony: Yes</div>
+                            </div>
+                          </div>
+                        ) : (
+                          AddRoomFormRoomSpecifications.map((spec, index) => (
+                            <div
+                              key={index}
+                              className="AddANewRoomSpecObjectMainContainer"
+                            >
+                              <div>
+                                Name:
                                 <input
-                                  type="checkbox"
-                                  checked={spec.Boolean}
+                                  className="AddANewRoomInputsMid"
+                                  value={spec.Detail}
+                                  placeholder="Enter name"
                                   onChange={(e) =>
                                     handleAddRoomFormSpecificationChange(
                                       index,
-                                      'Boolean',
-                                      e.target.checked
+                                      'Detail',
+                                      e.target.value
+                                    )
+                                  }
+                                />
+                                {spec.type === 'bool' ? (
+                                  <>
+                                    <input
+                                      type="checkbox"
+                                      checked={spec.Boolean}
+                                      onChange={(e) =>
+                                        handleAddRoomFormSpecificationChange(
+                                          index,
+                                          'Boolean',
+                                          e.target.checked
+                                        )
+                                      }
+                                    />{' '}
+                                    {spec.Boolean ? 'Yes' : 'No'}
+                                  </>
+                                ) : (
+                                  <input
+                                    type="number"
+                                    className="AddANewRoomInputsSmall"
+                                    value={spec.Number}
+                                    onChange={(e) =>
+                                      handleAddRoomFormSpecificationChange(
+                                        index,
+                                        'Number',
+                                        e.target.value
+                                      )
+                                    }
+                                  />
+                                )}
+                              </div>
+                              <div style={{ marginTop: 'var(--5px-V)', display: 'flex', flexDirection: 'row', justifyContent: 'space-between',alignItems: 'center' }}>
+                               <div style={{display: 'flex', flexDirection: 'row', alignItems: 'center'}}><input
+                                  type="radio"
+                                  name={`spec-${index}`}
+                                  value="bool"
+                                  checked={spec.type === 'bool'}
+                                  onChange={(e) =>
+                                    handleAddRoomFormSpecificationChange(
+                                      index,
+                                      'type',
+                                      'bool'
                                     )
                                   }
                                 />{' '}
-                                {spec.Boolean ? 'Yes' : 'No'}
-                              </>
-                            ) : (
-                              <input
-                                type="number"
-                                className="AddANewRoomInputsSmall"
-                                value={spec.Number}
-                                onChange={(e) =>
-                                  handleAddRoomFormSpecificationChange(
-                                    index,
-                                    'Number',
-                                    e.target.value
-                                  )
-                                }
-                              />
-                            )}
-                          </div>
-                          <div>
-                            <input
-                              type="radio"
-                              name={`spec-${index}`}
-                              value="bool"
-                              checked={spec.type === 'bool'}
-                              onChange={(e) =>
-                                handleAddRoomFormSpecificationChange(
-                                  index,
-                                  'type',
-                                  'bool'
-                                )
-                              }
-                            />{' '}
-                            Yes/No
-                            <input
-                              type="radio"
-                              name={`spec-${index}`}
-                              value="number"
-                              checked={spec.type === 'number'}
-                              onChange={(e) =>
-                                handleAddRoomFormSpecificationChange(
-                                  index,
-                                  'type',
-                                  'number'
-                                )
-                              }
-                            />{' '}
-                            Number{' - - '}
-                            <button
-                              onClick={() =>
-                                removeAddRoomFormSpecification(index)
-                              }
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        </div>
-                      ))}
+                                Yes/No</div> 
+                                <div style={{display: 'flex', flexDirection: 'row', alignItems: 'center'}}><input
+                                  type="radio"
+                                  name={`spec-${index}`}
+                                  value="number"
+                                  checked={spec.type === 'number'}
+                                  onChange={(e) =>
+                                    handleAddRoomFormSpecificationChange(
+                                      index,
+                                      'type',
+                                      'number'
+                                    )
+                                  }
+                                />{' '}
+                                Number</div>
+                                <button
+                                  onClick={() =>
+                                    removeAddRoomFormSpecification(index)
+                                  }
+                                >
+                                  Delete
+                                </button>
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                      <div className="AddARoomImageMainContainer">
+                        <ImageInteractor2
+                          sidebarState={AddARoomState}
+                          isAddRoomImage={true}
+                          refreshState={RefreshInspectorForAddRoom}
+                          SetRefreshState={setRefreshInspectorForAddRoom}
+                          AddRoomState={true}
+                          setIsMoreThanOneImage={setIsMoreThanOneImage}
+                        />
+                      </div>
                     </div>
-                    <div className="AddARoomImageMainContainer">
-                      <ImageInteractor2
-                        isAddRoomImage={true}
-                        refreshState={RefreshInspectorForAddRoom}
-                        SetRefreshState={setRefreshInspectorForAddRoom}
-                        AddRoomState={true}
-                        setIsMoreThanOneImage={setIsMoreThanOneImage}
-                      />
-                    </div>
-                  </div>
+                  )}
                 </div>
                 <div className="AddaNewRoomBottomContianer">
                   <button
@@ -1526,35 +2165,185 @@ const MainPage = ({
                   >
                     Cancel
                   </button>{' '}
-                  <button
+                  {showContinueAddingSettings && (
+                    <div
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        background: 'var(--Secondary-Color60)',
+                        padding: 'var(--5px-V)',
+                        borderRadius: 'var(--10px-V)',
+                        marginBottom: 'var(--10px-V)',
+                      }}
+                    >
+                      <div>
+                        <span
+                          style={{
+                            fontSize: 'var(--12px-V)',
+                            color: 'var(--Text-Color-Grey)',
+                          }}
+                        >
+                          After this room is add the below options will be
+                          applied to the next room
+                        </span>
+                        <br />
+                        <input
+                          type="radio"
+                          name="roomNumberAction"
+                          value="increment"
+                          checked={incrementRoomNumber}
+                          onChange={() => setIncrementRoomNumber(true)}
+                        />{' '}
+                        Increment Room Number <br />
+                        <input
+                          type="radio"
+                          name="roomNumberAction"
+                          value="reset"
+                          checked={!incrementRoomNumber}
+                          onChange={() => setIncrementRoomNumber(false)}
+                        />{' '}
+                        Reset Room Number
+                        <br />
+                      </div>
+                      <div>
+                        <input
+                          type="radio"
+                          name="floorAction"
+                          value="increment"
+                          checked={incrementFloor}
+                          onChange={() => setIncrementFloor(true)}
+                        />{' '}
+                        Increment Floor Number
+                        <br />
+                        <input
+                          type="radio"
+                          name="floorAction"
+                          value="reset"
+                          checked={!incrementFloor}
+                          onChange={() => setIncrementFloor(false)}
+                        />{' '}
+                        Keep Floor Number same
+                        <br />
+                        <hr />
+                      </div>
+                      <div>
+                        <input
+                          type="checkbox"
+                          name="resetCurrency"
+                          checked={resetCurrency}
+                          onChange={() => setResetCurrency(!resetCurrency)}
+                        />{' '}
+                        Reset Currency
+                        <br />
+                        <input
+                          type="checkbox"
+                          name="resetPrice"
+                          checked={resetPrice}
+                          onChange={() => setResetPrice(!resetPrice)}
+                        />{' '}
+                        Reset Price
+                        <br />
+                        <input
+                          type="checkbox"
+                          name="resetPaymentCycle"
+                          checked={resetPaymentCycle}
+                          onChange={() =>
+                            setResetPaymentCycle(!resetPaymentCycle)
+                          }
+                        />{' '}
+                        Reset Payment Cycle
+                        <br />
+                        <input
+                          type="checkbox"
+                          name="resetSquareMeters"
+                          checked={resetSquareMeters}
+                          onChange={() =>
+                            setResetSquareMeters(!resetSquareMeters)
+                          }
+                        />{' '}
+                        Reset Square Meters
+                        <br />
+                        <input
+                          type="checkbox"
+                          name="resetRoomSpecifications"
+                          checked={resetRoomSpecifications}
+                          onChange={() =>
+                            setResetRoomSpecifications(!resetRoomSpecifications)
+                          }
+                        />{' '}
+                        Reset Room Specifications
+                        <br />
+                        <input
+                          type="checkbox"
+                          name="resetRoomImages"
+                          checked={resetRoomImages}
+                          onChange={() => setResetRoomImages(!resetRoomImages)}
+                        />{' '}
+                        Reset Room Images
+                        <br />
+                      </div>
+                      <div
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'center',
+                          marginTop: 'var(--10px-V)',
+                        }}
+                      >
+                        <button
+                          className="HorizontalButton"
+                          style={{ marginRight: 'var(--10px-V)' }}
+                          onClick={() => {
+                            setShowContinueAddingSettings(false);
+                            resetAllValuesContinueAddingVariables();
+                          }}
+                        >
+                          Close
+                        </button>
+                        <button
+                          className="HorizontalButton"
+                          disabled={isAddingRoom}
+                          onClick={() => {
+                            handleAddRoom(true);
+
+                            setAddARoomState(true);
+                          }}
+                        >
+                          {isAddingRoom ? 'Adding...' : 'Add'}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  <div
                     className="HorizontalButton"
-                    onClick={() => {
-                      handleAddRoom(true);
-                      ResetAddRoomForumVariables();
-                      handleAddRoomButtonInitial(true, true);
-                      setAddARoomState(true);
-                    }}
+                    style={{ background: 'none', padding: '0' }}
                   >
-                    Add Room and continue adding
-                  </button>
-                  <button
-                    className="HorizontalButton"
-                    onClick={() => {
-                      handleAddRoom(false);
-                    }}
-                  >
-                    Add Room
-                  </button>
+                    <button
+                      onClick={() => {
+                        setShowContinueAddingSettings(
+                          !showContinueAddingSettings
+                        );
+                      }}
+                      style={{ width: '100%' }}
+                    >
+                      {showContinueAddingSettings
+                        ? 'Close'
+                        : 'Add Another Room'}
+                    </button>
+                  </div>
+                  {!showContinueAddingSettings && (
+                    <button
+                      className="HorizontalButton"
+                      onClick={() => handleAddRoom(false)}
+                      disabled={isAddingRoom}
+                    >
+                      {isAddingRoom ? 'Adding...' : 'Add Room'}
+                    </button>
+                  )}
                 </div>
               </div>
             </>
           ) : SelectedPage === 'People' ? (
             <>
-              <p>
-                Peoples page{' '}
-                <button onClick={RefreshDataFromSqlite}>Refresh</button>
-              </p>
-
               <SideBarItem
                 page="TenantsList"
                 currentPage={PeopleSelectedPage}
@@ -1579,30 +2368,68 @@ const MainPage = ({
             </>
           ) : SelectedPage === 'Tools' ? (
             <>
+              {privileges.editEmailTemplates && (
+                <SideBarItem
+                  page="EmailTemplates"
+                  currentPage={ToolsSelectedPage}
+                  onClick={() => setToolsSelectedPage('EmailTemplates')}
+                >
+                  Email Settings
+                </SideBarItem>
+              )}
+              {privileges.editSmsTemplates && (
+                <SideBarItem
+                  page="SMSTemplates"
+                  currentPage={ToolsSelectedPage}
+                  onClick={() => setToolsSelectedPage('SMSTemplates')}
+                >
+                  SMS Settings
+                </SideBarItem>
+              )}
+              {privileges.editExpenses && (
+                <SideBarItem
+                  page="Expense Manager"
+                  currentPage={ToolsSelectedPage}
+                  onClick={() => setToolsSelectedPage('Expense Manager')}
+                >
+                  Expense Manager
+                </SideBarItem>
+              )}
+              {(privileges.editExpenses||privileges.editSmsTemplates||privileges.editEmailTemplates) && (<br />)}
+
               <SideBarItem
-                page="EmailTemplates"
+                page="Support"
                 currentPage={ToolsSelectedPage}
-                onClick={() => setToolsSelectedPage('EmailTemplates')}
+                onClick={() => setToolsSelectedPage('Support')}
               >
-                Email Templates
+                Support
               </SideBarItem>
-              <SideBarItem
-                page="SMSTemplates"
-                currentPage={ToolsSelectedPage}
-                onClick={() => setToolsSelectedPage('SMSTemplates')}
-              >
-                SMS Templates
-              </SideBarItem>
-              <SideBarItem
-                page="Expense Manager"
-                currentPage={ToolsSelectedPage}
-                onClick={() => setToolsSelectedPage('Expense Manager')}
-              >
-                Expense Manager
-              </SideBarItem>
+
+              
+                <SideBarItem
+                  page="Settings"
+                  currentPage={ToolsSelectedPage}
+                  onClick={() => setToolsSelectedPage('Settings')}
+                >
+                  Settings
+                </SideBarItem>
+              
             </>
           ) : SelectedPage === 'Dashboard' ? (
             <>
+              <h3
+                style={{
+                  fontSize: 'var(--28px-V)',
+                  margin: 'var(--15px-V) 0px var(--15px-V) 0px',
+                }}
+              >
+                Dashboard
+              </h3>
+              <h3
+                style={{ fontSize: 'var(--20px-V)', margin: '0px 0px 0px 0px' }}
+              >
+                Overview
+              </h3>
               <SideBarItem
                 page="Overview"
                 currentPage={DashboardSelectedPage}
@@ -1610,6 +2437,19 @@ const MainPage = ({
               >
                 Overview
               </SideBarItem>
+
+              <SideBarItem
+                page="Expenses"
+                currentPage={DashboardSelectedPage}
+                onClick={() => setDashboardSelectedPage('Expenses')}
+              >
+                Expenses
+              </SideBarItem>
+              <h3
+                style={{ fontSize: 'var(--20px-V)', margin: '0px 0px 0px 0px' }}
+              >
+                Communication
+              </h3>
               <SideBarItem
                 page="Email History"
                 currentPage={DashboardSelectedPage}
@@ -1618,12 +2458,46 @@ const MainPage = ({
                 Email History
               </SideBarItem>
               <SideBarItem
-                page="Expenses"
+                page="SMS Details"
                 currentPage={DashboardSelectedPage}
-                onClick={() => setDashboardSelectedPage('Expenses')}
+                onClick={() => setDashboardSelectedPage('SMS Details')}
               >
-                Expenses
+                SMS Details
               </SideBarItem>
+              <h3
+                style={{ fontSize: 'var(--20px-V)', margin: '0px 0px 0px 0px' }}
+              >
+                History
+              </h3>
+              <SideBarItem
+                page="Action History"
+                currentPage={DashboardSelectedPage}
+                onClick={() => setDashboardSelectedPage('Action History')}
+              >
+                Action History
+              </SideBarItem>
+              <h3
+                style={{ fontSize: 'var(--20px-V)', margin: '0px 0px 0px 0px' }}
+              >
+                Reports
+              </h3>
+              <SideBarItem
+                page="Basic Rental income report"
+                currentPage={DashboardSelectedPage}
+                onClick={() =>
+                  setDashboardSelectedPage('Basic Rental income report')
+                }
+              >
+                Basic Rental income report
+              </SideBarItem>
+              <p
+                style={{
+                  fontSize: 'var(--12px-V)',
+                  color: 'var(--Text-Color-Grey)',
+                }}
+              >
+                More reports coming soon
+              </p>
             </>
           ) : (
             <></>
@@ -1658,24 +2532,108 @@ const MainPage = ({
                   {
                     RoomList.find((r: RoomType) => r.id === SelectedEditRoomId)
                       .roomIndex
+                  }{' '}
+                  (
+                  {
+                    RoomList.find((r: RoomType) => r.id === SelectedEditRoomId)
+                      .status
                   }
+                  )
                 </p>
+                <button
+                  style={{ width: '20%', marginLeft: 'auto' }}
+                  onClick={() => {
+                    handleDeleteFirst();
+                  }}
+                >
+                  {DeleteConfimation ? 'Confirm Delete' : 'Delete this room'}
+                </button>
               </div>{' '}
-              <div className="AddaNewRoomRowObject">
-                Square Meters :{' '}
-                <input
-                  className="AddANewRoomInputsSmall"
-                  type="number"
-                  placeholder="Square Meters"
-                  value={tempSquareMeters}
-                  onChange={(e) => setTempSquareMeters(e.target.value)}
-                  onBlur={handleBlur}
-                  onKeyDown={handleKeyDown}
-                />
-              </div>
+              {RoomList.find((r: RoomType) => r.id === SelectedEditRoomId)
+                .status === 'Empty' && (
+                <>
+                  {' '}
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'space-around',
+                      width: '100%',
+                    }}
+                  >
+                    <div className="AddaNewRoomRowObject">
+                      Payment Cycle :{' '}
+                      <select
+                        value={tempPaymentCycle}
+                        onChange={(e) => setTempPaymentCycle(e.target.value)}
+                        onBlur={handleBlurPaymentCycle}
+                      >
+                        <option value="monthly">Monthly</option>
+                        <option value="weekly">Weekly</option>
+                        <option value="daily">Daily</option>
+                        <option value="30">30</option>
+                        <option value="15">15</option>
+                        <option value="7">7</option>
+                        <option value="Annually">Annually</option>
+                        <option value="custom">Custom</option>
+                      </select>
+                      {tempPaymentCycle === 'custom' && (
+                        <input
+                          type="number"
+                          value={tempPaymentCycleCustomDays}
+                          onBlur={handleBlurCustomePaymentCycle}
+                          onKeyDown={handleKeyDownCustomePaymentCycle}
+                          onChange={(e) =>
+                            setTempPaymentCycleCustomDays(e.target.value)
+                          }
+                        />
+                      )}
+                    </div>
+                    <div className="AddaNewRoomRowObject">
+                      Price :{' '}
+                      <input
+                        className="AddANewRoomInputsSmall"
+                        type="number"
+                        placeholder="Price"
+                        value={tempPrice}
+                        onChange={(e) => setTempPrice(e.target.value)}
+                        onBlur={handleBlurPrice}
+                        onKeyDown={handleKeyDownPrice}
+                      />
+                    </div>
+                    <div className="AddaNewRoomRowObject">
+                      Square Meters :{' '}
+                      <input
+                        className="AddANewRoomInputsSmall"
+                        type="number"
+                        placeholder="Square Meters"
+                        value={tempSquareMeters}
+                        onChange={(e) => setTempSquareMeters(e.target.value)}
+                        onBlur={handleBlur}
+                        onKeyDown={handleKeyDown}
+                      />
+                    </div>{' '}
+                  </div>{' '}
+                </>
+              )}
               <div style={{ display: 'flex' }}>
-                <div className="RoomSpecficationsMainContainer">
-                  <h3>
+                <div
+                  style={{
+                    height:
+                      RoomList.find(
+                        (r: RoomType) => r.id === SelectedEditRoomId
+                      ).status === 'Empty'
+                        ? 'var(--440px-V)'
+                        : 'var(--480px-V)',
+                  }}
+                  className={`RoomSpecficationsMainContainer ${
+                    highlightedFields.includes('specifications')
+                      ? 'highlight-reset-field'
+                      : ''
+                  }`}
+                >
+                  <h3 style={{marginTop: '0px'}}>
                     Room Specifications{' - '}
                     <button
                       onClick={() => {
@@ -1898,13 +2856,6 @@ const MainPage = ({
                   )}
                 />
               </div>
-              <button
-                onClick={() => {
-                  handleDeleteFirst();
-                }}
-              >
-                {DeleteConfimation ? 'Confirm Delete' : 'Delete this room'}
-              </button>
             </div>
           </>
         )}
@@ -1912,17 +2863,25 @@ const MainPage = ({
           style={{
             width: HideSideBarForCalendar
               ? '100%'
-              : `calc(100% - ${SideBarWidth}px)`,
+              : `calc(100% - var(--${SideBarWidth}px-V))`,
             overflowY: SelectedPage === 'Database' ? 'hidden' : 'auto',
-            height: SelectedPage === 'Database' ? 'calc(100% - 60px)' : '',
+            height:
+              SelectedPage === 'Database' || SelectedPage === 'Tools'
+                ? 'calc(100% - var(--60px-V))'
+                : '',
           }}
         >
           {SelectedPage === 'Rooms' && (
             <RoomListComponent
+              setChangeProgress={setChangeProgress}
+              changeProgress={changeProgress}
+              SelectedAppUser={SelectedAppUser}
               updateRoomProperty={updateRoomProperty}
               updateRoomPropertyWithOutRefresh={
                 updateRoomPropertyWithOutRefresh
               }
+              SelectedAppUser={SelectedAppUser}
+              SelectedBranchId={SelectedBranchId}
               SelectedUserId={SelectedUserId}
               ShowArchived={ShowArchived}
               agreementApi={agreementApi}
@@ -1947,6 +2906,7 @@ const MainPage = ({
               setSelectedEditRoomId={setSelectedEditRoomId}
               brokersRecommendationListApi={brokersRecommendationListApi}
               setChangeMade={setChangeMade}
+              roomListContainerRef={roomListContainerRef}
             />
           )}
           {SelectedPage === 'People' && (
@@ -1963,20 +2923,24 @@ const MainPage = ({
           )}
           {SelectedPage === 'Tools' && (
             <ToolsPage
+              signOutUserAndRestart={signOutUserAndRestart}
               ToolsSelectedPage={ToolsSelectedPage}
               setToolsSelectedPage={setToolsSelectedPage}
+              SelectedAppUser={SelectedAppUser}
               setChangeMade={setChangeMade}
               SelectedUserId={SelectedUserId}
+              SelectedBranchId={SelectedBranchId}
             />
           )}
           {SelectedPage === 'Calendar' && (
             <CalendarPage
               updateRoomProperty={updateRoomProperty}
               RoomList={RoomList}
-              sortedAndFilteredRooms={sortedAndFilteredRooms}
+              sortedAndFilteredRooms={RoomList}
               removeFilterOption={removeFilterOption}
-              filterOptions={filterOptions}
+              filterOptions={[]}
               tenantList={TenantList}
+              SelectedBranchId={SelectedBranchId}
             />
           )}
           {SelectedPage === 'Settings' && (
@@ -2001,10 +2965,17 @@ const MainPage = ({
               DashboardSelectedPage={DashboardSelectedPage}
               SelectedUserId={SelectedUserId}
               setChangeMade={setChangeMade}
+              updateRoomPropertyLocal={updateRoomPropertyLocal}
+              updateRoomProperty={updateRoomProperty}
+              SelectedBranchId={SelectedBranchId}
             />
           )}
           {SelectedPage === 'Database' && (
-            <DatabasePage setChangeMade={setChangeMade} />
+            <DatabasePage
+              setChangeMade={setChangeMade}
+              SelectedAppUser={SelectedAppUser}
+              SelectedBranchId={SelectedBranchId}
+            />
           )}
         </div>
       </div>

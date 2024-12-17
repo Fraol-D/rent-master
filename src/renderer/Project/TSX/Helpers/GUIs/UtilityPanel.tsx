@@ -1,3 +1,4 @@
+import { Input } from '../CustomReactComponents';
 import {
   getValuesWithSql,
   updateValue,
@@ -5,12 +6,15 @@ import {
 } from 'Backend/localServerApis';
 import React, { useEffect, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
+import CurrencySign, { convertCurrency, formatNumberWithSuffix, GetDefaultCurrency, getRateByDate } from '../CurrencySign';
+import { useGlobal } from 'renderer/components/GlobalContext';
 
 type PaymentType = {
   id: string;
   ParentDate: number;
   type: string;
   price: number;
+  Currency: string;
   custom: boolean;
   paid: boolean;
 };
@@ -20,6 +24,7 @@ type UtilityDateObject = {
   date: number;
   PaymentTypes: PaymentType[];
   FullComplete: boolean;
+
   isOpen: boolean;
 };
 
@@ -28,6 +33,7 @@ interface props {
   TenantList: tenant[];
   setChangeMade: React.Dispatch<React.SetStateAction<number>>;
   selectedUserId: string;
+  SelectedBranchId: any;
 }
 
 const UtilityPanel: React.FC<props> = ({
@@ -35,12 +41,17 @@ const UtilityPanel: React.FC<props> = ({
   TenantList,
   setChangeMade,
   selectedUserId,
+  SelectedBranchId,
 }) => {
   const [utilityData, setUtilityData] = useState<UtilityDateObject[]>([]);
   const [visiblePastUtilities, setVisiblePastUtilities] = useState(10);
   const [visibleFutureUtilities, setVisibleFutureUtilities] = useState(10);
   const [tempPrice, setTempPrice] = useState<{ [key: string]: string }>({});
-
+  const { 
+    
+    AllUtilityPayments,
+    setAllUtilityPayments
+  } = useGlobal();
   useEffect(() => {
     const SetTheUtilityData = async () => {
       const ListOfUtilities: UtilityDateObject[] = [];
@@ -52,7 +63,6 @@ const UtilityPanel: React.FC<props> = ({
 
       const tenant = TenantList.find((t: tenant) => t.id === roomType.tenantId);
       let startDate = new Date(tenant?.startTime || Date.now());
-
       if (roomType.utilityPaymentUseDifferentStartDate) {
         const utilityPaymentStartDate = new Date(
           roomType.utilityPaymentStartDate
@@ -70,12 +80,11 @@ const UtilityPanel: React.FC<props> = ({
       }
 
       const today = new Date();
-      let currentDate = new Date(today);
+      let currentDate = new Date(startDate);
       let i = 0;
 
-      const utilityDataFromDatabase = await getValuesWithSql(
-        'utility_payments',
-        `WHERE roomId = '${roomType.id}'`
+      const utilityDataFromDatabase = AllUtilityPayments.filter(
+        (utility) => utility.roomId === roomType.id
       );
 
       // Calculate past utilities from the current date
@@ -94,7 +103,8 @@ const UtilityPanel: React.FC<props> = ({
           PaymentTypes: activeUtilities.map((utility) => {
             const existingUtility = utilityDataFromDatabase.find(
               (u: any) =>
-                u.type === utility.type && new Date(u.date).toDateString() === currentDate.toDateString()
+                u.type === utility.type &&
+                new Date(u.date).toDateString() === currentDate.toDateString()
             );
 
             const price = existingUtility
@@ -116,13 +126,15 @@ const UtilityPanel: React.FC<props> = ({
               price: price,
               custom: existingUtility?.custom ? true : utility.alwaysAsk,
               paid: existingUtility?.paid || false,
+              Currency:  utility.Currency || GetDefaultCurrency(),
               ParentDate: currentDate.getTime(),
             };
           }),
           FullComplete: activeUtilities.every((utility) => {
             const existingUtility = utilityDataFromDatabase.find(
               (u: any) =>
-                u.type === utility.type && u.date === currentDate.getTime()
+                u.type === utility.type &&
+                new Date(u.date).toDateString() === currentDate.toDateString()
             );
             return existingUtility?.paid || false;
           }),
@@ -131,12 +143,16 @@ const UtilityPanel: React.FC<props> = ({
 
         ListOfUtilities.unshift(utilityDateObject); // Add to the start of the list
 
-        currentDate.setDate(currentDate.getDate() - paymentDateType);
+        if (roomType.utilityPaymentEvery === 'monthly') {
+          currentDate.setMonth(currentDate.getMonth() - 1);
+        } else {
+          currentDate.setDate(currentDate.getDate() - paymentDateType);
+        }
         i++;
       }
 
       // Reset currentDate to today for future utilities
-      currentDate = new Date(today);
+      currentDate = new Date(startDate);
       i = 0;
 
       while (currentDate <= endDate && i < visibleFutureUtilities) {
@@ -154,7 +170,8 @@ const UtilityPanel: React.FC<props> = ({
           PaymentTypes: activeUtilities.map((utility) => {
             const existingUtility = utilityDataFromDatabase.find(
               (u: any) =>
-                u.type === utility.type && u.date === currentDate.getTime()
+                u.type === utility.type &&
+                new Date(u.date).toDateString() === currentDate.toDateString()
             );
 
             const price = existingUtility
@@ -176,13 +193,15 @@ const UtilityPanel: React.FC<props> = ({
               price: price,
               custom: existingUtility?.custom ? true : utility.alwaysAsk,
               paid: existingUtility?.paid || false,
+              Currency:  utility.Currency || GetDefaultCurrency(),
               ParentDate: currentDate.getTime(),
             };
           }),
           FullComplete: activeUtilities.every((utility) => {
             const existingUtility = utilityDataFromDatabase.find(
               (u: any) =>
-                u.type === utility.type && u.date === currentDate.getTime()
+                u.type === utility.type &&
+                new Date(u.date).toDateString() === currentDate.toDateString()
             );
             return existingUtility?.paid || false;
           }),
@@ -191,11 +210,21 @@ const UtilityPanel: React.FC<props> = ({
 
         ListOfUtilities.push(utilityDateObject);
 
-        currentDate.setDate(currentDate.getDate() + paymentDateType);
+        if (roomType.utilityPaymentEvery === 'monthly') {
+          currentDate.setMonth(currentDate.getMonth() + 1);
+        } else {
+          currentDate.setDate(currentDate.getDate() + paymentDateType);
+        }
         i++;
       }
-      const uniqueUtilities = ListOfUtilities.filter((utility, index, self) =>
-        index === self.findIndex((u) => new Date(u.date).toDateString() === new Date(utility.date).toDateString())
+      const uniqueUtilities = ListOfUtilities.filter(
+        (utility, index, self) =>
+          index ===
+          self.findIndex(
+            (u) =>
+              new Date(u.date).toDateString() ===
+              new Date(utility.date).toDateString()
+          )
       );
       ListOfUtilities.length = 0;
       ListOfUtilities.push(...uniqueUtilities);
@@ -203,7 +232,8 @@ const UtilityPanel: React.FC<props> = ({
 
       // Scroll to the current date
       const currentUtilityIndex = ListOfUtilities.findIndex(
-        (utility) => new Date(utility.date).toDateString() === today.toDateString()
+        (utility) =>
+          new Date(utility.date).toDateString() === today.toDateString()
       );
       if (currentUtilityIndex !== -1) {
         const element = document.getElementById(
@@ -235,18 +265,14 @@ const UtilityPanel: React.FC<props> = ({
   };
 
   const handlePaidChange = async (utilityId: string, paymentId: string) => {
-    console.log('handlePaidChange called with:', { utilityId, paymentId });
 
     let updatedPayment: PaymentType | undefined;
     let changeTo = false;
     setUtilityData((prevData) => {
-      console.log('Previous utility data:', prevData);
       const newData = prevData.map((utility) => {
         if (utility.id === utilityId) {
-          console.log('Updating utility:', utility);
           const updatedPaymentTypes = utility.PaymentTypes.map((payment) => {
             if (payment.id === paymentId) {
-              console.log('Updating payment:', payment);
               changeTo = !payment.paid;
               updatedPayment = { ...payment, paid: !payment.paid };
               return updatedPayment;
@@ -257,7 +283,6 @@ const UtilityPanel: React.FC<props> = ({
         }
         return utility;
       });
-      console.log('New utility data:', newData);
       return newData;
     });
 
@@ -275,18 +300,13 @@ const UtilityPanel: React.FC<props> = ({
         return utility;
       });
     });
-    console.log('Fetching existing payment from database');
-    const existingPayment = await getValuesWithSql(
-      'utility_payments',
-      `WHERE id = '${paymentId}'`
+    const existingPayment = AllUtilityPayments.find(
+      (utility) => utility.id === paymentId
     );
-    console.log('Existing payment:', existingPayment);
 
-    console.log('Updated payment:', updatedPayment);
 
     if (updatedPayment) {
-      if (existingPayment.length > 0) {
-        console.log('Updating existing payment in database');
+      if (existingPayment) {
         await updateValue(
           'utility_payments',
           paymentId,
@@ -295,8 +315,12 @@ const UtilityPanel: React.FC<props> = ({
           setChangeMade,
           !updatedPayment.paid ? 1 : 0
         );
+        setAllUtilityPayments((prev) =>
+          prev.map((utility) =>
+            utility.id === paymentId ? { ...utility, paid: updatedPayment.paid } : utility
+          )
+        );
       } else {
-        console.log('Adding new payment to database');
         await addValue(
           'utility_payments',
           {
@@ -306,18 +330,40 @@ const UtilityPanel: React.FC<props> = ({
             custom: updatedPayment.custom ? 1 : 0,
             paid: updatedPayment.paid ? 1 : 0,
             date: updatedPayment.ParentDate,
+            Currency: updatedPayment.Currency,
             roomId: roomType.id,
             userId: selectedUserId,
+            branchId: SelectedBranchId,
           },
           setChangeMade
         );
+        setAllUtilityPayments((prev) => [...prev,  {
+          id: paymentId,
+            type: updatedPayment.type,
+            price: updatedPayment.price || 0,
+            custom: updatedPayment.custom ? 1 : 0,
+            paid: updatedPayment.paid ? 1 : 0,
+            date: updatedPayment.ParentDate,
+            Currency: updatedPayment.Currency,
+            roomId: roomType.id,
+            userId: selectedUserId,
+            branchId: SelectedBranchId,
+        }]);
       }
     }
     console.log('handlePaidChange completed');
   };
 
-  const handlePaidChangeWithValue = async (utilityId: string, paymentId: string, value: boolean) => {
-    console.log('handlePaidChangeWithValue called with:', { utilityId, paymentId, value });
+  const handlePaidChangeWithValue = async (
+    utilityId: string,
+    paymentId: string,
+    value: boolean
+  ) => {
+    console.log('handlePaidChangeWithValue called with:', {
+      utilityId,
+      paymentId,
+      value,
+    });
 
     let updatedPayment: PaymentType | undefined;
     setUtilityData((prevData) => {
@@ -356,16 +402,15 @@ const UtilityPanel: React.FC<props> = ({
       });
     });
     console.log('Fetching existing payment from database');
-    const existingPayment = await getValuesWithSql(
-      'utility_payments',
-      `WHERE id = '${paymentId}'`
+    const existingPayment = AllUtilityPayments.find(
+      (utility) => utility.id === paymentId
     );
     console.log('Existing payment:', existingPayment);
 
     console.log('Updated payment:', updatedPayment);
 
     if (updatedPayment) {
-      if (existingPayment.length > 0) {
+      if (existingPayment) {
         console.log('Updating existing payment in database');
         await updateValue(
           'utility_payments',
@@ -374,6 +419,11 @@ const UtilityPanel: React.FC<props> = ({
           updatedPayment.paid ? 1 : 0,
           setChangeMade,
           !updatedPayment.paid ? 1 : 0
+        );
+        setAllUtilityPayments((prev) =>
+          prev.map((utility) =>
+            utility.id === paymentId ? { ...utility, paid: updatedPayment.paid } : utility
+          )
         );
       } else {
         console.log('Adding new payment to database');
@@ -386,11 +436,25 @@ const UtilityPanel: React.FC<props> = ({
             custom: updatedPayment.custom ? 1 : 0,
             paid: updatedPayment.paid ? 1 : 0,
             date: updatedPayment.ParentDate,
+            Currency: updatedPayment.Currency,
             roomId: roomType.id,
             userId: selectedUserId,
+            branchId: SelectedBranchId,
           },
           setChangeMade
         );
+        setAllUtilityPayments((prev) => [...prev,  {
+          id: paymentId,
+          type: updatedPayment.type,
+          price: updatedPayment.price || 0,
+          custom: updatedPayment.custom ? 1 : 0,
+          paid: updatedPayment.paid ? 1 : 0,
+          date: updatedPayment.ParentDate,
+          Currency: updatedPayment.Currency,
+          roomId: roomType.id,
+          userId: selectedUserId,
+          branchId: SelectedBranchId,
+        }]);
       }
     }
     console.log('handlePaidChangeWithValue completed');
@@ -434,16 +498,15 @@ const UtilityPanel: React.FC<props> = ({
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     console.log('Fetching existing payment from database');
-    const existingPayment = await getValuesWithSql(
-      'utility_payments',
-      `WHERE id = '${paymentId}'`
+    const existingPayment = AllUtilityPayments.find(
+      (utility) => utility.id === paymentId
     );
     console.log('Existing payment:', existingPayment);
 
     console.log('Updated payment:', updatedPayment);
 
     if (updatedPayment) {
-      if (existingPayment.length > 0) {
+      if (existingPayment) {
         console.log('Updating existing payment in database');
         await updateValue(
           'utility_payments',
@@ -453,6 +516,11 @@ const UtilityPanel: React.FC<props> = ({
           setChangeMade,
           !updatedPayment.custom ? 1 : 0
         );
+        setAllUtilityPayments((prev) =>
+          prev.map((utility) =>
+            utility.id === paymentId ? { ...utility, custom: updatedPayment.custom } : utility
+          )
+        );
         if (!updatedPayment.custom) {
           await updateValue(
             'utility_payments',
@@ -461,6 +529,11 @@ const UtilityPanel: React.FC<props> = ({
             updatedPayment.price,
             setChangeMade,
             existingPayment[0].price
+          );
+          setAllUtilityPayments((prev) =>
+            prev.map((utility) =>
+              utility.id === paymentId ? { ...utility, price: updatedPayment.price } : utility
+            )
           );
         }
       } else {
@@ -474,11 +547,25 @@ const UtilityPanel: React.FC<props> = ({
             custom: updatedPayment.custom ? 1 : 0,
             paid: updatedPayment.paid ? 1 : 0,
             date: updatedPayment.ParentDate,
+            Currency: updatedPayment.Currency,
             roomId: roomType.id,
+            branchId: SelectedBranchId,
             userId: selectedUserId,
           },
           setChangeMade
         );
+        setAllUtilityPayments((prev) => [...prev,  {
+          id: paymentId,
+          type: updatedPayment.type,
+          price: updatedPayment.price || 0,
+          custom: updatedPayment.custom ? 1 : 0,
+          paid: updatedPayment.paid ? 1 : 0,
+          date: updatedPayment.ParentDate,
+          Currency: updatedPayment.Currency,
+          roomId: roomType.id,
+          branchId: SelectedBranchId,
+          userId: selectedUserId,
+        }]);
       }
     }
     console.log('handleCustomChange completed');
@@ -522,16 +609,15 @@ const UtilityPanel: React.FC<props> = ({
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     console.log('Fetching existing payment from database');
-    const existingPayment = await getValuesWithSql(
-      'utility_payments',
-      `WHERE id = '${paymentId}'`
+    const existingPayment = AllUtilityPayments.find(
+      (utility) => utility.id === paymentId
     );
     console.log('Existing payment:', existingPayment);
 
     console.log('Updated payment:', updatedPayment);
 
     if (updatedPayment) {
-      if (existingPayment.length > 0) {
+      if (existingPayment) {
         console.log('Updating existing payment in database');
         await updateValue(
           'utility_payments',
@@ -539,7 +625,15 @@ const UtilityPanel: React.FC<props> = ({
           'price',
           newPrice,
           setChangeMade,
-          existingPayment[0].price
+          existingPayment.price
+        );
+        setAllUtilityPayments((prev) =>
+          prev.map((utility) =>
+            utility.id === paymentId ? {
+              ...utility,
+              price: newPrice
+            } : utility
+          )
         );
       } else {
         console.log('Adding new payment to database');
@@ -553,75 +647,131 @@ const UtilityPanel: React.FC<props> = ({
             paid: updatedPayment.paid ? 1 : 0,
             date: updatedPayment.ParentDate,
             roomId: roomType.id,
+            branchId: SelectedBranchId,
+            Currency: updatedPayment.Currency,
             userId: selectedUserId,
           },
           setChangeMade
         );
+        setAllUtilityPayments((prev) => [...prev,  {
+          id: paymentId,
+          type: updatedPayment.type,
+          price: newPrice || 0,
+          custom: updatedPayment.custom ? 1 : 0,
+          paid: updatedPayment.paid ? 1 : 0,
+          date: updatedPayment.ParentDate,
+          roomId: roomType.id,
+          branchId: SelectedBranchId,
+          Currency: updatedPayment.Currency,
+            userId: selectedUserId,
+          },
+        ]);
       }
     }
     console.log('handlePriceChange completed');
   };
 
   const handleFullCompleteChange = async (utilityId: string) => {
-    console.log('handleFullCompleteChange called with utilityId:', utilityId);
-    let allPaid2 = false;
-    let updatedUtilityData;
+    try {
+      console.log('handleFullCompleteChange called with utilityId:', utilityId);
+      let allPaid2 = false;
+      let updatedUtilityData;
 
-    setUtilityData((prevData) => {
-      console.log('Updating utility data state');
-      updatedUtilityData = prevData.map((element) => {
-        if (element.id === utilityId) {
-          console.log('Found matching utilityId:', utilityId);
-          const allPaid = element.PaymentTypes.every((payment) => payment.paid);
-          console.log('All payments paid:', allPaid);
+      // First, determine the new state (all paid or all unpaid)
+      const currentUtility = utilityData.find(element => element.id === utilityId);
+      const currentAllPaid = currentUtility?.PaymentTypes.every(payment => payment.paid);
+      allPaid2 = !currentAllPaid; // This will be the new state for all payments
 
-          if (allPaid) {
-            console.log('Setting all payments to unpaid');
-            element.PaymentTypes = element.PaymentTypes.map((payment) => ({
-              ...payment,
-              paid: false,
-            }));
-          } else {
-            console.log('Setting all payments to paid');
-            element.PaymentTypes = element.PaymentTypes.map((payment) => ({
-              ...payment,
-              paid: true,
-            }));
+      // Update the UI state
+      setUtilityData(prevData => {
+        updatedUtilityData = prevData.map(element => {
+          if (element.id === utilityId) {
+            return {
+              ...element,
+              FullComplete: allPaid2,
+              PaymentTypes: element.PaymentTypes.map(payment => ({
+                ...payment,
+                paid: allPaid2
+              }))
+            };
           }
-          allPaid2 = !allPaid;
-          element.FullComplete = !allPaid;
-          console.log('Updated FullComplete status to:', element.FullComplete);
-        }
-        return element;
-      });
-      return updatedUtilityData;
-    });
-
-    // Wait for state update to complete
-    await new Promise((resolve) => setTimeout(resolve, 0));
-
-    updatedUtilityData.forEach((utility) => {
-      if (utility.id === utilityId) {
-        utility.PaymentTypes.forEach((payment) => {
-          console.log(payment.paid, allPaid2);
-          handlePaidChangeWithValue(utilityId, payment.id, allPaid2);
+          return element;
         });
-      }
-    });
-
-    // Sync the state change with the database
-    const updatedUtility = updatedUtilityData.find((utility) => utility.id === utilityId);
-    if (updatedUtility) {
-   
-      updatedUtility.PaymentTypes.forEach(async (payment) => {
-        await updateValue(
-          'utility_payments',
-          payment.id,
-          'paid',
-          payment.paid,
-          setChangeMade
-        );
+        return updatedUtilityData;
       });
+
+      // Wait for state update
+      await new Promise(resolve => setTimeout(resolve, 0));
+
+      // Update database for each payment
+      const utility = updatedUtilityData?.find(u => u.id === utilityId);
+      if (utility) {
+        const updatePromises = utility.PaymentTypes.map(async payment => {
+          const existingPayment = AllUtilityPayments.find(
+            up => up.id === payment.id
+          );
+
+          if (existingPayment) {
+            // Update existing payment
+            await updateValue(
+              'utility_payments',
+              payment.id,
+              'paid',
+              allPaid2 ? 1 : 0,
+              setChangeMade,
+              !allPaid2 ? 1 : 0
+            );
+          } else {
+            // Add new payment
+            await addValue(
+              'utility_payments',
+              {
+                id: payment.id,
+                type: payment.type,
+                price: payment.price || 0,
+                custom: payment.custom ? 1 : 0,
+                paid: allPaid2 ? 1 : 0,
+                date: payment.ParentDate,
+                Currency: payment.Currency,
+                roomId: roomType.id,
+                userId: selectedUserId,
+                branchId: SelectedBranchId,
+              },
+              setChangeMade
+            );
+          }
+
+          // Update local state
+          setAllUtilityPayments(prev => {
+            const paymentExists = prev.some(p => p.id === payment.id);
+            if (paymentExists) {
+              return prev.map(p =>
+                p.id === payment.id ? { ...p, paid: allPaid2 } : p
+              );
+            } else {
+              return [...prev, {
+                id: payment.id,
+                type: payment.type,
+                price: payment.price || 0,
+                custom: payment.custom ? 1 : 0,
+                paid: allPaid2,
+                date: payment.ParentDate,
+                Currency: payment.Currency,
+                roomId: roomType.id,
+                userId: selectedUserId,
+                branchId: SelectedBranchId,
+              }];
+            }
+          });
+        });
+
+        // Wait for all updates to complete
+        await Promise.all(updatePromises);
+      }
+
+    } catch (error) {
+      console.error('Error in handleFullCompleteChange:', error);
+      showAlert?.('error', 'Failed to update payments');
     }
   };
 
@@ -650,21 +800,21 @@ const UtilityPanel: React.FC<props> = ({
     <div
       style={{
         position: 'absolute',
-        top: '2px',
-        right: '-845px',
-        width: '310px',
+        top: 'var(--2px-V)',
+        right: 'var(---845px-V)',
+        width: 'var(--310px-V)',
         height: '96%',
         backgroundColor: 'var(--Background-Color)',
-        boxShadow: 'rgba(0, 0, 0, 0.1) -2px 0px 5px',
+        boxShadow: 'rgba(0, 0, 0, 0.1) var(---2px-V) var(--0px-V) var(--5px-V)',
         zIndex: '1000',
-        padding: '5px',
-        borderRadius: '5px',
+        padding: 'var(--5px-V)',
+        borderRadius: 'var(--5px-V)',
         overflowY: 'auto',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'flex-start',
         alignItems: 'center',
-        border: '1px solid grey',
+        border: 'var(--1px-V) solid grey',
       }}
     >
       <h2 style={{ margin: '0', width: '100%', textAlign: 'center' }}>
@@ -683,12 +833,12 @@ const UtilityPanel: React.FC<props> = ({
           <button
             onClick={handleShowMorePast}
             style={{
-              marginBottom: '10px',
-              padding: '5px 10px',
+              marginBottom: 'var(--10px-V)',
+              padding: 'var(--5px-V) var(--10px-V)',
               backgroundColor: 'var(--Secondary-Color)',
               color: 'var(--Text-Color)',
               border: 'none',
-              borderRadius: '5px',
+              borderRadius: 'var(--5px-V)',
               cursor: 'pointer',
             }}
           >
@@ -713,16 +863,16 @@ const UtilityPanel: React.FC<props> = ({
                       <hr
                         style={{
                           width: '100%',
-                          margin: '5px',
-                          border: '1px solid orange',
+                          margin: 'var(--5px-V)',
+                          border: 'var(--1px-V) solid orange',
                         }}
                       />
                       Current Date: {convertUnixToDateString(Date.now())}
                       <hr
                         style={{
                           width: '100%',
-                          margin: '5px',
-                          border: '1px solid orange',
+                          margin: 'var(--5px-V)',
+                          border: 'var(--1px-V) solid orange',
                         }}
                       />
                     </>
@@ -744,15 +894,15 @@ const UtilityPanel: React.FC<props> = ({
                         utility.PaymentTypes.length
                       ? 'var(--Accent-Color50)'
                       : 'var(--Secondary-Color30)',
-                  padding: '5px',
-                  marginTop: '5px',
-                  marginBottom: '5px',
-                  borderRadius: '5px',
+                  padding: 'var(--5px-V)',
+                  marginTop: 'var(--5px-V)',
+                  marginBottom: 'var(--5px-V)',
+                  borderRadius: 'var(--5px-V)',
                 }}
               >
                 <p
                   style={{
-                    fontSize: '16px',
+                    fontSize: 'var(--16px-V)',
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
@@ -778,20 +928,21 @@ const UtilityPanel: React.FC<props> = ({
                       style={{
                         width: '100%',
                         borderCollapse: 'collapse',
-                        fontSize: '14px',
-                        paddingLeft: '10px',
+                        fontSize: 'var(--14px-V)',
+                        paddingLeft: 'var(--10px-V)',
                       }}
                     >
                       <thead
                         style={{
-                          height: '10px',
+                          height: 'var(--10px-V)',
                         }}
                       >
                         <tr
                           style={{
-                            fontSize: '11px',
-                            borderTop: '1px solid var(--Text-Color-Grey)',
-                            height: '10px',
+                            fontSize: 'var(--11px-V)',
+                            borderTop:
+                              'var(--1px-V) solid var(--Text-Color-Grey)',
+                            height: 'var(--10px-V)',
                           }}
                         >
                           <th style={{ textAlign: 'center' }}></th>
@@ -808,7 +959,7 @@ const UtilityPanel: React.FC<props> = ({
                                 {'  - '} {paymentType.type}
                               </td>
 
-                              <td style={{ textAlign: 'center' }}>
+                              <td style={{ textAlign: 'left' }}>
                                 <input
                                   type="checkbox"
                                   checked={paymentType.custom}
@@ -820,7 +971,7 @@ const UtilityPanel: React.FC<props> = ({
                                     )
                                   }
                                 />
-                                $<input
+                                <input
                                   type="number"
                                   value={
                                     tempPrice[paymentType.id] !== undefined
@@ -832,7 +983,7 @@ const UtilityPanel: React.FC<props> = ({
                                       ? 0
                                       : paymentType.price
                                   }
-                                  style={{ width: '60px' }}
+                                  style={{ width: 'var(--70px-V)' }}
                                   onChange={(e) =>
                                     handleTempPriceChange(
                                       paymentType.id,
@@ -860,8 +1011,8 @@ const UtilityPanel: React.FC<props> = ({
                                       ? 'UtilityPriceInput'
                                       : 'UtilityPriceInputDisabled'
                                   }
-                                />
-                                
+                                  />
+                                {CurrencySign(paymentType.Currency)}
                               </td>
                               <td style={{ textAlign: 'center' }}>
                                 <input
@@ -879,19 +1030,42 @@ const UtilityPanel: React.FC<props> = ({
                     </table>
                     <p
                       style={{
-                        marginTop: '5px',
-                        borderTop: '1px solid var(--Text-Color-Grey)',
+                        marginTop: 'var(--5px-V)',
+                        borderTop: 'var(--1px-V) solid var(--Text-Color-Grey)',
                         display: 'flex',
                         justifyContent: 'space-between',
                       }}
                     >
                       <span>
                         Total:{' '}
-                        {utility.PaymentTypes.reduce(
-                          (total, paymentType) => total +  (isNaN(paymentType.price) ? 0 : paymentType.price),
-                          0
-                        ).toLocaleString()}
-                        $
+                        {(() => {
+  const defaultCurrency = GetDefaultCurrency();
+  
+  // Convert all amounts to the default currency using date-specific rates
+  const total = utility.PaymentTypes.reduce((total, paymentType) => {
+    let amount = isNaN(paymentType.price) ? 0 : paymentType.price;
+    
+    // Only convert if currencies don't match
+    if (paymentType.Currency !== defaultCurrency) {
+      const { rate, direction } = getRateByDate(paymentType.ParentDate);
+      
+      if (rate) {
+        if (paymentType.Currency === 'USD') {
+          amount = amount * rate; // Convert USD to ETB
+        } else {
+          amount = amount / rate; // Convert ETB to USD
+        }
+      } else {
+        console.warn('No rate found for date, using original amount');
+      }
+    }
+    
+    return total + amount;
+  }, 0);
+
+  return `${formatNumberWithSuffix(total.toLocaleString())} ${CurrencySign(defaultCurrency)}`;
+})()}
+                        
                       </span>{' '}
                       <span>
                         Done{' '}
@@ -916,12 +1090,12 @@ const UtilityPanel: React.FC<props> = ({
           <button
             onClick={handleShowMoreFuture}
             style={{
-              marginTop: '10px',
-              padding: '5px 10px',
+              marginTop: 'var(--10px-V)',
+              padding: 'var(--5px-V) var(--10px-V)',
               backgroundColor: 'var(--Secondary-Color)',
               color: 'var(--Text-Color)',
               border: 'none',
-              borderRadius: '5px',
+              borderRadius: 'var(--5px-V)',
               cursor: 'pointer',
             }}
           >

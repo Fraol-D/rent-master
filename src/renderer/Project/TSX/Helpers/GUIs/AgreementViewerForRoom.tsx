@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import '../../../CSS/AgreementViewerForRoom.css';
-const { v4: uuidv4 } = require('uuid');
+
+import { Input } from '../CustomReactComponents';
+import { v4 as uuidv4 } from 'uuid';
 
 import {
   convertToGC,
@@ -10,10 +11,17 @@ import EthiopianCalanderConverterMenu from './EthiopianCalanderConverterMenu';
 import {
   addValue,
   deleteValue,
-  getValuesWithSql,
+
   updateValue,
 } from 'Backend/localServerApis';
 import { addDays } from 'date-fns'; // Add this import
+import CurrencySign, {
+  formatNumberWithSuffix,
+  GetCurrencyAsOptionsOnSelect,
+  GetDefaultCurrency,
+} from '../CurrencySign';
+import { useAlert } from 'renderer/components/useAlert';
+import { useGlobal } from 'renderer/components/GlobalContext';
 
 const AgreementViewerForRoom = ({
   TenantList,
@@ -28,6 +36,7 @@ const AgreementViewerForRoom = ({
   handlePaymentRefresh,
   setChangeMade,
   view,
+  SelectedBranchId,
 }: any) => {
   const [Agreements, setAgreements] = useState<agreements[]>([]);
   const [CurrentAgreementIndex, setCurrentAgreementIndex] = useState(0);
@@ -100,7 +109,7 @@ const AgreementViewerForRoom = ({
   const [ShowConverterEndDate, setShowConverterEndDate] = useState(false);
   const [ShowConverterSignDate, setShowConverterSignDate] = useState(false);
   const [selectedAgreement, setSelectedAgreement] = useState('');
-  const [paymentCycle, setPaymentCycle] = useState('Every 30 days');
+  const [paymentCycle, setPaymentCycle] = useState('30');
   const [customDays, setCustomDays] = useState('');
   const [agreedPrice, setAgreedPrice] = useState(0);
   const [endDateError, setEndDateError] = useState('');
@@ -113,52 +122,88 @@ const AgreementViewerForRoom = ({
       setCustomDays('');
     }
   };
+  const {
+    AllRoomPayInfo,
+    setAllRoomPayInfo,
+  } = useGlobal();
   const movePaymentsToHistory = async (
     roomId: string,
     newAgreementId: string
   ) => {
-    const existingPayments = await getValuesWithSql(
-      'room_pay_info',
-      `WHERE roomId = '${roomId}'`
+    const existingPayments = AllRoomPayInfo.filter(
+      (payment) => payment.roomId === roomId && payment.tenantId === roomType.tenantId
     );
 
     for (const payment of existingPayments) {
-      if(payment.Paid)await addValue(
-        'room_pay_info_history',
-        {
-          ...payment,
-          agreementId: newAgreementId,
-        },
-        setChangeMade
+      if (payment.Paid)
+        await addValue(
+          'room_pay_info_history',
+          {
+            ...payment,
+            agreementId: newAgreementId,
+            branchId: SelectedBranchId,
+          },
+          setChangeMade
+        );
+      await deleteValue('room_pay_info', payment.id, setChangeMade);
+      setAllRoomPayInfo((prev) =>
+        prev.filter((payment) => payment.id !== payment.id)
       );
-      await deleteValue('room_pay_info', payment.id,setChangeMade);
     }
 
     // Now delete only the paid payments from room_pay_info
   };
+  const { showAlert } = useAlert();
   const HandleAddAgreement = async () => {
+    // Validate start time and end time
+    if (!startTime || !endTime) {
+      showAlert('Please enter both start time and end time');
+      return;
+    }
+    if (signDate === '') {
+      showAlert('Please enter a sign date');
+      return;
+    }
+    if (!paymentCycle) {
+      showAlert('Please enter a payment cycle');
+      return;
+    }
+    if (paymentCycle === 'custom' && !customDays) {
+      showAlert('Please enter a custom payment cycle');
+      return;
+    }
+    const startDate = new Date(startTime);
+    const endDate = new Date(endTime);
+
+    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+      showAlert('Please enter valid dates for start time and end time');
+      return;
+    }
+
+    if (startDate >= endDate) {
+      showAlert('End time must be after start time');
+      return;
+    }
+
     // Deal with deleting, keeping, and makeing true of payments
     if (paymentOption === 'deleteUnpaid') {
-      const FutruePaymentsRaw = await getValuesWithSql(
-        'room_pay_info',
-        `WHERE roomId = '${
-          roomType.id
-        }' AND Day >= '${Date.now()}' AND Paid = '0'`
+      const FutruePaymentsRaw = AllRoomPayInfo.filter(
+        (payment) => payment.roomId === roomType.id && payment.tenantId === roomType.tenantId && payment.Day >= Date.now() && payment.Paid === 0
       );
 
       if (FutruePaymentsRaw.length >= 1) {
         for (let i = 0; i < FutruePaymentsRaw.length; i++) {
           const element = FutruePaymentsRaw[i];
           await deleteValue('room_pay_info', element.id);
+          setAllRoomPayInfo((prev) =>
+            prev.filter((payment) => payment.id !== element.id)
+          );
         }
       }
     } else if (paymentOption === 'keepUnpaid') {
     } else if (paymentOption === 'makeAllPaid') {
-      const FutruePaymentsRaw = await getValuesWithSql(
-        'room_pay_info',
-        `WHERE roomId = '${
-          roomType.id
-        }' AND Day >= '${Date.now()}' AND Paid = '0'`
+      const FutruePaymentsRaw = AllRoomPayInfo.filter(
+        (payment) => payment.roomId === roomType.id && payment.tenantId === roomType.tenantId && payment.Day >= Date.now() && payment.Paid === 0
       );
       console.log(FutruePaymentsRaw.length, 'length');
       if (FutruePaymentsRaw.length >= 1) {
@@ -172,6 +217,11 @@ const AgreementViewerForRoom = ({
             setChangeMade,
             0
           );
+          setAllRoomPayInfo((prev) =>
+            prev.map((payment) =>
+              payment.id === element.id ? { ...payment, Paid: true } : payment
+            )
+          );
         }
       }
     }
@@ -183,9 +233,9 @@ const AgreementViewerForRoom = ({
     // Create new payment data from start time to endtime using payment cycle
     console.log(paymentCycle);
     const paymentIntervals = {
-      'Every 30 days': 30,
-      'Every 15 days': 15,
-      'Every 7 days': 7,
+      '30': 30,
+      '15': 15,
+      '7': 7,
       monthly: 1,
       daily: 1,
       custom: parseInt(customDays, 10) || 30, // Provide a fallback value
@@ -195,9 +245,6 @@ const AgreementViewerForRoom = ({
       paymentIntervals[paymentCycle as keyof typeof paymentIntervals] || 30;
 
     console.log('reached1', interval);
-
-    const startDate = new Date(startTime);
-
     // Create a new agreement ID first
 
     // Create a new agreement and add it to the agreements table
@@ -212,7 +259,8 @@ const AgreementViewerForRoom = ({
       paymentCycle === 'custom' ? '-' + customDays : paymentCycle,
       '',
       '',
-      Representative
+      Representative,
+      AddAgreementFormCurrency
     );
     // Set the roomType.SelectedAgreementId to the new agreement Id
     updateRoomProperty(roomType.id, 'selectedAgreementId', agreementId);
@@ -229,9 +277,10 @@ const AgreementViewerForRoom = ({
     setEndTime('');
     setSignDate('');
     setRepresentative('');
-    setPaymentCycle('Every 30 days');
+    setPaymentCycle('monthly');
     setCustomDays('');
     setAgreedPrice(0);
+    setAddAgreementFormCurrency(GetDefaultCurrency());
     setShowAddAgreementPannal(false);
     console.log('Show add agreement form');
   };
@@ -242,9 +291,10 @@ const AgreementViewerForRoom = ({
     setEndTime('');
     setSignDate('');
     setRepresentative('');
-    setPaymentCycle('Every 30 days');
+    setPaymentCycle('monthly');
     setCustomDays('');
     setAgreedPrice(0);
+    setAddAgreementFormCurrency(GetDefaultCurrency());
 
     // Hide the add agreement form or modal
     // This is a placeholder, you might want to implement a state to control the visibility of the form
@@ -253,54 +303,60 @@ const AgreementViewerForRoom = ({
   };
   const [MemoText, setMemoText] = useState('INITIALLLI');
   const [RentReservedText, setRentReservedText] = useState('INITIALLLI');
-
+  const [AddAgreementFormCurrency, setAddAgreementFormCurrency] = useState(
+    GetDefaultCurrency()
+  );
   return (
     ShowState &&
     Agreements.length >= 1 && (
       <>
         <div className="AgreementMainContianer">
           <div>
-            {Agreements.length >= 1 && (
-              <div className="AgreementNavigationButtons">
+            <div className="AgreementNavigationButtons">
+              {Agreements.length > 1 && (
                 <button
                   onClick={handlePrevAgreement}
                   disabled={CurrentAgreementIndex === 0}
                 >
                   ◀
                 </button>
-                <strong
-                  style={{
-                    background:
-                      Agreements[CurrentAgreementIndex].id ===
-                      roomType.selectedAgreementId
-                        ? 'var(--Primary-Color)'
-                        : '',
-                    padding: '5px ',
-                    borderRadius: '5px',
-                  }}
-                >
-                  {Agreements[CurrentAgreementIndex].id ===
-                  roomType.selectedAgreementId
-                    ? 'Current'
-                    : 'Expired ' +
-                      (Agreements.indexOf(Agreements[CurrentAgreementIndex]) +
-                        1)}
-                </strong>{' '}
+              )}
+              <strong
+                style={{
+                  color: 'Black',
+                  background:
+                    Agreements[CurrentAgreementIndex].id ===
+                    roomType.selectedAgreementId
+                      ? 'var(--Primary-Color)'
+                      : '',
+                  padding: 'var(--5px-V) ',
+                  borderRadius: 'var(--5px-V)',
+                }}
+              >
+                {Agreements[CurrentAgreementIndex].id ===
+                roomType.selectedAgreementId
+                  ? 'Current'
+                  : 'Expired ' +
+                    (Agreements.indexOf(Agreements[CurrentAgreementIndex]) + 1)}
+              </strong>{' '}
+              {Agreements.length > 1 && (
                 <button
                   onClick={handleNextAgreement}
                   disabled={CurrentAgreementIndex === Agreements.length - 1}
                 >
                   ▶
                 </button>
-                <button
-                  onClick={() => {
-                    setShowAddAgreementPannal(true);
-                  }}
-                >
-                  Add an agreement
-                </button>
-              </div>
-            )}
+              )}
+              <button
+                onClick={() => {
+                  setShowAddAgreementPannal(true);
+                }}
+                style={{ marginLeft: 'var(--20px-V)' }}
+              >
+                Add an agreement
+              </button>
+            </div>
+
             <div className="AddTenantContainerinnerElement" style={{}}>
               <div>
                 Representative:
@@ -363,7 +419,7 @@ const AgreementViewerForRoom = ({
             <em style={{ fontWeight: '600' }}>
               {Agreements[CurrentAgreementIndex].agreedPrice.toLocaleString()}
             </em>
-            $ Every{' '}
+            {CurrencySign(Agreements[CurrentAgreementIndex].Currency)} Every{' '}
             {getCorrectPaymentStatment(
               Agreements[CurrentAgreementIndex].paymentCycleType,
               Agreements[CurrentAgreementIndex].paymentCycleType.slice(1)
@@ -384,6 +440,7 @@ const AgreementViewerForRoom = ({
             <input
               type="text"
               className="StartTime"
+              placeholder="Enter memo here..."
               value={
                 MemoText === 'INITIALLLI'
                   ? Agreements[CurrentAgreementIndex].Memo
@@ -416,7 +473,7 @@ const AgreementViewerForRoom = ({
             Rent Reserved:{' '}
             <input
               type="text"
-              style={{ width: '80px' }}
+              style={{ width: 'var(--80px-V)' }}
               className="StartTime"
               value={
                 RentReservedText === 'INITIALLLI'
@@ -474,7 +531,7 @@ const AgreementViewerForRoom = ({
                         checked={paymentOption === 'deleteUnpaid'}
                         onChange={() => setPaymentOption('deleteUnpaid')}
                       />
-                      Delete all unpaid future payments
+                      Delete all unpaid future payments (If any)
                     </label>
                     <br />
                     <label>
@@ -485,7 +542,7 @@ const AgreementViewerForRoom = ({
                         checked={paymentOption === 'keepUnpaid'}
                         onChange={() => setPaymentOption('keepUnpaid')}
                       />
-                      Keep all unpaid future payments
+                      Keep all unpaid future payments (If any)
                     </label>
                     <br />
                     <label>
@@ -496,21 +553,28 @@ const AgreementViewerForRoom = ({
                         checked={paymentOption === 'makeAllPaid'}
                         onChange={() => setPaymentOption('makeAllPaid')}
                       />
-                      Make all unpaid future payments paid
+                      Make all unpaid future payments paid (If any)
                     </label>
                     <br />
                   </div>
                   <div
                     className="AddTenantContainerinnerElement"
-                    style={{ marginTop: '20px' }}
+                    style={{
+                      marginTop: 'var(--20px-V)',
+                      marginBottom: 'var(--10px-V)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'flex-start',
+                      gap: 'var(--10px-V)',
+                    }}
                   >
                     <div>
                       Representative:
                       <input
                         type="text"
+                        placeholder="Enter representative name"
                         value={Representative}
                         className="StartTime"
-                        style={{ fontWeight: '700' }}
                         onChange={(e) => setRepresentative(e.target.value)}
                       />{' '}
                     </div>
@@ -637,24 +701,28 @@ const AgreementViewerForRoom = ({
                   <div className="AddTenantContainerinnerElement">
                     Payment cycle every:{' '}
                     <select
-                      className="AddTenantContainerinnerInput"
-                      style={{ width: '100px' }}
+                      className="AddTenantContainerinnerInput StartTime"
+                      style={{ width: 'var(--100px-V)' }}
                       value={paymentCycle}
                       onChange={handlePaymentCycleChange}
                     >
-                      <option value="Every 30 days">30 days</option>
-                      <option value="Every 15 days">15 days</option>
-                      <option value="Every 7 days">7 days</option>
+                      <option value="30">30 days</option>
+                      <option value="15">15 days</option>
+                      <option value="7">7 days</option>
                       <option value="daily">daily</option>
-
+                      <option value="weekly">weekly</option>
                       <option value="monthly">monthly</option>
+                      <option value="Annually">annually</option>
                       <option value="custom">custom days</option>
                     </select>
                     {paymentCycle === 'custom' && (
                       <input
                         type="number"
                         className="AddTenantContainerinnerInput"
-                        style={{ width: '50px', marginLeft: '10px' }}
+                        style={{
+                          width: 'var(--80px-V)',
+                          marginLeft: 'var(--10px-V)',
+                        }}
                         placeholder="Enter days"
                         value={customDays}
                         onChange={(e) => setCustomDays(e.target.value)}
@@ -662,33 +730,52 @@ const AgreementViewerForRoom = ({
                     )}
                   </div>
                   <div className="AddTenantContainerinnerElement">
+                    Currency:
+                    <select
+                      value={AddAgreementFormCurrency}
+                      onChange={(e) =>
+                        setAddAgreementFormCurrency(e.target.value)
+                      }
+                      className="AddANewRoomSelectMid StartTime"
+                    >
+                      {GetCurrencyAsOptionsOnSelect()}
+                    </select>
+                    <br />
                     Agreed Price:{' '}
                     <input
                       type="number"
-                      className="AddTenantContainerinnerInput"
-                      style={{ width: '70px' }}
+                      className="AddTenantContainerinnerInput StartTime"
+                      style={{
+                        width: 'var(--70px-V)',
+                        marginTop: 'var(--10px-V)',
+                      }}
                       placeholder="Enter price"
                       value={agreedPrice}
                       onChange={(e) => setAgreedPrice(parseInt(e.target.value))}
                     />
-                    $
-                    <button
-                      style={{
-                        marginLeft: '10px',
-                      }}
-                      onClick={() => {
-                        setAgreedPrice(roomType.price);
-                      }}
-                    >
-                      Same
-                    </button>
+                    {CurrencySign(AddAgreementFormCurrency)}
                   </div>
                 </div>
               </div>
               <div></div>
-              <div style={{ display: 'flex' }}>
-                <button onClick={HandleCancelAddAgreement}>Cancel</button>
-                <button onClick={HandleAddAgreement} disabled={!!endDateError}>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-around',
+                  width: '100%',
+                }}
+              >
+                <button
+                  onClick={HandleCancelAddAgreement}
+                  style={{ width: '90%', marginRight: 'var(--30px-V)' }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={HandleAddAgreement}
+                  disabled={!!endDateError}
+                  style={{ width: '90%' }}
+                >
                   Add
                 </button>
               </div>

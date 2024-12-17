@@ -1,25 +1,84 @@
-import { MemoryRouter as Router, Routes, Route } from 'react-router-dom';
+import { storageManager } from './storeManager';
+import {
+  MemoryRouter as Router,
+  Routes,
+  Route,
+  useParams,
+} from 'react-router-dom';
 import icon from '../../assets/icon.svg';
-import './App.css';
+
 import MainPage from './Project/TSX/MainPage';
 import { useEffect, useState } from 'react';
 import NavBar from './Project/TSX/Navbar/NavBar';
 import LogoImage from './assets/Insert Image Pic.png';
-const { v4: uuidv4 } = require('uuid');
+import loadingGif from './assets/assets/Loading/Rolling-1s-200px.gif';
+import { v4 as uuidv4 } from 'uuid';
 import {
   addValue,
+  addValueROOM,
   deleteValue,
   getValues,
   getValuesWithSql,
   updateValue,
-} from 'Backend/localServerApis';
+} from '../Backend/localServerApis';
 import AccountManager from './Project/TSX/Sign up and login/AccountManager';
-import { SignOutUser, Upload } from 'Backend/OnlineServerApis';
-import { addDays, addMonths, differenceInDays } from 'date-fns';
+import {
+  getValuesWithSql_Online,
+  SignOutUser,
+  Upload,
+  UploadUserFilesToTheOnlineDatabase,
+} from '../Backend/OnlineServerApis';
+import {
+  addDays,
+  addMonths,
+  addYears,
+  differenceInDays,
+  isAfter,
+  isBefore,
+} from 'date-fns';
 import { Payment } from 'electron';
+import {
+  GetDefaultCurrency,
+  getRateByDate,
+} from './Project/TSX/Helpers/CurrencySign';
+import { AlertProvider, useAlert } from './components/useAlert';
+import { ConfirmProvider } from './components/useConfirm';
+import { getFromStore, setToStore } from './storeManager';
+import { GlobalProvider, useGlobal } from './components/GlobalContext';
+import CornerSupport from './Project/TSX/Helpers/CornerSupport';
+function noop() {}
+//console.log = noop;
+
 declare global {}
-function Hello() {
+function Hello({ tryout, username, signup }: any) {
+  import('./App.css');
+  console.log(tryout, username);
   const [RoomList, setRoomList] = useState<RoomType[]>([]);
+  const {
+    AllRoomPayInfo,
+    setAllRoomPayInfo,
+    AllExpenses,
+    setAllExpenses,
+    AllAgreements,
+    setAllAgreements,
+    AllTenants,
+    setAllTenants,
+    AllUtilityPayments,
+    setAllUtilityPayments,
+    AllUtilityPaymentsSettings,
+    setAllUtilityPaymentsSettings,
+    AllEmailTemplates,
+    setAllEmailTemplates,
+    AllSmsTemplates,
+    setAllSmsTemplates,
+    AllNotificationTemplateSelections,
+    setAllNotificationTemplateSelections,
+    AllRoomSpecifications,
+    setAllRoomSpecifications,
+    AllRoomPayInfoHistory,
+    setAllRoomPayInfoHistory,
+  } = useGlobal();
+
   const [TenantList, setTenantList] = useState<tenant[]>([]);
   const [BrokerList, setBrokerList] = useState<BrokerType[]>([]);
   const [PastTenantReviews, setPastTenantReviews] = useState<
@@ -40,26 +99,26 @@ function Hello() {
       return propertyValue;
     }
   };
-  const calculatePredictedPayments = async (room: RoomType) => {
+  const calculatePredictedPayments = async (
+    room: RoomType,
+    AllAgreements2: any,
+    AllRoomPayInfo2: any
+  ) => {
     const allPayments = [];
     const today = new Date();
     const yearEnd = new Date(today.getFullYear() + 1, 11, 31);
-    const tenant = await getValuesWithSql(
-      'tenants',
-      `WHERE id = '${room.tenantId}'`
-    );
-    let startDate = new Date(tenant[0]?.startTime || Date.now()).getTime();
+    const tenant = AllTenants.find((t) => t.id === room.tenantId);
+    let startDate = new Date(tenant?.startTime || Date.now()).getTime();
 
     let endDate = null;
     if (room.selectedAgreementId) {
-      const agreements = await getValuesWithSql(
-        'agreements',
-        `WHERE id = '${room.selectedAgreementId}'`
+      const agreements = AllAgreements2.filter(
+        (a) => a.id === room.selectedAgreementId
       );
       if (agreements.length > 0) {
         startDate = agreements[0].startTime;
       }
-      if (tenant[0]?.SelectedAgreement === 'Fixed-Term') {
+      if (tenant?.SelectedAgreement === 'Fixed-Term') {
         if (agreements.length > 0) {
           endDate = agreements[0].endTime;
         }
@@ -68,7 +127,7 @@ function Hello() {
 
     let currentDate = new Date(startDate);
     while (
-    
+      currentDate <= yearEnd &&
       (endDate == null || currentDate <= new Date(endDate))
     ) {
       const paymentId = `${room.id}-${currentDate.getTime()}`;
@@ -99,6 +158,9 @@ function Hello() {
         case 'weekly':
           currentDate = addDays(currentDate, 7);
           break;
+        case 'Annually':
+          currentDate = addYears(currentDate, 1);
+          break;
         case 'custom':
           currentDate = addDays(
             currentDate,
@@ -110,9 +172,8 @@ function Hello() {
       }
     }
 
-    const actualPayments = await getValuesWithSql(
-      'room_pay_info',
-      `WHERE roomId = '${room.id}'`
+    const actualPayments = AllRoomPayInfo2.filter(
+      (p) => p.roomId === room.id && p.tenantId === room.tenantId
     );
 
     const finalPayments = allPayments.map((payment) => {
@@ -123,6 +184,14 @@ function Hello() {
         ? { ...payment, Paid: actualPayment.Paid === 1 }
         : payment;
     });
+
+    if (finalPayments.length === 0) {
+      console.log('No payments predicted. Possible reasons:');
+      console.log('- No tenant assigned to the room');
+      console.log('- No valid start date for the tenant');
+      console.log('- No valid payment cycle set for the room');
+      console.log('- End date is before or equal to start date');
+    }
 
     return finalPayments;
   };
@@ -147,30 +216,29 @@ function Hello() {
       }
     }
 
-    return 0;
+    return -98989898;
   };
   class RoomApi {
-    getPaymentTimelineInfo = async (roomId: string) => {
-      const AllRoomPayInfo =
-        (await roomPaymentInfoApi.getRoomPaymentsApi(roomId)) || [];
-      return AllRoomPayInfo;
-    };
-
-    getRoomFromApi = async () => {
-      const roomsRaw = await getValuesWithSql('rooms', 'WHERE 1');
+    getRoomFromApi = async (
+      AllRoomSpecifications2: any,
+      AllUtilityPaymentsSettings2: any,
+      AllRoomPayInfo2: any,
+      AllAgreements2: any
+    ) => {
+      let useBranchId = storageManager.get('SelectedBranchId');
+      const roomsRaw = await getValuesWithSql(
+        'rooms',
+        `WHERE 1 AND branchId = '${useBranchId}'`
+      );
+      console.log(':ROOOMS', roomsRaw);
       if (roomsRaw) {
         const rooms = await Promise.all(
           roomsRaw.map(async (room: RoomType) => {
-            const getRoomSpecifications = async () => {
-              return roomSpecificationAPI.getRoomSpecificationApi(room.id);
-            };
-
-            const roomSpecifications = (await getRoomSpecifications()) || [];
-            const AllRoomPayInfo = await this.getPaymentTimelineInfo(room.id);
-
-            const utilityPayments = await getValuesWithSql(
-              'utility_payments_settings',
-              `WHERE roomId = '${room.id}'`
+            const roomSpecifications = AllRoomSpecifications2.filter(
+              (r) => r.roomId === room.id
+            );
+            const utilityPayments = AllUtilityPaymentsSettings2.filter(
+              (u) => u.roomId === room.id
             );
             const defaultUtilities = [
               'Security',
@@ -196,18 +264,25 @@ function Hello() {
                 alwaysAsk: existingUtility
                   ? existingUtility.alwaysAsk === 1
                   : false,
+                Currency: existingUtility
+                  ? existingUtility.Currency
+                  : GetDefaultCurrency(),
                 id: existingUtility ? existingUtility.id : uuidv4(),
                 userId: existingUtility ? existingUtility.userId : uuidv4(),
               };
             });
 
             // Calculate predicted payments
-            const predictedPayments = await calculatePredictedPayments(room);
+            const predictedPayments = await calculatePredictedPayments(
+              room,
+              AllAgreements2,
+              AllRoomPayInfo2
+            );
 
             // Calculate days till next payment
             const DaysTillNextPayment =
               calculateDaysTillNextPayment(predictedPayments);
-     
+
             return {
               id: room.id,
               floor: room.floor,
@@ -219,12 +294,12 @@ function Hello() {
               PaymentCycleCustomeDays: room.PaymentCycleCustomeDays,
               squareMeters: room.squareMeters,
               RoomSpecifications: roomSpecifications,
-              Archived: room.Archived,
+              Archived: room.Archived || false,
               tenantId: room.tenantId || '',
-              AddTenantState: room.AddTenantState || false,
-              ViewAgreement: room.ViewAgreement || false,
-              ShowPayTimeLine: room.ShowPayTimeLine || false,
-              AllRoomPayInfo: { RoomPayInfo: predictedPayments },
+              AddTenantState: false,
+              ViewAgreement: false,
+              ShowPayTimeLine: false,
+              AllRoomPayInfo: { RoomPayInfo: predictedPayments || [] },
               selectedAgreementId: room.selectedAgreementId || '',
               notificationSettings: room.notificationSettings || 0,
               utilityPaymentEvery: room.utilityPaymentEvery || '30',
@@ -232,21 +307,23 @@ function Hello() {
               utilityPaymentUseDifferentStartDate:
                 room.utilityPaymentUseDifferentStartDate || false,
               utilityPaymentEveryCustom: room.utilityPaymentEveryCustom || 0,
-              utilityPayments: formattedUtilityPayments,
-              paymentShowAmount: room.paymentShowAmount,
-              DaysTillNextPayment: DaysTillNextPayment,
+              utilityPayments: formattedUtilityPayments || [],
+              paymentShowAmount: room.paymentShowAmount || 10,
+              DaysTillNextPayment: DaysTillNextPayment || 0,
+              Currency: room.Currency || '',
+              UtilityNotificationSettings:
+                room.UtilityNotificationSettings || 0,
+              useTenantPortal: room.useTenantPortal || false,
+              TenantPortalShowTenantDetails:
+                room.TenantPortalShowTenantDetails || false,
+              TenantPortalShowReceipts: room.TenantPortalShowReceipts || false,
+              TenantPortalAllowOnlinePayments:
+                room.TenantPortalAllowOnlinePayments || false,
             };
           })
         );
         setRoomList(rooms);
       }
-    };
-    getSpecificValueFromRoomAPI = async (
-      roomId: string,
-      propertyName: string
-    ) => {
-      const room = await getValuesWithSql('rooms', `WHERE id = '${roomId}'`);
-      return room[0][propertyName];
     };
 
     editRoomApi = async (
@@ -265,7 +342,11 @@ function Hello() {
           getOriginlPropertyValue(RoomList, roomId, propertyName)
         );
 
-        await this.getRoomFromApi();
+        setRoomList(
+          RoomList.map((room) =>
+            room.id === roomId ? { ...room, [propertyName]: newValue } : room
+          )
+        );
       } catch (error: any) {
         console.error(error.message);
       }
@@ -279,32 +360,39 @@ function Hello() {
       AddRoomFormPaymentCycleCustomDays: number,
       AddRoomFormSquareMeters: number,
 
-      AddRoomFormRoomSpecifications: RoomSpecificationType[]
+      AddRoomFormRoomSpecifications: RoomSpecificationType[],
+      AddRoomFormCurrency: string
     ) => {
       try {
         //Add room
 
-        await addValue(
+        await addValueROOM(
           'rooms',
           {
-            id: roomID,
-            floor: AddRoomFormFloor,
-            roomIndex: AddRoomFormRoomIndex,
+            id: roomID || uuidv4(), // Assuming you have a uuidv4 function for generating IDs
+            floor: AddRoomFormFloor || 0,
+            roomIndex: AddRoomFormRoomIndex || 0,
             status: 'Empty',
-            price: AddRoomFormPrice,
-            AgreedPrice: AddRoomFormPrice,
-            PaymentCycleType: AddRoomFormPaymentCycleType,
-            PaymentCycleCustomeDays: AddRoomFormPaymentCycleCustomDays,
-            squareMeters: AddRoomFormSquareMeters,
+            price: AddRoomFormPrice || 0,
+            AgreedPrice: AddRoomFormPrice || 0,
+            PaymentCycleType: AddRoomFormPaymentCycleType || 'monthly',
+            paymentShowAmount: 1,
+            PaymentCycleCustomeDays: AddRoomFormPaymentCycleCustomDays || 0,
+            squareMeters: AddRoomFormSquareMeters || 0,
             tenantId: '',
-            AddTenantState: false,
-            ViewAgreement: false,
-            ShowPayTimeLine: false,
+            AddTenantState: 0,
+            ViewAgreement: 0,
+            ShowPayTimeLine: 0,
             selectedAgreementId: '',
-            userId: SelectedUserId,
+            Archived: 0,
             notificationSettings: 0,
             utilityPaymentEvery: '30',
-            utilityPaymentEveryCustom: '',
+            utilityPaymentEveryCustom: 0,
+            utilityPaymentStartDate: 0,
+            utilityPaymentUseDifferentStartDate: 0,
+            userId: SelectedUserId || '',
+            branchId: SelectedBranchId,
+            Currency: AddRoomFormCurrency || GetDefaultCurrency(),
           },
           setChangeMade
         );
@@ -321,7 +409,42 @@ function Hello() {
             element.Boolean || false
           );
         }
-        await this.getRoomFromApi();
+        setRoomList([
+          ...RoomList,
+          {
+            id: roomID || uuidv4(),
+            floor: AddRoomFormFloor || 0,
+            roomIndex: AddRoomFormRoomIndex || 0,
+            status: 'Empty',
+            price: AddRoomFormPrice || 0,
+            AgreedPrice: AddRoomFormPrice || 0,
+            PaymentCycleType: AddRoomFormPaymentCycleType || 'monthly',
+            PaymentCycleCustomeDays: AddRoomFormPaymentCycleCustomDays || 0,
+            squareMeters: AddRoomFormSquareMeters || 0,
+            tenantId: '',
+            AddTenantState: false,
+            ViewAgreement: false,
+            ShowPayTimeLine: false,
+            selectedAgreementId: '',
+            Archived: false,
+            notificationSettings: 0,
+            utilityPaymentEvery: '30',
+            utilityPaymentEveryCustom: 0,
+            utilityPaymentStartDate: 0,
+            utilityPaymentUseDifferentStartDate: false,
+            userId: SelectedUserId || '',
+            branchId: SelectedBranchId,
+            Currency: AddRoomFormCurrency || GetDefaultCurrency(),
+            RoomSpecifications: AddRoomFormRoomSpecifications,
+            paymentShowAmount: 1,
+            DaysTillNextPayment: 0,
+            UtilityNotificationSettings: 0,
+            useTenantPortal: false,
+            TenantPortalShowTenantDetails: false,
+            TenantPortalShowReceipts: false,
+            TenantPortalAllowOnlinePayments: false,
+          },
+        ]);
       } catch (error: any) {
         console.error(error.message);
       }
@@ -329,8 +452,7 @@ function Hello() {
     DeleteRoom = async (roomId: string) => {
       try {
         await deleteValue('rooms', roomId, setChangeMade);
-        this.getRoomFromApi();
-        /* Delete All room specifications */
+        setRoomList(RoomList.filter((r: RoomType) => r.id !== roomId));
       } catch (error: any) {
         console.log(error.message);
       }
@@ -338,7 +460,7 @@ function Hello() {
     RemoveTenant = async (roomId: string) => {
       try {
         await deleteValue('rooms', roomId);
-        this.getRoomFromApi();
+        setRoomList(RoomList.filter((r: RoomType) => r.id !== roomId));
         /* Delete All room specifications */
       } catch (error: any) {
         console.log(error.message);
@@ -347,9 +469,8 @@ function Hello() {
   }
   class RoomSpecificationApi {
     getRoomSpecificationApi = async (roomID: string) => {
-      const roomSpecificationsRaw = await getValuesWithSql(
-        'room_specifications',
-        `WHERE roomId = '${roomID}'`
+      const roomSpecificationsRaw = AllRoomSpecifications.filter(
+        (roomSpecification) => roomSpecification.roomId === roomID
       );
       if (roomSpecificationsRaw) {
         return roomSpecificationsRaw.map(
@@ -385,9 +506,23 @@ function Hello() {
             type: type,
             Boolean: Boolean,
             userId: SelectedUserId,
+            branchId: SelectedBranchId,
           },
           setChangeMade
         );
+        setAllRoomSpecifications([
+          ...AllRoomSpecifications,
+          {
+            id: id,
+            roomId: roomId,
+            Detail: Detail,
+            Number: Number,
+            type: type,
+            Boolean: Boolean,
+            userId: SelectedUserId,
+            branchId: SelectedBranchId,
+          },
+        ]);
       } catch (error: any) {
         console.log(error.message);
       }
@@ -407,6 +542,13 @@ function Hello() {
           setChangeMade,
           OriginalValue
         );
+        setAllRoomSpecifications(
+          AllRoomSpecifications.map((roomSpecification) =>
+            roomSpecification.id === specificationId
+              ? { ...roomSpecification, [propertyName]: newValue }
+              : roomSpecification
+          )
+        );
       } catch (error: any) {
         console.error(error.message);
       }
@@ -414,6 +556,11 @@ function Hello() {
     deleteRoomSpecificationApi = async (roomSpecId: string) => {
       try {
         await deleteValue('room_specifications', roomSpecId);
+        setAllRoomSpecifications(
+          AllRoomSpecifications.filter(
+            (roomSpecification) => roomSpecification.id !== roomSpecId
+          )
+        );
       } catch (error: any) {
         console.log(error.message);
       }
@@ -422,7 +569,12 @@ function Hello() {
   class TenantApi {
     getTenantsApi = async () => {
       try {
-        const tenantsRaw = await getValuesWithSql('tenants', 'WHERE 1');
+        let useBranchId = storageManager.get('SelectedBranchId');
+
+        const tenantsRaw = await getValuesWithSql(
+          'tenants',
+          `WHERE 1 AND branchId = '${useBranchId}'`
+        );
         if (tenantsRaw) {
           const tenants = await Promise.all(
             tenantsRaw.map(async (tenant: tenant) => {
@@ -432,6 +584,7 @@ function Hello() {
                 phoneNumber: tenant.phoneNumber,
                 phoneNumber2: tenant.phoneNumber2 || '',
                 email: tenant.email || '',
+                description: tenant.description || '',
                 SelectedAgreement: tenant.SelectedAgreement,
                 RentingOrOut: tenant.RentingOrOut,
                 startTime: tenant.startTime,
@@ -440,6 +593,7 @@ function Hello() {
                 TIN: tenant.TIN || '',
                 RentReason: tenant.RentReason || '',
                 AddedTime: tenant.AddedTime,
+                Currency: tenant.Currency || GetDefaultCurrency(),
               };
             })
           );
@@ -455,6 +609,7 @@ function Hello() {
       phoneNumber: string,
       phoneNumber2: string,
       email: string,
+      description: string,
       SelectedAgreement: string,
       RentingOrOut: string,
       startTime: number,
@@ -462,7 +617,8 @@ function Hello() {
       agreedPrice: string,
       TIN: string,
       RentReason: string,
-      AddedTime: number
+      AddedTime: number,
+      Currency: string
     ) => {
       try {
         await addValue(
@@ -473,6 +629,7 @@ function Hello() {
             phoneNumber: phoneNumber,
             phoneNumber2: phoneNumber2,
             email: email,
+            description: description,
             SelectedAgreement: SelectedAgreement,
             RentingOrOut: RentingOrOut,
             startTime: new Date(startTime).getTime(),
@@ -483,6 +640,8 @@ function Hello() {
             RentReason: RentReason,
             AddedTime: AddedTime,
             userId: SelectedUserId,
+            branchId: SelectedBranchId,
+            Currency: Currency || GetDefaultCurrency(),
           },
           setChangeMade
         );
@@ -507,8 +666,8 @@ function Hello() {
           setChangeMade,
           getOriginlPropertyValue(TenantList, tenantId, propertyName)
         );
-        this.getTenantsApi();
-        roomAPI.getRoomFromApi();
+        // this.getTenantsApi();
+        //roomAPI.getRoomFromApi();
       } catch (error: any) {
         console.log(error.message);
       }
@@ -533,72 +692,6 @@ function Hello() {
     };
   }
   class RoomPaymentInfoApi {
-    getRoomPaymentsApi = async (roomId: string) => {
-      const roomPaymentsRaw = await getValuesWithSql(
-        'room_pay_info',
-        `WHERE roomId = '${roomId}'`
-      );
-      if (roomPaymentsRaw) {
-        return roomPaymentsRaw.map((roomPayment: RoomPayInfo) => {
-          return {
-            id: roomPayment.id,
-            roomId: roomPayment.roomId,
-            Day: roomPayment.Day,
-            Paid: roomPayment.Paid,
-            Value: roomPayment.Value,
-          };
-        });
-      }
-    };
-    addRoomPaymentApi = async (
-      id: string,
-      roomId: string,
-      Day: string,
-      Paid: string,
-      Value: number
-    ) => {
-      try {
-        await addValue(
-          'room_pay_info',
-          {
-            id: id,
-            roomId: roomId,
-            Day: Day,
-            Paid: Paid,
-            Value: Value,
-            userId: SelectedUserId,
-          },
-          setChangeMade
-        );
-        await roomAPI.getRoomFromApi();
-      } catch (error: any) {
-        console.log(error.message);
-      }
-    };
-    addRoomPaymentApiWithOutRefresh = async (
-      id: string,
-      roomId: string,
-      Day: string,
-      Paid: boolean,
-      Value: number
-    ) => {
-      try {
-        await addValue(
-          'room_pay_info',
-          {
-            id: id,
-            roomId: roomId,
-            Day: Day,
-            Paid: Paid,
-            Value: Value,
-            userId: SelectedUserId,
-          },
-          setChangeMade
-        );
-      } catch (error: any) {
-        console.log(error.message);
-      }
-    };
     editRoomPaymentApi = async (
       roomPaymentId: string,
       propertyName: string,
@@ -676,7 +769,7 @@ function Hello() {
       try {
         const pastTenantReviewRaw = await getValuesWithSql(
           'PastTenantsForRoom',
-          `WHERE 1`
+          `WHERE 1 AND branchId = '${SelectedBranchId}'`
         );
 
         if (pastTenantReviewRaw) {
@@ -696,6 +789,7 @@ function Hello() {
                 Stars: pastTenantReview.Stars,
                 description: pastTenantReview.description,
                 endReason: pastTenantReview.endReason,
+                Currency: pastTenantReview.Currency,
               };
             }
           );
@@ -712,7 +806,12 @@ function Hello() {
   class BrokerApi {
     getBrokersApi = async () => {
       try {
-        const brokersRaw = await getValuesWithSql('brokers', 'WHERE 1');
+        let useBranchId = storageManager.get('SelectedBranchId');
+
+        const brokersRaw = await getValuesWithSql(
+          'brokers',
+          `WHERE 1 AND branchId = '${useBranchId}'`
+        );
         if (brokersRaw) {
           const brokers = brokersRaw.map((broker: BrokerType) => {
             return {
@@ -738,7 +837,7 @@ function Hello() {
       try {
         await addValue(
           'brokers',
-          { ...broker, userId: SelectedUserId },
+          { ...broker, userId: SelectedUserId, branchId: SelectedBranchId },
           setChangeMade
         );
         await this.getBrokersApi();
@@ -793,6 +892,7 @@ function Hello() {
             recommendedTenantId,
             AddedTime,
             AgreedCommission,
+            branchId: SelectedBranchId,
             userId: SelectedUserId,
           },
           setChangeMade
@@ -805,7 +905,7 @@ function Hello() {
       try {
         const brokerRecommendationsRaw = await getValuesWithSql(
           'brokersRecommendationList',
-          'WHERE 1'
+          `WHERE 1 AND branchId = '${SelectedBranchId}'`
         );
         if (brokerRecommendationsRaw) {
           const brokerRecommendations = brokerRecommendationsRaw.map(
@@ -828,7 +928,9 @@ function Hello() {
   class AgreementApi {
     getAgreementsApi = async () => {
       try {
-        const agreementsRaw = await getValuesWithSql('agreements', 'WHERE 1');
+        const agreementsRaw = AllAgreements.filter(
+          (agreement) => agreement.branchId === SelectedBranchId
+        );
         if (agreementsRaw) {
           return agreementsRaw.map((agreement: agreements) => ({
             id: agreement.id,
@@ -851,9 +953,8 @@ function Hello() {
 
     getAgreementByIdApi = async (agreementId: string) => {
       try {
-        const agreement = await getValuesWithSql(
-          'agreements',
-          `WHERE id = '${agreementId}'`
+        const agreement = AllAgreements.find(
+          (agreement) => agreement.id === agreementId
         );
         if (agreement && agreement.length > 0) {
           return {
@@ -877,9 +978,8 @@ function Hello() {
 
     getAgreementsByRoomIdApi = async (roomId: string) => {
       try {
-        const agreements = await getValuesWithSql(
-          'agreements',
-          `WHERE roomId = '${roomId}'`
+        const agreements = AllAgreements.filter(
+          (agreement) => agreement.roomId === roomId
         );
         if (agreements && agreements.length > 0) {
           return agreements.map((agreement: agreements) => ({
@@ -894,6 +994,7 @@ function Hello() {
             Memo: agreement.Memo,
             RentReserved: agreement.RentReserved,
             representative: agreement.representative,
+            Currency: agreement.Currency,
           }));
         }
         return [];
@@ -917,6 +1018,13 @@ function Hello() {
           setChangeMade,
           originalValue
         );
+        setAllAgreements((prev) =>
+          prev.map((agreement) =>
+            agreement.id === agreementId
+              ? { ...agreement, [propertyName]: newValue }
+              : agreement
+          )
+        );
       } catch (error: any) {
         console.log(error.message);
       }
@@ -925,6 +1033,9 @@ function Hello() {
     deleteAgreementApi = async (agreementId: string) => {
       try {
         await deleteValue('agreements', agreementId);
+        setAllAgreements((prev) =>
+          prev.filter((agreement) => agreement.id !== agreementId)
+        );
       } catch (error: any) {
         console.log(error.message);
       }
@@ -941,7 +1052,8 @@ function Hello() {
       paymentCycleType: string,
       Memo: string,
       RentReserved: number,
-      representative: string
+      representative: string,
+      Currency: string
     ) => {
       try {
         await addValue(
@@ -959,9 +1071,30 @@ function Hello() {
             RentReserved,
             representative,
             userId: SelectedUserId,
+            branchId: SelectedBranchId,
+            Currency,
           },
           setChangeMade
         );
+        setAllAgreements((prev) => [
+          ...prev,
+          {
+            id,
+            roomId,
+            tenantId,
+            startTime,
+            endTime,
+            signTime,
+            agreedPrice,
+            paymentCycleType,
+            Memo,
+            RentReserved,
+            representative,
+            userId: SelectedUserId,
+            branchId: SelectedBranchId,
+            Currency,
+          },
+        ]);
       } catch (error: any) {
         console.log(error.message);
       }
@@ -977,30 +1110,154 @@ function Hello() {
   const agreementApi = new AgreementApi();
   // On start
   useEffect(() => {
-    RefreshDataFromSqlite();
+    const init = async () => {
+      const branchId = storageManager.get('SelectedBranchId');
+      setSelectedBranchId(branchId);
+      setBranches(storageManager.get('Branches'));
+
+      //RefreshDataFromSqlite();
+    };
+    init();
   }, []);
-  const RefreshDataFromSqlite = () => {
-    roomAPI.getRoomFromApi();
-    brokerApi.getBrokersApi();
-    tenantAPI.getTenantsApi();
-    pastTenantReviewApi.getPastTenantReviewLatestApi();
-    brokersRecommendationListApi.getBrokerRecommendationsFromApi();
+  const [MainSqliteRefreshLoading, setMainSqliteRefreshLoading] =
+    useState(false);
+  const RefreshDataFromSqlite = async () => {
+    setMainSqliteRefreshLoading(true);
+    if (!navigator.onLine) {
+      setBranches(storageManager.get('Branches'));
+    } else {
+      await fetchBranches();
+    }
+
+    const branchId = storageManager.get('SelectedBranchId');
+    setSelectedBranchId(branchId);
+    if (branchId) {
+      try {
+        const userId = storageManager.get('users')[0].id;
+        const branchId = storageManager.get('SelectedBranchId');
+
+        const AllRoomPayInfo2 = await getValuesWithSql(
+          'room_pay_info',
+          `WHERE userId = '${userId}' AND branchId = '${branchId}'`
+        );
+        setAllRoomPayInfo(AllRoomPayInfo2);
+        const AllTenants2 = await getValuesWithSql(
+          'tenants',
+          `WHERE userId = '${userId}' AND branchId = '${branchId}'`
+        );
+        setAllTenants(AllTenants2);
+        const AllUtilityPayments2 = await getValuesWithSql(
+          'utility_payments',
+          `WHERE userId = '${userId}' AND branchId = '${branchId}'`
+        );
+        setAllUtilityPayments(AllUtilityPayments2);
+        const AllAgreement2 = await getValuesWithSql(
+          'agreements',
+          `WHERE userId = '${userId}' AND branchId = '${branchId}'`
+        );
+        setAllAgreements(AllAgreement2);
+        const utilityPaymentsSettings2 = await getValuesWithSql(
+          'utility_payments_settings',
+          `WHERE userId = '${userId}' AND branchId = '${branchId}'`
+        );
+        setAllUtilityPaymentsSettings(utilityPaymentsSettings2);
+        const AllEmailTemplates2 = await getValuesWithSql(
+          'email_templates',
+          `WHERE userId = '${userId}'`
+        );
+        setAllEmailTemplates(AllEmailTemplates2);
+        const AllSmsTemplates2 = await getValuesWithSql(
+          'sms_templates',
+          `WHERE userId = '${userId}'`
+        );
+        setAllSmsTemplates(AllSmsTemplates2);
+        const AllRoomSpecifications2 = await getValuesWithSql(
+          'room_specifications',
+          `WHERE userId = '${userId}' AND branchId = '${branchId}'`
+        );
+
+        setAllRoomSpecifications(AllRoomSpecifications2);
+        const AllNotificationTemplateSelection2 = await getValuesWithSql(
+          'notification_template_selections',
+          `WHERE userId = '${userId}' AND branchId = '${branchId}'`
+        );
+        setAllNotificationTemplateSelections(AllNotificationTemplateSelection2);
+        const AllRoomPayInfoHistory2 = await getValuesWithSql(
+          'room_pay_info_history',
+          `WHERE userId = '${userId}' AND branchId = '${branchId}'`
+        );
+        setAllRoomPayInfoHistory(AllRoomPayInfoHistory2);
+        const AllExpenses2 = await getValuesWithSql(
+          'expenses',
+          `WHERE userId = '${userId}' AND branchId = '${branchId}'`
+        );
+        setAllExpenses(AllExpenses2);
+
+        roomAPI.getRoomFromApi(
+          AllRoomSpecifications2,
+          utilityPaymentsSettings2,
+          AllRoomPayInfo2,
+          AllAgreement2
+        );
+        brokerApi.getBrokersApi();
+        tenantAPI.getTenantsApi();
+        pastTenantReviewApi.getPastTenantReviewLatestApi();
+        brokersRecommendationListApi.getBrokerRecommendationsFromApi();
+      } catch (error: any) {
+        alert('Error getting data: ' + error.message);
+        console.log(error.message);
+      }
+    } else {
+      if (!storageManager.get('LockBranchToPc'))
+        setViewBranchManagementPage(true);
+      else {
+        setViewBranchManagementPage(true);
+        setViewBranchManagementPageNONAdm(true);
+      }
+    }
+
+    getBranchName(branchId);
+    setMainSqliteRefreshLoading(false);
   };
-  const [SelectedPage, setSelectedPage] = useState<
-    | 'Dashboard'
-    | 'People'
-    | 'Rooms'
-    | 'Calendar'
-    | 'Settings'
-    | 'Database'
-    | 'Tools'
-  >('Rooms');
+  // Fetch exchange rates on component mount
+  useEffect(() => {
+    fetchExchangeRates();
+  }, []);
+
+  const fetchExchangeRates = async () => {
+    try {
+      // Check last sync time
+      const lastUpdate = storageManager.get('lastExchangeRateUpdate');
+      const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
+
+      // Fetch if online and either:
+      // - lastUpdate is undefined
+      // - lastUpdate was more than a day ago
+      if (navigator.onLine && (!lastUpdate || lastUpdate < oneDayAgo)) {
+        const exchangeRates2 = await getValuesWithSql_Online(
+          'Exchange_RatesUSDtoETB',
+          'WHERE 1'
+        );
+        if (exchangeRates2.length > 0) {
+          const latestRate = exchangeRates2;
+          storageManager.set('exchangeRate', latestRate);
+          storageManager.set(
+            'lastExchangeRateUpdate',
+            latestRate[latestRate.length - 1].id * 1000
+          );
+          setRefresh(Refresh + 1);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching exchange rates:', error);
+    }
+  };
 
   const [ThemeMode, setThemeMode] = useState<'light' | 'dark'>('light');
 
   useEffect(() => {
     const get = async () => {
-      const storedTheme = window.electron.store.get('ThemeMode');
+      const storedTheme = storageManager.get('ThemeMode');
       if (storedTheme) {
         setThemeMode(storedTheme);
         applyTheme(storedTheme);
@@ -1012,7 +1269,7 @@ function Hello() {
   }, []);
 
   const ChangeTheme = async (theme: 'light' | 'dark') => {
-    window.electron.store.set('ThemeMode', theme);
+    storageManager.set('ThemeMode', theme);
     setThemeMode(theme);
     applyTheme(theme);
   };
@@ -1029,9 +1286,11 @@ function Hello() {
   const [isSignedIn, setisSignedIn] = useState(false);
   const signOutUserAndRestart = async () => {
     await SignOutUser();
-    window.electron.store.set('MainBackupPath', '');
-    window.electron.store.set('IsOnBackup', false);
-    window.electron.store.set('users', []);
+    storageManager.set('MainBackupPath', '');
+    storageManager.set('SelectedBranchId', '');
+    storageManager.set('MainBackupPath', '');
+    storageManager.set('LockBranchToPc', false);
+    storageManager.set('users', []);
     setRefresh(Refresh + 1);
     setisSignedIn(false);
   };
@@ -1048,15 +1307,20 @@ function Hello() {
         setChangeMade(OfflineChanges.length);
       }
     };
-    getChanges();
+    if (window.electron) {
+      getChanges();
+    }
   }, [ChangeMade]);
   const [UploadingLoadingEffect, setUploadingLoadingEffect] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [UploadAssetsProgress, setUploadAssetsProgress] = useState(0);
+
   const handleUploadChanges = async () => {
     if (!UploadingLoadingEffect) {
-      setUploadingLoadingEffect(true);
       setUploadProgress(0);
+      setUploadingLoadingEffect(true);
       setIsSyncing(true);
+      setSyncProgress(0);
 
       if (navigator.onLine) {
         const offline_changes = await getValuesWithSql(
@@ -1090,14 +1354,23 @@ function Hello() {
     }
   };
   useEffect(() => {
-    if (uploadProgress >= 1 && uploadProgress <= 99) {
-      setSyncProgress(uploadProgress);
-      setIsSyncing(true);
-    }
+    // @ts-ignore
+    window.handleUploadChanges = handleUploadChanges;
+  }, [handleUploadChanges]);
+  useEffect(() => {
+    if (UploadingLoadingEffect)
+      if (uploadProgress >= 0 && uploadProgress <= 99) {
+        setSyncProgress(uploadProgress);
+        setIsSyncing(true);
+      } else {
+        setSyncProgress(0);
+        setIsSyncing(false);
+      }
   }, [uploadProgress]);
   //Initial syncing
   const [isSyncing, setIsSyncing] = useState(false);
   const [SyncProgress, setSyncProgress] = useState(0);
+  const [changeProgress, setChangeProgress] = useState(0);
   const colors = {
     primary: 'var(--Primary-Color)',
     secondary: 'var(--Secondary-Color)',
@@ -1124,121 +1397,778 @@ function Hello() {
           style={{
             backgroundColor: colors.background,
             color: colors.text,
-            padding: '20px',
-            borderRadius: '10px',
-            boxShadow: '0 0 10px rgba(0, 0, 0, 0.3)',
+            padding: 'var(--20px-V)',
+            borderRadius: 'var(--10px-V)',
+            boxShadow: '0 0 var(--10px-V) rgba(0, 0, 0, 0.3)',
             textAlign: 'center',
           }}
         >
           <div
             style={{
-              border: `4px solid ${colors.secondary}`,
-              borderTop: `4px solid ${colors.primary}`,
+              border: `var(--4px-V) solid ${colors.secondary}`,
+              borderTop: `var(--4px-V) solid ${colors.primary}`,
               borderRadius: '50%',
-              width: '40px',
-              height: '40px',
+              width: 'var(--40px-V)',
+              height: 'var(--40px-V)',
               animation: 'spin 1s linear infinite',
-              margin: '0 auto 10px',
+              margin: '0 auto var(--10px-V)',
             }}
           />
           <p style={{ margin: 0 }}>
-            {uploadProgress >= 1 && uploadProgress <= 50
-              ? 'Uploading...'
-              : 'Syncing...'}{' '}
+            {UploadingLoadingEffect ? 'Uploading...' : 'Syncing...'}{' '}
             {SyncProgress.toFixed(1)}%
           </p>
         </div>
       </div>
     );
   };
+
+  const [AppUserManagerShow, setAppUserManagerShow] = useState(false);
+  const [SelectedAppUser, setSelectedAppUser] = useState<appUser | null>(null);
+  const [AppUserManagerPromptPassword, setAppUserManagerPromptPassword] =
+    useState(false);
+  const [SelectedPage, setSelectedPage] = useState<
+    | 'Rooms'
+    | 'People'
+    | 'Dashboard'
+    | 'Calendar'
+    | 'Settings'
+    | 'Database'
+    | 'Tools'
+    | 'non'
+  >(() => {
+    const privileges = getUserPrivileges(SelectedAppUser);
+    if (privileges.viewDashboard) return 'Dashboard';
+    if (privileges.viewRoomsPage) return 'Rooms';
+    if (privileges.viewPeoplesPage) return 'People';
+    if (privileges.viewCalendar) return 'Calendar';
+    if (privileges.viewDatabase) return 'Database';
+    if (privileges.viewToolsPage) return 'Tools';
+    return 'non'; // Default fallback
+  });
+
+  const [ViewBranchManagementPage, setViewBranchManagementPage] =
+    useState(true);
+  const [ViewBranchManagementPageNONAdm, setViewBranchManagementPageNONAdm] =
+    useState(false);
+  const [SelectedBranchId, setSelectedBranchId] = useState('');
+
+  const privileges = getUserPrivileges(SelectedAppUser);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSelectedPage((prevPage) => {
+        if (privileges.viewDashboard) return 'Dashboard';
+        if (privileges.viewRoomsPage) return 'Rooms';
+        if (privileges.viewPeoplesPage) return 'People';
+        if (privileges.viewCalendar) return 'Calendar';
+        if (privileges.viewDatabase) return 'Database';
+        if (privileges.viewToolsPage) return 'Tools';
+        return prevPage;
+      });
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, [SelectedAppUser]);
+  const [branchName, setBranchName] = useState('');
+
+  const getBranchName = async (branchId: string) => {
+    if (navigator.onLine) {
+      try {
+        console.log(storageManager.get('Branches'), 'branches');
+        const branch = storageManager
+          .get('Branches')
+          .find((b) => b.id === branchId);
+
+        if (branch) {
+          setBranchName(branch.name);
+        } else {
+          console.error('Branch not found');
+        }
+      } catch (error) {
+        console.error('Error fetching branch name:', error);
+        setBranchName(storageManager.get('BranchName'));
+      }
+    } else {
+      setBranchName(storageManager.get('BranchName'));
+    }
+  };
+  const generateRecurringExpenses = (
+    expenses: expenses[],
+    startDate: Date,
+    endDate: Date
+  ): expenses[] => {
+    let allExpenses: expenses[] = [];
+
+    expenses.forEach((expense) => {
+      if (expense.doesReoccur) {
+        const StartExpenseDate = new Date(expense.date);
+        StartExpenseDate.setHours(0, 0, 0, 0);
+
+        // Get the actual start date (either expense start date or period start date)
+        const effectiveStartDate = new Date(StartExpenseDate.getTime());
+
+        let currentDate = effectiveStartDate;
+        let expenseCount = 0;
+
+        // Calculate end date based on expense settings
+        const finalEndDate = expense.HasEndDate
+          ? new Date(Math.min(expense.EndDate, endDate.getTime()))
+          : endDate;
+
+        while (currentDate <= finalEndDate && expenseCount < 100) {
+          const expenseId = `${expense.id}-${currentDate.getTime()}`;
+
+          // Only add if the expense date falls within our range
+          if (
+            currentDate >= startDate &&
+            (currentDate <= endDate || expense.HasEndDate)
+          ) {
+            allExpenses.push({
+              ...expense,
+              id: expenseId,
+              date: currentDate.getTime(),
+            });
+          }
+
+          // Calculate next expense date based on recurring type
+          switch (expense.recurringType) {
+            case 'Day':
+              // Add days based on recurringCycle
+              currentDate = addDays(currentDate, expense.recurringCycle);
+              break;
+            case 'Monthly':
+              // Add one month to current date
+              const nextMonthDate = new Date(currentDate);
+              nextMonthDate.setMonth(nextMonthDate.getMonth() + 1);
+              currentDate = nextMonthDate;
+              break;
+
+            case 'Yearly':
+              // Preserve month and day when adding years
+              const nextYearDate = new Date(currentDate);
+              const originalMonth = nextYearDate.getMonth();
+              const originalDay = nextYearDate.getDate();
+              nextYearDate.setFullYear(nextYearDate.getFullYear() + 1);
+              // Ensure we keep the same month and day
+              nextYearDate.setMonth(originalMonth);
+              nextYearDate.setDate(originalDay);
+              currentDate = nextYearDate;
+              console.log(currentDate, 'lllllllllll');
+              break;
+
+            default:
+              console.warn(
+                `Unknown recurring type: ${expense.recurringType}, defaulting to monthly`
+              );
+              const defaultNextDate = new Date(currentDate);
+              defaultNextDate.setMonth(defaultNextDate.getMonth() + 1);
+          }
+
+          expenseCount++;
+        }
+      } else {
+        // For non-recurring expenses, only include if within date range
+        const expenseDate = new Date(expense.date);
+        expenseDate.setHours(0, 0, 0, 0);
+
+        if (expenseDate >= startDate && expenseDate <= endDate) {
+          allExpenses.push({
+            ...expense,
+            date: expenseDate.getTime(),
+          });
+        }
+      }
+    });
+
+    // Sort expenses by date
+    return allExpenses.sort((a, b) => a.date - b.date);
+  };
+  const [getBranchData, setGetBranchData] = useState(false); // Control whether to fetch detailed branch data
+  const processValueByCurrency = (
+    value: number,
+    currency: string | undefined,
+    date: number
+  ) => {
+    const { rate, direction } = getRateByDate(date);
+    console.log(value, currency || GetDefaultCurrency());
+    if (!rate) {
+      console.warn('No rate available, using current rate as fallback');
+      return 0; // Return 0 if no rate found to be consistent
+    }
+    const currencyDisplay = GetDefaultCurrency();
+
+    // For ALL_ETB, convert USD to ETB
+    if (currencyDisplay === 'ETB') {
+      if (currency === 'USD') {
+        return value * rate;
+      }
+      return value;
+    }
+
+    // For ALL_USD, convert ETB to USD
+    if (currencyDisplay === 'USD') {
+      if (currency === 'ETB') {
+        return value / rate;
+      }
+      return value;
+    }
+
+    return 0;
+  };
+  const fetchBranches = async () => {
+    if (navigator.onLine) {
+      if (storageManager.get('users')?.[0]) {
+        const branches = await getValuesWithSql_Online(
+          'branches',
+          `WHERE userId = '${storageManager.get('users')[0].id}'`
+        );
+        if (branches)
+          if (getBranchData) {
+            const branchesWithData = await Promise.all(
+              branches.map(async (branch: BranchType) => {
+                const allRooms =
+                  (await getValuesWithSql_Online(
+                    'rooms',
+                    `WHERE branchId = '${branch.id}'`
+                  )) || [];
+
+                const allTenants =
+                  (await getValuesWithSql_Online(
+                    'tenants',
+                    `WHERE branchId = '${branch.id}'`
+                  )) || [];
+
+                // Get payments for current month
+                const today = new Date();
+                const monthStart = new Date(
+                  today.getFullYear(),
+                  today.getMonth(),
+                  1
+                );
+                const monthEnd = new Date(
+                  today.getFullYear(),
+                  today.getMonth() + 1,
+                  0
+                );
+
+                const actualPayments = await getValuesWithSql_Online(
+                  'room_pay_info',
+                  `WHERE Day >= ${monthStart.getTime()} 
+                 AND Day <= ${monthEnd.getTime()} 
+                 AND branchId = '${branch.id}'
+                 AND Paid = 1`
+                );
+
+                const historicalPayments = await getValuesWithSql_Online(
+                  'room_pay_info_history',
+                  `WHERE Day >= ${monthStart.getTime()} 
+                 AND Day <= ${monthEnd.getTime()} 
+                 AND branchId = '${branch.id}'
+                 AND Paid = 1`
+                );
+
+                // Process payments with currency conversion
+                const monthlyRevenue = [
+                  ...actualPayments,
+                  ...historicalPayments,
+                ].reduce((sum, payment) => {
+                  const convertedValue = processValueByCurrency(
+                    parseFloat(payment.Value),
+                    allRooms.find((r: RoomType) => r.id === payment.roomId)
+                      ?.Currency || GetDefaultCurrency(),
+                    payment.Day
+                  );
+                  return sum + convertedValue;
+                }, 0);
+
+                // Get and process expenses with currency conversion
+                const branchExpenses =
+                  (await getValuesWithSql_Online(
+                    'expenses',
+                    `WHERE branchId = '${branch.id}'`
+                  )) || [];
+
+                const allMonthExpenses = generateRecurringExpenses(
+                  branchExpenses,
+                  monthStart,
+                  monthEnd
+                );
+
+                const monthlyExpenses = allMonthExpenses
+                  .filter(
+                    (e) =>
+                      new Date(e.date) >= monthStart &&
+                      new Date(e.date) <= monthEnd
+                  )
+                  .reduce((sum, expense) => {
+                    const convertedValue = processValueByCurrency(
+                      parseFloat(expense.price || '0'),
+                      expense.Currency || GetDefaultCurrency(),
+                      new Date(expense.date).getTime()
+                    );
+                    return sum + convertedValue;
+                  }, 0);
+
+                const monthlyProfit = monthlyRevenue - monthlyExpenses;
+
+                return {
+                  ...branch,
+                  totalRooms: allRooms.length,
+                  totalFloors:
+                    Math.max(...allRooms.map((room) => room.floor)) ===
+                    -Infinity
+                      ? 0
+                      : Math.max(...allRooms.map((room) => room.floor)),
+                  totalTenants: allTenants.length,
+                  occupiedRooms: allRooms.filter((room) => room.tenantId !== '')
+                    .length,
+                  vacantRooms: allRooms.filter((room) => room.tenantId === '')
+                    .length,
+                  monthlyRevenue,
+                  monthlyExpenses,
+                  monthlyProfit,
+                  currency: GetDefaultCurrency(), // Add currency information
+                  unpaidPastPayments: 0,
+                  userAccountsWhichHaveAccess: [],
+                };
+              })
+            );
+
+            setBranches(branchesWithData);
+            storageManager.set('Branches', branchesWithData);
+          } else {
+            setBranches(branches);
+            storageManager.set('Branches', branches);
+          }
+      }
+    } else {
+      if (storageManager.get('Branches')) {
+        setBranches(storageManager.get('Branches'));
+      }
+    }
+  };
+  const [Branches, setBranches] = useState<BranchTypeWithData[]>([]);
+
+  useEffect(() => {
+    const perfObserver = new PerformanceObserver((list) => {
+      for (const entry of list.getEntries()) {
+        if (entry.duration > 100) {
+          // Log slow renders
+          console.warn('Slow render:', entry);
+        }
+      }
+    });
+
+    perfObserver.observe({ entryTypes: ['measure'] });
+
+    return () => perfObserver.disconnect();
+  }, []);
+  const [ShowAdvancedUpload, setShowAdvancedUpload] = useState(false);
+
   return (
-    <>
-      {SyncProgress >= 1 && SyncProgress <= 99 && (
+    <AlertProvider>
+      <ConfirmProvider>
+        {' '}
         <>
-          <div className="progress-container">
+          {' '}
+          {SyncProgress >= 1 && SyncProgress <= 99 && (
+            <>
+              <div className="progress-container">
+                <div
+                  className="progress-bar"
+                  style={{
+                    width: `${SyncProgress}%`,
+                    position: 'absolute',
+                    zIndex: 10000,
+                  }}
+                ></div>
+              </div>
+            </>
+          )}{' '}
+          {MainSqliteRefreshLoading && (
             <div
-              className="progress-bar"
               style={{
-                width: `${SyncProgress}%`,
                 position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                backgroundColor: 'rgba(0,0,0,0.5)',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+                alignItems: 'center',
                 zIndex: 10000,
               }}
-            ></div>
-          </div>
-        </>
-      )}{' '}
-      <SyncLoadingPopup colors={colors} isVisible={isSyncing} />
-      <AccountManager
-        Refresh={Refresh}
-        isSignedIn={isSignedIn}
-        setisSignedIn={setisSignedIn}
-        setChangeMade={setChangeMade}
-        SelectedUserId={SelectedUserId}
-        setSelectedUserId={setSelectedUserId}
-        setIsSyncing={setIsSyncing}
-        RefreshDataFromSqlite={RefreshDataFromSqlite}
-        setSyncProgress={setSyncProgress}
-        signOutUserAndRestart={signOutUserAndRestart}
-      >
-        <>
-          <NavBar
-            RefreshDataFromSqlite={RefreshDataFromSqlite}
-            setIsSyncing={setIsSyncing}
-            SelectedUserId={SelectedUserId}
-            isSyncing={isSyncing}
-            setSyncProgress={setSyncProgress}
-            ChangeMade={ChangeMade}
-            handleUpload={handleUploadChanges}
-            uploadProgress={uploadProgress}
-            UploadingLoadingEffect={UploadingLoadingEffect}
-            ProfileState={false}
-            SelectedPage={SelectedPage}
-            setSelectedPage={setSelectedPage}
-            Image={''}
-            ShopName={'The company'}
-            ThemeMode={ThemeMode}
-            setThemeMode={ChangeTheme}
-            ChangeTheme={ChangeTheme}
-            signOutUserAndRestart={signOutUserAndRestart}
-          ></NavBar>
-          <MainPage
-            roomSpecificationAPI={roomSpecificationAPI}
-            SelectedPage={SelectedPage}
-            setSelectedPage={setSelectedPage}
-            RoomList={RoomList}
-            setRoomList={setRoomList}
-            setTenantList={setTenantList}
-            TenantList={TenantList}
-            roomAPI={roomAPI}
-            tenantAPI={tenantAPI}
-            roomPaymentInfoApi={roomPaymentInfoApi}
-            isUpdatingTenantList={isUpdatingTenantList}
-            setIsUpdatingTenantList={setIsUpdatingTenantList}
-            pastTenantReviewApi={pastTenantReviewApi}
-            brokerApi={brokerApi}
-            BrokerList={BrokerList}
-            setBrokerList={setBrokerList}
-            PastTenantReviews={PastTenantReviews}
-            brokersRecommendationListApi={brokersRecommendationListApi}
-            RefreshDataFromSqlite={RefreshDataFromSqlite}
-            BrokerRecommendationList={BrokerRecommendationList}
-            agreementApi={agreementApi}
+            >
+              <img
+                src={loadingGif}
+                alt="Loading..."
+                style={{ width: 'var(--100px-V)', height: 'var(--100px-V)' }}
+              />
+              <p
+                style={{
+                  color: 'white',
+                  fontSize: 'var(--16px-V)',
+                  fontWeight: '500',
+                }}
+              >
+                Refreshing Data
+              </p>
+            </div>
+          )}
+          <SyncLoadingPopup colors={colors} isVisible={isSyncing} />
+          <AccountManager
+            Refresh={Refresh}
+            isSignedIn={isSignedIn}
+            setisSignedIn={setisSignedIn}
             setChangeMade={setChangeMade}
             SelectedUserId={SelectedUserId}
-          />
+            setSelectedUserId={setSelectedUserId}
+            setIsSyncing={setIsSyncing}
+            RefreshDataFromSqlite={RefreshDataFromSqlite}
+            setSyncProgress={setSyncProgress}
+            signOutUserAndRestart={signOutUserAndRestart}
+            setAppUserManagerShow={setAppUserManagerShow}
+            AppUserManagerShow={AppUserManagerShow}
+            AppUserManagerPromptPassword={AppUserManagerPromptPassword}
+            setAppUserManagerPromptPassword={setAppUserManagerPromptPassword}
+            setSelectedAppUser={setSelectedAppUser}
+            SelectedAppUser={SelectedAppUser}
+            ViewBranchManagementPage={ViewBranchManagementPage}
+            setViewBranchManagementPage={setViewBranchManagementPage}
+            SelectedBranchId={SelectedBranchId}
+            setSelectedBranchId={setSelectedBranchId}
+            setViewBranchManagementPageNONAdm={
+              setViewBranchManagementPageNONAdm
+            }
+            ViewBranchManagementPageNONAdm={ViewBranchManagementPageNONAdm}
+            fetchBranches={fetchBranches}
+            Branches={Branches}
+            setBranches={setBranches}
+            setBranchName={setBranchName}
+            setGetBranchData={setGetBranchData}
+            getBranchData={getBranchData}
+            ProvidedInitialUsername={username}
+            ForceSignUp={signup}
+          >
+            <>
+              <NavBar
+                RefreshDataFromSqlite={RefreshDataFromSqlite}
+                UploadAssetsProgress={UploadAssetsProgress}
+                setUploadAssetsProgress={setUploadAssetsProgress}
+                setIsSyncing={setIsSyncing}
+                SelectedUserId={SelectedUserId}
+                isSyncing={isSyncing}
+                setSyncProgress={setSyncProgress}
+                ChangeMade={ChangeMade}
+                handleUpload={handleUploadChanges}
+                uploadProgress={uploadProgress}
+                UploadingLoadingEffect={UploadingLoadingEffect}
+                ProfileState={false}
+                SelectedPage={SelectedPage}
+                setSelectedPage={setSelectedPage}
+                ShowAdvancedUpload={ShowAdvancedUpload}
+                setShowAdvancedUpload={setShowAdvancedUpload}
+                Image={''}
+                ShopName={'The company'}
+                ThemeMode={ThemeMode}
+                setViewBranchManagementPageNONAdm={
+                  setViewBranchManagementPageNONAdm
+                }
+                branchName={branchName}
+                setThemeMode={ChangeTheme}
+                ChangeTheme={ChangeTheme}
+                signOutUserAndRestart={signOutUserAndRestart}
+                setAppUserManagerShow={setAppUserManagerShow}
+                setAppUserManagerPromptPassword={
+                  setAppUserManagerPromptPassword
+                }
+                SelectedAppUser={SelectedAppUser}
+                setChangeMade={setChangeMade}
+                setViewBranchManagementPage={setViewBranchManagementPage}
+              ></NavBar>
+              <MainPage
+                roomSpecificationAPI={roomSpecificationAPI}
+                SelectedPage={SelectedPage}
+                changeProgress={changeProgress}
+                setChangeProgress={setChangeProgress}
+                setSelectedPage={setSelectedPage}
+                signOutUserAndRestart={signOutUserAndRestart}
+                RoomList={RoomList}
+                setRoomList={setRoomList}
+                setTenantList={setTenantList}
+                TenantList={TenantList}
+                roomAPI={roomAPI}
+                tenantAPI={tenantAPI}
+                roomPaymentInfoApi={roomPaymentInfoApi}
+                isUpdatingTenantList={isUpdatingTenantList}
+                setIsUpdatingTenantList={setIsUpdatingTenantList}
+                pastTenantReviewApi={pastTenantReviewApi}
+                brokerApi={brokerApi}
+                BrokerList={BrokerList}
+                setBrokerList={setBrokerList}
+                PastTenantReviews={PastTenantReviews}
+                brokersRecommendationListApi={brokersRecommendationListApi}
+                RefreshDataFromSqlite={RefreshDataFromSqlite}
+                BrokerRecommendationList={BrokerRecommendationList}
+                agreementApi={agreementApi}
+                setChangeMade={setChangeMade}
+                SelectedAppUser={SelectedAppUser}
+                SelectedUserId={SelectedUserId}
+                SelectedBranchId={SelectedBranchId}
+              />
+              <CornerSupport />
+            </>
+          </AccountManager>
+          {/**/}
+          {tryout && (
+            <p
+              style={{
+                position: 'absolute',
+                left: '50%',
+                top: '50%',
+                transform: 'translate(50%, 50%)',
+              }}
+            >
+              THIS IS A TUTORIAL
+            </p>
+          )}
         </>
-      </AccountManager>
-      {/**/}
-    </>
+      </ConfirmProvider>
+    </AlertProvider>
+  );
+}
+import { BrowserRouter } from 'react-router-dom';
+function UserRoute() {
+  const { username } = useParams();
+  return (
+    <GlobalProvider>
+      <Hello tryout={false} username={username || 'none_provided'} />
+    </GlobalProvider>
   );
 }
 
 export default function App() {
+  if (window.electron) {
+    return (
+      <Router>
+        <Routes>
+          <Route
+            path="/"
+            element={
+              <GlobalProvider>
+                <Hello tryout={false} username={'none_provided'} signup={''}/>
+              </GlobalProvider>
+            }
+          />
+        </Routes>
+      </Router>
+    );
+  }
+
   return (
-    <Router>
+    <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Hello />} />
+        <Route
+          path="/app"
+          element={
+            <GlobalProvider>
+              <Hello tryout={false} username={'none_provided'} signup={''} />
+            </GlobalProvider>
+          }
+        />{' '}
+        <Route
+          path="/signup"
+          element={
+            <GlobalProvider>
+              <Hello tryout={false} username={'none_provided'} signup={'up'} />
+            </GlobalProvider>
+          }
+        />{' '}
+        <Route
+          path="/login"
+          element={
+            <GlobalProvider>
+              <Hello tryout={false} username={'none_provided'} signup={'in'} />
+            </GlobalProvider>
+          }
+        />
+        <Route
+          path="/app/tryout"
+          element={
+            <GlobalProvider>
+              <Hello tryout={true} username={'none_provided'} signup={''} />
+            </GlobalProvider>
+          }
+        />
+        {/* <Route path="/login" element={
+          <GlobalProvider>
+            <Hello tryout={true} username={'login'}/>
+          </GlobalProvider>
+        } />
+         <Route path="/signup" element={
+          <GlobalProvider>
+            <Hello tryout={true} username={'signup'}/>
+          </GlobalProvider>
+        } />
+        <Route path="/@:username" element={<UserRoute />} /> */}
+        <Route
+          path="/"
+          element={
+            <GlobalProvider>
+              <AppABC></AppABC>
+            </GlobalProvider>
+          }
+        />
       </Routes>
-    </Router>
+    </BrowserRouter>
   );
 }
+
+import AppABC from '../../RentMaster Website/RentalSite/src/App';
+export const getUserPrivileges = (
+  selectedAppUser: appUser | null
+): {
+  viewDashboard: boolean;
+  viewPeoplesPage: boolean;
+  viewCalendar: boolean;
+  viewDatabase: boolean;
+  editDatabaseData: boolean;
+  viewToolsPage: boolean;
+  editEmailTemplates: boolean;
+  editSmsTemplates: boolean;
+  editExpenses: boolean;
+  editSettings: boolean;
+  viewRoomsPage: boolean;
+  addRoom: boolean;
+  editRoomData: boolean;
+  editRoomPayment: boolean;
+  editUtilityPayments: boolean;
+  editTenantRoomTenantInfo: boolean;
+  editTenantRoomTenantPortal: boolean;
+  editTenantRoomAgreementInfo: boolean;
+  editTenantRoomUtilitySettings: boolean;
+  editTenantRoomAttachments: boolean;
+  editTenantRoomNotificationSettings: boolean;
+  editTenantRoomTenantStay: boolean;
+  addTenant: boolean;
+  addBranch: boolean;
+} => {
+  const privilegeObject: { [key: string]: boolean } = {
+    viewDashboard: false,
+    viewPeoplesPage: false,
+    viewCalendar: false,
+    viewDatabase: false,
+    editDatabaseData: false,
+    viewToolsPage: false,
+    editEmailTemplates: false,
+    editSmsTemplates: false,
+    editExpenses: false,
+    editSettings: false,
+    viewRoomsPage: false,
+    addRoom: false,
+    editRoomData: false,
+    editRoomPayment: false,
+    editUtilityPayments: false,
+    editTenantRoomTenantInfo: false,
+    editTenantRoomTenantPortal: false,
+    editTenantRoomAgreementInfo: false,
+    editTenantRoomUtilitySettings: false,
+    editTenantRoomAttachments: false,
+    editTenantRoomNotificationSettings: false,
+    editTenantRoomTenantStay: false,
+    addTenant: false,
+    addBranch: false,
+  };
+
+  if (selectedAppUser) {
+    if (selectedAppUser.id === 'admin') {
+      Object.keys(privilegeObject).forEach((key) => {
+        privilegeObject[key] = true;
+      });
+    } else if (selectedAppUser.privileges) {
+      const userPrivileges = selectedAppUser.privileges.split(',');
+
+      userPrivileges.forEach((privilege) => {
+        switch (privilege.trim()) {
+          case 'View dashboard page':
+            privilegeObject.viewDashboard = true;
+            break;
+          case 'View peoples page':
+            privilegeObject.viewPeoplesPage = true;
+            break;
+          case 'View calendar page':
+            privilegeObject.viewCalendar = true;
+            break;
+          case 'View database page':
+            privilegeObject.viewDatabase = true;
+            break;
+          case 'edit database data':
+            privilegeObject.editDatabaseData = true;
+            break;
+          case 'View tools page':
+            privilegeObject.viewToolsPage = true;
+            break;
+          case 'edit email templates':
+            privilegeObject.editEmailTemplates = true;
+            break;
+          case 'edit sms templates':
+            privilegeObject.editSmsTemplates = true;
+            break;
+          case 'edit expenses':
+            privilegeObject.editExpenses = true;
+            break;
+          case 'edit settings':
+            privilegeObject.editSettings = true;
+            break;
+          case 'View rooms page':
+            privilegeObject.viewRoomsPage = true;
+            break;
+          case 'Add a room':
+            privilegeObject.addRoom = true;
+            break;
+          case 'Add a tenant':
+            privilegeObject.addTenant = true;
+            break;
+          case 'edit room data':
+            privilegeObject.editRoomData = true;
+            break;
+          case 'edit rent payments':
+            privilegeObject.editRoomPayment = true;
+            break;
+          case 'edit utility payments':
+            privilegeObject.editUtilityPayments = true;
+            break;
+          case 'edit tenant room tenant info':
+            privilegeObject.editTenantRoomTenantInfo = true;
+            break;
+          case 'edit tenant room tenant portal':
+            privilegeObject.editTenantRoomTenantPortal = true;
+            break;
+          case 'edit tenant room agreement info':
+            privilegeObject.editTenantRoomAgreementInfo = true;
+            break;
+          case 'edit tenant room utility settings':
+            privilegeObject.editTenantRoomUtilitySettings = true;
+            break;
+          case 'edit tenant room attachments':
+            privilegeObject.editTenantRoomAttachments = true;
+            break;
+          case 'edit tenant room notification settings':
+            privilegeObject.editTenantRoomNotificationSettings = true;
+            break;
+          case 'edit tenant room tenant stay':
+            privilegeObject.editTenantRoomTenantStay = true;
+            break;
+          case 'add a branch':
+            privilegeObject.addBranch = true;
+            break;
+        }
+      });
+    }
+  }
+
+  return privilegeObject;
+};

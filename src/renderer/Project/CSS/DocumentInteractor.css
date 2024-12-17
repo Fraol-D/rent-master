@@ -9,13 +9,13 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px;
+    padding: var(--10px-V);
   }
   
   .document-square {
-    width: 80px;
-    height: 80px;
-    border: 1px solid #ccc;
+    width: var(--80px-V);
+    height: var(--80px-V);
+    border: var(--1px-V) solid #ccc;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -46,8 +46,8 @@
   }
   
   .arrow-button img {
-    width: 20px;
-    height: 20px;
+    width: var(--20px-V);
+    height: var(--20px-V);
   }
   
   .document-viewer {
@@ -59,24 +59,24 @@
     position: relative;
     width: 50%;
     height: 100%;
-    border: 1px solid #ccc;
+    border: var(--1px-V) solid #ccc;
   }
   
   .delete-button {
     position: absolute;
-    bottom: 10px;
-    left: 10px;
+    bottom: var(--10px-V);
+    left: var(--10px-V);
   }
   
   .document-controls {
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
-    padding: 10px;
+    padding: var(--10px-V);
   }
   
   .document-controls button {
-    margin-bottom: 10px;
+    margin-bottom: var(--10px-V);
   }
   
   .fullscreen {
@@ -103,11 +103,13 @@
     height: 100%;
   } */
 .document-item {
-  padding: 3px;
-  color: rgb(255, 255, 255);
+  padding: var(--3px-V);
+  color: var(--Text-Color);
 }
 .document-itemSelected {
+  padding: var(--3px-V);
+
   background: var(--Primary-Color);
-  border-radius: 5px;
+  border-radius: var(--5px-V);
   color: black;
 }

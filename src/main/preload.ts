@@ -1,5 +1,4 @@
-// Disable no-unused-vars, broken for spread args
-/* eslint no-unused-vars: off */
+
 import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron';
 
 export type Channels =
@@ -10,7 +9,9 @@ export type Channels =
 const electronHandler = {
   sendMessage: (channel: Channels, ...args: unknown[]) => {
     ipcRenderer.send(channel, ...args);
-  },
+  },  checkFileSystemSync: (userId: string, localFileSystem: any) => 
+    ipcRenderer.invoke('check-file-system', userId, localFileSystem),
+
   store: {
     get(key: any) {
       return ipcRenderer.sendSync('electron-store-get', key);
@@ -40,9 +41,46 @@ const electronHandler = {
     once(channel: Channels, func: (...args: unknown[]) => void) {
       ipcRenderer.once(channel, (_event, ...args) => func(...args));
     },
+    removeListener: (channel: string, func: (...args: any[]) => void) => {
+      const validChannels = ['upload-progress'];
+      if (validChannels.includes(channel)) {
+        ipcRenderer.removeListener(channel, func);
+      }
+    }
   },
   showContextMenu: () => ipcRenderer.send('show-context-menu'),
   onContextMenuCommand: (callback) => ipcRenderer.on('context-menu-command', callback),
+  update: {
+    checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),
+    install: () => ipcRenderer.invoke('install-update'),
+    isReady: () => ipcRenderer.invoke('is-update-ready'),
+  },  
+  connectionMonitor: {
+    startHeartbeat: () => {
+      let heartbeatInterval = setInterval(() => {
+        ipcRenderer.send('renderer-heartbeat');
+      }, 2000);
+
+      // Clean up on window unload
+      window.addEventListener('unload', () => {
+        clearInterval(heartbeatInterval);
+      });
+    },
+    
+    onConnectionLost: (callback: () => void) => {
+      let lastHeartbeat = Date.now();
+      
+      ipcRenderer.on('main-heartbeat', () => {
+        lastHeartbeat = Date.now();
+      });
+
+      setInterval(() => {
+        if (Date.now() - lastHeartbeat > 5000) {
+          callback();
+        }
+      }, 2000);
+    },
+  },
 };
 
 contextBridge.exposeInMainWorld('electron', electronHandler);

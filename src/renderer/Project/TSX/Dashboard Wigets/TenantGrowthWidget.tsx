@@ -1,5 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { LineChart } from '@mui/x-charts/LineChart';
+import { Input } from '../Helpers/CustomReactComponents';
+import { axisClasses } from '@mui/x-charts/ChartsAxis';
 
 const TenantGrowthWidget = ({ TenantList }: { TenantList: tenant[] }) => {
   const [viewBy, setViewBy] = useState<'month' | 'year'>('month');
@@ -78,12 +80,12 @@ const TenantGrowthWidget = ({ TenantList }: { TenantList: tenant[] }) => {
   return (
     <div
       className="DashboardWigetMainContainer"
-      style={{ width: '400px', height: '165px' }}
+      style={{ width: 'var(--400px-V)', height: 'var(--165px-V)' }}
     >
       <div style={{ display: 'flex', alignItems: 'center' }}>
         <p
           className="DashboardWigetPieChartTextHeader"
-          style={{ width: '209px' }}
+          style={{ width: 'var(--209px-V)' }}
         >
           Tenant Growth
         </p>
@@ -111,6 +113,7 @@ const TenantGrowthWidget = ({ TenantList }: { TenantList: tenant[] }) => {
       </div>
       {hasNewTenants ? (
         <LineChart
+        grid={{ vertical: true, horizontal: true }}
           xAxis={[
             {
               data:
@@ -147,27 +150,20 @@ const TenantGrowthWidget = ({ TenantList }: { TenantList: tenant[] }) => {
           width={480}
           height={160}
           sx={{
-            '.MuiChartsAxis-tickLabel': {
+            [`.${axisClasses.left} .${axisClasses.label}`]: {
+              transform: 'translate(var(---35px-V), 0)',
+              color: 'var(--Text-Color)',
               fill: 'var(--Text-Color)',
             },
-            '.MuiChartsAxis-label': {
-              fill: 'var(--Text-Color)',
+            [`.${axisClasses.root}`]: {
+              [`.${axisClasses.tick}, .${axisClasses.line}`]: {
+                stroke: 'var(--Text-Color)',
+                strokeWidth: 1,
+              },
+              [`.${axisClasses.tickLabel}`]: {
+                fill: 'var(--Text-Color)',
+              },
             },
-            '.MuiChartsAxis-line': {
-              stroke: 'var(--Text-Color)',
-            },
-            '.MuiChartsAxis-tick': {
-              stroke: 'var(--Text-Color)',
-            },
-            '.MuiLineElement-root': {
-              stroke: 'var(--Text-Color)',
-            },
-            '.MuiChartsGrid-line': {
-              stroke: 'var(--Text-Color)',
-            },
-            '.css-xyaj9i-MuiMarkElement-root' : {
-              stroke: 'var(--Accent-Color)',
-            }
           }}
         />
       ) : (

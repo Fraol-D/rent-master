@@ -1,49 +1,49 @@
 .navigation {
   background-color: var(--Secondary-Color20);
-  height: 60px;
+  height: var(--60px-V);
   box-sizing: border-box;
   align-items: center;
-  margin: 0px;
+  margin: var(--0px-V);
   display: flex;
   width: 100%;
-  border-bottom: 1px solid grey;
+  box-shadow: var(--3px-V) var(--3px-V) var(--5px-V) var(---1px-V) var(--Background-Color2);
 
   justify-content: space-between;
   flex-direction: row;
 }
 
 .LogoImage {
-  width: 50px;
-  min-width: 50px;
-  height: 50px;
-  margin-left: 5px;
-  margin-right: 5px;
+  width: var(--50px-V);
+  min-width: var(--50px-V);
+  height: var(--50px-V);
+  margin-left: var(--5px-V);
+  margin-right: var(--5px-V);
 
-  border-radius: 7px;
+  border-radius: var(--7px-V);
 }
 .LogoImageEdit {
-  width: 50px;
-  min-width: 50px;
-  height: 50px;
-  margin-left: 5px;
-  margin-right: 5px;
-  border: 1px solid #000;
-  border-radius: 7px;
+  width: var(--50px-V);
+  min-width: var(--50px-V);
+  height: var(--50px-V);
+  margin-left: var(--5px-V);
+  margin-right: var(--5px-V);
+  border: var(--1px-V) solid #000;
+  border-radius: var(--7px-V);
   background: #1d1d1d;
   opacity: 0.5;
 }
 .Name-ofShop {
   width: auto;
-  height: 50px;
+  height: var(--50px-V);
 
   min-width: 560;
-  font-size: 30px;
+  font-size: var(--30px-V);
   color: var(--Text-Color);
 
-  border-radius: 5px;
-  padding-left: 5px;
+  border-radius: var(--5px-V);
+  padding-left: var(--5px-V);
   font-weight: bolder;
-  border-radius: 7px;
+  border-radius: var(--7px-V);
   font-style: normal;
   font-weight: 300;
   line-height: normal;
@@ -55,41 +55,41 @@
   text-align: right;
   color: rgb(255, 255, 255);
 
-  font-size: 25px;
+  font-size: var(--25px-V);
   font-weight: bolder;
   color: var(--Text-Color);
   text-align: center;
 
-  font-size: 24px;
+  font-size: var(--24px-V);
   font-style: normal;
   font-weight: 300;
   line-height: normal;
-  margin: 0px;
+  margin: var(--0px-V);
 }
 .CurrentTimeSmall {
   text-align: right;
   color: rgb(255, 255, 255);
 
-  font-size: 25px;
+  font-size: var(--25px-V);
   font-weight: bolder;
   color: var(--Text-Color);
   text-align: center;
 
-  font-size: 14px;
+  font-size: var(--14px-V);
   font-style: normal;
   font-weight: 200;
   line-height: normal;
-  margin: 0px;
+  margin: var(--0px-V);
 }
 .CurrentTimeContainer {
-  width: 80px;
-  height: 50px;
-  border-radius: 13px;
+  width: var(--80px-V);
+  height: var(--50px-V);
+  border-radius: var(--13px-V);
   display: flex;
   padding: 0;
   justify-content: center;
   align-items: center;
-  margin-right: 15px;
+  margin-right: var(--15px-V);
 
   display: flex;
   flex-direction: column;
@@ -98,134 +98,141 @@
   display: flex;
   justify-content: right;
   align-items: center;
-  width: 28%;
+
 }
 .Name-ofShop-input {
-  width: 500px;
-  height: 50px;
+  width: var(--500px-V);
+  height: var(--50px-V);
 
   min-width: 560;
-  font-size: 30px;
+  font-size: var(--30px-V);
   color: var(--Text-Color);
-  border: 1px solid #ffffff;
+  border: var(--1px-V) solid #ffffff;
   background: #1d1d1d4d;
-  border-radius: 5px;
-  padding-left: 5px;
+  border-radius: var(--5px-V);
+  padding-left: var(--5px-V);
   font-weight: bolder;
-  border-radius: 7px;
+  border-radius: var(--7px-V);
   font-style: normal;
   font-weight: 600;
   line-height: normal;
 }
 .lockicon {
-  width: 57px;
+  width: var(--57px-V);
   position: relative;
-  bottom: 2px;
+  bottom: var(--2px-V);
 }
 .lockContiner {
-  width: 50px;
-  height: 50px;
-  border-radius: 13px;
+  width: var(--50px-V);
+  height: var(--50px-V);
+  border-radius: var(--13px-V);
   display: flex;
   padding: 0;
   justify-content: center;
   align-items: center;
-  margin-right: 15px;
+  margin-right: var(--15px-V);
 }
 .AdminAccountIndicator {
   color: rgb(0, 0, 0);
-  margin-right: 10px;
+  margin-right: var(--10px-V);
   font-size: large;
   font-weight: 700;
-  width: 0px;
+  width: var(--0px-V);
 }
 
 .adminandemploeeyicons {
-  width: 40px;
-  height: 40px;
+  width: var(--40px-V);
+  height: var(--40px-V);
   position: relative;
-  left: 27px;
-  top: 14px;
+  left: var(--27px-V);
+  top: var(--14px-V);
   z-index: 1;
 }
 .TrialExpire {
   color: var(--Text-Color);
   background-color: rgb(0, 0, 0);
-  border-radius: 7px;
-  height: 45px;
-  width: 239px;
-  max-width: 240px;
+  border-radius: var(--7px-V);
+  height: var(--45px-V);
+  width: var(--239px-V);
+  max-width: var(--240px-V);
   text-align: center;
-  border-bottom: 2px solid red;
-  border-left: 2px solid red;
-  border-top: 2px solid red;
-  border-right: 2px solid red;
-  margin-left: 10px;
+  border-bottom: var(--2px-V) solid red;
+  border-left: var(--2px-V) solid red;
+  border-top: var(--2px-V) solid red;
+  border-right: var(--2px-V) solid red;
+  margin-left: var(--10px-V);
 }
 .LeftSide {
   display: flex;
   justify-content: left;
   align-items: center;
-  width: 20%;
+
 }
 
 .SaveButtonLong {
-  max-width: 140px;
-  width: 140px;
-  height: 50px;
+  max-width: var(--140px-V);
+  width: var(--140px-V);
+  height: var(--50px-V);
   background-color: #1e1f28;
-  border-radius: 7px;
-  padding: 0px;
+  border-radius: var(--7px-V);
+  padding: var(--0px-V);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 15px;
-  border: 1px solid black;
-  margin-left: 10px;
+  font-size: var(--15px-V);
+  border: var(--1px-V) solid black;
+  margin-left: var(--10px-V);
 }
 
 .SaveButtonicon {
-  width: 35px;
+  width: var(--35px-V);
   position: relative;
-  margin-right: 5px;
-  border: 7px;
+  margin-right: var(--5px-V);
+  border: var(--7px-V);
 }
 .TopPageNavigatorContainer {
   display: flex;
 }
 .PageNavigatorButton,
 .PageNavigatorButtonSelected {
-  width: 90px;
-  height: 35px;
-  font-size: 14px;
-  margin: 5px;
+  width: var(--90px-V);
+  height: var(--35px-V);
+  font-size: var(--14px-V);
+  margin: var(--5px-V);
   transition: all 0.2s;
 }
 
 .PageNavigatorButton {
+ 
+  
+    border-radius: 5px;
+    border: 1px solid var(--Secondary-Color);
+    background: var(--Background-Color);
+    color: var(--Text-Color);
+    cursor: pointer;
 
 }
 
 .PageNavigatorButtonSelected {
   
-  width: 120px;
-  font-size: 16px;
-  border-top: 2px solid var(--Primary-Color);
+  width: var(--120px-V);
+  font-size: var(--16px-V);
+  border-top: var(--2px-V) solid var(--Primary-Color);
 }
 
 .PageNavigatorButtonSelected:hover {
-  border-top: 2px solid var(--Primary-Color);
+  border-top: var(--2px-V) solid var(--Primary-Color);
 }
 .progress-bar {
-  height: 5px;
+  height: var(--5px-V);
   background-color: #00e1ff;
-  /* border-bottom: 1px dashed #00e1ff; */
+  /* border-bottom: var(--1px-V) dashed #00e1ff; */
   width: 0;
-  box-shadow: 0px 6px 7px #00000045;
+  box-shadow: var(--0px-V) var(--6px-V) var(--7px-V) #00000045;
   transition: width 0.3s ease;
-  border-radius: 5px;
-  /* margin-left: 5px; */
-  /* margin-right: 5px;*/
+  border-radius: var(--5px-V);
+  /* margin-left: var(--5px-V); */
+  /* margin-right: var(--5px-V);*/
 }
 
 .progress-container {
@@ -238,22 +245,21 @@
   align-items: center;
   justify-content: flex-start;
   height: auto;
-  width: 230px;
+  width: var(--230px-V);
   position: absolute;
-  margin-right: 233px;
-  top: 43px;
+  margin-right: var(--180px-V);
+  top: var(--45px-V);
   background-color: var(--Background-Color);
-  border-radius: 10px 0px 10px 10px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  padding: 10px;
+  border-radius: var(--10px-V) var(--0px-V) var(--10px-V) var(--10px-V);
+  box-shadow: 0 var(--2px-V) var(--4px-V) rgba(0, 0, 0, 0.1);
+  padding: var(--10px-V);
   z-index: 2;
-
 }
 .AdvancedUploadButtons{
   width: 100%;
 }
 .AdvancedUploadButtonsUploadButton {
-  margin-top: 10px;
+  margin-top: var(--10px-V);
   width: 100%;
   display: flex;
   justify-content: space-between;

@@ -164,7 +164,6 @@ const limits = {
     max: maxEurDate
   }
 };
-
 const converter = {
   dateTime: {
     toEthiopian: toEthiopianDateTime,
@@ -187,9 +186,15 @@ const converter = {
 const converterDateTime = converter.dateTime;
 const converterString = converter.string;
 
-module.exports= {
-  ethDateTime,
-  limits,
-  converterDateTime,
-  converterString
-};
+export { ethDateTime };
+export { limits };
+export { toEthiopianDateTime };
+export { toEthiopianDateTimeString };
+export { toEthiopianDateString };
+export { toEthiopianTimeString };
+export { toEuropeanDate };
+export { toEuropeanDateString };
+export { leftpad };
+export { converterDateTime };
+export { converterString };
+

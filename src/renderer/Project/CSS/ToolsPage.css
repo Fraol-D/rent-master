@@ -1,24 +1,24 @@
 .tools-page {
-  max-width: 800px;
+  max-width: var(--800px-V);
   margin: 0 auto;
-  padding: 20px;
+  padding: var(--20px-V);
   color: var(--Text-Color);
   background-color: var(--Background-Color);
 }
 
 .email-template-container {
   background-color: var(--Secondary-Color30);
-  border-radius: 8px;
-  margin-bottom: 20px;
+  border-radius: var(--8px-V);
+  margin-bottom: var(--20px-V);
   overflow: hidden;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 var(--2px-V) var(--4px-V) rgba(0, 0, 0, 0.1);
 }
 
 .email-template-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px;
+  padding: var(--10px-V);
   background-color: var(--Secondary-Color30);
 }
 
@@ -28,14 +28,14 @@
 }
 
 .email-template-buttons button {
-  margin-left: 10px;
-  padding: 5px 10px;
+  margin-left: var(--10px-V);
+  padding: var(--5px-V) var(--10px-V);
   background-color: var(--Primary-Color);
   color: var(--Text-Color-Reverse);
   border: none;
-  border-radius: 4px;
+  border-radius: var(--4px-V);
   cursor: pointer;
-  transition: background-color 0.3s;  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  transition: background-color 0.3s;  text-shadow: var(--2px-V) var(--2px-V) var(--4px-V) rgba(0, 0, 0, 0.5);
 }
 
 .email-template-buttons-button {
@@ -43,14 +43,14 @@
   background-color: var(--Primary-Color);
   color: var(--Text-Color-Reverse);
   border: none;
-  border-radius: 4px;
+  border-radius: var(--4px-V);
   cursor: pointer;
-  transition: background-color 0.3s;  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  transition: background-color 0.3s;  text-shadow: var(--2px-V) var(--2px-V) var(--4px-V) rgba(0, 0, 0, 0.5);
 }
 .try-out-inputs{
   display: flex;
     flex-direction: column;
-    height: 321px;
+    height: var(--321px-V);
     flex-wrap: wrap
 }
 .email-template-buttons button:hover {
@@ -78,20 +78,20 @@
 }
 .email-template-body {
   flex: 4;
-  padding-right: 20px;
-  padding-left: 15px;
-  padding-bottom: 10px;
+  padding-right: var(--20px-V);
+  padding-left: var(--15px-V);
+  padding-bottom: var(--10px-V);
 }
 
 .email-template-variables {
   flex: 1;
   background-color: var(--Secondary-Color30);
-  padding: 10px;
-  border-radius: 4px;
+  padding: var(--10px-V);
+  border-radius: var(--4px-V);
 }
 .email-template-variables h4 {
-  margin-top: 10px;
-  margin-left: 10px;margin-bottom: 0px;
+  margin-top: var(--10px-V);
+  margin-left: var(--10px-V);margin-bottom: var(--0px-V);
 }
 
 .email-template-variables ul {
@@ -100,20 +100,20 @@
 }
 
 .email-template-variables li {
-  margin-bottom: 5px;
+  margin-bottom: var(--5px-V);
   font-family: monospace;
   background-color: var(--Secondary-Color30);
-  padding: 2px 5px;
-  border-radius: 3px;
+  padding: var(--2px-V) var(--5px-V);
+  border-radius: var(--3px-V);
   color: var(--Text-Color);
 }
 .email-template-header input,
 .email-template-body input,
 .email-template-body textarea {
   width: 80%;
-  padding: 5px;
+  padding: var(--5px-V);
  
-  border: 1px solid var(--Secondary-Color);
+ 
   background-color: var(--Background-Color);
   color: var(--Text-Color);
 }
@@ -122,21 +122,21 @@
 
 }
 .email-template-body textarea {
-  min-height: 280px;
+  min-height: var(--280px-V);
   resize: vertical;
   width: 100%;
   font-family: "inter";
 }
 .email-template-header input {
   width: 70%;
-  margin-bottom: 0px;
-  font-size: 18px;
-  height: 26px;
+  margin-bottom: var(--0px-V);
+  font-size: var(--18px-V);
+  height: var(--26px-V);
 }
 .variable-highlight {
   background-color: var(--Secondary-Color30);
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-  border-radius: 3px;
+  text-shadow: var(--2px-V) var(--2px-V) var(--4px-V) rgba(0, 0, 0, 0.5);
+  border-radius: var(--3px-V);
   font-weight: bold;
   color: var(--Primary-Color);
 }
@@ -146,39 +146,39 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 717px;
+  width: var(--717px-V);
   height: auto;
   max-height: 80vh;
   background-color: var(--Background-Color);
-  padding: 20px;
+  padding: var(--20px-V);
   overflow-y: auto;
   z-index: 9999;
-  border-radius: 10px;
-  padding-top: 0px;
-  border: 1px solid grey;}
+  border-radius: var(--10px-V);
+  padding-top: var(--0px-V);
+  border: var(--1px-V) solid grey;}
 
 .try-out-preview {
-  margin-bottom: 20px;
+  margin-bottom: var(--20px-V);
 }
 
 .variable-input {
-  margin-bottom: 10px;
+  margin-bottom: var(--10px-V);
 }
 
 .variable-input label {
   
-  margin-bottom: 5px;
+  margin-bottom: var(--5px-V);
 }
 
 .variable-input input {
-  width: 168px;
-  padding: 1px;
+  width: var(--168px-V);
+  padding: var(--1px-V);
 }
 .try-out-container-input {
-  width: 120px;
+  width: var(--120px-V);
 }
 .expense-cards {
-  width: 90%;
+  width: 100%;
   border-collapse: collapse;
 }
 .expense-cards th {
@@ -186,15 +186,34 @@
 }
 .expense-card {
   background-color: var(--Secondary-Color60);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  padding: 10px;
-  border-radius: 10px;
-  margin-top: 10px;
-  margin-bottom: 10px;
+  box-shadow: 0 var(--2px-V) var(--4px-V) rgba(0, 0, 0, 0.1);
+  padding: var(--10px-V);
+  border-radius: var(--10px-V);
+  margin-top: var(--10px-V);
+  margin-bottom: var(--10px-V);
   width: 100%;
-  height: 50px;
+  height: var(--50px-V);
 }
 .expense-card td {
   
-  padding: 5px;
+  padding: var(--5px-V);
+}
+.settings-container{
+  margin: var(--20px-V);
+    background: var(--Secondary-Color20);
+    padding: var(--10px-V);
+    border-radius: var(--10px-V);
+}
+.settings-container h2{
+  margin-bottom: var(--10px-V);
+  margin-top: var(--0px-V);
+}
+.settings-main-container{
+  margin: var(--10px-V);
+}
+.settings-main-container h1{
+  font-size: var(--35px-V);
+}
+.settings-inner-container{
+  margin-left: var(--20px-V);
 }
