@@ -258,3 +258,118 @@
     width: 100%;
   }
 } 
+
+/* Update pricing section responsiveness */
+@media (max-width: 1300px) {
+  .pricing {
+    padding: 6rem 1rem;
+  }
+
+  .pricing-grid {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .pricing-card {
+    width: 100%;
+    min-width: 280px;
+    max-width: 360px;
+  }
+}
+
+@media (max-width: 750px) {
+  .pricing {
+    padding: 4rem 0.5rem;
+  }
+
+  .pricing-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .enterprise-content {
+    flex-direction: column;
+    padding: 2rem;
+  }
+
+  .pricing-card {
+    width: 90%;
+  }
+}
+
+@media (max-width: 500px) {
+  .pricing {
+    padding: 3rem 0.25rem;
+  }
+
+  .pricing-card {
+    width: 95%;
+  }
+
+  .amount {
+    font-size: 1.5rem;
+  }
+
+  .plan-details p {
+    font-size: 0.9rem;
+  }
+} 
+
+@media (min-width: 770px) and (max-width: 970px) {
+  .pricing-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+
+  .pricing-card {
+    width: 100%;
+    min-width: 320px;
+    max-width: none;
+  }
+
+  .enterprise-card {
+    width: calc(100% - 2rem);
+    margin: 1rem;
+  }
+}
+
+@media (min-width: 1020px) and (max-width: 1290px) {
+  .pricing-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+  }
+
+  .pricing-card {
+    width: 100%;
+    min-width: 280px;
+    max-width: none;
+  }
+} 
+
+/* Update pricing mobile styles */
+@media (max-width: 480px) {
+  .pricing {
+    padding: 2rem 0.5rem;
+    width: 100%;
+  }
+
+  .pricing-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    width: 100%;
+    padding: 0;
+  }
+
+  .pricing-card {
+    width: 100%;
+    min-width: unset;
+    max-width: 100%;
+    padding: 1rem;
+    margin: 0;
+  }
+
+  .enterprise-card {
+    width: 100%;
+    margin: 1rem 0;
+    padding: 1rem;
+  }
+} 
