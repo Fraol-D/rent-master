@@ -191,11 +191,12 @@ declare global {
     RentingOrOut: boolean;
     startTime: number;
     endTime?: number;
-    agreedPrice: string;
+    agreedPrice: number;
     TIN: string;
     RentReason: string;
     AddedTime: number;
     Currency: string;
+    userId: string;
     branchId: string; // Added
   };
   type BrokerType = {
@@ -325,8 +326,7 @@ declare global {
 const MainPage = ({
   RoomList,
   setRoomList,
-  TenantList,
-  setTenantList,
+
   roomAPI,
   tenantAPI,
   roomPaymentInfoApi,
@@ -349,7 +349,8 @@ const MainPage = ({
   SelectedAppUser,
   SelectedBranchId,
   signOutUserAndRestart,
-  setChangeProgress,changeProgress
+  setChangeProgress,
+  changeProgress,
 }: any) => {
   const [floorFilter, setFloorFilter] = useState<string>('');
   const [TenantNameFilter, setTenantNameFilter] = useState<string>('');
@@ -566,9 +567,9 @@ const MainPage = ({
           );
           break;
         case 'tenantName':
-          if (TenantList.length > 0)
+          if (AllTenants.length > 0)
             filteredRooms = filteredRooms.filter((room: { tenantId: any }) =>
-              TenantList.find((tenant: any) => tenant.id === room.tenantId)
+              AllTenants.find((tenant: any) => tenant.id === room.tenantId)
                 ?.name.toLowerCase()
                 .includes(value.toLowerCase())
             );
@@ -713,7 +714,7 @@ const MainPage = ({
               /* case 'name':
           return (
            /* comparison *
-            TenantList > 0 ?(TenantList.find((tenant:any) => tenant.id === a.tenantId)?.name || '').localeCompare(TenantList.find((tenant:any) => tenant.id === b.tenantId)?.name || ''):
+            AllTenants > 0 ?(AllTenants.find((tenant:any) => tenant.id === a.tenantId)?.name || '').localeCompare(AllTenants.find((tenant:any) => tenant.id === b.tenantId)?.name || ''):
           );*/
               case 'price':
                 return comparison * (a.price - b.price);
@@ -800,7 +801,15 @@ const MainPage = ({
     | 'Expense Manager'
     | 'Settings'
     | 'Support'
-  >(privileges.editEmailTemplates ? 'EmailTemplates' : privileges.editSmsTemplates ? 'SMSTemplates' : privileges.editExpenses ? 'Expense Manager' : 'Settings');
+  >(
+    privileges.editEmailTemplates
+      ? 'EmailTemplates'
+      : privileges.editSmsTemplates
+      ? 'SMSTemplates'
+      : privileges.editExpenses
+      ? 'Expense Manager'
+      : 'Settings'
+  );
   const [DashboardSelectedPage, setDashboardSelectedPage] = useState<
     | 'Overview'
     | 'Email History'
@@ -822,11 +831,13 @@ const MainPage = ({
     AddRoomFormPaymentCycleCustomDays,
     setAddRoomFormPaymentCycleCustomDays,
   ] = useState(0);
-  const {AllRoomSpecifications} = useGlobal()
+  const { AllRoomSpecifications,AllTenants,setAllTenants } = useGlobal();
 
   const [AddRoomFormSquareMeters, setAddRoomFormSquareMeters] = useState(0);
   const [AddRoomFormRoomSpecifications, setAddRoomFormRoomSpecifications] =
-    useState<RoomSpecificationType[]>(AllRoomSpecifications.filter(spec => spec.roomId === 'DEFAULT'));
+    useState<RoomSpecificationType[]>(
+      AllRoomSpecifications.filter((spec) => spec.roomId === 'DEFAULT')
+    );
 
   const handleAddRoomFormSpecificationChange = (
     index: number,
@@ -980,7 +991,9 @@ const MainPage = ({
       }
 
       if (resetRoomSpecifications) {
-        setAddRoomFormRoomSpecifications(AllRoomSpecifications.filter(spec => spec.roomId === 'DEFAULT'));
+        setAddRoomFormRoomSpecifications(
+          AllRoomSpecifications.filter((spec) => spec.roomId === 'DEFAULT')
+        );
         fieldsToHighlight.push('specifications');
       }
 
@@ -999,7 +1012,9 @@ const MainPage = ({
       setAddRoomFormRoomIndex('');
       setAddRoomFormPrice(0);
       setAddRoomFormSquareMeters(0);
-      setAddRoomFormRoomSpecifications(AllRoomSpecifications.filter(spec => spec.roomId === 'DEFAULT'));
+      setAddRoomFormRoomSpecifications(
+        AllRoomSpecifications.filter((spec) => spec.roomId === 'DEFAULT')
+      );
       setRefreshInspectorForAddRoom(true);
     }
   };
@@ -1013,7 +1028,9 @@ const MainPage = ({
     setAddRoomFormPaymentCycleType('monthly');
     setAddRoomFormPaymentCycleCustomDays(0);
     setAddRoomFormSquareMeters(0);
-    setAddRoomFormRoomSpecifications(AllRoomSpecifications.filter(spec => spec.roomId === 'DEFAULT'));
+    setAddRoomFormRoomSpecifications(
+      AllRoomSpecifications.filter((spec) => spec.roomId === 'DEFAULT')
+    );
     handleDeleteFolderImages('Add a room images');
   };
   const handleRenameFolder = async (oldName: string, newName: string) => {
@@ -1101,7 +1118,9 @@ const MainPage = ({
   }, [SelectedPage]);
 
   const handleAddRoomButtonInitial = (state: boolean, plusOne?: boolean) => {
-    setAddRoomFormRoomSpecifications(AllRoomSpecifications.filter(spec => spec.roomId === 'DEFAULT'));
+    setAddRoomFormRoomSpecifications(
+      AllRoomSpecifications.filter((spec) => spec.roomId === 'DEFAULT')
+    );
 
     setAddARoomState(state);
     if (RoomList.length > 0 && RoomList) {
@@ -1174,7 +1193,7 @@ const MainPage = ({
       setOnDataBase(true);
       //RefreshDataFromSqlite();
     } else {
-      setOnDataBase(false)
+      setOnDataBase(false);
     }
   }, [SelectedPage]);
 
@@ -2032,7 +2051,7 @@ const MainPage = ({
                       </div>
 
                       <div className="RoomSpecficationsMainContainer">
-                        <h3 style={{marginTop: '0px'}}>
+                        <h3 style={{ marginTop: '0px' }}>
                           Room Specifications{' - '}
                           <button onClick={addAddRoomFormSpecification}>
                             Add
@@ -2102,35 +2121,59 @@ const MainPage = ({
                                   />
                                 )}
                               </div>
-                              <div style={{ marginTop: 'var(--5px-V)', display: 'flex', flexDirection: 'row', justifyContent: 'space-between',alignItems: 'center' }}>
-                               <div style={{display: 'flex', flexDirection: 'row', alignItems: 'center'}}><input
-                                  type="radio"
-                                  name={`spec-${index}`}
-                                  value="bool"
-                                  checked={spec.type === 'bool'}
-                                  onChange={(e) =>
-                                    handleAddRoomFormSpecificationChange(
-                                      index,
-                                      'type',
-                                      'bool'
-                                    )
-                                  }
-                                />{' '}
-                                Yes/No</div> 
-                                <div style={{display: 'flex', flexDirection: 'row', alignItems: 'center'}}><input
-                                  type="radio"
-                                  name={`spec-${index}`}
-                                  value="number"
-                                  checked={spec.type === 'number'}
-                                  onChange={(e) =>
-                                    handleAddRoomFormSpecificationChange(
-                                      index,
-                                      'type',
-                                      'number'
-                                    )
-                                  }
-                                />{' '}
-                                Number</div>
+                              <div
+                                style={{
+                                  marginTop: 'var(--5px-V)',
+                                  display: 'flex',
+                                  flexDirection: 'row',
+                                  justifyContent: 'space-between',
+                                  alignItems: 'center',
+                                }}
+                              >
+                                <div
+                                  style={{
+                                    display: 'flex',
+                                    flexDirection: 'row',
+                                    alignItems: 'center',
+                                  }}
+                                >
+                                  <input
+                                    type="radio"
+                                    name={`spec-${index}`}
+                                    value="bool"
+                                    checked={spec.type === 'bool'}
+                                    onChange={(e) =>
+                                      handleAddRoomFormSpecificationChange(
+                                        index,
+                                        'type',
+                                        'bool'
+                                      )
+                                    }
+                                  />{' '}
+                                  Yes/No
+                                </div>
+                                <div
+                                  style={{
+                                    display: 'flex',
+                                    flexDirection: 'row',
+                                    alignItems: 'center',
+                                  }}
+                                >
+                                  <input
+                                    type="radio"
+                                    name={`spec-${index}`}
+                                    value="number"
+                                    checked={spec.type === 'number'}
+                                    onChange={(e) =>
+                                      handleAddRoomFormSpecificationChange(
+                                        index,
+                                        'type',
+                                        'number'
+                                      )
+                                    }
+                                  />{' '}
+                                  Number
+                                </div>
                                 <button
                                   onClick={() =>
                                     removeAddRoomFormSpecification(index)
@@ -2395,7 +2438,9 @@ const MainPage = ({
                   Expense Manager
                 </SideBarItem>
               )}
-              {(privileges.editExpenses||privileges.editSmsTemplates||privileges.editEmailTemplates) && (<br />)}
+              {(privileges.editExpenses ||
+                privileges.editSmsTemplates ||
+                privileges.editEmailTemplates) && <br />}
 
               <SideBarItem
                 page="Support"
@@ -2405,15 +2450,13 @@ const MainPage = ({
                 Support
               </SideBarItem>
 
-              
-                <SideBarItem
-                  page="Settings"
-                  currentPage={ToolsSelectedPage}
-                  onClick={() => setToolsSelectedPage('Settings')}
-                >
-                  Settings
-                </SideBarItem>
-              
+              <SideBarItem
+                page="Settings"
+                currentPage={ToolsSelectedPage}
+                onClick={() => setToolsSelectedPage('Settings')}
+              >
+                Settings
+              </SideBarItem>
             </>
           ) : SelectedPage === 'Dashboard' ? (
             <>
@@ -2633,7 +2676,7 @@ const MainPage = ({
                       : ''
                   }`}
                 >
-                  <h3 style={{marginTop: '0px'}}>
+                  <h3 style={{ marginTop: '0px' }}>
                     Room Specifications{' - '}
                     <button
                       onClick={() => {
@@ -2895,9 +2938,9 @@ const MainPage = ({
               sortedAndFilteredRooms={sortedAndFilteredRooms}
               removeFilterOption={removeFilterOption}
               filterOptions={filterOptions}
-              setTenantList={setTenantList}
+              
               tenantAPI={tenantAPI}
-              TenantList={TenantList}
+             
               AddARoomState={AddARoomState}
               setAddARoomState={setAddARoomState}
               roomPaymentInfoApi={roomPaymentInfoApi}
@@ -2911,7 +2954,7 @@ const MainPage = ({
           )}
           {SelectedPage === 'People' && (
             <PeopleComponentPage
-              TenantList={TenantList}
+           
               agreementApi={agreementApi}
               PeopleSelectedPage={PeopleSelectedPage}
               PastTenantReviews={PastTenantReviews}
@@ -2939,7 +2982,7 @@ const MainPage = ({
               sortedAndFilteredRooms={RoomList}
               removeFilterOption={removeFilterOption}
               filterOptions={[]}
-              tenantList={TenantList}
+             
               SelectedBranchId={SelectedBranchId}
             />
           )}
@@ -2958,7 +3001,7 @@ const MainPage = ({
             <DashboardPage
               roomPaymentInfoApi={roomPaymentInfoApi}
               RoomList={RoomList}
-              tenantList={TenantList}
+           
               BrokerList={BrokerList}
               PastTenantReviews={PastTenantReviews}
               BrokerRecommendationList={BrokerRecommendationList}

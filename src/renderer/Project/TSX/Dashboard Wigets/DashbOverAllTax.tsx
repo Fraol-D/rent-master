@@ -24,13 +24,14 @@ interface Payment {
 
 const DashbOverAllTax = ({
   RoomList,
-  tenantList,
+
   SelectedBranchId,
 }: {
   RoomList: RoomType[];
-  tenantList: tenant[];
+ 
   SelectedBranchId: any;
 }) => {
+ 
   const [showBy, setShowBy] = useState<'Monthly' | 'Yearly'>('Monthly');
   const [selectedDate, setSelectedDate] = useState(
     new Date().getFullYear().toString()
@@ -38,6 +39,7 @@ const DashbOverAllTax = ({
   const {
     AllRoomPayInfoHistory,
     setAllRoomPayInfoHistory,
+    AllTenants,
     AllRoomPayInfo,
     setAllRoomPayInfo,
     AllAgreements,
@@ -122,7 +124,7 @@ const DashbOverAllTax = ({
       for (const room of RoomList) {
         if (!room.tenantId) continue;
 
-        const tenant = tenantList.find((t) => t.id === room.tenantId) || null;
+        const tenant = AllTenants.find((t) => t.id === room.tenantId) || null;
         if (!tenant) continue;
 
         let startDate = new Date(tenant.startTime || Date.now()).getTime();
@@ -166,7 +168,7 @@ const DashbOverAllTax = ({
     };
 
     calculatePayments();
-  }, [RoomList, tenantList, selectedDate, showBy]);
+  }, [RoomList, AllTenants, selectedDate, showBy]);
 
   const calculateNextPaymentDate = (currentDate: Date, room: any) => {
     switch (room.PaymentCycleType) {

@@ -3,22 +3,20 @@ import { useGlobal } from 'renderer/components/GlobalContext';
 
 const UpcomingAgreements = ({
   RoomList,
-  TenantList,
-  SelectedBranchId
+
+  SelectedBranchId,
 }: {
   RoomList: RoomType[];
-  TenantList: tenant[];
-  SelectedBranchId: any
+
+  SelectedBranchId: any;
 }) => {
-  const [upcomingAgreements, setUpcomingAgreements] = useState<agreements[]>([]);
+  const [upcomingAgreements, setUpcomingAgreements] = useState<agreements[]>(
+    []
+  );
   const [expiredAgreements, setExpiredAgreements] = useState<agreements[]>([]);
   const [daysThreshold, setDaysThreshold] = useState(30);
   const [activeTab, setActiveTab] = useState('upcoming');
-  const {
-    
-    AllAgreements,
-    setAllAgreements,
-  } = useGlobal();
+  const { AllAgreements, setAllAgreements,AllTenants } = useGlobal();
   useEffect(() => {
     const fetchAgreements = async () => {
       const currentTime = new Date().getTime();
@@ -31,7 +29,7 @@ const UpcomingAgreements = ({
           agreement.endTime <= thresholdTime &&
           agreement.branchId === SelectedBranchId
       );
-      
+
       // Fetch expired agreements
       const expiredData = AllAgreements.filter(
         (agreement) =>
@@ -41,11 +39,15 @@ const UpcomingAgreements = ({
 
       // Filter agreements that are currently selected for rooms
       const filteredUpcoming = upcomingData.filter((agreement) => {
-        return RoomList.some((room) => room.selectedAgreementId === agreement.id);
+        return RoomList.some(
+          (room) => room.selectedAgreementId === agreement.id
+        );
       });
 
       const filteredExpired = expiredData.filter((agreement) => {
-        return RoomList.some((room) => room.selectedAgreementId === agreement.id);
+        return RoomList.some(
+          (room) => room.selectedAgreementId === agreement.id
+        );
       });
 
       setUpcomingAgreements(filteredUpcoming);
@@ -112,7 +114,9 @@ const UpcomingAgreements = ({
             Upcoming Agreement Expirations
           </p>
           <div style={{ marginBottom: 'var(--10px-V)' }}>
-            <label htmlFor="daysThreshold">Show agreements ending within: </label>
+            <label htmlFor="daysThreshold">
+              Show agreements ending within:{' '}
+            </label>
             <select
               id="daysThreshold"
               value={daysThreshold}
@@ -128,11 +132,14 @@ const UpcomingAgreements = ({
               <option value={365}>365 days</option>
             </select>
           </div>
-          <table className="InfoTable" style={{ width: '100%',margin:"0px" }}>
+          <table className="InfoTable" style={{ width: '100%', margin: '0px' }}>
             <thead className="InfoTableThead">
               <tr className="InfoTableHeadTR">
                 <th className="InfoTableHeadTh">Tenants</th>
-                <th className="InfoTableHeadTh" style={{ width: 'var(--90px-V)' }}>
+                <th
+                  className="InfoTableHeadTh"
+                  style={{ width: 'var(--90px-V)' }}
+                >
                   Days Left
                 </th>
               </tr>
@@ -140,7 +147,7 @@ const UpcomingAgreements = ({
             <tbody>
               {upcomingAgreements.length > 0 ? (
                 upcomingAgreements.map((agreement, index) => {
-                  const tenant = TenantList.find(
+                  const tenant = AllTenants.find(
                     (t) => t.id === agreement.tenantId
                   );
                   const room = RoomList.find((r) => r.id === agreement.roomId);
@@ -157,7 +164,10 @@ const UpcomingAgreements = ({
                     >
                       <td className="InfoTableBodyTD">
                         <span
-                          style={{ fontSize: 'var(--16px-V)', overflowX: 'auto' }}
+                          style={{
+                            fontSize: 'var(--16px-V)',
+                            overflowX: 'auto',
+                          }}
                           title={tenant?.name}
                         >
                           {tenant?.name.slice(0, 20)}
@@ -186,8 +196,12 @@ const UpcomingAgreements = ({
                 })
               ) : (
                 <tr>
-                  <td colSpan={2} style={{ textAlign: 'center', padding: 'var(--10px-V)' }}>
-                    No upcoming agreement expirations within {daysThreshold} days
+                  <td
+                    colSpan={2}
+                    style={{ textAlign: 'center', padding: 'var(--10px-V)' }}
+                  >
+                    No upcoming agreement expirations within {daysThreshold}{' '}
+                    days
                   </td>
                 </tr>
               )}
@@ -206,7 +220,10 @@ const UpcomingAgreements = ({
             <thead className="InfoTableThead">
               <tr className="InfoTableHeadTR">
                 <th className="InfoTableHeadTh">Tenants</th>
-                <th className="InfoTableHeadTh" style={{ width: 'var(--90px-V)' }}>
+                <th
+                  className="InfoTableHeadTh"
+                  style={{ width: 'var(--90px-V)' }}
+                >
                   Expired By
                 </th>
               </tr>
@@ -214,7 +231,7 @@ const UpcomingAgreements = ({
             <tbody>
               {expiredAgreements.length > 0 ? (
                 expiredAgreements.map((agreement, index) => {
-                  const tenant = TenantList.find(
+                  const tenant = AllTenants.find(
                     (t) => t.id === agreement.tenantId
                   );
                   const room = RoomList.find((r) => r.id === agreement.roomId);
@@ -231,7 +248,10 @@ const UpcomingAgreements = ({
                     >
                       <td className="InfoTableBodyTD">
                         <span
-                          style={{ fontSize: 'var(--16px-V)', overflowX: 'auto' }}
+                          style={{
+                            fontSize: 'var(--16px-V)',
+                            overflowX: 'auto',
+                          }}
                           title={tenant?.name}
                         >
                           {tenant?.name.slice(0, 20)}
@@ -260,7 +280,10 @@ const UpcomingAgreements = ({
                 })
               ) : (
                 <tr>
-                  <td colSpan={2} style={{ textAlign: 'center', padding: 'var(--10px-V)' }}>
+                  <td
+                    colSpan={2}
+                    style={{ textAlign: 'center', padding: 'var(--10px-V)' }}
+                  >
                     No expired agreements
                   </td>
                 </tr>

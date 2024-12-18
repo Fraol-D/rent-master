@@ -36,12 +36,12 @@ interface Payment {
 const DashbNetProfitTotalCollected = ({
   RoomList,
   expenses2,
-  tenantList,
+
   SelectedBranchId,
 }: {
   RoomList: RoomType[];
   expenses2: expenses[];
-  tenantList: tenant[];
+ 
   SelectedBranchId: any;
 }) => {
  const {
@@ -51,7 +51,7 @@ const DashbNetProfitTotalCollected = ({
     setAllRoomPayInfo,
     AllAgreements,
     setAllAgreements,
-    AllExpenses
+    AllExpenses,AllTenants
   } = useGlobal();
   const [showBy, setShowBy] = useState<'Monthly' | 'Yearly'>('Monthly');
   const [selectedDate, setSelectedDate] = useState(
@@ -118,7 +118,7 @@ const DashbNetProfitTotalCollected = ({
         // Skip rooms without tenants
         if (!room.tenantId) continue;
 
-        const tenant = tenantList.find((t) => t.id === room.tenantId);
+        const tenant = AllTenants.find((t) => t.id === room.tenantId);
         if (!tenant) continue;
 
         let startDate = new Date(tenant.startTime || Date.now()).getTime();
@@ -166,7 +166,7 @@ const DashbNetProfitTotalCollected = ({
     };
 
     calculatePayments();
-  }, [RoomList, tenantList, selectedDate, showBy]);
+  }, [RoomList, AllTenants, selectedDate, showBy]);
   // Helper function to calculate next payment date
   const calculateNextPaymentDate = (currentDate: Date, room: any) => {
     switch (room.PaymentCycleType) {

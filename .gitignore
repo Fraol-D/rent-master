@@ -4,6 +4,8 @@ logs
 
 # ENVS
 .env
+organize_faculty.py
+faculty_organized.csv
 
 # Runtime data
 pids
@@ -24,6 +26,8 @@ node_modules
 release/app/dist
 release/build
 .erb/dll
+
+dist
 
 .idea
 npm-debug.log.*

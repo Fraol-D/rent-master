@@ -1,14 +1,16 @@
 import { storageManager } from '../renderer/storeManager';
 let baseUrl = 'http://localhost:8100';
 
-
 if (!window.electron) {
   baseUrl = 'https://www.rentmaster.markethubet.com/api';
 }
 
 import { v4 as uuidv4 } from 'uuid';
 
-import { makeProxyRequest } from './viteApiHandler';
+import {
+  makeProxyRequest,
+  makeProxyRequestFileManager,
+} from './viteApiHandler';
 
 // Base request function
 const makeRequest = async (input, init = {}) => {
@@ -17,7 +19,7 @@ const makeRequest = async (input, init = {}) => {
     headers = {},
     body = null,
     isFileManager = false,
-    useProxy = !window.electron
+    useProxy = !window.electron,
   } = init;
   //if(window.electron) return await fetch(input,init)
   try {
@@ -28,11 +30,17 @@ const makeRequest = async (input, init = {}) => {
     const userId = users[0].id;
 
     // Normalize URL
-    
+
     if (useProxy) {
-      
-      const proxyResponse = await makeProxyRequest('local',input, method, headers, body, userId)
-      
+      const proxyResponse = await makeProxyRequest(
+        'local',
+        input,
+        method,
+        headers,
+        body,
+        userId
+      );
+
       return await proxyResponse;
     } else {
       const response = await fetch(input, init);
@@ -49,17 +57,17 @@ const makeRequest = async (input, init = {}) => {
 
 export const dropAllRowsInTable = async (tableName) => {
   try {
-    const response = await makeRequest(`${baseUrl}/drop-all-rows/${tableName}`, {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json', 
-       
-      },
-    });
+    const response = await makeRequest(
+      `${baseUrl}/drop-all-rows/${tableName}`,
+      {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
+    );
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+ 
 
     const data = response;
     console.log(data);
@@ -75,17 +83,11 @@ export const addValueROOM = async (tableName, value, setChangeMade) => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        
       },
       body: JSON.stringify(value),
     });
-    if (!response.ok) {
-      const errorText = response;
-      throw new Error(
-        `HTTP error! status: ${response.status}, body: ${errorText}`
-      );
-    }
-    const data =  response;
+   
+    const data = response;
     await addRowToOfflineChanges(
       tableName,
       value.id,
@@ -110,12 +112,10 @@ export const getValuesWithSql = async (tableName, sqlCode) => {
       `${baseUrl}/${tableName}/${encodeURIComponent(sqlCode)}`,
       {
         method: 'GET',
-        headers: {
-          
-        },
+        headers: {},
       }
     );
-    const data =  response;
+    const data = response;
     return data;
   } catch (error) {
     console.error('Error fetching values with SQL code:', error);
@@ -128,12 +128,10 @@ const getValuesWithSqlL = async (tableName, sqlCode) => {
       `${baseUrl}/${tableName}/${encodeURIComponent(sqlCode)}`,
       {
         method: 'GET',
-        headers: {
-          
-        },
+        headers: {},
       }
     );
-    const data =  response;
+    const data = response;
     return data;
   } catch (error) {
     console.error('Error fetching values with SQL code:', error);
@@ -162,7 +160,6 @@ const addRowToOfflineChanges = async (
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            
           },
           body: JSON.stringify({
             id: uuidv4(), // Generate a random UUID
@@ -189,7 +186,6 @@ const addRowToOfflineChanges = async (
               method: 'PUT',
               headers: {
                 'Content-Type': 'application/json',
-                
               },
               body: JSON.stringify({ ['rowId']: RowIdP }),
             }
@@ -225,22 +221,24 @@ const addRowToOfflineChanges = async (
             );
             const data = response;
           } else {
-            const response = await makeRequest(`${baseUrl}/${'offline_changes'}`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                
-              },
-              body: JSON.stringify({
-                id: uuidv4(), // Generate a random UUID
-                type: typevalue,
-                columnName: columnNameP,
-                rowId: RowIdP,
-                newValue: columnValueP,
-                tableName: tableName,
-                addedJsonData: JSON.stringify(addedJsonData),
-              }),
-            });
+            const response = await makeRequest(
+              `${baseUrl}/${'offline_changes'}`,
+              {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  id: uuidv4(), // Generate a random UUID
+                  type: typevalue,
+                  columnName: columnNameP,
+                  rowId: RowIdP,
+                  newValue: columnValueP,
+                  tableName: tableName,
+                  addedJsonData: JSON.stringify(addedJsonData),
+                }),
+              }
+            );
             const data = response;
             console.log(
               `Row with that id(${RowIdP}) with type(${typevalue}) was not found so it added`,
@@ -249,23 +247,25 @@ const addRowToOfflineChanges = async (
           }
         } else {
           if (columnValueP !== originalValue) {
-            const response = await makeRequest(`${baseUrl}/${'offline_changes'}`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                
-              },
-              body: JSON.stringify({
-                id: uuidv4(), // Generate a random UUID
-                type: typevalue,
-                columnName: columnNameP,
-                rowId: RowIdP,
-                newValue: columnValueP,
-                tableName: tableName,
-                addedJsonData: JSON.stringify(addedJsonData),
-                originalValue: originalValue,
-              }),
-            });
+            const response = await makeRequest(
+              `${baseUrl}/${'offline_changes'}`,
+              {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  id: uuidv4(), // Generate a random UUID
+                  type: typevalue,
+                  columnName: columnNameP,
+                  rowId: RowIdP,
+                  newValue: columnValueP,
+                  tableName: tableName,
+                  addedJsonData: JSON.stringify(addedJsonData),
+                  originalValue: originalValue,
+                }),
+              }
+            );
             const data = response;
             console.log(
               `Row with that id(${RowIdP}) with type(${typevalue}) was not found so it added`,
@@ -325,7 +325,6 @@ const addRowToOfflineChanges = async (
               method: 'PUT',
               headers: {
                 'Content-Type': 'application/json',
-                
               },
               body: JSON.stringify({
                 newValue: columnValueP,
@@ -446,7 +445,6 @@ export const addValue = async (tableName, value, setChangeMade) => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        
       },
       body: JSON.stringify(value),
     });
@@ -484,7 +482,6 @@ export const addValueActionHistory = async (
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        
       },
       body: JSON.stringify(value),
     });
@@ -518,7 +515,6 @@ export const addValueWithOutOfflineChange = async (tableName, value) => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        
       },
       body: JSON.stringify(value),
     });
@@ -554,7 +550,6 @@ export const updateValue = async (
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          
         },
         body: JSON.stringify({ [columnName]: columnValue }),
       }
@@ -582,9 +577,7 @@ export const deleteValue = async (tableName, id, setChangeMade) => {
   try {
     const response = await makeRequest(`${baseUrl}/${tableName}/${id}`, {
       method: 'DELETE',
-      headers: {
-        
-      },
+      headers: {},
     });
     const data = response;
     await addRowToOfflineChanges(
@@ -687,7 +680,7 @@ const SendNormalApi = async (url, method, headers = {}, data = null) => {
       method,
       headers: {
         ...headers,
-        
+
         'user-id': userId,
       },
     };
@@ -727,7 +720,9 @@ export const deleteReceipt2 = async (date, roomId, tenant) => {
     const addedTimeText = new Date(tenant?.startTime || 0).toDateString();
 
     const response = await SendFileManagerApi(
-      `/delete-receipt/${encodeURIComponent(userId)}/${encodeURIComponent(roomId)}/${encodeURIComponent(formattedDate)}`,
+      `/delete-receipt/${encodeURIComponent(userId)}/${encodeURIComponent(
+        roomId
+      )}/${encodeURIComponent(formattedDate)}`,
       'DELETE',
       {
         'Content-Type': 'application/json',
@@ -738,9 +733,7 @@ export const deleteReceipt2 = async (date, roomId, tenant) => {
       }
     );
 
-    if (!response.ok) {
-      throw new Error('Failed to delete receipt');
-    }
+   
 
     return { success: true };
   } catch (error) {
@@ -761,7 +754,9 @@ export const GetReceiptFileApi = async (date, roomId, tenant) => {
 
     // Make the request
     const response = await SendFileManagerApi(
-      `/receipt-file/${encodeURIComponent(roomId)}/${encodeURIComponent(formattedDate)}`,
+      `/receipt-file/${encodeURIComponent(roomId)}/${encodeURIComponent(
+        formattedDate
+      )}`,
       'GET',
       {
         'Content-Type': 'application/json',
@@ -771,7 +766,7 @@ export const GetReceiptFileApi = async (date, roomId, tenant) => {
         'tenant-start-time': tenant?.startTime || '',
       }
     );
- 
+
     // Handle non-200 responses
     if (!response.ok) {
       if (response.status === 404) {
@@ -795,13 +790,19 @@ export const GetReceiptFileApi = async (date, roomId, tenant) => {
     }
 
     return `https://www.rentmaster.markethubet.com${data.receiptUrl}`;
-
   } catch (error) {
     console.error('Error getting receipt file:', error);
     return null;
   }
 };
-export const uploadReceiptDocumentsOnline = async (file, roomId, tenantList,tenantId, date,AddedTimeText) => {
+export const uploadReceiptDocumentsOnline = async (
+  file,
+  roomId,
+  tenantList,
+  tenantId,
+  date,
+  AddedTimeText
+) => {
   try {
     const users = await storageManager.get('users');
     if (!users?.[0]?.id) {
@@ -810,11 +811,11 @@ export const uploadReceiptDocumentsOnline = async (file, roomId, tenantList,tena
     const userId = users[0].id;
 
     // Get tenant info
-    const tenant = tenantList.find(t => t.id === tenantId);
+    const tenant = tenantList.find((t) => t.id === tenantId);
     if (!tenant) {
       throw new Error('Tenant not found');
     }
-console.log(date)
+    console.log(date);
     // Convert file to base64
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -837,13 +838,11 @@ console.log(date)
               tenantName: tenant.name,
               tenantId,
               formattedDate: date,
-              AddedTimeText
+              AddedTimeText,
             }
           );
 
-          if (!response.ok) {
-            throw new Error('Failed to upload receipt');
-          }
+      
 
           const result = response;
           resolve(result);
@@ -868,7 +867,6 @@ export const AddRoomImageToFiles = async (files, FolderText) => {
         'POST',
         {
           'Content-Type': 'application/json',
-          
         },
         {
           base64Image,
@@ -877,7 +875,7 @@ export const AddRoomImageToFiles = async (files, FolderText) => {
           FileId,
         }
       );
-      return response.json();
+      return response;
     });
 
     const results = await Promise.all(uploadPromises);
@@ -897,7 +895,6 @@ export const getRealFile = async (fullurl) => {
   const response = await makeRequest(fullurl, {
     headers: {
       'user-id': userId,
-      
     },
   });
   const blob = await response.blob();
@@ -958,9 +955,7 @@ export const downloadDocument = async (roomId, fileName) => {
         `/tenant-document-info/${encodeURIComponent(roomId)}`,
         'GET'
       );
-      if (!response.ok) {
-        throw new Error('Failed to get tenant document info');
-      }
+     
       const { folderName } = response;
       tenantFolderName = folderName;
     } else {
@@ -968,22 +963,27 @@ export const downloadDocument = async (roomId, fileName) => {
     }
 
     // Make the download request with the correct path structure
-    const response = await SendFileManagerApi(
-      `/download-document/${encodeURIComponent(roomId)}/${encodeURIComponent(tenantFolderName)}/${encodeURIComponent(fileName)}`,
-      'GET',
-      {
-        'Content-Type': 'application/json',
-        'user-id': userId,
-        
-      },
-      null,
-      true
+    const response = await fetch(
+      `https://www.rentmaster.markethubet.com/download-document/${encodeURIComponent(roomId)}/${encodeURIComponent(
+        tenantFolderName
+
+
+
+
+
+
+
+
+      )}/${encodeURIComponent(fileName)}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'user-id': userId,
+        }
+      }
     );
 
-    if (!response.ok) {
-      const errorText = response;
-      throw new Error(`Failed to download document: ${errorText}`);
-    }
+
 
     const blob = await response.blob();
     const url = window.URL.createObjectURL(blob);
@@ -1002,8 +1002,8 @@ export const downloadDocument = async (roomId, fileName) => {
   }
 };
 export const deleteRoomImage = async (roomId, fullPath) => {
- 
-  if (window.electron) { const fileName = fullPath.split('\\').pop();
+  if (window.electron) {
+    const fileName = fullPath.split('\\').pop();
     // Use backslash for Windows paths
     try {
       const response = await SendFileManagerApi(
@@ -1021,11 +1021,18 @@ export const deleteRoomImage = async (roomId, fullPath) => {
       // Extract just the filename from the full path
       const fileName = fullPath.split(/[/\\]/).pop();
       const userId = storageManager.get('users')[0].id;
-      
-      console.log('Deleting room image:', { roomId, fileName, userId, fullPath }); // Debug log
-      
+
+      console.log('Deleting room image:', {
+        roomId,
+        fileName,
+        userId,
+        fullPath,
+      }); // Debug log
+
       const response = await SendFileManagerApi(
-        `/room-image/${encodeURIComponent(roomId)}/${encodeURIComponent(fileName)}/${encodeURIComponent(userId)}`,
+        `/room-image/${encodeURIComponent(roomId)}/${encodeURIComponent(
+          fileName
+        )}/${encodeURIComponent(userId)}`,
         'DELETE'
       );
       const data = response;
@@ -1079,7 +1086,6 @@ export const duplicateRoomImagesFolder = async (
       'POST',
       {
         'Content-Type': 'application/json',
-        
       },
       {
         sourceFolderName,
@@ -1107,29 +1113,24 @@ export const downloadImage = async (roomId, imageName) => {
       'GET'
     );
 
-    if (!folderResponse.ok) {
-      throw new Error('Failed to get room folder info');
-    }
+  
 
-    const { folderName } = await folderResponse.json();
+    const { folderName } = await folderResponse;
 
     // Make the download request with the correct folder name
-    const response = await SendFileManagerApi(
-      `/download-image/${encodeURIComponent(roomId)}/${encodeURIComponent(folderName)}/${encodeURIComponent(imageName)}/${encodeURIComponent(userId)}`,
-      'GET',
+    const response = await fetch(
+      `https://www.rentmaster.markethubet.com/download-image/${encodeURIComponent(roomId)}/${encodeURIComponent(
+        folderName
+      )}/${encodeURIComponent(imageName)}/${encodeURIComponent(userId)}`,
       {
-        'Content-Type': 'application/json',
-        'user-id': userId,
-        
-      },
-      null,
-      true
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'user-id': userId,
+          "x-api-key": import.meta.env.VITE_AppCodeElectronString,
+        }
+      }
     );
-
-    if (!response.ok) {
-      const errorText = response;
-      throw new Error(`Failed to download image: ${errorText}`);
-    }
 
     const blob = await response.blob();
     const url = window.URL.createObjectURL(blob);
@@ -1166,7 +1167,6 @@ export const AddRoomDocuments = async (
         'POST',
         {
           'Content-Type': 'application/json',
-          
         },
         {
           base64Document,
@@ -1177,7 +1177,7 @@ export const AddRoomDocuments = async (
           AddedTimeText,
         }
       );
-      return response.json();
+      return response;
     });
 
     const results = await Promise.all(uploadPromises);
@@ -1236,7 +1236,6 @@ export const uploadTenantDocument = async (file, roomId) => {
       'POST',
       {
         'Content-Type': 'application/json',
-        
       },
       {
         base64Document,
@@ -1245,12 +1244,9 @@ export const uploadTenantDocument = async (file, roomId) => {
       }
     );
 
-    if (!response.ok) {
-      const errorData = response;
-      throw new Error(errorData.error || 'Failed to upload tenant document');
-    }
+   
 
-    return response.json();
+    return response;
   } catch (error) {
     console.error('Error uploading tenant document:', error);
     throw error;
@@ -1294,7 +1290,6 @@ export const uploadTenantDocumentsV2 = async (
         'POST',
         {
           'Content-Type': 'application/json',
-          
         },
         {
           base64Document,
@@ -1342,7 +1337,6 @@ export const uploadReceiptDocuments = async (
         'POST',
         {
           'Content-Type': 'application/json',
-          
         },
         {
           base64Document,

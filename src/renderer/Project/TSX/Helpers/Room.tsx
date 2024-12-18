@@ -48,8 +48,7 @@ const Room = ({
   turnOffAddTenantStateForAll,
 
   turnOffViewStateForAll,
-  TenantList,
-  setTenantList,
+
   tenantAPI,
   updateRoomPropertyWithOutRefresh,
   roomPaymentInfoApi,
@@ -67,14 +66,14 @@ const Room = ({
   SelectedUserId,
   SelectedBranchId,
   SelectedAppUser,
-  setChangeProgress,changeProgress
+  setChangeProgress,
+  changeProgress,
 }: {
   roomType: RoomType;
   updateRoomProperty: any;
   turnOffAddTenantStateForAll: any;
   turnOffViewStateForAll: any;
-  TenantList: any;
-  setTenantList: any;
+
   tenantAPI: any;
   updateRoomPropertyWithOutRefresh: any;
   roomPaymentInfoApi: any;
@@ -106,7 +105,19 @@ const Room = ({
   const privileges = useMemo(
     () => getUserPrivileges(SelectedAppUser),
     [SelectedAppUser]
-  );
+  );  const {
+    AllRoomPayInfo,
+    setAllRoomPayInfo,
+    AllAgreements,
+    setAllAgreements,
+    AllTenants,
+    setAllUtilityPayments,
+    AllUtilityPayments,
+
+    setAllTenants,
+    AllRoomPayInfoHistory,
+    setAllRoomPayInfoHistory,
+  } = useGlobal();
   const [name, setName] = useState('');
   const [tel1, setTel1] = useState('');
   const [tel2, setTel2] = useState('');
@@ -140,8 +151,8 @@ const Room = ({
   );
   const [searchTermTenant, setSearchTermTenant] = useState('');
   const filteredTenants =
-    TenantList &&
-    TenantList.filter(
+    AllTenants &&
+    AllTenants.filter(
       (tenant: tenant) =>
         tenant.name.toLowerCase().includes(searchTermTenant.toLowerCase()) ||
         tenant.phoneNumber.includes(searchTermTenant) ||
@@ -157,9 +168,6 @@ const Room = ({
   const utilityShowerRefHider = useRef(null);
   const utilityShowerRef = useRef(null);
   useEffect(() => {
-
-    
-
     const handleClickOutside = (event: MouseEvent) => {
       if (
         addTenantRef.current &&
@@ -188,7 +196,7 @@ const Room = ({
         !(hideButtonRef.current as HTMLElement).contains(
           event.target as Node
         ) &&
-        roomType.ShowPayTimeLine&&
+        roomType.ShowPayTimeLine &&
         !(event.target as HTMLElement).closest('#confirm-overlay')
       ) {
         updateRoomPropertyLocal(roomType.id, 'ShowPayTimeLine', 0);
@@ -221,11 +229,11 @@ const Room = ({
     return daysDifference;
   }
   const handleTenantSelectWhenNew = async () => {
-    // Find the tenant in the TenantList
-    const tenantIndex = TenantList.findIndex(
+    // Find the tenant in the AllTenants
+    const tenantIndex = AllTenants.findIndex(
       (tenant: any) => tenant.id === SelectedTenantIdOnAdding
     );
-    const tenant = TenantList[tenantIndex];
+    const tenant = AllTenants[tenantIndex];
 
     if (tenantIndex !== -1) {
       if (!tenant.RentingOrOut) {
@@ -279,13 +287,13 @@ const Room = ({
     // Find next available number
     let nextNumber = currentNumber + 1;
     while (
-      TenantList.some((t: any) => t.name === `${baseName}(${nextNumber})`)
+      AllTenants.some((t: any) => t.name === `${baseName}(${nextNumber})`)
     ) {
       nextNumber++;
     }
 
     // Create new tenant object
-    const newTenant = {
+    const newTenant: tenant = {
       id: uuidv4(),
       name: `${baseName}(${nextNumber})`,
       phoneNumber: originalTenant.phoneNumber,
@@ -296,7 +304,7 @@ const Room = ({
       RentingOrOut: true,
       SelectedAgreement: selectedAgreement,
       startTime: new Date(startTime).getTime(),
-      endTime: endTime,
+      endTime: new Date(endTime).getTime(),
       agreedPrice: agreedPrice || roomType.price,
       AddedTime: Date.now(),
       Currency: AddTenantFormCurrency,
@@ -306,7 +314,7 @@ const Room = ({
 
     // Add new tenant using AddValue
     await addValue('tenants', newTenant);
-
+    setAllTenants([...AllTenants, newTenant]);
     await updateRoomAndPaymentInfo(newTenant.id, newTenant.name);
   };
 
@@ -503,6 +511,7 @@ const Room = ({
         tenant.AddedTime,
         tenant.Currency
       );
+
       if (!roomType.AllRoomPayInfo) {
         roomType.AllRoomPayInfo = {
           RoomPayInfo: [],
@@ -586,9 +595,10 @@ const Room = ({
           ? ('-' + customDays).toString()
           : paymentCycle;
       //fixed term lease
+
       if (selectedAgreement === 'Fixed-Term') {
         const AgreementId = uuidv4();
-        agreementApi.addAgreementApi(
+        const result = await agreementApi.addAgreementApi(
           AgreementId,
           roomType.id,
           tenant.id,
@@ -602,6 +612,7 @@ const Room = ({
           Representative,
           tenant.Currency
         );
+        console.log(result);
         updateRoomProperty(roomType.id, 'selectedAgreementId', AgreementId);
       }
     }
@@ -616,12 +627,14 @@ const Room = ({
     const allPayments = [];
     const today = new Date();
     const yearEnd = new Date(today.getFullYear() + 1, 11, 31);
-    const tenant =  AllTenants.find(t => t.id === room.tenantId);
+    const tenant = AllTenants.find((t) => t.id === room.tenantId);
     let startDate = new Date(tenant?.startTime || Date.now()).getTime();
 
     let endDate = null;
     if (room.selectedAgreementId) {
-      const agreements = AllAgreements.find(a => a.id === room.selectedAgreementId);
+      const agreements = AllAgreements.find(
+        (a) => a.id === room.selectedAgreementId
+      );
       if (agreements) {
         startDate = agreements.startTime;
       }
@@ -679,9 +692,8 @@ const Room = ({
       }
     }
 
-    const actualPayments = await getValuesWithSql(
-      'room_pay_info',
-      `WHERE roomId = '${room.id}' AND tenantId = '${room.tenantId}'`
+    const actualPayments = AllRoomPayInfo.filter(
+      (r: RoomPayInfo) => r.roomId === room.id && r.tenantId === room.tenantId
     );
 
     const finalPayments = allPayments.map((payment) => {
@@ -834,22 +846,20 @@ const Room = ({
     try {
       // Get the current agreement for the room
       if (
-        TenantList.find((t: tenant) => t.SelectedAgreement === 'Fixed-Term')
+        AllTenants.find((t: tenant) => t.SelectedAgreement === 'Fixed-Term')
       ) {
-        const [currentAgreement] = await getValuesWithSql(
-          'agreements',
-          `WHERE roomId = '${roomType.id}' AND tenantId = '${roomType.tenantId}' ORDER BY startTime DESC LIMIT 1`
+        const currentAgreement = AllAgreements.find(
+          (a: agreements) =>
+            a.roomId === roomType.id && a.tenantId === roomType.tenantId
         );
-
         if (currentAgreement) {
           // Get all payments for this agreement
-          const payments = await getValuesWithSql(
-            'room_pay_info',
-            `WHERE roomId = '${roomType.id}' AND tenantId = '${
-              roomType.tenantId
-            }' AND Day >= ${
-              currentAgreement.startTime
-            } AND Day <= ${Date.now()}`
+          const payments = AllRoomPayInfo(
+            (r: RoomPayInfo) =>
+              r.roomId === roomType.id &&
+              r.Day <= Date.now() &&
+              r.Day >= currentAgreement.startTime &&
+              r.tenantId === roomType.tenantId
           );
 
           // Add these payments to the historical payments table
@@ -864,14 +874,26 @@ const Room = ({
               setChangeMade
             );
             await deleteValue('room_pay_info', payment.id, setChangeMade);
+            setAllRoomPayInfoHistory([
+              ...AllRoomPayInfoHistory,
+              {
+                ...payment,
+                agreementId: currentAgreement.id,
+                branchId: SelectedBranchId,
+              },
+            ]);
+
+            setAllRoomPayInfo(
+              AllRoomPayInfo.filter((p: any) => p.id !== payment.id)
+            );
           }
 
           // Now delete the payments from the room_pay_info table
         }
       } else {
-        const payments = await getValuesWithSql(
-          'room_pay_info',
-          `WHERE roomId = '${roomType.id}' AND tenantId = '${roomType.tenantId}'`
+        const payments = AllRoomPayInfo.filter(
+          (r: RoomPayInfo) =>
+            r.roomId === roomType.id && r.tenantId === roomType.tenantId
         );
 
         // Add these payments to the historical payments table
@@ -886,6 +908,19 @@ const Room = ({
             setChangeMade
           );
           await deleteValue('room_pay_info', payment.id, setChangeMade);
+          setAllRoomPayInfoHistory([
+            ...AllRoomPayInfoHistory,
+            {
+              ...payment,
+              agreementId: '',
+              branchId: SelectedBranchId,
+            },
+            ,
+          ]);
+
+          setAllRoomPayInfo(
+            AllRoomPayInfo.filter((p: any) => p.id !== payment.id)
+          );
         }
       }
       // Update the room's tenant information
@@ -926,9 +961,8 @@ const Room = ({
       );
 
       // Additional logic from the original function
-      const allPayInfos = await getValuesWithSql(
-        'room_pay_info',
-        `WHERE roomId = '${roomType.id}'`
+      const allPayInfos = AllRoomPayInfo.filter(
+        (r: RoomPayInfo) => r.roomId === roomType.id
       );
       let totalEarningsFromTenant = 0;
       if (allPayInfos) {
@@ -946,7 +980,7 @@ const Room = ({
         )
       ).sort((a: any, b: any) => b.AddedTime - a.AddedTime);
 
-      addValue(
+      await addValue(
         'PastTenantsForRoom',
         {
           id: uuidv4(),
@@ -957,7 +991,7 @@ const Room = ({
               : '',
           tenantId: roomType.tenantId,
           enterDate: new Date(
-            TenantList.find((t: tenant) => t.id === roomType.tenantId).startTime
+            AllTenants.find((t: tenant) => t.id === roomType.tenantId).startTime
           ).getTime(),
           exitDate: Date.now(),
           totalEarnings: totalEarningsFromTenant,
@@ -1000,14 +1034,16 @@ const Room = ({
         0
       );
 
-      const utilityPayments = await getValuesWithSql(
-        'utility_payments',
-        `WHERE roomId = '${roomType.id}'`
+      const utilityPayments = AllUtilityPayments.filter(
+        (u: UtilityPayment) => u.roomId === roomType.id
       );
       if (utilityPayments)
         for (let i = 0; i < utilityPayments.length; i++) {
           const element = utilityPayments[i];
           deleteValue('utility_payments', element.id, setChangeMade);
+          setAllUtilityPayments(
+            AllUtilityPayments.filter((p: any) => p.id !== element.id)
+          );
         }
 
       // Reset the room's AddTenantState
@@ -1091,14 +1127,8 @@ const Room = ({
   const handleSearchBroker = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchBroker(event.target.value);
   };
-  const {
-    AllRoomPayInfo,
-    setAllRoomPayInfo,
-    AllAgreements,
-    setAllAgreements,
-    AllTenants,
-    setAllTenants,
-  } = useGlobal();
+
+
   const [isPercentCommission, setIsPercentCommission] = useState(true);
   const [commissionValue, setCommissionValue] = useState<number>(0);
   const [ShowReceipt, setShowReceipt] = useState(false);
@@ -1271,12 +1301,18 @@ const Room = ({
     );
   });
   const editTenantInfo = (field: string, newValue: string) => {
-    const tenant = TenantList.find(
+    const tenant = AllTenants.find(
       (tenant: any) => tenant.id === roomType.tenantId
     );
     if (tenant) {
       tenantAPI.EditTenantApi(tenant.id, field, newValue);
-      setTenantList((prev) =>
+      setAllTenants((prev) =>
+        prev.map((tenant) =>
+          tenant.id === tenant.id ? { ...tenant, [field]: newValue } : tenant
+        )
+      );
+
+      setAllTenants((prev) =>
         prev.map((tenant) =>
           tenant.id === tenant.id ? { ...tenant, [field]: newValue } : tenant
         )
@@ -1466,7 +1502,11 @@ const Room = ({
                 setSelectedEditRoomId(roomType.id);
                 setTypeOfRoomState(true);
               }}
-              src={storageManager.get('ThemeMode') === 'dark' ? EditIconLight : EditIconDark}
+              src={
+                storageManager.get('ThemeMode') === 'dark'
+                  ? EditIconLight
+                  : EditIconDark
+              }
               style={{
                 width: 'var(--23px-V)',
                 height: 'var(--23px-V)',
@@ -1512,10 +1552,10 @@ const Room = ({
                       fontWeight: '400',
                     }}
                   >
-                    {TenantList.find(
+                    {AllTenants.find(
                       (tenant: any) => tenant.id === roomType.tenantId
                     ) ? (
-                      TenantList.find(
+                      AllTenants.find(
                         (tenant: any) => tenant.id === roomType.tenantId
                       ).name
                     ) : (
@@ -1537,38 +1577,37 @@ const Room = ({
                       <>
                         {privileges.addTenant && (
                           <strong
-                          className="PageNavigatorButtonSelected"
-                          style={{
-                            width: '77%',
-                            border: 'none',
-                            height: 'var(--22px-V)',
-                            marginTop: 'var(--0px-V)',
-                            paddingTop: 'var(--0px-V)',
-                          }}
-                         
-                        >
-                          Add a tenant
-                        </strong>
+                            className="PageNavigatorButtonSelected"
+                            style={{
+                              width: '77%',
+                              border: 'none',
+                              height: 'var(--22px-V)',
+                              marginTop: 'var(--0px-V)',
+                              paddingTop: 'var(--0px-V)',
+                            }}
+                          >
+                            Add a tenant
+                          </strong>
                         )}
                       </>
                     ) : (
                       <>
                         {privileges.addTenant && (
                           <button
-                          className="PageNavigatorButtonSelected"
-                          style={{
-                            width: '77%',
-                            border: 'none',
-                            height: 'var(--22px-V)',
-                            marginTop: 'var(--10px-V)',
-                            paddingTop: 'var(--0px-V)',
-                          }}
-                          onClick={() => {
-                            handleAddTenant();
-                          }}
-                        >
-                          Add a tenant
-                        </button>
+                            className="PageNavigatorButtonSelected"
+                            style={{
+                              width: '77%',
+                              border: 'none',
+                              height: 'var(--22px-V)',
+                              marginTop: 'var(--10px-V)',
+                              paddingTop: 'var(--0px-V)',
+                            }}
+                            onClick={() => {
+                              handleAddTenant();
+                            }}
+                          >
+                            Add a tenant
+                          </button>
                         )}
                       </>
                     )}
@@ -1834,7 +1873,7 @@ const Room = ({
                     fontSize: 'var(--17px-V)',
                   }}
                 >
-                 {roomType.squareMeters} Square Meters
+                  {roomType.squareMeters} Square Meters
                 </p>
               </div>
             </>
@@ -2026,7 +2065,7 @@ const Room = ({
                     >
                       Select Existing Tenant
                     </h3>
-                    {TenantList.length >= 1 ? (
+                    {AllTenants.length >= 1 ? (
                       <input
                         type="text"
                         placeholder="Search tenant"
@@ -2085,7 +2124,7 @@ const Room = ({
                       <div
                         className="TenantRow"
                         key={
-                          TenantList.find(
+                          AllTenants.find(
                             (tenant: any) =>
                               tenant.id == SelectedTenantIdOnAdding
                           ).key
@@ -2094,7 +2133,7 @@ const Room = ({
                         <button
                           onClick={() => {
                             setSelectedTenantIdOnAdding(
-                              TenantList.find(
+                              AllTenants.find(
                                 (tenant: any) =>
                                   tenant.id == SelectedTenantIdOnAdding
                               ).id
@@ -2103,7 +2142,7 @@ const Room = ({
                         >
                           <p>
                             {
-                              TenantList.find(
+                              AllTenants.find(
                                 (tenant: any) =>
                                   tenant.id == SelectedTenantIdOnAdding
                               ).name
@@ -2111,7 +2150,7 @@ const Room = ({
                           </p>
                           <p style={{ fontSize: 'var(--10px-V)' }}>
                             {
-                              TenantList.find(
+                              AllTenants.find(
                                 (tenant: any) =>
                                   tenant.id == SelectedTenantIdOnAdding
                               ).phoneNumber
@@ -2825,7 +2864,7 @@ const Room = ({
                       </h3>
                       <DocumentInteractor
                         room={roomType}
-                        TenantsList={TenantList}
+                        TenantsList={AllTenants}
                         AddTenant={true}
                         isAddRoomDocument={true}
                         SetRefreshState={SetRefreshState}
@@ -2846,7 +2885,7 @@ const Room = ({
                     </h3>
                     <DocumentInteractor
                       room={roomType}
-                      TenantsList={TenantList}
+                      TenantsList={AllTenants}
                       AddTenant={true}
                       isAddRoomDocument={true}
                       SetRefreshState={SetRefreshState}
@@ -3000,7 +3039,7 @@ const Room = ({
                         <InfoItem
                           label="Name"
                           value={
-                            TenantList.find(
+                            AllTenants.find(
                               (tenant: any) => tenant.id === roomType.tenantId
                             )?.name || ''
                           }
@@ -3011,7 +3050,7 @@ const Room = ({
                         <InfoItem2
                           label="Tel 1"
                           value={
-                            TenantList.find(
+                            AllTenants.find(
                               (tenant: any) => tenant.id === roomType.tenantId
                             )?.phoneNumber || ''
                           }
@@ -3022,7 +3061,7 @@ const Room = ({
                         <InfoItem2
                           label="Tel 2"
                           value={
-                            TenantList.find(
+                            AllTenants.find(
                               (tenant: any) => tenant.id === roomType.tenantId
                             )?.phoneNumber2 || ''
                           }
@@ -3033,7 +3072,7 @@ const Room = ({
                         <InfoItem2
                           label="Email"
                           value={
-                            TenantList.find(
+                            AllTenants.find(
                               (tenant: any) => tenant.id === roomType.tenantId
                             )?.email || ''
                           }
@@ -3044,7 +3083,7 @@ const Room = ({
                         <InfoItem2
                           label="Description"
                           value={
-                            TenantList.find(
+                            AllTenants.find(
                               (tenant: any) => tenant.id === roomType.tenantId
                             )?.description || ''
                           }
@@ -3056,7 +3095,7 @@ const Room = ({
                         <InfoItem2
                           label="TIN"
                           value={
-                            TenantList.find(
+                            AllTenants.find(
                               (tenant: any) => tenant.id === roomType.tenantId
                             )?.TIN || ''
                           }
@@ -3065,7 +3104,7 @@ const Room = ({
                         <InfoItem2
                           label="Rent Reason"
                           value={
-                            TenantList.find(
+                            AllTenants.find(
                               (tenant: any) => tenant.id === roomType.tenantId
                             )?.RentReason || ''
                           }
@@ -3120,25 +3159,25 @@ const Room = ({
                         <>
                           {renderInfoItem(
                             'Agreement type',
-                            TenantList.find(
+                            AllTenants.find(
                               (tenant: any) => tenant.id === roomType.tenantId
                             )?.SelectedAgreement
                           )}
-                          {TenantList.find(
+                          {AllTenants.find(
                             (tenant: any) => tenant.id === roomType.tenantId
                           )?.SelectedAgreement !== 'Fixed-Term' ? (
                             <>
                               {renderInfoItem(
                                 'Start time',
                                 new Date(
-                                  TenantList.find(
+                                  AllTenants.find(
                                     (tenant: any) =>
                                       tenant.id === roomType.tenantId
                                   )?.startTime
                                 ).toDateString(),
                                 toEthiopianDateString(
                                   new Date(
-                                    TenantList.find(
+                                    AllTenants.find(
                                       (tenant: any) =>
                                         tenant.id === roomType.tenantId
                                     )?.startTime
@@ -3159,7 +3198,7 @@ const Room = ({
                           ) : (
                             <AgreementViewerForRoom
                               view={
-                                TenantList.find(
+                                AllTenants.find(
                                   (tenant: any) =>
                                     tenant.id === roomType.tenantId
                                 )?.SelectedAgreement == 'Fixed-Term'
@@ -3168,7 +3207,7 @@ const Room = ({
                               getCorrectPaymentStatment={
                                 getCorrectPaymentStatment
                               }
-                              TenantList={TenantList}
+                              
                               SelectedBranchId={SelectedBranchId}
                               roomType={roomType}
                               agreementApi={agreementApi}
@@ -3281,7 +3320,7 @@ const Room = ({
                                               user.id === SelectedUserId
                                           ).companyName
                                       }/${
-                                        TenantList.find(
+                                        AllTenants.find(
                                           (tenant: any) =>
                                             tenant.id === roomType.tenantId
                                         )?.name
@@ -3310,7 +3349,7 @@ const Room = ({
                                       }
                                       /
                                       {
-                                        TenantList.find(
+                                        AllTenants.find(
                                           (tenant: any) =>
                                             tenant.id === roomType.tenantId
                                         )?.name
@@ -3335,7 +3374,7 @@ const Room = ({
                                               user.id === SelectedUserId
                                           ).companyName
                                       }/${
-                                        TenantList.find(
+                                        AllTenants.find(
                                           (tenant: any) =>
                                             tenant.id === roomType.tenantId
                                         )?.name
@@ -3481,7 +3520,7 @@ const Room = ({
                                   updateRoomProperty(
                                     roomType.id,
                                     'utilityPaymentStartDate',
-                                    TenantList.find(
+                                    AllTenants.find(
                                       (tenant: any) =>
                                         tenant.id === roomType.tenantId
                                     )?.startTime
@@ -3741,7 +3780,7 @@ const Room = ({
                         >
                           <DocumentInteractor
                             room={roomType}
-                            TenantsList={TenantList}
+                            TenantsList={AllTenants}
                           />
                         </div>
                       )}
@@ -3872,7 +3911,7 @@ const Room = ({
                 agreedPrice={roomType.AgreedPrice}
                 extendPaymentSchedule={extendPaymentSchedule}
                 refresh={handlePaymentRefresh}
-                tenantList={TenantList}
+                
                 ShowReceipt={ShowReceipt}
                 setShowReceipt={setShowReceipt}
                 setChangeMade={setChangeMade}
@@ -3898,7 +3937,7 @@ const Room = ({
           >
             <UtilityPanel
               roomType={roomType}
-              TenantList={TenantList}
+              AllTenants={AllTenants}
               selectedUserId={SelectedUserId}
               SelectedBranchId={SelectedBranchId}
               setChangeMade={setChangeMade}
@@ -3919,10 +3958,10 @@ const Room = ({
             <div className="TenantLeavePannelScreen">
               <LeavePanel
                 tenant={
-                  TenantList.find(
+                  AllTenants.find(
                     (tenant: any) => tenant.id === roomType.tenantId
                   ) &&
-                  TenantList.find(
+                  AllTenants.find(
                     (tenant: any) => tenant.id === roomType.tenantId
                   )
                 }

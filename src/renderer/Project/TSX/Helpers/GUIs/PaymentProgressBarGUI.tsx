@@ -35,7 +35,7 @@ interface Props {
   paymentData: RoomPayInfo[]; //
   agreedPrice: number; //
   roomType: RoomType; //
-  tenantList: tenant[]; //
+  
   roomPaymentInfoApi: any;
   refresh: () => void; //
   extendPaymentSchedule: () => void; //
@@ -60,7 +60,7 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
   roomType,
   extendPaymentSchedule,
   refresh,
-  tenantList,
+
   ShowReceipt,
   setShowReceipt,
   setChangeMade,
@@ -90,9 +90,14 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
 
   // Add window width state
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
- const { showAlert } = useAlert(); 
+  const { showAlert } = useAlert();
   // Add window resize listener
   useEffect(() => {
+    console.log(
+      AllRoomPayInfo,
+      AllAgreements,
+      AllTenants
+    );
     const handleResize = () => setWindowWidth(window.innerWidth);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
@@ -105,97 +110,95 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
     if (windowWidth >= 2560) return 3840 / 1920;
     return 1;
   };
-const calculatePayments = async () => {
-      const newPayments: Payment[] = [];
-      let startDate =
-        tenantList.find((tenant) => tenant.id === roomType.tenantId)
-          ?.startTime || Date.now();
-      let endDate = null;
-      if (roomType.selectedAgreementId) {
-        const agreements = AllAgreements.filter(
-          (agreement) => agreement.id === roomType.selectedAgreementId
-        );
-        if (agreements.length > 0) startDate = agreements[0].startTime;
-        if (
-          tenantList.find((t: tenant) => t.id === roomType.tenantId)
-            ?.SelectedAgreement === 'Fixed-Term'
-        )
-          if (agreements.length > 0) endDate = agreements[0].endTime;
-      }
-
-      let currentDate = new Date(startDate);
-      let paymentCount = 0;
-      const existingPayments = AllRoomPayInfo.filter(
-        (payment) =>
-          payment.roomId === roomType.id &&
-          payment.tenantId === roomType.tenantId
+  const calculatePayments = async () => {
+    const newPayments: Payment[] = [];
+    let startDate =
+      AllTenants.find((tenant) => tenant.id === roomType.tenantId)?.startTime ||
+      Date.now();
+    let endDate = null;
+    if (roomType.selectedAgreementId) {
+      const agreements = AllAgreements.filter(
+        (agreement) => agreement.id === roomType.selectedAgreementId
       );
-      let tenantIsFixedTerm =
-        tenantList.find((t: tenant) => t.id === roomType.tenantId)
-          ?.SelectedAgreement === 'Fixed-Term';
-      while (
-        (tenantIsFixedTerm || paymentCount < 10 * roomType.paymentShowAmount) &&
-        (endDate == null || currentDate < endDate)
-      ) {
-        const paymentId = `${roomType.id}-${currentDate.getTime()}`;
-        newPayments.push({
-          id: paymentId,
-          Day: currentDate.getTime(),
-          Value: roomType.AgreedPrice,
-          Paid:
-            existingPayments.length > 0
-              ? existingPayments.find((p: RoomPayInfo) => p.id === paymentId)
-                  ?.Paid
-              : false,
-          userId: SelectedUserId,
-        });
+      if (agreements.length > 0) startDate = agreements[0].startTime;
+      if (
+        AllTenants.find((t: tenant) => t.id === roomType.tenantId)
+          ?.SelectedAgreement === 'Fixed-Term'
+      )
+        if (agreements.length > 0) endDate = agreements[0].endTime;
+    }
 
-        paymentCount++;
+    let currentDate = new Date(startDate);
+    let paymentCount = 0;
+    const existingPayments = AllRoomPayInfo.filter(
+      (payment) =>
+        payment.roomId === roomType.id && payment.tenantId === roomType.tenantId
+    );
+    let tenantIsFixedTerm =
+      AllTenants.find((t: tenant) => t.id === roomType.tenantId)
+        ?.SelectedAgreement === 'Fixed-Term';
+    while (
+      (tenantIsFixedTerm || paymentCount < 10 * roomType.paymentShowAmount) &&
+      (endDate == null || currentDate < endDate)
+    ) {
+      const paymentId = `${roomType.id}-${currentDate.getTime()}`;
+      newPayments.push({
+        id: paymentId,
+        Day: currentDate.getTime(),
+        Value: roomType.AgreedPrice,
+        Paid:
+          existingPayments.length > 0
+            ? existingPayments.find((p: RoomPayInfo) => p.id === paymentId)
+                ?.Paid
+            : false,
+        userId: SelectedUserId,
+      });
 
-        // Calculate next payment date based on payment cycle
-        switch (roomType.PaymentCycleType) {
-          case '30':
-            currentDate = addDays(currentDate, 30);
-            break;
-          case '15':
-            currentDate = addDays(currentDate, 15);
-            break;
-          case '7':
-            currentDate = addDays(currentDate, 7);
-            break;
-          case 'daily':
-            currentDate = addDays(currentDate, 1);
-            break;
-          case 'monthly':
-            currentDate = addMonths(currentDate, 1);
-            break;
-          case 'weekly':
-            currentDate = addDays(currentDate, 7);
-            break;
-          case 'custom':
-            currentDate = addDays(
-              currentDate,
-              roomType.PaymentCycleCustomeDays || 30
-            );
-            break;
-          case 'Annually':
-            currentDate = addYears(currentDate, 1);
-            break;
-          default:
-            currentDate = addMonths(currentDate, 1);
-            break;
-        }
+      paymentCount++;
+
+      // Calculate next payment date based on payment cycle
+      switch (roomType.PaymentCycleType) {
+        case '30':
+          currentDate = addDays(currentDate, 30);
+          break;
+        case '15':
+          currentDate = addDays(currentDate, 15);
+          break;
+        case '7':
+          currentDate = addDays(currentDate, 7);
+          break;
+        case 'daily':
+          currentDate = addDays(currentDate, 1);
+          break;
+        case 'monthly':
+          currentDate = addMonths(currentDate, 1);
+          break;
+        case 'weekly':
+          currentDate = addDays(currentDate, 7);
+          break;
+        case 'custom':
+          currentDate = addDays(
+            currentDate,
+            roomType.PaymentCycleCustomeDays || 30
+          );
+          break;
+        case 'Annually':
+          currentDate = addYears(currentDate, 1);
+          break;
+        default:
+          currentDate = addMonths(currentDate, 1);
+          break;
       }
+    }
 
-      return newPayments;
-    };
+    return newPayments;
+  };
 
   useEffect(() => {
-    
     calculatePayments().then((payments) =>
       setPayments(payments as RoomPayInfo[])
     );
-  }, [roomType, tenantList]);
+  }, [roomType, AllTenants]);
   const calculatePredictedPayments = async (room: RoomType) => {
     const allPayments = [];
     const today = new Date();
@@ -329,13 +332,11 @@ const calculatePayments = async () => {
     }
   };
   const handlePayClick = async (payment: any) => {
-    const existingPayment = AllRoomPayInfo.find(
-      (p) => p.id === payment.id
-    );
-    console.log("Existing payment: ",existingPayment)
-    const newPaidStatus = !payment.Paid ;
+    const existingPayment = AllRoomPayInfo.find((p) => p.id === payment.id);
+    console.log('Existing payment: ', existingPayment);
+    const newPaidStatus = !payment.Paid;
     //setChangeProgress(0);
-    
+
     if (existingPayment) {
       if (newPaidStatus) {
         //setChangeProgress(25);
@@ -347,17 +348,22 @@ const calculatePayments = async () => {
           setChangeMade,
           0
         );
-        setAllRoomPayInfo((prevInfo:any) => prevInfo.map((p:any) => p.id === payment.id ? { ...p, Paid: 1 } : p));
-       // setChangeProgress(75);
+        setAllRoomPayInfo((prevInfo: any) =>
+          prevInfo.map((p: any) =>
+            p.id === payment.id ? { ...p, Paid: 1 } : p
+          )
+        );
+        // setChangeProgress(75);
       } else {
-       // setChangeProgress(25);
+        // setChangeProgress(25);
         await deleteValue('room_pay_info', payment.id, setChangeMade);
-        setAllRoomPayInfo((prevInfo:any) => prevInfo.filter((p:any) => p.id !== payment.id));
-       // setChangeProgress(75);
-
+        setAllRoomPayInfo((prevInfo: any) =>
+          prevInfo.filter((p: any) => p.id !== payment.id)
+        );
+        // setChangeProgress(75);
       }
     } else if (newPaidStatus) {
-  //    setChangeProgress(25);
+      //    setChangeProgress(25);
 
       await addValue(
         'room_pay_info',
@@ -365,7 +371,8 @@ const calculatePayments = async () => {
           ...payment,
           Paid: 1,
           roomId: roomType.id,
-          tenantId: roomType.tenantId, branchId: SelectedBranchId,
+          tenantId: roomType.tenantId,
+          branchId: SelectedBranchId,
         },
         setChangeMade
       );
@@ -375,9 +382,8 @@ const calculatePayments = async () => {
         roomId: roomType.id,
         tenantId: roomType.tenantId,
         branchId: SelectedBranchId,
-      })
-     // setChangeProgress(75);
-
+      });
+      // setChangeProgress(75);
     }
 
     setPayments((prevPayments) =>
@@ -385,19 +391,23 @@ const calculatePayments = async () => {
         p.id === payment.id ? { ...p, Paid: newPaidStatus ? 1 : 0 } : p
       )
     );
-    console.log(payments.map((p) =>
-      p.id === payment.id ? { ...p, Paid: newPaidStatus ? 1 : 0 } : p
-    ))
-   
+    console.log(
+      payments.map((p) =>
+        p.id === payment.id ? { ...p, Paid: newPaidStatus ? 1 : 0 } : p
+      )
+    );
+
     updateRoomPropertyLocal(
       roomType.id,
       'DaysTillNextPayment',
       calculateDaysTillNextPayment(await calculatePredictedPayments(roomType))
     );
-  //  setChangeProgress(98);
-   
+    //  setChangeProgress(98);
+    //  setChangeProgress(98);
+
+    //  setChangeProgress(98);
   };
-  const {confirm} = useConfirm();
+  const { confirm } = useConfirm();
   useEffect(() => {
     if (payments.length > 0 && svgRef.current) {
       const scaleFactor = getScaleFactor();
@@ -633,7 +643,7 @@ const calculatePayments = async () => {
           // Remove tooltip
           svg.selectAll('.price-tooltip').remove();
         });
-      
+
       const selectButtons = svg
         .selectAll('rect.select-button')
         .data(sortedPaymentData)
@@ -743,7 +753,11 @@ const calculatePayments = async () => {
           .attr('fill', 'var(--Secondary-Color)')
           .attr('stroke', 'var(--Text-Color)');
 
-        const menuItems = [window.electron ?'Open' : "Download", 'Delete',window.electron && 'File explorer' ];
+        const menuItems = [
+          window.electron ? 'Open' : 'Download',
+          'Delete',
+          window.electron && 'File explorer',
+        ];
         contextMenuGroup
           .selectAll('.menu-item')
           .data(menuItems)
@@ -782,8 +796,11 @@ const calculatePayments = async () => {
           .each(function (d: any) {
             const element = d3.select(this);
             GetReceiptFile(d.Day).then((receiptFile) => {
-            
-              if (!receiptFile || receiptFile==='Add receipt' || receiptFile==='COMUNDEFINED') {
+              if (
+                !receiptFile ||
+                receiptFile === 'Add receipt' ||
+                receiptFile === 'COMUNDEFINED'
+              ) {
                 element.html('Add receipt');
                 return;
               }
@@ -818,7 +835,11 @@ const calculatePayments = async () => {
           })
           .on('click', async function (event: Event, d: any) {
             const receiptFile = await GetReceiptFile(d.Day);
-            if (!receiptFile || receiptFile==='Add receipt'||receiptFile==='COMUNDEFINED') {
+            if (
+              !receiptFile ||
+              receiptFile === 'Add receipt' ||
+              receiptFile === 'COMUNDEFINED'
+            ) {
               AddAReceipt(d);
               console.log('Add receipt');
             } else {
@@ -828,10 +849,13 @@ const calculatePayments = async () => {
           .on('contextmenu', async function (event: Event, d: any) {
             event.preventDefault();
             const receiptFile = await GetReceiptFile(d.Day);
-            if(receiptFile==='Add receipt'||receiptFile==='COMUNDEFINED'){
+            if (
+              receiptFile === 'Add receipt' ||
+              receiptFile === 'COMUNDEFINED'
+            ) {
               return;
             }
-            if (!receiptFile || receiptFile==='Add receipt') {
+            if (!receiptFile || receiptFile === 'Add receipt') {
               // If there's no receipt, don't show the context menu
               return;
             }
@@ -881,7 +905,6 @@ const calculatePayments = async () => {
                 break;
 
               case 'Delete':
-                
                 deleteReceipt(currentContextData.Day);
                 break;
             }
@@ -889,18 +912,21 @@ const calculatePayments = async () => {
           });
 
         function GetReceiptFile(date: Date) {
-          console.log(tenantList)
+          console.log(AllTenants);
           return window.electron
             ? window.electron.ipcRenderer.invoke(
                 'GetReceiptFile',
                 date,
                 roomType.id,
-                tenantList.find((t: tenant) => t.id === roomType.tenantId)
+                AllTenants.find((t: tenant) => t.id === roomType.tenantId)
               )
-            : GetReceiptFileApi(date, roomType.id, tenantList.find((t: tenant) => t.id === roomType.tenantId));
+            : GetReceiptFileApi(
+                date,
+                roomType.id,
+                AllTenants.find((t: tenant) => t.id === roomType.tenantId)
+              ) || 'COMUNDEFINED';
         }
 
-       
         function AddAReceipt(d: any) {
           const input = document.createElement('input');
           input.type = 'file';
@@ -913,7 +939,10 @@ const calculatePayments = async () => {
               const maxFileSizeMB = 5; // 5MB limit
 
               if (totalFileSizeMB > maxFileSizeMB) {
-                showAlert(`File size exceeds the ${maxFileSizeMB}MB limit.`);
+                showAlert(
+                  `File size exceeds the ${maxFileSizeMB}MB limit.`,
+                  'error'
+                );
                 return;
               }
 
@@ -921,31 +950,33 @@ const calculatePayments = async () => {
                 const roomId = roomType.id;
                 const tenantId = roomType.tenantId || '';
                 const tenantName =
-                  tenantList.find((t: tenant) => t.id === tenantId)?.name ||
-                  '';
+                  AllTenants.find((t: tenant) => t.id === tenantId)?.name || '';
                 const formattedDate = format(d.Day, 'yyyy-MM-dd');
                 const AddedTimeText = format(
                   new Date(
-                    tenantList.find((t: tenant) => t.id === tenantId)
+                    AllTenants.find((t: tenant) => t.id === tenantId)
                       ?.startTime || 0
                   ),
                   'EEE MMM dd yyyy'
                 );
 
-                const results = window.electron ? await uploadReceiptDocuments(
-                  [file],
-                  roomId,
-                  tenantName,
-                  tenantId,
-                  formattedDate,
-                  AddedTimeText
-                ) : await uploadReceiptDocumentsOnline(
-                  file,
-                  roomId,
-                  tenantList,
-                  tenantId,
-                  formattedDate,AddedTimeText
-                );
+                const results = window.electron
+                  ? await uploadReceiptDocuments(
+                      [file],
+                      roomId,
+                      tenantName,
+                      tenantId,
+                      formattedDate,
+                      AddedTimeText
+                    )
+                  : await uploadReceiptDocumentsOnline(
+                      file,
+                      roomId,
+                      AllTenants,
+                      tenantId,
+                      formattedDate,
+                      AddedTimeText
+                    );
 
                 if (results) {
                   console.log('Receipt uploaded successfully:', results);
@@ -972,21 +1003,18 @@ const calculatePayments = async () => {
               }
             } else {
               // Web version
-              const receiptFile = await GetReceiptFile(
-                d.Day,
-              
-              );
-              
+              const receiptFile = await GetReceiptFile(d.Day);
+
               if (receiptFile && receiptFile !== 'Add receipt') {
                 // Open in new tab
                 window.open(receiptFile, '_blank');
               } else {
-                showAlert('error', 'No receipt found');
+                showAlert('No receipt found', 'error');
               }
             }
           } catch (error) {
             console.error('Error opening receipt:', error);
-            showAlert('error', 'Failed to open receipt');
+            showAlert('Failed to open receipt', 'error');
           }
         }
 
@@ -1000,34 +1028,49 @@ const calculatePayments = async () => {
           }
           console.log('Open in file explorer');
         }
-        async function deleteReceipt (date: number) {
-          const choice = await confirm('Are you sure you want to delete this receipt?', {
-            title: 'Delete receipt',
-            confirmText: 'Delete',
-            cancelText:'Cancel',
-            type:'danger'
-          });
-          if(choice) {
-          GetReceiptFile(date).then((receiptFile) => {
-            if (receiptFile) {
-              if(window.electron){
-              window.electron.ipcRenderer.send('delete-receipt', receiptFile);
-              window.electron.ipcRenderer.once(
-                'receipt-deleted',
-                (result: any) => {
-                  if (result.success) {
-                    console.log('Receipt deleted successfully');
-                    refresh(); // Refresh the UI
-                  } else {
-                    console.error('Failed to delete receipt:', result.error);
-                  }
-                }
-              );} else {
-                deleteReceipt2(date,roomType.id,tenantList.find((t: tenant) => t.id === roomType.tenantId))
-                refresh(); // Refresh the UI
-              }
+        async function deleteReceipt(date: number) {
+          const choice = await confirm(
+            'Are you sure you want to delete this receipt?',
+            {
+              title: 'Delete receipt',
+              confirmText: 'Delete',
+              cancelText: 'Cancel',
+              type: 'danger',
             }
-          });}
+          );
+          if (choice) {
+            GetReceiptFile(date).then((receiptFile) => {
+              if (receiptFile) {
+                if (window.electron) {
+                  window.electron.ipcRenderer.send(
+                    'delete-receipt',
+                    receiptFile
+                  );
+                  window.electron.ipcRenderer.once(
+                    'receipt-deleted',
+                    (result: any) => {
+                      if (result.success) {
+                        console.log('Receipt deleted successfully');
+                        refresh(); // Refresh the UI
+                      } else {
+                        console.error(
+                          'Failed to delete receipt:',
+                          result.error
+                        );
+                      }
+                    }
+                  );
+                } else {
+                  deleteReceipt2(
+                    date,
+                    roomType.id,
+                    AllTenants.find((t: tenant) => t.id === roomType.tenantId)
+                  );
+                  refresh(); // Refresh the UI
+                }
+              }
+            });
+          }
         }
       }
       /////////////////////////////////////////////
@@ -1049,7 +1092,7 @@ const calculatePayments = async () => {
 
       // Add extend button at the end of the progress bar
       if (
-        tenantList.find((t: tenant) => t.id === roomType.tenantId)
+        AllTenants.find((t: tenant) => t.id === roomType.tenantId)
           ?.SelectedAgreement === 'Open-Ended'
       ) {
         svg
@@ -1100,9 +1143,7 @@ const calculatePayments = async () => {
     for (const date of selectedDates) {
       const payment = payments.find((item) => item.Day === date);
       if (payment && payment.Paid) {
-        const existingPayment = AllRoomPayInfo.find(
-          (p) => p.id === payment.id
-        );
+        const existingPayment = AllRoomPayInfo.find((p) => p.id === payment.id);
         if (existingPayment) {
           await updateValue(
             'room_pay_info',
@@ -1113,9 +1154,7 @@ const calculatePayments = async () => {
             0
           );
           setAllRoomPayInfo((prevInfo) =>
-            prevInfo.map((p) =>
-              p.id === payment.id ? { ...p, Paid: 0 } : p
-            )
+            prevInfo.map((p) => (p.id === payment.id ? { ...p, Paid: 0 } : p))
           );
           setPayments((prevPayments) =>
             prevPayments.map((p) =>

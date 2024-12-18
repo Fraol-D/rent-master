@@ -11,7 +11,7 @@ interface CalendarProps {
   rooms: RoomType[];
   initialMonths: number;
   initialMonthsPast: number;
-  tenantList: tenant[];
+ 
   SelectedBranchId: any;
 }
 
@@ -27,7 +27,7 @@ const CalendarGUI: React.FC<CalendarProps> = ({
   rooms,
   initialMonths,
   initialMonthsPast,
-  tenantList,
+
   SelectedBranchId,
 }: CalendarProps) => {
   const [numberOfMonthsFuture, setNumberOfMonthsFuture] =
@@ -46,7 +46,7 @@ const CalendarGUI: React.FC<CalendarProps> = ({
     AllRoomPayInfo,
     setAllRoomPayInfo,
     AllAgreements,
-    setAllAgreements,
+    setAllAgreements,AllTenants
   } = useGlobal();
   useEffect(() => {
     const handleResize = () => setWindowWidth(window.innerWidth);
@@ -63,13 +63,13 @@ const CalendarGUI: React.FC<CalendarProps> = ({
 
   useEffect(() => {
     const filtered = rooms.filter((room) =>
-      tenantList
+      AllTenants
         .find((tenant) => tenant.id === room.tenantId)
         ?.name.toLowerCase()
         .includes(searchTerm.toLowerCase())
     );
     setFilteredRooms(filtered);
-  }, [searchTerm, rooms, tenantList]);
+  }, [searchTerm, rooms, AllTenants]);
 
   useEffect(() => {
     const makeTable = async () => {
@@ -114,7 +114,7 @@ const CalendarGUI: React.FC<CalendarProps> = ({
         // Generate predicted payments only for future dates or missing payments
         for (const room of rooms) {
           let startDate = new Date(
-            tenantList.find((tenant) => tenant.id === room.tenantId)
+            AllTenants.find((tenant) => tenant.id === room.tenantId)
               ?.startTime || Date.now()
           ).getTime();
           let endDate = yearEnd.getTime();
@@ -128,7 +128,7 @@ const CalendarGUI: React.FC<CalendarProps> = ({
                 yearStart.getTime()
               );
               if (
-                tenantList.find((t: tenant) => t.id === room.tenantId)
+                AllTenants.find((t: tenant) => t.id === room.tenantId)
                   ?.SelectedAgreement === 'Fixed-Term' &&
                 agreements[0].endTime
               ) {
@@ -290,7 +290,7 @@ const CalendarGUI: React.FC<CalendarProps> = ({
             const room = filteredRooms.find((room) => room.id === d);
             return room
               ? `${
-                  tenantList.find((t: tenant) => t.id === room.tenantId)?.name
+                  AllTenants.find((t: tenant) => t.id === room.tenantId)?.name
                 }\n` +
                   `${formatNumberWithSuffix(room.AgreedPrice.toLocaleString())} ${CurrencySign(
                     room.Currency
@@ -476,11 +476,11 @@ const CalendarGUI: React.FC<CalendarProps> = ({
                       <h3 style="color: var(--Text-Color); margin-bottom: var(--5px-V);">Room Details</h3>
                       <p><em>Date:</em> <span style="color: var(--Text-Color);">${paymentDate.toDateString()}</span></p>
                       <p><strong style="font-size: 1.1em;">Tenant:</strong> ${
-                        tenantList.find((t) => t.id === room.tenantId)?.name ||
+                        AllTenants.find((t) => t.id === room.tenantId)?.name ||
                         'N/A'
                       }</p>
                       <p><i>Contact:</i> <span style="text-decoration: underline;">${
-                        tenantList.find((t) => t.id === room.tenantId)
+                        AllTenants.find((t) => t.id === room.tenantId)
                           ?.phoneNumber || 'N/A'
                       }</span></p>
                       <p><strong>Status:</strong> ${
@@ -524,7 +524,7 @@ const CalendarGUI: React.FC<CalendarProps> = ({
     filteredRooms,
     numberOfMonthsFuture,
     numberOfMonthsPast,
-    tenantList,
+    AllTenants,
     windowWidth,
   ]);
 

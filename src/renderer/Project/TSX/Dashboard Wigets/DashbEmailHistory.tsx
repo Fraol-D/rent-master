@@ -12,7 +12,7 @@ import loadingGif from "./../../../assets/assets/Loading/Rolling-1s-200px.gif"
 interface props {
   SelectedUserId: string;
   RoomList: RoomType[];
-  tenantList: tenant[];
+
 }
 
 type emailHistoryType = {
@@ -27,7 +27,7 @@ type emailHistoryType = {
   mode: string;
 };
 
-const DashbEmailHistory = ({ SelectedUserId, RoomList, tenantList }: props) => {
+const DashbEmailHistory = ({ SelectedUserId, RoomList }: props) => {
   const [emailHistory, setEmailHistory] = useState<emailHistoryType[]>([]);
   const [expandedEmailId, setExpandedEmailId] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<string>(
@@ -46,7 +46,7 @@ const DashbEmailHistory = ({ SelectedUserId, RoomList, tenantList }: props) => {
   const [emailTemplates, setEmailTemplates] = useState<emailTemplate[]>([]);
   const {
     AllEmailTemplates,
-    setAllEmailTemplates,
+    setAllEmailTemplates,AllTenants
   } = useGlobal();
   const [isLoading, setIsLoading] = useState(false);
   useEffect(() => {
@@ -83,7 +83,7 @@ const DashbEmailHistory = ({ SelectedUserId, RoomList, tenantList }: props) => {
   const filteredEmails = emailHistory.filter((email) => {
     const emailDate = new Date(email.sentDate);
     const [year, month] = selectedDate.split('-').map(Number);
-    const tenant = tenantList.find((t) => t.email === email.receiver);
+    const tenant = AllTenants.find((t) => t.email === email.receiver);
     const room = RoomList.find((r) => r.tenantId === tenant?.id);
 
     return (
@@ -461,7 +461,7 @@ const DashbEmailHistory = ({ SelectedUserId, RoomList, tenantList }: props) => {
                   }}
                 >
                   {(() => {
-  const tenant = tenantList.find((tenant) => tenant.email === email.receiver);
+  const tenant = AllTenants.find((tenant) => tenant.email === email.receiver);
   if (tenant?.name) {
     const words = tenant.name.split(' ');
     return (words[0]?.charAt(0) || '') + (words[1]?.charAt(0) || '');
@@ -488,7 +488,7 @@ const DashbEmailHistory = ({ SelectedUserId, RoomList, tenantList }: props) => {
                           marginBottom: 'var(--3px-V)',
                         }}
                       >
-                        {tenantList.find(
+                        {AllTenants.find(
                           (tenant) => tenant.email === email.receiver
                         )?.name || email.receiver}
                       </h3>
@@ -504,7 +504,7 @@ const DashbEmailHistory = ({ SelectedUserId, RoomList, tenantList }: props) => {
                           {RoomList.find(
                             (room) =>
                               room.tenantId ===
-                              tenantList.find(
+                              AllTenants.find(
                                 (tenant) => tenant.email === email.receiver
                               )?.id
                           )?.roomIndex || '?'}
@@ -515,7 +515,7 @@ const DashbEmailHistory = ({ SelectedUserId, RoomList, tenantList }: props) => {
                           {RoomList.find(
                             (room) =>
                               room.tenantId ===
-                              tenantList.find(
+                              AllTenants.find(
                                 (tenant) => tenant.email === email.receiver
                               )?.id
                           )?.floor || '?'}

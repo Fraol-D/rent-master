@@ -8,12 +8,7 @@ import {
   toEthiopianDateString,
 } from 'renderer/Project/JS/Calendar Converter';
 import EthiopianCalanderConverterMenu from './EthiopianCalanderConverterMenu';
-import {
-  addValue,
-  deleteValue,
-
-  updateValue,
-} from 'Backend/localServerApis';
+import { addValue, deleteValue, updateValue } from 'Backend/localServerApis';
 import { addDays } from 'date-fns'; // Add this import
 import CurrencySign, {
   formatNumberWithSuffix,
@@ -24,7 +19,7 @@ import { useAlert } from 'renderer/components/useAlert';
 import { useGlobal } from 'renderer/components/GlobalContext';
 
 const AgreementViewerForRoom = ({
-  TenantList,
+ 
   roomType,
   getCorrectPaymentStatment,
   updateRoomPropertyLocal,
@@ -122,16 +117,14 @@ const AgreementViewerForRoom = ({
       setCustomDays('');
     }
   };
-  const {
-    AllRoomPayInfo,
-    setAllRoomPayInfo,
-  } = useGlobal();
+  const { AllRoomPayInfo, setAllRoomPayInfo, AllTenants } = useGlobal();
   const movePaymentsToHistory = async (
     roomId: string,
     newAgreementId: string
   ) => {
     const existingPayments = AllRoomPayInfo.filter(
-      (payment) => payment.roomId === roomId && payment.tenantId === roomType.tenantId
+      (payment) =>
+        payment.roomId === roomId && payment.tenantId === roomType.tenantId
     );
 
     for (const payment of existingPayments) {
@@ -188,7 +181,11 @@ const AgreementViewerForRoom = ({
     // Deal with deleting, keeping, and makeing true of payments
     if (paymentOption === 'deleteUnpaid') {
       const FutruePaymentsRaw = AllRoomPayInfo.filter(
-        (payment) => payment.roomId === roomType.id && payment.tenantId === roomType.tenantId && payment.Day >= Date.now() && payment.Paid === 0
+        (payment) =>
+          payment.roomId === roomType.id &&
+          payment.tenantId === roomType.tenantId &&
+          payment.Day >= Date.now() &&
+          payment.Paid === 0
       );
 
       if (FutruePaymentsRaw.length >= 1) {
@@ -203,7 +200,11 @@ const AgreementViewerForRoom = ({
     } else if (paymentOption === 'keepUnpaid') {
     } else if (paymentOption === 'makeAllPaid') {
       const FutruePaymentsRaw = AllRoomPayInfo.filter(
-        (payment) => payment.roomId === roomType.id && payment.tenantId === roomType.tenantId && payment.Day >= Date.now() && payment.Paid === 0
+        (payment) =>
+          payment.roomId === roomType.id &&
+          payment.tenantId === roomType.tenantId &&
+          payment.Day >= Date.now() &&
+          payment.Paid === 0
       );
       console.log(FutruePaymentsRaw.length, 'length');
       if (FutruePaymentsRaw.length >= 1) {

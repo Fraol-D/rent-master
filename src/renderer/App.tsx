@@ -52,7 +52,7 @@ function noop() {}
 declare global {}
 function Hello({ tryout, username, signup }: any) {
   import('./App.css');
-  console.log(tryout, username);
+
   const [RoomList, setRoomList] = useState<RoomType[]>([]);
   const {
     AllRoomPayInfo,
@@ -79,7 +79,6 @@ function Hello({ tryout, username, signup }: any) {
     setAllRoomPayInfoHistory,
   } = useGlobal();
 
-  const [TenantList, setTenantList] = useState<tenant[]>([]);
   const [BrokerList, setBrokerList] = useState<BrokerType[]>([]);
   const [PastTenantReviews, setPastTenantReviews] = useState<
     PastTenantReviewType[]
@@ -567,42 +566,7 @@ function Hello({ tryout, username, signup }: any) {
     };
   }
   class TenantApi {
-    getTenantsApi = async () => {
-      try {
-        let useBranchId = storageManager.get('SelectedBranchId');
-
-        const tenantsRaw = await getValuesWithSql(
-          'tenants',
-          `WHERE 1 AND branchId = '${useBranchId}'`
-        );
-        if (tenantsRaw) {
-          const tenants = await Promise.all(
-            tenantsRaw.map(async (tenant: tenant) => {
-              return {
-                id: tenant.id,
-                name: tenant.name,
-                phoneNumber: tenant.phoneNumber,
-                phoneNumber2: tenant.phoneNumber2 || '',
-                email: tenant.email || '',
-                description: tenant.description || '',
-                SelectedAgreement: tenant.SelectedAgreement,
-                RentingOrOut: tenant.RentingOrOut,
-                startTime: tenant.startTime,
-                endTime: tenant.endTime || 0,
-                agreedPrice: tenant.agreedPrice,
-                TIN: tenant.TIN || '',
-                RentReason: tenant.RentReason || '',
-                AddedTime: tenant.AddedTime,
-                Currency: tenant.Currency || GetDefaultCurrency(),
-              };
-            })
-          );
-          setTenantList(await tenants);
-        }
-      } catch (error: any) {
-        console.log(error.message);
-      }
-    };
+    
     addTenantApi = async (
       id: string,
       name: string,
@@ -611,10 +575,10 @@ function Hello({ tryout, username, signup }: any) {
       email: string,
       description: string,
       SelectedAgreement: string,
-      RentingOrOut: string,
+      RentingOrOut: boolean,
       startTime: number,
       endTime: string,
-      agreedPrice: string,
+      agreedPrice: number,
       TIN: string,
       RentReason: string,
       AddedTime: number,
@@ -645,8 +609,29 @@ function Hello({ tryout, username, signup }: any) {
           },
           setChangeMade
         );
-        // Update the TenantList and set the state to indicate that the update is complete
-        await this.getTenantsApi();
+        setAllTenants([
+          ...AllTenants,
+          {
+            id: id,
+            name: name,
+            phoneNumber: phoneNumber,
+            phoneNumber2: phoneNumber2,
+            email: email,
+            description: description,
+            SelectedAgreement: SelectedAgreement,
+            RentingOrOut: RentingOrOut,
+            startTime: new Date(startTime).getTime(),
+
+            endTime: new Date(endTime).getTime(),
+            agreedPrice: agreedPrice,
+            TIN: TIN,
+            RentReason: RentReason,
+            AddedTime: AddedTime,
+            userId: SelectedUserId,
+            branchId: SelectedBranchId,
+            Currency: Currency || GetDefaultCurrency(),
+          },
+        ]);
         setIsUpdatingTenantList(false);
       } catch (error: any) {
         console.log(error.message);
@@ -664,7 +649,14 @@ function Hello({ tryout, username, signup }: any) {
           propertyName,
           newValue,
           setChangeMade,
-          getOriginlPropertyValue(TenantList, tenantId, propertyName)
+          getOriginlPropertyValue(AllTenants, tenantId, propertyName)
+        );
+        setAllTenants(
+          AllTenants.map((tenant) =>
+            tenant.id === tenantId
+              ? { ...tenant, [propertyName]: newValue }
+              : tenant
+          )
         );
         // this.getTenantsApi();
         //roomAPI.getRoomFromApi();
@@ -684,8 +676,17 @@ function Hello({ tryout, username, signup }: any) {
           propertyName,
           newValue,
           setChangeMade,
-          getOriginlPropertyValue(TenantList, tenantId, propertyName)
+          getOriginlPropertyValue(AllTenants, tenantId, propertyName)
         );
+        setAllTenants(
+          AllTenants.map((tenant) =>
+            tenant.id === tenantId
+              ? { ...tenant, [propertyName]: newValue }
+              : tenant
+          )
+        );
+        // this.getTenantsApi();
+        //roomAPI.getRoomFromApi();
       } catch (error: any) {
         console.log(error.message);
       }
@@ -1200,7 +1201,7 @@ function Hello({ tryout, username, signup }: any) {
           AllAgreement2
         );
         brokerApi.getBrokersApi();
-        tenantAPI.getTenantsApi();
+      
         pastTenantReviewApi.getPastTenantReviewLatestApi();
         brokersRecommendationListApi.getBrokerRecommendationsFromApi();
       } catch (error: any) {
@@ -1898,8 +1899,7 @@ function Hello({ tryout, username, signup }: any) {
                 signOutUserAndRestart={signOutUserAndRestart}
                 RoomList={RoomList}
                 setRoomList={setRoomList}
-                setTenantList={setTenantList}
-                TenantList={TenantList}
+                
                 roomAPI={roomAPI}
                 tenantAPI={tenantAPI}
                 roomPaymentInfoApi={roomPaymentInfoApi}
@@ -1959,7 +1959,7 @@ export default function App() {
             path="/"
             element={
               <GlobalProvider>
-                <Hello tryout={false} username={'none_provided'} signup={''}/>
+                <Hello tryout={false} username={'none_provided'} signup={''} />
               </GlobalProvider>
             }
           />

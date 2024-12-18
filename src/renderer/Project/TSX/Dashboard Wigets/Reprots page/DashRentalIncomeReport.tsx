@@ -25,11 +25,11 @@ import html2canvas from 'html2canvas';
 
 const DashRentalIncomeReport = ({
   RoomList,
-  tenantList,
+
   SelectedBranchId,
 }: {
   RoomList: RoomType[];
-  tenantList: tenant[];
+ 
   SelectedBranchId: string;
 }) => {
   const [startDate, setStartDate] = useState(subMonths(new Date(), 1));
@@ -132,7 +132,7 @@ const DashRentalIncomeReport = ({
     return allExpenses.sort((a, b) => a.date - b.date);
   };
 
-  const { AllRoomPayInfo, AllRoomPayInfoHistory, AllExpenses, AllAgreements } =
+  const { AllRoomPayInfo, AllRoomPayInfoHistory, AllExpenses, AllAgreements,AllTenants } =
     useGlobal();
 
   const processValueByCurrency = (
@@ -168,7 +168,7 @@ const DashRentalIncomeReport = ({
     const allPayments = [];
     const today = new Date();
     const yearEnd = new Date(today.getFullYear() + 1, 11, 31);
-    const tenant = tenantList.find((t) => t.id === room.tenantId);
+    const tenant = AllTenants.find((t) => t.id === room.tenantId);
     let startDate = new Date(tenant?.startTime || Date.now()).getTime();
 
     let endDate = null;
@@ -322,7 +322,7 @@ const DashRentalIncomeReport = ({
           </div>
           <div className="summary-item">
             <label>Active Tenants:</label>
-            <span>{tenantList.length}</span>
+            <span>{AllTenants.length}</span>
           </div>
         </div>
       </div>

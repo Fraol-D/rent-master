@@ -14,7 +14,7 @@ interface Payment {
 }
 
 const DashbPastPayments = ({
-  tenantList,
+
   RoomList,
   roomPaymentInfoApi,
   setChangeMade,
@@ -23,7 +23,7 @@ const DashbPastPayments = ({
   SelectedUserId,
   SelectedBranchId,
 }: {
-  tenantList: tenant[];
+ 
   RoomList: RoomType[];
   roomPaymentInfoApi: any;
   SelectedBranchId: any;
@@ -38,7 +38,7 @@ const DashbPastPayments = ({
     AllRoomPayInfo,
     setAllRoomPayInfo,
     AllAgreements,
-    setAllAgreements,
+    setAllAgreements,AllTenants
   } = useGlobal();
   const [PastPaymentList, setPastPaymentList] = useState<
     { tenant: tenant; NumOfPayments: number; PastBy: number }[]
@@ -67,7 +67,7 @@ const DashbPastPayments = ({
 
       for (const room of RoomList) {
         // Get tenant and agreement details
-        const tenant = tenantList.find((t) => t.id === room.tenantId);
+        const tenant = AllTenants.find((t) => t.id === room.tenantId);
         let startDate = tenant?.startTime || Date.now();
         let endDate = null;
 
@@ -143,7 +143,7 @@ const DashbPastPayments = ({
     };
 
     calculatePayments();
-  }, [RoomList, tenantList]);
+  }, [RoomList, AllTenants]);
 
   useEffect(() => {
     const currentDate = new Date();
@@ -157,7 +157,7 @@ const DashbPastPayments = ({
     // Group by tenant with corrected counting
     const newPastPaymentList = pastPayments.reduce((acc, payment) => {
       const room = RoomList.find((r) => r.id === payment.roomId);
-      const tenant = tenantList.find((t) => t.id === room?.tenantId);
+      const tenant = AllTenants.find((t) => t.id === room?.tenantId);
 
       if (tenant) {
         const existingTenant = acc.find((item) => item.tenant.id === tenant.id);
@@ -214,7 +214,7 @@ const DashbPastPayments = ({
     const newUpcomingPaymentList = upcomingPayments
       .map((payment) => {
         const room = RoomList.find((r) => r.id === payment.roomId);
-        const tenant = tenantList.find((t) => t.id === room?.tenantId);
+        const tenant = AllTenants.find((t) => t.id === room?.tenantId);
         if (tenant) {
           return {
             tenant,
@@ -228,7 +228,7 @@ const DashbPastPayments = ({
       .sort((a, b) => a!.DueDate.getTime() - b!.DueDate.getTime()); // Sort by earliest due date
 
     setUpcomingPaymentList(newUpcomingPaymentList);
-  }, [predictedPayments, RoomList, tenantList]);
+  }, [predictedPayments, RoomList, AllTenants]);
   const [ShowReceipt, setShowReceipt] = useState(false);
   const handlePaymentRefresh = async () => {
     const roomType = RoomList.find(
@@ -532,7 +532,7 @@ const DashbPastPayments = ({
             }}
           >
             {
-              tenantList.find((t: tenant) => t.id == SelectedTenantViewShow)
+              AllTenants.find((t: tenant) => t.id == SelectedTenantViewShow)
                 ?.name
             }
           </p>
@@ -556,19 +556,19 @@ const DashbPastPayments = ({
                     RoomList.find(
                       (r: RoomType) =>
                         r.tenantId ===
-                        tenantList.find(
+                        AllTenants.find(
                           (t: tenant) => t.id == SelectedTenantViewShow
                         )?.id
                     )?.id
                 ) || []
               }
               roomPaymentInfoApi={roomPaymentInfoApi}
-              tenantList={tenantList}
+              AllTenants={AllTenants}
               agreedPrice={
                 RoomList.find(
                   (r: RoomType) =>
                     r.tenantId ===
-                    tenantList.find(
+                    AllTenants.find(
                       (t: tenant) => t.id == SelectedTenantViewShow
                     )?.id
                 )?.AgreedPrice || 0
@@ -577,7 +577,7 @@ const DashbPastPayments = ({
                 const selectedRoom = RoomList.find(
                   (r: RoomType) =>
                     r.tenantId ===
-                    tenantList.find(
+                    AllTenants.find(
                       (t: tenant) => t.id == SelectedTenantViewShow
                     )?.id
                 );
@@ -592,13 +592,13 @@ const DashbPastPayments = ({
               roomType={RoomList.find(
                 (r: RoomType) =>
                   r.tenantId ===
-                  tenantList.find((t: tenant) => t.id == SelectedTenantViewShow)
+                  AllTenants.find((t: tenant) => t.id == SelectedTenantViewShow)
                     ?.id
               )}
               tenantId={RoomList.find(
                 (r: RoomType) =>
                   r.tenantId ===
-                  tenantList.find((t: tenant) => t.id == SelectedTenantViewShow)
+                  AllTenants.find((t: tenant) => t.id == SelectedTenantViewShow)
                     ?.tenantId
               )}
               ShowReceipt={ShowReceipt}
@@ -607,7 +607,7 @@ const DashbPastPayments = ({
               SelectedUserId={SelectedUserId}
               updateRoomPropertyLocal={updateRoomPropertyLocal}
               Currency={
-                tenantList.find(
+                AllTenants.find(
                   (t: tenant) =>
                     t.id ===
                    SelectedTenantViewShow

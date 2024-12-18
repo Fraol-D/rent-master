@@ -11,7 +11,7 @@ import loadingGif from "./../../../assets/assets/Loading/Rolling-1s-200px.gif"
 interface props {
   SelectedUserId: string;
   RoomList: RoomType[];
-  tenantList: tenant[];
+
 }
 
 type smsHistoryType = {
@@ -24,7 +24,7 @@ type smsHistoryType = {
   mode: string;
 };
 
-const DashbSmsDetails = ({ SelectedUserId, RoomList, tenantList }: props) => {
+const DashbSmsDetails = ({ SelectedUserId, RoomList }: props) => {
   const [smsHistory, setSmsHistory] = useState<smsHistoryType[]>([]);
   const [expandedSmsId, setExpandedSmsId] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<string>(
@@ -43,7 +43,7 @@ const DashbSmsDetails = ({ SelectedUserId, RoomList, tenantList }: props) => {
   const [smsTemplates, setSmsTemplates] = useState<smsTemplate[]>([]);
   const {
     AllSmsTemplates,
-    setAllSmsTemplates,
+    setAllSmsTemplates,AllTenants
   } = useGlobal();
   const [isLoading, setIsLoading] = useState(false);
   useEffect(() => {
@@ -89,7 +89,7 @@ const DashbSmsDetails = ({ SelectedUserId, RoomList, tenantList }: props) => {
   const filteredSms = smsHistory.filter((sms) => {
     const smsDate = new Date(sms.sentDate);
     const [year, month] = selectedDate.split('-').map(Number);
-    const tenant = tenantList.find((t) => t.phoneNumber === sms.receiver);
+    const tenant = AllTenants.find((t) => t.phoneNumber === sms.receiver);
     const room = RoomList.find((r) => r.tenantId === tenant?.id);
 
     return (
@@ -466,7 +466,7 @@ const DashbSmsDetails = ({ SelectedUserId, RoomList, tenantList }: props) => {
                 >
                   {(() => {
                     const name =
-                      tenantList.find(
+                      AllTenants.find(
                         (tenant) => tenant.phoneNumber === sms.receiver
                       )?.name || '';
                     const words = name.split(' ');
@@ -494,7 +494,7 @@ const DashbSmsDetails = ({ SelectedUserId, RoomList, tenantList }: props) => {
                           marginBottom: 'var(--3px-V)',
                         }}
                       >
-                        {sms.mode === "Representative_Automatic" && 'Rep - '}{tenantList.find(
+                        {sms.mode === "Representative_Automatic" && 'Rep - '}{AllTenants.find(
                           (tenant) => tenant.phoneNumber === sms.receiver
                         )?.name || sms.receiver} 
                       </h3>
@@ -511,7 +511,7 @@ const DashbSmsDetails = ({ SelectedUserId, RoomList, tenantList }: props) => {
                           {RoomList.find(
                             (room) =>
                               room.tenantId ===
-                              tenantList.find(
+                              AllTenants.find(
                                 (tenant) => tenant.phoneNumber === sms.receiver
                               )?.id
                           )?.roomIndex || '?'}
@@ -522,7 +522,7 @@ const DashbSmsDetails = ({ SelectedUserId, RoomList, tenantList }: props) => {
                           {RoomList.find(
                             (room) =>
                               room.tenantId ===
-                              tenantList.find(
+                              AllTenants.find(
                                 (tenant) => tenant.phoneNumber === sms.receiver
                               )?.id
                           )?.floor || '?'}

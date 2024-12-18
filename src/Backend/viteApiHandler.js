@@ -119,3 +119,62 @@ export const makeProxyRequest = async (
 console.error("After several retries data can not", error)
   throw lastError;
 };
+export const makeProxyRequestFileManager = async (
+
+  targetUrl,
+  method,
+  headers = {},
+  data = null,
+  params = null
+) => {
+  let lastError;
+
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), TIMEOUT);
+      let proxyUrl = 'https://rentmaster.markethubet.com/make-request-filemanager';
+     
+      if(window.electron) {
+        proxyUrl = 'http://localhost:3000/make-request';
+      } 
+      const requestData = {
+        targetUrl,
+        method,
+        headers,
+        data,
+        params,
+      };
+
+      const encryptedData = encrypt(requestData);
+
+      const response = await fetch(proxyUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          dataString: encryptedData,
+        }),
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      return response;
+    } catch (error) {
+      lastError = error;
+     
+
+      if (attempt < MAX_RETRIES) {
+        await delay(RETRY_DELAY * attempt); // Exponential backoff
+        continue;
+      } else {
+        
+      }
+      break;
+    }
+  }
+console.error("After several retries data can not", error)
+  throw lastError;
+};

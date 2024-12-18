@@ -2,16 +2,17 @@ import React, { useState, useMemo } from 'react';
 import { LineChart } from '@mui/x-charts/LineChart';
 import { Input } from '../Helpers/CustomReactComponents';
 import { axisClasses } from '@mui/x-charts/ChartsAxis';
+import { useGlobal } from 'renderer/components/GlobalContext';
 
-const TenantGrowthWidget = ({ TenantList }: { TenantList: tenant[] }) => {
+const TenantGrowthWidget = () => {
   const [viewBy, setViewBy] = useState<'month' | 'year'>('month');
   const [selectedDate, setSelectedDate] = useState(
     new Date().getFullYear().toString()
   );
-
+  const { AllTenants } = useGlobal();
   const tenantGrowthData = useMemo(() => {
     const dateMap = new Map();
-    TenantList.forEach((tenant) => {
+    AllTenants.forEach((tenant) => {
       const addedDate = new Date(tenant.AddedTime);
       const key =
         viewBy === 'month'
@@ -73,7 +74,7 @@ const TenantGrowthWidget = ({ TenantList }: { TenantList: tenant[] }) => {
         count: dateMap.get(year) || 0,
       }));
     }
-  }, [TenantList, viewBy, selectedDate]);
+  }, [AllTenants, viewBy, selectedDate]);
 
   const hasNewTenants = tenantGrowthData.some(({ count }) => count > 0);
 
@@ -113,7 +114,7 @@ const TenantGrowthWidget = ({ TenantList }: { TenantList: tenant[] }) => {
       </div>
       {hasNewTenants ? (
         <LineChart
-        grid={{ vertical: true, horizontal: true }}
+          grid={{ vertical: true, horizontal: true }}
           xAxis={[
             {
               data:

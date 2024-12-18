@@ -6,8 +6,7 @@ export function RoomListComponent({
   RoomList,
   filterOptions,
   removeFilterOption,
-  TenantList,
-  setTenantList,
+
   setAddARoomState,
   AddARoomState,
   tenantAPI,
@@ -24,8 +23,14 @@ export function RoomListComponent({
   handleAddRoomButtonInitial,
   updateRoomPropertyLocal,
   agreementApi,
-  setChangeProgress,changeProgress,
-  ShowArchived,setChangeMade,SelectedUserId,SelectedAppUser,roomListContainerRef,SelectedBranchId
+  setChangeProgress,
+  changeProgress,
+  ShowArchived,
+  setChangeMade,
+  SelectedUserId,
+  SelectedAppUser,
+  roomListContainerRef,
+  SelectedBranchId,
 }: any) {
   // Sort the rooms based on floor and room number
   const sortedRooms = sortedAndFilteredRooms.sort((a, b) => {
@@ -40,15 +45,25 @@ export function RoomListComponent({
       <div className="SecondNavBarContainer" style={{ width: '100%' }}>
         <div className="FilterOptions">
           <strong style={{ marginRight: 'var(--10px-V)' }}>
-            Showing {ShowArchived ? sortedRooms.filter((r:RoomType)=>r.Archived).length : sortedRooms.filter((r:RoomType)=>!r.Archived).length} {ShowArchived && 'archived'}{' '}
-            room
-            {ShowArchived ? sortedRooms.filter((r:RoomType)=>r.Archived).length != 1 && 's': sortedRooms.filter((r:RoomType)=>!r.Archived).length != 1 && 's'}
+            Showing{' '}
+            {ShowArchived
+              ? sortedRooms.filter((r: RoomType) => r.Archived).length
+              : sortedRooms.filter((r: RoomType) => !r.Archived).length}{' '}
+            {ShowArchived && 'archived'} room
+            {ShowArchived
+              ? sortedRooms.filter((r: RoomType) => r.Archived).length != 1 &&
+                's'
+              : sortedRooms.filter((r: RoomType) => !r.Archived).length != 1 &&
+                's'}
           </strong>
           {filterOptions.length > 0 && <strong>Filter options:</strong>}
           {filterOptions.map((option: any, index: any) => (
             <>
               <div
-                style={{ marginRight: 'var(--10px-V)', marginLeft: 'var(--10px-V)' }}
+                style={{
+                  marginRight: 'var(--10px-V)',
+                  marginLeft: 'var(--10px-V)',
+                }}
                 key={index}
               >
                 <span>
@@ -76,17 +91,29 @@ export function RoomListComponent({
         style={{
           width: '100%',
           height: 'calc(100% - var(--60px-V))',
-        }}ref={roomListContainerRef}
+        }}
+        ref={roomListContainerRef}
       >
         <div
           style={{
             height: 'var(--25px-V)',
           }}
         ></div>
-        <div className="RoomContainer" >
-          {sortedRooms.filter((r: RoomType) => r.Archived == ShowArchived).length === 0 ? (
-            <div style={{ textAlign: 'center', padding: 'var(--20px-V)',width:'100%', color:'var(--Text-Color-Grey)'}}>
-              <p>There are no rooms. Add a room by clicking the "Add room" button on the left.</p>
+        <div className="RoomContainer">
+          {sortedRooms.filter((r: RoomType) => r.Archived == ShowArchived)
+            .length === 0 ? (
+            <div
+              style={{
+                textAlign: 'center',
+                padding: 'var(--20px-V)',
+                width: '100%',
+                color: 'var(--Text-Color-Grey)',
+              }}
+            >
+              <p>
+                There are no rooms. Add a room by clicking the "Add room" button
+                on the left.
+              </p>
             </div>
           ) : (
             sortedRooms
@@ -108,13 +135,19 @@ export function RoomListComponent({
                   setSelectedEditRoomId={setSelectedEditRoomId}
                   roomPaymentInfoApi={roomPaymentInfoApi}
                   roomType={room}
-                  updateRoomPropertyWithOutRefresh={updateRoomPropertyWithOutRefresh}
+                  updateRoomPropertyWithOutRefresh={
+                    updateRoomPropertyWithOutRefresh
+                  }
                   updateRoomProperty={updateRoomProperty}
                   turnOffAddTenantStateForAll={() => {
                     for (let i = 0; i < RoomList.length; i++) {
                       const element = RoomList[i];
                       if (element.AddTenantState) {
-                        updateRoomPropertyLocal(element.id, 'AddTenantState', 0);
+                        updateRoomPropertyLocal(
+                          element.id,
+                          'AddTenantState',
+                          0
+                        );
                       }
                     }
 
@@ -127,7 +160,11 @@ export function RoomListComponent({
                     for (let i = 0; i < RoomList.length; i++) {
                       const element = RoomList[i];
                       if (element.ShowUtilityLine) {
-                        updateRoomPropertyLocal(element.id, 'ShowUtilityLine', 0);
+                        updateRoomPropertyLocal(
+                          element.id,
+                          'ShowUtilityLine',
+                          0
+                        );
                       }
                     }
                   }}
@@ -135,7 +172,11 @@ export function RoomListComponent({
                     for (let i = 0; i < RoomList.length; i++) {
                       const element = RoomList[i];
                       if (element.AddTenantState) {
-                        updateRoomPropertyLocal(element.id, 'AddTenantState', 0);
+                        updateRoomPropertyLocal(
+                          element.id,
+                          'AddTenantState',
+                          0
+                        );
                       }
                     }
 
@@ -148,15 +189,20 @@ export function RoomListComponent({
                     for (let i = 0; i < RoomList.length; i++) {
                       const element = RoomList[i];
                       if (element.ShowUtilityLine) {
-                        updateRoomPropertyLocal(element.id, 'ShowUtilityLine', 0);
+                        updateRoomPropertyLocal(
+                          element.id,
+                          'ShowUtilityLine',
+                          0
+                        );
                       }
                     }
                   }}
                   key={room.id}
-                  setTenantList={setTenantList}
-                  TenantList={TenantList}
-                  tenantAPI={tenantAPI}SelectedBranchId={SelectedBranchId}
-                  pastTenantReviewApi={pastTenantReviewApi}SelectedAppUser={SelectedAppUser}
+             
+                  tenantAPI={tenantAPI}
+                  SelectedBranchId={SelectedBranchId}
+                  pastTenantReviewApi={pastTenantReviewApi}
+                  SelectedAppUser={SelectedAppUser}
                 />
               ))
           )}

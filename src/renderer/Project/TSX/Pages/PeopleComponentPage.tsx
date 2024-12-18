@@ -3,9 +3,10 @@ import React, { useState } from 'react';
 import { toEthiopianDateString } from 'renderer/Project/JS/Calendar Converter';
 import { Input } from '../Helpers/CustomReactComponents';
 import CurrencySign, { formatNumberWithSuffix } from '../Helpers/CurrencySign';
+import { useGlobal } from 'renderer/components/GlobalContext';
 
 export function PeopleComponentPage({
-  TenantList,
+
   PeopleSelectedPage,
   PastTenantReviews,
   RoomList,
@@ -16,7 +17,9 @@ export function PeopleComponentPage({
 }: any) {
   const [searchConfig, setSearchConfig] = useState({ key: '', query: '' });
   const [mainSearch, setMainSearch] = useState('');
-
+const {
+  AllTenants
+} = useGlobal();
   const filteredData = (data: any[], key: string, query: string) => {
     if (mainSearch) {
       return data.filter((item) =>
@@ -49,14 +52,12 @@ export function PeopleComponentPage({
     setMainSearch(event.target.value);
   };
 
-
-
   const getCorrectPaymentStatment = (text: string) => {
     switch (text) {
       case '30':
         return '30 days';
       case '15':
-        return '15 days'; 
+        return '15 days';
       case '7':
         return '7 days';
       case 'monthly':
@@ -86,7 +87,14 @@ export function PeopleComponentPage({
       <span>
         {parts.filter(String).map((part, i) => {
           return regex.test(part) ? (
-            <mark key={i} style={{ backgroundColor: 'var(--Accent-Color)', color: 'var(--Text-Color)', padding: '0 var(--2px-V)' }}>
+            <mark
+              key={i}
+              style={{
+                backgroundColor: 'var(--Accent-Color)',
+                color: 'var(--Text-Color)',
+                padding: '0 var(--2px-V)',
+              }}
+            >
               {part}
             </mark>
           ) : (
@@ -138,8 +146,7 @@ export function PeopleComponentPage({
         style={{ width: '100%', height: 'calc(100% - var(--60px-V))' }}
       >
         <div style={{ marginBottom: 'var(--20px-V)' }}>
-   
-         <input
+          <input
             type="text"
             value={mainSearch}
             onChange={handleMainSearch}
@@ -150,9 +157,9 @@ export function PeopleComponentPage({
               fontSize: 'var(--16px-V)',
               borderRadius: 'var(--8px-V)',
               border: 'var(--1px-V) solid var(--Secondary-Color)',
-           
+
               color: 'var(--Text-Color)',
-              transition: 'all 0.3s ease'
+              transition: 'all 0.3s ease',
             }}
           />
         </div>
@@ -213,7 +220,7 @@ export function PeopleComponentPage({
                 <tbody>
                                    {' '}
                   {filteredData(
-                    TenantList,
+                    AllTenants,
                     searchConfig.key,
                     searchConfig.query
                   ).map((tenant: any, index: any) => (
@@ -233,8 +240,8 @@ export function PeopleComponentPage({
                         style={{ color: 'var(--Text-Color-Grey)' }}
                       >
                                                {' '}
-                        {highlightText((index + 1).toString(), mainSearch)}           
-                                 {' '}
+                        {highlightText((index + 1).toString(), mainSearch)}     
+                                       {' '}
                       </td>
                                            {' '}
                       <td className="InfoTableBodyTD">
@@ -393,7 +400,9 @@ export function PeopleComponentPage({
                         <div>
                                                    {' '}
                           {highlightText(
-                           formatNumberWithSuffix(tenant.agreedPrice.toLocaleString()) + CurrencySign(tenant.Currency),
+                            formatNumberWithSuffix(
+                              tenant.agreedPrice.toLocaleString()
+                            ) + CurrencySign(tenant.Currency),
                             mainSearch
                           )}
                                                  {' '}
@@ -428,7 +437,7 @@ export function PeopleComponentPage({
                   style={{ marginTop: 'var(--40px-V)' }}
                 >
                   Tenant Name:{' '}
-                  {TenantList.find(
+                  {AllTenants.find(
                     (t: tenant) =>
                       t.id === Agreements[Agreements.length - 1].tenantId
                   )?.name || 'Deleted'}
@@ -566,7 +575,9 @@ export function PeopleComponentPage({
                           <td className="InfoTableBodyTD">
                                                          {' '}
                             {highlightText(
-                              formatNumberWithSuffix(agreement.agreedPrice.toLocaleString()) + CurrencySign(agreement.Currency),
+                              formatNumberWithSuffix(
+                                agreement.agreedPrice.toLocaleString()
+                              ) + CurrencySign(agreement.Currency),
                               mainSearch
                             )}
                                                        {' '}
@@ -590,7 +601,8 @@ export function PeopleComponentPage({
                           <td className="InfoTableBodyTD">
                                                          {' '}
                             {highlightText(
-                              agreement.RentReserved.toLocaleString() + CurrencySign(agreement.Currency),
+                              agreement.RentReserved.toLocaleString() +
+                                CurrencySign(agreement.Currency),
                               mainSearch
                             )}
                                                        {' '}
@@ -749,7 +761,7 @@ export function PeopleComponentPage({
                             >
                               <span style={{ fontWeight: 'bold' }}>
                                 {highlightText(
-                                  TenantList.find(
+                                  AllTenants.find(
                                     (t: tenant) =>
                                       t.id ===
                                       recommendation.recommendedTenantId
@@ -772,7 +784,9 @@ export function PeopleComponentPage({
                               <span style={{ color: 'var(--Accent-Color)' }}>
                                 Commission: $
                                 {highlightText(
-                                  formatNumberWithSuffix(recommendation.AgreedCommission.toLocaleString()),
+                                  formatNumberWithSuffix(
+                                    recommendation.AgreedCommission.toLocaleString()
+                                  ),
                                   mainSearch
                                 )}
                               </span>
@@ -883,13 +897,13 @@ export function PeopleComponentPage({
                     </td>
                     <td className="InfoTableBodyTD">
                       {highlightText(
-                        TenantList.find((t: tenant) => t.id === review.tenantId)
+                        AllTenants.find((t: tenant) => t.id === review.tenantId)
                           ?.name || 'Deleted',
                         mainSearch
                       )}
                       <div className="EmailInfoTable">
                         {highlightText(
-                          TenantList.find(
+                          AllTenants.find(
                             (t: tenant) => t.id === review.tenantId
                           )?.email.toLowerCase() || '',
                           mainSearch
@@ -934,7 +948,9 @@ export function PeopleComponentPage({
                     </td>
                     <td className="InfoTableBodyTD">
                       {highlightText(
-                        formatNumberWithSuffix(review.AgreedPrice.toLocaleString()),
+                        formatNumberWithSuffix(
+                          review.AgreedPrice.toLocaleString()
+                        ),
                         mainSearch
                       )}
                       {CurrencySign(review.Currency)} per{' '}
@@ -945,7 +961,9 @@ export function PeopleComponentPage({
                     </td>
                     <td className="InfoTableBodyTD">
                       {highlightText(
-                        formatNumberWithSuffix(review.totalEarnings.toLocaleString()),
+                        formatNumberWithSuffix(
+                          review.totalEarnings.toLocaleString()
+                        ),
                         mainSearch
                       )}
                       {CurrencySign(review.Currency)}
