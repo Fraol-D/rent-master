@@ -1,0 +1,169 @@
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fadeInRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slideInBottom {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate {
+  opacity: 0;
+  animation-duration: 0.8s;
+  animation-fill-mode: forwards;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.delay-100 { animation-delay: 100ms; }
+.delay-200 { animation-delay: 200ms; }
+.delay-300 { animation-delay: 300ms; }
+.delay-400 { animation-delay: 400ms; }
+.delay-500 { animation-delay: 500ms; }
+
+.fade-in-up { animation-name: fadeInUp; }
+.fade-in-left { animation-name: fadeInLeft; }
+.fade-in-right { animation-name: fadeInRight; }
+.scale-in { animation-name: scaleIn; }
+.slide-in-bottom { animation-name: slideInBottom; }
+
+/* Update animation classes to work with visibility state */
+section {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1),
+              transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+section.animate-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Features animations */
+.feature-card {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+section.animate-visible .feature-card {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+section.animate-visible .feature-card:nth-child(1) { transition-delay: 200ms; }
+section.animate-visible .feature-card:nth-child(2) { transition-delay: 300ms; }
+section.animate-visible .feature-card:nth-child(3) { transition-delay: 400ms; }
+section.animate-visible .feature-card:nth-child(4) { transition-delay: 500ms; }
+
+/* Pricing animations */
+.pricing-card {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+section.animate-visible .pricing-card {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+section.animate-visible .pricing-card:nth-child(1) { transition-delay: 200ms; }
+section.animate-visible .pricing-card:nth-child(2) { transition-delay: 300ms; }
+section.animate-visible .pricing-card:nth-child(3) { transition-delay: 400ms; }
+section.animate-visible .pricing-card:nth-child(4) { transition-delay: 500ms; }
+
+/* About section animations */
+.mission {
+  opacity: 0;
+  transform: translateX(-30px);
+  transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.about-animation {
+  opacity: 0;
+  transform: translateX(30px);
+  transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+section.animate-visible .mission {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+section.animate-visible .about-animation {
+  opacity: 1;
+  transform: translateX(0);
+  transition-delay: 300ms;
+}
+
+/* Save banner animation */
+.save-banner {
+  opacity: 0;
+  transform: scale(0.9);
+  transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+section.animate-visible .save-banner {
+  opacity: 1;
+  transform: scale(1);
+  transition-delay: 200ms;
+}
+
+/* Section headings animation */
+section h2 {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+section.animate-visible h2 {
+  opacity: 1;
+  transform: translateY(0);
+} 

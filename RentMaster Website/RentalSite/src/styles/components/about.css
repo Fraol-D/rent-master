@@ -1,0 +1,152 @@
+.about {
+  position: relative;
+  padding: 8rem 2rem;
+  min-height: 70vh;
+  display: flex;
+  align-items: center;
+  background-position: bottom left;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+.about-content {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.about-main {
+  display: grid;
+  
+}
+
+.mission-values {
+  display: flex;
+  flex-direction: column;
+  gap: 3rem;
+}
+
+.mission {
+  position: relative;
+  padding: 2rem;
+  background: var(--Background-Color2);
+  border-radius: 12px;
+  transition: transform 0.3s ease;
+  border: 1px solid var(--Secondary-Color30);
+  box-shadow: 0 4px 6px var(--Secondary-Color20);
+}
+
+
+
+
+.mission h3 {
+  color: var(--Text-Color);
+  margin-bottom: 1.5rem;
+  font-size: 1.8rem;
+}
+
+.mission p {
+  font-size: 1.2rem;
+  line-height: 1.8;
+  color: var(--Text-Color-Grey);
+}
+
+.values-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  width: 100%;
+}
+
+.value-card {
+  background: var(--Background-Color2);
+  padding: 1.5rem;
+  border-radius: 8px;
+  text-align: center;
+  transition: transform 0.3s ease;
+  border: 1px solid var(--Secondary-Color30);
+  box-shadow: 0 4px 6px var(--Secondary-Color20);
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.value-card:hover {
+  transform: translateY(-5px);
+  border-color: var(--Primary-Color);
+}
+
+.value-icon {
+  color: var(--Accent-Color);
+  font-size: 2rem;
+  margin-bottom: 1rem;
+}
+
+.value-card h4 {
+  color: var(--Text-Color);
+  margin-bottom: 0.8rem;
+  font-size: 1.2rem;
+}
+
+.value-card p {
+  color: var(--Text-Color-Grey);
+  line-height: 1.6;
+  font-size: 0.9rem;
+}
+
+.about-visuals {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.about-animation {
+  background: var(--Background-Color2);
+  padding: 2rem;
+  border-radius: 12px;
+  border: 1px solid var(--Secondary-Color30);
+  box-shadow: 0 4px 6px var(--Secondary-Color20);
+}
+
+.team-image {
+  width: 100%;
+  border-radius: 12px;
+  box-shadow: 0 20px 40px var(--Secondary-Color30);
+}
+
+@media (max-width: 1024px) {
+  .about-main {
+    grid-template-columns: 1fr;
+    gap: 3rem;
+  }
+
+  .about-visuals {
+    order: -1;
+  }
+}
+
+@media (max-width: 768px) {
+  .about {
+    padding: 6rem 1rem;
+  }
+
+  .about-main {
+    padding: 1rem;
+  }
+
+  .mission {
+    padding: 1.5rem;
+  }
+
+  .mission h3 {
+    font-size: 1.5rem;
+  }
+
+  .mission p {
+    font-size: 1.1rem;
+  }
+
+  .values-grid {
+    grid-template-columns: 1fr;
+  }
+} 

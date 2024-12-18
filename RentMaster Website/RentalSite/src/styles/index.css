@@ -1,0 +1,80 @@
+@import url('variables.css');
+@import url('components/navbar.css');
+@import url('components/hero.css');
+@import url('components/about.css');
+@import url('components/features.css');
+@import url('components/how-it-works.css');
+@import url('components/pricing.css');
+@import url('components/testimonials.css');
+@import url('components/faq.css');
+@import url('components/contact.css');
+@import url('components/footer.css');
+@import url('animations.css');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: inter;
+}
+
+html {
+  scroll-behavior: smooth;
+  background-color: #ffffff;
+}
+
+body {
+  background-color: #e2e2e2;
+  color: var(--Text-Color);
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.app {
+  width: 100%;
+  min-height: 100vh;
+  background: linear-gradient(to bottom, #ff000000, #b5b5b5);
+}
+
+.app .content {
+ 
+}
+
+section {
+ 
+  background-position: center;
+  background-repeat: no-repeat;
+
+}
+
+.app .container {
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+  padding: 0 2rem;
+}
+
+.app h2 {
+  font-size: 2.5rem;
+  margin-bottom: 2rem;
+  text-align: center;
+  color: rgb(49 79 111 / 74%) !important;
+}
+
+ button {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+@media (max-width: 768px) {
+ section {
+    padding: 4rem 1rem;
+  }
+
+  .app h2 {
+    font-size: 2rem;
+  }
+} 

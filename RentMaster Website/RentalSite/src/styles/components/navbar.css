@@ -1,0 +1,145 @@
+.navbar {
+  background-color: rgb(30 41 53 / 0%) !important;
+  position: fixed;
+  top: 0;
+  left: 0;
+  backdrop-filter: blur(5px);
+  width: 100%;
+  display: flex
+;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  z-index: 1000;
+  height: 60px;
+  box-shadow: 0 2px 8px rgba(166, 170, 186, 0.15);
+  border-bottom: 1px solid rgba(166, 170, 186, 0.2);
+}
+.logo-highlight {
+  color: var(--Primary-Color);
+}
+.logo {
+  color: #414141;
+  font-weight: 300;
+  font-size: 1.5rem;
+  text-decoration: none;
+}
+
+.nav-links {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.nav-links a {
+  color: #414141;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  font-weight: 500;
+  position: relative;
+  height: 20px;
+  font-size: 1rem;
+}
+.nav-link-container{
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+.nav-straightline {
+  width: 1px;
+  height: 15px;
+  background: #414141;
+  transition: all 0.3s ease;
+}
+.nav-links a:hover {
+  color: var(--Primary-Color);
+}
+
+.nav-links a::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 0px;
+  height: 2px;
+  background: white;
+  transition: width 0.3s ease;
+}
+
+.nav-links a:hover::after {
+  background: var(--Primary-Color);
+}
+
+.nav-links a:hover::after {
+  width: 100%;
+}
+
+.auth-buttons {
+  display: flex;
+  gap: 1rem;
+}
+
+.login-btn, .signup-btn {
+  background: var(--Primary-Color);
+  color: var(--Text-Color);
+  padding: 0.5rem 1.2rem;
+  border-radius: 4px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.login-btn:hover, .signup-btn:hover {
+  background: var(--Primary-Color);
+  transform: translateY(-2px);
+}
+
+.tryout-btn {
+  background: #ffffff00;
+  border: 2px solid #00e1ff;
+  color: #3f3f3f;
+  padding: 0.4rem 1rem;
+  border-radius: 4px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.tryout-btn:hover {
+  background: var(--Primary-Color);
+  font-weight: 600;
+
+  color: black;
+}
+
+@media (max-width: 768px) {
+  .nav-links {
+    display: none;
+  }
+  
+  .navbar {
+    padding: 1rem;
+  }
+} 
+
+.nav-separator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  height: 24px;
+}
+
+.diamond-top, .diamond-bottom {
+  width: 3px;
+  height: 3px;
+  background-color: #414141;
+  transform: rotate(45deg);
+  transition: all 0.3s ease;
+}
+
+.nav-separator:hover .diamond-top,
+.nav-separator:hover .diamond-bottom,
+.nav-separator:hover .nav-straightline {
+  background-color: var(--Primary-Color);
+}
+
