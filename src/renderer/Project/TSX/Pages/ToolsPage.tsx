@@ -2090,7 +2090,7 @@ const ToolsPage = ({
                 flexDirection: 'column',
                 justifyContent: 'center',
                 alignItems: 'center',
-                zIndex: 9999,
+                zIndex: 1000,
               }}
             >
               <img
@@ -2123,7 +2123,7 @@ const ToolsPage = ({
                 flexDirection: 'column',
                 justifyContent: 'center',
                 alignItems: 'center',
-                zIndex: 9999,
+                zIndex: 100,
               }}
             >
               <img

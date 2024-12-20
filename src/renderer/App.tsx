@@ -1391,7 +1391,7 @@ function Hello({ tryout, username, signup }: any) {
           justifyContent: 'center',
           alignItems: 'center',
           backgroundColor: 'rgba(0, 0, 0, 0.8)',
-          zIndex: 9999,
+          zIndex: 1000,
         }}
       >
         <div
@@ -1923,6 +1923,7 @@ function Hello({ tryout, username, signup }: any) {
             </>
           </AccountManager>  <CornerSupport  SelectedUserId={SelectedUserId}/>
           {/**/}
+         
           {tryout && (
             <p
               style={{
@@ -2028,6 +2029,7 @@ export default function App() {
 }
 
 import AppABC from '../../RentMaster Website/RentalSite/src/App';
+import TutorialManager from './Project/TSX/Tutorial Components/tutorialManager';
 export const getUserPrivileges = (
   selectedAppUser: appUser | null
 ): {

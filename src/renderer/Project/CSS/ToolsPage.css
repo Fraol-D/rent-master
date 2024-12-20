@@ -152,7 +152,7 @@
   background-color: var(--Background-Color);
   padding: var(--20px-V);
   overflow-y: auto;
-  z-index: 9999;
+  z-index: 100;
   border-radius: var(--10px-V);
   padding-top: var(--0px-V);
   border: var(--1px-V) solid grey;}

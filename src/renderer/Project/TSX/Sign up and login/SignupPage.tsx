@@ -663,7 +663,7 @@ const SignupPage = ({
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
-            zIndex: 9999,
+            zIndex: 1000,
           }}
         >
           <img

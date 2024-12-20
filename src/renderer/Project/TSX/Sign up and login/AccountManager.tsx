@@ -1858,7 +1858,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
-            zIndex: 9999,
+            zIndex: 1000,
           }}
         >
           <img
@@ -1994,7 +1994,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                               right: 0,
                               bottom: 0,
                               backgroundColor: 'rgba(0, 0, 0, 0.5)',
-                              zIndex: 9999,
+                              zIndex: 100,
                             }}
                           >
                             <div
@@ -2813,7 +2813,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                 }}
                               >
                                 {' '}
-                                <h1 style={{ margin: 0 }}>
+                                <h1 id="Property-Management-Title" style={{ margin: 0 }}>
                                   Property Management
                                 </h1>
                                 <p style={{ margin: 0 }}>
@@ -2866,6 +2866,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                   onClick={() => {
                                     handleFetchBranches();
                                   }}
+                                  id="property-refresh-btn"
                                 >
                                   Refresh
                                 </button>
@@ -2883,6 +2884,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                     className="appUserButtons"
                                     style={{ marginRight: 'var(--20px-V)' }}
                                     onClick={() => handleAddBranchFunction()}
+                                    id="property-add-btn"
                                   >
                                     Add New Property
                                   </button>
@@ -2911,6 +2913,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                   justifyContent: 'center',
                                   alignItems: 'center',
                                   minHeight: '200px',
+                                  zIndex:"1000"
                                 }}
                               >
                                 <img
@@ -3505,7 +3508,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
               display: 'flex',
               justifyContent: 'center',
               alignItems: 'center',
-              zIndex: 9999,
+              zIndex: 100,
             }}
           >
             <div
@@ -3515,7 +3518,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                 borderRadius: 'var(--8px-V)',
                 width: 'var(--400px-V)',
                 maxWidth: '90%',
-              }}
+              }}       id="add-new-property-panel"
             >
               <div
                 style={{
@@ -3523,7 +3526,9 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                   justifyContent: 'space-between',
                   alignItems: 'center',
                   marginBottom: 'var(--20px-V)',
+                
                 }}
+       
               >
                 <h2 style={{ margin: 0 }}>Add New Property</h2>
                 <button
@@ -3673,7 +3678,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
               display: 'flex',
               justifyContent: 'center',
               alignItems: 'center',
-              zIndex: 9999,
+              zIndex: 100,
             }}
           >
             <div
@@ -3897,7 +3902,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
               right: 0,
               bottom: 0,
               backgroundColor: 'rgba(0, 0, 0, 0.5)',
-              zIndex: 9999,
+              zIndex: 100,
             }}
           >
             <div

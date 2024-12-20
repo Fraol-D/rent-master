@@ -5,6 +5,11 @@ import {
   sendEmailAPI,
 } from 'Backend/OnlineServerApis';
 import { storageManager } from 'renderer/storeManager';
+import {
+  tutorialData,
+  TutorialSystem,
+} from '../Tutorial Components/tutorialData';
+import TutorialManager from '../Tutorial Components/TutorialManager';
 
 const CornerSupport = ({ SelectedUserId }: any) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -15,6 +20,9 @@ const CornerSupport = ({ SelectedUserId }: any) => {
   const [featureSuggestion, setFeatureSuggestion] = useState('');
   const [isSendingFeatureSuggestion, setIsSendingFeatureSuggestion] =
     useState(false);
+  const [isTutorialActive, setIsTutorialActive] = useState(false);
+  const [selectedTutorial, setSelectedTutorial] =
+    useState<TutorialSystem | null>(null);
 
   const toggleOpen = () => {
     if (isOpen && selectedOption) {
@@ -64,7 +72,7 @@ const CornerSupport = ({ SelectedUserId }: any) => {
       });
     };
     if (navigator.onLine) fetchSmsHistory();
-  }, [SelectedUserId,isOpen]);
+  }, [SelectedUserId, isOpen]);
 
   const [getCurrentPlanInfo, setCurrentPlanInfo] = useState({
     name: 'Starter Plan',
@@ -168,38 +176,72 @@ const CornerSupport = ({ SelectedUserId }: any) => {
     },
   ];
 
+  const renderTutorialList = () => (
+    <div style={{ padding: 'var(--5px-V)' }}>
+      <h2 style={{ marginTop: '0' }}>Available Tutorials</h2>
+      <div
+        style={{
+          marginTop: 'var(--10px-V)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 'var(--10px-V)',
+        }}
+      >
+        {tutorialData.pages.map((page, index) => (
+          <div
+            key={index}
+            style={{
+              padding: 'var(--10px-V)',
+              backgroundColor: 'var(--Secondary-Color20)',
+              borderRadius: 'var(--5px-V)',
+            }}
+          >
+            <h3 style={{ margin: '0 0 var(--5px-V) 0' }}>{page.pageTitle}</h3>
+            <p style={{ margin: '0 0 var(--10px-V) 0' }}>
+              {page.overview.description}
+            </p>
+            <button
+              onClick={() => {
+                setSelectedTutorial(tutorialData);
+                setIsTutorialActive(true);
+                setSelectedOption(null);
+                setIsOpen(false);
+              }}
+              style={{
+                padding: 'var(--5px-V) var(--10px-V)',
+                backgroundColor: 'var(--Primary-Color)',
+                color: 'var(--Text-Color-Reverse)',
+                border: 'none',
+                borderRadius: 'var(--3px-V)',
+                cursor: 'pointer',
+              }}
+            >
+              Start Tutorial
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
   const renderContent = () => {
     switch (selectedOption) {
       case 'tutorial':
-        return (
-          <div style={{ fontSize: 'var(--16px-V)', padding: 'var(--5px-V)' }}>
-            <h2 style={{ marginTop: '0' }}>Getting Started</h2>
-            <ul style={{ listStyle: 'none', padding: 0 }}>
-              <li style={{ marginBottom: 'var(--10px-V)' }}>
-                • Add your first property
-              </li>
-              <li style={{ marginBottom: 'var(--10px-V)' }}>
-                • Manage tenants
-              </li>
-              <li style={{ marginBottom: 'var(--10px-V)' }}>
-                • Track payments
-              </li>
-              <li style={{ marginBottom: 'var(--10px-V)' }}>
-                • Generate reports
-              </li>
-            </ul>
-          </div>
-        );
+        return renderTutorialList();
 
       case 'support':
         return (
           <div style={{ padding: 'var(--5px-V)' }}>
             <h2 style={{ marginTop: '0' }}>Support</h2>
             <div style={{ marginTop: 'var(--10px-V)' }}>
-              <div style={{marginTop: 'var(--20px-V)',
-padding: 'var(--10px-V)',
-borderRadius: 'var(--10px-V)',
-backgroundColor: 'var(--Secondary-Color20)'}}>
+              <div
+                style={{
+                  marginTop: 'var(--20px-V)',
+                  padding: 'var(--10px-V)',
+                  borderRadius: 'var(--10px-V)',
+                  backgroundColor: 'var(--Secondary-Color20)',
+                }}
+              >
                 <div
                   style={{
                     display: 'flex',
@@ -231,13 +273,13 @@ backgroundColor: 'var(--Secondary-Color20)'}}>
                   <span>@Rent_Master</span>
                 </div>
               </div>
-       
+
               <div
                 style={{
                   marginTop: 'var(--20px-V)',
                   padding: 'var(--10px-V)',
                   borderRadius: 'var(--10px-V)',
-                  backgroundColor: 'var(--Secondary-Color20)'
+                  backgroundColor: 'var(--Secondary-Color20)',
                 }}
               >
                 <label>Send a message</label>
@@ -247,7 +289,11 @@ backgroundColor: 'var(--Secondary-Color20)'}}>
                   id="message"
                   name="message"
                   placeholder="Send us a message"
-                  style={{ height: 'var(--100px-V)',width:"97%" , resize: 'vertical' }}
+                  style={{
+                    height: 'var(--100px-V)',
+                    width: '97%',
+                    resize: 'vertical',
+                  }}
                 ></textarea>
                 <button onClick={handleSubmitmessage}>
                   {IsSendingReviewMessage ? (
@@ -267,24 +313,27 @@ backgroundColor: 'var(--Secondary-Color20)'}}>
                   )}
                 </button>
               </div>
-           
+
               <div
                 style={{
                   marginTop: 'var(--20px-V)',
                   padding: 'var(--10px-V)',
                   borderRadius: 'var(--10px-V)',
-                  backgroundColor: 'var(--Secondary-Color20)'
+                  backgroundColor: 'var(--Secondary-Color20)',
                 }}
               >
                 <label>Suggest a feature</label>
                 <textarea
-                
                   value={featureSuggestion}
                   onChange={(e) => setFeatureSuggestion(e.target.value)}
                   id="featureSuggestion"
                   name="featureSuggestion"
                   placeholder="Tell us what features you would like to see in RentMaster..."
-                  style={{ height: 'var(--100px-V)',width:"97%" ,resize: 'vertical' }}
+                  style={{
+                    height: 'var(--100px-V)',
+                    width: '97%',
+                    resize: 'vertical',
+                  }}
                 ></textarea>
                 <button onClick={handleSubmitFeatureSuggestion}>
                   {isSendingFeatureSuggestion ? (
@@ -317,7 +366,7 @@ backgroundColor: 'var(--Secondary-Color20)'}}>
                 marginTop: 'var(--20px-V)',
                 padding: 'var(--10px-V)',
                 borderRadius: 'var(--10px-V)',
-                backgroundColor: 'var(--Secondary-Color20)'
+                backgroundColor: 'var(--Secondary-Color20)',
               }}
             >
               <h3 style={{ margin: '0 0 var(--10px-V) 0' }}>
@@ -409,7 +458,7 @@ backgroundColor: 'var(--Secondary-Color20)'}}>
                 marginTop: 'var(--20px-V)',
                 padding: 'var(--10px-V)',
                 borderRadius: 'var(--10px-V)',
-                backgroundColor: 'var(--Secondary-Color20)'
+                backgroundColor: 'var(--Secondary-Color20)',
               }}
             >
               <h3 style={{ margin: '0 0 var(--10px-V) 0' }}>Need More?</h3>
@@ -426,17 +475,17 @@ backgroundColor: 'var(--Secondary-Color20)'}}>
               </ul>
               <div
                 style={{
-                 display:"flex",
-                 justifyContent:"center",
+                  display: 'flex',
+                  justifyContent: 'center',
                   padding: 'var(--5px-V)',
-           background:"var(--Secondary-Color30)",
+                  background: 'var(--Secondary-Color30)',
                   border: 'none',
                   borderRadius: 'var(--5px-V)',
-               
+
                   marginBottom: 'var(--5px-V)',
                 }}
               >
-                Contact: 0944509999 
+                Contact: 0944509999
               </div>
             </div>
           </div>
@@ -448,150 +497,165 @@ backgroundColor: 'var(--Secondary-Color20)'}}>
   };
 
   return (
-    <div
-      style={{
-        position: 'fixed',
-        bottom: 'var(--20px-V)',
-        right: 'var(--20px-V)',
-        zIndex: 1000,
-      }}
-    >
-      <button
-        onClick={toggleOpen}
+    <>
+      {isTutorialActive && selectedTutorial && (
+        <TutorialManager
+          tutorialData={selectedTutorial}
+          onClose={() => {
+            setIsTutorialActive(false);
+            setSelectedTutorial(null);
+          }}
+        />
+      )}
+
+      <div
         style={{
-          width: 'var(--50px-V)',
-          height: 'var(--50px-V)',
-          borderRadius: '50%',
-          zIndex: '4',
-          fontSize: 'var(--24px-V)',
-          position: 'relative',
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          background: 'var(--Background-Color)',
-          border: 'var(--2px-V) solid var(--Secondary-Color)',
-          color: 'var(--Text-Color)',
+          position: 'fixed',
+          bottom: 'var(--20px-V)',
+          right: 'var(--20px-V)',
+          zIndex: 600,
         }}
-        title="Help"
       >
-        H
-      </button>
-
-      {isOpen && (
-        <div
+        <button
+          onClick={toggleOpen}
           style={{
-            position: 'absolute',
-            bottom: 'var(--3px-V)',
-            right: 'var(--28px-V)',
+            width: 'var(--50px-V)',
+            height: 'var(--50px-V)',
+            borderRadius: '50%',
+            zIndex: '4',
+            fontSize: 'var(--24px-V)',
+            position: 'relative',
+            cursor: 'pointer',
             display: 'flex',
-            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
             background: 'var(--Background-Color)',
-            boxShadow: '0px 0px var(--10px-V) var(--Secondary-Color)',
-            gap: 'var(--10px-V)',
-            zIndex: '3',
-            padding: 'var(--7px-V)',
-            paddingRight: 'var(--30px-V)',
-            borderRadius: 'var(--10px-V)',
-            transformOrigin: 'right center',
-            animation: isClosing
-              ? '0.3s ease-out slideOutBar'
-              : '0.3s ease-out slideInBar',
+            border: 'var(--2px-V) solid var(--Secondary-Color)',
+            color: 'var(--Text-Color)',
           }}
+          title="Help"
         >
-          {['tutorial', 'support', 'Subscription'].map((option) => (
-            <button
-              key={option}
-              onClick={() => setSelectedOption(option as any)}
-              style={{
-                padding: 'var(--5px-V) var(--15px-V)',
-                borderRadius: 'var(--5px-V)',
-                border: 'var(--1px-V) solid var(--Secondary-Color)',
-                background: selectedOption === option ? 'var(--Secondary-Color)':'var(--Background-Color)',
-                color: 'var(--Text-Color)',
-                cursor: 'pointer',
-              }}
-            >
-              {option.charAt(0).toUpperCase() + option.slice(1)}
-            </button>
-          ))}
-        </div>
-      )}
+          H
+        </button>
 
-      {selectedOption && (
-        <div
-          style={{
-            position: 'fixed',
-            right: 'var(--47px-V)',
-            bottom: 'var(--65px-V)',
-            width: 'var(--320px-V)',
-            height: '75vh',
-            backgroundColor: 'var(--Background-Color)',
-            boxShadow: '0px 0px var(--10px-V) var(--Secondary-Color)',
-            borderRadius: 'var(--10px-V)',
-            padding: 'var(--20px-V)',
-            display: 'flex',
-            flexDirection: 'column',
-            transformOrigin: 'right bottom',
-            overflow: 'auto',
-            transition: '.2s all',
-            animation: isClosing
-              ? '0.3s ease-out slideOutBar'
-              : '0.3s ease-out slideInBar',
-          }}
-        >
-          {renderContent()}
-        </div>
-      )}
+        {isOpen && (
+          <div
+            style={{
+              position: 'absolute',
+              bottom: 'var(--3px-V)',
+              right: 'var(--28px-V)',
+              display: 'flex',
+              flexDirection: 'row',
+              background: 'var(--Background-Color)',
+              boxShadow: '0px 0px var(--10px-V) var(--Secondary-Color)',
+              gap: 'var(--10px-V)',
+              zIndex: '3',
+              padding: 'var(--7px-V)',
+              paddingRight: 'var(--30px-V)',
+              borderRadius: 'var(--10px-V)',
+              transformOrigin: 'right center',
+              animation: isClosing
+                ? '0.3s ease-out slideOutBar'
+                : '0.3s ease-out slideInBar',
+            }}
+          >
+            {['tutorial', 'support', 'Subscription'].map((option) => (
+              <button
+                key={option}
+                onClick={() => setSelectedOption(option as any)}
+                style={{
+                  padding: 'var(--5px-V) var(--15px-V)',
+                  borderRadius: 'var(--5px-V)',
+                  border: 'var(--1px-V) solid var(--Secondary-Color)',
+                  background:
+                    selectedOption === option
+                      ? 'var(--Secondary-Color)'
+                      : 'var(--Background-Color)',
+                  color: 'var(--Text-Color)',
+                  cursor: 'pointer',
+                }}
+              >
+                {option.charAt(0).toUpperCase() + option.slice(1)}
+              </button>
+            ))}
+          </div>
+        )}
 
-      <style>
-        {`
-          @keyframes slideInBar {
-            from {
-              transform: scaleX(0);
-              opacity: 0;
-            }
-            to {
-              transform: scaleX(1);
-              opacity: 1;
-            }
-          }
+        {selectedOption && (
+          <div
+            style={{
+              position: 'fixed',
+              right: 'var(--47px-V)',
+              bottom: 'var(--65px-V)',
+              width: 'var(--320px-V)',
+              height: '75vh',
+              backgroundColor: 'var(--Background-Color)',
+              boxShadow: '0px 0px var(--10px-V) var(--Secondary-Color)',
+              borderRadius: 'var(--10px-V)',
+              padding: 'var(--20px-V)',
+              display: 'flex',
+              flexDirection: 'column',
+              transformOrigin: 'right bottom',
+              overflow: 'auto',
+              transition: '.2s all',
+              animation: isClosing
+                ? '0.3s ease-out slideOutBar'
+                : '0.3s ease-out slideInBar',
+            }}
+          >
+            {renderContent()}
+          </div>
+        )}
 
-          @keyframes slideOutBar {
-            from {
-              transform: scaleX(1);
-              opacity: 1;
+        <style>
+          {`
+            @keyframes slideInBar {
+              from {
+                transform: scaleX(0);
+                opacity: 0;
+              }
+              to {
+                transform: scaleX(1);
+                opacity: 1;
+              }
             }
-            to {
-              transform: scaleX(0);
-              opacity: 0;
-            }
-          }
 
-          @keyframes slideInPanel {
-            from {
-              transform: translateY(var(--70px-V)) scale(1);
-              opacity: 0;
+            @keyframes slideOutBar {
+              from {
+                transform: scaleX(1);
+                opacity: 1;
+              }
+              to {
+                transform: scaleX(0);
+                opacity: 0;
+              }
             }
-            to {
-              transform: translateY(0) scale(1);
-              opacity: 1;
-            }
-          }
 
-          @keyframes slideOutPanel {
-            from {
-              transform: translateY(0) scale(1);
-              opacity: 1;
+            @keyframes slideInPanel {
+              from {
+                transform: translateY(var(--70px-V)) scale(1);
+                opacity: 0;
+              }
+              to {
+                transform: translateY(0) scale(1);
+                opacity: 1;
+              }
             }
-            to {
-              transform: translateY(var(--70px-V)) scale(1);
-              opacity: 0;
+
+            @keyframes slideOutPanel {
+              from {
+                transform: translateY(0) scale(1);
+                opacity: 1;
+              }
+              to {
+                transform: translateY(var(--70px-V)) scale(1);
+                opacity: 0;
+              }
             }
-          }
-        `}
-      </style>
-    </div>
+          `}
+        </style>
+      </div>
+    </>
   );
 };
 

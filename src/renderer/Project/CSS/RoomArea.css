@@ -605,7 +605,7 @@
   position: fixed;
   top: 20px;
   right: 20px;
-  z-index: 9999;
+  z-index: 700;
   min-width: 300px;
   max-width: 450px;
   padding: 16px;
@@ -681,7 +681,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 9999;
+  z-index: 700;
 }
 
 .confirm-dialog {
