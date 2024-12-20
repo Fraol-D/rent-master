@@ -1,13 +1,12 @@
 .solution {
   padding: 3rem 2rem;
   padding-top: 7rem;
-  min-height: 65rem;
-  display: flex;
-  align-items: flex-start;
-  background-position-y: -66px;
-  background-size: 100%;
- 
-  background-image: url("../../assets/img/Rectangle 2.png");
+  min-height: auto;
+  width: 100%;
+  position: relative;
+  display: block;
+  margin-bottom: 4rem;
+  overflow: visible;
 }
 
 .section-description {
@@ -21,8 +20,12 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 2rem;
-  margin-top: 4rem;
-  grid-auto-rows: minmax(100px, auto);    justify-items: center;
+  width: 100%;
+  max-width: 1200px;
+  margin: 4rem auto 0;
+  padding: 0 1rem;
+  position: relative;
+  z-index: 1;
 }
 
 .solution-visual {
@@ -36,13 +39,15 @@
 }
 
 .solution-image {
-  width: 200px;
-
-
+  width: 100px;
+  height: auto;
+  max-width: 200px;
 }
-.solution-image2 {
-  width: 170px;
 
+.solution-image2 {
+  width: 85px;
+  height: auto;
+  max-width: 170px;
 }
 
 .dashboard-bg-image {
@@ -67,16 +72,17 @@
 
 .solution-main-benift {
   display: flex;
-      background: rgb(226 226 226) !important;
-      justify-content: center;
-      flex-direction: column;
-      align-items: flex-start;
-      width: 345px;
-      background: var(--Background-Color);
-      padding: 1.5rem;
-      border-radius: 8px;
-      border: 1px solid var(--Secondary-Color30);
-      box-shadow: 0 4px 6px var(--Secondary-Color20);
+  background: rgb(226 226 226) !important;
+  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 345px;
+  margin: 0 auto;
+  padding: 1.5rem;
+  border-radius: 8px;
+  border: 1px solid var(--Secondary-Color30);
+  box-shadow: 0 4px 6px var(--Secondary-Color20);
 }
 .solution-description{
   font-size: 0.9rem;
@@ -144,6 +150,15 @@
   
   .solution-grid {
     grid-template-columns: 1fr;
+  }
+
+  .solution-image,
+  .solution-image2 {
+    width: 60px;
+  }
+
+  .inside-main-benift h3 {
+    font-size: 1.1rem;
   }
 }
 
@@ -257,5 +272,36 @@
 
   .inside-main-benift {
     width: 100%;
+  }
+}
+
+@media (min-width: 1020px) {
+  .solution-content {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
+  }
+
+  .solution-main-benift {
+    width: 100%;
+    min-width: 280px;
+    max-width: 345px;
+  }
+}
+
+@media (max-width: 1019px) {
+  .solution-content {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .solution-content {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .solution-main-benift {
+    width: 90%;
   }
 } 
