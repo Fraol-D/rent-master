@@ -48,23 +48,7 @@ const DashboardPage: React.FC<props> = ({
   updateRoomProperty,
   SelectedBranchId,
 }) => {
-  const [expenses, setExpenses] = useState<expenses[]>([]);
 
-  useEffect(() => {
-    const fetchExpenses = async () => {
-      try {
-        const expensesData = await getValuesWithSql(
-          'expenses',
-          `WHERE 1 AND branchId = '${SelectedBranchId}'`
-        );
-        setExpenses(expensesData);
-      } catch (error) {
-        console.error('Error fetching expenses:', error);
-      } finally {
-      }
-    };
-    fetchExpenses();
-  }, []);
 
   return (
     <>
@@ -126,16 +110,16 @@ const DashboardPage: React.FC<props> = ({
         >
           <DashbNetProfitTotalCollected
             RoomList={RoomList}
-            expenses2={expenses}
+         
           
             SelectedBranchId={SelectedBranchId}
           ></DashbNetProfitTotalCollected>
           <DashbMonthlyExpenseTrendWidget
-            expenses={expenses}
+          
             SelectedBranchId={SelectedBranchId}
           />
-          <DashbExpenseHistory expenses={expenses} />
-          <DashbUpcomingExpensesWidget expenses={expenses} />
+          <DashbExpenseHistory/>
+          <DashbUpcomingExpensesWidget/>
 
           {/* {<DashbExpenseDistribution expenses={expenses} />} */}
         </div>

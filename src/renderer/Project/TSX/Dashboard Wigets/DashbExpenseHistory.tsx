@@ -6,6 +6,7 @@ import CurrencySign, {
   formatNumberWithSuffix,
   getRateByDate,
 } from '../Helpers/CurrencySign';
+import { useGlobal } from 'renderer/components/GlobalContext';
 
 interface Expense {
   id: string;
@@ -22,12 +23,13 @@ interface Expense {
 }
 
 interface DashbExpenseHistoryProps {
-  expenses: Expense[];
+
 }
 
 const DashbExpenseHistory: React.FC<DashbExpenseHistoryProps> = ({
-  expenses,
+
 }) => {
+  const {AllExpenses} = useGlobal()
   const [sortBy, setSortBy] = useState<'date' | 'price'>('date');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [showRecurring, setShowRecurring] = useState<
@@ -166,15 +168,15 @@ const DashbExpenseHistory: React.FC<DashbExpenseHistoryProps> = ({
     pastDate.setHours(0, 0, 0, 0);
 
     let expandedExpenses =
-      generateRecurringExpenses(expenses as expenses[], pastDate, today) || [];
+      generateRecurringExpenses(AllExpenses as expenses[], pastDate, today) || [];
     if (
-      expenses &&
-      expenses.length > 0 &&
-      expenses !== undefined &&
-      expenses !== null
+      AllExpenses &&
+      AllExpenses.length > 0 &&
+      AllExpenses !== undefined &&
+      AllExpenses !== null
     ) {
       expandedExpenses =
-        generateRecurringExpenses(expenses as expenses[], pastDate, today) ||
+        generateRecurringExpenses(AllExpenses as expenses[], pastDate, today) ||
         [];
     } else {
     }
@@ -202,7 +204,7 @@ const DashbExpenseHistory: React.FC<DashbExpenseHistoryProps> = ({
       })
       .slice(0, limit);
   }, [
-    expenses,
+    AllExpenses,
     sortBy,
     sortOrder,
     showRecurring,

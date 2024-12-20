@@ -6,6 +6,7 @@ import CurrencySign, {
   formatNumberWithSuffix,
   getRateByDate,
 } from '../Helpers/CurrencySign';
+import { useGlobal } from 'renderer/components/GlobalContext';
 
 interface Expense {
   id: string;
@@ -23,7 +24,7 @@ interface Expense {
 }
 
 interface UpcomingExpensesWidgetProps {
-  expenses: Expense[];
+
 }
 
 const generateRecurringExpenses = (
@@ -32,7 +33,7 @@ const generateRecurringExpenses = (
   endDate: Date
 ): expenses[] => {
   let allExpenses: expenses[] = [];
-
+if(expenses)
   expenses.forEach((expense) => {
     if (expense.doesReoccur) {
       const StartExpenseDate = new Date(expense.date);
@@ -119,8 +120,8 @@ const generateRecurringExpenses = (
 };
 
 const DashbUpcomingExpensesWidget: React.FC<UpcomingExpensesWidgetProps> = ({
-  expenses,
-}) => {
+
+}) => {const {AllExpenses} = useGlobal();
   const [expandedMonths, setExpandedMonths] = useState<string[]>([]);
   const [filterFullBuilding, setFilterFullBuilding] = useState<boolean | null>(
     null
@@ -169,7 +170,7 @@ const DashbUpcomingExpensesWidget: React.FC<UpcomingExpensesWidgetProps> = ({
     const futureDate = addMonths(today, monthsToShow);
 
     const expandedExpenses = generateRecurringExpenses(
-      expenses,
+      AllExpenses,
       today,
       futureDate
     );
@@ -200,7 +201,7 @@ const DashbUpcomingExpensesWidget: React.FC<UpcomingExpensesWidgetProps> = ({
       })
       .sort((a, b) => a.date - b.date);
   }, [
-    expenses,
+    AllExpenses,
     filterFullBuilding,
     filterFloor,
     filterRoom,

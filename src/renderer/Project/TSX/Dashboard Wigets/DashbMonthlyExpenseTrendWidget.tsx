@@ -23,7 +23,7 @@ import CurrencySign, {
 } from '../Helpers/CurrencySign';
 import { useGlobal } from 'renderer/components/GlobalContext';
 interface MonthlyExpenseTrendWidgetProps {
-  expenses: expenses[];
+
   SelectedBranchId: any;
 }
 

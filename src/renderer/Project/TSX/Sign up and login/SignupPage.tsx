@@ -636,7 +636,7 @@ const SignupPage = ({
       await addValueOnline('sms_templates', element);
       if(window.electron) await addValueWithOutOfflineChange('sms_templates', element);
     }
-
+    if(!window.electron)window.location.pathname = '/app';
     setisSignedIn(true);
     setErrorMessage('Sign up successful!');
     setLoading(false);

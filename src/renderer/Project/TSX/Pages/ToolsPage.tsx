@@ -1522,25 +1522,18 @@ const ToolsPage = ({
           whereClause += ` AND id <= ${new Date(endDate).getTime() / 1000}`;
         }
 
-        // First get total count for pagination
-        const countQuery = `SELECT COUNT(*) as total FROM Exchange_RatesUSDtoETB ${whereClause}`;
-        const totalResult = await getValuesWithSql_Online(
-          'Exchange_RatesUSDtoETB',
+        // Add pagination params directly to the where clause
+        const offset = (currentPage - 1) * ratesPerPage;
+        whereClause += ` ORDER BY id DESC LIMIT ${ratesPerPage} OFFSET ${offset}`;
+
+        // Single query to get the data
+        const rates = await getValuesWithSql_Online(
+          'Exchange_RatesUSDtoETB', 
           whereClause
         );
 
-        const total = totalResult.length;
-        const calculatedTotalPages = Math.ceil(total / ratesPerPage);
-        setTotalPages(calculatedTotalPages);
-
-        // Then get paginated data
-        const offset = (currentPage - 1) * ratesPerPage;
-        const paginatedQuery = `${whereClause} ORDER BY id DESC LIMIT ${ratesPerPage} OFFSET ${offset}`;
-        const rates = await getValuesWithSql_Online(
-          'Exchange_RatesUSDtoETB',
-          paginatedQuery
-        );
         setExchangeRates(rates);
+        setTotalPages(Math.ceil(rates.length / ratesPerPage));
       }
     } catch (error) {
       console.error('Error fetching exchange rates:', error);

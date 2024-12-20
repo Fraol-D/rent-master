@@ -35,12 +35,12 @@ interface Payment {
 
 const DashbNetProfitTotalCollected = ({
   RoomList,
-  expenses2,
+
 
   SelectedBranchId,
 }: {
   RoomList: RoomType[];
-  expenses2: expenses[];
+
  
   SelectedBranchId: any;
 }) => {

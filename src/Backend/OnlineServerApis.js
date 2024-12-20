@@ -4,12 +4,54 @@ import {
   getLocalUserDirectory,
   getValuesWithSql,
 } from './localServerApis';
-import { makeProxyRequest } from './viteApiHandler';
 const baseUrl = 'https://www.rentmaster.markethubet.com/api';
 const baseUrlLocal = 'http://localhost:8100';
-
+import {
+  makeProxyRequest,
+  makeProxyRequestFileManager,
+} from './viteApiHandler';
 import axios from 'axios';
+const makeRequest = async (input, init = {}) => {
+  const {
+    method = 'GET',
+    headers = {},
+    body = null,
+    isFileManager = false,
+    useProxy = !window.electron,
+  } = init;
+  //if(window.electron) return await fetch(input,init)
+  try {
+    const users = await storageManager.get('users');
+    if (!users?.[0]?.id) {
+      throw new Error('User ID not found');
+    }
+    const userId = users[0].id;
 
+    // Normalize URL
+
+    if (useProxy) {
+      const proxyResponse = await makeProxyRequest(
+        'local',
+        input,
+        method,
+        headers,
+        body,
+        userId
+      );
+
+      return await proxyResponse;
+    } else {
+      const response = await fetch(input, init);
+
+      return response.headers.get('content-type')?.includes('application/json')
+        ? response.json()
+        : response.text();
+    }
+  } catch (error) {
+    console.error('Request error:', error);
+    throw error;
+  }
+};
 let sendApiFunction = async (string, { url, method, headers, data }) => {
   if (window.electron) {
     return await window.electron.ipcRenderer.invoke(string, {
@@ -379,17 +421,20 @@ export async function verifyAppUserCredentials(email, password) {
 
 export const getValuesWithSql_Online = async (tableName, sqlCode) => {
   try {
-    if (navigator.onLine) {
+  if(window.electron) {
+   if (navigator.onLine) {
       const url = `${baseUrl}/${tableName}/${encodeURIComponent(sqlCode)}`;
       const headers = {
         'Content-Type': 'application/json',
       };
-      return await sendApiFunction('api-request', {
-        url,
-        method: 'get',
-        headers,
-      });
+      const answer = await makeRequest(url, { method: 'get', headers });
+      console.log(answer)
+      return  answer
     }
+  } else {
+return await getValuesWithSql(tableName, sqlCode)
+  }
+ 
   } catch (error) {
     console.error('Error in getValuesWithSql_Online:', error);
     return [];
@@ -1405,7 +1450,7 @@ export const sendEmailAPIForVerify = async (email, code) => {
     </html>
   `;
 
-  const subject = 'Email Verification';
+    const subject = 'Email Verification';
     const data = {
       email,
       subject2,
@@ -1430,10 +1475,9 @@ export const sendEmailAPIForWebsite = async (email2, text, subject) => {
     const headers = {
       'Content-Type': 'application/json',
     };
-  
- 
+
     const data = {
-      email: "rentmaster.et@gmail.com",
+      email: 'rentmaster.et@gmail.com',
       subject,
       text,
     };
@@ -1475,3 +1519,26 @@ export const checkIfCompanyNameExists = async (companyName) => {
     return { success: false, error: error.message };
   }
 };
+
+export const checkRoomLimit = async (SelectedUserId) => {
+  try {
+    const url = `${baseUrl}/check-room-limit`;
+    const headers = {
+      'Content-Type': 'application/json',
+    };
+    const data = {
+      userId: SelectedUserId,
+    };
+
+    const response = sendApiFunction('api-request', {
+      url,
+      method: 'post',
+      headers,
+      data,
+    })
+
+    return !response.valid;
+  } catch (error) {
+    
+  }
+}

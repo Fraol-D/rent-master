@@ -127,6 +127,7 @@ const LoginPage = ({
         TrailEndDate: user.TrailEndDate,
       },
     ]);
+    if(!window.electron)window.location.pathname = '/app';
     setisSignedIn(true);
   };
 

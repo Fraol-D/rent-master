@@ -130,6 +130,26 @@ app.all('/make-request', async (req, res) => {
   }
 });
 
+// Add better error handling middleware
+app.use((err, req, res, next) => {
+  console.error('Proxy Server Error:', err);
+  res.status(500).json({
+    success: false,
+    error: err.message,
+    details: process.env.NODE_ENV === 'development' ? err.stack : undefined
+  });
+});
+
+// Add request logging middleware
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.path}`);
+  const start = Date.now();
+  res.on('finish', () => {
+    console.log(`${req.method} ${req.path} - ${res.statusCode} (${Date.now() - start}ms)`);
+  });
+  next();
+});
+
 // Start server if not being required as a module
 if (require.main === module) {
   app.listen(port, () => {

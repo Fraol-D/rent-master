@@ -1919,9 +1919,9 @@ function Hello({ tryout, username, signup }: any) {
                 SelectedUserId={SelectedUserId}
                 SelectedBranchId={SelectedBranchId}
               />
-              <CornerSupport />
+            
             </>
-          </AccountManager>
+          </AccountManager>  <CornerSupport  SelectedUserId={SelectedUserId}/>
           {/**/}
           {tryout && (
             <p

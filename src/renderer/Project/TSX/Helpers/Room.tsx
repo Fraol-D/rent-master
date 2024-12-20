@@ -21,6 +21,7 @@ import {
   deleteValue,
   getRoomDocuments,
   getValuesWithSql,
+  RenameAddTenantDocumentFolder,
   updateValue,
   uploadTenantDocument,
   uploadTenantDocumentsV2,
@@ -41,6 +42,7 @@ import CurrencySign, {
 import { Input } from './CustomReactComponents';
 import { getUserPrivileges } from '../../../App';
 import { storageManager } from 'renderer/storeManager';
+import loadingGif from 'renderer/assets/assets/Loading/Rolling-1s-200px.gif';
 import { useGlobal } from 'renderer/components/GlobalContext';
 const Room = ({
   roomType,
@@ -105,7 +107,8 @@ const Room = ({
   const privileges = useMemo(
     () => getUserPrivileges(SelectedAppUser),
     [SelectedAppUser]
-  );  const {
+  );
+  const {
     AllRoomPayInfo,
     setAllRoomPayInfo,
     AllAgreements,
@@ -118,6 +121,7 @@ const Room = ({
     AllRoomPayInfoHistory,
     setAllRoomPayInfoHistory,
   } = useGlobal();
+  const [isLoading, setIsLoading] = useState(false);
   const [name, setName] = useState('');
   const [tel1, setTel1] = useState('');
   const [tel2, setTel2] = useState('');
@@ -210,7 +214,8 @@ const Room = ({
         !(utilityShowerRefHider.current as HTMLElement).contains(
           event.target as Node
         ) &&
-        roomType.ShowUtilityLine
+        roomType.ShowUtilityLine &&
+        !(event.target as HTMLElement).closest('#confirm-overlay')
       ) {
         updateRoomPropertyLocal(roomType.id, 'ShowUtilityLine', 0);
       }
@@ -245,7 +250,7 @@ const Room = ({
       }
     }
     SetRefreshState(true);
-    tenantAPI.getTenantsApi();
+
     await handlePaymentRefresh();
   };
 
@@ -389,21 +394,42 @@ const Room = ({
       );
       await updateRoomProperty(roomType.id, 'selectedAgreementId', AgreementId);
     }
+    updateRoomPropertyLocal(
+      roomType.id,
+      'DaysTillNextPayment',
+      calculateDaysTillNextPayment(await calculatePredictedPayments(roomType))
+    );
 
     SetRefreshState(true);
     await handlePaymentRefresh();
   };
-
   const handleDocuments = async (tenantId: string, tenant_name: string) => {
     console.log('tenant_name', tenant_name);
     const roomDocs = await getRoomDocuments('Add a tenant documents');
-    if (roomDocs?.documents) {
-      for (const element of roomDocs.documents) {
+    if (roomDocs?.documents && roomDocs.documents.length > 0) {
+      if(window.electron) {
+         for (const element of roomDocs.documents) {
+        
         const fileName = element.split('\\').pop().split('/').pop();
-        const fileContent = await window.electron.ipcRenderer.invoke(
-          'read-file',
-          element
-        );
+        let fileContent;
+
+        // Check if running in Electron environment
+        if (window.electron) {
+          // Use Electron's IPC to read the file
+          fileContent = await window.electron.ipcRenderer.invoke(
+            'read-file',
+            element
+          );
+        } else {
+          // Fallback to fetch the file content
+          const response = await fetch(element);
+          if (!response.ok) {
+            throw new Error(`Failed to fetch file: ${fileName}`);
+          }
+          console.log(roomDocs);
+          fileContent = await response.blob(); // Get the file content as a Blob
+        }
+
         const blob = new Blob([fileContent]);
         const file = new File([blob], fileName, {
           type: 'application/octet-stream',
@@ -417,7 +443,14 @@ const Room = ({
           new Date(startTime).toDateString()
         );
       }
-      await deleteTenantDocumentFolder();
+      } else {
+        await RenameAddTenantDocumentFolder(    roomType.id,
+          tenant_name,
+          tenantId,
+          new Date(startTime).toDateString());
+      }
+     
+     if(window.electron) await deleteTenantDocumentFolder();
     }
   };
   const getCorrectPaymentStatment = (text: string, custom: string) => {
@@ -450,6 +483,7 @@ const Room = ({
 
     if (name.length >= 3 && tel1.length >= 6 && startTime.length >= 1) {
       setIsUpdatingTenantList(true);
+      setIsLoading(true)
       const tenantId = uuidv4();
       const tenant = {
         id: tenantId,
@@ -469,32 +503,36 @@ const Room = ({
         Currency: AddTenantFormCurrency,
       };
 
-      updateRoomPropertyWithOutRefresh(
+      await updateRoomPropertyWithOutRefresh(
         roomType.id,
         'Currency',
         AddTenantFormCurrency
       );
-      updateRoomPropertyWithOutRefresh(roomType.id, 'status', 'Taken');
-      updateRoomPropertyWithOutRefresh(
+      await updateRoomPropertyWithOutRefresh(roomType.id, 'status', 'Taken');
+      await updateRoomPropertyWithOutRefresh(
         roomType.id,
         'PaymentCycleCustomeDays',
         customDays
       );
-      updateRoomPropertyWithOutRefresh(
+      await updateRoomPropertyWithOutRefresh(
         roomType.id,
         'PaymentCycleType',
         paymentCycle
       );
-      updateRoomPropertyWithOutRefresh(roomType.id, 'AgreedPrice', agreedPrice);
-      updateRoomPropertyWithOutRefresh(roomType.id, 'tenantId', tenantId);
-      updateRoomPropertyLocal(roomType.id, 'AddTenantState', 0);
-      updateRoomProperty(
+      await updateRoomPropertyWithOutRefresh(
+        roomType.id,
+        'AgreedPrice',
+        agreedPrice
+      );
+      await updateRoomPropertyWithOutRefresh(roomType.id, 'tenantId', tenantId);
+      await updateRoomPropertyLocal(roomType.id, 'AddTenantState', 0);
+      await updateRoomProperty(
         roomType.id,
         'Price',
         agreedPrice ? roomType.price : agreedPrice
       );
       //add a tenant to the tenant list
-      tenantAPI.addTenantApi(
+      await tenantAPI.addTenantApi(
         tenant.id,
         tenant.name,
         tenant.phoneNumber,
@@ -517,85 +555,10 @@ const Room = ({
           RoomPayInfo: [],
         };
       }
-
-      const paymentIntervals = {
-        '30': 30,
-        '15': 15,
-        '7': 7,
-        monthly: 1,
-        daily: 1,
-        custom: parseInt(customDays, 10),
-      };
-
-      const getPaymentDay = (
-        interval: number,
-        start: Date,
-        index: number,
-        type: string
-      ) => {
-        const paymentDay = new Date(start);
-        if (type === 'monthly') {
-          paymentDay.setMonth(paymentDay.getMonth() + index);
-        } else {
-          paymentDay.setDate(paymentDay.getDate() + index * interval);
-        }
-        return paymentDay;
-      };
-
-      let interval: number =
-        paymentIntervals[paymentCycle as keyof typeof paymentIntervals];
-      if (!interval || isNaN(interval)) {
-        interval = 30; // Default to 30 days if the payment cycle is invalid
-      }
-      console.log('reached1');
-
-      if (AddTenantUseBrokerState) {
-        brokersRecommendationListApi.AddBrokerRecommendation(
-          uuidv4(),
-          AddTenantSelectedBrokerId,
-          roomType.id,
-          tenant.id,
-          Date.now(),
-          isPercentCommission
-            ? (commissionValue / 100) * agreedPrice
-            : commissionValue
-        );
-      }
-      let DocumentFiles = [];
-      const roomDocs = await getRoomDocuments('Add a tenant documents');
-      if (roomDocs && roomDocs.documents) {
-        DocumentFiles = roomDocs.documents;
-        for (let i = 0; i < DocumentFiles.length; i++) {
-          const element = DocumentFiles[i];
-          const fileName = element.split('\\').pop().split('/').pop();
-          const fileContent = await window.electron.ipcRenderer.invoke(
-            'read-file',
-            element
-          );
-          const blob = new Blob([fileContent]);
-          const file = new File([blob], fileName, {
-            type: 'application/octet-stream',
-          });
-          console.log(file);
-          await uploadTenantDocumentsV2(
-            [file],
-            roomType.id,
-            tenant.name,
-            tenant.id,
-            new Date(tenant.startTime).toDateString()
-          );
-        }
-        await deleteTenantDocumentFolder();
-      } else {
-        DocumentFiles = [];
-      }
-      SetRefreshState(true);
       const paymentCycleType2 =
         paymentCycle === 'custom'
           ? ('-' + customDays).toString()
           : paymentCycle;
-      //fixed term lease
-
       if (selectedAgreement === 'Fixed-Term') {
         const AgreementId = uuidv4();
         const result = await agreementApi.addAgreementApi(
@@ -613,8 +576,29 @@ const Room = ({
           tenant.Currency
         );
         console.log(result);
-        updateRoomProperty(roomType.id, 'selectedAgreementId', AgreementId);
+        await updateRoomProperty(
+          roomType.id,
+          'selectedAgreementId',
+          AgreementId
+        );
       }
+
+      if (AddTenantUseBrokerState) {
+        await brokersRecommendationListApi.AddBrokerRecommendation(
+          uuidv4(),
+          AddTenantSelectedBrokerId,
+          roomType.id,
+          tenant.id,
+          Date.now(),
+          isPercentCommission
+            ? (commissionValue / 100) * agreedPrice
+            : commissionValue
+        );
+      }
+     await  handleDocuments(tenant.id, tenant.name);
+      SetRefreshState(true);
+      setIsLoading(false)
+
     }
     updateRoomPropertyLocal(
       roomType.id,
@@ -1128,7 +1112,6 @@ const Room = ({
     setSearchBroker(event.target.value);
   };
 
-
   const [isPercentCommission, setIsPercentCommission] = useState(true);
   const [commissionValue, setCommissionValue] = useState<number>(0);
   const [ShowReceipt, setShowReceipt] = useState(false);
@@ -1479,6 +1462,33 @@ const Room = ({
     const bitPosition = bitOffsets[timing] + typeBits[settingType];
     return (roomType.UtilityNotificationSettings & (1 << bitPosition)) !== 0;
   };
+// Add LoadingOverlay component
+const LoadingOverlay = ({ isLoading }: { isLoading: boolean }) => (
+  <div
+    style={{
+      display: isLoading ? 'flex' : 'none',
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.3)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 1000,
+      borderRadius: 'var(--10px-V)',
+    }}
+  >
+    <img
+      src={loadingGif}
+      style={{
+        width: '40px',
+        height: '40px',
+      }}
+      alt="Loading..."
+    />
+  </div>
+);
 
   return (
     <>
@@ -1493,10 +1503,10 @@ const Room = ({
             : 'var(--Secondary-Color30)',
           border: roomType.AddTenantState ? 'var(--1px-V) solid #00e1f1' : '',
         }}
-      >
+      >  
         <div className="FirstLine">
           <div style={{ display: 'flex' }}>
-            <p className="FloorText">Floor {roomType.floor}</p>{' '}
+            <p className="FloorText">Floor {roomType.floor}</p>{' '}<LoadingOverlay isLoading={isLoading} />
             <img
               onClick={() => {
                 setSelectedEditRoomId(roomType.id);
@@ -1551,7 +1561,7 @@ const Room = ({
                       marginTop: 'var(--5px-V)',
                       fontWeight: '400',
                     }}
-                  >
+                 >
                     {AllTenants.find(
                       (tenant: any) => tenant.id === roomType.tenantId
                     ) ? (
@@ -1561,13 +1571,7 @@ const Room = ({
                     ) : (
                       <>
                         <span>Tenant not found, </span>
-                        <button
-                          onClick={() => {
-                            tenantAPI.getTenantsApi();
-                          }}
-                        >
-                          Refresh
-                        </button>
+                       
                       </>
                     )}
                   </p>
@@ -3207,7 +3211,6 @@ const Room = ({
                               getCorrectPaymentStatment={
                                 getCorrectPaymentStatment
                               }
-                              
                               SelectedBranchId={SelectedBranchId}
                               roomType={roomType}
                               agreementApi={agreementApi}
@@ -3888,39 +3891,23 @@ const Room = ({
               zIndex: roomType.ShowPayTimeLine ? '1' : '-1',
             }}
           >
-            <div
-              className="TimeLineMainContaner"
-              style={{
-                width: roomType.ShowPayTimeLine
-                  ? 'var(--568px-V)'
-                  : 'var(--0px-V)',
-                height: roomType.ShowPayTimeLine
-                  ? !ShowReceipt
-                    ? 'auto'
-                    : 'auto'
-                  : 'var(--0px-V)',
-                opacity: roomType.ShowPayTimeLine ? '1' : '0',
-              }}
-            >
-              <PaymentProgressBarGUI
-                setChangeProgress={setChangeProgress}
-                changeProgress={changeProgress}
-                paymentData={roomType.AllRoomPayInfo.RoomPayInfo || []}
-                roomPaymentInfoApi={roomPaymentInfoApi}
-                roomType={roomType}
-                agreedPrice={roomType.AgreedPrice}
-                extendPaymentSchedule={extendPaymentSchedule}
-                refresh={handlePaymentRefresh}
-                
-                ShowReceipt={ShowReceipt}
-                setShowReceipt={setShowReceipt}
-                setChangeMade={setChangeMade}
-                SelectedBranchId={SelectedBranchId}
-                SelectedUserId={SelectedUserId}
-                updateRoomPropertyLocal={updateRoomPropertyLocal}
-                Currency={roomType.Currency}
-              />
-            </div>
+            <PaymentProgressBarGUI
+              setChangeProgress={setChangeProgress}
+              changeProgress={changeProgress}
+              paymentData={roomType.AllRoomPayInfo.RoomPayInfo || []}
+              roomPaymentInfoApi={roomPaymentInfoApi}
+              roomType={roomType}
+              agreedPrice={roomType.AgreedPrice}
+              extendPaymentSchedule={extendPaymentSchedule}
+              refresh={handlePaymentRefresh}
+              ShowReceipt={ShowReceipt}
+              setShowReceipt={setShowReceipt}
+              setChangeMade={setChangeMade}
+              SelectedBranchId={SelectedBranchId}
+              SelectedUserId={SelectedUserId}
+              updateRoomPropertyLocal={updateRoomPropertyLocal}
+              Currency={roomType.Currency}
+            />
           </div>
         ) : roomType.ShowUtilityLine ? (
           <div

@@ -285,7 +285,7 @@ const NavBar = ({
                 }
               }}
             >
-              Switch Property
+              Properties
             </button>
           </p>
           <p

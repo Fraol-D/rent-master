@@ -25,6 +25,7 @@ import {
 import UtilityPanel from './UtilityPanel';
 import { Payment } from 'electron';
 import CurrencySign, { formatNumberWithSuffix } from '../CurrencySign';
+import loadingGif from 'renderer/assets/assets/Loading/Rolling-1s-200px.gif'
 import { useAlert } from 'renderer/components/useAlert';
 export type RoomPayInfo = {
   Day: number; // milliseconds since January 1, 1970, 00:00:00 UTC
@@ -331,81 +332,70 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
       return nextPaymentDays;
     }
   };
+  const [isLoading, setIsLoading] = useState(false);
   const handlePayClick = async (payment: any) => {
-    const existingPayment = AllRoomPayInfo.find((p) => p.id === payment.id);
-    console.log('Existing payment: ', existingPayment);
-    const newPaidStatus = !payment.Paid;
-    //setChangeProgress(0);
+    try {
+      setIsLoading(true);
+      const existingPayment = AllRoomPayInfo.find((p) => p.id === payment.id);
+      console.log('Existing payment: ', existingPayment);
+      const newPaidStatus = !payment.Paid;
 
-    if (existingPayment) {
-      if (newPaidStatus) {
-        //setChangeProgress(25);
-        await updateValue(
+      if (existingPayment) {
+        if (newPaidStatus) {
+          await updateValue(
+            'room_pay_info',
+            payment.id,
+            'Paid',
+            1,
+            setChangeMade,
+            0
+          );
+          setAllRoomPayInfo((prevInfo: any) =>
+            prevInfo.map((p: any) =>
+              p.id === payment.id ? { ...p, Paid: 1 } : p
+            )
+          );
+        } else {
+          await deleteValue('room_pay_info', payment.id, setChangeMade);
+          setAllRoomPayInfo((prevInfo: any) =>
+            prevInfo.filter((p: any) => p.id !== payment.id)
+          );
+        }
+      } else if (newPaidStatus) {
+        await addValue(
           'room_pay_info',
-          payment.id,
-          'Paid',
-          1,
-          setChangeMade,
-          0
+          {
+            ...payment,
+            Paid: 1,
+            roomId: roomType.id,
+            tenantId: roomType.tenantId,
+            branchId: SelectedBranchId,
+          },
+          setChangeMade
         );
-        setAllRoomPayInfo((prevInfo: any) =>
-          prevInfo.map((p: any) =>
-            p.id === payment.id ? { ...p, Paid: 1 } : p
-          )
-        );
-        // setChangeProgress(75);
-      } else {
-        // setChangeProgress(25);
-        await deleteValue('room_pay_info', payment.id, setChangeMade);
-        setAllRoomPayInfo((prevInfo: any) =>
-          prevInfo.filter((p: any) => p.id !== payment.id)
-        );
-        // setChangeProgress(75);
-      }
-    } else if (newPaidStatus) {
-      //    setChangeProgress(25);
-
-      await addValue(
-        'room_pay_info',
-        {
+        AllRoomPayInfo.push({
           ...payment,
           Paid: 1,
           roomId: roomType.id,
           tenantId: roomType.tenantId,
           branchId: SelectedBranchId,
-        },
-        setChangeMade
+        });
+      }
+
+      setPayments((prevPayments) =>
+        prevPayments.map((p) =>
+          p.id === payment.id ? { ...p, Paid: newPaidStatus ? 1 : 0 } : p
+        )
       );
-      AllRoomPayInfo.push({
-        ...payment,
-        Paid: 1,
-        roomId: roomType.id,
-        tenantId: roomType.tenantId,
-        branchId: SelectedBranchId,
-      });
-      // setChangeProgress(75);
+
+      await updateRoomPropertyLocal(
+        roomType.id,
+        'DaysTillNextPayment',
+        calculateDaysTillNextPayment(await calculatePredictedPayments(roomType))
+      );
+    } finally {
+      setIsLoading(false);
     }
-
-    setPayments((prevPayments) =>
-      prevPayments.map((p) =>
-        p.id === payment.id ? { ...p, Paid: newPaidStatus ? 1 : 0 } : p
-      )
-    );
-    console.log(
-      payments.map((p) =>
-        p.id === payment.id ? { ...p, Paid: newPaidStatus ? 1 : 0 } : p
-      )
-    );
-
-    updateRoomPropertyLocal(
-      roomType.id,
-      'DaysTillNextPayment',
-      calculateDaysTillNextPayment(await calculatePredictedPayments(roomType))
-    );
-    //  setChangeProgress(98);
-    //  setChangeProgress(98);
-
-    //  setChangeProgress(98);
   };
   const { confirm } = useConfirm();
   useEffect(() => {
@@ -793,9 +783,9 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
             // Return a placeholder initially
             return '<div class="receipt-placeholder">Loading...</div>';
           })
-          .each(function (d: any) {
+          .each(async function (d: any) {
             const element = d3.select(this);
-            GetReceiptFile(d.Day).then((receiptFile) => {
+            await GetReceiptFile(d.Day).then((receiptFile) => {
               if (
                 !receiptFile ||
                 receiptFile === 'Add receipt' ||
@@ -911,8 +901,8 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
             contextMenuGroup.style('display', 'none');
           });
 
-        function GetReceiptFile(date: Date) {
-          console.log(AllTenants);
+        async function GetReceiptFile(date: Date) {
+        
           return window.electron
             ? window.electron.ipcRenderer.invoke(
                 'GetReceiptFile',
@@ -920,78 +910,79 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
                 roomType.id,
                 AllTenants.find((t: tenant) => t.id === roomType.tenantId)
               )
-            : GetReceiptFileApi(
+            :await  GetReceiptFileApi(
                 date,
                 roomType.id,
                 AllTenants.find((t: tenant) => t.id === roomType.tenantId)
               ) || 'COMUNDEFINED';
         }
 
-        function AddAReceipt(d: any) {
-          const input = document.createElement('input');
-          input.type = 'file';
-          input.accept = 'image/*,.pdf,.doc,.docx,.txt';
+        const AddAReceipt = async (d: any) => {
+          try {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*,.pdf,.doc,.docx';
 
-          input.onchange = async (event) => {
-            const file = (event.target as HTMLInputElement).files[0];
-            if (file) {
+            input.onchange = async (event) => {
+              const file = (event.target as HTMLInputElement).files?.[0];
+              if (!file) return;
+
               const totalFileSizeMB = file.size / (1024 * 1024);
-              const maxFileSizeMB = 5; // 5MB limit
+              const maxFileSizeMB = 5;
 
               if (totalFileSizeMB > maxFileSizeMB) {
-                showAlert(
-                  `File size exceeds the ${maxFileSizeMB}MB limit.`,
-                  'error'
-                );
+                showAlert(`File size exceeds ${maxFileSizeMB}MB limit.`, 'error');
                 return;
               }
 
+              setIsLoading(true);
               try {
-                const roomId = roomType.id;
-                const tenantId = roomType.tenantId || '';
-                const tenantName =
-                  AllTenants.find((t: tenant) => t.id === tenantId)?.name || '';
+                const tenant = AllTenants.find((t: tenant) => t.id === roomType.tenantId);
+                if (!tenant) {
+                  throw new Error('Tenant not found');
+                }
+
                 const formattedDate = format(d.Day, 'yyyy-MM-dd');
-                const AddedTimeText = format(
-                  new Date(
-                    AllTenants.find((t: tenant) => t.id === tenantId)
-                      ?.startTime || 0
-                  ),
-                  'EEE MMM dd yyyy'
-                );
+                const addedTimeText = format(new Date(tenant.startTime), 'EEE MMM dd yyyy');
 
                 const results = window.electron
                   ? await uploadReceiptDocuments(
                       [file],
-                      roomId,
-                      tenantName,
-                      tenantId,
+                      roomType.id,
+                      tenant.name,
+                      tenant.id,
                       formattedDate,
-                      AddedTimeText
+                      addedTimeText
                     )
                   : await uploadReceiptDocumentsOnline(
                       file,
-                      roomId,
+                      roomType.id,
                       AllTenants,
-                      tenantId,
+                      tenant.id,
                       formattedDate,
-                      AddedTimeText
+                      addedTimeText
                     );
 
                 if (results) {
-                  console.log('Receipt uploaded successfully:', results);
-                  refresh(); // Assuming you have a refresh function to update the UI
+                  console.log('Receipt uploaded successfully');
+                  refresh();
                 } else {
-                  console.error('Failed to upload receipt');
+                  throw new Error('Failed to upload receipt');
                 }
               } catch (error) {
-                console.error('Error uploading file:', error);
+                console.error('Error uploading receipt:', error);
+                showAlert('Failed to upload receipt', 'error');
+              } finally {
+                setIsLoading(false);
               }
-            }
-          };
+            };
 
-          input.click();
-        }
+            input.click();
+          } catch (error) {
+            console.error('Error adding receipt:', error);
+            showAlert('Failed to add receipt', 'error');
+          }
+        };
 
         async function openInPhotos(d: any) {
           try {
@@ -1039,7 +1030,7 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
             }
           );
           if (choice) {
-            GetReceiptFile(date).then((receiptFile) => {
+          await  GetReceiptFile(date).then((receiptFile) => {
               if (receiptFile) {
                 if (window.electron) {
                   window.electron.ipcRenderer.send(
@@ -1130,41 +1121,61 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
   // Function to handle multi-pay
 
   const handleMultiPay = async () => {
-    for (const date of selectedDates) {
-      const payment = payments.find((item) => item.Day === date);
-      if (payment && !payment.Paid) {
-        await handlePayClick(payment);
+    try {
+      setIsLoading(true);
+      for (const date of selectedDates) {
+        const payment = payments.find((item) => item.Day === date);
+        if (payment && !payment.Paid) {
+          await handlePayClick(payment);
+        }
       }
+      setSelectedDates([]);
+      await updateRoomPropertyLocal(
+        roomType.id,
+        'DaysTillNextPayment',
+        calculateDaysTillNextPayment(await calculatePredictedPayments(roomType))
+      );
+    } finally {
+      setIsLoading(false);
     }
-    setSelectedDates([]);
   };
 
   const handleMultiUnPay = async () => {
-    for (const date of selectedDates) {
-      const payment = payments.find((item) => item.Day === date);
-      if (payment && payment.Paid) {
-        const existingPayment = AllRoomPayInfo.find((p) => p.id === payment.id);
-        if (existingPayment) {
-          await updateValue(
-            'room_pay_info',
-            payment.id,
-            'Paid',
-            0,
-            setChangeMade,
-            0
-          );
-          setAllRoomPayInfo((prevInfo) =>
-            prevInfo.map((p) => (p.id === payment.id ? { ...p, Paid: 0 } : p))
-          );
-          setPayments((prevPayments) =>
-            prevPayments.map((p) =>
-              p.id === payment.id ? { ...p, Paid: false } : p
-            )
-          );
+    try {
+      setIsLoading(true);
+      for (const date of selectedDates) {
+        const payment = payments.find((item) => item.Day === date);
+        if (payment && payment.Paid) {
+          const existingPayment = AllRoomPayInfo.find((p) => p.id === payment.id);
+          if (existingPayment) {
+            await updateValue(
+              'room_pay_info',
+              payment.id,
+              'Paid',
+              0,
+              setChangeMade,
+              0
+            );
+            setAllRoomPayInfo((prevInfo) =>
+              prevInfo.map((p) => (p.id === payment.id ? { ...p, Paid: 0 } : p))
+            );
+            setPayments((prevPayments) =>
+              prevPayments.map((p) =>
+                p.id === payment.id ? { ...p, Paid: false } : p
+              )
+            );
+          }
         }
       }
+      setSelectedDates([]);
+      await updateRoomPropertyLocal(
+        roomType.id,
+        'DaysTillNextPayment',
+        calculateDaysTillNextPayment(await calculatePredictedPayments(roomType))
+      );
+    } finally {
+      setIsLoading(false);
     }
-    setSelectedDates([]);
   };
 
   // Calculate days until or past due date for paragraph message
@@ -1203,7 +1214,182 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
     }
   };
 
-  return (
+  const LoadingOverlay = () => (
+    <div
+      style={{
+        display: isLoading ? 'flex' : 'none',
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        width: roomType.ShowPayTimeLine
+        ? 'var(--568px-V)'
+        : 'var(--0px-V)',
+        height:"100%",
+        paddingRight: 'var(--12px-V)',
+        backgroundColor: 'rgba(0, 0, 0, 0.3)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 1000,
+      }}
+    >
+      <img
+      src={loadingGif}
+        style={{
+          width: '40px',
+          height: '40px',
+          
+        }}
+      />
+    </div>
+  );
+
+  // Add state for receipt refresh
+  const [refreshingReceipt, setRefreshingReceipt] = useState<string | null>(null);
+
+  // Update GetReceiptFile function
+  const GetReceiptFile = async (date: Date) => {
+    try {
+      if (!roomType.tenantId) return 'Add receipt';
+
+      const tenant = AllTenants.find((t: tenant) => t.id === roomType.tenantId);
+      if (!tenant) return 'Add receipt';
+
+      const result = window.electron 
+        ? await window.electron.ipcRenderer.invoke(
+            'GetReceiptFile',
+            date,
+            roomType.id,
+            tenant
+          )
+        : await GetReceiptFileApi(
+            date,
+            roomType.id,
+            tenant
+          );
+
+      return result || 'Add receipt';
+    } catch (error) {
+      console.error('Error getting receipt:', error);
+      return 'Add receipt';
+    }
+  };
+
+  // Update AddAReceipt function
+  const AddAReceipt = async (d: any) => {
+    try {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*,.pdf,.doc,.docx';
+
+      input.onchange = async (event) => {
+        const file = (event.target as HTMLInputElement).files?.[0];
+        if (!file) return;
+
+        const totalFileSizeMB = file.size / (1024 * 1024);
+        if (totalFileSizeMB > 5) {
+          showAlert('File size exceeds 5MB limit', 'error');
+          return;
+        }
+
+        setRefreshingReceipt(d.Day);
+        setIsLoading(true);
+
+        try {
+          const tenant = AllTenants.find((t: tenant) => t.id === roomType.tenantId);
+          if (!tenant) throw new Error('Tenant not found');
+
+          const formattedDate = format(d.Day, 'yyyy-MM-dd');
+          const addedTimeText = format(new Date(tenant.startTime), 'EEE MMM dd yyyy');
+
+          const results = window.electron
+            ? await uploadReceiptDocuments(
+                [file],
+                roomType.id,
+                tenant.name,
+                tenant.id,
+                formattedDate,
+                addedTimeText
+              )
+            : await uploadReceiptDocumentsOnline(
+                file,
+                roomType.id,
+                tenant,
+                tenant.id,
+                formattedDate,
+                addedTimeText
+              );
+
+          if (results) {
+            // Only refresh the specific receipt
+            const receiptElement = d3.select(`#receipt-${d.Day}`);
+            if (receiptElement.node()) {
+              await renderReceipt(receiptElement, d);
+            }
+          }
+        } catch (error) {
+          console.error('Error uploading receipt:', error);
+          showAlert('Failed to upload receipt', 'error');
+        } finally {
+          setIsLoading(false);
+          setRefreshingReceipt(null);
+        }
+      };
+
+      input.click();
+    } catch (error) {
+      console.error('Error adding receipt:', error);
+      showAlert('Failed to add receipt', 'error');
+    }
+  };
+
+  // Update receipt rendering
+  const renderReceipt = async (element: d3.Selection<any, any, any, any>, d: any) => {
+    if (refreshingReceipt === d.Day) {
+      element.html(`
+        <div style="display: flex; justify-content: center; align-items: center; height: 100%;">
+          <img src="${loadingGif}" width="20" height="20" />
+        </div>
+      `);
+      return;
+    }
+
+    const receiptFile = await GetReceiptFile(d.Day);
+    
+    if (!receiptFile || receiptFile === 'Add receipt') {
+      element.html('Add receipt');
+      return;
+    }
+
+    const extension = receiptFile.split('.').pop()?.toLowerCase();
+    const isImage = ['jpg', 'jpeg', 'png', 'gif', 'bmp'].includes(extension || '');
+
+    element.html(`
+      <div style="position: relative; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center;">
+        ${isImage 
+          ? `<img src="${receiptFile}" width="40" height="40" style="object-fit: contain;" />` 
+          : `<div style="font-weight: bold;">${extension?.toUpperCase()}</div>`
+        }
+      </div>
+    `);
+  };
+
+
+  return (<> <LoadingOverlay />   <div
+    className="TimeLineMainContaner"
+    style={{
+      width: roomType.ShowPayTimeLine
+        ? 'var(--568px-V)'
+        : 'var(--0px-V)',
+      height: roomType.ShowPayTimeLine
+        ? !ShowReceipt
+          ? 'auto'
+          : 'auto'
+        : 'var(--0px-V)',
+      opacity: roomType.ShowPayTimeLine ? '1' : '0',
+    }}
+  >
     <div>
       <div
         style={{
@@ -1263,6 +1449,7 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
       </div>
       <div
         style={{
+          position: 'relative',
           overflowX: 'auto',
           maxWidth: '100%',
           overflowY: 'hidden',
@@ -1270,10 +1457,11 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
           transition: 'all .2s',
         }}
       >
-        {' '}
+        
         <svg ref={svgRef} width="100%" height="126" />
       </div>
-    </div>
+    </div> </div></>
+
   );
 };
 

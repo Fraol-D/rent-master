@@ -1,5 +1,6 @@
 import { storageManager } from '../renderer/storeManager';
 let baseUrl = 'http://localhost:8100';
+let baseUrl2 = 'https://www.rentmaster.markethubet.com';
 
 if (!window.electron) {
   baseUrl = 'https://www.rentmaster.markethubet.com/api';
@@ -79,6 +80,8 @@ export const dropAllRowsInTable = async (tableName) => {
 };
 export const addValueROOM = async (tableName, value, setChangeMade) => {
   try {
+    console.log('Adding room value:', { tableName, value });
+    
     const response = await makeRequest(`${baseUrl}/${tableName}`, {
       method: 'POST',
       headers: {
@@ -86,8 +89,11 @@ export const addValueROOM = async (tableName, value, setChangeMade) => {
       },
       body: JSON.stringify(value),
     });
-   
-    const data = response;
+
+    if (!response) {
+      throw new Error('No response received from server');
+    }
+
     await addRowToOfflineChanges(
       tableName,
       value.id,
@@ -99,11 +105,11 @@ export const addValueROOM = async (tableName, value, setChangeMade) => {
       'Not needed',
       true
     );
-    return data;
+
+    return response;
   } catch (error) {
-    console.error('Error adding value:', error.message);
-    console.error('Request body:', JSON.stringify(value, null, 2));
-    return null;
+    console.error('Error adding value:', error);
+    throw error;
   }
 };
 export const getValuesWithSql = async (tableName, sqlCode) => {
@@ -741,58 +747,52 @@ export const deleteReceipt2 = async (date, roomId, tenant) => {
     return { success: false, error: error.message };
   }
 };
+
 export const GetReceiptFileApi = async (date, roomId, tenant) => {
   try {
+    // Get user ID from storage
     const users = await storageManager.get('users');
-    if (!users?.[0]?.id) {
+    const userId = users?.[0]?.id;
+    if (!userId) {
       throw new Error('User ID not found');
     }
-    const userId = users[0].id;
 
-    // Format the date consistently
+    // Format the date consistently with server expectations
     const formattedDate = new Date(date).toISOString().split('T')[0];
 
-    // Make the request
-    const response = await SendFileManagerApi(
-      `/receipt-file/${encodeURIComponent(roomId)}/${encodeURIComponent(
-        formattedDate
-      )}`,
-      'GET',
+    const response = await fetch(
+      `${baseUrl2}/receipt-file/${encodeURIComponent(roomId)}/${encodeURIComponent(formattedDate)}`,
       {
-        'Content-Type': 'application/json',
-        'user-id': userId,
-        'tenant-id': tenant?.id || '',
-        'tenant-name': tenant?.name || '',
-        'tenant-start-time': tenant?.startTime || '',
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'user-id': userId,
+          'tenant-id': tenant?.id || '',
+          'tenant-name': tenant?.name || '',
+          'tenant-start-time': tenant?.startTime?.toString() || ''
+        }
       }
     );
 
-    // Handle non-200 responses
+    // Handle different response statuses
+    if (response.status === 204) {
+      return 'Add receipt';
+    }
+
     if (!response.ok) {
-      if (response.status === 404) {
-        return 'Add receipt';
-      }
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    // Try to parse JSON response
-    let data;
-    const text = response;
-    try {
-      data = text ? JSON.parse(text) : {};
-    } catch (e) {
-      console.error('Failed to parse JSON:', text);
+    const data = await response.json();
+    
+    if (!data?.receiptUrl) {
       return 'Add receipt';
     }
 
-    if (!data.receiptUrl) {
-      return 'Add receipt';
-    }
-
-    return `https://www.rentmaster.markethubet.com${data.receiptUrl}`;
+    return `${baseUrl2}${data.receiptUrl}`;
   } catch (error) {
     console.error('Error getting receipt file:', error);
-    return null;
+    return 'Add receipt';
   }
 };
 export const uploadReceiptDocumentsOnline = async (
@@ -1265,7 +1265,7 @@ export const deleteTenantDocument = async (filePath) => {
       )}`,
       'DELETE'
     );
-    return response.json();
+    return response;
   } catch (error) {
     console.error('Error deleting tenant document:', error);
     return null;
@@ -1300,7 +1300,7 @@ export const uploadTenantDocumentsV2 = async (
           AddedTimeText,
         }
       );
-      return response.json();
+      return response;
     });
     const results = await Promise.all(uploadPromises);
     return results;
@@ -1309,13 +1309,34 @@ export const uploadTenantDocumentsV2 = async (
     return null;
   }
 };
+export const RenameAddTenantDocumentFolder = async( roomId,
+  tenantName,
+  tenantId,
+  AddedTimeText) => {
+try {
+  const newNameSecond = tenantName+", "+AddedTimeText+", "+tenantId
+ 
+  const response = await SendFileManagerApi(
+    `/rename-adddocument-folder`,
+    'put',{},{
+      newNameSecond,
+      roomId,
+
+    }
+  );
+  return response;
+} catch (error) {
+  console.error('Error renaming tenant document folder:', error);
+    return null;
+}
+}
 export const deleteTenantDocumentFolder = async () => {
   try {
     const response = await SendFileManagerApi(
       `/delete-tenant-document-folder`,
       'DELETE'
     );
-    return response.json();
+    return response;
   } catch (error) {
     console.error('Error deleting tenant document folder:', error);
     return null;
@@ -1348,7 +1369,7 @@ export const uploadReceiptDocuments = async (
           AddedTimeText,
         }
       );
-      return response.json();
+      return response;
     });
     const results = await Promise.all(uploadPromises);
     return results;

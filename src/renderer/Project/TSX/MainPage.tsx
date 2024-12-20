@@ -38,6 +38,8 @@ import { IconsGUI } from '../getIcons';
 import { useAlert } from '../../components/useAlert';
 import { useConfirm } from 'renderer/components/useConfirm';
 import { useGlobal } from 'renderer/components/GlobalContext';
+import { storageManager } from 'renderer/storeManager';
+import { checkRoomLimit } from 'Backend/OnlineServerApis';
 type FilterOption = {
   key: string;
   value: any;
@@ -873,7 +875,18 @@ const MainPage = ({
   // Modify the handleAddRoom function
   const handleAddRoom = async (continueAdding = false) => {
     if (isAddingRoom) return; // Prevent multiple clicks
+    if(navigator.onLine) {
+         const reachedLimit = await checkRoomLimit(SelectedUserId);
 
+    console.log(reachedLimit);
+    if(reachedLimit) {
+      showAlert("Room limit reached. Please upgrade to add more rooms.")
+      
+      return;}
+    } else {
+      //IMPLIMENT ROOM LIMIT ON offline electron
+    }
+ 
     try {
       setIsAddingRoom(true); // Start loading
 

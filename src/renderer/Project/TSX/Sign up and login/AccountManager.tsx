@@ -1788,54 +1788,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
     }
     setIsCheckingPasswordAPPUSER(false);
   };
-  const SignUp = () => {
-    return (
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          height: '100%',
-          flexDirection: 'column',
-        }}
-      >
-        {isSignedIn && (
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              marginBottom: 'var(--10px-V)',
-              marginTop: 'var(--10px-V)',
-              background: 'var(--Secondary-Color20)',
-              padding: 'var(--7px-V)',
-              borderRadius: 'var(--5px-V)',
-              boxShadow:
-                'var(--0px-V) var(--4px-V) var(--4px-V) var(--0px-V) rgba(0, 0, 0, 0.25)',
-            }}
-          >
-            Found an account: {storageManager.get('users')[0].companyName}{' '}
-            <button
-              style={{ marginLeft: 'var(--10px-V)' }}
-              onClick={() => {
-                window.location.pathname = '/app';
-              }}
-            >
-              Open
-            </button>
-          </div>
-        )}
-        <SignUpPage
-          setisSignUpMode={setisSignUpMode}
-          setisSignedIn={setisSignedIn}
-          setChangeMade={setChangeMade}
-          email={email}
-          password={password}
-          setEmail={setEmail}
-          setPassword={setPassword}
-        />
-      </div>
-    );
-  };
+ 
   const LogIn = () => {
     return (
       <div
@@ -2162,7 +2115,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                     display: 'flex',
                                     justifyContent: 'center',
                                   }}
-                                  onClick={handleSwitchUserFromMainAPP}
+                                  onClick={() => {handleSwitchUserFromMainAPP(); setPasswordCheckInput('');}}
                                 >
                                   Sign in{' '}
                                   {isCheckingPasswordAPPUSER && (
@@ -3272,7 +3225,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                           Select Property
                                         </button>
 
-                                        <label
+                                        {/* <label
                                           style={{
                                             display: 'flex',
                                             alignItems: 'center',
@@ -3300,7 +3253,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                             style={{ margin: 0 }}
                                           />
                                           Lock this PC to this branch
-                                        </label>
+                                        </label> */}
                                       </div>
                                     </div>
                                   ))
@@ -3332,14 +3285,207 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                   <AccountCheck />
                 )
               ) : isSignUpMode ? (
-                <SignUp />
+                <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  height: '100%',
+                  flexDirection: 'column',
+                }}
+              >
+                {isSignedIn && (
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      marginBottom: 'var(--10px-V)',
+                      marginTop: 'var(--10px-V)',
+                      background: 'var(--Secondary-Color20)',
+                      padding: 'var(--7px-V)',
+                      borderRadius: 'var(--5px-V)',
+                      boxShadow:
+                        'var(--0px-V) var(--4px-V) var(--4px-V) var(--0px-V) rgba(0, 0, 0, 0.25)',
+                    }}
+                  >
+                    Found an account: {storageManager.get('users')[0].companyName}{' '}
+                    <button
+                      style={{ marginLeft: 'var(--10px-V)' }}
+                      onClick={() => {
+                        window.location.pathname = '/app';
+                      }}
+                    >
+                      Open
+                    </button>
+                  </div>
+                )}
+                <LoginPage
+                  setisSignUpMode={setisSignUpMode}
+                  setisSignedIn={setisSignedIn}
+                  setChangeMade={setChangeMade}
+                  email={email}
+                  password={password}
+                  setEmail={setEmail}
+                  username={username}
+                  setUsername={setUsername}
+                  setPassword={setPassword}
+                  setSelectedAppUser={setSelectedAppUser}
+                  setAppUserManagerShow={setAppUserManagerShow}
+                  fetchBranches={handleShowBranches}
+                  RefreshComponent={RefreshComponent}
+                  setViewBranchManagementPage={setViewBranchManagementPage}
+                />
+              </div>
               ) : (
-                <LogIn />
+                <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  height: '100%',
+                  flexDirection: 'column',
+                }}
+              >
+                {isSignedIn && (
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      marginBottom: 'var(--10px-V)',
+                      marginTop: 'var(--10px-V)',
+                      background: 'var(--Secondary-Color20)',
+                      padding: 'var(--7px-V)',
+                      borderRadius: 'var(--5px-V)',
+                      boxShadow:
+                        'var(--0px-V) var(--4px-V) var(--4px-V) var(--0px-V) rgba(0, 0, 0, 0.25)',
+                    }}
+                  >
+                    Found an account: {storageManager.get('users')[0].companyName}{' '}
+                    <button
+                      style={{ marginLeft: 'var(--10px-V)' }}
+                      onClick={() => {
+                        window.location.pathname = '/app';
+                      }}
+                    >
+                      Open
+                    </button>
+                  </div>
+                )}
+                <LoginPage
+                  setisSignUpMode={setisSignUpMode}
+                  setisSignedIn={setisSignedIn}
+                  setChangeMade={setChangeMade}
+                  email={email}
+                  password={password}
+                  setEmail={setEmail}
+                  username={username}
+                  setUsername={setUsername}
+                  setPassword={setPassword}
+                  setSelectedAppUser={setSelectedAppUser}
+                  setAppUserManagerShow={setAppUserManagerShow}
+                  fetchBranches={handleShowBranches}
+                  RefreshComponent={RefreshComponent}
+                  setViewBranchManagementPage={setViewBranchManagementPage}
+                />
+              </div>
               )
             ) : (
               <>
-                {ForceSignUp === 'in' && <LogIn />}
-                {ForceSignUp === 'up' && <SignUp />}
+                {ForceSignUp === 'in' && <div
+        style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: '100%',
+          flexDirection: 'column',
+        }}
+      >
+        {isSignedIn && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              marginBottom: 'var(--10px-V)',
+              marginTop: 'var(--10px-V)',
+              background: 'var(--Secondary-Color20)',
+              padding: 'var(--7px-V)',
+              borderRadius: 'var(--5px-V)',
+              boxShadow:
+                'var(--0px-V) var(--4px-V) var(--4px-V) var(--0px-V) rgba(0, 0, 0, 0.25)',
+            }}
+          >
+            Found an account: {storageManager.get('users')[0].companyName}{' '}
+            <button
+              style={{ marginLeft: 'var(--10px-V)' }}
+              onClick={() => {
+                window.location.pathname = '/app';
+              }}
+            >
+              Open
+            </button>
+          </div>
+        )}
+        <LoginPage
+          setisSignUpMode={setisSignUpMode}
+          setisSignedIn={setisSignedIn}
+          setChangeMade={setChangeMade}
+          email={email}
+          password={password}
+          setEmail={setEmail}
+          username={username}
+          setUsername={setUsername}
+          setPassword={setPassword}
+          setSelectedAppUser={setSelectedAppUser}
+          setAppUserManagerShow={setAppUserManagerShow}
+          fetchBranches={handleShowBranches}
+          RefreshComponent={RefreshComponent}
+          setViewBranchManagementPage={setViewBranchManagementPage}
+        />
+      </div>}
+                {ForceSignUp === 'up' &&    <div
+        style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: '100%',
+          flexDirection: 'column',
+        }}
+      >
+        {isSignedIn && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              marginBottom: 'var(--10px-V)',
+              marginTop: 'var(--10px-V)',
+              background: 'var(--Secondary-Color20)',
+              padding: 'var(--7px-V)',
+              borderRadius: 'var(--5px-V)',
+              boxShadow:
+                'var(--0px-V) var(--4px-V) var(--4px-V) var(--0px-V) rgba(0, 0, 0, 0.25)',
+            }}
+          >
+            Found an account: {storageManager.get('users')[0].companyName}{' '}
+            <button
+              style={{ marginLeft: 'var(--10px-V)' }}
+              onClick={() => {
+                window.location.pathname = '/app';
+              }}
+            >
+              Open
+            </button>
+          </div>
+        )}
+        <SignUpPage
+          setisSignUpMode={setisSignUpMode}
+          setisSignedIn={setisSignedIn}
+          setChangeMade={setChangeMade}
+          email={email}
+          password={password}
+          setEmail={setEmail}
+          setPassword={setPassword}
+        />
+      </div>}
               </>
             )}
           </>

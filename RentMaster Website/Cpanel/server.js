@@ -4,6 +4,7 @@ const bodyParser = require('body-parser');
 const nodemailer = require('nodemailer');
 const cron = require('node-cron');
 const path = require('path');
+const axios = require('axios');
 const fs = require('fs');
 const cors = require('cors');
 const multer = require('multer');
@@ -15,7 +16,7 @@ const PORT = process.env.PORT || 3000;
 const apiKey = 'HH(CzZuQoW@tB)e';
 const baseDir = path.join(__dirname, 'User Files');
 const moment = require('moment');
-// Middleware
+//
 // Increase payload size limit
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
@@ -56,6 +57,8 @@ const corsOptions = {
   optionsSuccessStatus: 200,
 };
 app.use(cors(corsOptions));
+
+
 
 // API Key Middleware
 const checkApiKey = (req, res, next) => {
@@ -100,6 +103,171 @@ log4js.configure({
   categories: { default: { appenders: ['everything'], level: 'ALL' } },
 });
 const logger = log4js.getLogger();
+
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+const TIMEOUT = 30000; // 30 seconds
+
+// Axios instance with timeout
+const axiosInstance = axios.create({
+  timeout: TIMEOUT,
+  validateStatus: status => status < 500 // Treat 4xx as valid responses
+});
+
+// Toggle encryption on or off
+const encryptData = false;
+
+const secretKey = 'LOmndonlkteafodysrday';
+
+const encrypt = (data) => {
+  if (!encryptData) return data;
+  try {
+    return CryptoJS.AES.encrypt(JSON.stringify(data), secretKey).toString();
+  } catch (error) {
+    console.error('Encryption error:', error.message);
+    throw error;
+  }
+};
+
+const decrypt = (data) => {
+  if (!encryptData || !data) return data;
+  try {
+    const bytes = CryptoJS.AES.decrypt(data, secretKey);
+    const decryptedString = bytes.toString(CryptoJS.enc.Utf8);
+    return JSON.parse(decryptedString);
+  } catch (error) {
+    console.error('Decryption error:', error.message);
+    throw error;
+  }
+};
+app.all('/make-request', async (req, res) => {
+  try {
+    if (!req.body?.dataString) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid request format'
+      });
+    }
+
+    const decryptedData = decrypt(req.body.dataString);
+    if (!decryptedData?.targetUrl || !decryptedData?.method) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields'
+      });
+    }
+
+    const { targetUrl, method, headers = {}, data, params } = decryptedData;
+    const baseUrl = targetUrl.includes('localhost') 
+      ? 'http://localhost:8100'
+      : 'https://www.rentmaster.markethubet.com/api';
+
+    const fullUrl = targetUrl.startsWith('http')
+      ? targetUrl 
+      : `${baseUrl}${targetUrl.startsWith('/') ? targetUrl : `/${targetUrl}`}`;
+
+    const config = {
+      method: method.toLowerCase(),
+      url: fullUrl,
+      headers: { ...headers, 'x-api-key': apiKey },
+      timeout: TIMEOUT
+    };
+
+    if (['post', 'put', 'patch'].includes(method.toLowerCase()) && data) {
+      config.data = data;
+    }
+    if (params) {
+      config.params = { userId: params };
+    }
+
+    const response = await axiosInstance(config);
+    const responseData = response.data || null;
+
+    res.status(response.status).json({
+      success: true,
+      data: responseData ? encrypt(responseData) : null,
+      status: response.status
+    });
+
+  } catch (error) {
+    if (error.code === 'ECONNABORTED') {
+      return res.status(504).json({
+        success: false,
+        error: 'Request timeout',
+        details: { timeout: TIMEOUT }
+      });
+    }
+    res.status(error.response?.status || 500).json({
+      success: false,
+      error: error.message,
+      details: error.response?.data || error.code
+    });
+  }
+});
+app.all('/make-request-filemanager', async (req, res) => {
+  try {
+    if (!req.body?.dataString) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid request format'
+      });
+    }
+
+    const decryptedData = decrypt(req.body.dataString);
+    if (!decryptedData?.targetUrl || !decryptedData?.method) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields'
+      });
+    }
+
+    const { targetUrl, method, headers = {}, data, params } = decryptedData;
+    const baseUrl = targetUrl.includes('localhost') 
+      ? 'http://localhost:8100'
+      : 'https://www.rentmaster.markethubet.com/api';
+
+    const fullUrl = targetUrl.startsWith('http')
+      ? targetUrl 
+      : `${baseUrl}${targetUrl.startsWith('/') ? targetUrl : `/${targetUrl}`}`;
+
+    const config = {
+      method: method.toLowerCase(),
+      url: fullUrl,
+      headers: { ...headers, 'x-api-key': apiKey },
+      timeout: TIMEOUT
+    };
+
+    if (['post', 'put', 'patch'].includes(method.toLowerCase()) && data) {
+      config.data = data;
+    }
+    if (params) {
+      config.params = { userId: params };
+    }
+
+    const response = await axiosInstance(config);
+    const responseData = response.data || null;
+
+    res.status(response.status).json({
+      success: true,
+      data: responseData,
+      status: response.status
+    });
+
+  } catch (error) {
+    if (error.code === 'ECONNABORTED') {
+      return res.status(504).json({
+        success: false,
+        error: 'Request timeout',
+        details: { timeout: TIMEOUT }
+      });
+    }
+    res.status(error.response?.status || 500).json({
+      success: false,
+      error: error.message,
+      details: error.response?.data || error.code
+    });
+  }
+});
 
 // Email sending function
 app.get('/log', (req, res) => {
@@ -631,7 +799,10 @@ fileManagerRouter.get('/room-documents/:roomId/:tenantInfo', async (req, res) =>
 
     const tenantFolderPath = path.join(baseUserPath, userId, 'Room Documents', roomId, tenantInfo);
     const files = await fs.promises.readdir(tenantFolderPath);
-
+    // Check if files array is empty
+    if (files.length === 0) {
+      return res.json({ documents: [] }); // Return an empty array if no files exist
+    }
     const documents = files.map(file => path.join(tenantFolderPath, file));
 
     res.json({ documents });
@@ -1235,8 +1406,93 @@ fileManagerRouter.get('/download-image/:roomId/:folderName/:fileName/:userId', a
     res.status(500).json({ error: 'Failed to download image' });
   }
 });
+app.get('/download-image/:roomId/:folderName/:fileName/:userId', async (req, res) => {
+  try {
+    const { roomId, folderName, fileName, userId } = req.params;
+    const requestUserId = req.headers['user-id'];
+
+    // Verify user authorization
+    if (userId !== requestUserId) {
+      return res.status(403).json({ error: 'Unauthorized access' });
+    }
+
+    // Construct the full path to the image
+    const imagePath = path.join(
+      baseUserPath,
+      userId,
+      'Room Pictures',
+      folderName,
+      fileName
+    );
+
+    logger.debug(`Attempting to download image from: ${imagePath}`);
+    
+    // Check if file exists
+    if (!fs.existsSync(imagePath)) {
+      logger.error(`Image not found at path: ${imagePath}`);
+      return res.status(404).json({ error: 'Image not found' });
+    }
+
+    // Set headers for file download
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+    
+    // Set content type based on file extension
+    const ext = path.extname(fileName).toLowerCase();
+    const contentType = {
+      '.png': 'image/png',
+      '.jpg': 'image/jpeg',
+      '.jpeg': 'image/jpeg',
+      '.gif': 'image/gif',
+      '.webp': 'image/webp'
+    }[ext] || 'application/octet-stream';
+    
+    res.setHeader('Content-Type', contentType);
+
+    // Stream the file
+    const fileStream = fs.createReadStream(imagePath);
+    fileStream.pipe(res);
+
+  } catch (error) {
+    logger.error('Error downloading image:', error);
+    res.status(500).json({ error: 'Failed to download image' });
+  }
+});
 // Update the download document endpoint
 fileManagerRouter.get('/download-document/:roomId/:tenantFolder/:fileName', async (req, res) => {
+  try {
+    const { roomId, tenantFolder, fileName } = req.params;
+    const userId = req.headers['user-id'];
+
+    // Construct the full path to the document using the correct structure
+    const documentPath = path.join(
+      baseUserPath,
+      userId,
+      'Room Documents',
+      roomId,
+      tenantFolder,
+      fileName
+    );
+
+    // Check if file exists
+    if (!fs.existsSync(documentPath)) {
+      logger.error(`File not found: ${documentPath}`);
+      return res.status(404).json({ error: 'Document not found' });
+    }
+
+    // Set download headers
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+    res.setHeader('Content-Type', 'application/octet-stream');
+
+    // Stream the file
+    const fileStream = fs.createReadStream(documentPath);
+    fileStream.pipe(res);
+
+  } catch (error) {
+    logger.error('Error downloading document:', error);
+    res.status(500).json({ error: 'Failed to download document' });
+  }
+});
+app.get('/download-document/:roomId/:tenantFolder/:fileName', async (req, res) => {
   try {
     const { roomId, tenantFolder, fileName } = req.params;
     const userId = req.headers['user-id'];
@@ -1708,11 +1964,11 @@ app.get('/tenantPortal/:BranchAndCompany/:TenantName', async (req, res) => {
   gtag('js', new Date());
 
   gtag('config', 'G-8VQZ0E1PPS');
-</script>
+</script> 
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Tenant Portal</title>
-        <link rel="stylesheet" href="/assets2/index-Dap_4Qtg.css">
+        <link rel="stylesheet" href="/assets/index-Dap_4Qtg.css">
         ${checkoutScript}
       </head>
       <body>
@@ -2842,7 +3098,7 @@ app.post('/api/send-email-without-user', async (req, res) => {
   const { email, subject, text } = req.body;
 
   // Fix typo in logger.debug
-  logger.debug('Send email', subject, email?.slice(0, 100), text);
+  logger.debug('Send email', "____",subject,"____", email?.slice(0, 100),"____", text);
 
   try {
     // Validate required fields
@@ -2860,9 +3116,9 @@ app.post('/api/send-email-without-user', async (req, res) => {
       secure: true, // use SSL
       auth: {
         user: 'rentmaster@rentmaster.markethubet.com',
-        pass: 'Plp5H9:Li(UO#6[y+26E',
+        pass: 'V0x&s.XZtbS;',
       },
-      tls: {
+       tls: {
         rejectUnauthorized: false, // Only during development/testing
       },
       debug: true, // Enable debug logs
