@@ -34,6 +34,7 @@ import ExpenseManager from '../Tools page components/ExpenseManager';
 import { useAlert } from 'renderer/components/useAlert';
 import { useConfirm } from 'renderer/components/useConfirm';
 import { useGlobal } from 'renderer/components/GlobalContext';
+import DatabasePage from './DatabasePage';
 
 const ToolsPage = ({
   setToolsSelectedPage,
@@ -194,7 +195,9 @@ const ToolsPage = ({
     AllSmsTemplates,
     setAllSmsTemplates,
     AllExpenses,
-    setAllExpenses,AllRoomSpecifications, setAllRoomSpecifications
+    setAllExpenses,
+    AllRoomSpecifications,
+    setAllRoomSpecifications,
   } = useGlobal();
   const validateEmail = (email: string) => {
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
@@ -1230,7 +1233,7 @@ const ToolsPage = ({
       smsTo,
       Currency,
       category,
-      beforeTax
+      beforeTax,
     };
 
     // Update only changed fields
@@ -1255,9 +1258,7 @@ const ToolsPage = ({
         setChangeMade,
         originalExpense[field as keyof typeof originalExpense]
       );
-      setAllExpenses(
-        updatedExpenses
-      );
+      setAllExpenses(updatedExpenses);
     }
 
     setEditingExpenseId(null);
@@ -1528,7 +1529,7 @@ const ToolsPage = ({
 
         // Single query to get the data
         const rates = await getValuesWithSql_Online(
-          'Exchange_RatesUSDtoETB', 
+          'Exchange_RatesUSDtoETB',
           whereClause
         );
 
@@ -1739,14 +1740,14 @@ const ToolsPage = ({
     const userDATA = await storageManager.get('users');
     const userEmail = userDATA[0].email;
     const userPass = userDATA[0].password;
-    
-      await sendEmailAPI(
-        'rentmaster.et@gmail.com',
-        'Review From ' + userEmail,
-        review,
-        SelectedUserId
-      );
-    
+
+    await sendEmailAPI(
+      'rentmaster.et@gmail.com',
+      'Review From ' + userEmail,
+      review,
+      SelectedUserId
+    );
+
     setReviewForm('');
     setInterval(() => {
       setIsSendingReview(false);
@@ -1760,14 +1761,13 @@ const ToolsPage = ({
     const userDATA = await storageManager.get('users');
     const userEmail = userDATA[0].email;
     const userPass = userDATA[0].password;
-    
-      await sendEmailAPI(
-        'rentmaster.et@gmail.com',
-        'Feature Suggestion From ' + userEmail,
-        feature,
-        SelectedUserId
-      );
-    
+
+    await sendEmailAPI(
+      'rentmaster.et@gmail.com',
+      'Feature Suggestion From ' + userEmail,
+      feature,
+      SelectedUserId
+    );
 
     setFeatureSuggestion('');
 
@@ -1801,25 +1801,29 @@ const ToolsPage = ({
     setTaxPercentage(storageManager.get('taxPercentage'));
     setHasChangedTaxPercentage(false);
   };
-  const [specifications, setSpecifications] = useState<RoomSpecificationType[]>([]);
+  const [specifications, setSpecifications] = useState<RoomSpecificationType[]>(
+    []
+  );
   const [hasChangedSpecs, setHasChangedSpecs] = useState(false);
   const [isApplyingSpecs, setIsApplyingSpecs] = useState(false);
 
   // Load initial specifications from global context
   useEffect(() => {
-    const defaultSpecs = AllRoomSpecifications.filter(spec => spec.roomId === 'DEFAULT');
+    const defaultSpecs = AllRoomSpecifications.filter(
+      (spec) => spec.roomId === 'DEFAULT'
+    );
     setSpecifications(defaultSpecs);
   }, [AllRoomSpecifications]);
 
   // Track pending changes
   const [pendingChanges, setPendingChanges] = useState<{
-    added: RoomSpecificationType[],
-    updated: {id: string, changes: Partial<RoomSpecificationType>}[],
-    deleted: string[]
+    added: RoomSpecificationType[];
+    updated: { id: string; changes: Partial<RoomSpecificationType> }[];
+    deleted: string[];
   }>({
     added: [],
     updated: [],
-    deleted: []
+    deleted: [],
   });
 
   const addSpecification = () => {
@@ -1831,63 +1835,70 @@ const ToolsPage = ({
       Number: 0,
       branchId: SelectedBranchId,
       roomId: 'DEFAULT',
-      userId: SelectedUserId
+      userId: SelectedUserId,
     };
-    setSpecifications(prevSpecs => [...prevSpecs, newSpec]);
-    setPendingChanges(prev => ({
+    setSpecifications((prevSpecs) => [...prevSpecs, newSpec]);
+    setPendingChanges((prev) => ({
       ...prev,
-      added: [...prev.added, newSpec]
+      added: [...prev.added, newSpec],
     }));
     setHasChangedSpecs(true);
   };
 
   const removeSpecification = (index: number) => {
     const specToRemove = specifications[index];
-    setSpecifications(prevSpecs => prevSpecs.filter((_, i) => i !== index));
-    
+    setSpecifications((prevSpecs) => prevSpecs.filter((_, i) => i !== index));
+
     // If it was a newly added spec, remove from added list
-    if (pendingChanges.added.find(s => s.id === specToRemove.id)) {
-      setPendingChanges(prev => ({
+    if (pendingChanges.added.find((s) => s.id === specToRemove.id)) {
+      setPendingChanges((prev) => ({
         ...prev,
-        added: prev.added.filter(s => s.id !== specToRemove.id)
+        added: prev.added.filter((s) => s.id !== specToRemove.id),
       }));
     } else {
       // Otherwise add to deleted list
-      setPendingChanges(prev => ({
+      setPendingChanges((prev) => ({
         ...prev,
-        deleted: [...prev.deleted, specToRemove.id]
+        deleted: [...prev.deleted, specToRemove.id],
       }));
     }
     setHasChangedSpecs(true);
   };
 
-  const handleSpecificationChange = (index: number, field: string, value: any) => {
+  const handleSpecificationChange = (
+    index: number,
+    field: string,
+    value: any
+  ) => {
     const spec = specifications[index];
-    setSpecifications(prevSpecs =>
-      prevSpecs.map((s, i) =>
-        i === index ? { ...s, [field]: value } : s
-      )
+    setSpecifications((prevSpecs) =>
+      prevSpecs.map((s, i) => (i === index ? { ...s, [field]: value } : s))
     );
 
     // Don't track changes for newly added specs
-    if (!pendingChanges.added.find(s => s.id === spec.id)) {
-      const existingChange = pendingChanges.updated.find(u => u.id === spec.id);
+    if (!pendingChanges.added.find((s) => s.id === spec.id)) {
+      const existingChange = pendingChanges.updated.find(
+        (u) => u.id === spec.id
+      );
       if (existingChange) {
-        setPendingChanges(prev => ({
+        setPendingChanges((prev) => ({
           ...prev,
-          updated: prev.updated.map(u => 
-            u.id === spec.id 
-              ? { ...u, changes: { ...u.changes, [field]: value }}
+          updated: prev.updated.map((u) =>
+            u.id === spec.id
+              ? { ...u, changes: { ...u.changes, [field]: value } }
               : u
-          )
+          ),
         }));
       } else {
-        setPendingChanges(prev => ({
+        setPendingChanges((prev) => ({
           ...prev,
-          updated: [...prev.updated, {
-            id: spec.id,
-            changes: { [field]: value }
-          }]
+          updated: [
+            ...prev.updated,
+            {
+              id: spec.id,
+              changes: { [field]: value },
+            },
+          ],
         }));
       }
     }
@@ -1908,24 +1919,26 @@ const ToolsPage = ({
       }
 
       // Handle updates
-      for (const {id, changes} of pendingChanges.updated) {
+      for (const { id, changes } of pendingChanges.updated) {
         for (const [field, value] of Object.entries(changes)) {
           await updateValue('room_specifications', id, field, value);
         }
       }
 
       // Update global context with current specifications
-      const updatedSpecs = [...AllRoomSpecifications.filter(spec => spec.roomId !== 'DEFAULT'), ...specifications];
+      const updatedSpecs = [
+        ...AllRoomSpecifications.filter((spec) => spec.roomId !== 'DEFAULT'),
+        ...specifications,
+      ];
       setAllRoomSpecifications(updatedSpecs);
-      
+
       // Reset pending changes
       setPendingChanges({
         added: [],
         updated: [],
-        deleted: []
+        deleted: [],
       });
       setHasChangedSpecs(false);
-
     } catch (error) {
       console.error('Failed to save specifications:', error);
     }
@@ -1934,7 +1947,9 @@ const ToolsPage = ({
 
   const cancelSpecs = async () => {
     // Reset to original specifications from global context
-    const defaultSpecs = AllRoomSpecifications.filter(spec => spec.roomId === 'DEFAULT');
+    const defaultSpecs = AllRoomSpecifications.filter(
+      (spec) => spec.roomId === 'DEFAULT'
+    );
     setSpecifications(defaultSpecs);
     setHasChangedSpecs(false);
   };
@@ -2012,9 +2027,9 @@ const ToolsPage = ({
               setSelectedInput={setSelectedInput}
             />
           )}
-          {ToolsSelectedPage === 'Expense Manager' && (
+          {ToolsSelectedPage === 'Database' && (
             <>
-              <ExpenseManager
+              {/* <ExpenseManager
                 // Header controls
                 showFilters={showFilters}
                 setShowFilters={setShowFilters}
@@ -2074,7 +2089,12 @@ const ToolsPage = ({
                 CurrencySign={CurrencySign}
                 formatNumberWithSuffix={formatNumberWithSuffix}
                 addDays={addDays}
-              />
+              /> */}
+                 <DatabasePage
+              setChangeMade={setChangeMade}
+              SelectedAppUser={SelectedAppUser}
+              SelectedBranchId={SelectedBranchId}
+            />
             </>
           )}
           {isApplyingNotifications && (
@@ -2221,13 +2241,21 @@ const ToolsPage = ({
               </div>
               <div className="settings-container">
                 {' '}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--10px-V)' }}>
-                  <h2 style={{ fontSize: 'var(--25px-V)' }}>Default Room Specifications</h2>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 'var(--10px-V)',
+                  }}
+                >
+                  <h2 style={{ fontSize: 'var(--25px-V)' }}>
+                    Default Room Specifications
+                  </h2>
                   <button onClick={addSpecification}>Add</button>
                   {hasChangedSpecs ? (
                     <>
                       {isApplyingSpecs ? (
-                    <img
+                        <img
                           src={loadingGif}
                           alt="Loading..."
                           style={{
@@ -2243,96 +2271,161 @@ const ToolsPage = ({
                       )}
                     </>
                   ) : (
-                   <></> )}
-                 
+                    <></>
+                  )}
                 </div>
-
                 <div style={{ marginLeft: 'var(--20px-V)' }}>
-                <span style={{color: 'var(--Text-Color-Grey)', marginBottom: 'var(--10px-V)',fontStyle: 'italic'}}>These specifications will be shown when adding a new room, so you don't have to enter them repeatedly.</span>
-                  
+                  <span
+                    style={{
+                      color: 'var(--Text-Color-Grey)',
+                      marginBottom: 'var(--10px-V)',
+                      fontStyle: 'italic',
+                    }}
+                  >
+                    These specifications will be shown when adding a new room,
+                    so you don't have to enter them repeatedly.
+                  </span>
+
                   {specifications.length === 0 ? (
-                    <div style={{ color: 'var(--Text-Color-Grey)', fontStyle: 'italic' }}>
+                    <div
+                      style={{
+                        color: 'var(--Text-Color-Grey)',
+                        fontStyle: 'italic',
+                      }}
+                    >
                       <div>Click "Add" above to add specifications</div>
                       Example specifications:
                       <div>• Bedrooms: 3</div>
                       <div>• Balcony: Yes</div>
                     </div>
                   ) : (
-                    <div style={{ display: 'flex', overflowX: 'auto', gap: 'var(--10px-V)' }}>
-                    {specifications.map((spec, index) => (
-                      <div key={index} className="AddANewRoomSpecObjectMainContainer" style={{ minWidth: 'var(--240px-V)' }}>
-                        <div>
-                          Name:
-                          <input
-                            className="AddANewRoomInputsMid"
-                            value={spec.Detail}
-                            placeholder="Enter name"
-                            onChange={(e) => {
-                              setHasChangedSpecs(true);
-                              handleSpecificationChange(index, 'Detail', e.target.value);
-                            }}
-                          />
-                          {spec.type === 'bool' ? (
-                            <>
-                              <input
-                                type="checkbox"
-                                checked={spec.Boolean}
-                                onChange={(e) => {
-                                  setHasChangedSpecs(true);
-                                  handleSpecificationChange(index, 'Boolean', e.target.checked);
-                                }}
-                              />{' '}
-                              {spec.Boolean ? 'Yes' : 'No'}
-                            </>
-                          ) : (
+                    <div
+                      style={{
+                        display: 'flex',
+                        overflowX: 'auto',
+                        gap: 'var(--10px-V)',
+                      }}
+                    >
+                      {specifications.map((spec, index) => (
+                        <div
+                          key={index}
+                          className="AddANewRoomSpecObjectMainContainer"
+                          style={{ minWidth: 'var(--240px-V)' }}
+                        >
+                          <div>
+                            Name:
                             <input
-                              type="number"
-                              className="AddANewRoomInputsSmall"
-                              value={spec.Number}
+                              className="AddANewRoomInputsMid"
+                              value={spec.Detail}
+                              placeholder="Enter name"
                               onChange={(e) => {
                                 setHasChangedSpecs(true);
-                                handleSpecificationChange(index, 'Number', e.target.value);
+                                handleSpecificationChange(
+                                  index,
+                                  'Detail',
+                                  e.target.value
+                                );
                               }}
                             />
-                          )}
-                        </div>
-                        <div style={{ marginTop: 'var(--5px-V)', display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <div style={{display: 'flex', flexDirection: 'row', alignItems: 'center'}}>
-                            <input
-                              type="radio"
-                              name={`spec-${index}`}
-                              value="bool"
-                              checked={spec.type === 'bool'}
-                              onChange={() => {
-                                setHasChangedSpecs(true);
-                                handleSpecificationChange(index, 'type', 'bool');
-                              }}
-                            />{' '}
-                            Yes/No
+                            {spec.type === 'bool' ? (
+                              <>
+                                <input
+                                  type="checkbox"
+                                  checked={spec.Boolean}
+                                  onChange={(e) => {
+                                    setHasChangedSpecs(true);
+                                    handleSpecificationChange(
+                                      index,
+                                      'Boolean',
+                                      e.target.checked
+                                    );
+                                  }}
+                                />{' '}
+                                {spec.Boolean ? 'Yes' : 'No'}
+                              </>
+                            ) : (
+                              <input
+                                type="number"
+                                className="AddANewRoomInputsSmall"
+                                value={spec.Number}
+                                onChange={(e) => {
+                                  setHasChangedSpecs(true);
+                                  handleSpecificationChange(
+                                    index,
+                                    'Number',
+                                    e.target.value
+                                  );
+                                }}
+                              />
+                            )}
                           </div>
-                          <div style={{display: 'flex', flexDirection: 'row', alignItems: 'center'}}>
-                            <input
-                              type="radio"
-                              name={`spec-${index}`}
-                              value="number"
-                              checked={spec.type === 'number'}
-                              onChange={() => {
-                                setHasChangedSpecs(true);
-                                handleSpecificationChange(index, 'type', 'number');
+                          <div
+                            style={{
+                              marginTop: 'var(--5px-V)',
+                              display: 'flex',
+                              flexDirection: 'row',
+                              justifyContent: 'space-between',
+                              alignItems: 'center',
+                            }}
+                          >
+                            <div
+                              style={{
+                                display: 'flex',
+                                flexDirection: 'row',
+                                alignItems: 'center',
                               }}
-                            />{' '}
-                            Number
+                            >
+                              <input
+                                type="radio"
+                                name={`spec-${index}`}
+                                value="bool"
+                                checked={spec.type === 'bool'}
+                                onChange={() => {
+                                  setHasChangedSpecs(true);
+                                  handleSpecificationChange(
+                                    index,
+                                    'type',
+                                    'bool'
+                                  );
+                                }}
+                              />{' '}
+                              Yes/No
+                            </div>
+                            <div
+                              style={{
+                                display: 'flex',
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                              }}
+                            >
+                              <input
+                                type="radio"
+                                name={`spec-${index}`}
+                                value="number"
+                                checked={spec.type === 'number'}
+                                onChange={() => {
+                                  setHasChangedSpecs(true);
+                                  handleSpecificationChange(
+                                    index,
+                                    'type',
+                                    'number'
+                                  );
+                                }}
+                              />{' '}
+                              Number
+                            </div>
+                            <button
+                              onClick={() => {
+                                setHasChangedSpecs(true);
+                                removeSpecification(index);
+                              }}
+                            >
+                              Delete
+                            </button>
                           </div>
-                          <button onClick={() => {
-                            setHasChangedSpecs(true);
-                            removeSpecification(index);
-                          }}>
-                            Delete
-                          </button>
                         </div>
-                        
-                      </div>
-                    ))}</div>
+                      ))}
+                    </div>
                   )}
                 </div>
               </div>
@@ -2962,7 +3055,6 @@ const ToolsPage = ({
                   </div>
                 )}
               </div>
-              
             </div>
           )}
           {ToolsSelectedPage === 'Support' && (
@@ -3415,7 +3507,6 @@ const ToolsPage = ({
                   <br />
                 </div>
               </div>
-             
             </div>
           )}
           {ToolsSelectedPage === 'Support' && (

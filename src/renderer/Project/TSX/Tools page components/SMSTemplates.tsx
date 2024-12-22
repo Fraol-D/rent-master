@@ -87,7 +87,7 @@ const calculateSMSInfo = (text: string) => {
   };
 };
 const { showAlert } = useAlert();
-// Then in your JSX, replace the "counts as 5 SMS" part with:
+
   return (
     <div className="tools-page">
       <div

@@ -5,34 +5,7 @@ import { getValuesWithSql } from 'Backend/localServerApis';
 import loadingGif from '../../../assets/assets/Loading/Rolling-1s-200px.gif';
 
 const DashbRoomSummary = ({ RoomList }: { RoomList: RoomType[] }) => {
-  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
-  
-  useEffect(() => {
-    const handleResize = () => setWindowWidth(window.innerWidth);
-    window.addEventListener('resize', handleResize);
-    
-   
 
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  // Calculate scale factor based on window width
-  const getScaleFactor = () => {
-    if (windowWidth <= 1280) return 1280 / 1920;
-    if (windowWidth <= 1366) return 1366 / 1920;
-    if (windowWidth >= 2560) return 3840 / 1920;
-    return 1;
-  };
-
-  const scaleFactor = getScaleFactor();
-
-  // Base dimensions
-  const baseWidth = 400;
-  const baseHeight = 350;
-
-  // Scaled dimensions
-  const scaledWidth = baseWidth * scaleFactor;
-  const scaledHeight = baseHeight * scaleFactor;
 
   const takenRoomsCount = RoomList.filter(
     (room) => room.status === 'Taken' && !room.Archived

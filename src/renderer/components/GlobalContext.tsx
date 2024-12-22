@@ -23,6 +23,12 @@ interface GlobalContextType {
   setAllRoomSpecifications: React.Dispatch<React.SetStateAction<RoomSpecificationType[]>>;
   AllRoomPayInfoHistory: AllRoomPayInfoHistory[];
   setAllRoomPayInfoHistory: React.Dispatch<React.SetStateAction<AllRoomPayInfoHistory[]>>;
+
+  tutorialNewAppUserId: string;
+  setTutorialNewAppUserId: React.Dispatch<React.SetStateAction<string>>;
+
+  isOnTutorial: boolean;
+  setIsOnTutorial: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 const GlobalContext = createContext<GlobalContextType | undefined>(undefined);
@@ -39,6 +45,11 @@ const [AllSmsTemplates, setAllSmsTemplates] = useState<SMSTemplate[]>([]);
 const [AllNotificationTemplateSelections, setAllNotificationTemplateSelections] = useState<notification_template_selections[]>([]);
 const [AllRoomSpecifications, setAllRoomSpecifications] = useState<RoomSpecificationType[]>([]);
 const [AllRoomPayInfoHistory, setAllRoomPayInfoHistory] = useState<AllRoomPayInfoHistory[]>([]);
+
+
+//TUTORIAL DATA
+const [isOnTutorial, setIsOnTutorial] = useState<boolean>(false);
+const [tutorialNewAppUserId, setTutorialNewAppUserId] = useState<string>("");
 return (
     <GlobalContext.Provider 
       value={{
@@ -64,6 +75,10 @@ return (
         setAllRoomSpecifications,
         AllRoomPayInfoHistory,
         setAllRoomPayInfoHistory,
+        tutorialNewAppUserId,
+        setTutorialNewAppUserId,
+        isOnTutorial,
+        setIsOnTutorial,
       }}
     >
       {children}

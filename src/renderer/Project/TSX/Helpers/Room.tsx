@@ -1524,7 +1524,7 @@ const LoadingOverlay = ({ isLoading }: { isLoading: boolean }) => (
               }}
               alt=""
             />
-            {roomType.status === 'Empty' && (
+            {/* {roomType.status === 'Empty' && (
               <button
                 style={{ padding: '0' }}
                 onClick={() => {
@@ -1537,7 +1537,7 @@ const LoadingOverlay = ({ isLoading }: { isLoading: boolean }) => (
               >
                 {roomType.Archived ? 'Unarchive' : 'Archive'}
               </button>
-            )}
+            )} */}
           </div>
           <p className="RoomText">Room {roomType.roomIndex}</p>
 

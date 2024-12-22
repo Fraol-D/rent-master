@@ -10,8 +10,18 @@ import {
   TutorialSystem,
 } from '../Tutorial Components/tutorialData';
 import TutorialManager from '../Tutorial Components/TutorialManager';
+import { getUserPrivileges } from 'renderer/App';
 
-const CornerSupport = ({ SelectedUserId }: any) => {
+const CornerSupport = ({
+  SelectedUserId,
+  SelectedPage,
+  SelectedAppUser,
+  setSelectedPage,
+  setViewBranchManagementPage,
+  setViewBranchManagementPageNONAdm,
+  setAppUserManagerPromptPassword,
+  setAppUserManagerShow,
+}: any) => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedOption, setSelectedOption] = useState<
     'tutorial' | 'support' | 'Subscription' | null
@@ -23,6 +33,45 @@ const CornerSupport = ({ SelectedUserId }: any) => {
   const [isTutorialActive, setIsTutorialActive] = useState(false);
   const [selectedTutorial, setSelectedTutorial] =
     useState<TutorialSystem | null>(null);
+  const [selectedTutorialIndex, setSelectedTutorialIndex] = useState<number>(0);
+
+  const [showTutorialPrompt, setShowTutorialPrompt] = useState(false);
+  const [tutorialPromptPage, setTutorialPromptPage] = useState('');
+
+  useEffect(() => {
+    const checkTutorialPrompt = () => {
+      const tutorialPreferences =
+        storageManager.get('tutorialPreferences') || {};
+
+      const pageTutorial = tutorialData.pages.find(
+        (page) => page.hasToBeIn.toLowerCase() === SelectedPage.toLowerCase()
+      );
+
+      if (pageTutorial && !tutorialPreferences[SelectedPage.toLowerCase()]) {
+        setTutorialPromptPage(pageTutorial.pageTitle);
+        setShowTutorialPrompt(true);
+      }
+    };
+
+   // checkTutorialPrompt();
+  }, [SelectedPage]);
+
+  const handleTutorialPromptResponse = (accepted: boolean) => {
+    const tutorialPreferences = storageManager.get('tutorialPreferences') || {};
+    tutorialPreferences[SelectedPage.toLowerCase()] = true;
+    storageManager.set('tutorialPreferences', tutorialPreferences);
+
+    setShowTutorialPrompt(false);
+
+    if (accepted) {
+      const pageIndex = tutorialData.pages.findIndex(
+        (page) => page.hasToBeIn.toLowerCase() === SelectedPage.toLowerCase()
+      );
+      if (pageIndex !== -1) {
+        handleTutorialStart(pageIndex);
+      }
+    }
+  };
 
   const toggleOpen = () => {
     if (isOpen && selectedOption) {
@@ -58,10 +107,13 @@ const CornerSupport = ({ SelectedUserId }: any) => {
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
       const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
-      const totalSms = smsHistoryRaw.filter((sms) => {
-        const smsDate = new Date(sms.sentDate);
-        return smsDate >= monthStart && smsDate <= monthEnd;
-      }).length;
+      const totalSms = smsHistoryRaw
+        .filter((sms: any) => {
+          const smsDate = new Date(sms.sentDate);
+          return smsDate >= monthStart && smsDate <= monthEnd;
+        })
+        .reduce((acc: number, sms: any) => acc + (sms.countsAs || 1), 0);
+
       const package2 = user[0].PackageSelected || 'Canot get';
       setCurrentPlanInfo({
         name: package2,
@@ -176,6 +228,14 @@ const CornerSupport = ({ SelectedUserId }: any) => {
     },
   ];
 
+  const handleTutorialStart = (index: number) => {
+    setSelectedTutorialIndex(index);
+    setSelectedTutorial(tutorialData);
+    setIsTutorialActive(true);
+    setSelectedOption(null);
+    setIsOpen(false);
+  };
+
   const renderTutorialList = () => (
     <div style={{ padding: 'var(--5px-V)' }}>
       <h2 style={{ marginTop: '0' }}>Available Tutorials</h2>
@@ -200,24 +260,44 @@ const CornerSupport = ({ SelectedUserId }: any) => {
             <p style={{ margin: '0 0 var(--10px-V) 0' }}>
               {page.overview.description}
             </p>
-            <button
-              onClick={() => {
-                setSelectedTutorial(tutorialData);
-                setIsTutorialActive(true);
-                setSelectedOption(null);
-                setIsOpen(false);
-              }}
-              style={{
-                padding: 'var(--5px-V) var(--10px-V)',
-                backgroundColor: 'var(--Primary-Color)',
-                color: 'var(--Text-Color-Reverse)',
-                border: 'none',
-                borderRadius: 'var(--3px-V)',
-                cursor: 'pointer',
-              }}
-            >
-              Start Tutorial
-            </button>
+            {page.hasToBeIn === SelectedPage ? (
+              <>
+                <button
+                  onClick={() => {
+                    handleTutorialStart(index);
+                  }}
+                  style={{
+                    padding: 'var(--5px-V) var(--10px-V)',
+                    backgroundColor: 'var(--Primary-Color)',
+                    color: 'var(--Text-Color-Reverse)',
+                    border: 'none',
+                    borderRadius: 'var(--3px-V)',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Start Tutorial
+                </button>
+              </>
+            ) : (
+              <>
+                Wrong page,{' '}
+                <button
+                  onClick={() => {
+                    handleTutorialStart(index);
+                  }}
+                  style={{
+                    padding: 'var(--5px-V) var(--10px-V)',
+                    backgroundColor: 'var(--Primary-Color)',
+                    color: 'var(--Text-Color-Reverse)',
+                    border: 'none',
+                    borderRadius: 'var(--3px-V)',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Go to page
+                </button>
+              </>
+            )}
           </div>
         ))}
       </div>
@@ -496,16 +576,126 @@ const CornerSupport = ({ SelectedUserId }: any) => {
     }
   };
 
+  const handlePageNavigation = (page: string) => {
+    // Close the tutorial panel
+    setIsOpen(false);
+    setSelectedOption(null);
+    const privileges = getUserPrivileges(SelectedAppUser);
+    // Navigate based on page
+    switch (page.toLowerCase()) {
+      case 'app user':
+        setAppUserManagerShow(true);
+        setViewBranchManagementPage(false);
+        setAppUserManagerPromptPassword(SelectedAppUser.id !== 'admin');
+        break;
+      case 'property':
+        setAppUserManagerShow(false);
+
+        setViewBranchManagementPage(true);
+
+        break;
+      case 'dashboard':
+        if (SelectedAppUser.id === 'admin' || privileges.viewDashboard)
+          setSelectedPage('Dashboard');
+        else console.log('Access denied');
+        break;
+      case 'people':
+        if (SelectedAppUser.id === 'admin' || privileges.viewPeoplesPage)
+          setSelectedPage('People');
+        else console.log('Access denied');
+        break;
+      case 'calendar':
+        if (SelectedAppUser.id === 'admin' || privileges.viewCalendar)
+          setSelectedPage('Calendar');
+        else console.log('Access denied');
+        break;
+      case 'database':
+        if (SelectedAppUser.id === 'admin' || privileges.viewDatabase)
+          setSelectedPage('Database');
+        else console.log('Access denied');
+        break;
+      case 'tools':
+        if (SelectedAppUser.id === 'admin' || privileges.viewToolsPage)
+          setSelectedPage('Tools');
+        else console.log('Access denied');
+        break;
+    }
+  };
+
   return (
     <>
       {isTutorialActive && selectedTutorial && (
         <TutorialManager
           tutorialData={selectedTutorial}
+          SelectedPage={SelectedPage}
           onClose={() => {
             setIsTutorialActive(false);
             setSelectedTutorial(null);
           }}
+          currentPageInital={selectedTutorialIndex}
+          onNavigate={handlePageNavigation}
+          selectedAppUserId={SelectedAppUser.id}
+          userPrivileges={getUserPrivileges(SelectedAppUser)}
         />
+      )}
+
+      {showTutorialPrompt && (
+        <div
+          style={{
+            position: 'fixed',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            backgroundColor: 'var(--Background-Color)',
+            padding: 'var(--20px-V)',
+            borderRadius: 'var(--10px-V)',
+            boxShadow: '0 0 var(--10px-V) var(--Secondary-Color50)',
+            zIndex: 1000,
+            width: 'var(--400px-V)',
+            maxWidth: '90vw',
+            textAlign: 'center',
+          }}
+        >
+          <h2 style={{ margin: '0 0 var(--15px-V) 0' }}>Tutorial Available</h2>
+          <p style={{ margin: '0 0 var(--20px-V) 0' }}>
+            Would you like to view the tutorial for the {tutorialPromptPage}{' '}
+            page?
+          </p>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'center',
+              gap: 'var(--10px-V)',
+            }}
+          >
+            <button
+              onClick={() => handleTutorialPromptResponse(true)}
+              style={{
+                backgroundColor: 'var(--Primary-Color)',
+                color: 'var(--Text-Color-Reverse)',
+                padding: 'var(--10px-V) var(--20px-V)',
+                border: 'none',
+                borderRadius: 'var(--5px-V)',
+                cursor: 'pointer',
+              }}
+            >
+              Yes, show tutorial
+            </button>
+            <button
+              onClick={() => handleTutorialPromptResponse(false)}
+              style={{
+                backgroundColor: 'var(--Secondary-Color20)',
+                color: 'var(--Text-Color)',
+                padding: 'var(--10px-V) var(--20px-V)',
+                border: 'none',
+                borderRadius: 'var(--5px-V)',
+                cursor: 'pointer',
+              }}
+            >
+              No, thanks
+            </button>
+          </div>
+        </div>
       )}
 
       <div

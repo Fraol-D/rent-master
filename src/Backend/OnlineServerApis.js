@@ -1453,7 +1453,7 @@ export const sendEmailAPIForVerify = async (email, code) => {
     const subject = 'Email Verification';
     const data = {
       email,
-      subject2,
+      subject,
       text,
     };
 
@@ -1530,13 +1530,13 @@ export const checkRoomLimit = async (SelectedUserId) => {
       userId: SelectedUserId,
     };
 
-    const response = sendApiFunction('api-request', {
+    const response = await sendApiFunction('api-request', {
       url,
       method: 'post',
       headers,
       data,
     })
-
+    console.log(response)
     return !response.valid;
   } catch (error) {
     

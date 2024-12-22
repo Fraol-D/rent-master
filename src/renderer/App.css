@@ -24,6 +24,7 @@ section {
 }
 :root {
   --Text-Color-Grey: rgba(128, 128, 128);
+  --Text-Color-Grey2: rgb(189, 189, 189);
   --Text-Color: rgb(255, 255, 255);
   --Text-Color-Reverse: rgb(0, 0, 0);
   --Text-Color-Reverse50: rgba(0, 0, 0, 0.5);
@@ -191,6 +192,7 @@ section {
 }
 .DarkTheme {
   --Text-Color-Grey: #505050;
+  --Text-Color-Grey2: rgb(65, 65, 65);
   --Text-Color: #000000;
   --Text-Color-Reverse50: rgba(0, 0, 0, 0.5);
   --Text-Color-Reverse: rgb(0, 0, 0);

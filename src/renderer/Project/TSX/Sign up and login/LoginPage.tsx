@@ -63,7 +63,7 @@ const LoginPage = ({
           if (user) {
             handleLogin(user);
           } else {
-            setErrorMessage('Error retrieving user data. Please try again.');
+            setErrorMessage('Email could not be found. Please try again.');
           }
         } else {
           setErrorMessage('Invalid email or password');
@@ -93,7 +93,7 @@ const LoginPage = ({
                 RefreshComponent();
               }, 600);
             } else {
-              setErrorMessage('Error retrieving user data. Please try again.');
+              setErrorMessage('Email could not be found. Please try again.');
             }
           } else {
             setErrorMessage(

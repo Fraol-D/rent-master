@@ -824,7 +824,7 @@ justifyContent: 'space-between' }}> <input
                   type="text"
                   value={phoneNumber}
                   onChange={handlePhoneNumberChange}
-                  style={{width:"36%",marginBottom:"0px"}}
+                  style={{width:"38%",marginBottom:"0px"}}
                   placeholder="Phone Number"
                   className="userName-input"
                 /></div> 

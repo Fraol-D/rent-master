@@ -373,12 +373,13 @@
 .SideBarTopContainer {
   display: flex;
   flex-direction: row;
+  gap: var(--30px-V);
   border-bottom: var(--1px-V) solid grey;
 }
 .SideBarTopButton {
   flex:1;
-  height: var(--52px-V);
-  margin: var(--5px-V);
+  height: var(--52px-V);width: var(--70px-V);
+  margin-bottom: var(--10px-V);
 }
 .SideBarShowButton {
   height: var(--25px-V);
@@ -468,7 +469,7 @@
   border-radius: var(--5px-V);
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content:flex-start;
   margin: var(--10px-V);
   box-shadow: var(--1px-V) var(--1px-V) var(--3px-V) var(---1px-V) var(--Secondary-Color);
   padding: var(--5px-V);
@@ -603,14 +604,14 @@
   margin-bottom: var(--4px-V);
 }.custom-alert {
   position: fixed;
-  top: 20px;
-  right: 20px;
+  top: var(--20px-V);
+  right: var(--20px-V);
   z-index: 700;
-  min-width: 300px;
-  max-width: 450px;
-  padding: 16px;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  min-width: var(--300px-V);
+  max-width: var(--450px-V);
+  padding: var(--16px-V);
+  border-radius: var(--8px-V);
+  box-shadow: 0 var(--4px-V) var(--12px-V) rgba(0, 0, 0, 0.15);
   animation: slideIn 0.3s ease-out;
 }
 
@@ -618,18 +619,18 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--12px-V);
 }
 
 .alert-message {
   flex-grow: 1;
-  font-size: 14px;
+  font-size: var(--14px-V);
 }
 
 .close-button {
   background: none;
   border: none;
-  font-size: 20px;
+  font-size: var(--20px-V);
   cursor: pointer;
   padding: 0;
   color: inherit;
@@ -687,16 +688,16 @@
 .confirm-dialog {
   background-color: var(--Background-Color);
 
-  border-radius: 8px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+  border-radius: var(--8px-V);
+  box-shadow: 0 var(--2px-V) var(--12px-V) rgba(0, 0, 0, 0.15);
   width: 100%;
-  max-width: 400px;
+  max-width: var(--400px-V);
   animation: slideIn 0.2s ease-out;
 }
 
 .confirm-header {
-  padding: 16px 20px;
-  border-bottom: 1px solid #eee;
+  padding: var(--16px-V) var(--20px-V);
+  border-bottom: var(--1px-V) solid #eee;
 }
 
 .confirm-header.info { border-bottom-color: #2196f3; }
@@ -705,30 +706,30 @@
 
 .confirm-header h3 {
   margin: 0;
-  font-size: 18px;
+  font-size: var(--18px-V);
   font-weight: 500;
 }
 
 .confirm-content {
-  padding: 20px;
-  font-size: 16px;
+  padding: var(--20px-V);
+  font-size: var(--16px-V);
   line-height: 1.5;
 }
 
 .confirm-actions {
-  padding: 16px 20px;
+  padding: var(--16px-V) var(--20px-V);
   display: flex;
   justify-content: flex-end;
-  gap: 12px;
-  border-top: 1px solid #eee;
+  gap: var(--12px-V);
+  border-top: var(--1px-V) solid #eee;
 }
 
 .confirm-button,
 .cancel-button {
-  padding: 8px 16px;
-  border-radius: 4px;
+  padding: var(--8px-V) var(--16px-V);
+  border-radius: var(--4px-V);
   border: none;
-  font-size: 14px;
+  font-size: var(--14px-V);
   cursor: pointer;
   transition: background-color 0.2s;
 }

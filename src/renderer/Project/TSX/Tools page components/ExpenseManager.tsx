@@ -1,130 +1,523 @@
+import { addValue, deleteValue, updateValue } from 'Backend/localServerApis';
 import React, { useState, useEffect } from 'react';
+import { useAlert } from 'renderer/components/useAlert';
+import { useGlobal } from 'renderer/components/GlobalContext';
+import { useConfirm } from 'renderer/components/useConfirm';
 import { v4 as uuidv4 } from 'uuid';
+import { CurrencySign, GetCurrencyAsOptionsOnSelect } from '../Helpers/CurrencySign';
+import { formatNumberWithSuffix } from '../Helpers/CurrencySign';
+import loadingGif from '../../../assets/assets/Loading/Rolling-1s-200px.gif';
+import { addDays } from 'date-fns';
 interface ExpenseManagerContainerProps {
-  // Header controls
-  showFilters: boolean;
-  setShowFilters: (show: boolean) => void;
-  ShowDefaultNotificationsSettings: boolean;
-  setShowDefaultNotificationsSettings: (show: boolean) => void;
-  handleAddExpense: () => void;
-  resetFilters: () => void;
-
-  // Filter controls
-  searchTerm: string;
-  setSearchTerm: (term: string) => void;
-  maxPrice: number | '';
-  setMaxPrice: (price: number | '') => void;
-  minPrice: number | '';
-  setMinPrice: (price: number | '') => void;
-  fullBuildingFilter: 'yes' | 'no' | '';
-  setFullBuildingFilter: (filter: 'yes' | 'no' | '') => void;
-  floorSearch: string;
-  setFloorSearch: (floor: string) => void;
-  roomSearch: string;
-  setRoomSearch: (room: string) => void;
-  doesReoccurFilter: 'yes' | 'no' | '';
-  setDoesReoccurFilter: (filter: 'yes' | 'no' | '') => void;
-  reoccurDays: string;
-  setReoccurDays: (days: string) => void;
-  dateFilter: string;
-  setDateFilter: (date: string) => void;
-
-  // Notification settings
-  sendEmail: boolean;
-  setSendEmail: (send: boolean) => void;
-  emailTo: string;
-  setEmailTo: (email: string) => void;
-  emailDaysBefore: number;
-  setEmailDaysBefore: (days: number) => void;
-  sendSms: boolean;
-  setSendSms: (send: boolean) => void;
-  smsTo: string;
-  setSmsTo: (sms: string) => void;
-  smsDaysBefore: number;
-  setSmsDaysBefore: (days: number) => void;
-  applyDefaultNotifications: () => void;
-
-  // Expense data and handlers
-  filteredExpenses: Array<expenses>;
-  editingExpenseId: string | null;
-  editedExpense: expenses | null;
-  showNotifySettings: Record<string, boolean>;
-  handleEditExpenseClick: (expense: expenses) => void;
-  handleEditExpenseChange: (field: keyof expenses, value: any) => void;
-  toggleNotifySettings: (id: string) => void;
-  handleDeleteExpense: (id: string) => void;
-  calculateNextPayment: (expense: expenses) => number | 'today' | null;
-
-  // Utility functions
-  GetCurrencyAsOptionsOnSelect: () => JSX.Element[];
-  CurrencySign: (currency: string) => string;
-  formatNumberWithSuffix: (num: string) => string;
-  addDays: (date: Date, days: number) => Date;
+  setChangeMade: (changeMade: boolean) => void;
+  SelectedUserId: string;
+  SelectedBranchId: string;
 }
 
 const ExpenseManager = ({
-  // Header control props
-  showFilters,
-  setShowFilters,
-  ShowDefaultNotificationsSettings,
-  setShowDefaultNotificationsSettings,
-  handleAddExpense,
-  resetFilters,
-
-  // Filter control props
-  searchTerm,
-  setSearchTerm,
-  maxPrice,
-  setMaxPrice,
-  minPrice,
-  setMinPrice,
-  fullBuildingFilter,
-  setFullBuildingFilter,
-  floorSearch,
-  setFloorSearch,
-  roomSearch,
-  setRoomSearch,
-  doesReoccurFilter,
-  setDoesReoccurFilter,
-  reoccurDays,
-  setReoccurDays,
-  dateFilter,
-  setDateFilter,
-
-  // Notification setting props
-  sendEmail,
-  setSendEmail,
-  emailTo,
-  setEmailTo,
-  emailDaysBefore,
-  setEmailDaysBefore,
-  sendSms,
-  setSendSms,
-  smsTo,
-  setSmsTo,
-  smsDaysBefore,
-  setSmsDaysBefore,
-  applyDefaultNotifications,
-
-  // Expense data and handler props
-  filteredExpenses,
-  editingExpenseId,
-  editedExpense,
-  showNotifySettings,
-  handleEditExpenseClick,
-  handleEditExpenseChange,
-  toggleNotifySettings,
-  handleDeleteExpense,
-  calculateNextPayment,
-
-  // Utility function props
-  GetCurrencyAsOptionsOnSelect,
-  CurrencySign,
-  formatNumberWithSuffix,
-  addDays,
+  setChangeMade,
+  SelectedUserId,
+  SelectedBranchId,
 }: ExpenseManagerContainerProps) => {
+
+  const [expenses, setExpenses] = useState<expenses[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleAddExpense = async () => {
+    const newExpense: expenses = {
+      id: uuidv4(),
+      name: 'New Expense',
+      description: 'New Expense Description',
+      price: 0,
+      date: Date.now(),
+      userId: SelectedUserId,
+      fullBuilding: false,
+      floor: 0,
+      room: 0,
+      doesReoccur: false,
+      recurringCycle: 0,
+      recurringType: 'Day',
+      HasEndDate: false,
+      EndDate: 0,
+      branchId: SelectedBranchId,
+      // New notification fields
+      sendEmail: false,
+      emailDaysBefore: 0,
+      sendSms: false,
+      smsDaysBefore: 0,
+      emailTo: null,
+      smsTo: null,
+      Currency: 'ETB',
+    };
+
+    setEditingExpenseId(newExpense.id);
+    setEditedExpense(newExpense);
+    await addValue('expenses', newExpense, setChangeMade);
+    setAllExpenses([...AllExpenses, newExpense]);
+    setExpenses([...expenses, newExpense]);
+  };
+  useEffect(()=>{ getExpenses();},[])
+  const getExpenses = async () => {
+    const rawExpenses = AllExpenses;
+
+    const mappedExpenses = rawExpenses.map((expense: any) => ({
+      id: expense.id,
+      name: expense.name,
+      description: expense.description,
+      price: Number(expense.price),
+      fullBuilding: Boolean(expense.fullBuilding),
+      floor: Number(expense.floor),
+      room: Number(expense.room),
+      doesReoccur: Boolean(expense.doesReoccur),
+      recurringCycle: Number(expense.recurringCycle),
+      date: Number(expense.date),
+      recurringType: expense.recurringType as 'Day' | 'Monthly' | 'Yearly',
+      HasEndDate: Boolean(expense.HasEndDate),
+      EndDate: expense.EndDate ? Number(expense.EndDate) : null,
+      sendEmail: Boolean(expense.sendEmail),
+      emailTemplate: expense.emailTemplate,
+      emailDaysBefore: Number(expense.emailDaysBefore),
+      sendSms: Boolean(expense.sendSms),
+      smsTemplate: expense.smsTemplate,
+      smsDaysBefore: Number(expense.smsDaysBefore),
+      emailTo: expense.emailTo,
+      smsTo: expense.smsTo,
+      Currency: expense.Currency,
+      userId: expense.userId,
+      branchId: expense.branchId,
+      showNotifySettings: Boolean(expense.showNotifySettings),
+    }));
+
+    setExpenses(mappedExpenses);
+  };
+  const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null);
+  const [editedExpense, setEditedExpense] = useState<expenses | null>(null);
+
+  const handleEditExpenseChange = (
+    field: keyof expenses,
+    value: string | number | boolean
+  ) => {
+    // Add to handleEditExpenseChange
+
+    if (editedExpense) {
+      setEditedExpense({ ...editedExpense, [field]: value });
+    }
+  };
+
+  const saveExpenseChanges = async () => {
+    if (editedExpense) {
+      setIsSaving(true);
+      try {
+        await handleEditExpense(
+          editedExpense.id,
+          editedExpense.name,
+          editedExpense.description,
+          editedExpense.price || 0,
+          editedExpense.fullBuilding || false,
+          editedExpense.floor,
+          editedExpense.room,
+          editedExpense.doesReoccur || false,
+          editedExpense.recurringCycle || 0,
+          editedExpense.date || Date.now(),
+          editedExpense.recurringType || 'Day',
+          editedExpense.HasEndDate || false,
+          editedExpense.EndDate || null,
+          // Add notification fields
+          editedExpense.sendEmail || false,
+          editedExpense.emailDaysBefore || 0,
+          editedExpense.sendSms || false,
+          editedExpense.smsDaysBefore || 0,
+          editedExpense.emailTo || null,
+          editedExpense.smsTo || null,
+          editedExpense.Currency || 'ETB',
+          editedExpense.category || 'Other',
+          editedExpense.beforeTax || false
+        );
+      } finally {
+        setIsSaving(false);
+        setEditingExpenseId(null);
+        setEditedExpense(null);
+      }
+    }
+  };
+
+  const validatePhoneNumber = (phoneNumber: string) => {
+    const phoneNumberRegex = /^\d{10}$/;
+    return phoneNumberRegex.test(phoneNumber);
+  };
+  const handleEditExpenseClick = (expense: expenses) => {
+    if (editingExpenseId === expense.id) {
+      saveExpenseChanges();
+    } else {
+      setEditingExpenseId(expense.id);
+      setEditedExpense({ ...expense });
+    }
+  };
+  const { confirm } = useConfirm();
+
+
+  const [
+    ShowDefaultNotificationsSettings,
+    setShowDefaultNotificationsSettings,
+  ] = useState(false);
+
+  const { showAlert } = useAlert();
+  const applyDefaultNotifications = async () => {
+    if (sendEmail) {
+      if (!emailDaysBefore || emailDaysBefore === '') {
+        showAlert('Please enter days before for email notification');
+        return;
+      }
+    }
+    if (sendSms) {
+      if (!validatePhoneNumber(smsTo)) {
+        showAlert('Please enter a valid 10-digit phone number');
+        return;
+      }
+
+      if (!smsDaysBefore || smsDaysBefore === '') {
+        showAlert('Please enter days before for SMS notification');
+        return;
+      }
+    }
+    try {
+      setEditingExpenseId(null);
+      setEditedExpense(null);
+      setIsApplyingNotifications(true);
+      // Create the notification settings object
+      const notificationSettings = {
+        sendEmail,
+
+        emailDaysBefore: parseInt(emailDaysBefore) || 0,
+        sendSms,
+
+        smsDaysBefore: parseInt(smsDaysBefore) || 0,
+        emailTo,
+        smsTo,
+      };
+
+      // Update all expenses with the new notification settings
+      for (const expense of expenses) {
+        // Update local database
+        for (const [key, value] of Object.entries(notificationSettings)) {
+          await updateValue('expenses', expense.id, key, value, setChangeMade);
+          setAllExpenses(
+            AllExpenses.map((expense) =>
+              expense.id === expense.id ? { ...expense, [key]: value } : expense
+            )
+          );
+        }
+      }
+
+      // Refresh the expenses list
+      await getExpenses();
+      setShowDefaultNotificationsSettings(false);
+      showAlert('Default notifications applied to all expenses successfully!', "success");
+    } catch (error) {
+      console.error('Error applying default notifications:', error);
+      showAlert('Failed to apply default notifications. Please try again.');
+    } finally {
+      setIsApplyingNotifications(false);
+    }
+  };
+   // Start Generation Here
+   const [sendEmail, setSendEmail] = useState(false);
+   const [emailDaysBefore, setEmailDaysBefore] = useState(0);
+   const [sendSms, setSendSms] = useState(false);
+   const [smsDaysBefore, setSmsDaysBefore] = useState(0);
+   const [emailTo, setEmailTo] = useState('');
+   const [smsTo, setSmsTo] = useState('');
+   const [isApplyingNotifications, setIsApplyingNotifications] = useState(false);
+   const [isResetingTemplates, setIsResetingTemplates] = useState(false);
+ 
+  const {
+    AllEmailTemplates,
+    setAllEmailTemplates,
+    AllSmsTemplates,
+    setAllSmsTemplates,
+    AllExpenses,
+    setAllExpenses,
+    AllRoomSpecifications,
+    setAllRoomSpecifications,
+  } = useGlobal();
+  const [showNotifySettings, setShowNotifySettings] = useState<{
+    [key: string]: boolean;
+  }>({});
+
+  // Add this function to toggle notification settings visibility
+  const toggleNotifySettings = (expenseId: string) => {
+    setShowNotifySettings((prev) => ({
+      ...prev,
+      [expenseId]: !prev[expenseId],
+    }));
+  };
+  const calculateNextPayment = (expense: expenses) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Reset time to start of day
+    const todayTime = today.getTime();
+
+    const StartExpenseDate = new Date(expense.date);
+    StartExpenseDate.setHours(0, 0, 0, 0); // Reset time to start of day
+    const startTime = StartExpenseDate.getTime();
+
+    const cycle = expense.recurringCycle;
+    const cycleType = expense.recurringType;
+    const endTime = expense.EndDate;
+    const hasEndDate = expense.HasEndDate;
+    let nextPayment: number;
+    const msPerDay = 86400000; // milliseconds in a day
+    let payments = [];
+
+    // First, count the start date payment
+    for (let i = 0; i < 30; i++) {
+      if (cycleType === 'Day') {
+        nextPayment = startTime + i * cycle * msPerDay;
+        if (hasEndDate && nextPayment > endTime) {
+          break;
+        }
+        payments.push(nextPayment);
+      } else if (cycleType === 'Monthly') {
+        const nextDate = new Date(startTime);
+        nextDate.setMonth(nextDate.getMonth() + i);
+        nextPayment = nextDate.getTime();
+        if (hasEndDate && nextPayment > endTime) {
+          break;
+        }
+        payments.push(nextPayment);
+      } else if (cycleType === 'Yearly') {
+        const nextYearDate = new Date(startTime);
+        nextYearDate.setFullYear(nextYearDate.getFullYear() + i);
+        nextPayment = nextYearDate.getTime();
+        if (hasEndDate && nextPayment > endTime) {
+          break;
+        }
+        payments.push(nextPayment);
+      }
+    }
+
+    // Find today's or next payment
+    const todayPayment = payments.find((payment) => payment === todayTime);
+    if (todayPayment) {
+      return 'today'; // Return 'today' instead of 0
+    }
+
+    const nextPayment2 = payments.find((payment) => payment > todayTime);
+    if (!nextPayment2) {
+      return null;
+    }
+
+    return Math.ceil((nextPayment2 - todayTime) / msPerDay);
+  };
+  const [exchangeRates, setExchangeRates] = useState<
+    Array<{
+      id: number;
+      rates: number;
+    }>
+  >([]);
+  const handleEditExpense = async (
+    id: string,
+    name: string,
+    description: string,
+    price: number,
+    fullBuilding: boolean,
+    floor: string,
+    room: string,
+    doesReoccur: boolean,
+    recurringCycle: number,
+    date: number,
+    recurringType: 'Day' | 'Monthly' | 'Yearly',
+    HasEndDate: boolean,
+    EndDate: number | null,
+    sendEmail: boolean = false,
+    emailDaysBefore: number = 0,
+    sendSms: boolean = false,
+    smsDaysBefore: number = 0,
+    emailTo: string | null = null,
+    smsTo: string | null = null,
+    Currency: string = 'ETB',
+    category: string = 'Other',
+    beforeTax: boolean = false
+  ) => {
+    const originalExpense = expenses.find((e: { id: string; }) => e.id === id);
+    if (!originalExpense) return;
+
+    const updatedFields = {
+      name,
+      description,
+      price,
+      fullBuilding,
+      floor: parseInt(floor) || 0,
+      room: parseInt(room) || 0,
+      doesReoccur,
+      recurringCycle,
+      date,
+      recurringType,
+      HasEndDate,
+      EndDate,
+      sendEmail,
+      emailDaysBefore,
+      sendSms,
+      smsDaysBefore,
+      emailTo,
+      smsTo,
+      Currency,
+      category,
+      beforeTax,
+    };
+
+    // Update only changed fields
+    const changedFields = Object.entries(updatedFields).filter(
+      ([key, value]) =>
+        originalExpense[key as keyof typeof originalExpense] !== value
+    );
+
+    // Update state with all changes
+    const updatedExpenses = expenses.map((expense: { id: string; }) =>
+      expense.id === id ? { ...expense, ...updatedFields } : expense
+    );
+    setExpenses(updatedExpenses);
+
+    // Save only changed fields to database
+    for (const [field, value] of changedFields) {
+      await updateValue(
+        'expenses',
+        id,
+        field,
+        value,
+        setChangeMade,
+        originalExpense[field as keyof typeof originalExpense]
+      );
+      setAllExpenses(updatedExpenses);
+    }
+
+    setEditingExpenseId(null);
+    setEditedExpense(null);
+  };
+
+  const handleDeleteExpense = async (id: string) => {
+    const choice = await confirm(
+      'Are you sure you want to delete this expense?',
+      {
+        title: 'Delete Expense',
+        confirmText: 'Delete',
+        cancelText: 'Keep',
+        type: 'danger',
+      }
+    );
+    if (choice) {
+      await deleteValue('expenses', id, setChangeMade);
+      setEditingExpenseId(null);
+      setEditedExpense(null);
+      setExpenses(expenses.filter((expense: { id: string; }) => expense.id !== id));
+    }
+  };
+
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortField, setSortField] = useState<'name' | 'price' | 'date'>('name');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+
+  // New filter states
+  const [roomSearch, setRoomSearch] = useState('');
+  const [floorSearch, setFloorSearch] = useState('');
+  const [fullBuildingFilter, setFullBuildingFilter] = useState<
+    'yes' | 'no' | ''
+  >('');
+  const [doesReoccurFilter, setDoesReoccurFilter] = useState<'yes' | 'no' | ''>(
+    ''
+  );
+  const [reoccurDays, setReoccurDays] = useState('');
+  const [minPrice, setMinPrice] = useState<number | ''>('');
+  const [maxPrice, setMaxPrice] = useState<number | ''>('');
+  const [dateFilter, setDateFilter] = useState<string>('');
+  const [showFilters, setShowFilters] = useState<boolean>(false);
+
+  const resetFilters = () => {
+    setSearchTerm('');
+    setRoomSearch('');
+    setFloorSearch('');
+    setFullBuildingFilter('');
+    setDoesReoccurFilter('');
+    setReoccurDays('');
+    setMinPrice('');
+    setMaxPrice('');
+    setDateFilter('');
+  };
+
+  const filteredExpenses = expenses
+    .filter((expense: { name: string; room: { toString: () => string | string[]; }; floor: { toString: () => string | string[]; }; fullBuilding: any; doesReoccur: any; recurringCycle: { toString: () => string; }; price: number; date: string | number | Date; }) => {
+      const matchesName = expense.name
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase());
+      const matchesRoom = roomSearch
+        ? expense.room.toString().includes(roomSearch)
+        : true;
+      const matchesFloor = floorSearch
+        ? expense.floor.toString().includes(floorSearch)
+        : true;
+      const matchesFullBuilding = fullBuildingFilter
+        ? fullBuildingFilter === 'yes'
+          ? expense.fullBuilding
+          : !expense.fullBuilding
+        : true;
+      const matchesDoesReoccur = doesReoccurFilter
+        ? doesReoccurFilter === 'yes'
+          ? expense.doesReoccur
+          : !expense.doesReoccur
+        : true;
+      const matchesReoccurDays = reoccurDays
+        ? expense.recurringCycle.toString() === reoccurDays
+        : true;
+      const matchesPrice =
+        (minPrice === '' || expense.price >= minPrice) &&
+        (maxPrice === '' || expense.price <= maxPrice);
+      const matchesDate = dateFilter
+        ? new Date(expense.date).toISOString().split('T')[0] === dateFilter
+        : true;
+
+      return (
+        matchesName &&
+        matchesRoom &&
+        matchesFloor &&
+        matchesFullBuilding &&
+        matchesDoesReoccur &&
+        matchesReoccurDays &&
+        matchesPrice &&
+        matchesDate
+      );
+    })
+    .sort((a: { [x: string]: number; }, b: { [x: string]: number; }) => {
+      if (sortOrder === 'asc') {
+        return a[sortField] > b[sortField] ? 1 : -1;
+      } else {
+        return a[sortField] < b[sortField] ? 1 : -1;
+      }
+    });
+
+
+
   return (
-    <>
+    <>{isSaving && (
+          <div style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 1000
+          }}>
+            <div style={{
+              backgroundColor: 'white',
+              padding: '20px',
+              borderRadius: '5px'
+            }}>
+              Saving changes...
+            </div>
+          </div>
+        )}
       <div
         style={{
           display: 'flex',
@@ -132,11 +525,13 @@ const ExpenseManager = ({
           alignItems: 'center',
           flexDirection: 'column',
           width: '100%',
-          maxWidth: 'var(--1200px-V)',
+          maxWidth: 'var(--1300px-V)',
           margin: '0 auto',
           height: '100%',
+          position: 'relative'
         }}
       >
+        
         <div
           style={{
             display: 'flex',
@@ -147,7 +542,7 @@ const ExpenseManager = ({
             margin: '0 auto',
           }}
         >
-          <h2>Expense Manager</h2>
+          <h2 style={{fontSize: 'var(--25px-V)'}}>Expense Manager</h2>
           <button
             onClick={() => {
               setShowFilters(!showFilters);
@@ -226,7 +621,7 @@ const ExpenseManager = ({
                     }}
                   >
                     {emailTo.split(',').map(
-                      (email, index) =>
+                      (email: string, index: React.Key | null | undefined) =>
                         email.trim() && (
                           <div
                             key={index}
@@ -350,7 +745,7 @@ const ExpenseManager = ({
                     }}
                   >
                     {smsTo.split(',').map(
-                      (sms, index) =>
+                      (sms: string, index: React.Key | null | undefined) =>
                         sms.trim() && (
                           <div
                             key={index}
@@ -641,7 +1036,7 @@ const ExpenseManager = ({
                   </td>
                 </tr>
               ) : (
-                filteredExpenses.map((expense, index) => (
+                filteredExpenses.map((expense: { id: any; name: any; category?: any; price: any; Currency: any; fullBuilding: any; floor: any; room: any; doesReoccur: any; recurringType: any; recurringCycle: any; date: any; HasEndDate: any; EndDate: any; branchId?: string; description?: string; showNotifySettings?: boolean; userId?: string; sendEmail?: boolean; emailDaysBefore?: number; sendSms?: boolean; smsDaysBefore?: number; emailTo?: string | null; smsTo?: string | null; }, index: number) => (
                   <>
                     <tr key={`${expense.id}-${index}`} className="expense-card">
                       <td
@@ -766,7 +1161,7 @@ const ExpenseManager = ({
                                   handleEditExpenseChange('beforeTax', e.target.checked)
                                 }
                               />
-                              <span style={{fontSize: 'var(--10px-V)', color: 'var(--Text-Color-Grey)'}}>
+                              <span style={{fontSize: 'var(--12px-V)', color: 'var(--Text-Color-Grey)'}}>
                               Is the expense amount is before tax calculation.                              </span>
                             </div>
                           </>
@@ -1491,7 +1886,39 @@ const ExpenseManager = ({
             </tbody>
           </table>
         </div>
-      </div>
+      </div>  {isApplyingNotifications && (
+            <div
+              style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+                alignItems: 'center',
+                zIndex: 1000,
+              }}
+            >
+              <img
+                src={loadingGif}
+                alt="Loading..."
+                style={{ width: '50px', height: '50px' }}
+              />
+              <p
+                style={{
+                  color: 'white',
+                  marginTop: '20px',
+                  fontSize: 'var(--16px-V)',
+                  fontWeight: '500',
+                }}
+              >
+                Applying notification settings to all expenses...
+              </p>
+            </div>
+          )}
     </>
   );
 };

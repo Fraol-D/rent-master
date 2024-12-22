@@ -73,16 +73,16 @@ const DashboardPage: React.FC<props> = ({
             SelectedUserId={SelectedUserId}
           />
           <div>
-            <DashbRevenuePerSquareFoot RoomList={RoomList} />
-            <TopPerformingUnits
+            <DashbRevenuePerSquareFoot RoomList={RoomList} /> 
+           <TopPerformingUnits
               RoomList={RoomList}
            
               BrokerList={BrokerList}
               PastTenantReviews={PastTenantReviews}
               BrokerRecommendationList={BrokerRecommendationList}
               SelectedBranchId={SelectedBranchId}
-            />
-            <TenantGrowthWidget/>
+            /> 
+             <TenantGrowthWidget/>
           </div>
           <DashbOverAllTax
             RoomList={RoomList}

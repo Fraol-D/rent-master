@@ -40,6 +40,7 @@ import { useConfirm } from 'renderer/components/useConfirm';
 import { useGlobal } from 'renderer/components/GlobalContext';
 import { storageManager } from 'renderer/storeManager';
 import { checkRoomLimit } from 'Backend/OnlineServerApis';
+import ExpenseManager from './Tools page components/ExpenseManager';
 type FilterOption = {
   key: string;
   value: any;
@@ -800,7 +801,7 @@ const MainPage = ({
   const [ToolsSelectedPage, setToolsSelectedPage] = useState<
     | 'EmailTemplates'
     | 'SMSTemplates'
-    | 'Expense Manager'
+    | 'Database'
     | 'Settings'
     | 'Support'
   >(
@@ -808,8 +809,8 @@ const MainPage = ({
       ? 'EmailTemplates'
       : privileges.editSmsTemplates
       ? 'SMSTemplates'
-      : privileges.editExpenses
-      ? 'Expense Manager'
+      : privileges.viewDatabase
+      ? 'Database'
       : 'Settings'
   );
   const [DashboardSelectedPage, setDashboardSelectedPage] = useState<
@@ -833,7 +834,7 @@ const MainPage = ({
     AddRoomFormPaymentCycleCustomDays,
     setAddRoomFormPaymentCycleCustomDays,
   ] = useState(0);
-  const { AllRoomSpecifications,AllTenants,setAllTenants } = useGlobal();
+  const { AllRoomSpecifications, AllTenants, setAllTenants } = useGlobal();
 
   const [AddRoomFormSquareMeters, setAddRoomFormSquareMeters] = useState(0);
   const [AddRoomFormRoomSpecifications, setAddRoomFormRoomSpecifications] =
@@ -875,18 +876,19 @@ const MainPage = ({
   // Modify the handleAddRoom function
   const handleAddRoom = async (continueAdding = false) => {
     if (isAddingRoom) return; // Prevent multiple clicks
-    if(navigator.onLine) {
-         const reachedLimit = await checkRoomLimit(SelectedUserId);
+    if (navigator.onLine) {
+      const reachedLimit = await checkRoomLimit(SelectedUserId);
 
-    console.log(reachedLimit);
-    if(reachedLimit) {
-      showAlert("Room limit reached. Please upgrade to add more rooms.")
-      
-      return;}
+      console.log(reachedLimit);
+      if (reachedLimit) {
+        showAlert('Room limit reached. Please upgrade to add more rooms.');
+
+        return;
+      }
     } else {
       //IMPLIMENT ROOM LIMIT ON offline electron
     }
- 
+
     try {
       setIsAddingRoom(true); // Start loading
 
@@ -921,6 +923,16 @@ const MainPage = ({
         selectedAgreementId: '',
         Archived: false,
         Currency: AddRoomFormCurrency || GetDefaultCurrency(),
+        utilityPaymentEvery: 30,
+        utilityPaymentStartDate: new Date().toISOString(),
+        utilityPaymentUseDifferentStartDate: false,
+        utilityPaymentEveryCustom: 30,
+        UtilityNotificationSettings: 0,
+        AddTenantState: 0,
+        ViewAgreement: 0,
+        ShowUtilityLine: 0,
+        ShowPaymentLine: 0,
+        ShowTenantLine: 0,
       };
 
       // Add to database
@@ -967,6 +979,33 @@ const MainPage = ({
       setRoomExistsWarning(false);
       setIsMoreThanOneImage(false);
       setRefreshInspectorForAddRoom(true);
+
+      // Wait a bit for the DOM to update
+      setTimeout(() => {
+        const roomContainer = document.querySelector('.RoomContainerContainer');
+        const newRoomElement = document.getElementById(`room-${newRoom.id}`);
+
+        if (roomContainer && newRoomElement) {
+          // Add highlight effect
+          newRoomElement.style.backgroundColor = 'var(--Accent-Color50)';
+          newRoomElement.style.transition = 'background-color 0.5s ease';
+
+          // Calculate scroll position
+          const containerRect = roomContainer.getBoundingClientRect();
+          const newRoomRect = newRoomElement.getBoundingClientRect();
+
+          roomContainer.scrollTop +=
+            newRoomRect.top -
+            containerRect.top -
+            containerRect.height / 2 +
+            newRoomRect.height / 2;
+
+          // Remove highlight after 2 seconds
+          setTimeout(() => {
+            newRoomElement.style.backgroundColor = '';
+          }, 1000);
+        }
+      }, 100);
     } catch (error) {
       console.error('Error adding room:', error);
     } finally {
@@ -1113,16 +1152,12 @@ const MainPage = ({
     if (SelectedPage === 'People') {
       //RefreshDataFromSqlite();
     }
-    if (SelectedPage === 'Calendar' || SelectedPage === 'Database') {
+    if (SelectedPage === 'Calendar' || SelectedPage === 'Database' || SelectedPage === 'Expense') {
       setHideSideBarForCalendar(true);
     } else {
       setHideSideBarForCalendar(false);
     }
-    if (
-      SelectedPage === 'People' ||
-      SelectedPage === 'Dashboard' ||
-      SelectedPage === 'ToolsPage'
-    ) {
+    if (false) {
       if (!SideBarShowState) {
         setSideBarWidth(290);
         setSideBarShowState(true);
@@ -1213,6 +1248,7 @@ const MainPage = ({
   const SideBarItem = ({ page, currentPage, onClick, children }: any) => (
     <button
       onClick={onClick}
+      style={{ display: SideBarShowState ? '' : 'none' }}
       className={
         currentPage === page
           ? 'sideBarItemComponentMainSelected'
@@ -1546,6 +1582,15 @@ const MainPage = ({
         >
           {SelectedPage === 'Rooms' ? (
             <>
+              <h3
+                style={{
+                  display: SideBarShowState ? '' : 'none',
+                  fontSize: 'var(--28px-V)',
+                  margin: 'var(--15px-V) 0px var(--15px-V) 0px',
+                }}
+              >
+                Room Manager
+              </h3>
               <div
                 className="SideBarTopContainer"
                 style={{
@@ -1559,7 +1604,7 @@ const MainPage = ({
                   onClick={handleCloseSideBar}
                   title="Close Sidebar"
                 >
-                  close sidebar
+                  Close sidebar
                 </button>
                 {privileges.addRoom ? (
                   <button
@@ -1584,7 +1629,7 @@ const MainPage = ({
                 >
                   Clear Filters
                 </button>
-                <button
+                {/* <button
                   className="SideBarTopButton"
                   style={{
                     display: 'flex',
@@ -1597,7 +1642,7 @@ const MainPage = ({
                   }}
                 >
                   {ShowArchived ? 'Show unarchived' : 'Show archived'}
-                </button>{' '}
+                </button>{' '} */}
               </div>
               <div
                 className="SideBarRoomPageTopPart"
@@ -1739,6 +1784,7 @@ const MainPage = ({
                               marginLeft: 'var(--10px-V)',
                             }}
                           >
+                            <option value="all">All</option>
                             <option value="Taken">Taken</option>
                             <option value="Empty">Empty</option>
                           </select>
@@ -1768,7 +1814,7 @@ const MainPage = ({
                             <option value="=">{'='}</option>
                             <option value="<">{'<'}</option>
                             <option value=">">{'>'}</option>
-                            <option value="none">none</option>
+                            <option value="None">Any</option>
                           </select>
                           <input
                             type="number"
@@ -1809,7 +1855,7 @@ const MainPage = ({
                             <option value="=">{'='}</option>
                             <option value="<">{'<'}</option>
                             <option value=">">{'>'}</option>
-                            <option value="none">none</option>
+                            <option value="None">Any</option>
                           </select>
                           <input
                             type="number"
@@ -1852,7 +1898,7 @@ const MainPage = ({
                             <option value="=">{'='}</option>
                             <option value="<">{'<'}</option>
                             <option value=">">{'>'}</option>
-                            <option value="none">none</option>
+                            <option value="None">Any</option>
                           </select>
                           <input
                             type="number"
@@ -2400,6 +2446,24 @@ const MainPage = ({
             </>
           ) : SelectedPage === 'People' ? (
             <>
+              <h3
+                style={{
+                  display: SideBarShowState ? '' : 'none',
+                  fontSize: 'var(--28px-V)',
+                  margin: 'var(--15px-V) 0px var(--15px-V) 0px',
+                }}
+              >
+                People Lists
+              </h3>
+              <h3
+                style={{
+                  fontSize: 'var(--20px-V)',
+                  margin: '0px 0px 0px 0px',
+                  display: SideBarShowState ? '' : 'none',
+                }}
+              >
+                
+              </h3>
               <SideBarItem
                 page="TenantsList"
                 currentPage={PeopleSelectedPage}
@@ -2424,13 +2488,32 @@ const MainPage = ({
             </>
           ) : SelectedPage === 'Tools' ? (
             <>
+              {' '}
+              <h3
+                style={{
+                  display: SideBarShowState ? '' : 'none',
+                  fontSize: 'var(--28px-V)',
+                  margin: 'var(--15px-V) 0px var(--15px-V) 0px',
+                }}
+              >
+                Tools and Settings
+              </h3>
+              <h3
+                style={{
+                  fontSize: 'var(--20px-V)',
+                  margin: '0px 0px 0px 0px',
+                  display: SideBarShowState ? '' : 'none',
+                }}
+              >
+                
+              </h3>
               {privileges.editEmailTemplates && (
                 <SideBarItem
                   page="EmailTemplates"
                   currentPage={ToolsSelectedPage}
                   onClick={() => setToolsSelectedPage('EmailTemplates')}
                 >
-                  Email Settings
+                  Email Templates
                 </SideBarItem>
               )}
               {privileges.editSmsTemplates && (
@@ -2439,30 +2522,21 @@ const MainPage = ({
                   currentPage={ToolsSelectedPage}
                   onClick={() => setToolsSelectedPage('SMSTemplates')}
                 >
-                  SMS Settings
+                  SMS Templates
                 </SideBarItem>
               )}
-              {privileges.editExpenses && (
+              {privileges.viewDatabase && (
                 <SideBarItem
-                  page="Expense Manager"
+                  page="Database"
                   currentPage={ToolsSelectedPage}
-                  onClick={() => setToolsSelectedPage('Expense Manager')}
+                  onClick={() => setToolsSelectedPage('Database')}
                 >
-                  Expense Manager
+              Database
                 </SideBarItem>
               )}
-              {(privileges.editExpenses ||
+              {(privileges.viewDatabase ||
                 privileges.editSmsTemplates ||
                 privileges.editEmailTemplates) && <br />}
-
-              <SideBarItem
-                page="Support"
-                currentPage={ToolsSelectedPage}
-                onClick={() => setToolsSelectedPage('Support')}
-              >
-                Support
-              </SideBarItem>
-
               <SideBarItem
                 page="Settings"
                 currentPage={ToolsSelectedPage}
@@ -2475,6 +2549,7 @@ const MainPage = ({
             <>
               <h3
                 style={{
+                  display: SideBarShowState ? '' : 'none',
                   fontSize: 'var(--28px-V)',
                   margin: 'var(--15px-V) 0px var(--15px-V) 0px',
                 }}
@@ -2482,7 +2557,11 @@ const MainPage = ({
                 Dashboard
               </h3>
               <h3
-                style={{ fontSize: 'var(--20px-V)', margin: '0px 0px 0px 0px' }}
+                style={{
+                  fontSize: 'var(--20px-V)',
+                  margin: '0px 0px 0px 0px',
+                  display: SideBarShowState ? '' : 'none',
+                }}
               >
                 Overview
               </h3>
@@ -2502,7 +2581,11 @@ const MainPage = ({
                 Expenses
               </SideBarItem>
               <h3
-                style={{ fontSize: 'var(--20px-V)', margin: '0px 0px 0px 0px' }}
+                style={{
+                  fontSize: 'var(--20px-V)',
+                  margin: '0px 0px 0px 0px',
+                  display: SideBarShowState ? '' : 'none',
+                }}
               >
                 Communication
               </h3>
@@ -2521,7 +2604,11 @@ const MainPage = ({
                 SMS Details
               </SideBarItem>
               <h3
-                style={{ fontSize: 'var(--20px-V)', margin: '0px 0px 0px 0px' }}
+                style={{
+                  fontSize: 'var(--20px-V)',
+                  margin: '0px 0px 0px 0px',
+                  display: SideBarShowState ? '' : 'none',
+                }}
               >
                 History
               </h3>
@@ -2533,7 +2620,11 @@ const MainPage = ({
                 Action History
               </SideBarItem>
               <h3
-                style={{ fontSize: 'var(--20px-V)', margin: '0px 0px 0px 0px' }}
+                style={{
+                  fontSize: 'var(--20px-V)',
+                  margin: '0px 0px 0px 0px',
+                  display: SideBarShowState ? '' : 'none',
+                }}
               >
                 Reports
               </h3>
@@ -2550,6 +2641,7 @@ const MainPage = ({
                 style={{
                   fontSize: 'var(--12px-V)',
                   color: 'var(--Text-Color-Grey)',
+                  display: SideBarShowState ? '' : 'none',
                 }}
               >
                 More reports coming soon
@@ -2951,9 +3043,7 @@ const MainPage = ({
               sortedAndFilteredRooms={sortedAndFilteredRooms}
               removeFilterOption={removeFilterOption}
               filterOptions={filterOptions}
-              
               tenantAPI={tenantAPI}
-             
               AddARoomState={AddARoomState}
               setAddARoomState={setAddARoomState}
               roomPaymentInfoApi={roomPaymentInfoApi}
@@ -2967,7 +3057,6 @@ const MainPage = ({
           )}
           {SelectedPage === 'People' && (
             <PeopleComponentPage
-           
               agreementApi={agreementApi}
               PeopleSelectedPage={PeopleSelectedPage}
               PastTenantReviews={PastTenantReviews}
@@ -2995,7 +3084,6 @@ const MainPage = ({
               sortedAndFilteredRooms={RoomList}
               removeFilterOption={removeFilterOption}
               filterOptions={[]}
-             
               SelectedBranchId={SelectedBranchId}
             />
           )}
@@ -3014,7 +3102,6 @@ const MainPage = ({
             <DashboardPage
               roomPaymentInfoApi={roomPaymentInfoApi}
               RoomList={RoomList}
-           
               BrokerList={BrokerList}
               PastTenantReviews={PastTenantReviews}
               BrokerRecommendationList={BrokerRecommendationList}
@@ -3032,6 +3119,14 @@ const MainPage = ({
               SelectedAppUser={SelectedAppUser}
               SelectedBranchId={SelectedBranchId}
             />
+          )}
+          {SelectedPage === 'Expense' && (
+                <ExpenseManager
+                // Header controls
+              setChangeMade={setChangeMade}
+              SelectedUserId={SelectedUserId}
+              SelectedBranchId={SelectedBranchId}
+              />
           )}
         </div>
       </div>

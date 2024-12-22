@@ -280,8 +280,8 @@ const NavBar = ({
               onClick={() => {
                 if (navigator.onLine) {
                   setViewBranchManagementPage(true);
-                  if (storageManager.get('LockBranchToPc'))
-                    setViewBranchManagementPageNONAdm(true);
+
+                  setViewBranchManagementPageNONAdm(false);
                 }
               }}
             >
@@ -296,7 +296,7 @@ const NavBar = ({
               {storageManager.get('users')[0].email} -{' '}
             </span>
             {storageManager.get('SelectedAppUserId') === 'admin' ? (
-              <> Admin User</>
+              <> Admin user</>
             ) : (
               storageManager
                 .get('app_users')
@@ -314,9 +314,9 @@ const NavBar = ({
               }}
               onClick={() => {
                 if (navigator.onLine) {
-                  console.log(storageManager.get('SelectedAppUserId'));
                   if (storageManager.get('SelectedAppUserId') === 'admin') {
                     setAppUserManagerShow(true);
+                    setAppUserManagerPromptPassword(false);
                     return;
                   }
                   setAppUserManagerShow(true);
@@ -324,7 +324,9 @@ const NavBar = ({
                 }
               }}
             >
-              Switch
+              {storageManager.get('SelectedAppUserId') === 'admin'
+                ? 'Go to App Users'
+                : 'Switch User'}
             </span>
           </p>
         </div>
@@ -378,16 +380,16 @@ const NavBar = ({
             Calendar
           </button>
         )}
-        {privileges.viewDatabase && (
+        {privileges.editExpenses && (
           <button
             className={
-              SelectedPage === 'Database'
+              SelectedPage === 'Expense'
                 ? 'PageNavigatorButtonSelected'
                 : 'PageNavigatorButton'
             }
-            onClick={() => setSelectedPage('Database')}
+            onClick={() => setSelectedPage('Expense')}
           >
-            Database
+            Expenses
           </button>
         )}
         {privileges.viewToolsPage && (
@@ -767,14 +769,24 @@ const NavBar = ({
             )}
           </>
         )}
-        {window.electron ? <></> : <> <button
-          style={{ marginLeft: 'var(--10px-V)', marginRight: 'var(--10px-V)' }}
-          onClick={() => {
-          RefreshDataFromSqlite();
-          }}
-        >
-          Refresh Data
-        </button></>}
+        {window.electron ? (
+          <></>
+        ) : (
+          <>
+            {' '}
+            <button
+              style={{
+                marginLeft: 'var(--10px-V)',
+                
+              }}
+              onClick={() => {
+                RefreshDataFromSqlite();
+              }}
+            >
+              Refresh Data
+            </button>
+          </>
+        )}
         <button
           style={{ marginLeft: 'var(--10px-V)', marginRight: 'var(--10px-V)' }}
           onClick={() => {

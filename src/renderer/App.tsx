@@ -229,7 +229,7 @@ function Hello({ tryout, username, signup }: any) {
         'rooms',
         `WHERE 1 AND branchId = '${useBranchId}'`
       );
-      console.log(':ROOOMS', roomsRaw);
+      
       if (roomsRaw) {
         const rooms = await Promise.all(
           roomsRaw.map(async (room: RoomType) => {
@@ -566,7 +566,6 @@ function Hello({ tryout, username, signup }: any) {
     };
   }
   class TenantApi {
-    
     addTenantApi = async (
       id: string,
       name: string,
@@ -1201,7 +1200,7 @@ function Hello({ tryout, username, signup }: any) {
           AllAgreement2
         );
         brokerApi.getBrokersApi();
-      
+
         pastTenantReviewApi.getPastTenantReviewLatestApi();
         brokersRecommendationListApi.getBrokerRecommendationsFromApi();
       } catch (error: any) {
@@ -1434,7 +1433,7 @@ function Hello({ tryout, username, signup }: any) {
     | 'Dashboard'
     | 'Calendar'
     | 'Settings'
-    | 'Database'
+    | 'Expense'
     | 'Tools'
     | 'non'
   >(() => {
@@ -1443,7 +1442,7 @@ function Hello({ tryout, username, signup }: any) {
     if (privileges.viewRoomsPage) return 'Rooms';
     if (privileges.viewPeoplesPage) return 'People';
     if (privileges.viewCalendar) return 'Calendar';
-    if (privileges.viewDatabase) return 'Database';
+    if (privileges.editExpenses) return 'Expense';
     if (privileges.viewToolsPage) return 'Tools';
     return 'non'; // Default fallback
   });
@@ -1463,7 +1462,7 @@ function Hello({ tryout, username, signup }: any) {
         if (privileges.viewRoomsPage) return 'Rooms';
         if (privileges.viewPeoplesPage) return 'People';
         if (privileges.viewCalendar) return 'Calendar';
-        if (privileges.viewDatabase) return 'Database';
+        if (privileges.editExpenses) return 'Expense';
         if (privileges.viewToolsPage) return 'Tools';
         return prevPage;
       });
@@ -1899,7 +1898,6 @@ function Hello({ tryout, username, signup }: any) {
                 signOutUserAndRestart={signOutUserAndRestart}
                 RoomList={RoomList}
                 setRoomList={setRoomList}
-                
                 roomAPI={roomAPI}
                 tenantAPI={tenantAPI}
                 roomPaymentInfoApi={roomPaymentInfoApi}
@@ -1919,11 +1917,25 @@ function Hello({ tryout, username, signup }: any) {
                 SelectedUserId={SelectedUserId}
                 SelectedBranchId={SelectedBranchId}
               />
-            
             </>
-          </AccountManager>  <CornerSupport  SelectedUserId={SelectedUserId}/>
+          </AccountManager>{' '}
+          <CornerSupport
+            SelectedPage={
+              AppUserManagerShow
+                ? 'app user'
+                : ViewBranchManagementPage
+                ? 'property'
+                : SelectedPage
+            }
+            SelectedUserId={SelectedUserId}
+            SelectedAppUser={SelectedAppUser}
+            setSelectedPage={setSelectedPage}
+            setViewBranchManagementPage={setViewBranchManagementPage}
+            setViewBranchManagementPageNONAdm={setViewBranchManagementPageNONAdm}
+            setAppUserManagerPromptPassword={setAppUserManagerPromptPassword}
+            setAppUserManagerShow={setAppUserManagerShow}
+          />
           {/**/}
-         
           {tryout && (
             <p
               style={{
@@ -2029,7 +2041,6 @@ export default function App() {
 }
 
 import AppABC from '../../RentMaster Website/RentalSite/src/App';
-import TutorialManager from './Project/TSX/Tutorial Components/tutorialManager';
 export const getUserPrivileges = (
   selectedAppUser: appUser | null
 ): {

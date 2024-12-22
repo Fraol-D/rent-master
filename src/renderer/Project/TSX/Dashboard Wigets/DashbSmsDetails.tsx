@@ -22,6 +22,7 @@ type smsHistoryType = {
   templateId: string;
   userId: string;
   mode: string;
+  countsAs: number;
 };
 
 const DashbSmsDetails = ({ SelectedUserId, RoomList }: props) => {
@@ -47,30 +48,38 @@ const DashbSmsDetails = ({ SelectedUserId, RoomList }: props) => {
   } = useGlobal();
   const [isLoading, setIsLoading] = useState(false);
   useEffect(() => {
-    
-
     const fetchSmsHistory = async () => {
-      setIsLoading(true);const user = await getValuesWithSql_Online(
+      setIsLoading(true);
+      const user = await getValuesWithSql_Online(
         'users',
         `WHERE id = '${SelectedUserId}'`
       );
 
       setSMSMonthlyLimit(await user[0].SMSMonthlyLimit);
       const smsHistoryRaw = await getValuesWithSql_Online(
-        'sms_history',
+        'sms_history', 
         `WHERE userId = '${SelectedUserId}'`
       );
       const smsTemplates = AllSmsTemplates;
       setSmsTemplates(smsTemplates);
+      
+      // Add countsAs field to each SMS history item
+      const smsHistoryWithCounts = smsHistoryRaw.map((sms: any) => {
+        const template = smsTemplates.find(t => t.id === sms.templateId);
+        return {
+          ...sms,
+          countsAs: template?.countsAs || 1
+        };
+      });
+
       const sortedSmsHistory = smsHistoryRaw.sort(
         (a: smsHistoryType, b: smsHistoryType) => b.sentDate - a.sentDate
       );
-      setSmsHistory(sortedSmsHistory); setIsLoading(false);
+      setSmsHistory(sortedSmsHistory);
+      setIsLoading(false);
     };
+
     if (navigator.onLine) fetchSmsHistory();
-
-   
-
   }, [SelectedUserId]);
 
   const toggleExpand = (id: string) => {
@@ -139,14 +148,17 @@ const DashbSmsDetails = ({ SelectedUserId, RoomList }: props) => {
       });
       return {
         date: format(day, 'd'),
-        sms: daySms.length,
+        sms: daySms.reduce((acc, sms) => acc + (sms.countsAs || 1), 0),
       };
     });
 
-    const totalSms = smsToCount.filter((sms) => {
+    const totalSms = smsToCount.reduce((acc, sms) => {
       const smsDate = new Date(sms.sentDate);
-      return smsDate >= monthStart && smsDate <= monthEnd;
-    }).length;
+      if (smsDate >= monthStart && smsDate <= monthEnd) {
+        return acc + (sms.countsAs || 1);
+      }
+      return acc;
+    }, 0);
 
     const highestDailySms = Math.max(...dailySmsCounts.map((d) => d.sms));
     const averageDailySms = totalSms / daysInMonth.length;
@@ -177,7 +189,7 @@ const DashbSmsDetails = ({ SelectedUserId, RoomList }: props) => {
           series={[
             {
               dataKey: 'sms',
-              label: 'SMS Sent',
+              label: 'SMS Count',
               area: true,
               valueFormatter: (value) => value?.toString() || '0',
             },
@@ -267,18 +279,18 @@ const DashbSmsDetails = ({ SelectedUserId, RoomList }: props) => {
             Limit: <strong>{SMSMonthlyLimit.toLocaleString()} per month</strong>
           </p>
           <p>
-            Total SMS:{' '}
+            Total SMS Count:{' '}
             <strong>
               {smsStats.totalSms.toLocaleString()}/
               {SMSMonthlyLimit.toLocaleString()}
             </strong>
           </p>
           <p>
-            Highest Daily:{' '}
+            Highest Daily Count:{' '}
             <strong>{smsStats.highestDailySms.toLocaleString()}</strong>
           </p>
           <p>
-            Average Daily:{' '}
+            Average Daily Count:{' '}
             <strong>{smsStats.averageDailySms.toFixed(1)}</strong>
           </p>
         </div>
@@ -413,7 +425,7 @@ const DashbSmsDetails = ({ SelectedUserId, RoomList }: props) => {
       )}
 
       <p>
-        {filteredSms.length} SMS sent in{' '}
+        {filteredSms.length} SMS entries ({filteredSms.reduce((acc, sms) => acc + (sms.countsAs || 1), 0)} total count) in{' '}
         {new Date(selectedDate).toLocaleString('default', {
           month: 'long',
           year: 'numeric',
@@ -534,6 +546,8 @@ const DashbSmsDetails = ({ SelectedUserId, RoomList }: props) => {
                         </span>
                         <span>•</span>
                         <span>{sms.mode || 'Unknown Mode'}</span>
+                        <span>•</span>
+                        <span>Counts as {sms.countsAs || 1}</span>
                       </div>
                     </div>
                     <div

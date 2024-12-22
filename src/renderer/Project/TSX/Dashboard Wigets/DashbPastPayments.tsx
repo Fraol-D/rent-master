@@ -14,7 +14,6 @@ interface Payment {
 }
 
 const DashbPastPayments = ({
-
   RoomList,
   roomPaymentInfoApi,
   setChangeMade,
@@ -23,7 +22,6 @@ const DashbPastPayments = ({
   SelectedUserId,
   SelectedBranchId,
 }: {
- 
   RoomList: RoomType[];
   roomPaymentInfoApi: any;
   SelectedBranchId: any;
@@ -49,6 +47,8 @@ const DashbPastPayments = ({
   const [SelectedTenantViewShow, setSelectedTenantViewShow] = useState('');
   const [activeTab, setActiveTab] = useState('past');
   const [predictedPayments, setPredictedPayments] = useState<Payment[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
 
   useEffect(() => {
     const calculatePayments = async () => {
@@ -262,13 +262,19 @@ const DashbPastPayments = ({
       console.log(updatedAllRoomPayInfo, roomType.AllRoomPayInfo);
     }
   };
+
+  // Calculate pagination
+  const totalPages = Math.ceil(PastPaymentList.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentItems = PastPaymentList.slice(startIndex, endIndex);
+
   return (
     <div
       className="DashboardWigetMainContainer"
       style={{
         width: 'var(--400px-V)',
         alignItems: 'flex-start',
-       
         overflowY: 'auto',
         overflowX: 'hidden',
       }}
@@ -344,8 +350,8 @@ const DashbPastPayments = ({
                 </tr>
               </thead>
               <tbody>
-                {PastPaymentList.length > 0 ? (
-                  PastPaymentList.map((tenant, index) =>
+                {currentItems.length > 0 ? (
+                  currentItems.map((tenant, index) =>
                     tenant.tenant.RentingOrOut ? (
                       <tr
                         key={index}
@@ -421,6 +427,28 @@ const DashbPastPayments = ({
                 )}
               </tbody>
             </table>
+            {PastPaymentList.length > itemsPerPage && (
+              <div style={{ 
+                display: 'flex', 
+                justifyContent: 'center', 
+                padding: 'var(--10px-V)',
+                gap: 'var(--10px-V)'
+              }}>
+                <button 
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                >
+                  Previous
+                </button>
+                <span>Page {currentPage} of {totalPages}</span>
+                <button 
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                >
+                  Next
+                </button>
+              </div>
+            )}
           </div>
         </>
       ) : (
@@ -550,20 +578,16 @@ const DashbPastPayments = ({
               SelectedBranchId={SelectedBranchId}
               refresh={handlePaymentRefresh}
               paymentData={
-                predictedPayments.filter(
-                  (p) =>
-                    p.roomId ===
-                    RoomList.find(
-                      (r: RoomType) =>
-                        r.tenantId ===
-                        AllTenants.find(
-                          (t: tenant) => t.id == SelectedTenantViewShow
-                        )?.id
+                RoomList.find(
+                  (r: RoomType) =>
+                    r.tenantId ===
+                    AllTenants.find(
+                      (t: tenant) => t.id == SelectedTenantViewShow
                     )?.id
-                ) || []
+                )?.AllRoomPayInfo.RoomPayInfo || []
               }
               roomPaymentInfoApi={roomPaymentInfoApi}
-              AllTenants={AllTenants}
+            
               agreedPrice={
                 RoomList.find(
                   (r: RoomType) =>

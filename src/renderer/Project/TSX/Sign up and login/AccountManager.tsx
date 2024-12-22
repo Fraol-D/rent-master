@@ -23,6 +23,7 @@ import DashboardPage from '../Pages/DashboardPage';
 import { formatNumberWithSuffix } from '../Helpers/CurrencySign';
 import { useAlert } from '../../../components/useAlert';
 import { useConfirm } from '../../../components/useConfirm';
+import { useGlobal } from 'renderer/components/GlobalContext';
 
 interface MyComponentProps {
   children: React.ReactNode;
@@ -504,7 +505,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
     }
     console.log(`[${getSeconds()}s] App users management complete`);
   };
-
+  const { isOnTutorial, setTutorialNewAppUserId } = useGlobal();
   const handleAddNewAppUser = async () => {
     if (navigator.onLine) {
       const existingUsers = appUsers.filter((user: any) =>
@@ -529,38 +530,38 @@ const AccountManager = (React.FC<MyComponentProps> = ({
         addedDate: Date.now(),
         AllowedBranches: Branches.map((branch) => branch.id).join(','),
       };
-
+      handleEditUser(newAppUser);
       try {
         await addValueOnline('app_users', newAppUser);
         await appUsersManagement();
+        if (isOnTutorial) setTutorialNewAppUserId(accountId);
+        // Wait for the next render cycle and DOM update
         setTimeout(() => {
-          // Wait for the next render cycle
-          requestAnimationFrame(() => {
-            // Find the container and the new element
-            const container = document.querySelector('.abcScroll');
-            const newUserElement = document.getElementById(
-              `app-user-${accountId}`
-            );
-            console.log(container);
-            console.log(newUserElement);
-            if (container && newUserElement) {
-              // Scroll the container
-              container.scrollTo({
-                left:
-                  (newUserElement as HTMLElement).offsetLeft -
-                  (container as HTMLElement).offsetLeft,
-                behavior: 'smooth',
-              });
+          const container = document.querySelector('.appUserItemContainer');
+          const newUserElement = document.getElementById(`${accountId}`);
 
-              // Add highlight effect
-              newUserElement.style.transition = 'background-color 0.3s ease';
-              newUserElement.style.backgroundColor = 'var(--Highlight-Color)';
-              setTimeout(() => {
-                newUserElement.style.backgroundColor = '';
-              }, 1500);
-            }
-          });
-        }, 500);
+          if (container && newUserElement) {
+            // Calculate scroll position to center the new element
+            const containerWidth = container.clientWidth;
+            const elementLeft = newUserElement.offsetLeft;
+            const elementWidth = newUserElement.clientWidth;
+            const scrollPosition =
+              elementLeft - containerWidth / 2 + elementWidth / 2;
+
+            // Smooth scroll to the new element
+            container.scrollTo({
+              left: scrollPosition,
+              behavior: 'smooth',
+            });
+
+            // Add highlight effect
+            newUserElement.style.transition = 'background-color 0.3s ease';
+            newUserElement.style.backgroundColor = 'var(--Accent-Color50)';
+            setTimeout(() => {
+              newUserElement.style.backgroundColor = '';
+            }, 1500);
+          }
+        }, 100); // Increased timeout to ensure DOM is updated
       } catch (error) {
         console.error('Error adding new user:', error);
         showAlert(
@@ -866,6 +867,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
         if (
           !appUsers.some(
             (user) =>
+              user.id !== userId && 
               user.roleName.toUpperCase() === editingUserName.toUpperCase()
           )
         ) {
@@ -1073,7 +1075,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
     'edit tenant room attachments',
     'edit tenant room notification settings',
     'edit tenant room tenant stay',
-    'add a branch',
+    'manage properties',
   ];
   interface PrivilegeNode {
     name: string;
@@ -1118,7 +1120,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
       ],
     },
     {
-      name: 'add a branch',
+      name: 'manage properties',
     },
   ];
   const [IsTrueAdmin, setIsTrueAdmin] = useState(false);
@@ -1136,7 +1138,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
 
     return (
       <div className="privilege-item">
-        <div>
+        <div style={{display: 'flex', alignItems: 'center'}}>
           <input
             type="checkbox"
             id={`${appUser.id}-${privilege.name}`}
@@ -1281,7 +1283,6 @@ const AccountManager = (React.FC<MyComponentProps> = ({
     googleMapPinPoint: '',
     userId: '',
   });
-
   const handleAddBranch = async () => {
     try {
       setIsAddingBranch(true);
@@ -1294,30 +1295,21 @@ const AccountManager = (React.FC<MyComponentProps> = ({
 
       // Check if a branch with the same name already exists
       const existingBranch = Branches.find(
-        (branch) => branch.name === newBranchData.name.trim()
+        (branch: any) => branch.name === newBranchData.name.trim()
       );
       if (existingBranch) {
-        showAlert('A branch with the same name already exists');
+        showAlert('A property with the same name already exists');
         return;
       }
-
-      // Log the data being sent
-      console.log('Adding branch with data:', {
-        id: uuidv4(),
-        name: newBranchData.name,
-        location: newBranchData.location || null,
-        description: newBranchData.description || null,
-        googleMapPinPoint: newBranchData.googleMapPinPoint || null,
-        userId: SelectedUserId,
-      });
 
       // First, check if we have a valid SelectedUserId
       if (!SelectedUserId) {
         throw new Error('No user ID selected');
       }
 
+      const branchId = uuidv4();
       const branchToAdd = {
-        id: uuidv4(),
+        id: branchId,
         name: newBranchData.name.trim(),
         location: newBranchData.location?.trim() || null,
         description: newBranchData.description?.trim() || null,
@@ -1327,7 +1319,26 @@ const AccountManager = (React.FC<MyComponentProps> = ({
 
       // Add to online database
       const result = await addValueOnline('branches', branchToAdd);
-      console.log('Add branch result:', result); // Log the result
+      console.log('Add property result:', result);
+
+      // If user is not admin, add branch to their allowed branches
+      const currentUser = storageManager.get('SelectedAppUserId');
+      if (currentUser !== 'admin') {
+        const appUser = appUsers.find(user => user.id === currentUser);
+        if (appUser) {
+          const cleanedBranches = appUser.AllowedBranches.split(',')
+            .filter((branch) => branch.length === 36)
+            .join(',');
+          const updatedBranches = cleanedBranches + ',' + branchId;
+          await updateValueOnline(
+            'app_users',
+            appUser.id,
+            'AllowedBranches',
+            updatedBranches
+          );
+          await appUsersManagement();
+        }
+      }
 
       // If successful, refresh the branches list
       await handleFetchBranches();
@@ -1347,9 +1358,9 @@ const AccountManager = (React.FC<MyComponentProps> = ({
 
       // Show success message
       showAlert('Property added successfully!', 'success');
-    } catch (error) {
-      console.error('Detailed error adding branch:', error);
-      showAlert(`Failed to add branch: ${error.message}`);
+    } catch (error: any) {
+      console.error('Detailed error adding property:', error);
+      showAlert(`Failed to add property: ${error.message}`);
     } finally {
       setIsAddingBranch(false);
     }
@@ -1417,18 +1428,19 @@ const AccountManager = (React.FC<MyComponentProps> = ({
   const { confirm } = useConfirm();
   const handleDeleteBranch = async (branchId: string) => {
     const choice = await confirm(
-      'Are you sure you want to delete this branch?',
+      'Are you sure you want to delete this branch? This action is Irreversible.',
       {
         title: 'Delete Property',
         confirmText: 'Delete',
-        cancelText: 'Keep',
+        cancelText: 'Cancel',
         type: 'danger',
       }
     );
     if (!choice) return;
     try {
       await deleteValueOnline('branches', branchId);
-
+      setShowEditBranchModal(false);
+      setEditingBranch(null);
       handleFetchBranches();
     } catch (error) {
       showAlert(
@@ -1567,7 +1579,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
 
       if (maxBranches <= currentBranches) {
         showAlert(
-          'You have reached the maximum number of properties allowed for your account. Please contact support to increase your limit. +2519 4450 9999 or +2519 4450 8888, or email rentmaster.et@gmail.com',
+          'You have reached the maximum number of properties allowed for now. Please contact support to increase your limit. +2519 4450 9999, or email rentmaster.et@gmail.com This is in case of data abuse',
           'error'
         );
 
@@ -1698,6 +1710,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
       }
     } finally {
       setIsCheckingPasswordAPPUSER(false);
+      setPasswordCheckInputAPPUSER('');
     }
   };
   const handleSwitchUserFromMainAPP = async () => {
@@ -1788,7 +1801,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
     }
     setIsCheckingPasswordAPPUSER(false);
   };
- 
+
   const LogIn = () => {
     return (
       <div
@@ -2115,7 +2128,11 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                     display: 'flex',
                                     justifyContent: 'center',
                                   }}
-                                  onClick={() => {handleSwitchUserFromMainAPP(); setPasswordCheckInput('');}}
+                                  onClick={() => {
+                                    handleSwitchUserFromMainAPP();
+                                    setPasswordCheckInput('');
+                                    setPasswordCheckInputAPPUSER('');
+                                  }}
                                 >
                                   Sign in{' '}
                                   {isCheckingPasswordAPPUSER && (
@@ -2130,18 +2147,23 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                             </div>
                           </div>
                         ) : (
-                          <>
+                          <div style={{height: '100%', width: '100%', display:"flex", flexDirection:"column", justifyContent:"flex-start"}}>
                             <div
                               style={{
                                 display: 'flex',
                                 justifyContent: 'space-between',
                                 alignItems: 'center',
-                                marginBottom: 'var(--20px-V)',
+           
                                 padding: 'var(--20px-V)',
                               }}
                             >
                               <div>
-                                <h1 style={{ margin: 0 }}>User Management</h1>
+                                <h1
+                                  style={{ margin: 0 }}
+                                  id="App-User-Manager-Title"
+                                >
+                                  User Management
+                                </h1>
                                 <p
                                   style={{
                                     margin: 'var(--10px-V) 0 0 0',
@@ -2160,32 +2182,17 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                 >
                                   Refresh
                                 </button>
-                                {storageManager.get('SelectedAppUserId') ===
-                                '' ? (
-                                  <></>
-                                ) : (
-                                  <button
-                                    className="appUserButtons"
-                                    onClick={() => setAppUserManagerShow(false)}
-                                    style={{ marginRight: 'var(--10px-V)' }}
-                                  >
-                                    Back
-                                  </button>
-                                )}
+
                                 <button
                                   className="appUserButtons"
                                   onClick={handleAddNewAppUser}
+                                  id="app-user-buttons"
                                 >
                                   Add New User
                                 </button>
                               </div>
                             </div>
-                            <div
-                              style={{
-                                height: 'calc(100% - var(--105px-V))',
-                                overflowY: 'auto',
-                              }}
-                            >
+                           
                               <div
                                 style={{
                                   display: 'flex',
@@ -2197,6 +2204,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                 <div
                                   style={{ display: 'flex' }}
                                   className="abcScroll"
+                                  id="app-user-list"
                                 >
                                   <div className="appUserItemM appUserItem">
                                     <div>
@@ -2208,6 +2216,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                         </span>
                                         <button
                                           className="appUserButtons"
+                                          style={{backgroundColor:"var(--Primary-Color)", color:"var(--Text-Color-Reverse)"}}
                                           onClick={() =>
                                             handleSelectUser({
                                               id: 'admin',
@@ -2249,7 +2258,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                     )
                                     .map((appUser) => (
                                       <div
-                                        id={`app-user-${appUser.id}`}
+                                        id={`${appUser.id}`}
                                         className="appUserItem"
                                       >
                                         <div>
@@ -2277,11 +2286,10 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                                   }
                                                   style={{
                                                     fontSize: 'var(--20px-V)',
-                                                    marginRight:
-                                                      'var(--10px-V)',
-                                                    width: '100%',
+                                                    width: '99%',
                                                     marginBottom: '10px',
                                                   }}
+                                                  id={appUser.id + " app-user-edit-name-input"}
                                                 />
 
                                                 <div>
@@ -2290,6 +2298,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                                     onClick={() =>
                                                       handleSaveEdit(appUser.id)
                                                     }
+                                                    id={appUser.id + " app-user-edit-name-save"}  
                                                   >
                                                     Save
                                                   </button>
@@ -2322,12 +2331,13 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                                 >
                                                   {appUser.roleName}
                                                 </span>
-                                                <div>
+                                                <div id={appUser.id + " app-user-edit-select"}>
                                                   <button
                                                     className="appUserButtons"
+                                               
                                                     onClick={() =>
                                                       handleSelectUser(appUser)
-                                                    }
+                                                    }style={{marginLeft: '0px', backgroundColor:"var(--Primary-Color)", color:"var(--Text-Color-Reverse)"}}
                                                   >
                                                     Select
                                                   </button>
@@ -2343,7 +2353,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                               </>
                                             )}
                                           </div>
-                                          <div className="privileges-list">
+                                          <div className="privileges-list"id={appUser.id + " privileges-list"}>
                                             {privilegeHierarchy.map(
                                               (privilege) => (
                                                 <PrivilegeItem
@@ -2402,7 +2412,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                           </div>
                                           <hr />
                                         </div>
-                                        <div>
+                                        <div id={appUser.id + " appuser-properties-list"}>
                                           <h2
                                             style={{
                                               textAlign: 'left',
@@ -2410,8 +2420,8 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                               marginBottom: 'var(--10px-V)',
                                             }}
                                           >
-                                            Allowed Properties{' '}
-                                            <select
+                                            Allowed Properties{' '} 
+                                        <div><select
                                               name=""
                                               key={`select-${appUser.id}`}
                                               id=""
@@ -2421,6 +2431,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                                 );
                                               }}
                                               value={SelectedBranchIdADD}
+                                              style={{marginRight:"var(--10px-V)", padding:"var(--5px-V)"}}
                                             >
                                               <option
                                                 value={
@@ -2452,7 +2463,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                             >
                                               {!AddBranchToUserIsAdding &&
                                                 'Add'}
-                                            </button>
+                                            </button></div>    
                                           </h2>
                                           <div
                                             style={{
@@ -2487,9 +2498,9 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                                 backgroundColor:
                                                   'var(--Secondary-Color60)',
                                                 marginTop: 'auto',
-                                                marginRight: 'auto',
+                                         
                                                 marginBottom: 'var(--5px-V)',
-                                                marginLeft: 'auto',
+                                             
                                                 paddingLeft: 'var(--5px-V)',
                                                 borderRadius: 'var(--5px-V)',
                                               }}
@@ -2510,158 +2521,81 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                               </button>
                                             </span>
                                           ))}
-                                          <hr />
+                                        </div>
+                                          <hr  style={{width: '100%', marginBottom:"0px"}}/>
+                                        <div id={appUser.id + " appuser-account-password"}>
                                           <h2
                                             style={{
                                               textAlign: 'left',
                                               width: '100%',
                                               marginBottom: 'var(--10px-V)',
+                                              marginTop: 'var(--10px-V)',
                                             }}
                                           >
-                                            Sign in with password
+                                            Password Settings
                                           </h2>
+                                          
                                           {appUser.EnterWithPassword ? (
                                             <div>
-                                              <button
-                                                onClick={() => {
-                                                  if (IsTrueAdmin) {
-                                                    setIsTrueAdmin(false);
-                                                  } else {
-                                                    setCheckIfTureAdmin(true);
-                                                  }
-                                                }}
-                                                style={{
-                                                  marginRight: 'var(--10px-V)',
-                                                }}
-                                              >
-                                                {IsTrueAdmin ? 'Hide' : 'Show'}
-                                              </button>
-                                              User password:{' '}
-                                              {IsTrueAdmin
-                                                ? appUser.password
-                                                : '********'}
-                                              <div style={{ display: 'flex' }}>
-                                                {IsTrueAdmin &&
-                                                  ChangingPasswordId !==
-                                                    appUser.id && (
-                                                    <button
-                                                      onClick={() =>
-                                                        setChangingPasswordId(
-                                                          appUser.id
-                                                        )
-                                                      }
-                                                    >
-                                                      Change Password
-                                                    </button>
-                                                  )}
-                                                {ChangingPasswordId !==
-                                                  appUser.id && (
-                                                  <button
-                                                    onClick={() => {
-                                                      handleDisallowEnterWithPassword(
-                                                        appUser
-                                                      );
-                                                    }}
-                                                  >
-                                                    Don't allow entering with
-                                                    password
+                                              <div style={{marginBottom: 'var(--10px-V)'}}>
+                                                <button
+                                                  onClick={() => setIsTrueAdmin(!IsTrueAdmin)}
+                                                  style={{marginRight: 'var(--10px-V)'}}
+                                                >
+                                                  {IsTrueAdmin ? 'Hide Password' : 'Show Password'}
+                                                </button>
+                                                <span>Current Password: {IsTrueAdmin ? appUser.password : '********'}</span>
+                                              </div>
+
+                                              <div style={{display: 'flex', gap: 'var(--10px-V)'}}>
+                                                {IsTrueAdmin && ChangingPasswordId !== appUser.id && (
+                                                  <button onClick={() => setChangingPasswordId(appUser.id)}>
+                                                    Change Password
                                                   </button>
                                                 )}
-                                                {ChangingPasswordId ===
-                                                  appUser.id && (
-                                                  <>
+                                                
+                                                {ChangingPasswordId !== appUser.id && (
+                                                  <button onClick={() => handleDisallowEnterWithPassword(appUser)}>
+                                                    Disable Password Login
+                                                  </button>
+                                                )}
+
+                                                {ChangingPasswordId === appUser.id && (
+                                                  <div style={{display: 'flex', gap: 'var(--10px-V)'}}>
                                                     <input
-                                                      type={'text'}
-                                                      placeholder="New Password"
-                                                      style={{
-                                                        width: 'var(--180px-V)',
-                                                      }}
+                                                      type="text"
+                                                      placeholder="Enter new password"
+                                                      style={{width: 'var(--180px-V)'}}
                                                       value={NewAdminPassword}
-                                                      onChange={(e) =>
-                                                        setNewAdminPassword(
-                                                          e.target.value
-                                                        )
-                                                      }
+                                                      onChange={(e) => setNewAdminPassword(e.target.value)}
                                                     />
-                                                    <button
-                                                      onClick={() => {
-                                                        handleApplyPASSWORD();
-                                                      }}
-                                                      style={{
-                                                        marginRight:
-                                                          'var(--10px-V)',
-                                                      }}
-                                                    >
-                                                      Done
-                                                    </button>
-                                                    <button
-                                                      onClick={() => {
-                                                        setChangingPasswordId(
-                                                          ''
-                                                        );
-                                                      }}
-                                                    >
-                                                      Cancel
-                                                    </button>
-                                                  </>
+                                                    <button onClick={handleApplyPASSWORD}>Save</button>
+                                                    <button onClick={() => setChangingPasswordId('')}>Cancel</button>
+                                                  </div>
                                                 )}
                                               </div>
                                             </div>
                                           ) : (
-                                            <>
-                                              <button
+                                            <div>
+                                              
+                                              <span >
+                                                Password login is currently disabled
+                                              </span><button
                                                 onClick={() => {
-                                                  if (IsTrueAdmin) {
-                                                    if (
-                                                      appUser.EnterWithPassword
-                                                    ) {
-                                                      handleDisallowEnterWithPassword(
-                                                        appUser
-                                                      );
-                                                    } else {
-                                                      handleAllowEnterWithPassword(
-                                                        appUser
-                                                      );
-                                                      if (
-                                                        appUser.password === ''
-                                                      ) {
-                                                        setChangingPasswordId(
-                                                          appUser.id
-                                                        );
-                                                      }
-                                                    }
-                                                  } else {
+                                                  if (!IsTrueAdmin) {
                                                     setCheckIfTureAdmin(true);
-                                                    if (
-                                                      appUser.EnterWithPassword
-                                                    ) {
-                                                      handleDisallowEnterWithPassword(
-                                                        appUser
-                                                      );
-                                                    } else {
-                                                      handleAllowEnterWithPassword(
-                                                        appUser
-                                                      );
+                                                  }
+                                                  if (IsTrueAdmin) {
+                                                    handleAllowEnterWithPassword(appUser);
+                                                    if (!appUser.password) {
+                                                      setChangingPasswordId(appUser.id);
                                                     }
                                                   }
                                                 }}
-                                                style={{
-                                                  marginRight: 'var(--10px-V)',
-                                                }}
                                               >
-                                                {IsTrueAdmin
-                                                  ? appUser.EnterWithPassword
-                                                    ? 'Disallow'
-                                                    : 'Allow'
-                                                  : appUser.EnterWithPassword
-                                                  ? 'Allow'
-                                                  : 'Allow'}
+                                                Enable Password Login
                                               </button>
-                                              Enter with password:{' '}
-                                              {appUser.EnterWithPassword
-                                                ? 'Yes'
-                                                : 'No'}
-                                            </>
+                                            </div>
                                           )}
                                         </div>
                                       </div>
@@ -2678,8 +2612,8 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                   {privilegeError}
                                 </div>
                               )}
-                            </div>
-                          </>
+                          
+                          </ div>
                         )
                       ) : ViewBranchManagementPage ? (
                         ViewBranchManagementPageNONAdm ? (
@@ -2813,26 +2747,35 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                 }}
                               >
                                 {' '}
-                                <h1 id="Property-Management-Title" style={{ margin: 0 }}>
+                                <h1
+                                  id="Property-Management-Title"
+                                  style={{ margin: 0 }}
+                                >
                                   Property Management
                                 </h1>
-                                <p style={{ margin: 0 }}>
+                                <p
+                                  id="Property-Management-switchUser"
+                                  style={{ width: 'max-content' }}
+                                >
+                                  {' '}
                                   {storageManager.get('SelectedAppUserId') ===
                                   'admin' ? (
-                                    <>Admin</>
+                                    <>Admin - <button onClick={handleSwitchUserInBranchManagement}>Go to App Users</button></>
                                   ) : (
-                                    appUsers.find(
-                                      (appUser) =>
-                                        appUser.id ===
-                                        storageManager.get('SelectedAppUserId')
-                                    )?.roleName
-                                  )}{' '}
-                                  -{' '}
-                                  <button
-                                    onClick={handleSwitchUserInBranchManagement}
-                                  >
-                                    Switch user
-                                  </button>
+                                    <>
+                                      {appUsers.find(
+                                        (appUser) =>
+                                          appUser.id ===
+                                          storageManager.get('SelectedAppUserId')
+                                      )?.roleName}{' '}
+                                      -{' '}
+                                      <button
+                                        onClick={handleSwitchUserInBranchManagement}
+                                      >
+                                        Switch user
+                                      </button>
+                                    </>
+                                  )}
                                 </p>
                               </div>
                               <p style={{ width: '40%' }}>
@@ -2846,8 +2789,16 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                   </>
                                 )}
                               </p>{' '}
-                              <div>
-                                {(storageManager.get('SelectedAppUserId') ===
+                              <div
+                                id="Property-Management-Buttons"
+                                style={{
+                                  display: 'flex',
+                                  gap: 'var(--15px-V)',
+                                  alignItems: 'center',
+                                  padding: 'var(--10px-V)',
+                                }}
+                              >
+                                {/* {(storageManager.get('SelectedAppUserId') ===
                                   'admin' ||
                                   appUsers
                                     .find(
@@ -2855,14 +2806,12 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                         appUser.id ===
                                         storageManager.get('SelectedAppUserId')
                                     )
-                                    ?.privileges.includes('add a branch')) && (
+                                    ?.privileges.includes('manage properties')) && (
                                   <>
                                     Limit {Branches.length}/{BranchLimit}
                                   </>
-                                )}
+                                )} */}
                                 <button
-                                  className="appUserButtons"
-                                  style={{ marginRight: 'var(--20px-V)' }}
                                   onClick={() => {
                                     handleFetchBranches();
                                   }}
@@ -2879,10 +2828,9 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                       appUser.id ===
                                         storageManager.get('SelectedAppUserId')
                                   )
-                                  ?.privileges.includes('add a branch') ? (
+                                  ?.privileges.includes('manage properties') ? (
                                   <button
-                                    className="appUserButtons"
-                                    style={{ marginRight: 'var(--20px-V)' }}
+                                    style={{ margin: 'none' }}
                                     onClick={() => handleAddBranchFunction()}
                                     id="property-add-btn"
                                   >
@@ -2891,18 +2839,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                 ) : (
                                   <></>
                                 )}
-                                {Branches.length > 0 &&
-                                  storageManager.get('SelectedBranchId') !==
-                                    '' &&
-                                  storageManager.get('SelectedBranchId') && (
-                                    <button
-                                      onClick={() =>
-                                        setViewBranchManagementPage(false)
-                                      }
-                                    >
-                                      Back
-                                    </button>
-                                  )}
+                               
                               </div>
                             </div>
 
@@ -2913,7 +2850,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                   justifyContent: 'center',
                                   alignItems: 'center',
                                   minHeight: '200px',
-                                  zIndex:"1000"
+                                  zIndex: '1000',
                                 }}
                               >
                                 <img
@@ -2928,6 +2865,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                             ) : (
                               <div
                                 className="branch-list"
+                                id="Property-Management-List"
                                 style={{
                                   display: 'flex',
                                   flexWrap: 'wrap',
@@ -3029,19 +2967,6 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                             }}
                                           >
                                             Edit
-                                          </button>
-                                          <button
-                                            className="appUserButtons"
-                                            onClick={() =>
-                                              handleDeleteBranch(branch.id)
-                                            }
-                                            style={{
-                                              padding:
-                                                'var(--8px-V) var(--12px-V)',
-                                              fontSize: 'var(--14px-V)',
-                                            }}
-                                          >
-                                            Delete
                                           </button>
                                         </div>
                                       </div>
@@ -3225,7 +3150,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                             color: 'var(--Text-Color-Reverse)',
                                           }}
                                         >
-                                          Select Property
+                                          Manage Property
                                         </button>
 
                                         {/* <label
@@ -3260,7 +3185,31 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                       </div>
                                     </div>
                                   ))
-                                )}
+                                )}{Math.abs(Branches.filter(
+                                  (branch: any) =>
+                                    storageManager.get('SelectedAppUserId') ===
+                                      'admin' ||
+                                    appUsers
+                                      .find(
+                                        (appUser) =>
+                                          appUser.id ===
+                                          storageManager.get(
+                                            'SelectedAppUserId'
+                                          )
+                                      )
+                                      ?.AllowedBranches.includes(branch.id)).length - Branches.length) === 0 ? "": Math.abs(Branches.filter(
+                                        (branch: any) =>
+                                          storageManager.get('SelectedAppUserId') ===
+                                            'admin' ||
+                                          appUsers
+                                            .find(
+                                              (appUser) =>
+                                                appUser.id ===
+                                                storageManager.get(
+                                                  'SelectedAppUserId'
+                                                )
+                                            )
+                                            ?.AllowedBranches.includes(branch.id)).length - Branches.length) + " Hidden"} 
 
                                 {Branches.length === 0 && (
                                   <div
@@ -3289,206 +3238,214 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                 )
               ) : isSignUpMode ? (
                 <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  height: '100%',
-                  flexDirection: 'column',
-                }}
-              >
-                {isSignedIn && (
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      marginBottom: 'var(--10px-V)',
-                      marginTop: 'var(--10px-V)',
-                      background: 'var(--Secondary-Color20)',
-                      padding: 'var(--7px-V)',
-                      borderRadius: 'var(--5px-V)',
-                      boxShadow:
-                        'var(--0px-V) var(--4px-V) var(--4px-V) var(--0px-V) rgba(0, 0, 0, 0.25)',
-                    }}
-                  >
-                    Found an account: {storageManager.get('users')[0].companyName}{' '}
-                    <button
-                      style={{ marginLeft: 'var(--10px-V)' }}
-                      onClick={() => {
-                        window.location.pathname = '/app';
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    height: '100%',
+                    flexDirection: 'column',
+                  }}
+                >
+                  {isSignedIn && (
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        marginBottom: 'var(--10px-V)',
+                        marginTop: 'var(--10px-V)',
+                        background: 'var(--Secondary-Color20)',
+                        padding: 'var(--7px-V)',
+                        borderRadius: 'var(--5px-V)',
+                        boxShadow:
+                          'var(--0px-V) var(--4px-V) var(--4px-V) var(--0px-V) rgba(0, 0, 0, 0.25)',
                       }}
                     >
-                      Open
-                    </button>
-                  </div>
-                )}
-                <LoginPage
-                  setisSignUpMode={setisSignUpMode}
-                  setisSignedIn={setisSignedIn}
-                  setChangeMade={setChangeMade}
-                  email={email}
-                  password={password}
-                  setEmail={setEmail}
-                  username={username}
-                  setUsername={setUsername}
-                  setPassword={setPassword}
-                  setSelectedAppUser={setSelectedAppUser}
-                  setAppUserManagerShow={setAppUserManagerShow}
-                  fetchBranches={handleShowBranches}
-                  RefreshComponent={RefreshComponent}
-                  setViewBranchManagementPage={setViewBranchManagementPage}
-                />
-              </div>
+                      Found an account:{' '}
+                      {storageManager.get('users')[0].companyName}{' '}
+                      <button
+                        style={{ marginLeft: 'var(--10px-V)' }}
+                        onClick={() => {
+                          window.location.pathname = '/app';
+                        }}
+                      >
+                        Open
+                      </button>
+                    </div>
+                  )}
+                  <LoginPage
+                    setisSignUpMode={setisSignUpMode}
+                    setisSignedIn={setisSignedIn}
+                    setChangeMade={setChangeMade}
+                    email={email}
+                    password={password}
+                    setEmail={setEmail}
+                    username={username}
+                    setUsername={setUsername}
+                    setPassword={setPassword}
+                    setSelectedAppUser={setSelectedAppUser}
+                    setAppUserManagerShow={setAppUserManagerShow}
+                    fetchBranches={handleShowBranches}
+                    RefreshComponent={RefreshComponent}
+                    setViewBranchManagementPage={setViewBranchManagementPage}
+                  />
+                </div>
               ) : (
                 <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  height: '100%',
-                  flexDirection: 'column',
-                }}
-              >
-                {isSignedIn && (
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      marginBottom: 'var(--10px-V)',
-                      marginTop: 'var(--10px-V)',
-                      background: 'var(--Secondary-Color20)',
-                      padding: 'var(--7px-V)',
-                      borderRadius: 'var(--5px-V)',
-                      boxShadow:
-                        'var(--0px-V) var(--4px-V) var(--4px-V) var(--0px-V) rgba(0, 0, 0, 0.25)',
-                    }}
-                  >
-                    Found an account: {storageManager.get('users')[0].companyName}{' '}
-                    <button
-                      style={{ marginLeft: 'var(--10px-V)' }}
-                      onClick={() => {
-                        window.location.pathname = '/app';
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    height: '100%',
+                    flexDirection: 'column',
+                  }}
+                >
+                  {isSignedIn && (
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        marginBottom: 'var(--10px-V)',
+                        marginTop: 'var(--10px-V)',
+                        background: 'var(--Secondary-Color20)',
+                        padding: 'var(--7px-V)',
+                        borderRadius: 'var(--5px-V)',
+                        boxShadow:
+                          'var(--0px-V) var(--4px-V) var(--4px-V) var(--0px-V) rgba(0, 0, 0, 0.25)',
                       }}
                     >
-                      Open
-                    </button>
-                  </div>
-                )}
-                <LoginPage
-                  setisSignUpMode={setisSignUpMode}
-                  setisSignedIn={setisSignedIn}
-                  setChangeMade={setChangeMade}
-                  email={email}
-                  password={password}
-                  setEmail={setEmail}
-                  username={username}
-                  setUsername={setUsername}
-                  setPassword={setPassword}
-                  setSelectedAppUser={setSelectedAppUser}
-                  setAppUserManagerShow={setAppUserManagerShow}
-                  fetchBranches={handleShowBranches}
-                  RefreshComponent={RefreshComponent}
-                  setViewBranchManagementPage={setViewBranchManagementPage}
-                />
-              </div>
+                      Found an account:{' '}
+                      {storageManager.get('users')[0].companyName}{' '}
+                      <button
+                        style={{ marginLeft: 'var(--10px-V)' }}
+                        onClick={() => {
+                          window.location.pathname = '/app';
+                        }}
+                      >
+                        Open
+                      </button>
+                    </div>
+                  )}
+                  <LoginPage
+                    setisSignUpMode={setisSignUpMode}
+                    setisSignedIn={setisSignedIn}
+                    setChangeMade={setChangeMade}
+                    email={email}
+                    password={password}
+                    setEmail={setEmail}
+                    username={username}
+                    setUsername={setUsername}
+                    setPassword={setPassword}
+                    setSelectedAppUser={setSelectedAppUser}
+                    setAppUserManagerShow={setAppUserManagerShow}
+                    fetchBranches={handleShowBranches}
+                    RefreshComponent={RefreshComponent}
+                    setViewBranchManagementPage={setViewBranchManagementPage}
+                  />
+                </div>
               )
             ) : (
               <>
-                {ForceSignUp === 'in' && <div
-        style={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          height: '100%',
-          flexDirection: 'column',
-        }}
-      >
-        {isSignedIn && (
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              marginBottom: 'var(--10px-V)',
-              marginTop: 'var(--10px-V)',
-              background: 'var(--Secondary-Color20)',
-              padding: 'var(--7px-V)',
-              borderRadius: 'var(--5px-V)',
-              boxShadow:
-                'var(--0px-V) var(--4px-V) var(--4px-V) var(--0px-V) rgba(0, 0, 0, 0.25)',
-            }}
-          >
-            Found an account: {storageManager.get('users')[0].companyName}{' '}
-            <button
-              style={{ marginLeft: 'var(--10px-V)' }}
-              onClick={() => {
-                window.location.pathname = '/app';
-              }}
-            >
-              Open
-            </button>
-          </div>
-        )}
-        <LoginPage
-          setisSignUpMode={setisSignUpMode}
-          setisSignedIn={setisSignedIn}
-          setChangeMade={setChangeMade}
-          email={email}
-          password={password}
-          setEmail={setEmail}
-          username={username}
-          setUsername={setUsername}
-          setPassword={setPassword}
-          setSelectedAppUser={setSelectedAppUser}
-          setAppUserManagerShow={setAppUserManagerShow}
-          fetchBranches={handleShowBranches}
-          RefreshComponent={RefreshComponent}
-          setViewBranchManagementPage={setViewBranchManagementPage}
-        />
-      </div>}
-                {ForceSignUp === 'up' &&    <div
-        style={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          height: '100%',
-          flexDirection: 'column',
-        }}
-      >
-        {isSignedIn && (
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              marginBottom: 'var(--10px-V)',
-              marginTop: 'var(--10px-V)',
-              background: 'var(--Secondary-Color20)',
-              padding: 'var(--7px-V)',
-              borderRadius: 'var(--5px-V)',
-              boxShadow:
-                'var(--0px-V) var(--4px-V) var(--4px-V) var(--0px-V) rgba(0, 0, 0, 0.25)',
-            }}
-          >
-            Found an account: {storageManager.get('users')[0].companyName}{' '}
-            <button
-              style={{ marginLeft: 'var(--10px-V)' }}
-              onClick={() => {
-                window.location.pathname = '/app';
-              }}
-            >
-              Open
-            </button>
-          </div>
-        )}
-        <SignUpPage
-          setisSignUpMode={setisSignUpMode}
-          setisSignedIn={setisSignedIn}
-          setChangeMade={setChangeMade}
-          email={email}
-          password={password}
-          setEmail={setEmail}
-          setPassword={setPassword}
-        />
-      </div>}
+                {ForceSignUp === 'in' && (
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      height: '100%',
+                      flexDirection: 'column',
+                    }}
+                  >
+                    {isSignedIn && (
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          marginBottom: 'var(--10px-V)',
+                          marginTop: 'var(--10px-V)',
+                          background: 'var(--Secondary-Color20)',
+                          padding: 'var(--7px-V)',
+                          borderRadius: 'var(--5px-V)',
+                          boxShadow:
+                            'var(--0px-V) var(--4px-V) var(--4px-V) var(--0px-V) rgba(0, 0, 0, 0.25)',
+                        }}
+                      >
+                        Found an account:{' '}
+                        {storageManager.get('users')[0].companyName}{' '}
+                        <button
+                          style={{ marginLeft: 'var(--10px-V)' }}
+                          onClick={() => {
+                            window.location.pathname = '/app';
+                          }}
+                        >
+                          Open
+                        </button>
+                      </div>
+                    )}
+                    <LoginPage
+                      setisSignUpMode={setisSignUpMode}
+                      setisSignedIn={setisSignedIn}
+                      setChangeMade={setChangeMade}
+                      email={email}
+                      password={password}
+                      setEmail={setEmail}
+                      username={username}
+                      setUsername={setUsername}
+                      setPassword={setPassword}
+                      setSelectedAppUser={setSelectedAppUser}
+                      setAppUserManagerShow={setAppUserManagerShow}
+                      fetchBranches={handleShowBranches}
+                      RefreshComponent={RefreshComponent}
+                      setViewBranchManagementPage={setViewBranchManagementPage}
+                    />
+                  </div>
+                )}
+                {ForceSignUp === 'up' && (
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      height: '100%',
+                      flexDirection: 'column',
+                    }}
+                  >
+                    {isSignedIn && (
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          marginBottom: 'var(--10px-V)',
+                          marginTop: 'var(--10px-V)',
+                          background: 'var(--Secondary-Color20)',
+                          padding: 'var(--7px-V)',
+                          borderRadius: 'var(--5px-V)',
+                          boxShadow:
+                            'var(--0px-V) var(--4px-V) var(--4px-V) var(--0px-V) rgba(0, 0, 0, 0.25)',
+                        }}
+                      >
+                        Found an account:{' '}
+                        {storageManager.get('users')[0].companyName}{' '}
+                        <button
+                          style={{ marginLeft: 'var(--10px-V)' }}
+                          onClick={() => {
+                            window.location.pathname = '/app';
+                          }}
+                        >
+                          Open
+                        </button>
+                      </div>
+                    )}
+                    <SignUpPage
+                      setisSignUpMode={setisSignUpMode}
+                      setisSignedIn={setisSignedIn}
+                      setChangeMade={setChangeMade}
+                      email={email}
+                      password={password}
+                      setEmail={setEmail}
+                      setPassword={setPassword}
+                    />
+                  </div>
+                )}
               </>
             )}
           </>
@@ -3508,110 +3465,110 @@ const AccountManager = (React.FC<MyComponentProps> = ({
               display: 'flex',
               justifyContent: 'center',
               alignItems: 'center',
-              zIndex: 100,
+            }}
+          ></div>{' '}
+          <div
+            id="add-new-property-panel"
+            style={{
+              backgroundColor: 'var(--Background-Color)',
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              padding: 'var(--20px-V)',
+              borderRadius: 'var(--8px-V)',
+              width: 'var(--400px-V)',
+              maxWidth: '90%',
             }}
           >
             <div
               style={{
-                backgroundColor: 'var(--Background-Color)',
-                padding: 'var(--20px-V)',
-                borderRadius: 'var(--8px-V)',
-                width: 'var(--400px-V)',
-                maxWidth: '90%',
-              }}       id="add-new-property-panel"
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: 'var(--20px-V)',
+              }}
             >
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  marginBottom: 'var(--20px-V)',
-                
-                }}
-       
+              <h2 style={{ margin: 0 }}>Add New Property</h2>
+              <button
+                className="appUserButtons"
+                onClick={() => setShowAddBranchModal(false)}
               >
-                <h2 style={{ margin: 0 }}>Add New Property</h2>
-                <button
-                  className="appUserButtons"
-                  onClick={() => setShowAddBranchModal(false)}
-                >
-                  ✕
-                </button>
-              </div>
+                ✕
+              </button>
+            </div>
 
-              <div style={{ marginBottom: 'var(--15px-V)' }}>
-                <label
-                  style={{ display: 'block', marginBottom: 'var(--5px-V)' }}
-                >
-                  Property Name:
-                </label>
-                <input
-                  type="text"
-                  value={newBranchData.name}
-                  onChange={(e) =>
-                    setNewBranchData((prev) => ({
-                      ...prev,
-                      name: e.target.value,
-                    }))
-                  }
-                  placeholder="Enter Property Name"
-                  style={{
-                    width: '95%',
-                    padding: 'var(--8px-V)',
-                    borderRadius: 'var(--4px-V)',
-                  }}
-                />
-              </div>
+            <div style={{ marginBottom: 'var(--15px-V)' }}>
+              <label style={{ display: 'block', marginBottom: 'var(--5px-V)' }}>
+                Property Name:
+              </label>
+              <input
+                type="text"
+                id="add-property-name"
+                value={newBranchData.name}
+                onChange={(e) =>
+                  setNewBranchData((prev) => ({
+                    ...prev,
+                    name: e.target.value,
+                  }))
+                }
+                placeholder="Enter Property Name"
+                style={{
+                  width: '95%',
+                  padding: 'var(--8px-V)',
+                  borderRadius: 'var(--4px-V)',
+                  position: 'relative',
+                }}
+              />
+            </div>
 
-              <div style={{ marginBottom: 'var(--15px-V)' }}>
-                <label
-                  style={{ display: 'block', marginBottom: 'var(--5px-V)' }}
-                >
-                  Location:
-                </label>
-                <input
-                  type="text"
-                  value={newBranchData.location}
-                  onChange={(e) =>
-                    setNewBranchData((prev) => ({
-                      ...prev,
-                      location: e.target.value,
-                    }))
-                  }
-                  placeholder="Enter Property Location"
-                  style={{
-                    width: '95%',
-                    padding: 'var(--8px-V)',
-                    borderRadius: 'var(--4px-V)',
-                  }}
-                />
-              </div>
+            <div style={{ marginBottom: 'var(--15px-V)' }}>
+              <label style={{ display: 'block', marginBottom: 'var(--5px-V)' }}>
+                Location:
+              </label>
+              <input
+                type="text"
+                id="add-property-location"
+                value={newBranchData.location}
+                onChange={(e) =>
+                  setNewBranchData((prev) => ({
+                    ...prev,
+                    location: e.target.value,
+                  }))
+                }
+                placeholder="Enter Property Location"
+                style={{
+                  width: '95%',
+                  padding: 'var(--8px-V)',
+                  borderRadius: 'var(--4px-V)',
+                }}
+              />
+            </div>
 
-              <div style={{ marginBottom: 'var(--15px-V)' }}>
-                <label
-                  style={{ display: 'block', marginBottom: 'var(--5px-V)' }}
-                >
-                  Description:
-                </label>
-                <textarea
-                  value={newBranchData.description}
-                  onChange={(e) =>
-                    setNewBranchData((prev) => ({
-                      ...prev,
-                      description: e.target.value,
-                    }))
-                  }
-                  placeholder="Enter Property Description"
-                  style={{
-                    width: '95%',
-                    padding: 'var(--8px-V)',
-                    borderRadius: 'var(--4px-V)',
-                    minHeight: '100px',
-                    resize: 'none',
-                  }}
-                />
-              </div>
-              {/** <div style={{ marginBottom: 'var(--20px-V)' }}>
+            <div style={{ marginBottom: 'var(--15px-V)' }}>
+              <label style={{ display: 'block', marginBottom: 'var(--5px-V)' }}>
+                Description:
+              </label>
+              <textarea
+                value={newBranchData.description}
+                onChange={(e) =>
+                  setNewBranchData((prev) => ({
+                    ...prev,
+                    description: e.target.value,
+                  }))
+                }
+                id="add-property-description"
+                placeholder="Enter Property Description"
+                style={{
+                  width: '95%',
+                  padding: 'var(--8px-V)',
+                  borderRadius: 'var(--4px-V)',
+                  minHeight: '100px',
+                  resize: 'none',
+                }}
+              />
+            </div>
+            {/** <div style={{ marginBottom: 'var(--20px-V)' }}>
                 <label
                   style={{ display: 'block', marginBottom: 'var(--5px-V)' }}
                 >
@@ -3632,35 +3589,35 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                 ></iframe>
               </div> */}
 
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'flex-end',
-                  gap: 'var(--10px-V)',
-                }}
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'flex-end',
+                gap: 'var(--10px-V)',
+              }}
+            >
+              <button
+                className="appUserButtons"
+                onClick={() => setShowAddBranchModal(false)}
               >
-                <button
-                  className="appUserButtons"
-                  onClick={() => setShowAddBranchModal(false)}
-                >
-                  Cancel
-                </button>
-                <button
-                  className="appUserButtons"
-                  onClick={handleAddBranch}
-                  disabled={isAddingBranch || !newBranchData.name.trim()}
-                >
-                  {isAddingBranch ? (
-                    <img
-                      src={loadingGif}
-                      alt="Loading..."
-                      style={{ width: '20px', height: '20px' }}
-                    />
-                  ) : (
-                    'Add Property'
-                  )}
-                </button>
-              </div>
+                Cancel
+              </button>
+              <button
+                id="add-property-final-btn"
+                className="appUserButtons"
+                onClick={handleAddBranch}
+                disabled={isAddingBranch || !newBranchData.name.trim()}
+              >
+                {isAddingBranch ? (
+                  <img
+                    src={loadingGif}
+                    alt="Loading..."
+                    style={{ width: '20px', height: '20px' }}
+                  />
+                ) : (
+                  'Add Property'
+                )}
+              </button>
             </div>
           </div>
         </>
@@ -3678,7 +3635,6 @@ const AccountManager = (React.FC<MyComponentProps> = ({
               display: 'flex',
               justifyContent: 'center',
               alignItems: 'center',
-              zIndex: 100,
             }}
           >
             <div
@@ -3704,11 +3660,12 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                 <h2
                   style={{
                     margin: 0,
-                    fontSize: 'var(--20px-V)',
-                    fontWeight: 600,
                   }}
                 >
-                  Edit Property
+                  Editing{' '}
+                  {Branches.find((b: BranchType) => b.id === editingBranch?.id)
+                    .name || ''}{' '}
+                  Property
                 </h2>
                 <button
                   className="appUserButtons"
@@ -3716,17 +3673,8 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                     setShowEditBranchModal(false);
                     setEditingBranch(null);
                   }}
-                  style={{
-                    padding: 'var(--8px-V)',
-                    borderRadius: '50%',
-                    minWidth: '32px',
-                    height: '32px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
                 >
-                  ✕
+                  X
                 </button>
               </div>
 
@@ -3846,7 +3794,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
               <div
                 style={{
                   display: 'flex',
-                  justifyContent: 'flex-end',
+                  justifyContent: 'space-between',
                   gap: 'var(--12px-V)',
                   borderTop: '1px solid var(--Text-Color-10)',
                   paddingTop: 'var(--20px-V)',
@@ -3855,38 +3803,42 @@ const AccountManager = (React.FC<MyComponentProps> = ({
               >
                 <button
                   className="appUserButtons"
-                  onClick={() => {
-                    setShowEditBranchModal(false);
-                    setEditingBranch(null);
-                  }}
+                  onClick={() => handleDeleteBranch(editingBranch?.id)}
                   style={{
-                    padding: 'var(--10px-V) var(--20px-V)',
-                    fontSize: 'var(--14px-V)',
-                    fontWeight: 500,
+                    marginLeft: '0px',
                   }}
                 >
-                  Cancel
+                  Delete
                 </button>
-                <button
-                  className="appUserButtons"
-                  onClick={handleEditBranch}
-                  disabled={isEditingBranch || !editingBranch?.name.trim()}
-                  style={{
-                    padding: 'var(--10px-V) var(--20px-V)',
-                    fontSize: 'var(--14px-V)',
-                    fontWeight: 500,
-                  }}
-                >
-                  {isEditingBranch ? (
-                    <img
-                      src={loadingGif}
-                      alt="Loading..."
-                      style={{ width: '20px', height: '20px' }}
-                    />
-                  ) : (
-                    'Save Changes'
-                  )}
-                </button>
+                <div>
+                  {' '}
+                  <button
+                    className="appUserButtons"
+                    onClick={() => {
+                      setShowEditBranchModal(false);
+                      setEditingBranch(null);
+                    }}
+                    style={{}}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className="appUserButtons"
+                    onClick={handleEditBranch}
+                    disabled={isEditingBranch || !editingBranch?.name.trim()}
+                    style={{}}
+                  >
+                    {isEditingBranch ? (
+                      <img
+                        src={loadingGif}
+                        alt="Loading..."
+                        style={{ width: '20px', height: '20px' }}
+                      />
+                    ) : (
+                      'Save Changes'
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
           </div>

@@ -16,7 +16,7 @@ const PORT = process.env.PORT || 3000;
 const apiKey = 'HH(CzZuQoW@tB)e';
 const baseDir = path.join(__dirname, 'User Files');
 const moment = require('moment');
-//
+// Middle
 // Increase payload size limit
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
@@ -552,7 +552,7 @@ fileManagerRouter.delete('/delete-receipt/:userId/:roomId/:date', async (req, re
     res.status(500).json({ error: 'Failed to delete receipt' });
   }
 });
-fileManagerRouter.get('/receipt-file/:roomId/:date', async (req, res) => {
+app.get('/receipt-file/:roomId/:date', async (req, res) => {
   try {
     const { roomId, date } = req.params;
     const userId = req.headers['user-id'];
@@ -582,18 +582,20 @@ const ONE_DAY_MS = 86400000; // milliseconds in a day
    
     // Check if directory exists
     if (!fs.existsSync(receiptDir)) {
-        logger.debug("Stop trippin");
+       
       return res.status(204).json({ error: 'Receipt directory not found' });
     }
 
     // Read directory and find matching receipt
+  
+    // Read directory and find matching receipt
     const files = await fs.promises.readdir(receiptDir);
     const receiptFile = files.find(file => file.startsWith(date));
-   logger.debug("Stop tripping",receiptFile); 
-    if (!receiptFile || receiptFile === undefined) {
     
-      return res.status(204).json({ error: 'Receipt not found' });
+    if (!receiptFile || receiptFile === undefined) {
+      return res.status(204).json({ message: 'Receipt not found' });
     }
+    
     
     const filePath = path.join(receiptDir, receiptFile);
     
@@ -1406,6 +1408,113 @@ fileManagerRouter.get('/download-image/:roomId/:folderName/:fileName/:userId', a
     res.status(500).json({ error: 'Failed to download image' });
   }
 });
+// Function to get receipt path for a payment
+function getReceiptPath(date, tenant, userId) {
+  try {
+    const paymentDate = new Date(date);
+    const receiptFileName = `${paymentDate.getFullYear()}-${String(
+      paymentDate.getMonth() + 1
+    ).padStart(2, '0')}-${String(paymentDate.getDate()).padStart(2, '0')}_`;
+
+    // Construct the receipts folder path
+    const receiptsPath = path.join(
+      __dirname,
+      'User Files',
+      userId,
+      'Room Documents',
+      `${tenant.name}, ${new Date(tenant.startTime).toDateString()}, ${tenant.id}`,
+      'receipts'
+    );
+
+    // Check if directory exists
+    if (!fs.existsSync(receiptsPath)) {
+      return null;
+    }
+
+    // Find matching receipt file
+    const files = fs.readdirSync(receiptsPath);
+    const receiptFile = files.find((file) => file.startsWith(receiptFileName));
+    
+    if (!receiptFile) {
+      return null;
+    }
+
+    return {
+      fileName: receiptFile,
+      fullPath: path.join(receiptsPath, receiptFile)
+    };
+  } catch (error) {
+    console.error('Error finding receipt:', error);
+    return null;
+  }
+}
+
+app.get("/receipt-get", async (req, res) => {
+  try {
+    const { date, tenant, userId } = req.query; // Changed from req.body since it's a GET request
+
+    // Validate required parameters
+    if (!date || !tenant || !userId) {
+      return res.status(400).json({
+        error: 'Missing required parameters',
+        details: {
+          date: !date ? 'missing' : 'present',
+          tenant: !tenant ? 'missing' : 'present',
+          userId: !userId ? 'missing' : 'present'
+        }
+      });
+    }
+
+    // Parse tenant data if it's a string
+    const tenantData = typeof tenant === 'string' ? JSON.parse(tenant) : tenant;
+
+    // Get receipt file information
+    const receiptInfo = await getReceiptPath(date, tenantData, userId);
+
+    if (!receiptInfo) {
+      return res.status(404).json({
+        error: 'Receipt not found',
+        details: {
+          date,
+          tenantName: tenantData.name,
+          userId
+        }
+      });
+    }
+
+    // Get file extension
+    const ext = path.extname(receiptInfo.fileName).toLowerCase();
+    const contentType = {
+      '.pdf': 'application/pdf',
+      '.jpg': 'image/jpeg',
+      '.jpeg': 'image/jpeg',
+      '.png': 'image/png'
+    }[ext] || 'application/octet-stream';
+
+    // Return receipt information
+    res.json({
+      success: true,
+      receipt: {
+        fileName: receiptInfo.fileName,
+        downloadUrl: `/download-receipt/${encodeURIComponent(userId)}/${encodeURIComponent(tenantData.id)}/${encodeURIComponent(receiptInfo.fileName)}`,
+        contentType,
+        date: date,
+        tenant: {
+          id: tenantData.id,
+          name: tenantData.name
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('Error processing receipt request:', error);
+    res.status(500).json({
+      error: 'Internal server error',
+      message: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
+});
 app.get('/download-image/:roomId/:folderName/:fileName/:userId', async (req, res) => {
   try {
     const { roomId, folderName, fileName, userId } = req.params;
@@ -1565,7 +1674,85 @@ fileManagerRouter.put('/rename-folder', async (req, res) => {
   }
 });
 
-// 9. Duplicate Room Images Folder
+// 8. Rename Folder
+fileManagerRouter.put('/rename-adddocument-folder', async (req, res) => {
+  try {
+    const { newNameSecond, roomId } = req.body;
+    const userId = req.userId;
+
+    // Define the paths
+    const oldPath = path.join(
+      getRoomDocumentsPath(userId),
+      'Add a tenant documents',
+      'Add a tenant document'
+    );
+
+    // Create the destination directory structure first
+    const destinationDir = path.join(
+      getRoomDocumentsPath(userId),
+      'Add a tenant documents'
+    );
+
+    // Ensure the destination directory exists
+    await fs.promises.mkdir(destinationDir, { recursive: true });
+
+    // Construct the new path
+    const newPath = path.join(
+      destinationDir,
+      `${newNameSecond}`  // Remove the date and UUID from the folder name
+    );
+
+    // Check if source exists
+    try {
+      await fs.promises.access(oldPath, fs.constants.F_OK);
+      logger.debug(`Source path exists: ${oldPath}`);
+    } catch (error) {
+      logger.error(`Source path does not exist: ${oldPath}`);
+      throw new Error('Source folder does not exist');
+    }
+
+    // Perform the rename operation for the inner folder
+    await fs.promises.rename(oldPath, newPath);
+    logger.debug(`Successfully renamed inner folder from ${oldPath} to ${newPath}`);
+
+    // Now handle the main folder rename
+    const oldPathMain = path.join(getRoomDocumentsPath(userId), 'Add a tenant documents');
+    const newPathMain = path.join(getRoomDocumentsPath(userId), roomId);
+
+    // Ensure the destination parent directory exists
+    await fs.promises.mkdir(path.dirname(newPathMain), { recursive: true });
+
+    // Check if main folder exists before renaming
+    try {
+      await fs.promises.access(oldPathMain, fs.constants.F_OK);
+      logger.debug(`Main folder exists: ${oldPathMain}`);
+      
+      // Perform the rename operation for the main folder
+      await fs.promises.rename(oldPathMain, newPathMain);
+      logger.debug(`Successfully renamed main folder from ${oldPathMain} to ${newPathMain}`);
+    } catch (error) {
+      logger.error(`Main folder does not exist: ${oldPathMain}`);
+      // Don't throw here, as the inner folder rename might have succeeded
+    }
+
+    res.json({ 
+      message: 'Folders renamed successfully',
+      oldPath,
+      newPath,
+      oldPathMain,
+      newPathMain
+    });
+
+  } catch (error) {
+    logger.error('Error renaming folder:', error);
+    res.status(500).json({ 
+      error: 'Failed to rename folder',
+      details: error.message,
+      path: error.path,
+      dest: error.dest
+    });
+  }
+});
 fileManagerRouter.post('/duplicate-room-images-folder', async (req, res) => {
   try {
     const { sourceFolderName, newFolderName } = req.body;
@@ -2560,10 +2747,8 @@ const sendSMSWithUserId = async (phoneNumber, message, userId) => {
 
   let formattedPhone = phoneNumber;
   if (phoneNumber.startsWith('0')) {
-    // Remove leading 0 and add 2519
     formattedPhone = `251${phoneNumber.substring(1)}`;
   } else if (!phoneNumber.startsWith('251')) {
-    // If doesn't start with 251, assume it needs full prefix
     formattedPhone = `251${phoneNumber}`;
   }
 
@@ -2588,7 +2773,10 @@ const sendSMSWithUserId = async (phoneNumber, message, userId) => {
       `Checking SMS history for user ${user.id} from ${startOfMonth} to ${endOfMonth} FOR MANUAL SMS`
     );
     pool.query(
-      `SELECT * FROM sms_history WHERE userId = ? AND sentDate BETWEEN ? AND ?`,
+      `SELECT h.*
+       FROM sms_history h
+       LEFT JOIN sms_templates t ON h.templateId = t.id
+       WHERE h.userId = ? AND h.sentDate BETWEEN ? AND ?`,
       [user.id, startOfMonth, endOfMonth],
       (error, results) => {
         if (error) reject(error);
@@ -2597,23 +2785,26 @@ const sendSMSWithUserId = async (phoneNumber, message, userId) => {
     );
   });
 
-  if (user.SMSMonthlyLimit <= history.length) {
+  const totalSMSCount = history.reduce((sum, sms) => sum + (sms.countsAs || 1), 0);
+
+  if (user.SMSMonthlyLimit <= totalSMSCount) {
     logger.debug(
-      `SMS limit reached for user ${user.id}. Current limit: ${history.length}, Max limit: ${user.SMSMonthlyLimit}`
+      `SMS limit reached for user ${user.id}. Current count: ${totalSMSCount}, Max limit: ${user.SMSMonthlyLimit}`
     );
     return {
       success: false,
       log: 'data.log',
-      error: `Limit Reached ${history.length}/${user.SMSMonthlyLimit}`,
+      error: `Limit Reached ${totalSMSCount}/${user.SMSMonthlyLimit}`,
       api_log_id: 'data.api_log_id',
     };
   }
   logger.debug('SMS SENT (is suppose to) 🙃');
   const smsHistoryId = `${userId}_${Date.now()}_Manual_SMS`;
+  const smsInfo = calculateSMSInfo(`[REP] ${message}`);
   await new Promise((resolve, reject) => {
     pool.query(
-      `INSERT INTO sms_history (id, receiver, body, templateId, sentDate, mode, userId)
-VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO sms_history (id, receiver, body, templateId, sentDate, mode, countsAs, userId)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         smsHistoryId,
         formattedPhone,
@@ -2621,6 +2812,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?)`,
         'Manual_SMS',
         moment().valueOf(),
         'Manual_SMS',
+        smsInfo.count,
         userId,
       ],
       (error) => {
@@ -2638,8 +2830,6 @@ VALUES (?, ?, ?, ?, ?, ?, ?)`,
     logger.debug('SMS token not configured');
     return { success: false, error: 'SMS token not configured' };
   }
-
-  // Format phone number to start with 251 and 9
 
   const params = new URLSearchParams({
     token: user.SmsToken,
@@ -2672,13 +2862,12 @@ VALUES (?, ?, ?, ?, ?, ?, ?)`,
     return { success: false, error: error.message };
   }
 };
+
 const sendSMS = async (phoneNumber, message, user) => {
   let formattedPhone = phoneNumber;
   if (phoneNumber.startsWith('0')) {
-    // Remove leading 0 and add 2519
     formattedPhone = `251${phoneNumber.substring(1)}`;
   } else if (!phoneNumber.startsWith('251')) {
-    // If doesn't start with 251, assume it needs full prefix
     formattedPhone = `251${phoneNumber}`;
   }
 
@@ -2704,7 +2893,10 @@ const sendSMS = async (phoneNumber, message, user) => {
       `Checking SMS history for user ${user.id} from ${startOfMonth} to ${endOfMonth} FOR MANUAL SMS`
     );
     pool.query(
-      `SELECT * FROM sms_history WHERE userId = ? AND sentDate BETWEEN ? AND ?`,
+      `SELECT h.*
+       FROM sms_history h
+       LEFT JOIN sms_templates t ON h.templateId = t.id
+       WHERE h.userId = ? AND h.sentDate BETWEEN ? AND ?`,
       [user.id, startOfMonth, endOfMonth],
       (error, results) => {
         if (error) reject(error);
@@ -2713,9 +2905,11 @@ const sendSMS = async (phoneNumber, message, user) => {
     );
   });
 
-  if (user.SMSMonthlyLimit <= history.length) {
+  const totalSMSCount = history.reduce((sum, sms) => sum + (sms.countsAs || 1), 0);
+
+  if (user.SMSMonthlyLimit <= totalSMSCount) {
     logger.debug(
-      `SMS limit reached for user ${user.id}. Current limit: ${history.length}, Max limit: ${user.SMSMonthlyLimit}`
+      `SMS limit reached for user ${user.id}. Current count: ${totalSMSCount}, Max limit: ${user.SMSMonthlyLimit}`
     );
     return {
       success: false,
@@ -2732,8 +2926,6 @@ const sendSMS = async (phoneNumber, message, user) => {
     logger.debug('SMS token not configured');
     return { success: false, error: 'SMS token not configured' };
   }
-
-  // Format phone number to start with 251 and 9
 
   const params = new URLSearchParams({
     token: user.SmsToken,
@@ -3893,7 +4085,6 @@ const processNotifications = async () => {
               landlord_Telephone: user.LandlordTelephone || user.phoneNumber,
               currency: tenant.Currency,
             };
-
             Object.entries(smsReplacements).forEach(([key, value]) => {
               const regex = new RegExp(`{{${key}}}`, 'g');
               smsBody = smsBody.replace(regex, value);
@@ -3913,10 +4104,14 @@ const processNotifications = async () => {
                 const smsHistoryId = `${room.id}_${Date.now()}_${Math.random()
                   .toString(36)
                   .substr(2, 9)}`;
+
+                // Calculate SMS count info
+                const smsInfo = calculateSMSInfo(smsBody);
+
                 await new Promise((resolve, reject) => {
                   pool.query(
-                    `INSERT INTO sms_history (id, receiver, body, templateId, sentDate, mode, userId)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+                    `INSERT INTO sms_history (id, receiver, body, templateId, sentDate, mode, countsAs, userId)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
                     [
                       smsHistoryId,
                       tenant.phoneNumber,
@@ -3924,6 +4119,7 @@ const processNotifications = async () => {
                       SmsTemplateObject.sms_template_id,
                       moment().valueOf(),
                       'Rent_Automatic',
+                      smsInfo.count,
                       user.id,
                     ],
                     (error) => {
@@ -3940,11 +4136,13 @@ const processNotifications = async () => {
               const repPhones = user.RepresentativePhoneNumbers.split(',').map(
                 (phone) => phone.trim()
               );
-
               for (const repPhone of repPhones) {
+                const repSmsMessage = `[REP] ${smsBody}`;
+                const smsInfo = calculateSMSInfo(repSmsMessage);
+                
                 const repSmsResult = await sendSMS(
                   repPhone,
-                  `[REP] ${smsBody}`,
+                  repSmsMessage,
                   user
                 );
 
@@ -3956,15 +4154,16 @@ const processNotifications = async () => {
                     .substr(2, 9)}`;
                   await new Promise((resolve, reject) => {
                     pool.query(
-                      `INSERT INTO sms_history (id, receiver, body, templateId, sentDate, mode, userId)
-             VALUES (?, ?, ?, ?, ?, ?, ?)`,
+                      `INSERT INTO sms_history (id, receiver, body, templateId, sentDate, mode, countsAs, userId)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
                       [
                         repSmsHistoryId,
                         repPhone,
-                        `[REP] ${smsBody}`,
+                        repSmsMessage,
                         SmsTemplateObject.sms_template_id,
                         moment().valueOf(),
                         'Rent_Representative_Automatic',
+                        smsInfo.count,
                         user.id,
                       ],
                       (error) => {
@@ -4033,7 +4232,25 @@ const generateUtilityDueDates = (room, startDate, currentDate) => {
 
   return dueDates;
 };
+const calculateSMSInfo = (text) => {
+  // Function to check if text contains ANY Amharic characters
+  const containsAmharic = (text) => {
+    const amharicRange = /[\u1200-\u137F]/; // Unicode range for Amharic
+    return amharicRange.test(text);
+  };
 
+  const messageLength = text.length;
+  const isAmharic = containsAmharic(text);
+  
+  // If there's ANY Amharic character, use 69 limit for the entire message
+  const charLimit = isAmharic ? 69 : 159;
+  const smsCount = Math.ceil(messageLength / charLimit);
+
+  return {
+    count: smsCount,
+    total: messageLength
+  };
+};
 const processUtilityNotifications = async () => {
   try {
     logger.debug('╔════════════════════════════════════════');
@@ -4589,6 +4806,10 @@ ${utilitiesList}
                 utilities[0].tenantName
               }'s utilities due ${dueDate.format('MMM D')}
 Total: ${totalAmountText.replace(/\.00/g, '')}`;
+
+              // Calculate SMS count info
+              const smsInfo = calculateSMSInfo(repSmsMessage);
+
               const smsResult = await sendSMS(repPhone, repSmsMessage, user);
               if (smsResult.success) {
                 logger.debug(`│ │ ✓ Sent SMS to representative: ${repPhone}`);
@@ -4599,8 +4820,8 @@ Total: ${totalAmountText.replace(/\.00/g, '')}`;
 
                 await new Promise((resolve, reject) => {
                   pool.query(
-                    `INSERT INTO sms_history (id, receiver, body, templateId, sentDate, mode, userId)
-                   VALUES (?, ?, ?, ?, ?, ?, ?)`,
+                    `INSERT INTO sms_history (id, receiver, body, templateId, sentDate, mode, countsAs, userId)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
                     [
                       smsHistoryId,
                       repPhone,
@@ -4609,6 +4830,7 @@ Total: ${totalAmountText.replace(/\.00/g, '')}`;
                       'Utility',
                       sentDate,
                       utilities[0].smsShortCode || '',
+                      smsInfo.count,
                       'Utility_Automatic_Representative',
                       user.id,
                     ],
@@ -4657,10 +4879,21 @@ Total: ${totalAmountText.replace(/\.00/g, '')}`;
                 .substr(2, 9)}`;
               const sentDate = moment().valueOf();
 
+              // Calculate SMS count and length
+              const containsAmharic = (text) => {
+                const amharicRange = /[\u1200-\u137F]/;
+                return amharicRange.test(text);
+              };
+
+              const messageLength = tenantSmsMessage.length;
+              const isAmharic = containsAmharic(tenantSmsMessage);
+              const charLimit = isAmharic ? 69 : 159;
+              const countsAs = Math.ceil(messageLength / charLimit);
+
               await new Promise((resolve, reject) => {
                 pool.query(
-                  `INSERT INTO sms_history (id, receiver, body, templateId, sentDate, mode, userId)
-                   VALUES (?, ?, ?, ?, ?, ?, ?)`,
+                  `INSERT INTO sms_history (id, receiver, body, templateId, sentDate, mode, countsAs, userId)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
                   [
                     smsHistoryId,
                     tenantPhone,
@@ -4669,6 +4902,7 @@ Total: ${totalAmountText.replace(/\.00/g, '')}`;
                     'Utility',
                     sentDate,
                     utilities[0].smsShortCode || '',
+                    countsAs,
                     'Utility_Automatic_Tenant',
                     user.id,
                   ],
@@ -5543,6 +5777,69 @@ app.post('/api/download-files2', async (req, res) => {
   }
 });
 
+app.post('/api/check-room-limit', (req, res) => {
+ const { userId } = req.body;
+  if (!userId) {
+   return res.status(400).json({ 
+     valid: false,
+     message: 'User ID is required' 
+   });
+ }
+  pool.getConnection((err, connection) => {
+   if (err) {
+     logger.debug(`Database connection error: ${err.message}`);
+     return res.status(500).json({
+       valid: false,
+       message: 'Database connection error'
+     });
+   }
+    // First query to get user details
+   connection.query(
+     'SELECT MaxAmountOfRooms, id FROM users WHERE id = ?',
+     [userId],
+     (error, users) => {
+       if (error) {
+         connection.release();
+         logger.debug(`Error fetching user: ${error.message}`);
+         return res.status(500).json({
+           valid: false,
+           message: 'Error checking room limit'
+         });
+       }
+        if (users.length === 0) {
+         connection.release();
+         return res.status(404).json({
+           valid: false,
+           message: 'User not found'
+         });
+       }
+        // Second query to get room count
+       connection.query(
+         'SELECT COUNT(*) AS roomsUsed FROM rooms WHERE userId = ?',
+         [userId],
+         (error, rooms) => {
+           connection.release();
+            if (error) {
+             logger.debug(`Error checking rooms: ${error.message}`);
+             return res.status(500).json({
+               valid: false,
+               message: 'Error checking room limit'
+             });
+           }
+            const isLimitReached = rooms[0].roomsUsed+1 >= users[0].MaxAmountOfRooms;
+            logger.debug(isLimitReached, ": limit reached state for:",users[0].id, rooms[0].roomsUsed+1,"/", users[0].MaxAmountOfRooms )
+            res.json({
+             valid: !isLimitReached,
+             message: isLimitReached ? 'Room limit reached. Upgrade required.' : 'Room limit not reached.',
+             roomsUsed: rooms[0].roomsUsed+1,
+             roomLimit: users[0].MaxAmountOfRooms
+           });
+         }
+       );
+     }
+   );
+ });
+});
 const validateTableName = (tableName) => {
   const validTables = [
     'users',

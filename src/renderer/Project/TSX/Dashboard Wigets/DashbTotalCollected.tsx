@@ -37,7 +37,6 @@ const DashbTotalCollected = ({
 
   SelectedBranchId: any;
 }) => {
-  
   const [showBy, setShowBy] = useState<'Monthly' | 'Yearly'>('Monthly');
   const [selectedDate, setSelectedDate] = useState(
     new Date().getFullYear().toString()
@@ -48,7 +47,8 @@ const DashbTotalCollected = ({
     AllRoomPayInfo,
     setAllRoomPayInfo,
     AllAgreements,
-    setAllAgreements,AllTenants
+    setAllAgreements,
+    AllTenants,
   } = useGlobal();
   const [predictedPayments, setPredictedPayments] = useState<Payment[]>([]);
   const [visibleSeries, setVisibleSeries] = useState({

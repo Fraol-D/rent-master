@@ -1,12 +1,26 @@
 import React, { useEffect, useState } from 'react';
 import { TutorialSystem } from './tutorialData';
+import { useGlobal } from 'renderer/components/GlobalContext';
 
 interface TutorialManagerProps {
   tutorialData: TutorialSystem;
   onClose: () => void;
+  SelectedPage: string;
+  onNavigate?: (page: string) => void;
+  userPrivileges: any;
+  selectedAppUserId: string;
+  currentPageInital: number;
 }
 
-const TutorialManager = ({ tutorialData, onClose }: TutorialManagerProps) => {
+const TutorialManager = ({
+  tutorialData,
+  onClose,
+  SelectedPage,
+  onNavigate,
+  selectedAppUserId,
+  userPrivileges,
+  currentPageInital,
+}: TutorialManagerProps) => {
   // Add error checking
   if (!tutorialData || !tutorialData.pages || tutorialData.pages.length === 0) {
     return (
@@ -28,14 +42,25 @@ const TutorialManager = ({ tutorialData, onClose }: TutorialManagerProps) => {
   // Add close button to the UI
   const handleClose = () => {
     onClose();
+    setIsOnTutorial(false);
   };
+  const { isOnTutorial, setIsOnTutorial } = useGlobal();
+
+  useEffect(() => {
+    setIsOnTutorial(true);
+  }, []);
 
   // State to track current position in tutorial
-  const [currentPage, setCurrentPage] = useState(0);
+  const [currentPage, setCurrentPage] = useState(currentPageInital);
   const [currentSection, setCurrentSection] = useState(0);
   const [currentStep, setCurrentStep] = useState(0);
   const [hasInteracted, setHasInteracted] = useState(false);
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+  const [cardPosition, setCardPosition] = useState({
+    top: '50%',
+    left: '50%',
+    transform: 'translate(-50%, -50%)',
+  });
 
   // Add state for error message
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -50,10 +75,25 @@ const TutorialManager = ({ tutorialData, onClose }: TutorialManagerProps) => {
 
   // Function to position the tutorial card relative to target element
   const positionCard = (elementId: string | undefined, position: string) => {
-    if (!elementId) return {};
+    if (!elementId) {
+      // Center the card if no element ID is provided
+      return {
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+      };
+    }
 
     const element = document.getElementById(elementId);
-    if (!element) return {};
+    if (!element) {
+      // Center the card if element is not found
+      return {
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+      };
+    }
+
     const screenWidth = window.innerWidth;
     let scaleFactor;
     if (screenWidth <= 1280) {
@@ -66,10 +106,10 @@ const TutorialManager = ({ tutorialData, onClose }: TutorialManagerProps) => {
       scaleFactor = 2560 / 2560;
     }
     const rect = element.getBoundingClientRect();
-    const offset = 20 * scaleFactor; // Scale the offset
-    const cardWidth = 400 * scaleFactor; // Width of tutorial card
-    const cardHeight = 250 * scaleFactor; // Height of tutorial card
-    const adjustmentOffset = 40 * scaleFactor; // Scale the adjustment offset
+    const offset = 20 * scaleFactor;
+    const cardWidth = 400 * scaleFactor;
+    const cardHeight = 250 * scaleFactor;
+    const adjustmentOffset = 40 * scaleFactor;
 
     let style: { [key: string]: string } = {};
 
@@ -162,115 +202,6 @@ const TutorialManager = ({ tutorialData, onClose }: TutorialManagerProps) => {
 
     return style;
   };
-  const positionCard2 = (elementId: string | undefined, position: string) => {
-    if (!elementId) return {};
-
-    const element = document.getElementById(elementId);
-    if (!element) return {};
-
-    const rect = element.getBoundingClientRect();
-    const screenWidth = window.innerWidth;
-    // Calculate scale factor based on screen width
-    const scaleFactor =
-      screenWidth <= 1920 ? screenWidth / 1920 : screenWidth / 2560;
-
-    // Scale dimensions
-    const offset = 20 * scaleFactor;
-    const cardWidth = 300 * scaleFactor;
-    const cardHeight = 150 * scaleFactor;
-
-    console.log(window.innerWidth - rect.left + offset + rect.width);
-    let style: { [key: string]: string } = {};
-
-    switch (position) {
-      case 'left':
-        style = {
-          top: `${rect.top + rect.height / 2}px`,
-          right: `${window.innerWidth - rect.left + offset + rect.width}px`,
-          transform: 'translateY(-50%)',
-        };
-        // Adjust if clipping top/bottom
-        if (rect.top + rect.height / 2 - cardHeight / 2 < 0) {
-          style.top = `${cardHeight / 2}px`;
-        } else if (
-          rect.top + rect.height / 2 + cardHeight / 2 >
-          window.innerHeight
-        ) {
-          style.top = `${window.innerHeight - cardHeight / 2}px`;
-        }
-        break;
-
-      case 'right':
-        style = {
-          top: `${rect.top + rect.height / 2}px`,
-          left: `${rect.right + rect.width}px`,
-          transform: 'translateY(-50%)',
-        };
-        // Adjust if clipping top/bottom or right
-        if (rect.top + rect.height / 2 - cardHeight / 2 < 0) {
-          style.top = `${cardHeight / 2}px`;
-        } else if (
-          rect.top + rect.height / 2 + cardHeight / 2 >
-          window.innerHeight
-        ) {
-          style.top = `${window.innerHeight - cardHeight / 2}px`;
-        }
-        if (rect.right + offset + cardWidth > window.innerWidth) {
-          style.left = `${window.innerWidth - cardWidth - offset}px`;
-        }
-        break;
-
-      case 'up':
-        style = {
-          bottom: `${window.innerHeight - rect.top + offset}px`,
-          left: `${rect.left + rect.width / 2}px`,
-          transform: 'translateX(-50%)',
-        };
-        // Adjust if clipping left/right
-        if (rect.left + rect.width / 2 - cardWidth / 2 < 0) {
-          style.left = `${cardWidth / 2}px`;
-        } else if (
-          rect.left + rect.width / 2 + cardWidth / 2 >
-          window.innerWidth
-        ) {
-          style.left = `${window.innerWidth - cardWidth / 2}px`;
-        }
-        break;
-
-      case 'down':
-        style = {
-          top: `${rect.bottom + offset}px`,
-          left: `${rect.left + rect.width / 2}px`,
-          transform: 'translateX(-50%)',
-        };
-        // Adjust if clipping left/right or bottom
-        if (rect.left + rect.width / 2 - cardWidth / 2 < 0) {
-          style.left = `${cardWidth / 2}px`;
-        } else if (
-          rect.left + rect.width / 2 + cardWidth / 2 >
-          window.innerWidth
-        ) {
-          style.left = `${window.innerWidth - cardWidth / 2}px`;
-        }
-        if (rect.bottom + offset + cardHeight > window.innerHeight) {
-          style.top = `${window.innerHeight - cardHeight - offset}px`;
-        }
-        break;
-
-      default:
-        return {};
-    }
-
-    // Apply scale factor to all pixel values in style
-    Object.keys(style).forEach((key) => {
-      if (style[key].endsWith('px')) {
-        const value = parseFloat(style[key]);
-        style[key] = `${value * scaleFactor}px`;
-      }
-    });
-
-    return style;
-  };
 
   // Effect to update window width
   useEffect(() => {
@@ -281,80 +212,340 @@ const TutorialManager = ({ tutorialData, onClose }: TutorialManagerProps) => {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+  const { tutorialNewAppUserId } = useGlobal();
+
+  // Effect to check and update card position and styles every 2 seconds
+  useEffect(() => {
+    const checkAndUpdatePosition = () => {
+      // Get the target ID, handling JS IDs
+      const targetId = currentStepData.isJsId
+        ? eval(currentStepData.targetElementId)
+        : currentStepData.targetElementId;
+
+      // Check if we need to verify parent element
+      let finalTargetId = targetId;
+      if (currentStepData.checkUnderElementId && targetId) {
+        const parentElement = document.getElementById(
+          currentStepData.checkUnderElementId
+        );
+        const targetElement = document.getElementById(targetId);
+
+        // Only use the target ID if it's under the specified parent
+        if (
+          parentElement &&
+          targetElement &&
+          parentElement.contains(targetElement)
+        ) {
+          finalTargetId = targetId;
+        } else {
+          finalTargetId = ''; // Element not found under parent
+        }
+      }
+
+      const newPosition = positionCard(finalTargetId, currentStepData.position);
+
+      if (finalTargetId) {
+        const element = document.getElementById(finalTargetId);
+        if (element) {
+          const isCentered =
+            cardPosition.top === '50%' && cardPosition.left === '50%';
+          const positionChanged =
+            JSON.stringify(newPosition) !== JSON.stringify(cardPosition);
+
+          if (isCentered || positionChanged) {
+            setCardPosition(newPosition);
+          }
+
+          // Re-apply styles
+          element.setAttribute('data-tutorial-target', 'true');
+          element.style.zIndex = '504';
+
+          // Re-apply interaction styles
+          if (
+            currentStepData.requiresInteraction ||
+            currentStepData.requiresInteractionInput
+          ) {
+            const allChildren = element.getElementsByTagName('*');
+            for (let i = 0; i < allChildren.length; i++) {
+              (allChildren[i] as HTMLElement).style.pointerEvents = 'auto';
+            }
+            element.style.pointerEvents = 'auto';
+          }
+
+          if (currentStepData.dontInteract) {
+            element.style.pointerEvents = 'none';
+          }
+        } else {
+          setCardPosition({
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+          });
+        }
+      }
+
+      // Re-apply styles to additional elements
+      const additionalElements = currentStepData.additionalZIndexElements || [];
+      additionalElements.forEach((id) => {
+        const element = document.getElementById(id);
+        if (element) {
+          element.setAttribute('data-tutorial-target', 'true');
+          element.style.zIndex = '501';
+
+          if (
+            currentStepData.requiresInteraction ||
+            currentStepData.requiresInteractionInput
+          ) {
+            const allChildren = element.getElementsByTagName('*');
+            for (let i = 0; i < allChildren.length; i++) {
+              (allChildren[i] as HTMLElement).style.pointerEvents = 'none';
+            }
+            element.style.pointerEvents = 'none';
+          }
+        }
+      });
+    };
+
+    const intervalId = setInterval(checkAndUpdatePosition, 2000);
+
+    // Initial position and style check
+    checkAndUpdatePosition();
+
+    return () => clearInterval(intervalId);
+  }, [
+    currentStepData.targetElementId,
+    currentStepData.isJsId,
+    currentStepData.position,
+    currentStepData.requiresInteraction,
+    currentStepData.requiresInteractionInput,
+    currentStepData.dontInteract,
+    currentStepData.additionalZIndexElements,
+    currentStepData.checkUnderElementId,
+  ]);
 
   // Effect to highlight target element and additional elements
   useEffect(() => {
-    const elementsToUpdate = [
-      currentStepData.targetElementId,
-      ...(currentStepData.additionalZIndexElements || []),
-    ];
-
-    const updatedElements = elementsToUpdate
+    // Handle additional elements
+    const additionalElements = currentStepData.additionalZIndexElements || [];
+    const updatedElements = additionalElements
       .map((id) => {
         const element = document.getElementById(id);
         if (element) {
           element.setAttribute('data-tutorial-target', 'true');
           element.style.zIndex = '501';
+
+          // Block interactions for element and all its children if requires interaction
+          if (
+            currentStepData.requiresInteraction ||
+            currentStepData.requiresInteractionInput
+          ) {
+            const allChildren = element.getElementsByTagName('*');
+            for (let i = 0; i < allChildren.length; i++) {
+              (allChildren[i] as HTMLElement).style.pointerEvents = 'none';
+            }
+            element.style.pointerEvents = 'none';
+          }
           return element;
         }
         return null;
       })
-      .filter(Boolean);
+      .filter(Boolean) as HTMLElement[];
 
+    // Get the target ID, handling JS IDs and parent check
+    const targetId = currentStepData.isJsId
+      ? eval(currentStepData.targetElementId)
+      : currentStepData.targetElementId;
+    let finalTargetId = targetId;
+
+    if (currentStepData.checkUnderElementId && targetId) {
+      const parentElement = document.getElementById(
+        currentStepData.checkUnderElementId
+      );
+      const targetElement = document.getElementById(targetId);
+
+      // Only use the target ID if it's under the specified parent
+      if (
+        parentElement &&
+        targetElement &&
+        parentElement.contains(targetElement)
+      ) {
+        finalTargetId = targetId;
+      } else {
+        finalTargetId = ''; // Element not found under parent
+      }
+    }
+
+    // Handle main target element
+    const mainElement = finalTargetId
+      ? document.getElementById(finalTargetId)
+      : null;
+
+    if (mainElement) {
+      mainElement.setAttribute('data-tutorial-target', 'true');
+      mainElement.style.zIndex = '504';
+
+      // Keep pointer events enabled for main target and its children if interaction required
+      if (
+        currentStepData.requiresInteraction ||
+        currentStepData.requiresInteractionInput
+      ) {
+        const allChildren = mainElement.getElementsByTagName('*');
+        for (let i = 0; i < allChildren.length; i++) {
+          (allChildren[i] as HTMLElement).style.pointerEvents = 'auto';
+        }
+        mainElement.style.pointerEvents = 'auto';
+      }
+    }
+
+    // Cleanup function
     return () => {
       updatedElements.forEach((element) => {
-        if (element) {
-          element.removeAttribute('data-tutorial-target');
-          element.style.zIndex = '';
+        const allChildren = element.getElementsByTagName('*');
+        for (let i = 0; i < allChildren.length; i++) {
+          (allChildren[i] as HTMLElement).style.pointerEvents = '';
         }
+        element.removeAttribute('data-tutorial-target');
+        element.style.zIndex = '';
+        element.style.pointerEvents = '';
       });
+
+      if (mainElement) {
+        const allChildren = mainElement.getElementsByTagName('*');
+        for (let i = 0; i < allChildren.length; i++) {
+          (allChildren[i] as HTMLElement).style.pointerEvents = '';
+        }
+        mainElement.removeAttribute('data-tutorial-target');
+        mainElement.style.zIndex = '';
+        mainElement.style.pointerEvents = '';
+      }
     };
   }, [
     currentStepData.targetElementId,
     currentStepData.additionalZIndexElements,
+    currentStepData.requiresInteraction,
+    currentStepData.requiresInteractionInput,
+    currentStepData.checkUnderElementId,
+    currentStepData.isJsId,
   ]);
+  useEffect(() => {
+    console.log(errorMessage);
+  }, [errorMessage]);
+  const handleNext = () => {
+    if (!canProgress) return;
 
+    setHasInteracted(false);
+    setErrorMessage(null);
+    if (isLastStep()) {
+      setShowCompletionMessage(true);
+      // Close tutorial after showing completion message
+      setTimeout(() => {
+        onClose();
+      }, 5000);
+      return;
+    }
+
+    if (currentStep < currentSectionData.steps.length - 1) {
+      setCurrentStep((prev) => prev + 1);
+    } else if (currentSection < currentPageData.sections.length) {
+      setCurrentSection((prev) => prev + 1);
+      setCurrentStep(0);
+    } else if (currentPage < tutorialSystem.pages.length - 1) {
+      if (currentStepData.autoNext) {
+        setCurrentPage((prev) => prev + 1);
+        setCurrentSection(0);
+        setCurrentStep(0);
+      } else {
+        setShowCompletionMessage(true);
+        // Close tutorial after showing completion message
+        setTimeout(() => {
+          onClose();
+        }, 5000);
+        return;
+      }
+    }
+  };
   // Effect to handle element interaction and blocking
   useEffect(() => {
     if (currentStepData.targetElementId) {
-      const element = document.getElementById(currentStepData.targetElementId);
+      const targetId = currentStepData.isJsId
+        ? eval(currentStepData.targetElementId)
+        : currentStepData.targetElementId;
+      let finalTargetId = targetId;
+
+      if (currentStepData.checkUnderElementId && targetId) {
+        const parentElement = document.getElementById(
+          currentStepData.checkUnderElementId
+        );
+        const targetElement = document.getElementById(targetId);
+
+        // Only use the target ID if it's under the specified parent
+        if (
+          parentElement &&
+          targetElement &&
+          parentElement.contains(targetElement)
+        ) {
+          finalTargetId = targetId;
+        } else {
+          finalTargetId = ''; // Element not found under parent
+        }
+      }
+
+      const element = document.getElementById(finalTargetId);
       if (element) {
         element.setAttribute('data-tutorial-target', 'true');
-        element.style.zIndex = '1001';
+        element.style.zIndex = '504';
 
         if (currentStepData.dontInteract) {
           const blockingHandler = (e: Event) => {
             e.preventDefault();
             e.stopPropagation();
-            
+
             // Show error message in the card
             setErrorMessage('Please finish the tutorial first');
-            
+
             // Clear message after 2 seconds
             setTimeout(() => {
               setErrorMessage(null);
-            }, 2000);
-            
+            }, 5000);
+
             return false;
           };
 
+          // Add click and mousedown handlers for better blocking
           element.addEventListener('click', blockingHandler, true);
+          element.addEventListener('mousedown', blockingHandler, true);
           element.style.pointerEvents = 'none';
+          element.style.cursor = 'not-allowed';
 
           return () => {
             element.removeEventListener('click', blockingHandler, true);
+            element.removeEventListener('mousedown', blockingHandler, true);
             element.style.pointerEvents = '';
+            element.style.cursor = '';
             element.removeAttribute('data-tutorial-target');
             element.style.zIndex = '';
-            setErrorMessage(null);
           };
         } else if (currentStepData.requiresInteraction) {
           const handleInteraction = () => {
             setHasInteracted(true);
+            if (currentStepData.whenClickedGoNextStep) {
+              handleNext();
+            }
           };
           element.addEventListener('click', handleInteraction);
           return () => {
             element.removeEventListener('click', handleInteraction);
+            element.removeAttribute('data-tutorial-target');
+            element.style.zIndex = '';
+          };
+        } else if (currentStepData.requiresInteractionInput) {
+          const handleInput = (e: Event) => {
+            const inputElement = e.target as HTMLInputElement;
+            setHasInteracted(inputElement.value.length > 1);
+          };
+          element.addEventListener('input', handleInput);
+          return () => {
+            element.removeEventListener('input', handleInput);
             element.removeAttribute('data-tutorial-target');
             element.style.zIndex = '';
           };
@@ -367,29 +558,27 @@ const TutorialManager = ({ tutorialData, onClose }: TutorialManagerProps) => {
         };
       }
     }
-  }, [currentStepData]);
+  }, [currentStepData, handleNext]);
 
   const canProgress = !currentStepData.requiresInteraction || hasInteracted;
 
-  const handleNext = () => {
-    if (!canProgress) return;
+  const [showCompletionMessage, setShowCompletionMessage] = useState(false);
 
-    setHasInteracted(false);
-    if (currentStep < currentSectionData.steps.length - 1) {
-      setCurrentStep((prev) => prev + 1);
-    } else if (currentSection < currentPageData.sections.length) {
-      setCurrentSection((prev) => prev + 1);
-      setCurrentStep(0);
-    } else if (currentPage < tutorialSystem.pages.length - 1) {
-      setCurrentPage((prev) => prev + 1);
-      setCurrentSection(0);
-      setCurrentStep(0);
-    }
+  // Function to check if it's the last step of the last section
+  const isLastStep = () => {
+    const isLastPage = currentPage === tutorialSystem.pages.length - 1;
+    const isLastSection = currentSection === currentPageData.sections.length;
+    const isLastStepInSection =
+      currentStep === currentSectionData.steps.length - 1;
+
+    return isLastPage && isLastSection && isLastStepInSection;
   };
+
+  // Modify handleNext to handle tutorial completion
 
   const handleBack = () => {
     if (!currentStepData.allowBack) return;
-
+    setErrorMessage(null);
     if (currentStep > 0) {
       setCurrentStep((prev) => prev - 1);
     } else if (currentSection > 0) {
@@ -405,77 +594,181 @@ const TutorialManager = ({ tutorialData, onClose }: TutorialManagerProps) => {
     }
   };
 
+  // Check if user is on the correct page and has privileges
+  const canAccessPage = (requiredPage: string): boolean => {
+    switch (requiredPage.toLowerCase()) {
+      case 'app user':
+        return selectedAppUserId == 'admin';
+      case 'property':
+        return userPrivileges.viewRoomsPage;
+      case 'dashboard':
+        return userPrivileges.viewDashboard;
+      case 'people':
+        return userPrivileges.viewPeoplesPage;
+      case 'calendar':
+        return userPrivileges.viewCalendar;
+      case 'database':
+        return userPrivileges.viewDatabase;
+      case 'tools':
+        return userPrivileges.viewToolsPage;
+      default:
+        return true;
+    }
+  };
+  console.log(
+    'Is on right page: ',
+    currentPageData.hasToBeIn,
+    SelectedPage,
+    canAccessPage(currentPageData.hasToBeIn)
+  );
+  const isOnCorrectPage =
+    currentPageData.hasToBeIn.toLowerCase() === SelectedPage.toLowerCase();
+  const hasPageAccess = canAccessPage(currentPageData.hasToBeIn);
+
+  if (!isOnCorrectPage) {
+    return (
+      <div className="tutorial-manager">
+        <div className="tutorial-overlay" />
+
+        <div
+          className="tutorial-card"
+          style={{
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+          }}
+        >
+          <h2>Wrong Page</h2>
+          <p>
+            This tutorial needs to be viewed on the {currentPageData.hasToBeIn}{' '}
+            page
+          </p>
+
+          {hasPageAccess ? (
+            <button
+              className="tutorial-btn next-btn"
+              onClick={() => onNavigate?.(currentPageData.hasToBeIn)}
+            >
+              Go to {currentPageData.hasToBeIn}
+            </button>
+          ) : (
+            <p className="tutorial-error-message">
+              You don't have access to the {currentPageData.hasToBeIn} page
+            </p>
+          )}
+
+          <button
+            className="tutorial-close-btn"
+            onClick={onClose}
+            style={{
+              position: 'absolute',
+              top: 'var(--10px-V)',
+              right: 'var(--10px-V)',
+              background: 'none',
+              border: 'none',
+              color: 'var(--Text-Color-Grey)',
+              cursor: 'pointer',
+              fontSize: 'var(--20px-V)',
+            }}
+          >
+            ×
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="tutorial-manager">
+    <>
       {/* Semi-transparent overlay */}
       <div className="tutorial-overlay" />
 
-      <div
-        className="tutorial-card"
-        style={positionCard(
-          currentStepData.targetElementId,
-          currentStepData.position
-        )}
-      >
-        <div className="tutorial-header">
-          <span className="tutorial-small-title">
-            {currentPageData.pageTitle}
-          </span>
-          <h2 className="tutorial-main-title">
-            {currentSectionData.mainTitle}
-          </h2>
-        </div>
-
-        <p className="tutorial-description">{currentStepData.description}</p>
-
-        {/* Add error message display */}
-        {errorMessage && (
-          <div className="tutorial-error-message">
-            {errorMessage}
+      <div className="tutorial-card" style={cardPosition}>
+        {showCompletionMessage ? (
+          <div className="tutorial-completion">
+            <h2>You are all set and ready!</h2>
+            <p>Tutorial completed successfully</p>
+            <button
+              onClick={() => {
+                onClose();
+              }}
+            >
+              Close
+            </button>
           </div>
-        )}
+        ) : (
+          <>
+            <div className="tutorial-header">
+              <span className="tutorial-small-title">
+                {currentPageData.pageTitle}
+              </span>
+              <h2 className="tutorial-main-title">
+                {currentSectionData.mainTitle}
+              </h2>
+            </div>
 
-        <div className="tutorial-controls">
-          <div className="tutorial-progress">
-            Step {currentStep + 1} of {currentSectionData.steps.length}
-          </div>
-          <div className="tutorial-buttons">
-            {currentStepData.allowBack && currentStep !== 0 && (
-              <button className="tutorial-btn back-btn" onClick={handleBack}>
-                Back
-              </button>
+            <p className="tutorial-description">
+              {currentStepData.description}
+            </p>
+
+            {errorMessage && (
+              <div className="tutorial-error-message">{errorMessage}</div>
             )}
-            {currentStepData.requiresInteraction && !hasInteracted ? (
-              <div className="tutorial-interaction-prompt">
-                Click element to continue
+
+            <div className="tutorial-controls">
+              <div className="tutorial-progress">
+                Step {currentStep + 1} of {currentSectionData.steps.length}
               </div>
-            ) : (
-              <button className="tutorial-btn next-btn" onClick={handleNext}>
-                Next
-              </button>
-            )}
-          </div>
-        </div>
+              <div className="tutorial-buttons">
+                {currentStepData.allowBack && currentStep !== 0 && (
+                  <button
+                    className="tutorial-btn back-btn"
+                    onClick={handleBack}
+                  >
+                    Back
+                  </button>
+                )}
+                {currentStepData.requiresInteraction && !hasInteracted ? (
+                  <div className="tutorial-interaction-prompt">
+                    Click element to continue
+                  </div>
+                ) : (
+                  <button
+                    className="tutorial-btn next-btn"
+                    onClick={handleNext}
+                  >
+                    {isLastStep()
+                      ? 'Finish'
+                      : currentStep + 1 === currentSectionData.steps.length
+                      ? currentPageData.autoNext
+                        ? 'Next Section'
+                        : 'Finish Tutorial'
+                      : 'Next'}
+                  </button>
+                )}
+              </div>
+            </div>
 
-        {/* Add close button */}
-        <button
-          className="tutorial-close-btn"
-          onClick={handleClose}
-          style={{
-            position: 'absolute',
-            top: 'var(--10px-V)',
-            right: 'var(--10px-V)',
-            background: 'none',
-            border: 'none',
-            color: 'var(--Text-Color-Grey)',
-            cursor: 'pointer',
-            fontSize: 'var(--20px-V)',
-          }}
-        >
-          ×
-        </button>
+            <button
+              className="tutorial-close-btn"
+              onClick={handleClose}
+              style={{
+                position: 'absolute',
+                top: 'var(--10px-V)',
+                right: 'var(--10px-V)',
+                background: 'none',
+                border: 'none',
+                color: 'var(--Text-Color-Grey)',
+                cursor: 'pointer',
+                fontSize: 'var(--20px-V)',
+              }}
+            >
+              ×
+            </button>
+          </>
+        )}
       </div>
-    </div>
+    </>
   );
 };
 
