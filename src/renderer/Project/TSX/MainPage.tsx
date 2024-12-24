@@ -1,12 +1,19 @@
 import { RoomListComponent } from './Pages/RoomListComponent';
 import { PeopleComponentPage } from './Pages/PeopleComponentPage';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  Suspense,
+  lazy,
+} from 'react';
 import { Input } from './Helpers/CustomReactComponents';
 import { v4 as uuidv4 } from 'uuid';
 import ImageInteractor from './Helpers/GUIs/ImageIntractorGUI';
 import LONGIMAGE from './Helpers/WIN_20240802_19_41_23_Pro.jpg';
 import Room from './Helpers/Room';
-
+import loadingGif from '../../assets/assets/Loading/Rolling-1s-200px.gif';
 import SortIcon from '../../assets/icons8-sort-100.png';
 import DoubleArrowIconDark from '../../assets/assets/Dark mode/Left2Arrow.png';
 import DoubleArrowIconDarkb from '../../assets/assets/Dark mode/Admin Settings Male.png';
@@ -41,6 +48,8 @@ import { useGlobal } from 'renderer/components/GlobalContext';
 import { storageManager } from 'renderer/storeManager';
 import { checkRoomLimit } from 'Backend/OnlineServerApis';
 import ExpenseManager from './Tools page components/ExpenseManager';
+import ExpenseCalendar from './Tools page components/ExpenseCalendar';
+
 type FilterOption = {
   key: string;
   value: any;
@@ -355,6 +364,14 @@ const MainPage = ({
   setChangeProgress,
   changeProgress,
 }: any) => {
+  const {
+    AllRoomSpecifications,
+    AllTenants,
+    setAllTenants,
+    setAllExpenses,
+    AllExpenses,
+  } = useGlobal();
+
   const [floorFilter, setFloorFilter] = useState<string>('');
   const [TenantNameFilter, setTenantNameFilter] = useState<string>('');
   const [roomFilter, setRoomFilter] = useState<string>('');
@@ -370,16 +387,16 @@ const MainPage = ({
     'all' | 'Taken' | 'Empty' | 'None'
   >('all');
   const [filterPriceOperator, setFilterPriceOperator] = useState<
-    '=' | '<' | '>' | 'None'
-  >('None');
+    '=' | '<' | '>'
+  >('=');
   const [FilterDueDateOperator, setFilterDueDateOperator] = useState<
-    '=' | '<' | '>' | 'None'
-  >('None');
+    '=' | '<' | '>'
+  >('=');
   const [filterPriceValue, setFilterPriceValue] = useState<string>('');
   const [FilterDueDateValue, setFilterDueDateValue] = useState<string>('');
   const [filterSquareFeetOperator, setFilterSquareFeetOperator] = useState<
-    '=' | '<' | '>' | 'None'
-  >('None');
+    '=' | '<' | '>'
+  >('=');
   const [filterSquareFeetValue, setFilterSquareFeetValue] =
     useState<string>('');
   const [selectedCurrency, setSelectedCurrency] = useState<string>('all');
@@ -486,49 +503,47 @@ const MainPage = ({
       return updatedRoomList;
     });*/
   };
-  const addFilterOption = (key: string, value: any) => {
-    setFilterOptions((prevOptions) => {
-      return [
-        ...prevOptions.filter((option) => option.key !== key),
-        { key, value },
-      ];
-    });
+  const addFilterOption = (key: string, value: string) => {
+    // Only add filter if value is not empty
+    if (value) {
+      const existingIndex = filterOptions.findIndex(
+        (option) => option.key === key
+      );
+      if (existingIndex !== -1) {
+        const newOptions = [...filterOptions];
+        newOptions[existingIndex] = { key, value };
+        setFilterOptions(newOptions);
+      } else {
+        setFilterOptions([...filterOptions, { key, value }]);
+      }
+    } else {
+      // Remove filter if value is empty
+      removeFilterOption(key);
+    }
   };
 
-  const removeFilterOption = (indexaggg: number) => {
-    setFilterOptions((options) => {
-      const removedOption = options[indexaggg];
-      console.log(removedOption.key);
+  // Update removeFilterOption to handle removal by key
+  const removeFilterOption = (keyToRemove: string) => {
+    setFilterOptions(
+      filterOptions.filter((option) => option.key !== keyToRemove)
+    );
 
-      if (removedOption.key === 'floor') {
-        setFloorFilter(''); // Reset the floor filter
-      } else if (removedOption.key === 'tenantName') {
-        setFloorFilter(''); // Reset the floor filter
-      } else if (removedOption.key === 'room') {
-        setRoomFilter(''); // Reset the room filter
-      } else if (removedOption.key === 'sort') {
-        setSortType('name'); // Reset the sort type to the default
-      } else if (removedOption.key === 'filterstatus') {
-        setFilterStatus('all'); // Reset the filter status to 'all'
-      } else if (removedOption.key === 'filterPriceValue') {
-        setFilterPriceValue(''); // Reset the filter price value
-      } else if (removedOption.key === 'filterDueDateValue') {
-        setFilterDueDateValue(''); // Reset the filter price value
-      } else if (removedOption.key === 'filterSquareFeetValue') {
-        setFilterSquareFeetValue(''); // Reset the filter square feet value
-      } else if (removedOption.key === 'selectedCurrency') {
-        setSelectedCurrency('all');
-      }
-      // If none of the above conditions are met, it will handle unknown keys by doing nothing
-
-      const newOptions = [];
-      for (let i = 0; i < options.length; i++) {
-        if (i !== indexaggg) {
-          newOptions.push(options[i]);
-        }
-      }
-      return newOptions;
-    });
+    // Reset corresponding state based on key
+    switch (keyToRemove) {
+      case 'floor':
+        setFloorFilter('');
+        break;
+      case 'room':
+        setRoomFilter('');
+        break;
+      case 'tenantName':
+        setTenantNameFilter('');
+        break;
+      case 'filterstatus':
+        setFilterStatus('all');
+        break;
+      // Add other cases as needed
+    }
   };
   const getDaysUntilPayment = (allRoomPayInfo: {
     RoomPayInfo: { Day: number; Paid: boolean }[];
@@ -556,181 +571,125 @@ const MainPage = ({
     return daysUntilPayment;
   };
   const filterAndSortRooms = () => {
-    let filteredRooms = RoomList || [];
+    let filteredRooms = [...RoomList];
 
-    // Loop through the filter options and apply them to the rooms
-    filterOptions.forEach((option) => {
-      const { key, value } = option;
+    // Apply tenant name filter
+    if (TenantNameFilter) {
+      filteredRooms = filteredRooms.filter((room) => {
+        const tenant = AllTenants.find((t) => t.id === room.tenantId);
+        return tenant?.name
+          .toLowerCase()
+          .includes(TenantNameFilter.toLowerCase());
+      });
+    }
 
-      switch (key) {
-        case 'floor':
-          filteredRooms = filteredRooms.filter(
-            (room: { floor: { toString: () => any } }) =>
-              room.floor.toString() === value
-          );
+    // Filter by price
+    if (filterPriceValue !== '') {
+      const priceValue = parseFloat(filterPriceValue);
+      if (!isNaN(priceValue)) {
+        filteredRooms = filteredRooms.filter((room) => {
+          console.log(room.AgreedPrice, priceValue);
+          switch (filterPriceOperator) {
+            case '=':
+              return room.AgreedPrice === priceValue;
+            case '<':
+              return room.AgreedPrice < priceValue;
+            case '>':
+              return room.AgreedPrice > priceValue;
+            default:
+              return true;
+          }
+        });
+      }
+    }
+
+    // Filter by square meters
+    if (filterSquareFeetValue !== '') {
+      const squareMetersValue = parseFloat(filterSquareFeetValue);
+      if (!isNaN(squareMetersValue)) {
+        filteredRooms = filteredRooms.filter((room) => {
+          switch (filterSquareFeetOperator) {
+            case '=':
+              return room.squareMeters === squareMetersValue;
+            case '<':
+              return room.squareMeters < squareMetersValue;
+            case '>':
+              return room.squareMeters > squareMetersValue;
+            default:
+              return true;
+          }
+        });
+      }
+    }
+
+    // Filter by days until payment
+    if (FilterDueDateValue !== '') {
+      const daysValue = parseInt(FilterDueDateValue, 10);
+      if (!isNaN(daysValue)) {
+        filteredRooms = filteredRooms.filter((room) => {
+          const daysUntil = getDaysUntilPayment(room.AllRoomPayInfo);
+          switch (FilterDueDateOperator) {
+            case '=':
+              return daysUntil === daysValue;
+            case '<':
+              return daysUntil < daysValue;
+            case '>':
+              return daysUntil > daysValue;
+            default:
+              return true;
+          }
+        });
+      }
+    }
+
+    // Apply other existing filters
+    if (filterStatus !== 'all') {
+      filteredRooms = filteredRooms.filter(
+        (room) => room.status === filterStatus
+      );
+    }
+
+    if (floorFilter) {
+      filteredRooms = filteredRooms.filter(
+        (room) => room.floor === parseInt(floorFilter, 10)
+      );
+    }
+
+    if (roomFilter) {
+      filteredRooms = filteredRooms.filter(
+        (room) => room.roomIndex === parseInt(roomFilter, 10)
+      );
+    }
+
+    if (selectedCurrency !== 'all') {
+      filteredRooms = filteredRooms.filter(
+        (room) => room.Currency === selectedCurrency
+      );
+    }
+
+    // Sort rooms
+    filteredRooms.sort((a, b) => {
+      let comparison = 0;
+      switch (sortType) {
+        case 'price':
+          comparison = a.price - b.price;
           break;
-        case 'tenantName':
-          if (AllTenants.length > 0)
-            filteredRooms = filteredRooms.filter((room: { tenantId: any }) =>
-              AllTenants.find((tenant: any) => tenant.id === room.tenantId)
-                ?.name.toLowerCase()
-                .includes(value.toLowerCase())
-            );
-
+        case 'floor':
+          comparison = a.floor - b.floor;
           break;
         case 'room':
-          filteredRooms = filteredRooms.filter(
-            (room: { roomIndex: { toString: () => any } }) =>
-              room.roomIndex.toString() === value
-          );
+          comparison = a.roomIndex - b.roomIndex;
           break;
-        case 'filterstatus':
-          if (value === 'None') {
-            filteredRooms = filteredRooms.filter(
-              (room: { status: any }) => !room.status
-            );
-          } else {
-            filteredRooms = filteredRooms.filter(
-              (room: { status: any }) => room.status === value
-            );
-          }
-          break;
-        case 'filterDueDateValue':
-          if (!isNaN(parseInt(value, 10)) && FilterDueDateOperator !== 'None') {
-            const daysUntilPayment = parseInt(value, 10);
-            switch (FilterDueDateOperator) {
-              case '=':
-                filteredRooms = filteredRooms.filter(
-                  (room: {
-                    AllRoomPayInfo: {
-                      RoomPayInfo: { Day: number; Paid: boolean }[];
-                    };
-                  }) =>
-                    getDaysUntilPayment(room.AllRoomPayInfo) ===
-                    daysUntilPayment
-                );
-                break;
-              case '<':
-                filteredRooms = filteredRooms.filter(
-                  (room: {
-                    AllRoomPayInfo: {
-                      RoomPayInfo: { Day: number; Paid: boolean }[];
-                    };
-                  }) =>
-                    getDaysUntilPayment(room.AllRoomPayInfo) < daysUntilPayment
-                );
-                break;
-              case '>':
-                filteredRooms = filteredRooms.filter(
-                  (room: {
-                    AllRoomPayInfo: {
-                      RoomPayInfo: { Day: number; Paid: boolean }[];
-                    };
-                  }) =>
-                    getDaysUntilPayment(room.AllRoomPayInfo) > daysUntilPayment
-                );
-                break;
-              default:
-                // Optionally handle unexpected operators
-                console.warn(`Unexpected operator: ${FilterDueDateOperator}`);
-                break;
-            }
-          }
-          break;
-
-        case 'filterPriceValue':
-          if (!isNaN(parseInt(value, 10)) && filterPriceOperator !== 'None') {
-            const price = parseInt(value, 10);
-            switch (filterPriceOperator) {
-              case '=':
-                filteredRooms = filteredRooms.filter(
-                  (room: { price: number }) => room.price === price
-                );
-                break;
-              case '<':
-                filteredRooms = filteredRooms.filter(
-                  (room: { price: number }) => room.price < price
-                );
-                break;
-              case '>':
-                filteredRooms = filteredRooms.filter(
-                  (room: { price: number }) => room.price > price
-                );
-                break;
-              default:
-                break;
-            }
-          }
-          break;
-        case 'filterSquareFeetValue':
-          if (
-            !isNaN(parseInt(value, 10)) &&
-            filterSquareFeetOperator !== 'None'
-          ) {
-            const squareFeet = parseInt(value, 10);
-            switch (filterSquareFeetOperator) {
-              case '=':
-                filteredRooms = filteredRooms.filter(
-                  (room: { squareMeters: number }) =>
-                    room.squareMeters === squareFeet
-                );
-                break;
-              case '<':
-                filteredRooms = filteredRooms.filter(
-                  (room: { squareMeters: number }) =>
-                    room.squareMeters < squareFeet
-                );
-                break;
-              case '>':
-                filteredRooms = filteredRooms.filter(
-                  (room: { squareMeters: number }) =>
-                    room.squareMeters > squareFeet
-                );
-                break;
-              default:
-                break;
-            }
-          }
-          break;
-        case 'selectedCurrency':
-          if (value !== 'all')
-            filteredRooms = filteredRooms.filter(
-              (room: { Currency: string }) => room.Currency === value
-            );
-          break;
-        case 'sort':
-          // You can decide how to handle sorting here
-          break;
+        case 'name':
         default:
+          comparison =
+            a.floor === b.floor ? a.roomIndex - b.roomIndex : a.floor - b.floor;
           break;
       }
+      return sortDirection === 'asc' ? comparison : -comparison;
     });
 
-    return filteredRooms.length > 0
-      ? filteredRooms.sort(
-          (
-            a: { price: number; floor: number; roomIndex: number },
-            b: { price: number; floor: number; roomIndex: number }
-          ) => {
-            const comparison = sortDirection === 'asc' ? -1 : 1;
-            switch (sortType) {
-              /* case 'name':
-          return (
-           /* comparison *
-            AllTenants > 0 ?(AllTenants.find((tenant:any) => tenant.id === a.tenantId)?.name || '').localeCompare(AllTenants.find((tenant:any) => tenant.id === b.tenantId)?.name || ''):
-          );*/
-              case 'price':
-                return comparison * (a.price - b.price);
-              case 'floor':
-                return comparison * (a.floor - b.floor);
-              case 'room':
-                return comparison * (a.roomIndex - b.roomIndex);
-              default:
-                return 0;
-            }
-          }
-        )
-      : [];
+    return filteredRooms;
   };
   const removeFilterOptionByName = (key: any) => {
     setFilterOptions((options) => {
@@ -793,17 +752,30 @@ const MainPage = ({
     FilterDueDateValue,
   ]);
 
-  const sortedAndFilteredRooms = filterAndSortRooms();
+  const sortedAndFilteredRooms = useMemo(() => {
+    return filterAndSortRooms();
+  }, [
+    RoomList,
+    filterStatus,
+    filterPriceOperator,
+    filterPriceValue,
+    filterSquareFeetOperator,
+    filterSquareFeetValue,
+    FilterDueDateOperator,
+    FilterDueDateValue,
+    floorFilter,
+    roomFilter,
+    TenantNameFilter,
+    selectedCurrency,
+    sortType,
+    sortDirection,
+  ]);
 
   const [PeopleSelectedPage, setPeopleSelectedPage] = useState<
     'TenantsList' | 'BrokersList' | 'TenantReviews'
   >('TenantsList');
   const [ToolsSelectedPage, setToolsSelectedPage] = useState<
-    | 'EmailTemplates'
-    | 'SMSTemplates'
-    | 'Database'
-    | 'Settings'
-    | 'Support'
+    'EmailTemplates' | 'SMSTemplates' | 'Database' | 'Settings' | 'Support'
   >(
     privileges.editEmailTemplates
       ? 'EmailTemplates'
@@ -820,6 +792,9 @@ const MainPage = ({
     | 'Action History'
     | 'SMS Details'
     | 'Basic Rental income report'
+    | 'TenantsList'
+    | 'BrokersList'
+    | 'TenantReviews'
   >('Overview');
   const [AddARoomState, setAddARoomState] = useState(false);
   const [AddRoomFormFloor, setAddRoomFormFloor] = useState(1);
@@ -834,7 +809,6 @@ const MainPage = ({
     AddRoomFormPaymentCycleCustomDays,
     setAddRoomFormPaymentCycleCustomDays,
   ] = useState(0);
-  const { AllRoomSpecifications, AllTenants, setAllTenants } = useGlobal();
 
   const [AddRoomFormSquareMeters, setAddRoomFormSquareMeters] = useState(0);
   const [AddRoomFormRoomSpecifications, setAddRoomFormRoomSpecifications] =
@@ -1152,7 +1126,7 @@ const MainPage = ({
     if (SelectedPage === 'People') {
       //RefreshDataFromSqlite();
     }
-    if (SelectedPage === 'Calendar' || SelectedPage === 'Database' || SelectedPage === 'Expense') {
+    if (SelectedPage === 'Calendar' || SelectedPage === 'Database') {
       setHideSideBarForCalendar(true);
     } else {
       setHideSideBarForCalendar(false);
@@ -1200,11 +1174,11 @@ const MainPage = ({
     setTenantNameFilter('');
     setRoomFilter('');
     setFilterStatus('all');
-    setFilterPriceOperator('None');
+    setFilterPriceOperator('=');
     setFilterPriceValue('');
-    setFilterDueDateOperator('None');
+    setFilterDueDateOperator('=');
     setFilterDueDateValue('');
-    setFilterSquareFeetOperator('None');
+    setFilterSquareFeetOperator('=');
     setFilterSquareFeetValue('');
     setSelectedCurrency('all');
     setSortType('name');
@@ -1543,8 +1517,111 @@ const MainPage = ({
   };
   const [highlightedFields, setHighlightedFields] = useState<string[]>([]);
 
+  // Add these near the top of MainPage component
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string[]>([]);
+  const [minPrice, setMinPrice] = useState<number | ''>('');
+  const [maxPrice, setMaxPrice] = useState<number | ''>('');
+  const [showRoomCalendar, setShowRoomCalendar] = useState(false);
+  // Add these state variables at the top with other states
+  const [fullBuildingFilter, setFullBuildingFilter] = useState<
+    'yes' | 'no' | 'all'
+  >('all');
+  const [floorFilterExpense, setFloorFilterExpense] = useState('');
+  const [roomFilterExpense, setRoomFilterExpense] = useState('');
+  const [beforeTaxFilter, setBeforeTaxFilter] = useState<'yes' | 'no' | 'all'>(
+    'all'
+  );
+  const [reoccurringFilter, setReoccurringFilter] = useState<
+    'yes' | 'no' | 'all'
+  >('all');
+  const [reoccurringTypeFilter, setReoccurringTypeFilter] = useState<
+    'Day' | 'Monthly' | 'Yearly' | 'all'
+  >('all');
+  const [startDateFilter, setStartDateFilter] = useState('');
+  const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null);
+  const [editedExpense, setEditedExpense] = useState<expenses | null>(null);
+  const [reoccurringDayCount, setReoccurringDayCount] = useState<string>('');
+  // Add this with other state variables
+  const [showExpenseFilters, setShowExpenseFilters] = useState(true);
+  const [showExpenseFilters2, setShowExpenseFilters2] = useState(false);
+  const [loadingAddExpense, setLoadingAddExpense] = useState(false);
+  const handleAddExpense = async () => {
+    setLoadingAddExpense(true);
+    const newExpense: expenses = {
+      id: uuidv4(),
+      name: 'New Expense',
+      description: 'New Expense Description',
+      price: 0,
+      date: Date.now(),
+      userId: SelectedUserId,
+      fullBuilding: false,
+      floor: 0,
+      room: 0,
+      doesReoccur: false,
+      recurringCycle: 0,
+      recurringType: 'Day',
+      HasEndDate: false,
+      EndDate: 0,
+      branchId: SelectedBranchId,
+      // New notification fields
+      sendEmail: false,
+      emailDaysBefore: 0,
+      sendSms: false,
+      smsDaysBefore: 0,
+      emailTo: null,
+      smsTo: null,
+      Currency: 'ETB',
+      category: 'Other',
+      beforeTax: false,
+    };
+  
+    setEditingExpenseId(newExpense.id);
+    setEditedExpense(newExpense);
+    await addValue('expenses', newExpense, setChangeMade);
+    setAllExpenses([...AllExpenses, newExpense]);
+    setExpenses([...expenses, newExpense]);
+    setLoadingAddExpense(false);
+  };
+  const [expenses, setExpenses] = useState<expenses[]>([]);
+
+  // Add this handler to prevent clicks in the sidebar from triggering the expense save
+  const handleSidebarClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+  };
+
+  // Add this state near other states
+  const [showExpenseCalendar, setShowExpenseCalendar] = useState(false);
+  const LoadingOverlay = () => (
+    <div
+      style={{
+        display: loadingAddExpense ? 'flex' : 'none',
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+   
+        height: '100%',
+        paddingRight: 'var(--12px-V)',
+        backgroundColor: 'rgba(0, 0, 0, 0.3)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 1000,
+      }}
+    >
+      <img
+        src={loadingGif}
+        style={{
+          width: 'var(--80px-V)',
+          height: 'var(--80px-V)',
+        }}
+      />
+    </div>
+  );
   return (
-    <>
+      <>
+     <LoadingOverlay />
       <div
         className="MainContainerMain"
         style={{
@@ -1597,13 +1674,16 @@ const MainPage = ({
                   borderBottom: SideBarShowState
                     ? 'var(--1px-V) solid var(--Text-Color-Grey)'
                     : 'none',
+                  width: '90%',
                 }}
               >
                 <button
                   className="SideBarTopButton"
                   onClick={handleCloseSideBar}
                   title="Close Sidebar"
+                  style={{ display: SideBarShowState ? '' : 'none' }}
                 >
+                  {/* <img src={IconsGUI().Left2ArrowIcon} alt="" /> */}
                   Close sidebar
                 </button>
                 {privileges.addRoom ? (
@@ -1613,22 +1693,24 @@ const MainPage = ({
                       handleAddRoomButtonInitial(!AddARoomState);
                     }}
                     title="Add room"
+                    style={{ display: SideBarShowState ? '' : 'none' }}
                   >
-                    Add room
+                    Add Room
                   </button>
                 ) : (
                   <></>
                 )}
                 <button
                   className="SideBarTopButton"
-                  onClick={handleClearFilters}
+                  onClick={() => setShowRoomCalendar(!showRoomCalendar)}
                   style={{
                     visibility: SideBarShowState ? 'visible' : 'hidden',
                   }}
-                  title="Clear filters"
+                  title="Show room calendar"
                 >
-                  Clear Filters
+                  {!showRoomCalendar ? 'Show Calendar' : 'Hide Calendar'}
                 </button>
+
                 {/* <button
                   className="SideBarTopButton"
                   style={{
@@ -1644,6 +1726,20 @@ const MainPage = ({
                   {ShowArchived ? 'Show unarchived' : 'Show archived'}
                 </button>{' '} */}
               </div>
+              {filterOptions.length > 0 && (
+                <button
+                  className="SideBarTopButton"
+                  onClick={handleClearFilters}
+                  style={{
+                    width: '90%',
+                    maxHeight: 'var(--30px-V)',
+                    marginTop: 'var(--10px-V)',
+                    display: SideBarShowState ? '' : 'none',
+                  }}
+                >
+                  Clear all filters
+                </button>
+              )}
               <div
                 className="SideBarRoomPageTopPart"
                 style={{
@@ -1687,10 +1783,9 @@ const MainPage = ({
                       >
                         {' '}
                         <div className="TenantSearchBarContainer">
-                          {' '}
                           Tenant:
                           <input
-                            type="text1"
+                            type="text"
                             className="TenantSearchBar"
                             placeholder="Search tenant name"
                             value={TenantNameFilter}
@@ -1716,7 +1811,6 @@ const MainPage = ({
                             />
                           </div>
                           <div>
-                            {' '}
                             Room:
                             <input
                               placeholder="0"
@@ -1814,7 +1908,6 @@ const MainPage = ({
                             <option value="=">{'='}</option>
                             <option value="<">{'<'}</option>
                             <option value=">">{'>'}</option>
-                            <option value="None">Any</option>
                           </select>
                           <input
                             type="number"
@@ -1855,7 +1948,6 @@ const MainPage = ({
                             <option value="=">{'='}</option>
                             <option value="<">{'<'}</option>
                             <option value=">">{'>'}</option>
-                            <option value="None">Any</option>
                           </select>
                           <input
                             type="number"
@@ -1898,7 +1990,6 @@ const MainPage = ({
                             <option value="=">{'='}</option>
                             <option value="<">{'<'}</option>
                             <option value=">">{'>'}</option>
-                            <option value="None">Any</option>
                           </select>
                           <input
                             type="number"
@@ -1982,7 +2073,9 @@ const MainPage = ({
               <div
                 className="SideBarRoomPageBottomPartAddRoom"
                 style={{
-                  height: AddARoomState ? 'calc(100% - var(--130px-V))' : '0%',
+                  height: AddARoomState
+                    ? 'calc(100% - var(--180px-V) - var(--10px-V))'
+                    : '0%',
                 }}
               >
                 <div>
@@ -2461,9 +2554,7 @@ const MainPage = ({
                   margin: '0px 0px 0px 0px',
                   display: SideBarShowState ? '' : 'none',
                 }}
-              >
-                
-              </h3>
+              ></h3>
               <SideBarItem
                 page="TenantsList"
                 currentPage={PeopleSelectedPage}
@@ -2504,9 +2595,7 @@ const MainPage = ({
                   margin: '0px 0px 0px 0px',
                   display: SideBarShowState ? '' : 'none',
                 }}
-              >
-                
-              </h3>
+              ></h3>
               {privileges.editEmailTemplates && (
                 <SideBarItem
                   page="EmailTemplates"
@@ -2531,7 +2620,7 @@ const MainPage = ({
                   currentPage={ToolsSelectedPage}
                   onClick={() => setToolsSelectedPage('Database')}
                 >
-              Database
+                  Database
                 </SideBarItem>
               )}
               {(privileges.viewDatabase ||
@@ -2579,6 +2668,36 @@ const MainPage = ({
                 onClick={() => setDashboardSelectedPage('Expenses')}
               >
                 Expenses
+              </SideBarItem>
+              <h3
+                style={{
+                  fontSize: 'var(--20px-V)',
+                  margin: '0px 0px 0px 0px',
+                  display: SideBarShowState ? '' : 'none',
+                }}
+              >
+                Lists
+              </h3>
+              <SideBarItem
+                page="TenantsList"
+                currentPage={DashboardSelectedPage}
+                onClick={() => setDashboardSelectedPage('TenantsList')}
+              >
+                Tenant list
+              </SideBarItem>
+              <SideBarItem
+                page="BrokersList"
+                currentPage={DashboardSelectedPage}
+                onClick={() => setDashboardSelectedPage('BrokersList')}
+              >
+                Broker list
+              </SideBarItem>
+              <SideBarItem
+                page="TenantReviews"
+                currentPage={DashboardSelectedPage}
+                onClick={() => setDashboardSelectedPage('TenantReviews')}
+              >
+                Tenant Reviews
               </SideBarItem>
               <h3
                 style={{
@@ -2646,6 +2765,388 @@ const MainPage = ({
               >
                 More reports coming soon
               </p>
+            </>
+          ) : SelectedPage === 'Expense' ? (
+            <>
+              <h3
+                style={{
+                  display: SideBarShowState ? '' : 'none',
+                  fontSize: 'var(--28px-V)',
+                  margin: 'var(--15px-V) 0px var(--15px-V) 0px',
+                }}
+                id="expense-manager-title"
+              >
+                Expense Manager
+              </h3>
+              <div
+                className="SideBarTopContainer"
+                style={{
+                  borderBottom: SideBarShowState
+                    ? 'var(--1px-V) solid var(--Text-Color-Grey)'
+                    : 'none',
+                  width: '90%',
+                }}
+              >
+                {' '}
+                <button
+                  className="SideBarTopButton"
+                  onClick={handleCloseSideBar}
+                  title="Close Sidebar"
+                  style={{ display: SideBarShowState ? '' : 'none' }}
+                >
+                  {/* <img src={IconsGUI().Left2ArrowIcon} alt="" /> */}
+                  Close sidebar
+                </button>{' '}
+                <button
+                  className="SideBarTopButton"
+                  onClick={handleAddExpense}
+                  title="Add Expense"
+                  style={{ display: SideBarShowState ? '' : 'none' }}
+                >
+                  Add Expense
+                </button>
+                <button
+                  className="SideBarTopButton"
+                  onClick={() => setShowExpenseCalendar(!showExpenseCalendar)}
+                  style={{ display: SideBarShowState ? '' : 'none' }}
+                  title="Show Calendar"
+                >
+                  {showExpenseCalendar ? 'Hide Calendar' : 'Show Calendar'}
+                </button>
+              </div>{' '}
+              {(searchTerm ||
+                selectedCategory.length > 0 ||
+                selectedCurrency !== 'all' ||
+                minPrice ||
+                maxPrice ||
+                fullBuildingFilter !== 'all' ||
+                floorFilter ||
+                roomFilter ||
+                beforeTaxFilter !== 'all' ||
+                reoccurringFilter !== 'all' ||
+                reoccurringTypeFilter !== 'all' ||
+                reoccurringDayCount ||
+                startDateFilter) && (
+                <button
+                  className="SideBarTopButton"
+                  style={{
+                    width: '90%',
+                    maxHeight: 'var(--30px-V)',
+                    marginTop: 'var(--10px-V)',
+                    display: SideBarShowState ? '' : 'none',
+                  }}
+                  onClick={() => {
+                    setSearchTerm('');
+                    setSelectedCategory([]);
+                    setSelectedCurrency('all');
+                    setMinPrice('');
+                    setMaxPrice('');
+                    setFullBuildingFilter('all');
+                    setFloorFilter('');
+                    setRoomFilter('');
+                    setBeforeTaxFilter('all');
+                    setReoccurringFilter('all');
+                    setReoccurringTypeFilter('all');
+                    setReoccurringDayCount('');
+                    setStartDateFilter('');
+                  }}
+                >
+                  Reset Filters
+                </button>
+              )}
+              <div
+                style={{
+                  display: 'flex',
+                  overflowY: 'auto',
+                  height: 'calc(100% - var(--200px-V) + var(--10px-V))',
+                  flexDirection: 'column',
+                  width:"100%",
+                  alignItems: 'center',
+                }}
+              >
+                <div
+                  className="SearchBarContainer"
+                  style={{
+                    backgroundColor: 'var(--Secondary-Color30)',
+                    margin: 'var(--5px-V)',
+                    display: SideBarShowState ? '' : 'none',
+                    width: '85%',
+                    borderRadius: 'var(--10px-V)',
+                    padding: 'var(--10px-V)',
+                    boxShadow:
+                      'var(--3px-V) var(--3px-V) var(--5px-V) var(---1px-V) var(--Secondary-Color30)',
+                  }}
+                >
+                  <div
+                    onClick={() => setShowExpenseFilters(!showExpenseFilters)}
+                    style={{
+                      cursor: 'pointer',
+                      fontSize: 'var(--22px-V)',
+                    }}
+                    id="expense-filters-toggle"
+                  >
+                    Search & Filter
+                  </div>
+                  {showExpenseFilters && (
+                    <div
+                      style={{
+                        width: '100%',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        marginLeft: 'var(--10px-V)',
+                        marginTop: 'var(--10px-V)',
+                        alignItems: 'flex-start',
+                      }}
+                    >
+                      <div
+                        style={{ width: '100%', marginBottom: 'var(--10px-V)' }}
+                      >
+                        <input
+                          type="text"
+                          placeholder="Search expenses"
+                          style={{ padding: 'var(--5px-V)' }}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                      </div>
+
+                      <div
+                        style={{ width: '100%', marginBottom: 'var(--10px-V)' }}
+                      >
+                        <select
+                          value={selectedCurrency}
+                          onChange={(e) => setSelectedCurrency(e.target.value)}
+                          style={{ padding: 'var(--5px-V)' }}
+                        >
+                          <option value="all">All Currencies</option>
+                          {GetCurrencyAsOptionsOnSelect()}
+                        </select>
+                      </div>
+
+                      <div
+                        style={{ width: '100%', marginBottom: 'var(--10px-V)' }}
+                      >
+                        Price Range:
+                        <div style={{ display: 'flex', gap: 'var(--5px-V)' }}>
+                          <input
+                            type="number"
+                            placeholder="Min"
+                            style={{ width: '40%', padding: 'var(--5px-V)' }}
+                            value={minPrice}
+                            onChange={(e) =>
+                              setMinPrice(
+                                e.target.value ? parseFloat(e.target.value) : ''
+                              )
+                            }
+                          />
+                          <input
+                            type="number"
+                            placeholder="Max"
+                            style={{ width: '40%', padding: 'var(--5px-V)' }}
+                            value={maxPrice}
+                            onChange={(e) =>
+                              setMaxPrice(
+                                e.target.value ? parseFloat(e.target.value) : ''
+                              )
+                            }
+                          />
+                        </div>
+                      </div>
+
+                      <div
+                        style={{ width: '100%', marginBottom: 'var(--10px-V)' }}
+                      >
+                        <select
+                          value={fullBuildingFilter}
+                          onChange={(e) =>
+                            setFullBuildingFilter(
+                              e.target.value as 'yes' | 'no' | 'all'
+                            )
+                          }
+                          style={{ padding: 'var(--5px-V)' }}
+                        >
+                          <option value="all">All Buildings</option>
+                          <option value="yes">Full Building Only</option>
+                          <option value="no">Specific Rooms Only</option>
+                        </select>
+
+                        {fullBuildingFilter === 'no' && (
+                          <div
+                            style={{
+                              display: 'flex',
+                              gap: 'var(--5px-V)',
+                              marginTop: 'var(--5px-V)',
+                            }}
+                          >
+                            <input
+                              type="number"
+                              placeholder="Floor"
+                              value={floorFilter}
+                              onChange={(e) => setFloorFilter(e.target.value)}
+                              style={{ width: '40%', padding: 'var(--5px-V)' }}
+                            />
+                            <input
+                              type="number"
+                              placeholder="Room"
+                              value={roomFilter}
+                              onChange={(e) => setRoomFilter(e.target.value)}
+                              style={{ width: '40%', padding: 'var(--5px-V)' }}
+                            />
+                          </div>
+                        )}
+                      </div>
+
+                      <div
+                        style={{ width: '100%', marginBottom: 'var(--10px-V)' }}
+                      >
+                        <select
+                          value={beforeTaxFilter}
+                          onChange={(e) =>
+                            setBeforeTaxFilter(
+                              e.target.value as 'yes' | 'no' | 'all'
+                            )
+                          }
+                          style={{ padding: 'var(--5px-V)' }}
+                        >
+                          <option value="all">All Tax Types</option>
+                          <option value="yes">Before Tax Only</option>
+                          <option value="no">After Tax Only</option>
+                        </select>
+                      </div>
+
+                      <div
+                        style={{ width: '100%', marginBottom: 'var(--10px-V)' }}
+                      >
+                        <select
+                          value={reoccurringFilter}
+                          onChange={(e) =>
+                            setReoccurringFilter(
+                              e.target.value as 'yes' | 'no' | 'all'
+                            )
+                          }
+                          style={{ padding: 'var(--5px-V)' }}
+                        >
+                          <option value="all">All Recurrence Types</option>
+                          <option value="yes">Recurring Only</option>
+                          <option value="no">One-time Only</option>
+                        </select>
+
+                        {reoccurringFilter === 'yes' && (
+                          <>
+                            <select
+                              value={reoccurringTypeFilter}
+                              onChange={(e) =>
+                                setReoccurringTypeFilter(
+                                  e.target.value as
+                                    | 'Day'
+                                    | 'Monthly'
+                                    | 'Yearly'
+                                    | 'all'
+                                )
+                              }
+                              style={{
+                                marginTop: 'var(--5px-V)',
+                                padding: 'var(--5px-V)',
+                              }}
+                            >
+                              <option value="all">All Periods</option>
+                              <option value="Day">By Day Count</option>
+                              <option value="Monthly">Monthly</option>
+                              <option value="Yearly">Yearly</option>
+                            </select>{' '}
+                            {reoccurringTypeFilter === 'Day' && (
+                              <>
+                                <input
+                                  type="number"
+                                  placeholder="Day Count"
+                                  value={reoccurringDayCount}
+                                  onChange={(e) =>
+                                    setReoccurringDayCount(e.target.value)
+                                  }
+                                  style={{
+                                    width: '40%',
+                                    padding: 'var(--5px-V)',
+                                  }}
+                                />
+                              </>
+                            )}
+                          </>
+                        )}
+                      </div>
+
+                      <div
+                        style={{ width: '100%', marginBottom: 'var(--10px-V)' }}
+                      >
+                        <div>Date:</div>
+                        <input
+                          type="date"
+                          value={startDateFilter}
+                          onChange={(e) => setStartDateFilter(e.target.value)}
+                          style={{ padding: 'var(--5px-V)' }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+                {/* Categories Section */}
+                <div
+                  className="SearchBarContainer"
+                  style={{
+                    backgroundColor: 'var(--Secondary-Color30)',
+                    margin: 'var(--5px-V)',
+                    display: SideBarShowState ? '' : 'none',
+                    width: '85%',
+                    borderRadius: 'var(--10px-V)',
+                    padding: 'var(--10px-V)',
+                    boxShadow:
+                      'var(--3px-V) var(--3px-V) var(--5px-V) var(---1px-V) var(--Secondary-Color30)',
+                  }}
+                >
+                  <div
+                    onClick={() => setShowExpenseFilters2(!showExpenseFilters2)}
+                    style={{
+                      cursor: 'pointer',
+                      fontSize: 'var(--22px-V)',
+                    }}
+                    id="expense-categories-container"
+                  >
+                    Categories
+                  </div>
+                  {showExpenseFilters2 && (
+                    <div style={{ marginTop: 'var(--10px-V)', width: '95%' }}>
+                      {[
+                        'Property Maintenance',
+                        'Utilities',
+                        'Administrative',
+                        'Staff',
+                        'Taxes',
+                        'Capital',
+                        'Financial',
+                        'Security',
+                        'Professional',
+                        'Other',
+                      ].map((category) => (
+                        <div
+                          key={category}
+                          onClick={() =>
+                            setSelectedCategory(
+                              selectedCategory.includes(category)
+                                ? selectedCategory.filter((c) => c !== category)
+                                : [...selectedCategory, category]
+                            )
+                          }
+                          className={
+                            selectedCategory.includes(category)
+                              ? 'expense-filters-categoryButton-Selected'
+                              : 'expense-filters-categoryButton'
+                          }
+                        >
+                          {category}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
             </>
           ) : (
             <></>
@@ -2838,6 +3339,7 @@ const MainPage = ({
                           <input
                             className="AddANewRoomInputsMid"
                             value={spec.Detail}
+                            placeholder="Enter name"
                             onChange={(e) => {
                               roomSpecificationAPI.editRoomSpecificationApi(
                                 spec.id,
@@ -3014,46 +3516,64 @@ const MainPage = ({
               : `calc(100% - var(--${SideBarWidth}px-V))`,
             overflowY: SelectedPage === 'Database' ? 'hidden' : 'auto',
             height:
-              SelectedPage === 'Database' || SelectedPage === 'Tools'
+              SelectedPage === 'Database' || SelectedPage === 'Tools' || SelectedPage === 'Expense'
                 ? 'calc(100% - var(--60px-V))'
                 : '',
           }}
         >
           {SelectedPage === 'Rooms' && (
-            <RoomListComponent
-              setChangeProgress={setChangeProgress}
-              changeProgress={changeProgress}
-              SelectedAppUser={SelectedAppUser}
-              updateRoomProperty={updateRoomProperty}
-              updateRoomPropertyWithOutRefresh={
-                updateRoomPropertyWithOutRefresh
-              }
-              SelectedAppUser={SelectedAppUser}
-              SelectedBranchId={SelectedBranchId}
-              SelectedUserId={SelectedUserId}
-              ShowArchived={ShowArchived}
-              agreementApi={agreementApi}
-              updateRoomPropertyLocal={updateRoomPropertyLocal}
-              handleAddRoomButtonInitial={handleAddRoomButtonInitial}
-              brokerApi={brokerApi}
-              BrokerList={BrokerList}
-              setBrokerList={setBrokerList}
-              pastTenantReviewApi={pastTenantReviewApi}
-              RoomList={RoomList}
-              sortedAndFilteredRooms={sortedAndFilteredRooms}
-              removeFilterOption={removeFilterOption}
-              filterOptions={filterOptions}
-              tenantAPI={tenantAPI}
-              AddARoomState={AddARoomState}
-              setAddARoomState={setAddARoomState}
-              roomPaymentInfoApi={roomPaymentInfoApi}
-              isUpdatingTenantList={isUpdatingTenantList}
-              setIsUpdatingTenantList={setIsUpdatingTenantList}
-              setSelectedEditRoomId={setSelectedEditRoomId}
-              brokersRecommendationListApi={brokersRecommendationListApi}
-              setChangeMade={setChangeMade}
-              roomListContainerRef={roomListContainerRef}
-            />
+            <>
+              {showRoomCalendar ? (
+                <>
+                  <CalendarPage
+                    updateRoomProperty={updateRoomProperty}
+                    RoomList={RoomList}
+                    sortedAndFilteredRooms={RoomList}
+                    removeFilterOption={removeFilterOption}
+                    filterOptions={[]}
+                    SelectedBranchId={SelectedBranchId}
+                  />
+                </>
+              ) : (
+                <>
+                  {' '}
+                  <RoomListComponent
+                    setChangeProgress={setChangeProgress}
+                    changeProgress={changeProgress}
+                    SelectedAppUser={SelectedAppUser}
+                    updateRoomProperty={updateRoomProperty}
+                    updateRoomPropertyWithOutRefresh={
+                      updateRoomPropertyWithOutRefresh
+                    }
+                    SelectedAppUser={SelectedAppUser}
+                    SelectedBranchId={SelectedBranchId}
+                    SelectedUserId={SelectedUserId}
+                    ShowArchived={ShowArchived}
+                    agreementApi={agreementApi}
+                    updateRoomPropertyLocal={updateRoomPropertyLocal}
+                    handleAddRoomButtonInitial={handleAddRoomButtonInitial}
+                    brokerApi={brokerApi}
+                    BrokerList={BrokerList}
+                    setBrokerList={setBrokerList}
+                    pastTenantReviewApi={pastTenantReviewApi}
+                    RoomList={RoomList}
+                    sortedAndFilteredRooms={sortedAndFilteredRooms}
+                    removeFilterOption={removeFilterOption}
+                    filterOptions={filterOptions}
+                    tenantAPI={tenantAPI}
+                    AddARoomState={AddARoomState}
+                    setAddARoomState={setAddARoomState}
+                    roomPaymentInfoApi={roomPaymentInfoApi}
+                    isUpdatingTenantList={isUpdatingTenantList}
+                    setIsUpdatingTenantList={setIsUpdatingTenantList}
+                    setSelectedEditRoomId={setSelectedEditRoomId}
+                    brokersRecommendationListApi={brokersRecommendationListApi}
+                    setChangeMade={setChangeMade}
+                    roomListContainerRef={roomListContainerRef}
+                  />
+                </>
+              )}
+            </>
           )}
           {SelectedPage === 'People' && (
             <PeopleComponentPage
@@ -3111,6 +3631,7 @@ const MainPage = ({
               updateRoomPropertyLocal={updateRoomPropertyLocal}
               updateRoomProperty={updateRoomProperty}
               SelectedBranchId={SelectedBranchId}
+              agreementApi={agreementApi}
             />
           )}
           {SelectedPage === 'Database' && (
@@ -3121,12 +3642,34 @@ const MainPage = ({
             />
           )}
           {SelectedPage === 'Expense' && (
-                <ExpenseManager
-                // Header controls
+            <ExpenseManager
               setChangeMade={setChangeMade}
               SelectedUserId={SelectedUserId}
               SelectedBranchId={SelectedBranchId}
-              />
+              searchTerm={searchTerm}
+              selectedCategory={selectedCategory}
+              selectedCurrency={selectedCurrency}
+              minPrice={minPrice}
+              maxPrice={maxPrice}
+              fullBuildingFilter={fullBuildingFilter}
+              floorFilter={floorFilter}
+              roomFilter={roomFilter}
+              beforeTaxFilter={beforeTaxFilter}
+              reoccurringFilter={reoccurringFilter}
+              reoccurringTypeFilter={reoccurringTypeFilter}
+              startDateFilter={startDateFilter}
+              expenses={expenses}
+              setExpenses={setExpenses}
+              setEditingExpenseId={setEditingExpenseId}
+              setEditedExpense={setEditedExpense}
+              editingExpenseId={editingExpenseId}
+              editedExpense={editedExpense}
+              reoccurringDayCount={reoccurringDayCount}
+              setReoccurringDayCount={setReoccurringDayCount}
+              showExpenseCalendar={showExpenseCalendar}
+              setShowExpenseCalendar={setShowExpenseCalendar}
+            
+            />
           )}
         </div>
       </div>

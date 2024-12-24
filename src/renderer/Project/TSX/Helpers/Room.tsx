@@ -482,12 +482,13 @@ const Room = ({
     }
 
     if (name.length >= 3 && tel1.length >= 6 && startTime.length >= 1) {
+      const fixedName = name.trim();
       setIsUpdatingTenantList(true);
       setIsLoading(true)
       const tenantId = uuidv4();
       const tenant = {
         id: tenantId,
-        name,
+        name: fixedName,
         phoneNumber: tel1,
         phoneNumber2: tel2,
         email,

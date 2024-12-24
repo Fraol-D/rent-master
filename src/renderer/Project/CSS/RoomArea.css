@@ -373,7 +373,7 @@
 .SideBarTopContainer {
   display: flex;
   flex-direction: row;
-  gap: var(--30px-V);
+  gap: var(--20px-V);
   border-bottom: var(--1px-V) solid grey;
 }
 .SideBarTopButton {
@@ -760,4 +760,38 @@
 
 .confirm-button:hover {
   opacity: 0.9;
+}
+
+
+.expense-filters-categoryButton{
+  padding: var(--8px-V);
+  cursor: pointer;
+  width: 100%;
+  background-color: var(--Secondary-Color30);
+  border-radius: var(--5px-V);
+  margin-bottom: var(--5px-V);
+  transition: all 0.2s;
+}
+.expense-filters-categoryButton-Selected{
+  padding: var(--8px-V);
+  cursor: pointer;
+  width: 100%;
+  background-color: var(--Accent-Color50);
+  border-radius: var(--5px-V);
+  margin-bottom: var(--5px-V);
+  transition: all 0.2s;
+}
+
+.expense-filters-categoryButton:hover{
+
+  background-color: var(--Secondary-Color60);
+
+}
+.expense-filters-categoryButton-Selected:hover{
+
+  background-color: var(--Accent-Color);
+
+}
+.highlighted {
+  background-color: var(--Accent-Color50);
 }

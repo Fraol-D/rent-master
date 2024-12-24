@@ -604,12 +604,12 @@ const CalendarGUI: React.FC<CalendarProps> = ({
          
             }}
           />
-          {numberOfMonthsFuture > 1 && numberOfMonthsPast > 1 && (
+          {(numberOfMonthsFuture > 1 || numberOfMonthsPast > 1) && (
             <button
               onClick={scrollToCurrentDate}
               style={{
                 padding: 'var(--5px-V) var(--10px-V)',
-                backgroundColor: '#4CAF50',
+               
 
                 border: 'none',
                 borderRadius: 'var(--3px-V)',

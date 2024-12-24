@@ -34,6 +34,20 @@ const DashbMonthlyExpenseTrendWidget: React.FC<
   const [selectedDate, setSelectedDate] = useState(
     new Date().getFullYear().toString()
   );
+  
+  const screenWidth = window.innerWidth;
+    let scaleFactor;
+    if (screenWidth <= 1280) {
+      scaleFactor = 1280 / 1920;
+    } else if (screenWidth <= 1366) {
+      scaleFactor = 1366 / 1920;
+    } else if (screenWidth <= 1920) {
+      scaleFactor = 1920 / 1920;
+    } else {
+      scaleFactor = 2560 / 2560;
+    }
+    const [leftMargin, setLeftMargin] = useState(0);
+
   const [expensesData, setExpensesData] = useState<expenses[]>([]);
   const [currencyDisplay, setCurrencyDisplay] = useState<
     'ETB_ONLY' | 'USD_ONLY' | 'ALL_ETB' | 'ALL_USD'
@@ -163,7 +177,19 @@ const DashbMonthlyExpenseTrendWidget: React.FC<
     // Sort expenses by date
     return allExpenses.sort((a, b) => a.date - b.date);
   };
-
+  const formatChartValue = (value: number) => {
+    if (currencyDisplay === 'ETB_ONLY' || currencyDisplay === 'ALL_ETB') {
+      const formatted = `${formatNumberWithSuffix(value)} ${CurrencySign(
+        'ETB'
+      )}`;
+      return formatted;
+    } else {
+      const formatted = `${formatNumberWithSuffix(value)}${CurrencySign(
+        'USD'
+      )}`;
+      return formatted;
+    }
+  };
   const aggregateMonthlyData = useMemo(() => {
     const selectedYear = parseInt(selectedDate);
     const yearStart = startOfYear(new Date(selectedYear, 0, 1));
@@ -174,7 +200,13 @@ const DashbMonthlyExpenseTrendWidget: React.FC<
       yearStart,
       yearEnd
     );
-
+    const maxValue = Math.max(...allExpenses.map(d => 
+      Math.max(d.price || 0)
+    ));
+    const formattedMaxValue = formatChartValue(maxValue);
+    const leftMargin = 40 + formattedMaxValue.length * 5 * scaleFactor;
+  
+    setLeftMargin(leftMargin);
     return d3.range(0, 12).map((month: number) => {
       const monthStart = startOfMonth(new Date(selectedYear, month, 1));
       const monthEnd = endOfMonth(new Date(selectedYear, month, 1));
@@ -194,28 +226,40 @@ const DashbMonthlyExpenseTrendWidget: React.FC<
       };
     });
   }, [selectedDate, expensesData, currencyDisplay]);
+  
   const aggregateYearlyData = useMemo(() => {
-    const selectedYear = parseInt(selectedDate);
-    const yearStart = startOfYear(new Date(selectedYear, 0, 1));
-    const yearEnd = endOfYear(new Date(selectedYear, 11, 31));
+    const currentYear = new Date().getFullYear();
+    const years = Array.from({length: 5}, (_, i) => currentYear - 4 + i);
+    const maxValue = Math.max(...expensesData.map(d => 
+      Math.max(d.price || 0)
+    ));
+    const formattedMaxValue = formatChartValue(maxValue);
+    const leftMargin = 40 + formattedMaxValue.length * 5 * scaleFactor;
+  
+    setLeftMargin(leftMargin);
+    return years.map(year => {
+      const yearStart = startOfYear(new Date(year, 0, 1));
+      const yearEnd = endOfYear(new Date(year, 11, 31));
+      
+      const allExpenses = generateRecurringExpenses(
+        expensesData,
+        yearStart,
+        yearEnd
+      );
 
-    const allExpenses = generateRecurringExpenses(
-      expensesData,
-      yearStart,
-      yearEnd
-    );
+      const totalExpense = allExpenses.reduce(
+        (sum, e) => sum + processValueByCurrency(e.price, e.Currency, e.date),
+        0
+      );
 
-    const totalYearlyExpense = allExpenses.reduce((sum, e) => {
-      return sum + processValueByCurrency(e.price, e.Currency, e.date);
-    }, 0);
+      return {
+        date: year.toString(),
+        expense: totalExpense
+      };
+    });
+  }, [expensesData, currencyDisplay]);
 
-    return {
-      year: selectedYear,
-      totalExpense: totalYearlyExpense,
-    };
-  }, [selectedDate, expensesData, currencyDisplay]);
-  const dataset =
-    showBy === 'Monthly' ? aggregateMonthlyData : aggregateYearlyData;
+  const dataset = showBy === 'Monthly' ? aggregateMonthlyData : aggregateYearlyData;
 
   const expenseStats = useMemo(() => {
     const selectedYear = parseInt(selectedDate);
@@ -338,15 +382,7 @@ const DashbMonthlyExpenseTrendWidget: React.FC<
           }}
           grid={{ vertical: true, horizontal: true }}
           margin={{
-            left:
-              40 +
-              (storageManager.get('abbreiviateBigNumbers')
-                ? 30
-                : Math.max(
-                    ...(Array.isArray(dataset) 
-                      ? dataset.map((d) => d.expense || 0)
-                      : [dataset.totalExpense || 0])
-                  ).toString().length * 6)+50,
+            left: leftMargin,
             right: 30,
             top: 10,
             bottom: 60,

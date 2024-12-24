@@ -605,8 +605,6 @@ const TutorialManager = ({
         return userPrivileges.viewDashboard;
       case 'people':
         return userPrivileges.viewPeoplesPage;
-      case 'calendar':
-        return userPrivileges.viewCalendar;
       case 'database':
         return userPrivileges.viewDatabase;
       case 'tools':

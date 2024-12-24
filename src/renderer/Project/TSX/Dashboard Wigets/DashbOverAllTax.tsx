@@ -31,7 +31,7 @@ const DashbOverAllTax = ({
  
   SelectedBranchId: any;
 }) => {
- 
+  const [leftMargin, setLeftMargin] = useState(0);
   const [showBy, setShowBy] = useState<'Monthly' | 'Yearly'>('Monthly');
   const [selectedDate, setSelectedDate] = useState(
     new Date().getFullYear().toString()
@@ -55,7 +55,7 @@ const DashbOverAllTax = ({
     currency: string,
     date: number
   ) => {
-    const { rate, direction } = getRateByDate(date);
+    const { rate } = getRateByDate(date);
 
     if (!rate) {
       console.warn(
@@ -64,25 +64,38 @@ const DashbOverAllTax = ({
       return value;
     }
 
-    if (
-      (currencyDisplay === 'ETB_ONLY' && currency === 'ETB') ||
-      (currencyDisplay === 'USD_ONLY' && currency === 'USD')
-    ) {
-      return value;
-    } else if (currencyDisplay === 'ALL_ETB') {
-      if (currency === 'USD') {
-        return value * rate;
-      }
-      return value;
-    } else if (currencyDisplay === 'ALL_USD') {
-      if (currency === 'ETB') {
-        return value / rate;
-      }
-      return value;
+    // Filter out payments not matching currency when in ONLY modes
+    if (currencyDisplay === 'ETB_ONLY' && currency !== 'ETB') {
+      return 0;
     }
+    if (currencyDisplay === 'USD_ONLY' && currency !== 'USD') {
+      return 0;
+    }
+
+    // Convert currencies for ALL modes
+    if (currencyDisplay === 'ALL_ETB') {
+      return currency === 'USD' ? value * rate : value;
+    }
+    if (currencyDisplay === 'ALL_USD') {
+      return currency === 'ETB' ? value / rate : value;
+    }
+
     return value;
   };
 
+  const formatChartValue = (value: number) => {
+    if (currencyDisplay === 'ETB_ONLY' || currencyDisplay === 'ALL_ETB') {
+      const formatted = `${formatNumberWithSuffix(value)} ${CurrencySign(
+        'ETB'
+      )}`;
+      return formatted;
+    } else {
+      const formatted = `${formatNumberWithSuffix(value)}${CurrencySign(
+        'USD'
+      )}`;
+      return formatted;
+    }
+  };
   useEffect(() => {
     const calculatePayments = async () => {
       const allPayments: Payment[] = [];
@@ -169,7 +182,17 @@ const DashbOverAllTax = ({
 
     calculatePayments();
   }, [RoomList, AllTenants, selectedDate, showBy]);
-
+  const screenWidth = window.innerWidth;
+  let scaleFactor;
+  if (screenWidth <= 1280) {
+    scaleFactor = 1280 / 1920;
+  } else if (screenWidth <= 1366) {
+    scaleFactor = 1366 / 1920;
+  } else if (screenWidth <= 1920) {
+    scaleFactor = 1920 / 1920;
+  } else {
+    scaleFactor = 2560 / 2560;
+  }
   const calculateNextPaymentDate = (currentDate: Date, room: any) => {
     switch (room.PaymentCycleType) {
       case '30':
@@ -205,13 +228,14 @@ const DashbOverAllTax = ({
     const monthlyData = d3.rollups(
       filteredData,
       (v) => ({
-        expectedValue: d3.sum(v, (d) =>
-          processValueByCurrency(
+        expectedValue: d3.sum(v, (d) => {
+          const room = RoomList.find((r) => r.id === d.roomId);
+          return processValueByCurrency(
             d.Value,
-            RoomList.find((r) => r.id === d.roomId)?.Currency || 'ETB',
+            room?.Currency || 'ETB',
             d.Day
-          )
-        ),
+          );
+        }),
       }),
       (d) => new Date(d.Day).getMonth()
     );
@@ -226,7 +250,13 @@ const DashbOverAllTax = ({
       allMonths[month].expectedValue = values.expectedValue;
       allMonths[month].tax = calculateTax(values.expectedValue);
     });
+    const maxValue = Math.max(...allMonths.map(d => 
+      Math.max(d.tax || 0, d.expectedValue || 0)
+    ));
+    const formattedMaxValue = formatChartValue(maxValue);
+    const leftMargin = 40 + formattedMaxValue.length * 5 * scaleFactor;
 
+    setLeftMargin(leftMargin);
     return allMonths;
   }, [selectedDate, predictedPayments, currencyDisplay]);
   // Add this to display current exchange rate
@@ -239,7 +269,14 @@ const DashbOverAllTax = ({
     const yearlyData = d3.rollups(
       predictedPayments,
       (v) => ({
-        expectedValue: d3.sum(v, (d) => d.Value),
+        expectedValue: d3.sum(v, (d) => {
+          const room = RoomList.find((r) => r.id === d.roomId);
+          return processValueByCurrency(
+            d.Value,
+            room?.Currency || 'ETB',
+            d.Day
+          );
+        }),
       }),
       (d) => new Date(d.Day).getFullYear()
     );
@@ -257,8 +294,15 @@ const DashbOverAllTax = ({
         yearRange[index].tax = calculateTax(values.expectedValue);
       }
     });
+      const maxValue = Math.max(...yearRange.map(d => 
+        Math.max(d.tax || 0, d.expectedValue || 0)
+      ));
+      const formattedMaxValue = formatChartValue(maxValue);
+      const leftMargin = 40 + formattedMaxValue.length * 5 * scaleFactor;
+
+      setLeftMargin(leftMargin);
     return yearRange;
-  }, [selectedDate, predictedPayments]);
+  }, [selectedDate, predictedPayments, currencyDisplay]);
 
   const dataset =
     showBy === 'Monthly' ? aggregateMonthlyData : aggregateYearlyData;
@@ -267,8 +311,15 @@ const DashbOverAllTax = ({
     const selectedYear = parseInt(selectedDate);
     return predictedPayments
       .filter((d) => new Date(d.Day).getFullYear() === selectedYear)
-      .reduce((sum, item) => sum + item.Value, 0);
-  }, [selectedDate, predictedPayments]);
+      .reduce((sum, item) => {
+        const room = RoomList.find((r) => r.id === item.roomId);
+        return sum + processValueByCurrency(
+          item.Value,
+          room?.Currency || 'ETB',
+          item.Day
+        );
+      }, 0);
+  }, [selectedDate, predictedPayments, currencyDisplay]);
 
   const totalTax = calculateTax(totalExpected);
 
@@ -418,10 +469,7 @@ const DashbOverAllTax = ({
         ]}
         margin={{
           left:
-            40 +
-            (storageManager.get('abbreiviateBigNumbers')
-              ? 30
-              : Math.max(...dataset.map((d) => d.tax.toString().length * 6))),
+          leftMargin,
           right: 30,
           top: 10,
           bottom: 55,

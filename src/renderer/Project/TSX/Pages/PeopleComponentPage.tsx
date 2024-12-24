@@ -6,7 +6,6 @@ import CurrencySign, { formatNumberWithSuffix } from '../Helpers/CurrencySign';
 import { useGlobal } from 'renderer/components/GlobalContext';
 
 export function PeopleComponentPage({
-
   PeopleSelectedPage,
   PastTenantReviews,
   RoomList,
@@ -17,9 +16,7 @@ export function PeopleComponentPage({
 }: any) {
   const [searchConfig, setSearchConfig] = useState({ key: '', query: '' });
   const [mainSearch, setMainSearch] = useState('');
-const {
-  AllTenants
-} = useGlobal();
+  const { AllTenants } = useGlobal();
   const filteredData = (data: any[], key: string, query: string) => {
     if (mainSearch) {
       return data.filter((item) =>
@@ -505,8 +502,8 @@ const {
                                                      {' '}
                           <td className="InfoTableBodyTD">
                                                          {' '}
-                            {highlightText(index, mainSearch)}                 
-                                     {' '}
+                            {highlightText(index + 1, mainSearch)}             
+                                         {' '}
                           </td>
                                                      {' '}
                           <td

@@ -225,65 +225,235 @@ export const tutorialData: TutorialSystem = {
             position: 'left',
             requiresInteraction: false,
             allowBack: false,
-            isJsId: true,       dontInteract: true,
+            isJsId: true,
+            dontInteract: true,
           },
           {
             description: 'Enter the name or role of the app user.',
-            targetElementId: 'tutorialNewAppUserId + " app-user-edit-name-input"',
+            targetElementId:
+              'tutorialNewAppUserId + " app-user-edit-name-input"',
             position: 'left',
             requiresInteraction: true,
             allowBack: false,
-            isJsId: true,       dontInteract: false,
+            isJsId: true,
+            dontInteract: false,
           },
           {
             description: 'When done click save',
-            targetElementId: 'tutorialNewAppUserId + " app-user-edit-name-save"',
+            targetElementId:
+              'tutorialNewAppUserId + " app-user-edit-name-save"',
             position: 'left',
             requiresInteraction: true,
             allowBack: true,
             whenClickedGoNextStep: true,
-            isJsId: true,       dontInteract: false,
+            isJsId: true,
+            dontInteract: false,
           },
           {
-            description: 'This is edit and select buttons which allow you to edit or select the app user.',
+            description:
+              'This is edit and select buttons which allow you to edit or select the app user.',
             targetElementId: 'tutorialNewAppUserId + " app-user-edit-select"',
             position: 'left',
             requiresInteraction: false,
             allowBack: true,
-            isJsId: true,       dontInteract: true,
+            isJsId: true,
+            dontInteract: true,
           },
           {
-            description: 'These are the privileges you can allow or disallow for this user.',
+            description:
+              'These are the privileges you can allow or disallow for this user.',
             targetElementId: 'tutorialNewAppUserId + " privileges-list"',
             position: 'left',
             requiresInteraction: false,
             allowBack: true,
-            isJsId: true,       dontInteract: true,
+            isJsId: true,
+            dontInteract: true,
           },
           {
-            description: 'This section is for what properties this user is able to access and manage.',
-            targetElementId: 'tutorialNewAppUserId + " appuser-properties-list"',
+            description:
+              'This section is for what properties this user is able to access and manage.',
+            targetElementId:
+              'tutorialNewAppUserId + " appuser-properties-list"',
             position: 'left',
             requiresInteraction: false,
             allowBack: true,
-            isJsId: true,       dontInteract: true,
+            isJsId: true,
+            dontInteract: true,
           },
           {
-            description: 'This section allows you to enable password and username login for this user account. Anyone with the correct username and password will be able to log in.',
-            targetElementId: 'tutorialNewAppUserId + " appuser-account-password"',
+            description:
+              'This section allows you to enable password and username login for this user account. Anyone with the correct username and password will be able to log in.',
+            targetElementId:
+              'tutorialNewAppUserId + " appuser-account-password"',
             position: 'left',
             requiresInteraction: false,
             allowBack: true,
-            isJsId: true,       dontInteract: true,
+            isJsId: true,
+            dontInteract: true,
           },
           //step 5 show them how to allow and dis allow privilages no click
           //step 6 show them the allowed propertyiesand how to add proerpeties
           //step 7 show them the sign in with password
-
-        
         ],
       },
       sections: [],
+    },
+    {
+      pageTitle: 'Expense Manager',
+      hasToBeIn: 'expense',
+      overview: {
+        mainTitle: 'Expense Manager',
+        description: 'Learn how to manage and track your expenses.',
+        steps: [
+          {
+            description:
+              'Welcome to the Expense Manager! Here you can track both recurring and one-time expenses, and also receive notifications for them.',
+            targetElementId: 'expense-manager-title',
+            position: 'right',
+            requiresInteraction: false,
+            allowBack: true,
+          },
+          {
+            description:
+              'Click this button to show or hide the filter options.',
+            targetElementId: 'expense-filters-toggle',
+            position: 'right',
+            requiresInteraction: true,
+            allowBack: true,
+          },
+          {
+            description:
+              'Use these filters to search and filter your expenses by various criteria.',
+            targetElementId: 'expense-filters-container',
+            position: 'right',
+            requiresInteraction: false,
+            allowBack: true,
+          },
+          {
+            description:
+              'Click on categories to filter expenses by their type.',
+            targetElementId: 'expense-categories-container',
+            position: 'right',
+            requiresInteraction: false,
+            allowBack: true,
+          },
+        ],
+      },
+      sections: [
+        {
+          mainTitle: 'Managing Expenses',
+          description: 'Learn how to add and edit expenses',
+          steps: [
+            {
+              description: 'Click here to add a new expense.',
+              targetElementId: 'add-expense-button',
+              position: 'down',
+              requiresInteraction: true,
+              allowBack: true,
+            },
+            {
+              description: 'Recurring expenses are shown in this section.',
+              targetElementId: 'recurring-expenses-title',
+              position: 'down',
+              requiresInteraction: false,
+              allowBack: true,
+            },
+            {
+              description: 'One-time expenses are shown in this section.',
+              targetElementId: 'one-time-expenses-title',
+              position: 'down',
+              requiresInteraction: false,
+              allowBack: true,
+            },
+            {
+              description: 'Click on any expense to edit its details.',
+              targetElementId: 'expense-row',
+              position: 'right',
+              requiresInteraction: true,
+              allowBack: true,
+            },
+            {
+              description:
+                'You can set up email and SMS notifications for expenses.',
+              targetElementId: 'expense-notifications-button',
+              position: 'left',
+              requiresInteraction: false,
+              allowBack: true,
+            },
+          ],
+        },
+        {
+          mainTitle: 'Filtering Expenses',
+          description: 'Learn how to use the filter options',
+          steps: [
+            {
+              description: 'Search for expenses by name using this search box.',
+              targetElementId: 'expense-search-input',
+              position: 'right',
+              requiresInteraction: false,
+              allowBack: true,
+            },
+            {
+              description: 'Filter expenses by currency and price range.',
+              targetElementId: 'expense-price-filters',
+              position: 'right',
+              requiresInteraction: false,
+              allowBack: true,
+            },
+            {
+              description: 'Filter by building, floor, and room numbers.',
+              targetElementId: 'expense-location-filters',
+              position: 'right',
+              requiresInteraction: false,
+              allowBack: true,
+            },
+            {
+              description: 'Filter recurring expenses by their frequency.',
+              targetElementId: 'expense-recurring-filters',
+              position: 'right',
+              requiresInteraction: false,
+              allowBack: true,
+            },
+            {
+              description:
+                'Use the date filter to find expenses within a specific timeframe.',
+              targetElementId: 'expense-date-filter',
+              position: 'right',
+              requiresInteraction: false,
+              allowBack: true,
+            },
+          ],
+        },
+        {
+          mainTitle: 'Calendar View',
+          description: 'Learn how to use the expense calendar',
+          steps: [
+            {
+              description: 'Click here to toggle the calendar view.',
+              targetElementId: 'expense-calendar-toggle',
+              position: 'down',
+              requiresInteraction: true,
+              allowBack: true,
+            },
+            {
+              description:
+                'The calendar shows all your expenses organized by date.',
+              targetElementId: 'expense-calendar',
+              position: 'down',
+              requiresInteraction: false,
+              allowBack: true,
+            },
+            {
+              description:
+                'Recurring expenses are highlighted with a special indicator.',
+              targetElementId: 'expense-calendar-recurring',
+              position: 'right',
+              requiresInteraction: false,
+              allowBack: true,
+            },
+          ],
+        },
+      ],
     },
   ],
 };

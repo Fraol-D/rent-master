@@ -229,7 +229,7 @@ function Hello({ tryout, username, signup }: any) {
         'rooms',
         `WHERE 1 AND branchId = '${useBranchId}'`
       );
-      
+
       if (roomsRaw) {
         const rooms = await Promise.all(
           roomsRaw.map(async (room: RoomType) => {
@@ -1441,7 +1441,7 @@ function Hello({ tryout, username, signup }: any) {
     if (privileges.viewDashboard) return 'Dashboard';
     if (privileges.viewRoomsPage) return 'Rooms';
     if (privileges.viewPeoplesPage) return 'People';
-    if (privileges.viewCalendar) return 'Calendar';
+
     if (privileges.editExpenses) return 'Expense';
     if (privileges.viewToolsPage) return 'Tools';
     return 'non'; // Default fallback
@@ -1461,7 +1461,7 @@ function Hello({ tryout, username, signup }: any) {
         if (privileges.viewDashboard) return 'Dashboard';
         if (privileges.viewRoomsPage) return 'Rooms';
         if (privileges.viewPeoplesPage) return 'People';
-        if (privileges.viewCalendar) return 'Calendar';
+
         if (privileges.editExpenses) return 'Expense';
         if (privileges.viewToolsPage) return 'Tools';
         return prevPage;
@@ -1931,7 +1931,9 @@ function Hello({ tryout, username, signup }: any) {
             SelectedAppUser={SelectedAppUser}
             setSelectedPage={setSelectedPage}
             setViewBranchManagementPage={setViewBranchManagementPage}
-            setViewBranchManagementPageNONAdm={setViewBranchManagementPageNONAdm}
+            setViewBranchManagementPageNONAdm={
+              setViewBranchManagementPageNONAdm
+            }
             setAppUserManagerPromptPassword={setAppUserManagerPromptPassword}
             setAppUserManagerShow={setAppUserManagerShow}
           />
@@ -2046,7 +2048,6 @@ export const getUserPrivileges = (
 ): {
   viewDashboard: boolean;
   viewPeoplesPage: boolean;
-  viewCalendar: boolean;
   viewDatabase: boolean;
   editDatabaseData: boolean;
   viewToolsPage: boolean;
@@ -2072,7 +2073,6 @@ export const getUserPrivileges = (
   const privilegeObject: { [key: string]: boolean } = {
     viewDashboard: false,
     viewPeoplesPage: false,
-    viewCalendar: false,
     viewDatabase: false,
     editDatabaseData: false,
     viewToolsPage: false,
@@ -2109,13 +2109,8 @@ export const getUserPrivileges = (
           case 'View dashboard page':
             privilegeObject.viewDashboard = true;
             break;
-          case 'View peoples page':
-            privilegeObject.viewPeoplesPage = true;
-            break;
-          case 'View calendar page':
-            privilegeObject.viewCalendar = true;
-            break;
-          case 'View database page':
+
+          case 'View databsae':
             privilegeObject.viewDatabase = true;
             break;
           case 'edit database data':
@@ -2130,7 +2125,7 @@ export const getUserPrivileges = (
           case 'edit sms templates':
             privilegeObject.editSmsTemplates = true;
             break;
-          case 'edit expenses':
+          case 'Edit expenses':
             privilegeObject.editExpenses = true;
             break;
           case 'edit settings':

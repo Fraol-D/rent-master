@@ -580,30 +580,20 @@ const DashbPastPayments = ({
               paymentData={
                 RoomList.find(
                   (r: RoomType) =>
-                    r.tenantId ===
-                    AllTenants.find(
-                      (t: tenant) => t.id == SelectedTenantViewShow
-                    )?.id
+                    r.tenantId === SelectedTenantViewShow
                 )?.AllRoomPayInfo.RoomPayInfo || []
               }
               roomPaymentInfoApi={roomPaymentInfoApi}
-            
               agreedPrice={
                 RoomList.find(
                   (r: RoomType) =>
-                    r.tenantId ===
-                    AllTenants.find(
-                      (t: tenant) => t.id == SelectedTenantViewShow
-                    )?.id
+                    r.tenantId === SelectedTenantViewShow
                 )?.AgreedPrice || 0
               }
               extendPaymentSchedule={() => {
                 const selectedRoom = RoomList.find(
                   (r: RoomType) =>
-                    r.tenantId ===
-                    AllTenants.find(
-                      (t: tenant) => t.id == SelectedTenantViewShow
-                    )?.id
+                    r.tenantId === SelectedTenantViewShow
                 );
                 if (selectedRoom) {
                   updateRoomProperty(
@@ -615,16 +605,12 @@ const DashbPastPayments = ({
               }}
               roomType={RoomList.find(
                 (r: RoomType) =>
-                  r.tenantId ===
-                  AllTenants.find((t: tenant) => t.id == SelectedTenantViewShow)
-                    ?.id
+                  r.tenantId === SelectedTenantViewShow
               )}
               tenantId={RoomList.find(
                 (r: RoomType) =>
-                  r.tenantId ===
-                  AllTenants.find((t: tenant) => t.id == SelectedTenantViewShow)
-                    ?.tenantId
-              )}
+                  r.tenantId === SelectedTenantViewShow
+              )?.tenantId}
               ShowReceipt={ShowReceipt}
               setShowReceipt={setShowReceipt}
               setChangeMade={setChangeMade}
@@ -633,10 +619,8 @@ const DashbPastPayments = ({
               Currency={
                 AllTenants.find(
                   (t: tenant) =>
-                    t.id ===
-                   SelectedTenantViewShow
-                    )?.Currency
-                 || GetDefaultCurrency()
+                    t.id === SelectedTenantViewShow
+                )?.Currency || GetDefaultCurrency()
               }
             />
           </div>

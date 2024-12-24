@@ -181,6 +181,14 @@
   width: 100%;
   border-collapse: collapse;
 }
+.expense-cards td {
+  border: var(--1px-V) solid grey;
+}
+
+.expense-cards td:first-child,
+.expense-cards td:last-child {
+  border: none;
+}
 .expense-cards th {
   text-align: left;  
 }

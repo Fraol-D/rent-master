@@ -68,8 +68,6 @@ export const dropAllRowsInTable = async (tableName) => {
       }
     );
 
- 
-
     const data = response;
     console.log(data);
     return data;
@@ -81,7 +79,7 @@ export const dropAllRowsInTable = async (tableName) => {
 export const addValueROOM = async (tableName, value, setChangeMade) => {
   try {
     console.log('Adding room value:', { tableName, value });
-    
+
     const response = await makeRequest(`${baseUrl}/${tableName}`, {
       method: 'POST',
       headers: {
@@ -639,7 +637,7 @@ const SendFileManagerApi = async (url, method, headers = {}, data = null) => {
       method,
       headers: {
         ...headers,
-        
+
         'user-id': userId,
       },
     };
@@ -739,8 +737,6 @@ export const deleteReceipt2 = async (date, roomId, tenant) => {
       }
     );
 
-   
-
     return { success: true };
   } catch (error) {
     console.error('Error deleting receipt:', error);
@@ -761,19 +757,21 @@ export const GetReceiptFileApi = async (date, roomId, tenant) => {
     const formattedDate = new Date(date).toISOString().split('T')[0];
 
     const response = await fetch(
-      `${baseUrl2}/receipt-file/${encodeURIComponent(roomId)}/${encodeURIComponent(formattedDate)}`,
+      `${baseUrl2}/receipt-file/${encodeURIComponent(
+        roomId
+      )}/${encodeURIComponent(formattedDate)}/${encodeURIComponent(userId)}`,
       {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          'user-id': userId,
+
           'tenant-id': tenant?.id || '',
           'tenant-name': tenant?.name || '',
-          'tenant-start-time': tenant?.startTime?.toString() || ''
-        }
+          'tenant-start-time': tenant?.startTime?.toString() || '',
+        },
       }
     );
-
+    console.log(response);
     // Handle different response statuses
     if (response.status === 204) {
       return 'Add receipt';
@@ -784,7 +782,7 @@ export const GetReceiptFileApi = async (date, roomId, tenant) => {
     }
 
     const data = await response.json();
-    
+
     if (!data?.receiptUrl) {
       return 'Add receipt';
     }
@@ -841,8 +839,6 @@ export const uploadReceiptDocumentsOnline = async (
               AddedTimeText,
             }
           );
-
-      
 
           const result = response;
           resolve(result);
@@ -955,7 +951,7 @@ export const downloadDocument = async (roomId, fileName) => {
         `/tenant-document-info/${encodeURIComponent(roomId)}`,
         'GET'
       );
-     
+
       const { folderName } = response;
       tenantFolderName = folderName;
     } else {
@@ -964,26 +960,19 @@ export const downloadDocument = async (roomId, fileName) => {
 
     // Make the download request with the correct path structure
     const response = await fetch(
-      `https://www.rentmaster.markethubet.com/download-document/${encodeURIComponent(roomId)}/${encodeURIComponent(
-        tenantFolderName
-
-
-
-
-
-
-
-
-      )}/${encodeURIComponent(fileName)}`, {
+      `https://www.rentmaster.markethubet.com/download-document/${encodeURIComponent(
+        roomId
+      )}/${encodeURIComponent(tenantFolderName)}/${encodeURIComponent(
+        fileName
+      )}`,
+      {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
           'user-id': userId,
-        }
+        },
       }
     );
-
-
 
     const blob = await response.blob();
     const url = window.URL.createObjectURL(blob);
@@ -1113,22 +1102,22 @@ export const downloadImage = async (roomId, imageName) => {
       'GET'
     );
 
-  
-
     const { folderName } = await folderResponse;
 
     // Make the download request with the correct folder name
     const response = await fetch(
-      `https://www.rentmaster.markethubet.com/download-image/${encodeURIComponent(roomId)}/${encodeURIComponent(
-        folderName
-      )}/${encodeURIComponent(imageName)}/${encodeURIComponent(userId)}`,
+      `https://www.rentmaster.markethubet.com/download-image/${encodeURIComponent(
+        roomId
+      )}/${encodeURIComponent(folderName)}/${encodeURIComponent(
+        imageName
+      )}/${encodeURIComponent(userId)}`,
       {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
           'user-id': userId,
-          "x-api-key": import.meta.env.VITE_AppCodeElectronString,
-        }
+          'x-api-key': import.meta.env.VITE_AppCodeElectronString,
+        },
       }
     );
 
@@ -1244,8 +1233,6 @@ export const uploadTenantDocument = async (file, roomId) => {
       }
     );
 
-   
-
     return response;
   } catch (error) {
     console.error('Error uploading tenant document:', error);
@@ -1309,27 +1296,30 @@ export const uploadTenantDocumentsV2 = async (
     return null;
   }
 };
-export const RenameAddTenantDocumentFolder = async( roomId,
+export const RenameAddTenantDocumentFolder = async (
+  roomId,
   tenantName,
   tenantId,
-  AddedTimeText) => {
-try {
-  const newNameSecond = tenantName+", "+AddedTimeText+", "+tenantId
- 
-  const response = await SendFileManagerApi(
-    `/rename-adddocument-folder`,
-    'put',{},{
-      newNameSecond,
-      roomId,
+  AddedTimeText
+) => {
+  try {
+    const newNameSecond = tenantName + ', ' + AddedTimeText + ', ' + tenantId;
 
-    }
-  );
-  return response;
-} catch (error) {
-  console.error('Error renaming tenant document folder:', error);
+    const response = await SendFileManagerApi(
+      `/rename-adddocument-folder`,
+      'put',
+      {},
+      {
+        newNameSecond,
+        roomId,
+      }
+    );
+    return response;
+  } catch (error) {
+    console.error('Error renaming tenant document folder:', error);
     return null;
-}
-}
+  }
+};
 export const deleteTenantDocumentFolder = async () => {
   try {
     const response = await SendFileManagerApi(

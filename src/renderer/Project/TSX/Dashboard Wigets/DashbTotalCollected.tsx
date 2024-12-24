@@ -54,7 +54,31 @@ const DashbTotalCollected = ({
   const [visibleSeries, setVisibleSeries] = useState({
     collected: true,
     expected: true,
-  });
+  });const formatChartValue = (value: number) => {
+    if (currencyDisplay === 'ETB_ONLY' || currencyDisplay === 'ALL_ETB') {
+      const formatted = `${formatNumberWithSuffix(value)} ${CurrencySign(
+        'ETB'
+      )}`;
+      return formatted;
+    } else {
+      const formatted = `${formatNumberWithSuffix(value)}${CurrencySign(
+        'USD'
+      )}`;
+      return formatted;
+    }
+  };
+
+  const screenWidth = window.innerWidth;
+    let scaleFactor;
+    if (screenWidth <= 1280) {
+      scaleFactor = 1280 / 1920;
+    } else if (screenWidth <= 1366) {
+      scaleFactor = 1366 / 1920;
+    } else if (screenWidth <= 1920) {
+      scaleFactor = 1920 / 1920;
+    } else {
+      scaleFactor = 2560 / 2560;
+    }
   const [currencyDisplay, setCurrencyDisplay] = useState<
     'ETB_ONLY' | 'USD_ONLY' | 'ALL_ETB' | 'ALL_USD'
   >('ALL_ETB');
@@ -222,9 +246,10 @@ const DashbTotalCollected = ({
     }
     return 0;
   };
-
+const [leftMargin, setLeftMargin] = useState(0);
   // Modify the aggregateMonthlyData to use currency filtering
   const aggregateMonthlyData = useMemo(() => {
+    
     const selectedYear = parseInt(selectedDate);
     const filteredData = predictedPayments.filter(
       (d) => new Date(d.Day).getFullYear() === selectedYear
@@ -263,7 +288,13 @@ const DashbTotalCollected = ({
       allMonths[month].value = values.value;
       allMonths[month].expectedValue = values.expectedValue;
     });
-
+     const maxValue = Math.max(...allMonths.map(d => 
+      Math.max(d.value || 0, d.expectedValue || 0)
+    ));
+    const formattedMaxValue = formatChartValue(maxValue);
+    const leftMargin = 40 + formattedMaxValue.length * 5 * scaleFactor;
+  
+    setLeftMargin(leftMargin);
     return allMonths;
   }, [selectedDate, predictedPayments, showBy, currencyDisplay]); // Add currencyDisplay to dependencies
 
@@ -307,7 +338,13 @@ const DashbTotalCollected = ({
         yearRange[index].expectedValue = values.expectedValue;
       }
     });
+   const maxValue = Math.max(...yearRange.map(d => 
+      Math.max(d.value || 0, d.expectedValue || 0)
+    ));
+    const formattedMaxValue = formatChartValue(maxValue);
+    const leftMargin = 40 + formattedMaxValue.length * 5 * scaleFactor;
 
+    setLeftMargin(leftMargin);
     return yearRange;
   }, [selectedDate, predictedPayments, showBy, currencyDisplay]);
 
@@ -320,12 +357,13 @@ const DashbTotalCollected = ({
       .filter((d) => new Date(d.Day).getFullYear() === selectedYear && d.Paid)
       .reduce(
         (sum, item) =>
-          sum +
-          processValueByCurrency(
+          parseFloat(sum) +
+          parseFloat(processValueByCurrency(
             item.Value,
             RoomList.find((r) => r.id === item.roomId)?.Currency || 'ETB',
             item.Day
-          ),
+          ))
+        ,
         0
       );
   }, [selectedDate, predictedPayments, showBy, currencyDisplay]);
@@ -336,12 +374,13 @@ const DashbTotalCollected = ({
       .filter((d) => new Date(d.Day).getFullYear() === selectedYear)
       .reduce(
         (sum, item) =>
-          sum +
-          processValueByCurrency(
+          parseFloat(sum) +
+          parseFloat(processValueByCurrency(
             item.Value,
             RoomList.find((r) => r.id === item.roomId)?.Currency || 'ETB',
             item.Day
-          ),
+          ))
+        ,
         0
       );
   }, [selectedDate, predictedPayments, showBy, currencyDisplay]);
@@ -368,20 +407,7 @@ const DashbTotalCollected = ({
       ? ((difference / lastYearTotalCollected) * 100).toFixed(2)
       : 'N/A';
 
-  const formatChartValue = (value: number) => {
-    if (currencyDisplay === 'ETB_ONLY' || currencyDisplay === 'ALL_ETB') {
-      const formatted = `${formatNumberWithSuffix(value)} ${CurrencySign(
-        'ETB'
-      )}`;
-      return formatted;
-    } else {
-      const formatted = `${formatNumberWithSuffix(value)}${CurrencySign(
-        'USD'
-      )}`;
-      return formatted;
-    }
-  };
-
+  
   // Add this useMemo hook to calculate the statistics
   const collectedStats = useMemo(() => {
     const selectedYear = parseInt(selectedDate);
@@ -402,7 +428,7 @@ const DashbTotalCollected = ({
       (payment) =>
         new Date(payment.Day).getFullYear() === selectedYear && payment.Paid
     ).length;
-
+   
     return {
       totalCollectedAmount,
       highestCollection,
@@ -410,7 +436,7 @@ const DashbTotalCollected = ({
       totalTransactions,
     };
   }, [dataset, selectedDate, predictedPayments]);
-
+  
   return (
     <div
       className="DashboardWigetMainContainer"
@@ -607,18 +633,7 @@ const DashbTotalCollected = ({
         ]}
         grid={{ vertical: true, horizontal: true }}
         margin={{
-          left:
-            40 +
-            (storageManager.get('abbreiviateBigNumbers')
-              ? 30
-              : Math.max(
-                  ...dataset.map((d) =>
-                    Math.max(
-                      visibleSeries.collected ? d.value || 0 : 0,
-                      visibleSeries.expected ? d.expectedValue || 0 : 0
-                    )
-                  )
-                ).toString().length * 6),
+          left:leftMargin,
           right: 30,
           top: 5,
           bottom: 55,

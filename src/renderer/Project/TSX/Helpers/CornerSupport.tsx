@@ -260,7 +260,7 @@ const CornerSupport = ({
             <p style={{ margin: '0 0 var(--10px-V) 0' }}>
               {page.overview.description}
             </p>
-            {page.hasToBeIn === SelectedPage ? (
+            {page.hasToBeIn === SelectedPage.toLowerCase() ? (
               <>
                 <button
                   onClick={() => {
@@ -599,19 +599,10 @@ const CornerSupport = ({
           setSelectedPage('Dashboard');
         else console.log('Access denied');
         break;
-      case 'people':
-        if (SelectedAppUser.id === 'admin' || privileges.viewPeoplesPage)
-          setSelectedPage('People');
-        else console.log('Access denied');
-        break;
-      case 'calendar':
-        if (SelectedAppUser.id === 'admin' || privileges.viewCalendar)
-          setSelectedPage('Calendar');
-        else console.log('Access denied');
-        break;
-      case 'database':
-        if (SelectedAppUser.id === 'admin' || privileges.viewDatabase)
-          setSelectedPage('Database');
+     
+      case 'expense':
+        if (SelectedAppUser.id === 'admin' || privileges.editExpenses)
+          setSelectedPage('Expense');
         else console.log('Access denied');
         break;
       case 'tools':

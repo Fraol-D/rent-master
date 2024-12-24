@@ -1,5 +1,5 @@
 import { storageManager } from '../../../storeManager';
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import * as d3 from 'd3';
 import { BarChart, barElementClasses } from '@mui/x-charts/BarChart';
 import { axisClasses } from '@mui/x-charts/ChartsAxis';
@@ -36,27 +36,38 @@ interface Payment {
 const DashbNetProfitTotalCollected = ({
   RoomList,
 
-
   SelectedBranchId,
 }: {
   RoomList: RoomType[];
 
- 
   SelectedBranchId: any;
 }) => {
- const {
+  const {
     AllRoomPayInfoHistory,
     setAllRoomPayInfoHistory,
     AllRoomPayInfo,
     setAllRoomPayInfo,
     AllAgreements,
     setAllAgreements,
-    AllExpenses,AllTenants
+    AllExpenses,
+    AllTenants,
   } = useGlobal();
   const [showBy, setShowBy] = useState<'Monthly' | 'Yearly'>('Monthly');
   const [selectedDate, setSelectedDate] = useState(
     new Date().getFullYear().toString()
   );
+  const screenWidth = window.innerWidth;
+    let scaleFactor;
+    if (screenWidth <= 1280) {
+      scaleFactor = 1280 / 1920;
+    } else if (screenWidth <= 1366) {
+      scaleFactor = 1366 / 1920;
+    } else if (screenWidth <= 1920) {
+      scaleFactor = 1920 / 1920;
+    } else {
+      scaleFactor = 2560 / 2560;
+    }
+  const [leftMargin, setLeftMargin] = useState(0);
   const [predictedPayments, setPredictedPayments] = useState<Payment[]>([]);
   const [expenses, setExpenses] = useState<expenses[]>([]);
   const [visibleSeries, setVisibleSeries] = useState({
@@ -282,46 +293,46 @@ const DashbNetProfitTotalCollected = ({
     // Sort expenses by date
     return allExpenses.sort((a, b) => a.date - b.date);
   };
-// Add this to display current exchange rate
-const getCurrentExchangeRate = () => {
-  const storedRates = storageManager.get('exchangeRate');
-  if (!storedRates || storedRates.length === 0) return null;
-  return storedRates[storedRates.length - 1].rates;
-};
+  // Add this to display current exchange rate
+  const getCurrentExchangeRate = () => {
+    const storedRates = storageManager.get('exchangeRate');
+    if (!storedRates || storedRates.length === 0) return null;
+    return storedRates[storedRates.length - 1].rates;
+  };
 
-// Replace processValueByCurrency function with this updated version
-const processValueByCurrency = (
-  value: number,
-  currency: string,
-  date: number
-) => {
-  const { rate, direction } = getRateByDate(date);
+  // Replace processValueByCurrency function with this updated version
+  const processValueByCurrency = (
+    value: number,
+    currency: string,
+    date: number
+  ) => {
+    const { rate, direction } = getRateByDate(date);
 
-  if (!rate) {
-    console.warn('No rate available, using current rate as fallback');
-    return value; // Return original value if no rate found
-  }
-
-  if (
-    (currencyDisplay === 'ETB_ONLY' && currency === 'ETB') ||
-    (currencyDisplay === 'USD_ONLY' && currency === 'USD')
-  ) {
-    return value;
-  } else if (currencyDisplay === 'ALL_ETB') {
-    if (currency === 'USD') {
-      const convertedValue = value * rate;
-      return convertedValue;
+    if (!rate) {
+      console.warn('No rate available, using current rate as fallback');
+      return value; // Return original value if no rate found
     }
-    return value;
-  } else if (currencyDisplay === 'ALL_USD') {
-    if (currency === 'ETB') {
-      const convertedValue = value / rate;
-      return convertedValue;
+
+    if (
+      (currencyDisplay === 'ETB_ONLY' && currency === 'ETB') ||
+      (currencyDisplay === 'USD_ONLY' && currency === 'USD')
+    ) {
+      return value;
+    } else if (currencyDisplay === 'ALL_ETB') {
+      if (currency === 'USD') {
+        const convertedValue = value * rate;
+        return convertedValue;
+      }
+      return value;
+    } else if (currencyDisplay === 'ALL_USD') {
+      if (currency === 'ETB') {
+        const convertedValue = value / rate;
+        return convertedValue;
+      }
+      return value;
     }
-    return value;
-  }
-  return 0;
-};
+    return 0;
+  };
 
   const formatChartValue = (value: number) => {
     if (currencyDisplay === 'ETB_ONLY' || currencyDisplay === 'ALL_ETB') {
@@ -339,62 +350,69 @@ const processValueByCurrency = (
 
   const aggregateMonthlyData = useMemo(() => {
     const selectedYear = parseInt(selectedDate);
-    const filteredData = predictedPayments.filter(
-      (d) => new Date(d.Day).getFullYear() === selectedYear
-    );
-
-    const monthlyData = d3.rollups(
-      filteredData,
-      (v) => ({
-        value: d3.sum(v, (d) =>
-          d.Paid
-            ? processValueByCurrency(
-                d.Value,
-                RoomList.find((r) => r.id === d.roomId)?.Currency || 'ETB',
-                d.Day
-              )
-            : 0
-        ),
-        expectedValue: d3.sum(v, (d) =>
-          processValueByCurrency(
-            d.Value,
-            RoomList.find((r) => r.id === d.roomId)?.Currency || 'ETB',
-            d.Day
-          )
-        ),
-      }),
-      (d) => new Date(d.Day).getMonth()
-    );
+    const defaultCurrency = GetDefaultCurrency();
     const startDate = startOfYear(new Date(selectedYear, 0, 1));
     const endDate = endOfYear(new Date(selectedYear, 11, 31));
     const allExpenses = generateRecurringExpenses(expenses, startDate, endDate);
 
-    const allMonths = d3.range(0, 12).map((month: any) => {
+    // Filter data once upfront
+    const yearData = predictedPayments.filter(
+      (d) => new Date(d.Day).getFullYear() === selectedYear
+    );
+
+    // Pre-calculate room currency map
+    const roomCurrencyMap = new Map(
+      RoomList.map(room => [room.id, room.Currency || defaultCurrency])
+    );
+
+    // Group payments by month
+    const monthlyData = d3.rollups(
+      yearData,
+      (v) => {
+        const currency = roomCurrencyMap.get(v[0].roomId) || defaultCurrency;
+        return {
+          value: d3.sum(v, (d) =>
+            d.Paid ? processValueByCurrency(
+              d.Value,
+              currency,
+              new Date(d.Day).getTime()
+            ) : 0
+          ),
+          expectedValue: d3.sum(v, (d) =>
+            processValueByCurrency(
+              d.Value,
+              currency, 
+              new Date(d.Day).getTime()
+            )
+          ),
+        };
+      },
+      (d) => new Date(d.Day).getMonth()
+    );
+
+    // Create month-by-month data
+    const allMonths = d3.range(0, 12).map(month => {
       const monthStart = startOfMonth(new Date(selectedYear, month, 1));
       const monthEnd = endOfMonth(new Date(selectedYear, month, 1));
+
+      // Calculate expenses for this month
       const monthlyExpenses = allExpenses
-        .filter(
-          (e) => new Date(e.date) >= monthStart && new Date(e.date) <= monthEnd
-        )
-        .reduce(
-          (sum, e) =>
-            sum +
-            processValueByCurrency(
-              e.price,
-              e.Currency,
-              new Date(e.date).getTime()
-            ),
+        .filter(e => {
+          const expenseDate = new Date(e.date);
+          return expenseDate >= monthStart && expenseDate <= monthEnd;
+        })
+        .reduce((sum, e) => 
+          sum + processValueByCurrency(
+            e.price,
+            e.Currency,
+            new Date(e.date).getTime()
+          ),
           0
         );
 
       const monthData = monthlyData.find(([m]) => m === month);
       const income = monthData ? monthData[1].value : 0;
       const expectedIncome = monthData ? monthData[1].expectedValue : 0;
-      console.log('monthly data', monthlyData, 'other one', {
-        month: d3.timeFormat('%b')(new Date(0, month)),
-        netIncome: income - monthlyExpenses,
-        expectedNetIncome: expectedIncome - monthlyExpenses,
-      });
 
       return {
         month: d3.timeFormat('%b')(new Date(0, month)),
@@ -402,169 +420,137 @@ const processValueByCurrency = (
         expectedValue: expectedIncome - monthlyExpenses,
       };
     });
+
+    // Calculate margin
+    const maxValue = Math.max(
+      ...allMonths.map(d => Math.max(d.value || 0, d.expectedValue || 0))
+    );
+    const formattedMaxValue = formatChartValue(maxValue);
+    const leftMargin = 40 + formattedMaxValue.length * 5 * scaleFactor;
+    setLeftMargin(leftMargin);
+
     return allMonths;
   }, [selectedDate, predictedPayments, expenses, RoomList, currencyDisplay]);
 
   const aggregateYearlyData = useMemo(() => {
-    const yearlyData = d3.rollups(
+    // Pre-calculate year range
+    const selectedYear = parseInt(selectedDate);
+    const yearRange = d3.range(selectedYear - 2, selectedYear + 3);
+    
+    // Create lookup map for yearly payment totals
+    const yearlyPayments = new Map(d3.rollups(
       predictedPayments,
       (v: any) => ({
         value: d3.sum(v, (d: any) => d.value),
         expectedValue: d3.sum(v, (d: any) => d.expectedValue),
       }),
       (d: any) => new Date(d.Day).getFullYear()
+    ));
+
+    // Process each year
+    const yearlyData = yearRange.map(year => {
+      const yearStart = startOfYear(new Date(year, 0));
+      const yearEnd = endOfYear(new Date(year, 11));
+
+      // Get expenses for year
+      const yearlyExpenses = generateRecurringExpenses(expenses, yearStart, yearEnd)
+        .reduce((sum, e) => sum + e.price, 0);
+
+      // Get income data from lookup map
+      const yearData = yearlyPayments.get(year) || { value: 0, expectedValue: 0 };
+
+      return {
+        year,
+        value: yearData.value - yearlyExpenses,
+        expectedValue: yearData.expectedValue - yearlyExpenses
+      };
+    });
+
+    // Calculate margin
+    const maxValue = Math.max(
+      ...yearlyData.flatMap(d => [d.value || 0, d.expectedValue || 0])
     );
+    setLeftMargin(40 + formatChartValue(maxValue).length * 5 * scaleFactor);
 
-    const yearRange = d3
-      .range(parseInt(selectedDate) - 2, parseInt(selectedDate) + 3)
-      .map((year: any) => {
-        const yearStart = startOfYear(new Date(year, 0, 1));
-        const yearEnd = endOfYear(new Date(year, 11, 31));
-        const allExpenses = generateRecurringExpenses(
-          expenses,
-          yearStart,
-          yearEnd
-        );
-        const yearlyExpenses = allExpenses
-          .filter(
-            (e) => new Date(e.date) >= yearStart && new Date(e.date) <= yearEnd
-          )
-          .reduce((sum, e) => sum + e.price, 0);
-
-        const yearData = yearlyData.find(([y]) => y === year);
-        const income = yearData ? yearData[1].value : 0;
-        const expectedIncome = yearData ? yearData[1].expectedValue : 0;
-
-        return {
-          year: year,
-          value: income - yearlyExpenses,
-          expectedValue: expectedIncome - yearlyExpenses,
-        };
-      });
-
-    return yearRange;
-  }, [selectedDate, predictedPayments, expenses]);
+    return yearlyData;
+  }, [selectedDate, predictedPayments, expenses, scaleFactor]);
 
   const dataset =
     showBy === 'Monthly' ? aggregateMonthlyData : aggregateYearlyData;
   // Add this to display current exchange rate
+  const calculateExpenses = useCallback((year: number, expenses: any[], start: Date, end: Date) => {
+    const allExpenses = generateRecurringExpenses(expenses, start, end);
+    return allExpenses
+      .filter((e) => new Date(e.date).getFullYear() === year)
+      .reduce((sum, e) => {
+        const expense = allExpenses.find((r) => r.id === e.id);
+        return sum + processValueByCurrency(
+          e.price,
+          expense?.Currency || '',
+          new Date(e.date).getTime()
+        );
+      }, 0);
+  }, []);
+
+  const calculateIncome = useCallback((year: number, payments: any[], roomList: any[]) => {
+    return payments
+      .filter((d) => new Date(d.Day).getFullYear() === year)
+      .reduce((sum, item) => {
+        const room = roomList.find((r) => r.id === item.roomId);
+        return sum + processValueByCurrency(item.Value, room?.Currency || '', item.Day);
+      }, 0);
+  }, []);
 
   const totalCollected = useMemo(() => {
     const selectedYear = parseInt(selectedDate);
     const yearStart = startOfYear(new Date(selectedYear, 0, 1));
     const yearEnd = endOfYear(new Date(selectedYear, 11, 31));
-    const allExpenses = generateRecurringExpenses(expenses, yearStart, yearEnd);
 
-    const yearlyExpenses = allExpenses
-      .filter((e) => new Date(e.date).getFullYear() === selectedYear)
-      .reduce((sum, e) => {
-        const expense = allExpenses.find((r) => r.id === e.id);
-        console.log(expense?.Currency);
-        return (
-          sum +
-          processValueByCurrency(
-            e.price,
-            expense?.Currency,
-            new Date(e.date).getTime()
-          )
-        );
-      }, 0);
-
-    const totalIncome = predictedPayments
-      .filter((d) => new Date(d.Day).getFullYear() === selectedYear)
-      .reduce((sum, item) => {
-        const room = RoomList.find((r) => r.id === item.roomId);
-        return (
-          sum + processValueByCurrency(item.Value, room?.Currency, item.Day)
-        );
-      }, 0);
+    const yearlyExpenses = calculateExpenses(selectedYear, expenses, yearStart, yearEnd);
+    const totalIncome = calculateIncome(selectedYear, predictedPayments, RoomList);
 
     return totalIncome - yearlyExpenses;
-  }, [selectedDate, predictedPayments, expenses, RoomList, currencyDisplay]);
+  }, [selectedDate, predictedPayments, expenses, RoomList, currencyDisplay, calculateExpenses, calculateIncome]);
 
   const totalExpected = useMemo(() => {
     const selectedYear = parseInt(selectedDate);
     const yearStart = startOfYear(new Date(selectedYear, 0, 1));
     const yearEnd = endOfYear(new Date(selectedYear, 11, 31));
-    const allExpenses = generateRecurringExpenses(expenses, yearStart, yearEnd);
 
-    const yearlyExpenses = allExpenses
-      .filter((e) => new Date(e.date).getFullYear() === selectedYear)
-      .reduce((sum, e) => {
-        const expense = allExpenses.find((r) => r.id === e.id);
-        console.log(
-          processValueByCurrency(
-            e.price,
-            expense?.Currency,
-            new Date(e.date).getTime()
-          )
-        );
-        return (
-          sum +
-          processValueByCurrency(
-            e.price,
-            expense?.Currency,
-            new Date(e.date).getTime()
-          )
-        );
-      }, 0);
-
-    const expectedIncome = predictedPayments
-      .filter((d) => new Date(d.Day).getFullYear() === selectedYear)
-      .reduce((sum, item) => {
-        const room = RoomList.find((r) => r.id === item.roomId);
-        return (
-          sum + processValueByCurrency(item.Value, room?.Currency, item.Day)
-        );
-      }, 0);
+    const yearlyExpenses = calculateExpenses(selectedYear, expenses, yearStart, yearEnd);
+    const expectedIncome = calculateIncome(selectedYear, predictedPayments, RoomList);
 
     return expectedIncome - yearlyExpenses;
-  }, [selectedDate, predictedPayments, expenses, RoomList, currencyDisplay]);
+  }, [selectedDate, predictedPayments, expenses, RoomList, currencyDisplay, calculateExpenses, calculateIncome]);
 
   const lastYearTotalCollected = useMemo(() => {
     const previousYear = parseInt(selectedDate) - 1;
     const yearStart = startOfYear(new Date(previousYear, 0, 1));
     const yearEnd = endOfYear(new Date(previousYear, 11, 31));
-    const allExpenses = generateRecurringExpenses(expenses, yearStart, yearEnd);
-    const yearlyExpenses = allExpenses
-      .filter((e) => new Date(e.date).getFullYear() === previousYear)
-      .reduce((sum, e) => sum + e.price, 0);
-    return (
-      predictedPayments
-        .filter((d) => new Date(d.Day).getFullYear() === previousYear)
-        .reduce((sum, item) => sum + item.Value, 0) - yearlyExpenses
-    );
-  }, [selectedDate, predictedPayments, expenses]);
+
+    const yearlyExpenses = calculateExpenses(previousYear, expenses, yearStart, yearEnd);
+    const totalIncome = calculateIncome(previousYear, predictedPayments, RoomList);
+
+    return totalIncome - yearlyExpenses;
+  }, [selectedDate, predictedPayments, expenses, RoomList, calculateExpenses, calculateIncome]);
 
   const difference = totalCollected - lastYearTotalCollected;
-  const percentageChange =
-    lastYearTotalCollected !== 0
-      ? (
-          (difference /
-            (lastYearTotalCollected === 0 ? 1 : lastYearTotalCollected)) *
-          100
-        ).toFixed(2)
-      : 'N/A';
+  const percentageChange = lastYearTotalCollected !== 0
+    ? ((difference / Math.max(lastYearTotalCollected, 1)) * 100).toFixed(2)
+    : 'N/A';
 
-  // Add this useMemo hook to calculate the statistics
   const netProfitStats = useMemo(() => {
     const selectedYear = parseInt(selectedDate);
     const yearData = dataset.map((item) => ({
       netProfit: item.value,
-      month: item.month,
+      month: 'month' in item ? item.month : undefined
     }));
 
-    const totalNetProfitAmount = yearData.reduce(
-      (sum, item) => sum + item.netProfit,
-      0
-    );
-    const highestNetProfit = Math.max(
-      ...yearData.map((item) => item.netProfit)
-    );
+    const totalNetProfitAmount = yearData.reduce((sum, item) => sum + item.netProfit, 0);
+    const highestNetProfit = Math.max(...yearData.map(item => item.netProfit));
     const averageNetProfit = totalNetProfitAmount / yearData.length;
     const totalTransactions = predictedPayments.filter(
-      (payment) =>
-        new Date(payment.Day).getFullYear() === selectedYear && payment.Paid
+      payment => new Date(payment.Day).getFullYear() === selectedYear && payment.Paid
     ).length;
 
     return {
@@ -617,8 +603,7 @@ const processValueByCurrency = (
           </div>
           <span className="TotalLabel">Total:</span>
           <span className="TotalValue">
-            ${formatNumberWithSuffix(totalCollected.toLocaleString())} / $
-            {formatNumberWithSuffix(totalExpected.toLocaleString())}
+            {formatChartValue(totalCollected)} / {formatChartValue(totalExpected)}
           </span>
           <span className="DifferenceLabel">
             <span
@@ -626,9 +611,8 @@ const processValueByCurrency = (
                 difference > 0 ? 'DifferenceValue' : 'DifferenceValueNegative'
               }
             >
-              {difference > 0 ? '+' : ''}$
-              {formatNumberWithSuffix(difference.toLocaleString())} (
-              {percentageChange}%)
+              {difference > 0 ? '+' : ''}
+              {formatChartValue(difference)} ({percentageChange}%)
             </span>{' '}
             in {parseInt(selectedDate) - 1}
           </span>
@@ -779,18 +763,7 @@ const processValueByCurrency = (
             : []),
         ]}
         margin={{
-          left:
-            40 +
-            (storageManager.get('abbreiviateBigNumbers')
-              ? 30
-              : Math.max(
-                  ...dataset.map((d) =>
-                    Math.max(
-                      visibleSeries.collected ? d.value || 0 : 0,
-                      visibleSeries.expected ? d.expectedValue || 0 : 0
-                    )
-                  )
-                ).toString().length * 6),
+          left: leftMargin,
           right: 10,
           top: 10,
           bottom: 55,
@@ -828,28 +801,19 @@ const processValueByCurrency = (
           Total Net Profit{' '}
           {showBy === 'Monthly' ? 'This Year' : 'Selected Period'}:
           <em className="ExpenseStatValue">
-            $
-            {formatNumberWithSuffix(
-              netProfitStats.totalNetProfitAmount.toLocaleString()
-            )}
+            {formatChartValue(netProfitStats.totalNetProfitAmount)}
           </em>
         </p>
         <p className="ExpenseStatItem">
           Highest {showBy === 'Monthly' ? 'Monthly' : 'Yearly'} Net Profit:
           <em className="ExpenseStatValue">
-            $
-            {formatNumberWithSuffix(
-              netProfitStats.highestNetProfit.toLocaleString()
-            )}
+            {formatChartValue(netProfitStats.highestNetProfit)}
           </em>
         </p>
         <p className="ExpenseStatItem">
           Average {showBy === 'Monthly' ? 'Monthly' : 'Yearly'} Net Profit:
           <em className="ExpenseStatValue">
-            $
-            {formatNumberWithSuffix(
-              netProfitStats.averageNetProfit.toLocaleString()
-            )}
+            {formatChartValue(netProfitStats.averageNetProfit)}
           </em>
         </p>
         <p className="ExpenseStatItem">

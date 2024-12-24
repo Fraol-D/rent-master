@@ -25,7 +25,7 @@ import {
 import UtilityPanel from './UtilityPanel';
 import { Payment } from 'electron';
 import CurrencySign, { formatNumberWithSuffix } from '../CurrencySign';
-import loadingGif from 'renderer/assets/assets/Loading/Rolling-1s-200px.gif'
+import loadingGif from 'renderer/assets/assets/Loading/Rolling-1s-200px.gif';
 import { useAlert } from 'renderer/components/useAlert';
 export type RoomPayInfo = {
   Day: number; // milliseconds since January 1, 1970, 00:00:00 UTC
@@ -36,7 +36,7 @@ interface Props {
   paymentData: RoomPayInfo[]; //
   agreedPrice: number; //
   roomType: RoomType; //
-  
+
   roomPaymentInfoApi: any;
   refresh: () => void; //
   extendPaymentSchedule: () => void; //
@@ -94,11 +94,7 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
   const { showAlert } = useAlert();
   // Add window resize listener
   useEffect(() => {
-    console.log(
-      AllRoomPayInfo,
-      AllAgreements,
-      AllTenants
-    );
+    console.log(AllRoomPayInfo, AllAgreements, AllTenants);
     const handleResize = () => setWindowWidth(window.innerWidth);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
@@ -701,11 +697,11 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
         .style('font-size', `${fontSize - 3}px`)
         .text((d: any) => CurrencySign(Currency))
         .append('tspan')
-        .style('font-size', `${fontSize}px`)
+        .style('font-size', `${fontSize - 3}px`)
         .text((d: any) => {
           return d.Value === null
-            ? `${formatNumberWithSuffix(agreedPrice.toLocaleString())} X`
-            : `${formatNumberWithSuffix(d.Value.toLocaleString())} X`;
+            ? `${formatNumberWithSuffix(agreedPrice.toLocaleString())}`
+            : `${formatNumberWithSuffix(d.Value.toLocaleString())}`;
         })
         .on('click', (event, d) => handlePayClick(d));
       /////////////////////////////////////////////
@@ -902,7 +898,6 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
           });
 
         async function GetReceiptFile(date: Date) {
-        
           return window.electron
             ? window.electron.ipcRenderer.invoke(
                 'GetReceiptFile',
@@ -910,11 +905,11 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
                 roomType.id,
                 AllTenants.find((t: tenant) => t.id === roomType.tenantId)
               )
-            :await  GetReceiptFileApi(
+            : (await GetReceiptFileApi(
                 date,
                 roomType.id,
                 AllTenants.find((t: tenant) => t.id === roomType.tenantId)
-              ) || 'COMUNDEFINED';
+              )) || 'COMUNDEFINED';
         }
 
         const AddAReceipt = async (d: any) => {
@@ -931,19 +926,27 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
               const maxFileSizeMB = 5;
 
               if (totalFileSizeMB > maxFileSizeMB) {
-                showAlert(`File size exceeds ${maxFileSizeMB}MB limit.`, 'error');
+                showAlert(
+                  `File size exceeds ${maxFileSizeMB}MB limit.`,
+                  'error'
+                );
                 return;
               }
 
               setIsLoading(true);
               try {
-                const tenant = AllTenants.find((t: tenant) => t.id === roomType.tenantId);
+                const tenant = AllTenants.find(
+                  (t: tenant) => t.id === roomType.tenantId
+                );
                 if (!tenant) {
                   throw new Error('Tenant not found');
                 }
 
                 const formattedDate = format(d.Day, 'yyyy-MM-dd');
-                const addedTimeText = format(new Date(tenant.startTime), 'EEE MMM dd yyyy');
+                const addedTimeText = format(
+                  new Date(tenant.startTime),
+                  'EEE MMM dd yyyy'
+                );
 
                 const results = window.electron
                   ? await uploadReceiptDocuments(
@@ -1030,7 +1033,7 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
             }
           );
           if (choice) {
-          await  GetReceiptFile(date).then((receiptFile) => {
+            await GetReceiptFile(date).then((receiptFile) => {
               if (receiptFile) {
                 if (window.electron) {
                   window.electron.ipcRenderer.send(
@@ -1146,7 +1149,9 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
       for (const date of selectedDates) {
         const payment = payments.find((item) => item.Day === date);
         if (payment && payment.Paid) {
-          const existingPayment = AllRoomPayInfo.find((p) => p.id === payment.id);
+          const existingPayment = AllRoomPayInfo.find(
+            (p) => p.id === payment.id
+          );
           if (existingPayment) {
             await updateValue(
               'room_pay_info',
@@ -1223,10 +1228,8 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
         left: 0,
         right: 0,
         bottom: 0,
-        width: roomType.ShowPayTimeLine
-        ? 'var(--568px-V)'
-        : 'var(--0px-V)',
-        height:"100%",
+       
+        height: '100%',
         paddingRight: 'var(--12px-V)',
         backgroundColor: 'rgba(0, 0, 0, 0.3)',
         justifyContent: 'center',
@@ -1235,18 +1238,19 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
       }}
     >
       <img
-      src={loadingGif}
+        src={loadingGif}
         style={{
-          width: '40px',
-          height: '40px',
-          
+          width: 'var(--40px-V)',
+          height: 'var(--40px-V)',
         }}
       />
     </div>
   );
 
   // Add state for receipt refresh
-  const [refreshingReceipt, setRefreshingReceipt] = useState<string | null>(null);
+  const [refreshingReceipt, setRefreshingReceipt] = useState<string | null>(
+    null
+  );
 
   // Update GetReceiptFile function
   const GetReceiptFile = async (date: Date) => {
@@ -1256,19 +1260,15 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
       const tenant = AllTenants.find((t: tenant) => t.id === roomType.tenantId);
       if (!tenant) return 'Add receipt';
 
-      const result = window.electron 
+      const result = window.electron
         ? await window.electron.ipcRenderer.invoke(
             'GetReceiptFile',
             date,
             roomType.id,
             tenant
           )
-        : await GetReceiptFileApi(
-            date,
-            roomType.id,
-            tenant
-          );
-
+        : await GetReceiptFileApi(date, roomType.id, tenant);
+      console.log(result);
       return result || 'Add receipt';
     } catch (error) {
       console.error('Error getting receipt:', error);
@@ -1297,11 +1297,16 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
         setIsLoading(true);
 
         try {
-          const tenant = AllTenants.find((t: tenant) => t.id === roomType.tenantId);
+          const tenant = AllTenants.find(
+            (t: tenant) => t.id === roomType.tenantId
+          );
           if (!tenant) throw new Error('Tenant not found');
 
           const formattedDate = format(d.Day, 'yyyy-MM-dd');
-          const addedTimeText = format(new Date(tenant.startTime), 'EEE MMM dd yyyy');
+          const addedTimeText = format(
+            new Date(tenant.startTime),
+            'EEE MMM dd yyyy'
+          );
 
           const results = window.electron
             ? await uploadReceiptDocuments(
@@ -1345,7 +1350,10 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
   };
 
   // Update receipt rendering
-  const renderReceipt = async (element: d3.Selection<any, any, any, any>, d: any) => {
+  const renderReceipt = async (
+    element: d3.Selection<any, any, any, any>,
+    d: any
+  ) => {
     if (refreshingReceipt === d.Day) {
       element.html(`
         <div style="display: flex; justify-content: center; align-items: center; height: 100%;">
@@ -1356,112 +1364,108 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
     }
 
     const receiptFile = await GetReceiptFile(d.Day);
-    
+
     if (!receiptFile || receiptFile === 'Add receipt') {
       element.html('Add receipt');
       return;
     }
 
     const extension = receiptFile.split('.').pop()?.toLowerCase();
-    const isImage = ['jpg', 'jpeg', 'png', 'gif', 'bmp'].includes(extension || '');
+    const isImage = ['jpg', 'jpeg', 'png', 'gif', 'bmp'].includes(
+      extension || ''
+    );
 
     element.html(`
       <div style="position: relative; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center;">
-        ${isImage 
-          ? `<img src="${receiptFile}" width="40" height="40" style="object-fit: contain;" />` 
-          : `<div style="font-weight: bold;">${extension?.toUpperCase()}</div>`
+        ${
+          isImage
+            ? `<img src="${receiptFile}" width="40" height="40" style="object-fit: contain;" />`
+            : `<div style="font-weight: bold;">${extension?.toUpperCase()}</div>`
         }
       </div>
     `);
   };
 
-
-  return (<> <LoadingOverlay />   <div
-    className="TimeLineMainContaner"
-    style={{
-      width: roomType.ShowPayTimeLine
-        ? 'var(--568px-V)'
-        : 'var(--0px-V)',
-      height: roomType.ShowPayTimeLine
-        ? !ShowReceipt
-          ? 'auto'
-          : 'auto'
-        : 'var(--0px-V)',
-      opacity: roomType.ShowPayTimeLine ? '1' : '0',
-    }}
-  >
-    <div>
+  return (
+    <>
+      {' '}
+      <LoadingOverlay />{' '}
       <div
-        style={{
-          display: 'flex',
-          flexDirection: 'row',
-          justifyContent: 'space-around',
-        }}
+        className="TimeLineMainContaner"
+      
       >
-        <p
-          ref={paragraphRef}
-          style={{
-            textAlign: 'center',
-            fontWeight: 'bold',
-            marginBottom: 'var(--10px-V)',
-            display: 'flex',
-          }}
-        >
-          {message}
-        </p>
-        <button
-          onClick={() => {
-            refresh();
-          }}
-        >
-          refresh
-        </button>{' '}
-        <button
-          onClick={() => {
-            setShowReceipt(!ShowReceipt);
-            setShowUtilityPanel(!ShowReceipt);
-          }}
-        >
-          RCT
-        </button>
-        <button onClick={scrollToCurrentDate}>Current Date</button>
-        {selectedDates.length > 0 ? (
-          <>
-            {' '}
-            <button
-              onClick={() => {
-                handleMultiUnPay();
+        <div>
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'row',
+              justifyContent: 'space-around',
+            }}
+          >
+            <p
+              ref={paragraphRef}
+              style={{
+                textAlign: 'center',
+                fontWeight: 'bold',
+                marginBottom: 'var(--10px-V)',
+                display: 'flex',
               }}
             >
-              UnPay
-            </button>
+              {message}
+            </p>
             <button
               onClick={() => {
-                handleMultiPay();
+                refresh();
               }}
             >
-              Pay
+              Refresh
+            </button>{' '}
+            <button
+              onClick={() => {
+                setShowReceipt(!ShowReceipt);
+                setShowUtilityPanel(!ShowReceipt);
+              }}
+            >
+              RCT
             </button>
-          </>
-        ) : (
-          <></>
-        )}
+            <button onClick={scrollToCurrentDate}>Current Date</button>
+            {selectedDates.length > 0 ? (
+              <>
+                {' '}
+                <button
+                  onClick={() => {
+                    handleMultiUnPay();
+                  }}
+                >
+                  UnPay
+                </button>
+                <button
+                  onClick={() => {
+                    handleMultiPay();
+                  }}
+                >
+                  Pay
+                </button>
+              </>
+            ) : (
+              <></>
+            )}
+          </div>
+          <div
+            style={{
+              position: 'relative',
+              overflowX: 'auto',
+              maxWidth: '100%',
+              overflowY: 'hidden',
+              height: ShowReceipt ? 'var(--220px-V)' : 'var(--174px-V)',
+              transition: 'all .2s',
+            }}
+          >
+            <svg ref={svgRef} width="100%" height="126" />
+          </div>
+        </div>{' '}
       </div>
-      <div
-        style={{
-          position: 'relative',
-          overflowX: 'auto',
-          maxWidth: '100%',
-          overflowY: 'hidden',
-          height: ShowReceipt ? 'var(--220px-V)' : 'var(--174px-V)',
-          transition: 'all .2s',
-        }}
-      >
-        
-        <svg ref={svgRef} width="100%" height="126" />
-      </div>
-    </div> </div></>
-
+    </>
   );
 };
 

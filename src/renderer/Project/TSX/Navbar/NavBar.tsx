@@ -344,18 +344,7 @@ const NavBar = ({
             Dashboard
           </button>
         )}
-        {privileges.viewPeoplesPage && (
-          <button
-            className={
-              SelectedPage === 'People'
-                ? 'PageNavigatorButtonSelected'
-                : 'PageNavigatorButton'
-            }
-            onClick={() => setSelectedPage('People')}
-          >
-            People
-          </button>
-        )}
+   
         {privileges.viewRoomsPage && (
           <button
             className={
@@ -368,18 +357,7 @@ const NavBar = ({
             Rooms
           </button>
         )}
-        {privileges.viewCalendar && (
-          <button
-            className={
-              SelectedPage === 'Calendar'
-                ? 'PageNavigatorButtonSelected'
-                : 'PageNavigatorButton'
-            }
-            onClick={() => setSelectedPage('Calendar')}
-          >
-            Calendar
-          </button>
-        )}
+      
         {privileges.editExpenses && (
           <button
             className={

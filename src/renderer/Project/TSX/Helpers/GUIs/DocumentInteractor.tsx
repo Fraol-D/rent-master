@@ -45,6 +45,7 @@ const DocumentInteractor: React.FC<DocumentInteractorProps> = ({
 }) => {
   const [documents, setDocuments] = useState<string[]>([]);
   const [selectedDocument, setSelectedDocument] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
     if (isAddRoomDocument && refreshState) {
@@ -124,10 +125,12 @@ const DocumentInteractor: React.FC<DocumentInteractorProps> = ({
       const files = (event.target as HTMLInputElement).files;
       if (files && files.length > 0) {
         try {
+          setIsUploading(true);
           const filteredFiles = Array.from(files).filter(file => file.size <= 5 * 1024 * 1024); // 5MB limit
-         console.log(filteredFiles.length,files.length)
+          console.log(filteredFiles.length,files.length)
           if(filteredFiles.length === 0){
             showAlert('All files are above the 5MB limit.', 'error');
+            setIsUploading(false);
             return;
           } else if (filteredFiles.length < files.length) {
             showAlert('Some files exceeded the 5MB limit and were not uploaded.', 'error');
@@ -158,6 +161,7 @@ const DocumentInteractor: React.FC<DocumentInteractorProps> = ({
 
             if (!roomId || !tenantName || !tenantId) {
               console.error('Missing required room or tenant information');
+              setIsUploading(false);
               return;
             }
 
@@ -180,6 +184,9 @@ const DocumentInteractor: React.FC<DocumentInteractorProps> = ({
           }
         } catch (error) {
           console.error('Error uploading files:', error);
+          showAlert('Error uploading files. Please try again.', 'error');
+        } finally {
+          setIsUploading(false);
         }
       }
     };
@@ -280,6 +287,7 @@ const handleOpenDocument = async () => {
               flexDirection: 'column',
               borderRadius: 'var(--10px-V)',
               marginBottom: 'var(--20px-V)',
+              position: 'relative',
             }
           : {
               width: '100%',
@@ -287,9 +295,35 @@ const handleOpenDocument = async () => {
               maxHeight: AddTenant ? 'var(--230px-V)' : '',
               display: 'flex',
               flexDirection: 'column',
+              position: 'relative',
             }
       }
     >
+      {isUploading && (
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 1000,
+          borderRadius: 'inherit'
+        }}>
+          <div style={{
+            color: 'white',
+            padding: '20px',
+            borderRadius: '5px',
+            textAlign: 'center'
+          }}>
+            <div>Uploading Documents...</div>
+            <div style={{marginTop: '10px'}}>Please wait</div>
+          </div>
+        </div>
+      )}
       <div
         className="document-list"
         style={{ flex: 1, overflowY: 'auto', overflowX: 'auto', minHeight: 'var(--120px-V)', maxHeight: 'var(--183px-V)'}}
@@ -330,16 +364,16 @@ const handleOpenDocument = async () => {
           background: 'var(--Secondary-Color30)'
         }}
       >
-        <button onClick={handleOnAddDocument}>Add Document</button>
+        <button onClick={handleOnAddDocument} disabled={isUploading}>Add Document</button>
         {selectedDocument && (
           <>
-            <button onClick={handleOpenDocument} disabled={!selectedDocument}>
+            <button onClick={handleOpenDocument} disabled={!selectedDocument || isUploading}>
               {window.electron ? 'Open' : 'Download'}
             </button>
-           {window.electron && <button onClick={handleShowInExplorer} disabled={!selectedDocument}>
+           {window.electron && <button onClick={handleShowInExplorer} disabled={!selectedDocument || isUploading}>
               Open in Files
             </button>}
-            <button onClick={handleDeleteDocument} disabled={!selectedDocument}>
+            <button onClick={handleDeleteDocument} disabled={!selectedDocument || isUploading}>
               Delete
             </button>
           </>

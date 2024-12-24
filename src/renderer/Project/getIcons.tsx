@@ -59,6 +59,7 @@ import VendorDark from '../assets/assets/Dark mode/Vendor.png';
 import XDark from '../assets/assets/Dark mode/X.png';
 import AddRoomDark from '../assets/assets/Dark mode/AddRoom.png';
 import ClearFiltersDark from '../assets/assets/Dark mode/ClearFilters.png';
+import CalenderDark from '../assets/assets/Dark mode/Calender.png';
 
 // Light Mode Icons// Light Mode Icons
 import AdminSettingsMaleLight from '../assets/assets/Light mode/Admin Settings Male.png';
@@ -120,7 +121,7 @@ import VendorLight from '../assets/assets/Light mode/Vendor.png';
 import XLight from '../assets/assets/Light mode/X.png';
 import AddRoomLight from '../assets/assets/Light mode/AddRoom.png';
 import ClearFiltersLight from '../assets/assets/Light mode/ClearFilters.png';
-import { LIMIT_LIKE_PATTERN_LENGTH } from 'sqlite3';
+import CalenderLight from '../assets/assets/Light mode/Calender.png';
 
 export const IconsGUI = () => {
   const DARKtheme = storageManager.get("ThemeMode") === "light";
@@ -183,6 +184,7 @@ export const IconsGUI = () => {
     VendorIcon: DARKtheme ? VendorDark : VendorLight,
     XIcon: DARKtheme ? XDark : XLight,
     AddRoomIcon: DARKtheme ? AddRoomDark : AddRoomLight,
-    if it is going to mak eit ? make it insted use the emails firt LIMIT_LIKE_PATTERN_LENGTH: DARKtheme ? ClearFiltersDark : ClearFiltersLight,
+    ClearFiltersIcon: DARKtheme ? ClearFiltersDark : ClearFiltersLight,
+    CalenderIcon: DARKtheme ? CalenderDark : CalenderLight,
   }
 };
