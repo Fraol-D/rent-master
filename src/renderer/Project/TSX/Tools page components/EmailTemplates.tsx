@@ -261,7 +261,7 @@ const EmailTemplates: React.FC<EmailTemplatesProps> = ({
         >
           Reset to Default
         </button>
-        <button onClick={handleAddEmailTemplate}>Add an email template</button>
+        <button onClick={handleAddEmailTemplate} id="add-email-template-button">Add an email template</button>
       </div>
       {emailTemplates
         .sort((a, b) => a.name.localeCompare(b.name))
@@ -287,12 +287,13 @@ const EmailTemplates: React.FC<EmailTemplatesProps> = ({
                   value={editedTemplate?.name || ''}
                   style={{ width: '50%' }}
                   onChange={(e) => handleEditChange('name', e.target.value)}
+                  id="email-template-name"
                 />
               ) : (
                 <h3>{template.name}</h3>
               )}
               <div className="email-template-buttons">
-                <button onClick={() => toggleTemplate(template.id)}>
+                <button onClick={() => toggleTemplate(template.id)} id="email-template-open-button">
                   {openTemplateId === template.id ? 'Close' : 'Open'}
                 </button>
                 {editingTemplateId === template.id ? (
@@ -304,7 +305,7 @@ const EmailTemplates: React.FC<EmailTemplatesProps> = ({
                     </button>
                   </>
                 ) : (
-                  <button onClick={() => startEditing(template)}>Edit</button>
+                  <button onClick={() => startEditing(template)} id="email-template-edit-button">Edit</button>
                 )}
               </div>
             </div>
@@ -341,6 +342,7 @@ const EmailTemplates: React.FC<EmailTemplatesProps> = ({
                             handleEditChange('subject', e.target.value)
                           }
                           onFocus={() => setSelectedInput('subject')}
+                          id="email-template-subject"
                         />
                       </>
                     ) : (
@@ -353,6 +355,7 @@ const EmailTemplates: React.FC<EmailTemplatesProps> = ({
                       value={editedTemplate?.body || ''}
                       onChange={(e) => handleEditChange('body', e.target.value)}
                       onFocus={() => setSelectedInput('body')}
+                      id="email-template-body"
                     />
                   ) : (
                     <p>{formatEmailBody(template.body)}</p>
@@ -365,7 +368,7 @@ const EmailTemplates: React.FC<EmailTemplatesProps> = ({
                       : 'Variables Used:'}
                   </h4>
                   {editingTemplateId === template.id ? (
-                    <div className="variable-buttons">
+                    <><div className="variable-buttons" id="email-variables-list">
                       {variables.map((variable) => (
                         <button
                           key={variable}
@@ -374,7 +377,9 @@ const EmailTemplates: React.FC<EmailTemplatesProps> = ({
                           {variable}
                         </button>
                       ))}
-                    </div>
+                    </div><button onClick={() => handleTryOut(template.id)}style={{marginTop: 'var(--10px-V)'}} id="try-out-email">
+                        Send / Try Out
+                      </button></>
                   ) : (
                     <div
                       style={{
@@ -393,7 +398,7 @@ const EmailTemplates: React.FC<EmailTemplatesProps> = ({
                           )
                         )}
                       </ul>
-                      <button onClick={() => handleTryOut(template.id)}>
+                      <button onClick={() => handleTryOut(template.id)} id="try-out-email">
                         Send / Try Out
                       </button>
                     </div>

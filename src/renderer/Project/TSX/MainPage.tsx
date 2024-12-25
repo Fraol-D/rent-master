@@ -369,7 +369,7 @@ const MainPage = ({
     AllTenants,
     setAllTenants,
     setAllExpenses,
-    AllExpenses,
+    AllExpenses,isOnTutorial,setTutorialNewExpenseId
   } = useGlobal();
 
   const [floorFilter, setFloorFilter] = useState<string>('');
@@ -1219,10 +1219,11 @@ const MainPage = ({
     }
   }, [SelectedPage]);
 
-  const SideBarItem = ({ page, currentPage, onClick, children }: any) => (
+  const SideBarItem = ({ page, currentPage, onClick, children, id }: any) => (
     <button
       onClick={onClick}
       style={{ display: SideBarShowState ? '' : 'none' }}
+      id={id || ''}
       className={
         currentPage === page
           ? 'sideBarItemComponentMainSelected'
@@ -1546,6 +1547,7 @@ const MainPage = ({
   const [showExpenseFilters, setShowExpenseFilters] = useState(true);
   const [showExpenseFilters2, setShowExpenseFilters2] = useState(false);
   const [loadingAddExpense, setLoadingAddExpense] = useState(false);
+
   const handleAddExpense = async () => {
     setLoadingAddExpense(true);
     const newExpense: expenses = {
@@ -1575,7 +1577,9 @@ const MainPage = ({
       category: 'Other',
       beforeTax: false,
     };
-  
+    if(isOnTutorial){
+      setTutorialNewExpenseId(newExpense.id);
+    }
     setEditingExpenseId(newExpense.id);
     setEditedExpense(newExpense);
     await addValue('expenses', newExpense, setChangeMade);
@@ -1707,6 +1711,7 @@ const MainPage = ({
                     visibility: SideBarShowState ? 'visible' : 'hidden',
                   }}
                   title="Show room calendar"
+                 
                 >
                   {!showRoomCalendar ? 'Show Calendar' : 'Hide Calendar'}
                 </button>
@@ -2601,6 +2606,7 @@ const MainPage = ({
                   page="EmailTemplates"
                   currentPage={ToolsSelectedPage}
                   onClick={() => setToolsSelectedPage('EmailTemplates')}
+                  id="tools-email-templates-tab"
                 >
                   Email Templates
                 </SideBarItem>
@@ -2610,6 +2616,7 @@ const MainPage = ({
                   page="SMSTemplates"
                   currentPage={ToolsSelectedPage}
                   onClick={() => setToolsSelectedPage('SMSTemplates')}
+                  id="tools-sms-templates-tab"
                 >
                   SMS Templates
                 </SideBarItem>
@@ -2619,6 +2626,7 @@ const MainPage = ({
                   page="Database"
                   currentPage={ToolsSelectedPage}
                   onClick={() => setToolsSelectedPage('Database')}
+                  id="tools-database-tab"
                 >
                   Database
                 </SideBarItem>
@@ -2630,6 +2638,7 @@ const MainPage = ({
                 page="Settings"
                 currentPage={ToolsSelectedPage}
                 onClick={() => setToolsSelectedPage('Settings')}
+                id="tools-settings-tab"
               >
                 Settings
               </SideBarItem>
@@ -2801,6 +2810,7 @@ const MainPage = ({
                   className="SideBarTopButton"
                   onClick={handleAddExpense}
                   title="Add Expense"
+                  id="add-expense-button"
                   style={{ display: SideBarShowState ? '' : 'none' }}
                 >
                   Add Expense
@@ -2809,7 +2819,7 @@ const MainPage = ({
                   className="SideBarTopButton"
                   onClick={() => setShowExpenseCalendar(!showExpenseCalendar)}
                   style={{ display: SideBarShowState ? '' : 'none' }}
-                  title="Show Calendar"
+                  title="Show Calendar" id="expense-calendar-toggle"
                 >
                   {showExpenseCalendar ? 'Hide Calendar' : 'Show Calendar'}
                 </button>
@@ -2858,7 +2868,7 @@ const MainPage = ({
                 style={{
                   display: 'flex',
                   overflowY: 'auto',
-                  height: 'calc(100% - var(--200px-V) + var(--10px-V))',
+                  height: 'calc(100% - var(--200px-V) - var(--35px-V))',
                   flexDirection: 'column',
                   width:"100%",
                   alignItems: 'center',
@@ -2897,6 +2907,7 @@ const MainPage = ({
                         marginTop: 'var(--10px-V)',
                         alignItems: 'flex-start',
                       }}
+                      id="expense-filters-container"
                     >
                       <div
                         style={{ width: '100%', marginBottom: 'var(--10px-V)' }}
@@ -2904,11 +2915,12 @@ const MainPage = ({
                         <input
                           type="text"
                           placeholder="Search expenses"
+                          id="expense-search-input"
                           style={{ padding: 'var(--5px-V)' }}
                           onChange={(e) => setSearchTerm(e.target.value)}
                         />
                       </div>
-
+<div id="expense-price-filters">
                       <div
                         style={{ width: '100%', marginBottom: 'var(--10px-V)' }}
                       >
@@ -2951,9 +2963,10 @@ const MainPage = ({
                           />
                         </div>
                       </div>
-
+</div>
                       <div
                         style={{ width: '100%', marginBottom: 'var(--10px-V)' }}
+                         id="expense-location-filters"
                       >
                         <select
                           value={fullBuildingFilter}
@@ -2963,6 +2976,7 @@ const MainPage = ({
                             )
                           }
                           style={{ padding: 'var(--5px-V)' }}
+                         
                         >
                           <option value="all">All Buildings</option>
                           <option value="yes">Full Building Only</option>
@@ -2997,6 +3011,7 @@ const MainPage = ({
 
                       <div
                         style={{ width: '100%', marginBottom: 'var(--10px-V)' }}
+                        id="expense-tax-filters"
                       >
                         <select
                           value={beforeTaxFilter}
@@ -3015,6 +3030,7 @@ const MainPage = ({
 
                       <div
                         style={{ width: '100%', marginBottom: 'var(--10px-V)' }}
+                        id="expense-recurring-filters"
                       >
                         <select
                           value={reoccurringFilter}
@@ -3075,6 +3091,7 @@ const MainPage = ({
 
                       <div
                         style={{ width: '100%', marginBottom: 'var(--10px-V)' }}
+                        id="expense-date-filter"
                       >
                         <div>Date:</div>
                         <input

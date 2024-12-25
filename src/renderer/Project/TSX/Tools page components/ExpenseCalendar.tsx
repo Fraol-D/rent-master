@@ -100,16 +100,28 @@ const ExpenseCalendar: React.FC<ExpenseCalendarProps> = ({ expenses }) => {
       800,
       window.innerWidth - margin.left - margin.right - 400
     ); // Adjust for sidebar
-    const height = 1500;
-
-    svg
-      .attr('width', width + margin.left + margin.right)
-      .attr('height', height + margin.top + margin.bottom);
-
+    let height = 1000; // Reduced base height since we'll scale bars dynamically
     const monthStart = startOfMonth(currentDate);
     const monthEnd = endOfMonth(currentDate);
     const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
-
+    const expensesInMonth = daysInMonth.map((day) => {
+      return expenses.filter((expense) => {
+        const expenseDate = new Date(expense.date);
+        if (
+          expenseDate.getDate() === day.getDate() &&
+          expenseDate.getMonth() === day.getMonth() &&
+          expenseDate.getFullYear() === day.getFullYear()
+        ) {
+          return true;
+        }
+        return calculateRecurringExpenses(expense, day) !== null;
+      });
+    });
+    height = height + (Math.max(...expensesInMonth.map(e => e.length)) * 15)
+    svg
+      .attr('width', width + margin.left + margin.right)
+      .attr('height', height + margin.top + margin.bottom);
+  
     // Create day columns
     const dayWidth = width / daysInMonth.length;
     const dayHeight = height - margin.top - margin.bottom;
@@ -136,8 +148,7 @@ const ExpenseCalendar: React.FC<ExpenseCalendarProps> = ({ expenses }) => {
                        d.getFullYear() === new Date().getFullYear();
         if (isToday) return 'var(--Secondary-Color60)';
         return d.getDay() === 0 || d.getDay() === 6 ? 'var(--Secondary-Color20)' : 'var(--Secondary-Color20)';
-      })
-     
+      });
 
     // Add day numbers
     dayGroups
@@ -174,13 +185,13 @@ const ExpenseCalendar: React.FC<ExpenseCalendarProps> = ({ expenses }) => {
             .attr('cx', dayWidth / 2)
             .attr('cy', i * 25+10)
             .attr('r', 12)
-            .attr('fill', expense.doesReoccur ? 'var(--Accent-Color)' : 'var(--Accent-Color)')
+            .attr('fill', expense.doesReoccur ? 'var(--Accent-Color)' : 'var(--Accent-Color50)')
             .attr('opacity', 0.7)
             .on('mouseover', (event) => {
               const tooltip = d3.select('.tooltip');
               tooltip.style('visibility', 'visible')
                 .html(`
-                  <div style="color: var(--Text-Color);font-family: Arial, sans-serif; line-height: 1.6;">
+                  <div id="expense-calendar" style="color: var(--Text-Color);font-family: Arial, sans-serif; line-height: 1.6;">
                     <h3 style="color: var(--Text-Color); margin-bottom: var(--5px-V);margin-top: var(--5px-V);">Expense Details</h3>
                     <p><strong style="font-size: 1.1em;">${expense.name}</strong></p>
                     <p><em style="font-style: italic;">Amount:</em> <span style="font-weight: bold; color: var(--Text-Color);">${formatNumberWithSuffix(expense.price)} ${CurrencySign(expense.Currency)}</span></p>
@@ -224,14 +235,14 @@ const ExpenseCalendar: React.FC<ExpenseCalendarProps> = ({ expenses }) => {
   }, [expenses, searchTerm, currentDate]);
 
   return (
-    <div className="CalendarMainContainer">
+    <div className="CalendarMainContainer" id="expense-calendar">
       <div className="calendar-navigation" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 'var(--10px-V)', marginTop: 'var(--10px-V)' }}>
-        <button onClick={goToPreviousMonth} style={{ cursor: 'pointer', border: 'none', color: 'var(--Text-Color)', fontSize: 'var(--18px-V)' }}>←</button>
+       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 'var(--10px-V)', marginTop: 'var(--10px-V)' }}id="expense-calendar-navigation"><button onClick={goToPreviousMonth} style={{ cursor: 'pointer', border: 'none', color: 'var(--Text-Color)', fontSize: 'var(--18px-V)' }}>←</button>
         <span style={{ fontSize: 'var(--18px-V)', color: 'var(--Text-Color)' }}>
           {currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}
         </span>
         <button onClick={goToNextMonth} style={{ cursor: 'pointer',  border: 'none', color: 'var(--Text-Color)', fontSize: 'var(--18px-V)' }}>→</button>
-      </div>
+    </div>   </div>
       <div style={{ overflowX: 'auto', height: 'calc(100% - var(--44px-V))' }}>
         <svg ref={ref}></svg>
       </div>

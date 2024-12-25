@@ -2,6 +2,46 @@ import React, { useEffect, useState } from 'react';
 import { TutorialSystem } from './tutorialData';
 import { useGlobal } from 'renderer/components/GlobalContext';
 
+const isElementInViewport = (element: HTMLElement) => {
+  const rect = element.getBoundingClientRect();
+  return (
+    rect.top >= 0 &&
+    rect.left >= 0 &&
+    rect.bottom <=
+      (window.innerHeight || document.documentElement.clientHeight) &&
+    rect.right <= (window.innerWidth || document.documentElement.clientWidth)
+  );
+};
+
+const scrollParentToElement = (element: HTMLElement) => {
+  // Find scrollable parent
+  let parent = element.parentElement;
+  while (parent) {
+    const style = window.getComputedStyle(parent);
+    const overflow = style.getPropertyValue('overflow');
+    if (overflow === 'auto' || overflow === 'scroll') {
+      break;
+    }
+    parent = parent.parentElement;
+  }
+
+  if (parent) {
+    // Calculate position to scroll to
+    const parentRect = parent.getBoundingClientRect();
+    const elementRect = element.getBoundingClientRect();
+    const scrollTop =
+      parent.scrollTop +
+      (elementRect.top - parentRect.top) -
+      parentRect.height / 2;
+
+    // Smooth scroll to element
+    parent.scrollTo({
+      top: scrollTop,
+      behavior: 'smooth',
+    });
+  }
+};
+
 interface TutorialManagerProps {
   tutorialData: TutorialSystem;
   onClose: () => void;
@@ -10,6 +50,7 @@ interface TutorialManagerProps {
   userPrivileges: any;
   selectedAppUserId: string;
   currentPageInital: number;
+  currentSectionInital: number;
 }
 
 const TutorialManager = ({
@@ -20,6 +61,7 @@ const TutorialManager = ({
   selectedAppUserId,
   userPrivileges,
   currentPageInital,
+  currentSectionInital,
 }: TutorialManagerProps) => {
   // Add error checking
   if (!tutorialData || !tutorialData.pages || tutorialData.pages.length === 0) {
@@ -52,7 +94,7 @@ const TutorialManager = ({
 
   // State to track current position in tutorial
   const [currentPage, setCurrentPage] = useState(currentPageInital);
-  const [currentSection, setCurrentSection] = useState(0);
+  const [currentSection, setCurrentSection] = useState(currentSectionInital);
   const [currentStep, setCurrentStep] = useState(0);
   const [hasInteracted, setHasInteracted] = useState(false);
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
@@ -107,6 +149,7 @@ const TutorialManager = ({
     }
     const rect = element.getBoundingClientRect();
     const offset = 20 * scaleFactor;
+    const offset2 = 30 * scaleFactor;
     const cardWidth = 400 * scaleFactor;
     const cardHeight = 250 * scaleFactor;
     const adjustmentOffset = 40 * scaleFactor;
@@ -114,10 +157,31 @@ const TutorialManager = ({
     let style: { [key: string]: string } = {};
 
     switch (position) {
+      case 'left2':
+        style = {
+          top: `${rect.top + rect.height / 2}px`,
+          left: `${rect.left - cardWidth - offset}px`,
+          transform: 'translateY(-50%)',
+        };
+        if (rect.top + rect.height / 2 - cardHeight / 2 < 0) {
+          style.top = `${cardHeight / 2 - adjustmentOffset}px`;
+        } else if (
+          rect.top + rect.height / 2 + cardHeight / 2 >
+          window.innerHeight
+        ) {
+          style.top = `${
+            window.innerHeight - cardHeight / 2 + adjustmentOffset
+          }px`;
+        }
+        if (rect.left - cardWidth - offset < 0) {
+          style.left = `${adjustmentOffset}px`;
+        }
+        break;
+
       case 'left':
         style = {
           top: `${rect.top + rect.height / 2}px`,
-          right: `${window.innerWidth - rect.left + offset}px`,
+          left: `${rect.left - cardWidth - offset - offset2}px`,
           transform: 'translateY(-50%)',
         };
         if (rect.top + rect.height / 2 - cardHeight / 2 < 0) {
@@ -129,6 +193,9 @@ const TutorialManager = ({
           style.top = `${
             window.innerHeight - cardHeight / 2 - adjustmentOffset
           }px`;
+        }
+        if (rect.left - offset - cardWidth < 0) {
+          style.left = `${offset + adjustmentOffset}px`;
         }
         break;
 
@@ -212,7 +279,7 @@ const TutorialManager = ({
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
-  const { tutorialNewAppUserId } = useGlobal();
+  const { tutorialNewAppUserId, tutorialNewExpenseId } = useGlobal();
 
   // Effect to check and update card position and styles every 2 seconds
   useEffect(() => {
@@ -226,7 +293,9 @@ const TutorialManager = ({
       let finalTargetId = targetId;
       if (currentStepData.checkUnderElementId && targetId) {
         const parentElement = document.getElementById(
-          currentStepData.checkUnderElementId
+          currentStepData.checkUnderElementIsJS
+            ? eval(currentStepData.checkUnderElementId)
+            : currentStepData.checkUnderElementId
         );
         const targetElement = document.getElementById(targetId);
 
@@ -247,13 +316,24 @@ const TutorialManager = ({
       if (finalTargetId) {
         const element = document.getElementById(finalTargetId);
         if (element) {
+          // Check if element is in viewport and scroll if needed
+          if (!isElementInViewport(element)) {
+            scrollParentToElement(element);
+          }
+
           const isCentered =
             cardPosition.top === '50%' && cardPosition.left === '50%';
           const positionChanged =
             JSON.stringify(newPosition) !== JSON.stringify(cardPosition);
 
           if (isCentered || positionChanged) {
-            setCardPosition(newPosition);
+            // Ensure newPosition has all required properties
+            const updatedPosition = {
+              top: newPosition.top || '50%',
+              left: newPosition.left || '50%',
+              transform: newPosition.transform || 'translate(-50%, -50%)',
+            };
+            setCardPosition(updatedPosition);
           }
 
           // Re-apply styles
@@ -321,6 +401,8 @@ const TutorialManager = ({
     currentStepData.dontInteract,
     currentStepData.additionalZIndexElements,
     currentStepData.checkUnderElementId,
+    currentStepData.checkUnderElementIsJS,
+    cardPosition,
   ]);
 
   // Effect to highlight target element and additional elements
@@ -359,7 +441,9 @@ const TutorialManager = ({
 
     if (currentStepData.checkUnderElementId && targetId) {
       const parentElement = document.getElementById(
-        currentStepData.checkUnderElementId
+        currentStepData.checkUnderElementIsJS
+          ? eval(currentStepData.checkUnderElementId)
+          : currentStepData.checkUnderElementId
       );
       const targetElement = document.getElementById(targetId);
 
@@ -426,6 +510,7 @@ const TutorialManager = ({
     currentStepData.requiresInteractionInput,
     currentStepData.checkUnderElementId,
     currentStepData.isJsId,
+    currentStepData.checkUnderElementIsJS,
   ]);
   useEffect(() => {
     console.log(errorMessage);
@@ -450,7 +535,7 @@ const TutorialManager = ({
       setCurrentSection((prev) => prev + 1);
       setCurrentStep(0);
     } else if (currentPage < tutorialSystem.pages.length - 1) {
-      if (currentStepData.autoNext) {
+      if (currentPageData.autoNext) {
         setCurrentPage((prev) => prev + 1);
         setCurrentSection(0);
         setCurrentStep(0);
@@ -474,7 +559,9 @@ const TutorialManager = ({
 
       if (currentStepData.checkUnderElementId && targetId) {
         const parentElement = document.getElementById(
-          currentStepData.checkUnderElementId
+          currentStepData.checkUnderElementIsJS
+            ? eval(currentStepData.checkUnderElementId)
+            : currentStepData.checkUnderElementId
         );
         const targetElement = document.getElementById(targetId);
 
@@ -646,6 +733,7 @@ const TutorialManager = ({
             <button
               className="tutorial-btn next-btn"
               onClick={() => onNavigate?.(currentPageData.hasToBeIn)}
+              style={{marginBottom: 'var(--0px-V)'}}
             >
               Go to {currentPageData.hasToBeIn}
             </button>
@@ -736,11 +824,11 @@ const TutorialManager = ({
                     onClick={handleNext}
                   >
                     {isLastStep()
-                      ? 'Finish'
-                      : currentStep + 1 === currentSectionData.steps.length
-                      ? currentPageData.autoNext
-                        ? 'Next Section'
-                        : 'Finish Tutorial'
+                      ? 'Finish Tutorial'
+                      : currentStep === currentSectionData.steps.length - 1
+                      ? currentSection === currentPageData.sections.length
+                        ? 'Finish Tutorial'
+                        : 'Next Section'
                       : 'Next'}
                   </button>
                 )}

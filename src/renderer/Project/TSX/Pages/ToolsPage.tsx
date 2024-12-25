@@ -900,7 +900,7 @@ const ToolsPage = ({
       {
         id: uuidv4(),
         name: 'ከቀኑ በኋላ 7 ቀናት',
-        subject: 'የመጨረሻ ማሳሰቢያ፡ የኪራይ ክፍያ በ7 ቀናት ዘግይቷል',
+        subject: 'የመጨረሻ ማሳሰቢያ፡ የኪራይ ክፍ�� በ7 ቀናት ዘግ��ቷል',
         body: `ውድ {{tenant_name}},
   
   ይህ የ{{currency}}{{due_amount}} የኪራይ ክፍያዎ አሁን በ7 ቀናት መዘግየቱን ({{due_duration}}) የሚያሳውቅ የመጨረሻ ማሳሰቢያ ነው። የመጀመሪያው የመክፈያ ቀን {{due_date}} ነበር።
@@ -2090,11 +2090,11 @@ const ToolsPage = ({
                 formatNumberWithSuffix={formatNumberWithSuffix}
                 addDays={addDays}
               /> */}
-                 <DatabasePage
-              setChangeMade={setChangeMade}
-              SelectedAppUser={SelectedAppUser}
-              SelectedBranchId={SelectedBranchId}
-            />
+              <DatabasePage
+                setChangeMade={setChangeMade}
+                SelectedAppUser={SelectedAppUser}
+                SelectedBranchId={SelectedBranchId}
+              />
             </>
           )}
           {isApplyingNotifications && (
@@ -2208,7 +2208,12 @@ const ToolsPage = ({
                         />
                       ) : (
                         <>
-                          <button onClick={saveTaxPercentage}>Save</button>
+                          <button
+                            id="tax-percentage-save"
+                            onClick={saveTaxPercentage}
+                          >
+                            Save
+                          </button>
                           <button onClick={CancelTaxPercentage}>Cancel</button>
                         </>
                       )}
@@ -2226,6 +2231,7 @@ const ToolsPage = ({
                       max="100"
                       style={{ width: 'var(--60px-V)' }}
                       value={taxPercentage}
+                      id="tax-percentage-input"
                       onChange={(e) => {
                         setHasChangedTaxPercentage(true);
                         setTaxPercentage(parseInt(e.target.value, 10));
@@ -2239,7 +2245,7 @@ const ToolsPage = ({
                   </div>
                 )}
               </div>
-              <div className="settings-container">
+              <div className="settings-container" id="room-specs-section">
                 {' '}
                 <div
                   style={{
@@ -2251,7 +2257,9 @@ const ToolsPage = ({
                   <h2 style={{ fontSize: 'var(--25px-V)' }}>
                     Default Room Specifications
                   </h2>
-                  <button onClick={addSpecification}>Add</button>
+                  <button id="add-room-spec-button" onClick={addSpecification}>
+                    Add
+                  </button>
                   {hasChangedSpecs ? (
                     <>
                       {isApplyingSpecs ? (
@@ -2265,7 +2273,12 @@ const ToolsPage = ({
                         />
                       ) : (
                         <>
-                          <button onClick={saveSpecs}>Save</button>
+                          <button
+                            id="room-spec-save-button"
+                            onClick={saveSpecs}
+                          >
+                            Save
+                          </button>
                           <button onClick={cancelSpecs}>Cancel</button>
                         </>
                       )}
@@ -2312,9 +2325,16 @@ const ToolsPage = ({
                           className="AddANewRoomSpecObjectMainContainer"
                           style={{ minWidth: 'var(--240px-V)' }}
                         >
-                          <div>
+                          <div
+                            style={{
+                              display: 'flex',
+                              flexDirection: 'row',
+                              gap: 'var(--5px-V)',
+                            }}
+                          >
                             Name:
                             <input
+                              id="room-spec-name-input"
                               className="AddANewRoomInputsMid"
                               value={spec.Detail}
                               placeholder="Enter name"
@@ -2327,37 +2347,39 @@ const ToolsPage = ({
                                 );
                               }}
                             />
-                            {spec.type === 'bool' ? (
-                              <>
+                            <div id="room-spec-input">
+                              {spec.type === 'bool' ? (
+                                <>
+                                  <input
+                                    type="checkbox"
+                                    checked={spec.Boolean}
+                                    onChange={(e) => {
+                                      setHasChangedSpecs(true);
+                                      handleSpecificationChange(
+                                        index,
+                                        'Boolean',
+                                        e.target.checked
+                                      );
+                                    }}
+                                  />{' '}
+                                  {spec.Boolean ? 'Yes' : 'No'}
+                                </>
+                              ) : (
                                 <input
-                                  type="checkbox"
-                                  checked={spec.Boolean}
+                                  type="number"
+                                  className="AddANewRoomInputsSmall"
+                                  value={spec.Number}
                                   onChange={(e) => {
                                     setHasChangedSpecs(true);
                                     handleSpecificationChange(
                                       index,
-                                      'Boolean',
-                                      e.target.checked
+                                      'Number',
+                                      e.target.value
                                     );
                                   }}
-                                />{' '}
-                                {spec.Boolean ? 'Yes' : 'No'}
-                              </>
-                            ) : (
-                              <input
-                                type="number"
-                                className="AddANewRoomInputsSmall"
-                                value={spec.Number}
-                                onChange={(e) => {
-                                  setHasChangedSpecs(true);
-                                  handleSpecificationChange(
-                                    index,
-                                    'Number',
-                                    e.target.value
-                                  );
-                                }}
-                              />
-                            )}
+                                />
+                              )}
+                            </div>
                           </div>
                           <div
                             style={{
@@ -2369,50 +2391,60 @@ const ToolsPage = ({
                             }}
                           >
                             <div
+                              id="room-spec-type-radio"
                               style={{
                                 display: 'flex',
                                 flexDirection: 'row',
+                                justifyContent: 'space-between',
                                 alignItems: 'center',
                               }}
                             >
-                              <input
-                                type="radio"
-                                name={`spec-${index}`}
-                                value="bool"
-                                checked={spec.type === 'bool'}
-                                onChange={() => {
-                                  setHasChangedSpecs(true);
-                                  handleSpecificationChange(
-                                    index,
-                                    'type',
-                                    'bool'
-                                  );
+                              <div
+                                style={{
+                                  display: 'flex',
+                                  flexDirection: 'row',
+                                  alignItems: 'center',
                                 }}
-                              />{' '}
-                              Yes/No
-                            </div>
-                            <div
-                              style={{
-                                display: 'flex',
-                                flexDirection: 'row',
-                                alignItems: 'center',
-                              }}
-                            >
-                              <input
-                                type="radio"
-                                name={`spec-${index}`}
-                                value="number"
-                                checked={spec.type === 'number'}
-                                onChange={() => {
-                                  setHasChangedSpecs(true);
-                                  handleSpecificationChange(
-                                    index,
-                                    'type',
-                                    'number'
-                                  );
+                              >
+                                <input
+                                  type="radio"
+                                  name={`spec-${index}`}
+                                  value="bool"
+                                  checked={spec.type === 'bool'}
+                                  onChange={() => {
+                                    setHasChangedSpecs(true);
+                                    handleSpecificationChange(
+                                      index,
+                                      'type',
+                                      'bool'
+                                    );
+                                  }}
+                                />{' '}
+                                Yes/No
+                              </div>
+                              <div
+                                style={{
+                                  display: 'flex',
+                                  flexDirection: 'row',
+                                  alignItems: 'center',
                                 }}
-                              />{' '}
-                              Number
+                              >
+                                <input
+                                  type="radio"
+                                  name={`spec-${index}`}
+                                  value="number"
+                                  checked={spec.type === 'number'}
+                                  onChange={() => {
+                                    setHasChangedSpecs(true);
+                                    handleSpecificationChange(
+                                      index,
+                                      'type',
+                                      'number'
+                                    );
+                                  }}
+                                />{' '}
+                                Number
+                              </div>
                             </div>
                             <button
                               onClick={() => {
@@ -2441,6 +2473,7 @@ const ToolsPage = ({
                       Default Currency:{' '}
                     </label>
                     <select
+                      id="default-currency-select"
                       onChange={(e) => {
                         storageManager.set('defaultCurrency', e.target.value);
                         setRefresh(refresh + 1);
@@ -2461,7 +2494,10 @@ const ToolsPage = ({
                         }}
                       >
                         <span>Current Exchange Rate:</span>
-                        <button onClick={updateExchangeRates}>
+                        <button
+                          id="update-exchange-rate-button"
+                          onClick={updateExchangeRates}
+                        >
                           Update Now
                         </button>
                         <p style={{ fontSize: 'var(--13px-V)' }}>
@@ -2500,6 +2536,7 @@ const ToolsPage = ({
                         >
                           <span>Check Historical Rate: </span>
                           <input
+                            id="historical-rate-date-input"
                             type="date"
                             onChange={(e) => {
                               const selectedDate =
@@ -2541,6 +2578,7 @@ const ToolsPage = ({
                         >
                           <h3 style={{ margin: 0 }}>Recent Exchange Rates</h3>
                           <button
+                            id="show-recent-rates-button"
                             onClick={() => setShowRecentRates(!showRecentRates)}
                           >
                             {showRecentRates ? 'Hide' : 'Show'}
@@ -2701,9 +2739,9 @@ const ToolsPage = ({
                   Make long numbers like 100,000, 1,000,000 or 10,000,000 to
                   100k, 1M or 10M:{' '}
                   <input
+                    id="abbreviate-numbers-checkbox"
                     type="checkbox"
                     name=""
-                    id=""
                     checked={storageManager.get('abbreiviateBigNumbers')}
                     onChange={(e) => {
                       storageManager.set(
@@ -2719,6 +2757,7 @@ const ToolsPage = ({
                   <br />
                   Number of decimal places to show:{' '}
                   <input
+                    id="decimal-places-input"
                     type="number"
                     min="0"
                     max="4"
@@ -2798,6 +2837,7 @@ const ToolsPage = ({
                                 flexWrap: 'wrap',
                                 gap: 'var(--5px-V)',
                               }}
+                              id="representativeEmails"
                             >
                               {representativeEmails.split(',').map(
                                 (email, index) =>
@@ -2881,6 +2921,7 @@ const ToolsPage = ({
                                 flexWrap: 'wrap',
                                 gap: 'var(--5px-V)',
                               }}
+                              id="representativePhoneNumbers"
                             >
                               {representativePhoneNumbers.split(',').map(
                                 (phone, index) =>
@@ -2989,6 +3030,7 @@ const ToolsPage = ({
                                 }
                                 placeholder="Name shown in emails"
                                 style={{ width: 'var(--300px-V)' }}
+                                id="landlordDisplayName"
                               />
                               :{' '}
                               <span style={{ color: 'var(--Text-Color-Grey)' }}>
@@ -3013,6 +3055,7 @@ const ToolsPage = ({
                                 }
                                 placeholder="Email address shown in emails"
                                 style={{ width: 'var(--300px-V)' }}
+                                id="landlordEmail"
                               />
                               :{' '}
                               <span style={{ color: 'var(--Text-Color-Grey)' }}>
@@ -3037,6 +3080,7 @@ const ToolsPage = ({
                                 }
                                 placeholder="Phone number shown in emails"
                                 style={{ width: 'var(--300px-V)' }}
+                                id="landlordTelephone"
                               />
                               :{' '}
                               <span style={{ color: 'var(--Text-Color-Grey)' }}>
@@ -3213,6 +3257,7 @@ const ToolsPage = ({
                       Default Currency:{' '}
                     </label>
                     <select
+                      id="default-currency-select"
                       onChange={(e) => {
                         storageManager.set('defaultCurrency', e.target.value);
                         setRefresh(refresh + 1);
@@ -3233,7 +3278,10 @@ const ToolsPage = ({
                         }}
                       >
                         <span>Current Exchange Rate:</span>
-                        <button onClick={updateExchangeRates}>
+                        <button
+                          id="update-exchange-rate-button"
+                          onClick={updateExchangeRates}
+                        >
                           Update Now
                         </button>
                         <p style={{ fontSize: 'var(--13px-V)' }}>
@@ -3272,6 +3320,7 @@ const ToolsPage = ({
                         >
                           <span>Check Historical Rate: </span>
                           <input
+                            id="historical-rate-date-input"
                             type="date"
                             onChange={(e) => {
                               const selectedDate =
@@ -3313,6 +3362,7 @@ const ToolsPage = ({
                         >
                           <h3 style={{ margin: 0 }}>Recent Exchange Rates</h3>
                           <button
+                            id="show-recent-rates-button"
                             onClick={() => setShowRecentRates(!showRecentRates)}
                           >
                             {showRecentRates ? 'Hide' : 'Show'}
@@ -3473,9 +3523,9 @@ const ToolsPage = ({
                   Make long numbers like 100,000, 1,000,000 or 10,000,000 to
                   100k, 1M or 10M:{' '}
                   <input
+                    id="abbreviate-numbers-checkbox"
                     type="checkbox"
                     name=""
-                    id=""
                     checked={storageManager.get('abbreiviateBigNumbers')}
                     onChange={(e) => {
                       storageManager.set(
@@ -3491,6 +3541,7 @@ const ToolsPage = ({
                   <br />
                   Number of decimal places to show:{' '}
                   <input
+                    id="decimal-places-input"
                     type="number"
                     min="0"
                     max="4"

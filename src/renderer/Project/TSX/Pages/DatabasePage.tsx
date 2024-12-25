@@ -26,29 +26,28 @@ const DatabasePage = ({
     () => getUserPrivileges(SelectedAppUser),
     [SelectedAppUser]
   );
- 
-const GetDataBaseData = async (TableName: string) => {
-  setIsLoading(true); // Set loading state to true
-  try {
-    // Only add branchId filter if the table supports it
-    const whereClause = tablesWithBranchId.includes(TableName) 
-      ? `WHERE 1 AND branchId = '${SelectedBranchId}'`
-      : 'WHERE 1';
-      
-    const DataRaw = await getValuesWithSql(TableName, whereClause);
-    console.log(DataRaw);
-    setData(DataRaw);
-  } catch (error) {
-    if (error instanceof Error) {
-      console.log(error.message);
-    } else {
-      console.log('An unknown error occurred');
-    }
-  } finally {
-    setIsLoading(false); // Set loading state to false
-  }
-};
 
+  const GetDataBaseData = async (TableName: string) => {
+    setIsLoading(true); // Set loading state to true
+    try {
+      // Only add branchId filter if the table supports it
+      const whereClause = tablesWithBranchId.includes(TableName)
+        ? `WHERE 1 AND branchId = '${SelectedBranchId}'`
+        : 'WHERE 1';
+
+      const DataRaw = await getValuesWithSql(TableName, whereClause);
+      console.log(DataRaw);
+      setData(DataRaw);
+    } catch (error) {
+      if (error instanceof Error) {
+        console.log(error.message);
+      } else {
+        console.log('An unknown error occurred');
+      }
+    } finally {
+      setIsLoading(false); // Set loading state to false
+    }
+  };
 
   useEffect(() => {
     GetDataBaseData('rooms');
@@ -59,7 +58,7 @@ const GetDataBaseData = async (TableName: string) => {
     | 'room_specifications'
     | 'tenants'
     | 'room_pay_info'
- | 'room_pay_info_history'
+    | 'room_pay_info_history'
     | 'brokers'
     | 'brokersRecommendationList'
     | 'PastTenantsForRoom'
@@ -70,8 +69,6 @@ const GetDataBaseData = async (TableName: string) => {
     | 'utility_payments_settings'
     | 'sms_templates'
     | 'expenses'
-    
- 
   >('rooms');
   const tablesWithBranchId = [
     'rooms',
@@ -79,16 +76,16 @@ const GetDataBaseData = async (TableName: string) => {
     'tenants',
     'room_pay_info',
     'room_pay_info_history',
- 
+
     'brokers',
     'brokersRecommendationList',
     'PastTenantsForRoom',
     'agreements',
     'notification_template_selections',
-    
+
     'utility_payments',
     'utility_payments_settings',
-    
+
     'expenses',
   ];
   const validTables = [
@@ -97,7 +94,7 @@ const GetDataBaseData = async (TableName: string) => {
     'tenants',
     'room_pay_info',
     'room_pay_info_history',
- 
+
     'brokers',
     'brokersRecommendationList',
     'PastTenantsForRoom',
@@ -246,7 +243,6 @@ const GetDataBaseData = async (TableName: string) => {
         }}
       >
         <div className="CalenderOptionsMainContainer">
-         
           <label htmlFor="monthsFutureInput">Select a table: </label>
           <select
             value={SelectedTable}
@@ -270,8 +266,13 @@ const GetDataBaseData = async (TableName: string) => {
             value={mainSearch}
             onChange={(e) => setMainSearch(e.target.value)}
             placeholder="Main search"
+            id="mainSearch"
           />
-          <button onClick={handleRefresh} style={{ marginLeft: 'var(--5px-V)' }}>
+          <button
+            id="refresh"
+            onClick={handleRefresh}
+            style={{ marginLeft: 'var(--5px-V)' }}
+          >
             Refresh
           </button>
         </div>
@@ -283,26 +284,34 @@ const GetDataBaseData = async (TableName: string) => {
           }}
         >
           {isLoading ? (
-            <div style={{
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              height: '100%',
-              fontSize: 'var(--16px-V)',
-              color: 'var(--Text-Color)'
-            }}>
-              <img src={loadingGif} alt="Loading..." style={{ width: 'var(--30px-V)', height: 'var(--30px-V)' }} />
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                height: '100%',
+                fontSize: 'var(--16px-V)',
+                color: 'var(--Text-Color)',
+              }}
+            >
+              <img
+                src={loadingGif}
+                alt="Loading..."
+                style={{ width: 'var(--30px-V)', height: 'var(--30px-V)' }}
+              />
               Loading...
             </div>
           ) : Data.length === 0 ? (
-            <div style={{
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              height: '100%',
-              fontSize: 'var(--16px-V)',
-              color: 'var(--Text-Color)'
-            }}>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                height: '100%',
+                fontSize: 'var(--16px-V)',
+                color: 'var(--Text-Color)',
+              }}
+            >
               No data available
             </div>
           ) : (
@@ -310,7 +319,11 @@ const GetDataBaseData = async (TableName: string) => {
               <thead className="InfoTableThead">
                 <tr className="InfoTableHeadTR">
                   {Object.keys(Data[0]).map((header, index) => (
-                    <th className="InfoTableHeadTh" key={index} onClick={() => handleSearch(header)}>
+                    <th
+                      className="InfoTableHeadTh"
+                      key={index}
+                      onClick={() => handleSearch(header)}
+                    >
                       {searchConfig.key === header ? (
                         <input
                           type="text"
@@ -324,7 +337,11 @@ const GetDataBaseData = async (TableName: string) => {
                       )}
                     </th>
                   ))}
-                  {privileges.editDatabaseData ? <th className="InfoTableHeadTh">Actions</th> : <></>}
+                  {privileges.editDatabaseData ? (
+                    <th className="InfoTableHeadTh">Actions</th>
+                  ) : (
+                    <></>
+                  )}
                 </tr>
               </thead>
               <tbody>
@@ -334,19 +351,16 @@ const GetDataBaseData = async (TableName: string) => {
                       className="InfoTableBodyTr"
                       key={rowIndex}
                       style={{
-                        backgroundColor: row.id === highlightedRow
-                          ? 'var(--Accent-Color50)'
-                          : rowIndex % 2 === 0
+                        backgroundColor:
+                          row.id === highlightedRow
+                            ? 'var(--Accent-Color50)'
+                            : rowIndex % 2 === 0
                             ? 'var(--Secondary-Color20)'
-                            : 'var(--Secondary-Color40)'
+                            : 'var(--Secondary-Color40)',
                       }}
                     >
                       {Object.entries(row).map(([key, value], cellIndex) => (
-                        <td
-                          className="InfoTableBodyTD"
-                          key={cellIndex}
-                    
-                        >
+                        <td className="InfoTableBodyTD" key={cellIndex}>
                           {editCell &&
                           editCell.rowIndex === rowIndex &&
                           editCell.key === key ? (
@@ -373,10 +387,12 @@ const GetDataBaseData = async (TableName: string) => {
                                 'email_template_id',
                                 'selectedAgreementId',
                               ].includes(key) &&
-                                value && 
+                                value &&
                                 value !== 'DEFAULT' && (
                                   <button
-                                    onClick={() => handleGoTo(key, String(value))}
+                                    onClick={() =>
+                                      handleGoTo(key, String(value))
+                                    }
                                     style={{ marginLeft: 'var(--5px-V)' }}
                                   >
                                     Go to

@@ -38,6 +38,10 @@ const CornerSupport = ({
   const [showTutorialPrompt, setShowTutorialPrompt] = useState(false);
   const [tutorialPromptPage, setTutorialPromptPage] = useState('');
 
+  const [currentPageInital, setCurrentPageInital] = useState(0);
+  const [currentSectionInital, setCurrentSectionInital] = useState(0);
+  const [tutorialShow, setTutorialShow] = useState(false);
+
   useEffect(() => {
     const checkTutorialPrompt = () => {
       const tutorialPreferences =
@@ -53,24 +57,26 @@ const CornerSupport = ({
       }
     };
 
-   // checkTutorialPrompt();
+    // checkTutorialPrompt();
   }, [SelectedPage]);
 
-  const handleTutorialPromptResponse = (accepted: boolean) => {
+  const handleTutorialPromptResponse = (
+    accepted: boolean,
+    pageIndex?: number,
+    sectionIndex?: number
+  ) => {
     const tutorialPreferences = storageManager.get('tutorialPreferences') || {};
     tutorialPreferences[SelectedPage.toLowerCase()] = true;
     storageManager.set('tutorialPreferences', tutorialPreferences);
 
-    setShowTutorialPrompt(false);
-
-    if (accepted) {
-      const pageIndex = tutorialData.pages.findIndex(
-        (page) => page.hasToBeIn.toLowerCase() === SelectedPage.toLowerCase()
-      );
-      if (pageIndex !== -1) {
-        handleTutorialStart(pageIndex);
-      }
+    if (accepted && pageIndex !== undefined) {
+      setTutorialShow(true);
+      setCurrentPageInital(pageIndex);
+      setCurrentSectionInital(sectionIndex || 0);
+      setSelectedTutorial(tutorialData);
+      setSelectedTutorialIndex(pageIndex);
     }
+    setShowTutorialPrompt(false);
   };
 
   const toggleOpen = () => {
@@ -228,12 +234,15 @@ const CornerSupport = ({
     },
   ];
 
-  const handleTutorialStart = (index: number) => {
-    setSelectedTutorialIndex(index);
-    setSelectedTutorial(tutorialData);
-    setIsTutorialActive(true);
-    setSelectedOption(null);
-    setIsOpen(false);
+  const handleTutorialStart = (pageIndex: number, sectionIndex: number) => {
+    setAppUserManagerShow(false);
+    setViewBranchManagementPage(false);
+    setViewBranchManagementPageNONAdm(false);
+    setAppUserManagerPromptPassword(false);
+    setShowTutorialPrompt(false);
+    setTutorialShow(true);
+    setCurrentPageInital(pageIndex);
+    setCurrentSectionInital(sectionIndex);
   };
 
   const renderTutorialList = () => (
@@ -247,9 +256,9 @@ const CornerSupport = ({
           gap: 'var(--10px-V)',
         }}
       >
-        {tutorialData.pages.map((page, index) => (
+        {tutorialData.pages.map((page, pageIndex) => (
           <div
-            key={index}
+            key={pageIndex}
             style={{
               padding: 'var(--10px-V)',
               backgroundColor: 'var(--Secondary-Color20)',
@@ -261,11 +270,15 @@ const CornerSupport = ({
               {page.overview.description}
             </p>
             {page.hasToBeIn === SelectedPage.toLowerCase() ? (
-              <>
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 'var(--10px-V)',
+                }}
+              >
                 <button
-                  onClick={() => {
-                    handleTutorialStart(index);
-                  }}
+                  onClick={() => handleTutorialStart(pageIndex, 0)}
                   style={{
                     padding: 'var(--5px-V) var(--10px-V)',
                     backgroundColor: 'var(--Primary-Color)',
@@ -273,18 +286,36 @@ const CornerSupport = ({
                     border: 'none',
                     borderRadius: 'var(--3px-V)',
                     cursor: 'pointer',
+                    textAlign: 'left',
                   }}
                 >
-                  Start Tutorial
+                  Overview: {page.overview.mainTitle}
                 </button>
-              </>
+                {page.sections.map((section, sectionIndex) => (
+                  <button
+                    key={sectionIndex}
+                    onClick={() =>
+                      handleTutorialStart(pageIndex, sectionIndex + 1)
+                    }
+                    style={{
+                      padding: 'var(--5px-V) var(--10px-V)',
+                      backgroundColor: 'var(--Secondary-Color30)',
+                      color: 'var(--Text-Color)',
+                      border: 'none',
+                      borderRadius: 'var(--3px-V)',
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                    }}
+                  >
+                    Section {sectionIndex + 1}: {section.mainTitle}
+                  </button>
+                ))}
+              </div>
             ) : (
               <>
                 Wrong page,{' '}
                 <button
-                  onClick={() => {
-                    handleTutorialStart(index);
-                  }}
+                  onClick={() => handlePageNavigation(page.hasToBeIn)}
                   style={{
                     padding: 'var(--5px-V) var(--10px-V)',
                     backgroundColor: 'var(--Primary-Color)',
@@ -578,8 +609,7 @@ const CornerSupport = ({
 
   const handlePageNavigation = (page: string) => {
     // Close the tutorial panel
-    setIsOpen(false);
-    setSelectedOption(null);
+
     const privileges = getUserPrivileges(SelectedAppUser);
     // Navigate based on page
     switch (page.toLowerCase()) {
@@ -599,7 +629,7 @@ const CornerSupport = ({
           setSelectedPage('Dashboard');
         else console.log('Access denied');
         break;
-     
+
       case 'expense':
         if (SelectedAppUser.id === 'admin' || privileges.editExpenses)
           setSelectedPage('Expense');
@@ -615,15 +645,15 @@ const CornerSupport = ({
 
   return (
     <>
-      {isTutorialActive && selectedTutorial && (
+      {tutorialShow && (
         <TutorialManager
-          tutorialData={selectedTutorial}
+          tutorialData={tutorialData}
           SelectedPage={SelectedPage}
           onClose={() => {
-            setIsTutorialActive(false);
-            setSelectedTutorial(null);
+            setTutorialShow(false);
           }}
-          currentPageInital={selectedTutorialIndex}
+          currentPageInital={currentPageInital}
+          currentSectionInital={currentSectionInital}
           onNavigate={handlePageNavigation}
           selectedAppUserId={SelectedAppUser.id}
           userPrivileges={getUserPrivileges(SelectedAppUser)}
@@ -655,23 +685,72 @@ const CornerSupport = ({
           <div
             style={{
               display: 'flex',
-              justifyContent: 'center',
+              flexDirection: 'column',
               gap: 'var(--10px-V)',
             }}
           >
-            <button
-              onClick={() => handleTutorialPromptResponse(true)}
-              style={{
-                backgroundColor: 'var(--Primary-Color)',
-                color: 'var(--Text-Color-Reverse)',
-                padding: 'var(--10px-V) var(--20px-V)',
-                border: 'none',
-                borderRadius: 'var(--5px-V)',
-                cursor: 'pointer',
-              }}
-            >
-              Yes, show tutorial
-            </button>
+            {tutorialData.pages.map((page, pageIndex) => {
+              if (
+                page.hasToBeIn.toLowerCase() ===
+                tutorialPromptPage.toLowerCase()
+              ) {
+                return (
+                  <div
+                    key={pageIndex}
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 'var(--10px-V)',
+                    }}
+                  >
+                    <div
+                      style={{ fontWeight: 'bold', color: 'var(--Text-Color)' }}
+                    >
+                      {page.pageTitle}
+                    </div>
+                    <button
+                      onClick={() =>
+                        handleTutorialPromptResponse(true, pageIndex, 0)
+                      }
+                      style={{
+                        backgroundColor: 'var(--Primary-Color)',
+                        color: 'var(--Text-Color-Reverse)',
+                        padding: 'var(--10px-V) var(--20px-V)',
+                        border: 'none',
+                        borderRadius: 'var(--5px-V)',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      Start from beginning
+                    </button>
+                    {page.sections.map((section, sectionIndex) => (
+                      <button
+                        key={sectionIndex}
+                        onClick={() =>
+                          handleTutorialPromptResponse(
+                            true,
+                            pageIndex,
+                            sectionIndex + 1
+                          )
+                        }
+                        style={{
+                          backgroundColor: 'var(--Secondary-Color20)',
+                          color: 'var(--Text-Color)',
+                          padding: 'var(--10px-V) var(--20px-V)',
+                          border: 'none',
+                          borderRadius: 'var(--5px-V)',
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                        }}
+                      >
+                        Start from: {section.mainTitle}
+                      </button>
+                    ))}
+                  </div>
+                );
+              }
+              return null;
+            })}
             <button
               onClick={() => handleTutorialPromptResponse(false)}
               style={{
@@ -681,6 +760,7 @@ const CornerSupport = ({
                 border: 'none',
                 borderRadius: 'var(--5px-V)',
                 cursor: 'pointer',
+                marginTop: 'var(--10px-V)',
               }}
             >
               No, thanks
@@ -710,9 +790,9 @@ const CornerSupport = ({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            background: 'var(--Background-Color)',
+            background: 'var(--Primary-Color)',
             border: 'var(--2px-V) solid var(--Secondary-Color)',
-            color: 'var(--Text-Color)',
+            color: 'black',
           }}
           title="Help"
         >

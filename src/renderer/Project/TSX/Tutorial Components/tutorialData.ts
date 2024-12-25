@@ -10,7 +10,9 @@ export type TutorialStep = {
   dontInteract?: boolean;
   isJsId?: boolean;
   checkUnderElementId?: string;
+  checkUnderElementIsJS?: boolean;
   whenClickedGoNextStep?: boolean;
+  toContinueVarHasToBeAvailable?: string;
 };
 
 export type TutorialSection = {
@@ -42,25 +44,7 @@ export const tutorialData: TutorialSystem = {
       overview: {
         mainTitle: 'Property Management',
         description: 'Learn about how to manage multiple properties.',
-        //Fisrt step on the main propertymanagmenttyitle
-        //Second step on the refresh add new proeprty and back no click
-        //Third step on the the current user and switch user no click
-        //Forth on the property list no click
-        //THEN NEXT SECTION
-        //fisrt step on add a property button yes touch
-        //second step on the peroperty name input yes touch
-        //Third step on the peroperty location input yes touch
-        //Fourth step on the peroperty location input yes touch
-        //Fifth step on the peroperty Discription input yes touch
-        //Sixth step on the peroperty add button yes touch
-        //SEVENTH STEP ON THE PROPERTY LIST NO CLICK
-        //Eigth step on the property they just added
-        //NIneth step on the property edit button no click
-        //tenth stpe on the select property button no click
-
-        // ALL done with property management
         steps: [
-          // Step 1: Welcome message on property management title
           {
             description:
               'Welcome to the Property Manager! This is where you will be managing your properties.',
@@ -69,7 +53,6 @@ export const tutorialData: TutorialSystem = {
             requiresInteraction: false,
             allowBack: true,
           },
-          // Step 2: Show refresh, add new property and back buttons
           {
             description:
               'Here you will see buttons which will allow you to refresh and add a new property',
@@ -79,7 +62,6 @@ export const tutorialData: TutorialSystem = {
             allowBack: true,
             dontInteract: true,
           },
-          // Step 3: Show current user and switch user options
           {
             description:
               'Here you can see the current user and switch between other users.',
@@ -89,7 +71,6 @@ export const tutorialData: TutorialSystem = {
             allowBack: true,
             dontInteract: true,
           },
-          // Step 4: Show property list
           {
             description: 'This is where your properties will be listed.',
             targetElementId: 'Property-Management-List',
@@ -100,97 +81,7 @@ export const tutorialData: TutorialSystem = {
           },
         ],
       },
-      sections: [
-        // {
-        //   mainTitle: 'Adding a Property',
-        //   description: 'Learn how to add and manage a new property',
-        //   steps: [
-        //     // Step 1: Click add property button
-        //     {
-        //       description: 'Click here to add a new property',
-        //       targetElementId: 'property-add-btn',
-        //       position: 'down',
-        //       requiresInteraction: true,
-        //       allowBack: true,
-        //     },
-        //     // Step 2: Property name input
-        //     {
-        //       description: 'Enter the name of your property',
-        //       targetElementId: 'add-property-name',
-        //       position: 'right',
-        //       requiresInteractionInput: true,
-        //       allowBack: true,
-        //       additionalZIndexElements: ['add-new-property-panel'],
-        //     },
-        //     // Step 3: Property location input
-        //     {
-        //       description: 'Enter the location of your property',
-        //       targetElementId: 'add-property-location',
-        //       position: 'right',
-        //       requiresInteractionInput: true,
-        //       allowBack: true,
-        //       additionalZIndexElements: ['add-new-property-panel'],
-        //     },
-        //     // Step 4: Property map location
-        //     {
-        //       description: 'Add a description for your property',
-        //       targetElementId: 'add-property-description',
-        //       position: 'right',
-        //       requiresInteractionInput: true,
-        //       allowBack: true,
-        //       additionalZIndexElements: ['add-new-property-panel'],
-        //     },
-        //     // Step 6: Add property button
-        //     {
-        //       description: 'Click to add your new property',
-        //       targetElementId: 'add-property-final-btn',
-        //       position: 'right',
-        //       requiresInteraction: true,
-        //       allowBack: true,
-        //       additionalZIndexElements: ['add-new-property-panel'],
-        //     },
-        //     // Step 7: View updated property list
-        //     {
-        //       description: 'You will find your new property in the list',
-        //       targetElementId: 'Property-Management-List',
-        //       position: 'down',
-        //       requiresInteraction: false,
-        //       allowBack: false,
-        //     },
-        //   ],
-        // },
-        // {
-        //   mainTitle: 'Managing Properties',
-        //   description: 'Learn how to manage your existing properties',
-        //   steps: [
-        //     // Step 1: Show newly added property
-        //     {
-        //       description: 'Here is your newly added property',
-        //       targetElementId: '',
-        //       position: 'down',
-        //       requiresInteraction: false,
-        //       allowBack: true,
-        //     },
-        //     // Step 2: Show edit property button
-        //     {
-        //       description:
-        //         'You can edit your property details using this button',
-        //       targetElementId: '',
-        //       position: 'down',
-        //       requiresInteraction: false,
-        //       allowBack: true,
-        //     },
-        //     // Step 3: Show select property button
-        //     {
-        //       description: 'Click here to select and manage this property',
-        //       targetElementId: '',
-        //       position: 'down',
-        //       requiresInteraction: false,
-        //       allowBack: true,
-        //     },
-        //   ],
-        // },
-      ],
+      sections: [],
     },
     {
       pageTitle: 'App Users',
@@ -207,8 +98,6 @@ export const tutorialData: TutorialSystem = {
             requiresInteraction: false,
             allowBack: true,
           },
-
-          //Step 3 Show them how to add new user yes click
           {
             description:
               'Click this button to add a new user. You can then assign specific properties and privileges to them.',
@@ -218,7 +107,6 @@ export const tutorialData: TutorialSystem = {
             allowBack: true,
             dontInteract: false,
           },
-          //step 4 Show them how to select or edit app user no click
           {
             description: 'This is the new app user you just added.',
             targetElementId: 'tutorialNewAppUserId',
@@ -291,15 +179,12 @@ export const tutorialData: TutorialSystem = {
             isJsId: true,
             dontInteract: true,
           },
-          //step 5 show them how to allow and dis allow privilages no click
-          //step 6 show them the allowed propertyiesand how to add proerpeties
-          //step 7 show them the sign in with password
         ],
       },
       sections: [],
     },
     {
-      pageTitle: 'Expense Manager',
+      pageTitle: 'Expense Page',
       hasToBeIn: 'expense',
       overview: {
         mainTitle: 'Expense Manager',
@@ -315,10 +200,10 @@ export const tutorialData: TutorialSystem = {
           },
           {
             description:
-              'Click this button to show or hide the filter options.',
+              'Click this button to show or hide the filter options. So you can find expenses easier.',
             targetElementId: 'expense-filters-toggle',
             position: 'right',
-            requiresInteraction: true,
+            requiresInteraction: false,
             allowBack: true,
           },
           {
@@ -345,40 +230,122 @@ export const tutorialData: TutorialSystem = {
           description: 'Learn how to add and edit expenses',
           steps: [
             {
-              description: 'Click here to add a new expense.',
-              targetElementId: 'add-expense-button',
-              position: 'down',
-              requiresInteraction: true,
-              allowBack: true,
-            },
-            {
-              description: 'Recurring expenses are shown in this section.',
+              description: 'Recurring expenses are shown under this section.',
               targetElementId: 'recurring-expenses-title',
               position: 'down',
               requiresInteraction: false,
               allowBack: true,
             },
             {
-              description: 'One-time expenses are shown in this section.',
+              description: 'One-time expenses are shown under this section.',
               targetElementId: 'one-time-expenses-title',
               position: 'down',
               requiresInteraction: false,
               allowBack: true,
             },
             {
-              description: 'Click on any expense to edit its details.',
-              targetElementId: 'expense-row',
+              description: 'Click here to add a new expense.',
+              targetElementId: 'add-expense-button',
+              position: 'down',
+              requiresInteraction: true,
+              allowBack: true,
+              toContinueVarHasToBeAvailable: 'tutorialNewExpenseId',
+            },
+            {
+              description: 'Enter the name of your expense.',
+              targetElementId:
+                'tutorialNewExpenseId + "-expense-row-name-input"',
               position: 'right',
               requiresInteraction: true,
               allowBack: true,
+              isJsId: true,
+            },
+            {
+              description: 'Select the category for this expense.',
+              targetElementId:
+                'tutorialNewExpenseId + "-expense-category-select"',
+              position: 'right',
+              requiresInteraction: true,
+              allowBack: true,
+              isJsId: true,
             },
             {
               description:
-                'You can set up email and SMS notifications for expenses.',
-              targetElementId: 'expense-notifications-button',
+                'Specify if the amount is calculated before or after tax percentage.',
+              targetElementId: 'tutorialNewExpenseId + "-expense-tax-checkbox"',
+              position: 'right',
+              requiresInteraction: false,
+              allowBack: true,
+              isJsId: true,
+            },
+            {
+              description: 'Enter the expense amount and select currency.',
+              targetElementId:
+                'tutorialNewExpenseId + "-expense-row-currencyPrice-select"',
+              position: 'right',
+              requiresInteraction: true,
+              allowBack: true,
+              isJsId: true,
+            },
+            {
+              description:
+                'Choose if this expense applies to the full building or specific room.',
+              targetElementId:
+                'tutorialNewExpenseId + "-expense-location-select"',
+              position: 'right',
+              requiresInteraction: true,
+              allowBack: true,
+              isJsId: true,
+            },
+            {
+              description:
+                'Set if this is a recurring expense and specify the recurrence pattern.',
+              targetElementId:
+                'tutorialNewExpenseId + "-expense-recurring-options"',
               position: 'left',
               requiresInteraction: false,
               allowBack: true,
+              isJsId: true,
+            },
+            {
+              description:
+                'Set the date for the expense and if it is a recurring expense, you can set a end date.',
+              targetElementId: 'tutorialNewExpenseId + "-expense-dates"',
+              position: 'left',
+              requiresInteraction: false,
+              allowBack: true,
+              isJsId: true,
+            },
+            {
+              description: 'Configure email notifications for this expense.',
+              targetElementId:
+                'tutorialNewExpenseId + "-expense-notifications-button"',
+              position: 'left',
+              requiresInteraction: false,
+              allowBack: true,
+              whenClickedGoNextStep: true,
+              isJsId: true,
+            },
+            {
+              description:
+                'You can send an email or a SMS to yourself, First allow email/SMS then enter the days before the expense is due, then enter the email/phone numbers, you can also send to multiple people by clicking by enter.',
+              targetElementId:
+                'tutorialNewExpenseId + "-expense-notifications-container"',
+              position: 'left',
+              requiresInteraction: false,
+              allowBack: true,
+
+              isJsId: true,
+            },
+            {
+              description: 'Click save to complete adding the expense.',
+              targetElementId:
+                'tutorialNewExpenseId + "-expense-row-edit-button"',
+              position: 'right',
+              requiresInteraction: true,
+              allowBack: true,
+              whenClickedGoNextStep: true,
+              isJsId: true,
             },
           ],
         },
@@ -403,6 +370,13 @@ export const tutorialData: TutorialSystem = {
             {
               description: 'Filter by building, floor, and room numbers.',
               targetElementId: 'expense-location-filters',
+              position: 'right',
+              requiresInteraction: false,
+              allowBack: true,
+            },
+            {
+              description: 'Filter by Tax type, if it is before or after tax.',
+              targetElementId: 'expense-tax-filters',
               position: 'right',
               requiresInteraction: false,
               allowBack: true,
@@ -439,16 +413,383 @@ export const tutorialData: TutorialSystem = {
               description:
                 'The calendar shows all your expenses organized by date.',
               targetElementId: 'expense-calendar',
+              position: 'left',
+              requiresInteraction: false,
+              allowBack: true,
+            },
+            {
+              description:
+                'You can click the left and right arrows to navigate through the months.',
+              targetElementId: 'expense-calendar-navigation',
+              position: 'left',
+              requiresInteraction: false,
+              allowBack: true,
+            },
+            {
+              description:
+                'You can hover over the dots to see the expenses details',
+              targetElementId: 'expense-calendar',
+              position: 'left',
+              requiresInteraction: false,
+              allowBack: true,
+            },
+          ],
+        },
+      ],
+    },
+
+    {
+      pageTitle: 'Tools Page',
+      hasToBeIn: 'tools',
+      overview: {
+        mainTitle: 'Tools Page',
+        description: 'Learn how to manage email/SMS templates and other tools.',
+        steps: [
+          {
+            targetElementId: 'tools-title',
+            description:
+              'Welcome to the Tools Page! Here you can manage email/SMS templates and other tools.',
+            position: 'right',
+            allowBack: true,
+          },
+        ],
+      },
+      sections: [
+        {
+          mainTitle: 'Email Templates',
+          description: 'Manage your email notification templates.',
+          steps: [
+            {
+              targetElementId: 'tools-email-templates-tab',
+              description:
+                'Click here to access email templates. These templates are used for automated notifications and communications.',
+              position: 'right',
+              allowBack: true,
+              requiresInteraction: true,
+            },
+            {
+              targetElementId: 'add-email-template-button',
+              description:
+                'Click here to create a new email template. You already have a default template, you can edit it or create a new one.',
+              position: 'left',
+              allowBack: true,
+            },
+            {
+              targetElementId: 'email-template-open-button',
+              description:
+                'Click here to open the default template. To see the contents.',
+              position: 'left',
+              allowBack: true,
+              requiresInteraction: true,
+            },
+            {
+              targetElementId: 'email-template-edit-button',
+              description:
+                'Click here to edit the default template. To change the name, subject, body.',
+              position: 'left',
+              allowBack: true,
+              requiresInteraction: true,
+            },
+            {
+              targetElementId: 'email-template-name',
+              description: 'Here you can edit the name of the template.',
+              position: 'down',
+              allowBack: true,
+            },
+            {
+              targetElementId: 'email-template-subject',
+              description: 'Here you can edit the subject of the template.',
+              position: 'right',
+              allowBack: true,
+            },
+            {
+              targetElementId: 'email-template-body',
+              description:
+                'Here you can edit the body of the template. You can use variables like {{tenant_name}} that will be automatically replaced with actual values.',
+              position: 'down',
+              allowBack: true,
+            },
+            {
+              targetElementId: 'email-variables-list',
+              description:
+                'Click these variables to insert them into your template. They will be replaced with actual data when the email is sent.',
+              position: 'left',
+              allowBack: true,
+            },
+            {
+              targetElementId: 'try-out-email',
+              description:
+                'Test your template by sending a sample email to verify how it looks.',
+              position: 'left',
+              allowBack: true,
+              dontInteract: true,
+            },
+          ],
+        },
+        {
+          mainTitle: 'SMS Templates',
+          description: 'Manage your SMS notification templates.',
+          steps: [
+            {
+              targetElementId: 'tools-sms-templates-tab',
+              description:
+                'Click here to access SMS templates. These templates are used for automated text notifications.',
+              position: 'right',
+              allowBack: true,
+              requiresInteraction: true,
+            },
+            {
+              targetElementId: 'add-sms-template-button',
+              description:
+                'Click here to create a new SMS template. You already have a default template, you can edit it or create a new one.',
+              position: 'left',
+              allowBack: true,
+            },
+            {
+              targetElementId: 'sms-template-open-button',
+              description:
+                'Click here to open the default template. To see the contents.',
+              position: 'left',
+              allowBack: true,
+              requiresInteraction: true,
+            },
+            {
+              targetElementId: 'sms-template-edit-button',
+              description:
+                'Click here to edit the default template. To change the name and body.',
+              position: 'left',
+              allowBack: true,
+              requiresInteraction: true,
+            },
+            {
+              targetElementId: 'sms-template-name',
+              description: 'Here you can edit the name of the template.',
+              position: 'down',
+              allowBack: true,
+            },
+            {
+              targetElementId: 'sms-template-body',
+              description:
+                'Write your SMS content here. Keep it concise as SMS messages have character limits. For Amharic text, 69 characters count as 1 SMS. For English text, 159 characters count as 1 SMS.',
+              position: 'down',
+              allowBack: true,
+            },
+            {
+              targetElementId: 'sms-variables-list',
+              description:
+                'Click these variables to insert them into your template. They will be replaced with actual data when the SMS is sent.',
+              position: 'left',
+              allowBack: true,
+            },
+            {
+              targetElementId: 'try-out-sms',
+              description:
+                'Test your template by sending a sample SMS to verify how it looks.',
+              position: 'left',
+              allowBack: true,
+              dontInteract: true,
+            },
+          ],
+        },
+        {
+          mainTitle: 'Database',
+          description:
+            'Learn how to use the database to view and manage your data',
+          steps: [
+            {
+              targetElementId: 'tools-database-tab',
+              description:
+                'Click here to access the database tab. Here you can view all your data in records.',
+              position: 'right',
+              whenClickedGoNextStep: true,
+              allowBack: true,
+              requiresInteraction: true,
+            },
+            {
+              description:
+                'Your data is displayed in this table format. Each row represents a record, and each column represents a field of information.',
+              targetElementId: 'InfoTable',
+              position: 'right',
+              requiresInteraction: false,
+              allowBack: true,
+            },
+            {
+              description:
+                'Click any column header to filter the data by that specific field. For example, click the "name" column to filter by name.',
+              targetElementId: 'InfoTableHeadTR',
               position: 'down',
               requiresInteraction: false,
               allowBack: true,
             },
             {
               description:
-                'Recurring expenses are highlighted with a special indicator.',
-              targetElementId: 'expense-calendar-recurring',
+                'When you click a column header, this search input appears. Type your search term to filter the records.',
+              targetElementId: 'searchConfig',
+              position: 'down',
+              requiresInteraction: false,
+              allowBack: true,
+            },
+            {
+              description:
+                'For fields that reference other records (like roomId or tenantId), you\'ll see a "Go to" button. Click it to navigate to the referenced record.',
+              targetElementId: 'InfoTableBodyTD',
               position: 'right',
               requiresInteraction: false,
+              allowBack: true,
+            },
+            {
+              description:
+                'Select which type of data you want to view. Each table contains different types of records - for example, "rooms" shows all room data, "tenants" shows tenant information.',
+              targetElementId: 'monthsFutureInput',
+              position: 'down',
+              requiresInteraction: false,
+              allowBack: true,
+            },
+            {
+              description:
+                'Use this search box to quickly find any record. The search works across all fields in the table.',
+              targetElementId: 'mainSearch',
+              position: 'down',
+              requiresInteraction: false,
+              allowBack: true,
+            },
+          ],
+        },
+        {
+          mainTitle: 'Settings',
+          description:
+            'Welcome to the Settings section! Here you can configure various system settings.',
+          steps: [
+            {
+              targetElementId: 'tools-settings-tab',
+              description:
+                'Click here to access the settings tab where you can configure all system settings.',
+              position: 'right',
+              whenClickedGoNextStep: true,
+              allowBack: true,
+              requiresInteraction: true,
+            },
+            {
+              targetElementId: 'tax-percentage-input',
+              description:
+                'Enter your tax percentage, which will be used for reports and statistics.',
+              position: 'right',
+              allowBack: true,
+            },
+            {
+              targetElementId: 'tax-percentage-save',
+              description: 'Click Save to apply your new tax percentage.',
+              position: 'right',
+              allowBack: true,
+            },
+            {
+              targetElementId: 'room-specs-section',
+              description:
+                'In this section, you can define default specifications available when creating or editing rooms.',
+              position: 'down',
+              allowBack: true,
+            },
+            {
+              targetElementId: 'add-room-spec-button',
+              description: 'Click Add to create a new room specification.',
+              position: 'down',
+              allowBack: true,
+              requiresInteraction: true,
+            },
+            {
+              targetElementId: 'room-spec-name-input',
+              description:
+                "Enter a name for your specification (e.g., 'Balcony', 'Furnishing', 'Bedrooms',etc.).",
+              position: 'down',
+              allowBack: true,
+            },
+            {
+              targetElementId: 'room-spec-type-radio',
+              description:
+                'Choose whether this specification is a Yes/No option or requires a number value.',
+              position: 'down',
+              allowBack: true,
+            },
+            {
+              targetElementId: 'room-spec-input',
+              description: 'Enter the value based on the type you selected.',
+              position: 'right',
+              allowBack: true,
+            },
+            {
+              targetElementId: 'room-spec-save-button',
+              description: 'Click Save to apply your new room specifications.',
+              position: 'right',
+              allowBack: true,
+            },
+            {
+              targetElementId: 'default-currency-select',
+              description:
+                'Select your default currency for transactions. This will be used as the base currency unless specifically set for individual rooms.',
+              position: 'right',
+              allowBack: true,
+            },
+            {
+              targetElementId: 'update-exchange-rate-button',
+              description: 'Click to update exchange rates to latest values.',
+              position: 'right',
+              allowBack: true,
+            },
+            {
+              targetElementId: 'historical-rate-date-input',
+              description: 'Select a date to view historical exchange rates.',
+              position: 'right',
+              allowBack: true,
+            },
+            {
+              targetElementId: 'show-recent-rates-button',
+              description: 'Click to view or hide recent exchange rates.',
+              position: 'right',
+              allowBack: true,
+            },
+            {
+              targetElementId: 'abbreviate-numbers-checkbox',
+              description:
+                'Enable to display large numbers in shortened format (e.g., 1M instead of 1,000,000).',
+              position: 'right',
+              allowBack: true,
+            },
+            {
+              targetElementId: 'decimal-places-input',
+              description: 'Set decimal places for abbreviated numbers.',
+              position: 'right',
+              allowBack: true,
+            },
+            {
+              targetElementId: 'representativeEmails',
+              description:
+                'Add email addresses for notifications. Add multiple by typing and pressing Enter.',
+              position: 'right',
+              allowBack: true,
+            },
+            {
+              targetElementId: 'representativePhoneNumbers',
+              description:
+                'Add phone numbers (minimum 10 digits) for SMS notifications.',
+              position: 'right',
+              allowBack: true,
+            },
+            {
+              targetElementId: 'landlordDisplayName',
+              description: 'Enter the name to show in tenant communications.',
+              position: 'right',
+              allowBack: true,
+            },
+            {
+              targetElementId: 'landlordEmail',
+              description: 'Enter the email address for tenant communications.',
+              position: 'right',
+              allowBack: true,
+            },
+            {
+              targetElementId: 'landlordTelephone',
+              description: 'Enter the phone number for tenant communications.',
+              position: 'right',
               allowBack: true,
             },
           ],

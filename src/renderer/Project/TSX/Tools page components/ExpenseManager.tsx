@@ -79,7 +79,8 @@ const ExpenseManager = ({
       if (
         editingExpenseId &&
         expenseTableRef.current &&
-        !expenseTableRef.current.contains(event.target as Node)
+        !expenseTableRef.current.contains(event.target as Node) &&
+        !isOnTutorial
       ) {
         saveExpenseChanges();
       }
@@ -184,6 +185,9 @@ const ExpenseManager = ({
       saveExpenseChanges();
     } else {
       setEditingExpenseId(expense.id);
+      if (isOnTutorial) {
+        setTutorialNewExpenseId(expense.id);
+      }
       setEditedExpense({ ...expense });
     }
   };
@@ -275,6 +279,8 @@ const ExpenseManager = ({
     setAllExpenses,
     AllRoomSpecifications,
     setAllRoomSpecifications,
+    isOnTutorial,
+    setTutorialNewExpenseId,
   } = useGlobal();
   const [showNotifySettings, setShowNotifySettings] = useState<{
     [key: string]: boolean;
@@ -574,6 +580,7 @@ const ExpenseManager = ({
           height: '100%',
           position: 'relative',
         }}
+        id="expenses-container"
       >
         {/* <div
           style={{
@@ -970,6 +977,7 @@ const ExpenseManager = ({
                           <>
                             <tr
                               key={`${expense.id}-${index}`}
+                              id={`${expense.id}-expense-row`}
                               className="expense-card"
                               style={{
                                 backgroundColor:
@@ -1003,6 +1011,7 @@ const ExpenseManager = ({
                                 {editingExpenseId === expense.id ? (
                                   <>
                                     <textarea
+                                      id={`${expense.id}-expense-row-name-input`}
                                       value={editedExpense?.name || ''}
                                       onChange={(e) =>
                                         handleEditExpenseChange(
@@ -1026,9 +1035,11 @@ const ExpenseManager = ({
                                         display: 'flex',
                                         flexDirection: 'row',
                                       }}
+                                      id={`${expense.id}-expense-row-category-select`}
                                     >
-                                      Caregory:{' '}
+                                      Category:{' '}
                                       <select
+                                        id={`${expense.id}-expense-category-select`}
                                         value={
                                           editedExpense?.category || 'Other'
                                         }
@@ -1105,6 +1116,7 @@ const ExpenseManager = ({
                                         justifyContent: 'left',
                                       }}
                                       title="Check this if the expense amount is before tax calculation."
+                                      id={`${expense.id}-expense-tax-checkbox`}
                                     >
                                       Before Tax:{' '}
                                       <input
@@ -1149,7 +1161,10 @@ const ExpenseManager = ({
                                   </>
                                 )}
                               </td>
-                              <td style={{}}>
+                              <td
+                                style={{}}
+                                id={`${expense.id}-expense-row-currencyPrice-select`}
+                              >
                                 {editingExpenseId === expense.id ? (
                                   <>
                                     <select
@@ -1191,6 +1206,7 @@ const ExpenseManager = ({
                                       display: 'flex',
                                       flexDirection: 'column',
                                     }}
+                                    id={`${expense.id}-expense-location-select`}
                                   >
                                     <label>
                                       Full building:
@@ -1292,8 +1308,9 @@ const ExpenseManager = ({
                                       display: 'flex',
                                       flexDirection: 'column',
                                     }}
+                                    id={`${expense.id}-expense-recurring-options`}
                                   >
-                                    <label>
+                                    <label style={{display:'flex',flexDirection:'row',alignItems:'center',justifyContent:'left'}}>
                                       Reoccur:
                                       <input
                                         type="checkbox"
@@ -1431,7 +1448,9 @@ const ExpenseManager = ({
                                     borderRadius:
                                       'var(--0px-V) var(--0px-V) var(--0px-V) var(--0px-V)',
                                   }}
+                                
                                 >
+                                  <div id={`${expense.id}-expense-dates`}>
                                   {editingExpenseId === expense.id ? (
                                     <>
                                       <div
@@ -1464,6 +1483,8 @@ const ExpenseManager = ({
                                           style={{
                                             display: 'flex',
                                             flexDirection: 'row',
+                                            alignItems:'center',
+                                            justifyContent:'left'
                                           }}
                                         >
                                           <input
@@ -1514,7 +1535,7 @@ const ExpenseManager = ({
                                     </>
                                   ) : (
                                     new Date(expense.date).toDateString()
-                                  )}
+                                  )}</div>
                                 </td>
                               )}
                               <td
@@ -1524,13 +1545,15 @@ const ExpenseManager = ({
                                       ? 'var(--0px-V) var(--0px-V) var(--0px-V) var(--0px-V)'
                                       : 'var(--0px-V) var(--10px-V) var(--10px-V) var(--0px-V)',
                                 }}
+                            
                               >
+                                <div id={`${expense.id}-expense-notifications-button`}>
                                 {editingExpenseId === expense.id ? (
                                   <button
                                     onClick={() =>
                                       toggleNotifySettings(expense.id)
-                                    }
-                                    style={{}}
+                                      }
+                                 
                                   >
                                     {showNotifySettings[expense.id]
                                       ? 'Hide Notifications'
@@ -1554,6 +1577,7 @@ const ExpenseManager = ({
                                         position: 'relative',
                                         right: 'var(--160px-V)',
                                       }}
+                                      id={`${expense.id}-expense-notifications-container`}
                                     >
                                       <div
                                         style={{
@@ -1915,6 +1939,7 @@ const ExpenseManager = ({
                                     )}
                                   </>
                                 )}
+                              </div>
                               </td>
 
                               {editingExpenseId === expense.id && (
@@ -2024,7 +2049,9 @@ const ExpenseManager = ({
                           <>
                             <tr
                               key={`${expense.id}-${index}`}
-                              className="expense-card"  style={{
+                              id={`${expense.id}-expense-row`}
+                              className="expense-card"
+                              style={{
                                 backgroundColor:
                                   editingExpenseId === expense.id
                                     ? 'var(--Accent-Color20)'
@@ -2041,6 +2068,7 @@ const ExpenseManager = ({
                                 {index + 1}.
                                 <button
                                   className="email-template-buttons-button"
+                                  id={`${expense.id}-expense-row-edit-button`}
                                   onClick={() =>
                                     handleEditExpenseClick(expense)
                                   }
@@ -2056,6 +2084,7 @@ const ExpenseManager = ({
                                 {editingExpenseId === expense.id ? (
                                   <>
                                     <textarea
+                                      id={`${expense.id}-expense-row-name-input`}
                                       value={editedExpense?.name || ''}
                                       onChange={(e) =>
                                         handleEditExpenseChange(
@@ -2079,9 +2108,11 @@ const ExpenseManager = ({
                                         display: 'flex',
                                         flexDirection: 'row',
                                       }}
+                                      id={`${expense.id}-expense-row-category-select`}
                                     >
-                                      Caregory:{' '}
+                                      Category:{' '}
                                       <select
+                                        id={`${expense.id}-expense-category-select`}
                                         value={
                                           editedExpense?.category || 'Other'
                                         }
@@ -2158,6 +2189,7 @@ const ExpenseManager = ({
                                         justifyContent: 'left',
                                       }}
                                       title="Check this if the expense amount is before tax calculation."
+                                      id={`${expense.id}-expense-tax-checkbox`}
                                     >
                                       Before Tax:{' '}
                                       <input
@@ -2202,7 +2234,7 @@ const ExpenseManager = ({
                                   </>
                                 )}
                               </td>
-                              <td style={{}}>
+                              <td style={{}} id={`${expense.id}-expense-row-currencyPrice-select`}>
                                 {editingExpenseId === expense.id ? (
                                   <>
                                     <select
@@ -2243,7 +2275,7 @@ const ExpenseManager = ({
                                     style={{
                                       display: 'flex',
                                       flexDirection: 'column',
-                                    }}
+                                    }}  id={`${expense.id}-expense-location-select`}
                                   >
                                     <label>
                                       Full building:
@@ -2344,9 +2376,9 @@ const ExpenseManager = ({
                                     style={{
                                       display: 'flex',
                                       flexDirection: 'column',
-                                    }}
+                                    }}    id={`${expense.id}-expense-recurring-options`}
                                   >
-                                    <label>
+                                    <label style={{display:'flex',flexDirection:'row',alignItems:'center',justifyContent:'left'}}>
                                       Reoccur:
                                       <input
                                         type="checkbox"
@@ -2449,6 +2481,7 @@ const ExpenseManager = ({
                                       'var(--0px-V) var(--0px-V) var(--0px-V) var(--0px-V)',
                                   }}
                                 >
+                                  <div id={`${expense.id}-expense-dates`}>
                                   {editingExpenseId === expense.id ? (
                                     <>
                                       <div
@@ -2481,6 +2514,8 @@ const ExpenseManager = ({
                                           style={{
                                             display: 'flex',
                                             flexDirection: 'row',
+                                            alignItems:'center',
+                                            justifyContent:'left'
                                           }}
                                         >
                                           <input
@@ -2532,6 +2567,7 @@ const ExpenseManager = ({
                                   ) : (
                                     new Date(expense.date).toDateString()
                                   )}
+                                  </div>
                                 </td>
                               )}
                               <td
@@ -2542,12 +2578,14 @@ const ExpenseManager = ({
                                       : 'var(--0px-V) var(--10px-V) var(--10px-V) var(--0px-V)',
                                 }}
                               >
+                                <div id={`${expense.id}-expense-notifications-button`}>
                                 {editingExpenseId === expense.id ? (
                                   <button
                                     onClick={() =>
                                       toggleNotifySettings(expense.id)
                                     }
                                     style={{}}
+                              
                                   >
                                     {showNotifySettings[expense.id]
                                       ? 'Hide Notifications'
@@ -2570,7 +2608,7 @@ const ExpenseManager = ({
                                         width: 'var(--250px-V)',
                                         position: 'relative',
                                         right: 'var(--160px-V)',
-                                      }}
+                                      }}   id={`${expense.id}-expense-notifications-container`}
                                     >
                                       <div
                                         style={{
@@ -2932,6 +2970,7 @@ const ExpenseManager = ({
                                     )}
                                   </>
                                 )}
+                              </div>
                               </td>
 
                               {editingExpenseId === expense.id && (
