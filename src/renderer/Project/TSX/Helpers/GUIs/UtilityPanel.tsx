@@ -827,7 +827,7 @@ const UtilityPanel: React.FC<props> = ({
       style={{
         position: 'absolute',
         top: 'var(--2px-V)',
-        right: 'var(---845px-V)',
+        right: 'var(---900px-V)',
         width: 'var(--310px-V)',
         height: '96%',
         backgroundColor: 'var(--Background-Color)',

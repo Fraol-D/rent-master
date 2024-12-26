@@ -20,7 +20,7 @@ const CornerSupport = ({
   setViewBranchManagementPage,
   setViewBranchManagementPageNONAdm,
   setAppUserManagerPromptPassword,
-  setAppUserManagerShow,
+  setAppUserManagerShow,RoomList
 }: any) => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedOption, setSelectedOption] = useState<
@@ -43,41 +43,38 @@ const CornerSupport = ({
   const [tutorialShow, setTutorialShow] = useState(false);
 
   useEffect(() => {
-    const checkTutorialPrompt = () => {
-      const tutorialPreferences =
-        storageManager.get('tutorialPreferences') || {};
+    const checkAndStartTutorial = () => {
+      const tutorialPreferences = storageManager.get('tutorialPreferences') || {};
 
       const pageTutorial = tutorialData.pages.find(
         (page) => page.hasToBeIn.toLowerCase() === SelectedPage.toLowerCase()
       );
 
-      if (pageTutorial && !tutorialPreferences[SelectedPage.toLowerCase()]) {
-        setTutorialPromptPage(pageTutorial.pageTitle);
-        setShowTutorialPrompt(true);
+      if (pageTutorial) {
+        // Check if first step target element exists
+        const firstStepElement = document.getElementById(pageTutorial.overview.steps[0].targetElementId);
+        
+        if (firstStepElement && !tutorialPreferences[SelectedPage.toLowerCase()]) {
+          // If element exists and tutorial not seen, start tutorial automatically
+          const pageIndex = tutorialData.pages.findIndex(p => p.hasToBeIn.toLowerCase() === SelectedPage.toLowerCase());
+          
+          setTutorialShow(true);
+          setCurrentPageInital(pageIndex);
+          setCurrentSectionInital(0);
+          setSelectedTutorial(tutorialData);
+          setSelectedTutorialIndex(pageIndex);
+          
+          // Mark tutorial as seen
+          tutorialPreferences[SelectedPage.toLowerCase()] = true;
+          storageManager.set('tutorialPreferences', tutorialPreferences);
+        }
       }
     };
 
-    // checkTutorialPrompt();
+    // Small delay to ensure DOM elements are rendered
+    const timeoutId = setTimeout(checkAndStartTutorial, 500);
+    return () => clearTimeout(timeoutId);
   }, [SelectedPage]);
-
-  const handleTutorialPromptResponse = (
-    accepted: boolean,
-    pageIndex?: number,
-    sectionIndex?: number
-  ) => {
-    const tutorialPreferences = storageManager.get('tutorialPreferences') || {};
-    tutorialPreferences[SelectedPage.toLowerCase()] = true;
-    storageManager.set('tutorialPreferences', tutorialPreferences);
-
-    if (accepted && pageIndex !== undefined) {
-      setTutorialShow(true);
-      setCurrentPageInital(pageIndex);
-      setCurrentSectionInital(sectionIndex || 0);
-      setSelectedTutorial(tutorialData);
-      setSelectedTutorialIndex(pageIndex);
-    }
-    setShowTutorialPrompt(false);
-  };
 
   const toggleOpen = () => {
     if (isOpen && selectedOption) {
@@ -146,14 +143,12 @@ const CornerSupport = ({
   const [isSendingReview, setIsSendingReview] = useState(false);
   const [IsSendingReviewMessage, setIsSendingReviewMessage] = useState(false);
   const [ReplayingEmail, setReplayingEmail] = useState('');
+
   const handleSubmitmessage = async () => {
     setIsSendingReviewMessage(true);
     const review = reviewFormMEssage;
-    const subject = 'Review';
-    const body = review;
     const userDATA = await storageManager.get('users');
     const userEmail = userDATA[0].email;
-    const userPass = userDATA[0].password;
 
     await sendEmailAPI(
       'rentmaster.et@gmail.com',
@@ -167,14 +162,12 @@ const CornerSupport = ({
       setIsSendingReviewMessage(false);
     }, 2000);
   };
+
   const handleSubmit = async () => {
     setIsSendingReview(true);
     const review = reviewForm;
-    const subject = 'Review';
-    const body = review;
     const userDATA = await storageManager.get('users');
     const userEmail = userDATA[0].email;
-    const userPass = userDATA[0].password;
 
     await sendEmailAPI(
       'rentmaster.et@gmail.com',
@@ -188,14 +181,12 @@ const CornerSupport = ({
       setIsSendingReview(false);
     }, 2000);
   };
+
   const handleSubmitFeatureSuggestion = async () => {
     setIsSendingFeatureSuggestion(true);
     const feature = featureSuggestion;
-    const subject = 'Feature Suggestion';
-    const body = feature;
     const userDATA = await storageManager.get('users');
     const userEmail = userDATA[0].email;
-    const userPass = userDATA[0].password;
 
     await sendEmailAPI(
       'rentmaster.et@gmail.com',
@@ -210,35 +201,8 @@ const CornerSupport = ({
       setIsSendingFeatureSuggestion(false);
     }, 2000);
   };
-  const plans = [
-    {
-      name: 'Starter Plan',
-      price: 'Br. 7,200',
-      period: 'Monthly',
-      rooms: '1 to 30 rooms',
-      sms: '1,500 SMS',
-    },
-    {
-      name: 'Growth Plan',
-      price: 'Br. 14,000',
-      period: 'Monthly',
-      rooms: '30 to 90 rooms',
-      sms: '2,200 SMS',
-    },
-    {
-      name: 'Pro Plan',
-      price: 'Br. 26,000',
-      period: 'Monthly',
-      rooms: '90 to 200 rooms',
-      sms: '3,000 SMS',
-    },
-  ];
 
   const handleTutorialStart = (pageIndex: number, sectionIndex: number) => {
-    setAppUserManagerShow(false);
-    setViewBranchManagementPage(false);
-    setViewBranchManagementPageNONAdm(false);
-    setAppUserManagerPromptPassword(false);
     setShowTutorialPrompt(false);
     setTutorialShow(true);
     setCurrentPageInital(pageIndex);
@@ -269,7 +233,7 @@ const CornerSupport = ({
             <p style={{ margin: '0 0 var(--10px-V) 0' }}>
               {page.overview.description}
             </p>
-            {page.hasToBeIn === SelectedPage.toLowerCase() ? (
+            {page.hasToBeIn.toLowerCase() === SelectedPage.toLowerCase() ? (
               <div
                 style={{
                   display: 'flex',
@@ -554,7 +518,7 @@ const CornerSupport = ({
                   style={{
                     marginTop: 'var(--10px-V)',
                     textAlign: 'center',
-                    color: 'var(--Error-Color)', // Optional: Add a color variable for emphasis
+                    color: 'var(--Error-Color)',
                     fontWeight: 'bold',
                   }}
                 >
@@ -592,7 +556,6 @@ const CornerSupport = ({
                   background: 'var(--Secondary-Color30)',
                   border: 'none',
                   borderRadius: 'var(--5px-V)',
-
                   marginBottom: 'var(--5px-V)',
                 }}
               >
@@ -608,10 +571,7 @@ const CornerSupport = ({
   };
 
   const handlePageNavigation = (page: string) => {
-    // Close the tutorial panel
-
     const privileges = getUserPrivileges(SelectedAppUser);
-    // Navigate based on page
     switch (page.toLowerCase()) {
       case 'app user':
         setAppUserManagerShow(true);
@@ -620,24 +580,26 @@ const CornerSupport = ({
         break;
       case 'property':
         setAppUserManagerShow(false);
-
         setViewBranchManagementPage(true);
-
         break;
       case 'dashboard':
         if (SelectedAppUser.id === 'admin' || privileges.viewDashboard)
-          setSelectedPage('Dashboard');
+          {setSelectedPage('Dashboard'); setAppUserManagerShow(false);}
         else console.log('Access denied');
         break;
-
+      case 'rooms':
+        if (SelectedAppUser.id === 'admin' || privileges.viewRoomsPage)
+          {setSelectedPage('Rooms');setAppUserManagerShow(false);}
+        else console.log('Access denied');
+        break;
       case 'expense':
         if (SelectedAppUser.id === 'admin' || privileges.editExpenses)
-          setSelectedPage('Expense');
+          {setSelectedPage('Expense');setAppUserManagerShow(false);}
         else console.log('Access denied');
         break;
       case 'tools':
         if (SelectedAppUser.id === 'admin' || privileges.viewToolsPage)
-          setSelectedPage('Tools');
+          {setSelectedPage('Tools');setAppUserManagerShow(false);}
         else console.log('Access denied');
         break;
     }
@@ -657,116 +619,8 @@ const CornerSupport = ({
           onNavigate={handlePageNavigation}
           selectedAppUserId={SelectedAppUser.id}
           userPrivileges={getUserPrivileges(SelectedAppUser)}
+          RoomList={RoomList}
         />
-      )}
-
-      {showTutorialPrompt && (
-        <div
-          style={{
-            position: 'fixed',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            backgroundColor: 'var(--Background-Color)',
-            padding: 'var(--20px-V)',
-            borderRadius: 'var(--10px-V)',
-            boxShadow: '0 0 var(--10px-V) var(--Secondary-Color50)',
-            zIndex: 1000,
-            width: 'var(--400px-V)',
-            maxWidth: '90vw',
-            textAlign: 'center',
-          }}
-        >
-          <h2 style={{ margin: '0 0 var(--15px-V) 0' }}>Tutorial Available</h2>
-          <p style={{ margin: '0 0 var(--20px-V) 0' }}>
-            Would you like to view the tutorial for the {tutorialPromptPage}{' '}
-            page?
-          </p>
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 'var(--10px-V)',
-            }}
-          >
-            {tutorialData.pages.map((page, pageIndex) => {
-              if (
-                page.hasToBeIn.toLowerCase() ===
-                tutorialPromptPage.toLowerCase()
-              ) {
-                return (
-                  <div
-                    key={pageIndex}
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: 'var(--10px-V)',
-                    }}
-                  >
-                    <div
-                      style={{ fontWeight: 'bold', color: 'var(--Text-Color)' }}
-                    >
-                      {page.pageTitle}
-                    </div>
-                    <button
-                      onClick={() =>
-                        handleTutorialPromptResponse(true, pageIndex, 0)
-                      }
-                      style={{
-                        backgroundColor: 'var(--Primary-Color)',
-                        color: 'var(--Text-Color-Reverse)',
-                        padding: 'var(--10px-V) var(--20px-V)',
-                        border: 'none',
-                        borderRadius: 'var(--5px-V)',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      Start from beginning
-                    </button>
-                    {page.sections.map((section, sectionIndex) => (
-                      <button
-                        key={sectionIndex}
-                        onClick={() =>
-                          handleTutorialPromptResponse(
-                            true,
-                            pageIndex,
-                            sectionIndex + 1
-                          )
-                        }
-                        style={{
-                          backgroundColor: 'var(--Secondary-Color20)',
-                          color: 'var(--Text-Color)',
-                          padding: 'var(--10px-V) var(--20px-V)',
-                          border: 'none',
-                          borderRadius: 'var(--5px-V)',
-                          cursor: 'pointer',
-                          textAlign: 'left',
-                        }}
-                      >
-                        Start from: {section.mainTitle}
-                      </button>
-                    ))}
-                  </div>
-                );
-              }
-              return null;
-            })}
-            <button
-              onClick={() => handleTutorialPromptResponse(false)}
-              style={{
-                backgroundColor: 'var(--Secondary-Color20)',
-                color: 'var(--Text-Color)',
-                padding: 'var(--10px-V) var(--20px-V)',
-                border: 'none',
-                borderRadius: 'var(--5px-V)',
-                cursor: 'pointer',
-                marginTop: 'var(--10px-V)',
-              }}
-            >
-              No, thanks
-            </button>
-          </div>
-        </div>
       )}
 
       <div

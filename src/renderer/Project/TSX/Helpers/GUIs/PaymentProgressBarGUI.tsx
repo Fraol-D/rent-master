@@ -49,6 +49,7 @@ interface Props {
   Currency: string;
   changeProgress: any;
   setChangeProgress: any;
+  fromRoom?: boolean;
 }
 import { v4 as uuidv4 } from 'uuid';
 import { useGlobal } from 'renderer/components/GlobalContext';
@@ -71,6 +72,7 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
   Currency,
   setChangeProgress,
   changeProgress,
+  fromRoom,
 }) => {
   const {
     AllRoomPayInfo,
@@ -694,15 +696,15 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
         })
         .style('font-size', `${fontSize}px`)
         .append('tspan')
-        .style('font-size', `${fontSize - 3}px`)
-        .text((d: any) => CurrencySign(Currency))
-        .append('tspan')
-        .style('font-size', `${fontSize - 3}px`)
+        .style('font-size', `${fontSize - 1}px`)
         .text((d: any) => {
           return d.Value === null
             ? `${formatNumberWithSuffix(agreedPrice.toLocaleString())}`
             : `${formatNumberWithSuffix(d.Value.toLocaleString())}`;
         })
+        .style('font-size', `${fontSize - 3}px`)
+        .append('tspan')
+        .text((d: any) => CurrencySign(Currency))
         .on('click', (event, d) => handlePayClick(d));
       /////////////////////////////////////////////
       if (ShowReceipt) {
@@ -1228,7 +1230,7 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
         left: 0,
         right: 0,
         bottom: 0,
-       
+        width: fromRoom ? 'var(--568px-V)' : '100%',
         height: '100%',
         paddingRight: 'var(--12px-V)',
         backgroundColor: 'rgba(0, 0, 0, 0.3)',
@@ -1389,11 +1391,14 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
   return (
     <>
       {' '}
-      <LoadingOverlay />{' '}
       <div
+        id={`payment-timeline-container${roomType.id}`}
         className="TimeLineMainContaner"
-      
+        style={{
+          width: fromRoom ? 'var(--568px-V)' : '97%',
+        }}
       >
+        <LoadingOverlay />
         <div>
           <div
             style={{
@@ -1421,6 +1426,7 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
               Refresh
             </button>{' '}
             <button
+              id={`payment-timeline-rct-button${roomType.id}`}
               onClick={() => {
                 setShowReceipt(!ShowReceipt);
                 setShowUtilityPanel(!ShowReceipt);
@@ -1428,7 +1434,12 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
             >
               RCT
             </button>
-            <button onClick={scrollToCurrentDate}>Current Date</button>
+            <button
+              id={`payment-timeline-current-date${roomType.id}`}
+              onClick={scrollToCurrentDate}
+            >
+              Current Date
+            </button>
             {selectedDates.length > 0 ? (
               <>
                 {' '}

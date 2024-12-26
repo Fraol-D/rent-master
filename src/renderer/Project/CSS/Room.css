@@ -175,6 +175,14 @@
   left: var(---536px-V);
   z-index: 1;
 }
+
+.PopOutContainerNoZindex {
+  width: 0;
+  position: relative;
+  top: var(--180px-V);
+  left: var(---536px-V);
+  
+}
 .AddTenantContainerinner {
   width: var(--280px-V);
   height: var(--260px-V);
@@ -274,7 +282,7 @@
 }
 .TimeLineMainContaner {
   background: var(--Background-Color);
-    z-index: 1;
+    
     transition: all 0.2s;
     border-radius: var(--5px-V);
     /* border: var(--1px-V) solid black; */

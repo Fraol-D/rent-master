@@ -84,7 +84,6 @@ export function RoomListComponent({
         }}
         ref={roomListContainerRef}
       >
-       
         <div className="RoomContainer">
           {sortedRooms.filter((r: RoomType) => r.Archived == ShowArchived)
             .length === 0 ? (
@@ -196,14 +195,14 @@ export function RoomListComponent({
       <button
         onClick={() => setShowExpenseCalendar(!showExpenseCalendar)}
         className="RoomListButton"
+        id="RoomListButton"
       >
-        {showExpenseCalendar
-          ? 'Hide Expense Calendar'
-          : 'Show Expense Calendar'}
+        {showExpenseCalendar ? 'Hide Calendar' : 'Show Calendar'}
       </button>
       {showExpenseCalendar && (
         <div style={{ height: '500px', margin: '20px 0' }}>
           <ExpenseCalendar
+            id="room-calendar"
             expenses={AllExpenses.filter(
               (e) => e.branchId === SelectedBranchId
             )}

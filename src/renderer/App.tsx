@@ -1920,6 +1920,7 @@ function Hello({ tryout, username, signup }: any) {
             </>
           </AccountManager>{' '}
           <CornerSupport
+            RoomList={RoomList}
             SelectedPage={
               AppUserManagerShow
                 ? 'app user'

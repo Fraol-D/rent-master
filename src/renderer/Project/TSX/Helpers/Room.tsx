@@ -109,7 +109,7 @@ const Room = ({
     [SelectedAppUser]
   );
   const {
-    AllRoomPayInfo,
+    
     setAllRoomPayInfo,
     AllAgreements,
     setAllAgreements,
@@ -119,7 +119,7 @@ const Room = ({
 
     setAllTenants,
     AllRoomPayInfoHistory,
-    setAllRoomPayInfoHistory,
+    setAllRoomPayInfoHistory,isOnTutorial,AllRoomPayInfo
   } = useGlobal();
   const [isLoading, setIsLoading] = useState(false);
   const [name, setName] = useState('');
@@ -176,7 +176,8 @@ const Room = ({
       if (
         addTenantRef.current &&
         !(addTenantRef.current as HTMLElement).contains(event.target as Node) &&
-        roomType.AddTenantState
+        roomType.AddTenantState&&
+        !isOnTutorial
       ) {
         updateRoomPropertyLocal(roomType.id, 'AddTenantState', 0);
       }
@@ -187,7 +188,8 @@ const Room = ({
         ) &&
         roomType.ViewAgreement &&
         !document.activeElement?.closest('.ViewAgreementContainer') &&
-        !(event.target as HTMLElement).closest('#confirm-overlay')
+        !(event.target as HTMLElement).closest('#confirm-overlay')&&
+        !isOnTutorial
       ) {
         updateRoomPropertyLocal(roomType.id, 'ViewAgreement', 0);
       }
@@ -201,7 +203,8 @@ const Room = ({
           event.target as Node
         ) &&
         roomType.ShowPayTimeLine &&
-        !(event.target as HTMLElement).closest('#confirm-overlay')
+        !(event.target as HTMLElement).closest('#confirm-overlay')&&
+        !isOnTutorial
       ) {
         updateRoomPropertyLocal(roomType.id, 'ShowPayTimeLine', 0);
       }
@@ -215,7 +218,8 @@ const Room = ({
           event.target as Node
         ) &&
         roomType.ShowUtilityLine &&
-        !(event.target as HTMLElement).closest('#confirm-overlay')
+        !(event.target as HTMLElement).closest('#confirm-overlay')&&
+        !isOnTutorial
       ) {
         updateRoomPropertyLocal(roomType.id, 'ShowUtilityLine', 0);
       }
@@ -1214,6 +1218,7 @@ const Room = ({
           fontSize: 'var(--16px-V)',
           color: 'var(--Text-Color-Grey)',
         }}
+
       >
         {isEditing ? (
           <>
@@ -1355,6 +1360,7 @@ const Room = ({
           marginBottom: 'var(--10px-V)',
           borderRadius: 'var(--5px-V)',
         }}
+        id={"room-view-agreement-tenant-information" + roomType.id}
       >
         <div
           style={{
@@ -1504,10 +1510,10 @@ const LoadingOverlay = ({ isLoading }: { isLoading: boolean }) => (
             : 'var(--Secondary-Color30)',
           border: roomType.AddTenantState ? 'var(--1px-V) solid #00e1f1' : '',
         }}
-      >  
+      >  <LoadingOverlay isLoading={isLoading} />
         <div className="FirstLine">
-          <div style={{ display: 'flex' }}>
-            <p className="FloorText">Floor {roomType.floor}</p>{' '}<LoadingOverlay isLoading={isLoading} />
+          <div id={'room-floorRoom-text-' + roomType.id}><div style={{ display: 'flex' }}>
+            <p className="FloorText">Floor {roomType.floor}</p>{' '}
             <img
               onClick={() => {
                 setSelectedEditRoomId(roomType.id);
@@ -1541,8 +1547,8 @@ const LoadingOverlay = ({ isLoading }: { isLoading: boolean }) => (
             )} */}
           </div>
           <p className="RoomText">Room {roomType.roomIndex}</p>
-
-          <div className="StatusContainer">
+</div>
+          <div id={'room-status-Main-container' + roomType.id} className="StatusContainer">
             <div className="StatusText">
               <p>
                 Current Status:{' '}
@@ -1582,6 +1588,7 @@ const LoadingOverlay = ({ isLoading }: { isLoading: boolean }) => (
                       <>
                         {privileges.addTenant && (
                           <strong
+                            id={'room-status-add-tenant-button' + roomType.id}
                             className="PageNavigatorButtonSelected"
                             style={{
                               width: '77%',
@@ -1609,7 +1616,7 @@ const LoadingOverlay = ({ isLoading }: { isLoading: boolean }) => (
                             }}
                             onClick={() => {
                               handleAddTenant();
-                            }}
+                            }}        id={'room-status-add-tenant-button' + roomType.id}
                           >
                             Add a tenant
                           </button>
@@ -1638,6 +1645,7 @@ const LoadingOverlay = ({ isLoading }: { isLoading: boolean }) => (
                           !roomType.ViewAgreement
                         );
                       }}
+                      id={"room-view-agreement-button" + roomType.id}
                     >
                       <p
                         style={{
@@ -1675,7 +1683,7 @@ const LoadingOverlay = ({ isLoading }: { isLoading: boolean }) => (
                           height: 'var(--22px-V)',
                           marginTop: 'var(--0px-V)',
                           paddingTop: 'var(--0px-V)',
-                        }}
+                        }}  id={"room-view-agreement-button" + roomType.id}
                       >
                         View Agreement
                       </button>
@@ -1689,9 +1697,9 @@ const LoadingOverlay = ({ isLoading }: { isLoading: boolean }) => (
           </div>
         </div>
         <div className="SecondLine">
-          <div className="PriceMainContainer">
+          <div className="PriceMainContainer"id={'room-price-payment-cycle' + roomType.id}>
             <div className="PriceContainer">
-              <div
+              <div 
                 style={{
                   display: 'flex',
                   flexDirection: 'column',
@@ -1798,6 +1806,7 @@ const LoadingOverlay = ({ isLoading }: { isLoading: boolean }) => (
                       color: 'var(--Text-Color-Reverse)',
                       border: 'none',
                     }}
+                    id={"room-payment-timeline-button" + roomType.id}
                     onClick={() => {
                       turnOffViewStateForAll();
                       updateRoomPropertyLocal(
@@ -1833,7 +1842,7 @@ const LoadingOverlay = ({ isLoading }: { isLoading: boolean }) => (
             </div>
           )}
         </div>
-        <div className="ThirdLine">
+        <div className="ThirdLine" id={'room-typeOfRoomMainContainer' + roomType.id}>
           {TypeOfRoomState ? (
             <>
               {' '}
@@ -1918,16 +1927,17 @@ const LoadingOverlay = ({ isLoading }: { isLoading: boolean }) => (
 
         {roomType.AddTenantState ? (
           <div
-            className="PopOutContainer"
+            className="PopOutContainerNoZindex"
             ref={addTenantRef}
             style={{
-              zIndex: roomType.AddTenantState ? '1' : '-1',
+              zIndex: roomType.AddTenantState ? '' : '-1',
               top: 'var(--260px-V)',
               marginTop: 'var(--20px-V)',
             }}
           >
             <div
               className="AddTenantContainerinner"
+              id={'room-add-tenant-container' + roomType.id}
               style={{
                 width: roomType.AddTenantState
                   ? 'var(--365px-V)'
@@ -1977,7 +1987,7 @@ const LoadingOverlay = ({ isLoading }: { isLoading: boolean }) => (
                 </div>
 
                 {TenantPageSelected === 'New' ? (
-                  <>
+                  <div id={'room-add-tenant-container-tenantInfo' + roomType.id}>
                     <h3
                       style={{
                         marginTop: 'var(--5px-V)',
@@ -2058,7 +2068,7 @@ const LoadingOverlay = ({ isLoading }: { isLoading: boolean }) => (
                         onChange={(e) => setRentReason(e.target.value)}
                       />
                     </div>
-                  </>
+                  </div>
                 ) : (
                   <>
                     <h3
@@ -2180,7 +2190,7 @@ const LoadingOverlay = ({ isLoading }: { isLoading: boolean }) => (
                 <hr />
 
                 {TenantPageSelected === 'New' ? (
-                  <>
+                  <div id={'room-add-tenant-container-agreementDetails' + roomType.id}>
                     <h3
                       style={{
                         marginTop: 'var(--5px-V)',
@@ -2391,7 +2401,7 @@ const LoadingOverlay = ({ isLoading }: { isLoading: boolean }) => (
                         Same
                       </button>
                     </div>
-                  </>
+                  </div>
                 ) : (
                   <>
                     {TenantPageSelected === 'Select' &&
@@ -3008,11 +3018,11 @@ const LoadingOverlay = ({ isLoading }: { isLoading: boolean }) => (
         )}
         {roomType.ViewAgreement ? (
           <div
-            className="PopOutContainer"
+            className="PopOutContainerNoZindex"
             ref={viewAgreementRef}
             style={{
               top: 'var(--310px-V)',
-              zIndex: roomType.ViewAgreement ? '1' : '-1',
+             
             }}
           >
             <div
@@ -3025,7 +3035,7 @@ const LoadingOverlay = ({ isLoading }: { isLoading: boolean }) => (
                   ? 'var(--470px-V)'
                   : 'var(--0px-V)',
                 opacity: roomType.ViewAgreement ? '1' : '0',
-              }}
+              }}     id={'room-view-agreement-container' + roomType.id}
             >
               <div style={{ display: 'flex', flexDirection: 'column' }}>
                 <div
@@ -3131,6 +3141,7 @@ const LoadingOverlay = ({ isLoading }: { isLoading: boolean }) => (
                   {/* Agreement Information Section f*/}
                   {privileges.editTenantRoomAgreementInfo && (
                     <div
+                    id={'room-view-agreement-information' + roomType.id}
                       style={{
                         width: '93%',
                         background: 'var(--Secondary-Color30)',
@@ -3229,6 +3240,7 @@ const LoadingOverlay = ({ isLoading }: { isLoading: boolean }) => (
                   )}
                   {privileges.editTenantRoomTenantPortal && (
                     <div
+                    id={'room-view-agreement-tenant-portal' + roomType.id}
                       style={{
                         width: '93%',
                         background: 'var(--Secondary-Color30)',
@@ -3445,6 +3457,7 @@ const LoadingOverlay = ({ isLoading }: { isLoading: boolean }) => (
 
                   {privileges.editTenantRoomUtilitySettings && (
                     <div
+                      id={'room-view-agreement-utility-settings' + roomType.id}
                       style={{
                         width: '93%',
                         background: 'var(--Secondary-Color30)',
@@ -3743,6 +3756,7 @@ const LoadingOverlay = ({ isLoading }: { isLoading: boolean }) => (
                   {/* File Attachments Section */}
                   {privileges.editTenantRoomAttachments && (
                     <div
+                      id={'room-view-agreement-file-attachments' + roomType.id}
                       style={{
                         width: '93%',
                         background: 'var(--Secondary-Color30)',
@@ -3793,6 +3807,7 @@ const LoadingOverlay = ({ isLoading }: { isLoading: boolean }) => (
                   {/* Reminders and Notifications Section */}
                   {privileges.editTenantRoomNotificationSettings && (
                     <div
+                      id={'room-view-agreement-reminders-and-notifications' + roomType.id}
                       style={{
                         width: '93%',
                         background: 'var(--Secondary-Color30)',
@@ -3884,12 +3899,12 @@ const LoadingOverlay = ({ isLoading }: { isLoading: boolean }) => (
         )}
         {roomType.ShowPayTimeLine ? (
           <div
-            className="PopOutContainer"
+            className="PopOutContainerNoZindex"
             ref={showPayTimeLineRef}
             style={{
               top: 'var(--200px-V)',
               left: 'var(---567px-V)',
-              zIndex: roomType.ShowPayTimeLine ? '1' : '-1',
+            
             }}
           >
             <PaymentProgressBarGUI
@@ -3908,6 +3923,7 @@ const LoadingOverlay = ({ isLoading }: { isLoading: boolean }) => (
               SelectedUserId={SelectedUserId}
               updateRoomPropertyLocal={updateRoomPropertyLocal}
               Currency={roomType.Currency}
+              fromRoom={true}
             />
           </div>
         ) : roomType.ShowUtilityLine ? (

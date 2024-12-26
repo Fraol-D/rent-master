@@ -192,7 +192,7 @@ const UtilityPaymentsTable = ({
                           handlePriceUpdate(index, utility);
                         }
                       }}
-                      style={{ width: 'var(--70px-V)' }}
+                      style={{ width: 'var(--60px-V)' }}
                     />
                     <select
                       value={utility.Currency}

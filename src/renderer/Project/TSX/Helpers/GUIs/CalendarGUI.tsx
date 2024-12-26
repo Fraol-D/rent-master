@@ -562,8 +562,8 @@ const CalendarGUI: React.FC<CalendarProps> = ({
   };
   return (
     <div className="CalenderContainer">
-      <div className="CalanderMainContainer">
-        <div className="CalenderOptionsMainContainer">
+      <div className="CalanderMainContainer" id="calendar-main-container">
+        <div className="CalenderOptionsMainContainer" id="calendar-navigation">
           <input
             type="text"
             placeholder="Search by tenant name"

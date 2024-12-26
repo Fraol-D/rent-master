@@ -28,6 +28,8 @@ interface GlobalContextType {
   setTutorialNewAppUserId: React.Dispatch<React.SetStateAction<string>>;
   tutorialNewExpenseId: string;
   setTutorialNewExpenseId: React.Dispatch<React.SetStateAction<string>>;
+  tutorialNewRoomId: string;
+  setTutorialNewRoomId: React.Dispatch<React.SetStateAction<string>>;
 
   isOnTutorial: boolean;
   setIsOnTutorial: React.Dispatch<React.SetStateAction<boolean>>;
@@ -53,6 +55,7 @@ const [AllRoomPayInfoHistory, setAllRoomPayInfoHistory] = useState<AllRoomPayInf
 const [isOnTutorial, setIsOnTutorial] = useState<boolean>(false);
 const [tutorialNewAppUserId, setTutorialNewAppUserId] = useState<string>("");
 const [tutorialNewExpenseId, setTutorialNewExpenseId] = useState<string>("");
+const [tutorialNewRoomId, setTutorialNewRoomId] = useState<string>("");
 return (
     <GlobalContext.Provider 
       value={{
@@ -82,6 +85,7 @@ return (
         setTutorialNewAppUserId,
         tutorialNewExpenseId,
         setTutorialNewExpenseId,
+        tutorialNewRoomId,setTutorialNewRoomId,
         isOnTutorial,
         setIsOnTutorial,
       }}

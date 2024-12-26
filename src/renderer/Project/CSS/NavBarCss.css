@@ -6,7 +6,8 @@
   margin: var(--0px-V);
   display: flex;
   width: 100%;
-  box-shadow: var(--3px-V) var(--3px-V) var(--5px-V) var(---1px-V) var(--Background-Color2);
+  box-shadow: var(--3px-V) var(--3px-V) var(--5px-V) var(---1px-V)
+    var(--Background-Color2);
 
   justify-content: space-between;
   flex-direction: row;
@@ -98,7 +99,6 @@
   display: flex;
   justify-content: right;
   align-items: center;
-
 }
 .Name-ofShop-input {
   width: var(--500px-V);
@@ -166,7 +166,6 @@
   display: flex;
   justify-content: left;
   align-items: center;
-
 }
 
 .SaveButtonLong {
@@ -203,18 +202,14 @@
 }
 
 .PageNavigatorButton {
- 
-  
-    border-radius: 5px;
-    border: 1px solid var(--Secondary-Color);
-    background: var(--Background-Color);
-    color: var(--Text-Color);
-    cursor: pointer;
-
+  border-radius: 5px;
+  border: 1px solid var(--Secondary-Color);
+  background: var(--Background-Color);
+  color: var(--Text-Color);
+  cursor: pointer;
 }
 
 .PageNavigatorButtonSelected {
-  
   width: var(--120px-V);
   font-size: var(--16px-V);
   border-top: var(--2px-V) solid var(--Primary-Color);
@@ -255,7 +250,7 @@
   padding: var(--10px-V);
   z-index: 2;
 }
-.AdvancedUploadButtons{
+.AdvancedUploadButtons {
   width: 100%;
 }
 .AdvancedUploadButtonsUploadButton {
@@ -265,8 +260,6 @@
   justify-content: space-between;
 }
 .AdvancedUploadButtonsButtonText {
-
 }
 .AdvancedUploadButtonsProgressText {
- 
 }

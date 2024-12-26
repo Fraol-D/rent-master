@@ -13,6 +13,8 @@ export type TutorialStep = {
   checkUnderElementIsJS?: boolean;
   whenClickedGoNextStep?: boolean;
   toContinueVarHasToBeAvailable?: string;
+  marginInDirection?: number;
+  blinkAsWellId?: string;
 };
 
 export type TutorialSection = {
@@ -182,6 +184,453 @@ export const tutorialData: TutorialSystem = {
         ],
       },
       sections: [],
+    },
+    {
+      pageTitle: 'Room Management',
+      hasToBeIn: 'rooms',
+      overview: {
+        mainTitle: 'Room Management',
+        description:
+          'Learn how to manage your rooms and view them in different ways.',
+        steps: [
+          {
+            description:
+              'Welcome to Room Management! This is where you will be managing all your rooms.',
+            targetElementId: 'room-manager-title',
+            position: 'right',
+            requiresInteraction: false,
+            allowBack: true,
+          },
+          {
+            description:
+              'Here you can search for rooms using the tenant search, room search and floor search.',
+            targetElementId: 'room-search-container',
+            position: 'right',
+            requiresInteraction: false,
+            allowBack: true,
+          },
+          {
+            description:
+              'You can filter rooms by various criteria including:\n• Room status (Taken/Empty)\n• Price with comparison operators\n• Due dates\n• Square meters\n• Currency',
+            targetElementId: 'room-search-container-filters',
+            position: 'right',
+            requiresInteraction: false,
+            allowBack: true,
+          },
+        ],
+      },
+      sections: [
+        {
+          mainTitle: 'Adding a Room',
+          description: 'Learn how to add new rooms to your property',
+          steps: [
+            {
+              description:
+                'Click this button to add a new room to your property.',
+              targetElementId: 'add-room-button',
+              position: 'right',
+              requiresInteraction: true,
+              allowBack: true,
+            },
+            {
+              description: 'Enter the floor number for your new room.',
+              targetElementId: 'add-room-floor-input',
+              position: 'right',
+              requiresInteraction: true,
+              allowBack: true,
+            },
+            {
+              description: 'Enter the room number/index.',
+              targetElementId: 'add-room-index-input',
+              position: 'right',
+              requiresInteraction: true,
+              allowBack: true,
+            },
+            {
+              description:
+                'Set the room price and select currency. You can change later when adding a tenant.',
+              targetElementId: 'add-room-price-container',
+              position: 'right',
+              requiresInteraction: true,
+              allowBack: true,
+            },
+            {
+              description:
+                'Choose the payment cycle for this room. Meaning how often the rent is paid.',
+              targetElementId: 'add-room-payment-cycle',
+              position: 'right',
+              requiresInteraction: true,
+              allowBack: true,
+            },
+            {
+              description: 'Enter the room size in square meters.',
+              targetElementId: 'add-room-square-meters',
+              position: 'right',
+              requiresInteraction: true,
+              allowBack: true,
+            },
+
+            {
+              targetElementId: 'room-specs-section',
+              description:
+                'Here you can define room specifications like Bathrooms: 2, Furnished: yes, etc.',
+              position: 'right',
+              allowBack: true,
+            },
+            {
+              targetElementId: 'add-room-spec-button',
+              description: 'Click Add to create a new room specification.',
+              position: 'right',
+              allowBack: true,
+              requiresInteraction: true,
+            },
+            {
+              targetElementId: 'room-spec-name-input',
+              description:
+                "Enter a name for your specification (e.g., 'Balcony', 'Furnishing', 'Bedrooms',etc.).",
+              position: 'right',
+              allowBack: true,
+            },
+            {
+              targetElementId: 'room-spec-type-radio',
+              description:
+                'Choose whether this specification is a Yes/No option or is a number value.',
+              position: 'right',
+              allowBack: true,
+            },
+            {
+              targetElementId: 'room-spec-input',
+              description: 'Enter the value based on the type you selected.',
+              position: 'right',
+              allowBack: true,
+            },
+            {
+              description: 'Upload room images here.',
+              targetElementId: 'room-images-section',
+              position: 'right',
+              requiresInteraction: false,
+              allowBack: true,
+            },
+            {
+              description: 'Click Add Room to create the room.',
+              targetElementId: 'add-room-submit',
+              position: 'right',
+              requiresInteraction: true,
+              allowBack: true,
+              whenClickedGoNextStep: true,
+            },
+            {
+              description: 'This is the room you just added.',
+              targetElementId: `'room-' + tutorialNewRoomId`,
+              position: 'up',
+              requiresInteraction: false,
+              allowBack: false,
+              isJsId: true,
+            },
+          ],
+        },
+        {
+          mainTitle: 'Room Details',
+          description: 'Learn how to view and manage room details',
+          steps: [
+            {
+              description:
+                'Here you will see the floor and room number and a edit button.',
+              targetElementId: `'room-floorRoom-text-' + (RoomList.find(room => room.status === 'Empty')?.id)`,
+              position: 'right',
+              requiresInteraction: false,
+              allowBack: true,
+              dontInteract: true,
+              isJsId: true,
+            },
+            {
+              description: 'Here you will see the price and payment cycle.',
+              targetElementId: `'room-price-payment-cycle' + (RoomList.find(room => room.status === 'Empty')?.id)`,
+              position: 'down',
+              requiresInteraction: false,
+              allowBack: true,
+              isJsId: true,
+            },
+            {
+              description:
+                'Here you will see the room specifications and a button to show room images.',
+              targetElementId: `'room-typeOfRoomMainContainer' + (RoomList.find(room => room.status === 'Empty')?.id)`,
+              position: 'left',
+              requiresInteraction: false,
+              allowBack: true,
+              isJsId: true,
+            },
+            {
+              description:
+                'Here you will see the room status and a button to add a tenant to this room.',
+              targetElementId: `'room-status-Main-container' + (RoomList.find(room => room.status === 'Empty')?.id)`,
+              position: 'right',
+              requiresInteraction: false,
+              allowBack: true,
+              dontInteract: true,
+              isJsId: true,
+            },
+          ],
+        },
+        {
+          mainTitle: 'Add a tenant',
+          description: 'Learn how to add a tenant to a room',
+          steps: [
+            {
+              description: 'Click the button to add a tenant.',
+              targetElementId: `'room-status-add-tenant-button' + (RoomList.find(room => room.status === 'Empty')?.id)`,
+              position: 'right',
+              requiresInteraction: true,
+              allowBack: true,
+
+              isJsId: true,
+            },
+            {
+              description:
+                'A panel will show, enter all the details. Lets start with the tenant information. Enter the name, phone number, email, Description, TIN(if any), and rent reason.',
+              targetElementId: `'room-add-tenant-container' + (RoomList.find(room => room.status === 'Empty')?.id)`,
+              position: 'right',
+              requiresInteraction: false,
+              allowBack: true,
+              isJsId: true,
+            },
+            {
+              description:
+                'Then now we will enter the tenant lease information. Enter the lease start date, lease end date, the date which it was signed,rent cycle, representative, currency, agreed price.',
+              targetElementId: `'room-add-tenant-container' + (RoomList.find(room => room.status === 'Empty')?.id)`,
+              position: 'right',
+              requiresInteraction: false,
+              allowBack: true,
+              isJsId: true,
+            },
+            {
+              description:
+                "If this tenant was aquaierd by means of a broker, Click the track broker button, then select the broker if you haven't made one yet, just click add new broker then enter the info of the broker.",
+              targetElementId: `'room-add-tenant-container' + (RoomList.find(room => room.status === 'Empty')?.id)`,
+              position: 'right',
+              requiresInteraction: false,
+              allowBack: true,
+              isJsId: true,
+            },
+            {
+              description:
+                'Then if you have any attachments or documents you can add it on the final area.',
+              targetElementId: `'room-add-tenant-container' + (RoomList.find(room => room.status === 'Empty')?.id)`,
+              position: 'right',
+              requiresInteraction: false,
+              allowBack: true,
+              isJsId: true,
+            },
+            {
+              description:
+                'When complete just click the add button to add the tenant.',
+              targetElementId: `'room-add-tenant-container' + (RoomList.find(room => room.status === 'Empty')?.id)`,
+              position: 'right',
+              requiresInteraction: false,
+              allowBack: true,
+              isJsId: true,
+            },
+          ],
+        },
+        {
+          mainTitle: 'View Agreement',
+          description: 'Learn how to view the agreement of a tenant',
+          steps: [
+            {
+              description:
+                'Click the view agreement button to view the agreement of the tenant.',
+              targetElementId: `'room-view-agreement-button' + (RoomList.find(room => room.status === 'Taken')?.id)`,
+              position: 'right',
+              requiresInteraction: true,
+              allowBack: true,
+              isJsId: true,
+            },
+            {
+              description:
+                'In this panel you can view every detail of the tenant and the agreement.',
+              targetElementId: `'room-view-agreement-container' + (RoomList.find(room => room.status === 'Taken')?.id)`,
+              position: 'right',
+              requiresInteraction: false,
+              allowBack: true,
+              isJsId: true,
+            },
+            //Start with the first one the tenant information section
+            {
+              description:
+                'This is the tenant information section. Here you can see the tenant name, phone number, email, description, TIN(if any), and rent reason.',
+              targetElementId: `'room-view-agreement-container' + (RoomList.find(room => room.status === 'Taken')?.id)`,
+              position: 'right',
+              requiresInteraction: false,
+              allowBack: true,
+              isJsId: true,
+              blinkAsWellId: `'room-view-agreement-tenant-information' + (RoomList.find(room => room.status === 'Taken')?.id)`,
+            },
+            //Then agreement information section
+            {
+              description:
+                'This is the agreement information section. Here you can see the lease start date, lease end date, the date which it was signed, rent cycle, representative, currency, agreed price. And you can also add a new agreement(lease).',
+              targetElementId: `'room-view-agreement-container' + (RoomList.find(room => room.status === 'Taken')?.id)`,
+              position: 'right',
+              requiresInteraction: false,
+              allowBack: true,
+              isJsId: true,
+              blinkAsWellId: `'room-view-agreement-information' + (RoomList.find(room => room.status === 'Taken')?.id)`,
+            },
+            // Then the tenant portal section
+            {
+              description:
+                'This is the tenant portal section. The tenant portal makes it easier for you and the tenant by showing the tenant the rent payments. Here you can see the tenant portal link, and the tenant portal settings.',
+              targetElementId: `'room-view-agreement-container' + (RoomList.find(room => room.status === 'Taken')?.id)`,
+              position: 'right',
+              requiresInteraction: false,
+              allowBack: true,
+              isJsId: true,
+              blinkAsWellId: `'room-view-agreement-tenant-portal' + (RoomList.find(room => room.status === 'Taken')?.id)`,
+            },
+            //THen the utility Section
+            {
+              description:
+                'This is the utility section. Here you can pick what utilities to bill the tenant for, set custom prices, choose payment cycles (monthly or custom days), and mark utilities as "Always Ask" to customize the price each time. You can also select different currencies for each utility payment. You can select what kind of reminders to send.',
+              targetElementId: `'room-view-agreement-container' + (RoomList.find(room => room.status === 'Taken')?.id)`,
+              position: 'right',
+              requiresInteraction: false,
+              allowBack: true,
+              isJsId: true,
+              blinkAsWellId: `'room-view-agreement-utility-settings' + (RoomList.find(room => room.status === 'Taken')?.id)`,
+            },
+            //tHEN THE fiLE ATTACHMENTS SECTION
+            {
+              description:
+                'This is the file attachments section. Here you can see the file attachments of the tenant. You can download, add, delete, and view the file attachments.',
+              targetElementId: `'room-view-agreement-container' + (RoomList.find(room => room.status === 'Taken')?.id)`,
+              position: 'right',
+              requiresInteraction: false,
+              allowBack: true,
+              isJsId: true,
+              blinkAsWellId: `'room-view-agreement-file-attachments' + (RoomList.find(room => room.status === 'Taken')?.id)`,
+            },
+            //Then the reminders and notification sectoin
+            {
+              description:
+                'This is the reminders and notification section. Here you can set up automated notifications for rent payments. You can enable email and SMS notifications to be sent to both tenants and representatives at different times - 5 days before due, 3 days before, 1 day before, on the due date, and several days after. For tenant notifications, you can select specific email and SMS templates to be used for each timing.',
+              targetElementId: `'room-view-agreement-container' + (RoomList.find(room => room.status === 'Taken')?.id)`,
+              position: 'right',
+              requiresInteraction: false,
+              allowBack: true,
+              isJsId: true,
+              blinkAsWellId: `'room-view-agreement-reminders-and-notifications' + (RoomList.find(room => room.status === 'Taken')?.id)`,
+            },
+          ],
+        },
+        {
+          mainTitle: 'Payment Timeline',
+          description:
+            'Learn how to manage rent payments using the payment timeline',
+          steps: [
+            {
+              description: 'Click here to view the payment timeline.',
+              targetElementId: `'room-payment-timeline-button' + (RoomList.find(room => room.status === 'Taken')?.id)`,
+              position: 'right',
+              requiresInteraction: true,
+              allowBack: true,
+              isJsId: true,
+            },
+            {
+              description:
+                'This is the payment timeline. Each line represents a payment period.',
+              targetElementId: `'payment-timeline-container' + (RoomList.find(room => room.status === 'Taken')?.id)`,
+              position: 'down',
+              requiresInteraction: false,
+              allowBack: true,
+              isJsId: true,
+
+            },
+            {
+              description:
+                'The colors indicate payment status: Red for overdue, Gold for paid, Blue for upcoming, and Cyan for payments due soon (within 10 days).',
+              targetElementId: `'payment-timeline-container' + (RoomList.find(room => room.status === 'Taken')?.id)`,
+              position: 'left',
+              requiresInteraction: false,
+              allowBack: true,
+              isJsId: true,
+              marginInDirection: 20,
+            },
+            {
+              description:
+                'Click "Pay" under any payment to mark it as paid. And click again to mark it as unpaid.',
+              targetElementId: `'payment-timeline-container' + (RoomList.find(room => room.status === 'Taken')?.id)`,
+              position: 'left',
+              requiresInteraction: false,
+              allowBack: true,
+              isJsId: true,
+              marginInDirection: 20,
+            },
+            {
+              description:
+                'Click RCT to toggle receipt view. When enabled, you can upload and manage payment receipts.',
+              targetElementId: `'payment-timeline-rct-button' + (RoomList.find(room => room.status === 'Taken')?.id)`,
+              position: 'down',
+              requiresInteraction: true,
+              allowBack: true,
+              isJsId: true,
+            },
+            {
+              description:
+                'Click "Current Date" to scroll the timeline to today\'s date.',
+              targetElementId: `'payment-timeline-current-date' + (RoomList.find(room => room.status === 'Taken')?.id)`,
+              position: 'down',
+              requiresInteraction: true,
+              allowBack: true,
+              isJsId: true,
+            },
+            {
+              description:
+                'For open-ended agreements, you can extend the payment schedule by clicking this button.',
+              targetElementId: `'payment-timeline-extend' + (RoomList.find(room => room.status === 'Taken')?.id)`,
+              position: 'right',
+              requiresInteraction: false,
+              allowBack: true,
+              isJsId: true,
+            },
+          ],
+        },
+        {
+          mainTitle: 'Calendar View',
+          description: 'Learn how to use the calendar view to manage rooms',
+          steps: [
+            {
+              description: 'Click here to switch to calendar view.',
+              targetElementId: 'room-calendar-toggle',
+              position: 'down',
+              requiresInteraction: true,
+              allowBack: true,
+            },
+            {
+              description: 'The calendar shows the rent payments by date.',
+              targetElementId: 'calendar-main-container',
+              position: 'left',
+              requiresInteraction: false,
+              allowBack: true,
+            },
+            {
+              description:
+                'You can search for tenants and if you want to see further into the future or past, enter the amount of months in the inputs.',
+              targetElementId: 'calendar-navigation',
+              position: 'down',
+              requiresInteraction: false,
+              allowBack: true,
+            },
+            {
+              description:
+                'Hover over the rectangles to see the rent payments.',
+              targetElementId: 'calendar-main-container',
+              position: 'left',
+              requiresInteraction: false,
+              allowBack: true,
+            },
+          ],
+        },
+      ],
     },
     {
       pageTitle: 'Expense Page',
@@ -437,10 +886,9 @@ export const tutorialData: TutorialSystem = {
         },
       ],
     },
-
     {
       pageTitle: 'Tools Page',
-      hasToBeIn: 'tools',
+      hasToBeIn: 'Tools',
       overview: {
         mainTitle: 'Tools Page',
         description: 'Learn how to manage email/SMS templates and other tools.',

@@ -344,7 +344,7 @@ const NavBar = ({
             Dashboard
           </button>
         )}
-   
+
         {privileges.viewRoomsPage && (
           <button
             className={
@@ -357,7 +357,7 @@ const NavBar = ({
             Rooms
           </button>
         )}
-      
+
         {privileges.editExpenses && (
           <button
             className={
@@ -755,7 +755,6 @@ const NavBar = ({
             <button
               style={{
                 marginLeft: 'var(--10px-V)',
-                
               }}
               onClick={() => {
                 RefreshDataFromSqlite();

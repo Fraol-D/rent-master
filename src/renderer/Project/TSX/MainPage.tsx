@@ -369,7 +369,11 @@ const MainPage = ({
     AllTenants,
     setAllTenants,
     setAllExpenses,
-    AllExpenses,isOnTutorial,setTutorialNewExpenseId
+    AllExpenses,
+    isOnTutorial,
+    setTutorialNewExpenseId,
+    tutorialNewRoomId,
+    setTutorialNewRoomId,
   } = useGlobal();
 
   const [floorFilter, setFloorFilter] = useState<string>('');
@@ -865,7 +869,7 @@ const MainPage = ({
 
     try {
       setIsAddingRoom(true); // Start loading
-
+      setLoadingAddExpense(true);
       // Check if room exists
       const roomExists = sortedAndFilteredRooms.some(
         (room: any) =>
@@ -953,7 +957,7 @@ const MainPage = ({
       setRoomExistsWarning(false);
       setIsMoreThanOneImage(false);
       setRefreshInspectorForAddRoom(true);
-
+      if (isOnTutorial) setTutorialNewRoomId(newRoom.id);
       // Wait a bit for the DOM to update
       setTimeout(() => {
         const roomContainer = document.querySelector('.RoomContainerContainer');
@@ -980,10 +984,12 @@ const MainPage = ({
           }, 1000);
         }
       }, 100);
+      setLoadingAddExpense(false);
     } catch (error) {
       console.error('Error adding room:', error);
     } finally {
-      setIsAddingRoom(false); // End loading
+      setIsAddingRoom(false);
+      setLoadingAddExpense(false); // End loading
     }
   };
 
@@ -1140,9 +1146,10 @@ const MainPage = ({
   }, [SelectedPage]);
 
   const handleAddRoomButtonInitial = (state: boolean, plusOne?: boolean) => {
-    setAddRoomFormRoomSpecifications(
-      AllRoomSpecifications.filter((spec) => spec.roomId === 'DEFAULT')
-    );
+    if (!isOnTutorial)
+      setAddRoomFormRoomSpecifications(
+        AllRoomSpecifications.filter((spec) => spec.roomId === 'DEFAULT')
+      );
 
     setAddARoomState(state);
     if (RoomList.length > 0 && RoomList) {
@@ -1577,7 +1584,7 @@ const MainPage = ({
       category: 'Other',
       beforeTax: false,
     };
-    if(isOnTutorial){
+    if (isOnTutorial) {
       setTutorialNewExpenseId(newExpense.id);
     }
     setEditingExpenseId(newExpense.id);
@@ -1605,7 +1612,7 @@ const MainPage = ({
         left: 0,
         right: 0,
         bottom: 0,
-   
+
         height: '100%',
         paddingRight: 'var(--12px-V)',
         backgroundColor: 'rgba(0, 0, 0, 0.3)',
@@ -1624,8 +1631,8 @@ const MainPage = ({
     </div>
   );
   return (
-      <>
-     <LoadingOverlay />
+    <>
+      <LoadingOverlay />
       <div
         className="MainContainerMain"
         style={{
@@ -1669,6 +1676,7 @@ const MainPage = ({
                   fontSize: 'var(--28px-V)',
                   margin: 'var(--15px-V) 0px var(--15px-V) 0px',
                 }}
+                id="room-manager-title"
               >
                 Room Manager
               </h3>
@@ -1697,6 +1705,7 @@ const MainPage = ({
                       handleAddRoomButtonInitial(!AddARoomState);
                     }}
                     title="Add room"
+                    id="add-room-button"
                     style={{ display: SideBarShowState ? '' : 'none' }}
                   >
                     Add Room
@@ -1711,7 +1720,7 @@ const MainPage = ({
                     visibility: SideBarShowState ? 'visible' : 'hidden',
                   }}
                   title="Show room calendar"
-                 
+                  id="room-calendar-toggle"
                 >
                   {!showRoomCalendar ? 'Show Calendar' : 'Hide Calendar'}
                 </button>
@@ -1765,6 +1774,7 @@ const MainPage = ({
                       boxShadow:
                         'var(--3px-V) var(--3px-V) var(--5px-V) var(---1px-V) var(--Secondary-Color30)',
                     }}
+                    id="room-search-container"
                   >
                     <div
                       onClick={toggleSearch}
@@ -1842,6 +1852,7 @@ const MainPage = ({
                       boxShadow:
                         'var(--3px-V) var(--3px-V) var(--5px-V) var(---1px-V) var(--Secondary-Color30)',
                     }}
+                    id="room-search-container-filters"
                   >
                     <div
                       onClick={toggleFilter}
@@ -1863,7 +1874,7 @@ const MainPage = ({
                           alignItems: 'flex-start',
                         }}
                       >
-                        <div>
+                        <div id="room-search-container-status">
                           Room status:
                           <select
                             value={filterStatus}
@@ -1889,7 +1900,10 @@ const MainPage = ({
                           </select>
                         </div>
 
-                        <div style={{ marginTop: 'var(--10px-V)' }}>
+                        <div
+                          id="room-search-container-price"
+                          style={{ marginTop: 'var(--10px-V)' }}
+                        >
                           Price:
                           <select
                             value={filterPriceOperator}
@@ -1929,7 +1943,10 @@ const MainPage = ({
                           />
                         </div>
 
-                        <div style={{ marginTop: 'var(--10px-V)' }}>
+                        <div
+                          id="room-search-container-due-date"
+                          style={{ marginTop: 'var(--10px-V)' }}
+                        >
                           Due dates:
                           <select
                             value={FilterDueDateOperator}
@@ -1971,7 +1988,10 @@ const MainPage = ({
                           />
                         </div>
 
-                        <div style={{ marginTop: 'var(--10px-V)' }}>
+                        <div
+                          id="room-search-container-square-meters"
+                          style={{ marginTop: 'var(--10px-V)' }}
+                        >
                           SMeters:
                           <select
                             value={filterSquareFeetOperator}
@@ -2011,7 +2031,10 @@ const MainPage = ({
                           />
                         </div>
 
-                        <div style={{ marginTop: 'var(--10px-V)' }}>
+                        <div
+                          id="room-search-container-currency"
+                          style={{ marginTop: 'var(--10px-V)' }}
+                        >
                           Filter Currency:
                           <select
                             key={uuidv4()}
@@ -2103,6 +2126,7 @@ const MainPage = ({
                           }`}
                           type="number"
                           placeholder="Floor"
+                          id="add-room-floor-input"
                           value={AddRoomFormFloor}
                           onChange={(e) =>
                             setAddRoomFormFloor(parseInt(e.target.value))
@@ -2119,6 +2143,7 @@ const MainPage = ({
                           }`}
                           type="number"
                           placeholder="Room Index"
+                          id="add-room-index-input"
                           value={AddRoomFormRoomIndex}
                           onChange={(e) =>
                             setAddRoomFormRoomIndex(parseInt(e.target.value))
@@ -2130,15 +2155,14 @@ const MainPage = ({
                         )}{' '}
                       </div>
 
-                      <div className="AddaNewRoomRowObject">
+                      <div
+                        id="add-room-price-container"
+                        className="AddaNewRoomRowObject"
+                      >
                         Price (inc. VAT):
                         <input
                           style={{ width: 'var(--100px-V)' }}
-                          className={`AddANewRoomInputsSmall ${
-                            highlightedFields.includes('roomPrice')
-                              ? 'highlight-reset-field'
-                              : ''
-                          }`}
+                          className="AddANewRoomInputsSmall"
                           type="number"
                           placeholder="Price"
                           value={AddRoomFormPrice}
@@ -2156,7 +2180,10 @@ const MainPage = ({
                           {GetCurrencyAsOptionsOnSelect()}
                         </select>
                       </div>
-                      <div className="AddaNewRoomRowObject">
+                      <div
+                        id="add-room-payment-cycle"
+                        className="AddaNewRoomRowObject"
+                      >
                         Payment cycle:{' '}
                         <select
                           value={AddRoomFormPaymentCycleType}
@@ -2169,7 +2196,6 @@ const MainPage = ({
                           <option value="15">15 days</option>
                           <option value="7">7 days</option>
                           <option value="daily">daily</option>
-
                           <option value="monthly">monthly</option>
                           <option value="custom">custom days</option>
                         </select>
@@ -2190,14 +2216,13 @@ const MainPage = ({
                           />
                         </div>
                       )}
-                      <div className="AddaNewRoomRowObject">
+                      <div
+                        id="add-room-square-meters"
+                        className="AddaNewRoomRowObject"
+                      >
                         Square Meters:
                         <input
-                          className={`AddANewRoomInputsSmall ${
-                            highlightedFields.includes('squareMeters')
-                              ? 'highlight-reset-field'
-                              : ''
-                          }`}
+                          className="AddANewRoomInputsSmall"
                           type="number"
                           placeholder="Square Meters"
                           value={AddRoomFormSquareMeters}
@@ -2207,10 +2232,16 @@ const MainPage = ({
                         />
                       </div>
 
-                      <div className="RoomSpecficationsMainContainer">
+                      <div
+                        className="RoomSpecficationsMainContainer"
+                        id="room-specs-section"
+                      >
                         <h3 style={{ marginTop: '0px' }}>
                           Room Specifications{' - '}
-                          <button onClick={addAddRoomFormSpecification}>
+                          <button
+                            onClick={addAddRoomFormSpecification}
+                            id="add-room-spec-button"
+                          >
                             Add
                           </button>
                         </h3>
@@ -2247,11 +2278,13 @@ const MainPage = ({
                                       e.target.value
                                     )
                                   }
+                                  id={`room-spec-name-input`}
                                 />
                                 {spec.type === 'bool' ? (
                                   <>
                                     <input
                                       type="checkbox"
+                                      id={`room-spec-input`}
                                       checked={spec.Boolean}
                                       onChange={(e) =>
                                         handleAddRoomFormSpecificationChange(
@@ -2275,6 +2308,7 @@ const MainPage = ({
                                         e.target.value
                                       )
                                     }
+                                    id="room-spec-input"
                                   />
                                 )}
                               </div>
@@ -2288,48 +2322,57 @@ const MainPage = ({
                                 }}
                               >
                                 <div
+                                  id="room-spec-type-radio"
                                   style={{
                                     display: 'flex',
                                     flexDirection: 'row',
                                     alignItems: 'center',
                                   }}
                                 >
-                                  <input
-                                    type="radio"
-                                    name={`spec-${index}`}
-                                    value="bool"
-                                    checked={spec.type === 'bool'}
-                                    onChange={(e) =>
-                                      handleAddRoomFormSpecificationChange(
-                                        index,
-                                        'type',
-                                        'bool'
-                                      )
-                                    }
-                                  />{' '}
-                                  Yes/No
-                                </div>
-                                <div
-                                  style={{
-                                    display: 'flex',
-                                    flexDirection: 'row',
-                                    alignItems: 'center',
-                                  }}
-                                >
-                                  <input
-                                    type="radio"
-                                    name={`spec-${index}`}
-                                    value="number"
-                                    checked={spec.type === 'number'}
-                                    onChange={(e) =>
-                                      handleAddRoomFormSpecificationChange(
-                                        index,
-                                        'type',
-                                        'number'
-                                      )
-                                    }
-                                  />{' '}
-                                  Number
+                                  <div
+                                    style={{
+                                      display: 'flex',
+                                      flexDirection: 'row',
+                                      alignItems: 'center',
+                                    }}
+                                  >
+                                    <input
+                                      type="radio"
+                                      name={`spec-${index}`}
+                                      value="bool"
+                                      checked={spec.type === 'bool'}
+                                      onChange={(e) =>
+                                        handleAddRoomFormSpecificationChange(
+                                          index,
+                                          'type',
+                                          'bool'
+                                        )
+                                      }
+                                    />{' '}
+                                    Yes/No
+                                  </div>
+                                  <div
+                                    style={{
+                                      display: 'flex',
+                                      flexDirection: 'row',
+                                      alignItems: 'center',
+                                    }}
+                                  >
+                                    <input
+                                      type="radio"
+                                      name={`spec-${index}`}
+                                      value="number"
+                                      checked={spec.type === 'number'}
+                                      onChange={(e) =>
+                                        handleAddRoomFormSpecificationChange(
+                                          index,
+                                          'type',
+                                          'number'
+                                        )
+                                      }
+                                    />{' '}
+                                    Number
+                                  </div>
                                 </div>
                                 <button
                                   onClick={() =>
@@ -2343,7 +2386,10 @@ const MainPage = ({
                           ))
                         )}
                       </div>
-                      <div className="AddARoomImageMainContainer">
+                      <div
+                        className="AddARoomImageMainContainer"
+                        id="room-images-section"
+                      >
                         <ImageInteractor2
                           sidebarState={AddARoomState}
                           isAddRoomImage={true}
@@ -2535,6 +2581,7 @@ const MainPage = ({
                       className="HorizontalButton"
                       onClick={() => handleAddRoom(false)}
                       disabled={isAddingRoom}
+                      id="add-room-submit"
                     >
                       {isAddingRoom ? 'Adding...' : 'Add Room'}
                     </button>
@@ -2591,6 +2638,7 @@ const MainPage = ({
                   fontSize: 'var(--28px-V)',
                   margin: 'var(--15px-V) 0px var(--15px-V) 0px',
                 }}
+                id="tools-title"
               >
                 Tools and Settings
               </h3>
@@ -2819,7 +2867,8 @@ const MainPage = ({
                   className="SideBarTopButton"
                   onClick={() => setShowExpenseCalendar(!showExpenseCalendar)}
                   style={{ display: SideBarShowState ? '' : 'none' }}
-                  title="Show Calendar" id="expense-calendar-toggle"
+                  title="Show Calendar"
+                  id="expense-calendar-toggle"
                 >
                   {showExpenseCalendar ? 'Hide Calendar' : 'Show Calendar'}
                 </button>
@@ -2870,7 +2919,7 @@ const MainPage = ({
                   overflowY: 'auto',
                   height: 'calc(100% - var(--200px-V) - var(--35px-V))',
                   flexDirection: 'column',
-                  width:"100%",
+                  width: '100%',
                   alignItems: 'center',
                 }}
               >
@@ -2920,53 +2969,65 @@ const MainPage = ({
                           onChange={(e) => setSearchTerm(e.target.value)}
                         />
                       </div>
-<div id="expense-price-filters">
-                      <div
-                        style={{ width: '100%', marginBottom: 'var(--10px-V)' }}
-                      >
-                        <select
-                          value={selectedCurrency}
-                          onChange={(e) => setSelectedCurrency(e.target.value)}
-                          style={{ padding: 'var(--5px-V)' }}
+                      <div id="expense-price-filters">
+                        <div
+                          style={{
+                            width: '100%',
+                            marginBottom: 'var(--10px-V)',
+                          }}
                         >
-                          <option value="all">All Currencies</option>
-                          {GetCurrencyAsOptionsOnSelect()}
-                        </select>
-                      </div>
+                          <select
+                            value={selectedCurrency}
+                            onChange={(e) =>
+                              setSelectedCurrency(e.target.value)
+                            }
+                            style={{ padding: 'var(--5px-V)' }}
+                          >
+                            <option value="all">All Currencies</option>
+                            {GetCurrencyAsOptionsOnSelect()}
+                          </select>
+                        </div>
 
-                      <div
-                        style={{ width: '100%', marginBottom: 'var(--10px-V)' }}
-                      >
-                        Price Range:
-                        <div style={{ display: 'flex', gap: 'var(--5px-V)' }}>
-                          <input
-                            type="number"
-                            placeholder="Min"
-                            style={{ width: '40%', padding: 'var(--5px-V)' }}
-                            value={minPrice}
-                            onChange={(e) =>
-                              setMinPrice(
-                                e.target.value ? parseFloat(e.target.value) : ''
-                              )
-                            }
-                          />
-                          <input
-                            type="number"
-                            placeholder="Max"
-                            style={{ width: '40%', padding: 'var(--5px-V)' }}
-                            value={maxPrice}
-                            onChange={(e) =>
-                              setMaxPrice(
-                                e.target.value ? parseFloat(e.target.value) : ''
-                              )
-                            }
-                          />
+                        <div
+                          style={{
+                            width: '100%',
+                            marginBottom: 'var(--10px-V)',
+                          }}
+                        >
+                          Price Range:
+                          <div style={{ display: 'flex', gap: 'var(--5px-V)' }}>
+                            <input
+                              type="number"
+                              placeholder="Min"
+                              style={{ width: '40%', padding: 'var(--5px-V)' }}
+                              value={minPrice}
+                              onChange={(e) =>
+                                setMinPrice(
+                                  e.target.value
+                                    ? parseFloat(e.target.value)
+                                    : ''
+                                )
+                              }
+                            />
+                            <input
+                              type="number"
+                              placeholder="Max"
+                              style={{ width: '40%', padding: 'var(--5px-V)' }}
+                              value={maxPrice}
+                              onChange={(e) =>
+                                setMaxPrice(
+                                  e.target.value
+                                    ? parseFloat(e.target.value)
+                                    : ''
+                                )
+                              }
+                            />
+                          </div>
                         </div>
                       </div>
-</div>
                       <div
                         style={{ width: '100%', marginBottom: 'var(--10px-V)' }}
-                         id="expense-location-filters"
+                        id="expense-location-filters"
                       >
                         <select
                           value={fullBuildingFilter}
@@ -2976,7 +3037,6 @@ const MainPage = ({
                             )
                           }
                           style={{ padding: 'var(--5px-V)' }}
-                         
                         >
                           <option value="all">All Buildings</option>
                           <option value="yes">Full Building Only</option>
@@ -3533,7 +3593,9 @@ const MainPage = ({
               : `calc(100% - var(--${SideBarWidth}px-V))`,
             overflowY: SelectedPage === 'Database' ? 'hidden' : 'auto',
             height:
-              SelectedPage === 'Database' || SelectedPage === 'Tools' || SelectedPage === 'Expense'
+              SelectedPage === 'Database' ||
+              SelectedPage === 'Tools' ||
+              SelectedPage === 'Expense'
                 ? 'calc(100% - var(--60px-V))'
                 : '',
           }}
@@ -3685,7 +3747,6 @@ const MainPage = ({
               setReoccurringDayCount={setReoccurringDayCount}
               showExpenseCalendar={showExpenseCalendar}
               setShowExpenseCalendar={setShowExpenseCalendar}
-            
             />
           )}
         </div>

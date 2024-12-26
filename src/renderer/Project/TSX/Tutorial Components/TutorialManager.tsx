@@ -51,6 +51,7 @@ interface TutorialManagerProps {
   selectedAppUserId: string;
   currentPageInital: number;
   currentSectionInital: number;
+  RoomList: RoomType[];
 }
 
 const TutorialManager = ({
@@ -62,6 +63,7 @@ const TutorialManager = ({
   userPrivileges,
   currentPageInital,
   currentSectionInital,
+  RoomList,
 }: TutorialManagerProps) => {
   // Add error checking
   if (!tutorialData || !tutorialData.pages || tutorialData.pages.length === 0) {
@@ -153,14 +155,16 @@ const TutorialManager = ({
     const cardWidth = 400 * scaleFactor;
     const cardHeight = 250 * scaleFactor;
     const adjustmentOffset = 40 * scaleFactor;
-
+    const marginInDirection = currentStepData.marginInDirection
+      ? currentStepData.marginInDirection * scaleFactor
+      : 0;
     let style: { [key: string]: string } = {};
 
     switch (position) {
       case 'left2':
         style = {
           top: `${rect.top + rect.height / 2}px`,
-          left: `${rect.left - cardWidth - offset}px`,
+          left: `${rect.left - cardWidth - offset - marginInDirection}px`,
           transform: 'translateY(-50%)',
         };
         if (rect.top + rect.height / 2 - cardHeight / 2 < 0) {
@@ -181,7 +185,9 @@ const TutorialManager = ({
       case 'left':
         style = {
           top: `${rect.top + rect.height / 2}px`,
-          left: `${rect.left - cardWidth - offset - offset2}px`,
+          left: `${
+            rect.left - cardWidth - offset - offset2 - marginInDirection
+          }px`,
           transform: 'translateY(-50%)',
         };
         if (rect.top + rect.height / 2 - cardHeight / 2 < 0) {
@@ -202,7 +208,7 @@ const TutorialManager = ({
       case 'right':
         style = {
           top: `${rect.top + rect.height / 2}px`,
-          left: `${rect.right + offset}px`,
+          left: `${rect.right + offset - marginInDirection}px`,
           transform: 'translateY(-50%)',
         };
         if (rect.top + rect.height / 2 - cardHeight / 2 < 0) {
@@ -224,7 +230,9 @@ const TutorialManager = ({
 
       case 'up':
         style = {
-          bottom: `${window.innerHeight - rect.top + offset}px`,
+          bottom: `${
+            window.innerHeight - rect.top + offset - marginInDirection
+          }px`,
           left: `${rect.left + rect.width / 2}px`,
           transform: 'translateX(-50%)',
         };
@@ -242,7 +250,7 @@ const TutorialManager = ({
 
       case 'down':
         style = {
-          top: `${rect.bottom + offset}px`,
+          top: `${rect.bottom + offset - marginInDirection}px`,
           left: `${rect.left + rect.width / 2}px`,
           transform: 'translateX(-50%)',
         };
@@ -279,7 +287,8 @@ const TutorialManager = ({
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
-  const { tutorialNewAppUserId, tutorialNewExpenseId } = useGlobal();
+  const { tutorialNewAppUserId, tutorialNewExpenseId, tutorialNewRoomId } =
+    useGlobal();
 
   // Effect to check and update card position and styles every 2 seconds
   useEffect(() => {
@@ -316,7 +325,6 @@ const TutorialManager = ({
       if (finalTargetId) {
         const element = document.getElementById(finalTargetId);
         if (element) {
-          // Check if element is in viewport and scroll if needed
           if (!isElementInViewport(element)) {
             scrollParentToElement(element);
           }
@@ -384,6 +392,15 @@ const TutorialManager = ({
           }
         }
       });
+
+      // Handle blinking element if specified
+      if (currentStepData.blinkAsWellId) {
+        const blinkElement = document.getElementById(currentStepData.blinkAsWellId);
+        if (blinkElement) {
+          blinkElement.setAttribute('data-tutorial-target', 'true');
+          blinkElement.style.zIndex = '504';
+        }
+      }
     };
 
     const intervalId = setInterval(checkAndUpdatePosition, 2000);
@@ -393,16 +410,14 @@ const TutorialManager = ({
 
     return () => clearInterval(intervalId);
   }, [
+    currentStepData,
     currentStepData.targetElementId,
-    currentStepData.isJsId,
     currentStepData.position,
-    currentStepData.requiresInteraction,
-    currentStepData.requiresInteractionInput,
-    currentStepData.dontInteract,
-    currentStepData.additionalZIndexElements,
+    currentStepData.isJsId,
     currentStepData.checkUnderElementId,
     currentStepData.checkUnderElementIsJS,
-    cardPosition,
+    currentStepData.blinkAsWellId,
+    // Don't include cardPosition in dependencies to prevent infinite loop
   ]);
 
   // Effect to highlight target element and additional elements
@@ -464,6 +479,16 @@ const TutorialManager = ({
       ? document.getElementById(finalTargetId)
       : null;
 
+    // Handle blinking element
+    let blinkElement = null;
+    if (currentStepData.blinkAsWellId) {
+      blinkElement = document.getElementById(currentStepData.blinkAsWellId);
+      if (blinkElement) {
+        blinkElement.setAttribute('data-tutorial-target', 'true');
+        blinkElement.style.zIndex = '504';
+      }
+    }
+
     if (mainElement) {
       mainElement.setAttribute('data-tutorial-target', 'true');
       mainElement.style.zIndex = '504';
@@ -502,6 +527,11 @@ const TutorialManager = ({
         mainElement.style.zIndex = '';
         mainElement.style.pointerEvents = '';
       }
+
+      if (blinkElement) {
+        blinkElement.removeAttribute('data-tutorial-target');
+        blinkElement.style.zIndex = '';
+      }
     };
   }, [
     currentStepData.targetElementId,
@@ -511,10 +541,9 @@ const TutorialManager = ({
     currentStepData.checkUnderElementId,
     currentStepData.isJsId,
     currentStepData.checkUnderElementIsJS,
+    currentStepData.blinkAsWellId,
   ]);
-  useEffect(() => {
-    console.log(errorMessage);
-  }, [errorMessage]);
+
   const handleNext = () => {
     if (!canProgress) return;
 
@@ -694,18 +723,13 @@ const TutorialManager = ({
         return userPrivileges.viewPeoplesPage;
       case 'database':
         return userPrivileges.viewDatabase;
-      case 'tools':
+      case 'Tools':
         return userPrivileges.viewToolsPage;
       default:
         return true;
     }
   };
-  console.log(
-    'Is on right page: ',
-    currentPageData.hasToBeIn,
-    SelectedPage,
-    canAccessPage(currentPageData.hasToBeIn)
-  );
+
   const isOnCorrectPage =
     currentPageData.hasToBeIn.toLowerCase() === SelectedPage.toLowerCase();
   const hasPageAccess = canAccessPage(currentPageData.hasToBeIn);
@@ -733,7 +757,7 @@ const TutorialManager = ({
             <button
               className="tutorial-btn next-btn"
               onClick={() => onNavigate?.(currentPageData.hasToBeIn)}
-              style={{marginBottom: 'var(--0px-V)'}}
+              style={{ marginBottom: 'var(--0px-V)', marginTop: 'auto' }}
             >
               Go to {currentPageData.hasToBeIn}
             </button>
@@ -804,6 +828,7 @@ const TutorialManager = ({
             <div className="tutorial-controls">
               <div className="tutorial-progress">
                 Step {currentStep + 1} of {currentSectionData.steps.length}
+                
               </div>
               <div className="tutorial-buttons">
                 {currentStepData.allowBack && currentStep !== 0 && (
