@@ -314,13 +314,13 @@ const CalendarGUI: React.FC<CalendarProps> = ({
                 text
                   .append('tspan')
                   .attr('x', -10 * scaleFactor)
-                  .attr('dy', `-${0.5 * scaleFactor}em`)
-                  .style('font-size', `${14 * scaleFactor}px`)
+                  .attr('dy', `-${0.7 * scaleFactor}em`)
+                  .style('font-size', `${16 * scaleFactor}px`)
                   .text(words[0]);
                 text
                   .append('tspan')
                   .attr('x', -15 * scaleFactor)
-                  .attr('dy', `${1.2 * scaleFactor}em`)
+                  .attr('dy', `${1.9 * scaleFactor}em`)
                   .style('font-size', `${11.3 * scaleFactor}px`)
                   .text(words[1]);
 
@@ -560,11 +560,12 @@ const CalendarGUI: React.FC<CalendarProps> = ({
       }
     }
   };
+  const { isMobileState } = useGlobal();
   return (
     <div className="CalenderContainer">
       <div className="CalanderMainContainer" id="calendar-main-container">
         <div className="CalenderOptionsMainContainer" id="calendar-navigation">
-          <input
+          <div style={{display: 'flex', flexDirection: isMobileState ? 'column' : 'row', gap: 'var(--10px-V)'}}><input
             type="text"
             placeholder="Search by tenant name"
             value={searchTerm}
@@ -574,9 +575,24 @@ const CalendarGUI: React.FC<CalendarProps> = ({
               borderRadius: 'var(--3px-V)',
              
             }}
-          />
+          /> {( isMobileState) && (
+            <button
+              onClick={scrollToCurrentDate}
+              style={{
+                padding: 'var(--5px-V) var(--10px-V)',
+               
 
-          <label htmlFor="monthsPastInput">Months to show in past: </label>
+                border: 'none',
+                borderRadius: 'var(--3px-V)',
+                cursor: 'pointer',
+              }}
+            >
+              Go to Current Date
+            </button>
+          )}</div>
+
+          <div style={{display: 'flex', flexDirection: isMobileState ? 'column' : 'row', gap: 'var(--10px-V)'}}>
+          <div><label htmlFor="monthsPastInput">Months to show in past: </label>
           <input
             id="monthsPastInput"
             type="number"
@@ -589,8 +605,8 @@ const CalendarGUI: React.FC<CalendarProps> = ({
               borderRadius: 'var(--3px-V)',
               
             }}
-          />
-          <label htmlFor="monthsFutureInput">Months to show in future: </label>
+          /></div>
+          <div><label htmlFor="monthsFutureInput">Months to show in future: </label>
           <input
             id="monthsFutureInput"
             type="number"
@@ -603,8 +619,8 @@ const CalendarGUI: React.FC<CalendarProps> = ({
               borderRadius: 'var(--3px-V)',
          
             }}
-          />
-          {(numberOfMonthsFuture > 1 || numberOfMonthsPast > 1) && (
+          /></div></div>
+          {(numberOfMonthsFuture > 1 || numberOfMonthsPast > 1 && !isMobileState) && (
             <button
               onClick={scrollToCurrentDate}
               style={{
@@ -621,7 +637,7 @@ const CalendarGUI: React.FC<CalendarProps> = ({
           )}
         </div>
         <div
-          style={{ overflowX: 'auto', height: 'calc(100% - var(--44px-V))' }}
+          style={{ overflowX: 'auto', height: isMobileState ? "calc(100% - var(--80px-V) - var(--5px-V))": 'calc(100% - var(--44px-V))' }}
         >
           <svg ref={ref}></svg>
         </div>

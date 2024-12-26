@@ -1978,7 +1978,21 @@ const ExpenseManager = ({
                     fontStyle: 'italic',
                   }}
                 >
-                  No recurring expenses found with the current filters
+                  {searchTerm ||
+                selectedCategory.length > 0 ||
+                selectedCurrency !== 'all' ||
+                minPrice ||
+                maxPrice ||
+                fullBuildingFilter !== 'all' ||
+                floorFilter ||
+                roomFilter ||
+                beforeTaxFilter !== 'all' ||
+                reoccurringFilter !== 'all' ||
+                reoccurringTypeFilter !== 'all' ||
+                reoccurringDayCount ||
+                startDateFilter ? 
+                    'No recurring expenses found with the current filters' :
+                    'Click "Add Expense" to start managing expenses'}
                 </div>
               )}
 
@@ -3009,7 +3023,21 @@ const ExpenseManager = ({
                     fontStyle: 'italic',
                   }}
                 >
-                  No one-time expenses found with the current filters
+                    {searchTerm ||
+                selectedCategory.length > 0 ||
+                selectedCurrency !== 'all' ||
+                minPrice ||
+                maxPrice ||
+                fullBuildingFilter !== 'all' ||
+                floorFilter ||
+                roomFilter ||
+                beforeTaxFilter !== 'all' ||
+                reoccurringFilter !== 'all' ||
+                reoccurringTypeFilter !== 'all' ||
+                reoccurringDayCount ||
+                startDateFilter ? 
+                    'No one-time expenses found with the current filters' :
+                    'Click "Add Expense" to start managing expenses'}
                 </div>
               )}
             </div>

@@ -1285,12 +1285,16 @@ function Hello({ tryout, username, signup }: any) {
   const [Refresh, setRefresh] = useState(0);
   const [isSignedIn, setisSignedIn] = useState(false);
   const signOutUserAndRestart = async () => {
+   
     await SignOutUser();
-    storageManager.set('MainBackupPath', '');
-    storageManager.set('SelectedBranchId', '');
-    storageManager.set('MainBackupPath', '');
-    storageManager.set('LockBranchToPc', false);
-    storageManager.set('users', []);
+    await storageManager.set('MainBackupPath', '');
+    await storageManager.set('SelectedBranchId', '');
+    await storageManager.set('MainBackupPath', '');
+    await storageManager.set('LockBranchToPc', false);
+    await storageManager.set('users', []);
+    await storageManager.set('tutorialPreferences', {});
+    await storageManager.set('app_users', []);
+    window.location.pathname = '/login';
     setRefresh(Refresh + 1);
     setisSignedIn(false);
   };
@@ -1820,6 +1824,7 @@ function Hello({ tryout, username, signup }: any) {
           )}
           <SyncLoadingPopup colors={colors} isVisible={isSyncing} />
           <AccountManager
+            setSelectedPage={setSelectedPage}
             Refresh={Refresh}
             isSignedIn={isSignedIn}
             setisSignedIn={setisSignedIn}
@@ -2111,7 +2116,7 @@ export const getUserPrivileges = (
             privilegeObject.viewDashboard = true;
             break;
 
-          case 'View databsae':
+          case 'view database':
             privilegeObject.viewDatabase = true;
             break;
           case 'edit database data':

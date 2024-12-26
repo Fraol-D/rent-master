@@ -1,6 +1,7 @@
 import React from 'react';
 import { Input } from '../Helpers/CustomReactComponents';
 import { useAlert } from 'renderer/components/useAlert';
+import { useGlobal } from 'renderer/components/GlobalContext';
 interface SMSTemplate {
   id: string;
   name: string;
@@ -87,7 +88,7 @@ const SMSTemplates: React.FC<SMSTemplatesProps> = ({
     };
   };
   const { showAlert } = useAlert();
-
+  const { isMobileState } = useGlobal();
   return (
     <div className="tools-page">
       <div
@@ -98,15 +99,7 @@ const SMSTemplates: React.FC<SMSTemplatesProps> = ({
         }}
       >
         <h2>Your SMS Templates</h2>
-        <p
-          style={{
-            fontSize: 'var(--13px-V)',
-            color: 'var(--Text-Color-Grey)',
-            width: 'var(--150px-V)',
-          }}
-        >
-          69 characters for Amharic and 159 for English counts as 1 SMS
-        </p>
+       
         <button
           onClick={handleReplaceWithDefaultSms}
           style={{
@@ -219,7 +212,7 @@ const SMSTemplates: React.FC<SMSTemplatesProps> = ({
                       style={{
                         display: 'flex',
                         flexDirection: 'column',
-                        height: '89%',
+                        height: isMobileState ? '' : '89%',
                         justifyContent: 'space-between',
                       }}
                     >
@@ -250,7 +243,7 @@ const SMSTemplates: React.FC<SMSTemplatesProps> = ({
                   className="try-out-container-Opacity"
                   onClick={() => setTryOutMode(null)}
                 ></div>
-                <div className="try-out-container">
+                <div className="try-out-container" style={{width: isMobileState ? '90%' : ''}}>
                   <div
                     style={{
                       display: 'flex',
@@ -313,6 +306,15 @@ const SMSTemplates: React.FC<SMSTemplatesProps> = ({
             )}
           </div>
         ))}
+         <p
+          style={{
+            fontSize: 'var(--13px-V)',
+            color: 'var(--Text-Color-Grey)',
+         
+          }}
+        >
+          69 characters for Amharic and 159 for English counts as 1 SMS
+        </p>
     </div>
   );
 };

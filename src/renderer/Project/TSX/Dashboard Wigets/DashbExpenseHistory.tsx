@@ -231,6 +231,7 @@ const DashbExpenseHistory: React.FC<DashbExpenseHistoryProps> = ({
         height: 'var(--600px-V)',
         overflowY: 'auto',
       }}
+      id="DashbExpenseHistory"
     >
       <h2
         style={{

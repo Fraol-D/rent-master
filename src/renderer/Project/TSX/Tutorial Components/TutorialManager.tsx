@@ -403,7 +403,7 @@ const TutorialManager = ({
       }
     };
 
-    const intervalId = setInterval(checkAndUpdatePosition, 2000);
+    const intervalId = setInterval(checkAndUpdatePosition, 1000);
 
     // Initial position and style check
     checkAndUpdatePosition();
@@ -721,8 +721,7 @@ const TutorialManager = ({
         return userPrivileges.viewDashboard;
       case 'people':
         return userPrivileges.viewPeoplesPage;
-      case 'database':
-        return userPrivileges.viewDatabase;
+     
       case 'Tools':
         return userPrivileges.viewToolsPage;
       default:

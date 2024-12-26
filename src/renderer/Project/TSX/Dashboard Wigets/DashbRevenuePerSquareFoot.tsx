@@ -114,6 +114,7 @@ const DashbRevenuePerSquareMeter = ({ RoomList }: { RoomList: RoomType[] }) => {
   return (
     <div
       className="DashboardWigetMainContainer"
+      id="DashbRevenuePerSquareFoot"
       style={{ width: 'var(--400px-V)', height: 'var(--102px-V)' }}
     >
       <p className="DashboardWigetPieChartTextHeader">

@@ -272,6 +272,7 @@ const DashbPastPayments = ({
   return (
     <div
       className="DashboardWigetMainContainer"
+      id="DashbPastPayments"
       style={{
         width: 'var(--400px-V)',
         alignItems: 'flex-start',

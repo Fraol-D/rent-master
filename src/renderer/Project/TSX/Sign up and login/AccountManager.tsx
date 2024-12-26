@@ -58,6 +58,7 @@ interface MyComponentProps {
   SelectedAppUser: appUser;
   ProvidedInitialUsername: string;
   ForceSignUp: string;
+  setSelectedPage: (newval: string) => void;
 }
 
 const timeoutPromise = (ms: number) => {
@@ -100,6 +101,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
   SelectedAppUser,
   ProvidedInitialUsername,
   ForceSignUp,
+  setSelectedPage,
 }: any) => {
   const [TrialExpiredState, setTrialExpiredState] = useState(false);
   const [IsAllowedState, setIsAllowedState] = useState(false);
@@ -504,7 +506,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
     }
     console.log(`[${getSeconds()}s] App users management complete`);
   };
-  const { isOnTutorial, setTutorialNewAppUserId } = useGlobal();
+  const { isOnTutorial, setTutorialNewAppUserId, isMobileState } = useGlobal();
   const handleAddNewAppUser = async () => {
     if (navigator.onLine) {
       const existingUsers = appUsers.filter((user: any) =>
@@ -1053,11 +1055,11 @@ const AccountManager = (React.FC<MyComponentProps> = ({
 
   const privileges = [
     'View dashboard page', //
-
     'Edit expenses',
     'View tools page',
     'edit email templates',
     'edit sms templates',
+    'view database', //
     'edit settings',
     'View rooms page',
     'View database', //
@@ -1092,7 +1094,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
       children: [
         { name: 'edit email templates' },
         { name: 'edit sms templates' },
-
+        { name: 'view database' },
         { name: 'edit settings' },
       ],
     },
@@ -1364,6 +1366,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
     null
   );
   const handleSelectBranch = (branchId: string) => {
+   
     setSelectedBranchId(branchId);
     setBranchName(
       Branches.find((branch) => branch.id === branchId)?.name || ''
@@ -1376,10 +1379,14 @@ const AccountManager = (React.FC<MyComponentProps> = ({
     if (Branches.find((branch) => branch.id === branchId)?.lock)
       storageManager.set('LockBranchToPc', true);
     else storageManager.set('LockBranchToPc', false);
-
+    const tutorialPreferences = storageManager.get('tutorialPreferences') || {};
+if(!tutorialPreferences["rooms"]) {
+  setSelectedPage("Rooms");
+}
     setViewBranchManagementPage(false);
     if (!window.electron) RefreshDataFromSqlite();
-    syncWithOnline(SelectedUserId);
+    syncWithOnline(SelectedUserId); 
+    
   };
   const [isEditingBranch, setIsEditingBranch] = useState(false);
   const [showEditBranchModal, setShowEditBranchModal] = useState(false);
@@ -2899,7 +2906,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                   )}
                                 </p>
                               </div>
-                              <p style={{ width: '40%' }}>
+                             {isMobileState ? <></> : <p style={{ width: '40%' }}>
                                 {storageManager.get('SelectedAppUserId') !==
                                   'admin' && (
                                   <>
@@ -2909,7 +2916,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                     to enable access to more properties.
                                   </>
                                 )}
-                              </p>{' '}
+                              </p>}{' '}
                               <div
                                 id="Property-Management-Buttons"
                                 style={{
@@ -2917,6 +2924,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                   gap: 'var(--15px-V)',
                                   alignItems: 'center',
                                   padding: 'var(--10px-V)',
+                                  flexDirection: isMobileState ? 'column-reverse' : 'row',
                                 }}
                               >
                                 {/* {(storageManager.get('SelectedAppUserId') ===
@@ -2991,6 +2999,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                   flexWrap: 'wrap',
                                   gap: 'var(--20px-V)',
                                   overflowY: 'auto',
+                                  justifyContent: isMobileState ? 'center' : 'flex-start',
                                 }}
                               >
                                 {Branches.filter(
@@ -3306,6 +3315,15 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                     </div>
                                   ))
                                 )}
+                                  {!isMobileState ? <></> : <p style={{ width: '80%' }}>
+                                {storageManager.get('SelectedAppUserId') !==
+                                  'admin' && (
+                                  <p style={{color:"var(--Text-Color-Grey)"}}>
+                                    You are only able to view the properties
+                                    selected for your user account.
+                                  </p>
+                                )}
+                              </p>}
                                 {Math.abs(
                                   Branches.filter(
                                     (branch: any) =>

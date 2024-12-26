@@ -33,6 +33,7 @@ const DashbEmailHistory = ({ SelectedUserId, RoomList }: props) => {
   const [selectedDate, setSelectedDate] = useState<string>(
     new Date().toISOString().substr(0, 7)
   );
+  const { isMobileState } = useGlobal();
   const [searchConfig, setSearchConfig] = useState({
     receiver: '',
     subject: '',
@@ -122,7 +123,12 @@ const DashbEmailHistory = ({ SelectedUserId, RoomList }: props) => {
 
     const emailsToCount = applyFiltersToGraph ? filteredEmails : emailHistory;
 
-    const dailyEmailCounts = daysInMonth.map((day) => {
+    const dailyEmailCounts = daysInMonth.map((day, index) => {
+      // Skip every other day if on mobile
+      if (isMobileState && index % 2 !== 0) {
+        return null;
+      }
+
       const dayEmails = emailsToCount.filter((email) => {
         const emailDate = new Date(email.sentDate);
         return (
@@ -135,7 +141,7 @@ const DashbEmailHistory = ({ SelectedUserId, RoomList }: props) => {
         date: format(day, 'd'),
         emails: dayEmails.length,
       };
-    });
+    }).filter(Boolean); // Remove null entries
 
     const totalEmails = emailsToCount.filter((email) => {
       const emailDate = new Date(email.sentDate);
@@ -178,7 +184,7 @@ const DashbEmailHistory = ({ SelectedUserId, RoomList }: props) => {
           ]}
           dataset={emailStats.dailyEmailCounts}
           height={250}
-          margin={{ left: 70, right: 30, top: 30, bottom: 30 }}
+          margin={{ left: isMobileState ? 30 : 70, right: 30, top: 30, bottom: 30 }}
           sx={{
             '.MuiLineElement-root': {
               stroke: 'var(--Primary-Color)',
@@ -311,7 +317,7 @@ const DashbEmailHistory = ({ SelectedUserId, RoomList }: props) => {
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: '1fr 1fr 1fr',
+              gridTemplateColumns: isMobileState ? '1fr' : '1fr 1fr 1fr',
               gap: 'var(--10px-V)',
             }}
           >

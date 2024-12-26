@@ -100,7 +100,7 @@ const ExpenseCalendar: React.FC<ExpenseCalendarProps> = ({ expenses }) => {
       800,
       window.innerWidth - margin.left - margin.right - 400
     ); // Adjust for sidebar
-    let height = 1000; // Reduced base height since we'll scale bars dynamically
+    let height = 500; // Reduced base height since we'll scale bars dynamically
     const monthStart = startOfMonth(currentDate);
     const monthEnd = endOfMonth(currentDate);
     const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });

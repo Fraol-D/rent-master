@@ -242,6 +242,7 @@ const DashbUpcomingExpensesWidget: React.FC<UpcomingExpensesWidgetProps> = ({
         height: 'var(--600px-V)',
         overflowY: 'auto',
       }}
+      id="DashbUpcomingExpensesWidget"
     >
       <h2
         style={{

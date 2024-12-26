@@ -424,6 +424,7 @@ const DashbMonthlyExpenseTrendWidget: React.FC<
   return (
     <div
       className="DashboardWigetMainContainer"
+      id="DashbMonthlyExpenseTrendWidget"
       style={{ width: 'var(--800px-V)', height: 'var(--510px-V)' }}
     >
       <p className="DashboardWigetPieChartTextHeader">Expense Trend</p>

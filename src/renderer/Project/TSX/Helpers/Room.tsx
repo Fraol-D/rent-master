@@ -119,7 +119,7 @@ const Room = ({
 
     setAllTenants,
     AllRoomPayInfoHistory,
-    setAllRoomPayInfoHistory,isOnTutorial,AllRoomPayInfo
+    setAllRoomPayInfoHistory,isOnTutorial,AllRoomPayInfo,isMobileState
   } = useGlobal();
   const [isLoading, setIsLoading] = useState(false);
   const [name, setName] = useState('');
@@ -1503,6 +1503,7 @@ const LoadingOverlay = ({ isLoading }: { isLoading: boolean }) => (
         id={`room-${roomType.id}`}
         className="MainContainer"
         style={{
+          width: isMobileState ? '100%' : '',
           background: roomType.AddTenantState
             ? 'var(--Secondary-Color20)'
             : roomType.status === 'Empty'
@@ -3959,7 +3960,7 @@ const LoadingOverlay = ({ isLoading }: { isLoading: boolean }) => (
                 setTenantLeavePannelState(false);
               }}
             ></div>
-            <div className="TenantLeavePannelScreen">
+            <div className="TenantLeavePannelScreen" style={{width: isMobileState ? '95%' : ''}}>
               <LeavePanel
                 tenant={
                   AllTenants.find(

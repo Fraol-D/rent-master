@@ -618,6 +618,7 @@ const ToolsPage = ({
       console.error('Error replacing templates:', error);
     }
   };
+  const { isMobileState } = useGlobal();
   const handleReplaceWithDefaultSms = async () => {
     try {
       const choice = await confirm(
@@ -2166,11 +2167,13 @@ const ToolsPage = ({
           {ToolsSelectedPage === 'Settings' && (
             <div className="settings-main-container">
               <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                }}
+               style={{
+                display: 'flex',
+                alignItems: isMobileState ? 'flex-start' : 'center',
+                paddingLeft: isMobileState ? 'var(--20px-V)' : '0',
+                justifyContent: 'space-between',
+                flexDirection: isMobileState ? 'column' : 'row',
+              }}
               >
                 <h1>Settings</h1>{' '}
                 <div
@@ -2180,8 +2183,8 @@ const ToolsPage = ({
                     gap: 'var(--10px-V)',
                   }}
                 >
-                  {storageManager.get('users')[0].email} -{' '}
-                  {storageManager.get('users')[0].companyName}
+                  {storageManager.get('users')?.[0]?.email || ""} -{' '}
+                  {storageManager.get('users')?.[0]?.companyName || ""}
                   <button onClick={handleSignOut}>Sign Out</button>{' '}
                 </div>
               </div>
@@ -3227,8 +3230,10 @@ const ToolsPage = ({
               <div
                 style={{
                   display: 'flex',
-                  alignItems: 'center',
+                  alignItems: isMobileState ? 'flex-start' : 'center',
+                  paddingLeft: isMobileState ? 'var(--20px-V)' : '0',
                   justifyContent: 'space-between',
+                  flexDirection: isMobileState ? 'column' : 'row',
                 }}
               >
                 <h1>Settings</h1>{' '}
@@ -3239,8 +3244,8 @@ const ToolsPage = ({
                     gap: 'var(--10px-V)',
                   }}
                 >
-                  {storageManager.get('users')[0].email} -{' '}
-                  {storageManager.get('users')[0].companyName}
+                  {storageManager.get('users')?.[0]?.email || ""} -{' '}
+                  {storageManager.get('users')?.[0]?.companyName || ""}
                   <button onClick={handleSignOut}>Sign Out</button>{' '}
                 </div>
               </div>

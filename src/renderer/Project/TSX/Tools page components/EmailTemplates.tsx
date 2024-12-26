@@ -13,6 +13,7 @@ import {
   updateValueOnline,
 } from 'Backend/OnlineServerApis';
 import { useAlert } from 'renderer/components/useAlert';
+import { useGlobal } from 'renderer/components/GlobalContext';
 
 interface EmailTemplatesProps {
   emailTemplates: EmailTemplate[];
@@ -164,7 +165,7 @@ const EmailTemplates: React.FC<EmailTemplatesProps> = ({
     landlordTelephone,
     originalValues,
   ]);
-
+const {isMobileState} = useGlobal();
   const handleSaveEmailSettings = async () => {
     if (navigator.onLine) {
       try {
@@ -385,7 +386,7 @@ const EmailTemplates: React.FC<EmailTemplatesProps> = ({
                       style={{
                         display: 'flex',
                         flexDirection: 'column',
-                        height: '89%',
+                        height: isMobileState ? '' : '89%',
                         justifyContent: 'space-between',
                       }}
                     >
@@ -412,7 +413,7 @@ const EmailTemplates: React.FC<EmailTemplatesProps> = ({
                   className="try-out-container-Opacity"
                   onClick={() => setTryOutMode(null)}
                 ></div>
-                <div className="try-out-container">
+                <div className="try-out-container" style={{width: isMobileState ? '90%' : ''}}>
                   <div
                     style={{
                       display: 'flex',

@@ -564,6 +564,7 @@ const DashbNetProfitTotalCollected = ({
   return (
     <div
       className="DashboardWigetMainContainer"
+      id="DashbNetProfitTotalCollected"
       style={{
         height: 'var(--510px-V)',
       }}

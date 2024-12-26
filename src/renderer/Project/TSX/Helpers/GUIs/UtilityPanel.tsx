@@ -48,6 +48,7 @@ const UtilityPanel: React.FC<props> = ({
   selectedUserId,
   SelectedBranchId,
 }) => {
+  const { isMobileState } = useGlobal();
   const [utilityData, setUtilityData] = useState<UtilityDateObject[]>([]);
   const [visiblePastUtilities, setVisiblePastUtilities] = useState(10);
   const [visibleFutureUtilities, setVisibleFutureUtilities] = useState(10);
@@ -826,8 +827,8 @@ const UtilityPanel: React.FC<props> = ({
     <div
       style={{
         position: 'absolute',
-        top: 'var(--2px-V)',
-        right: 'var(---900px-V)',
+        top: isMobileState ? 'var(--150px-V)' : 'var(--2px-V)',
+        right: isMobileState ? 'calc(10px - var(--650px-V))' : 'var(---900px-V)',
         width: 'var(--310px-V)',
         height: '96%',
         backgroundColor: 'var(--Background-Color)',

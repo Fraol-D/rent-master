@@ -38,6 +38,7 @@ section {
   --Secondary-Color20: hsl(228, 13%, 31%, 20%);
   --Secondary-Color30: hsl(228, 13%, 31%, 30%);
   --Secondary-Color40: hsl(228, 13%, 31%, 40%);
+  --Secondary-Color50N: rgb(57,59,69);
   --Secondary-Color50: hsl(228, 13%, 31%, 50%);
   --Secondary-Color60: hsl(228, 13%, 31%, 60%);
 
@@ -209,6 +210,8 @@ section {
   --Secondary-Color30: hsl(228, 13%, 69%, 30%);
   --Secondary-Color40: hsl(228, 13%, 69%, 40%);
   --Secondary-Color50: hsl(228, 13%, 69%, 50%);
+  --Secondary-Color50N: rgb(196,198,206);
+
   --Secondary-Color60: hsl(228, 13%, 69%, 60%);
 
   --Accent-Color: #db911a;--Accent-Color20: hsl(37, 79%, 52%, 20%);

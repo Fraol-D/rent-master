@@ -28,11 +28,24 @@ const DashbRoomSummary = ({ RoomList }: { RoomList: RoomType[] }) => {
       color: 'var(--Accent-Color50)',
     },
   ];
-
+  const screenWidth = window.innerWidth;
+  const [scaleFactor, setScaleFactor] = useState(1);
   
+  useEffect(() => {
+   if (screenWidth <= 1280) {
+      setScaleFactor(1280 / 1920);
+  } else if (screenWidth <= 1366) {
+    setScaleFactor(1366 / 1920);
+  } else if (screenWidth <= 1920) {
+    setScaleFactor(1920 / 1920);
+  } else {
+    setScaleFactor(2560 / 2560);
+  }
+  }, [ window.innerWidth]);
   return (
     <div
       className="DashboardWigetMainContainer"
+      id="DashbRoomSummary"
       style={{
         width: 'var(--400px-V)',
         height: 'var(--510px-V)',
@@ -52,32 +65,27 @@ const DashbRoomSummary = ({ RoomList }: { RoomList: RoomType[] }) => {
             data: roomSummaryData,
             arcLabel: (item) => `${item.label} (${item.value})`,
             arcLabelMinAngle: 45,
-            
+   
+        
+
           },
         ]}
-        colors={roomSummaryData.map((item) => item.color)}
-        sx={{
-          [`& .${axisClasses.root}`]: {
-            [`& .${axisClasses.tick}, .${axisClasses.line}`]: {
-              stroke: 'var(--Text-Color)',
-              strokeWidth: 1,
-              fontSize: 'var(--12px-V)',
-            },
-            [`& .${axisClasses.tickLabel}`]: {
-              fill: 'var(--Text-Color)',
-              fontSize: 'var(--12px-V)',
-            },
-          },
-          '& .MuiChartsLegend-label': {
-            fill: 'var(--Text-Color)',
-            fontSize: 'var(--12px-V)',
-          },
-          '& .MuiChartsArcLabel-root': {
-            fill: 'var(--Text-Color)',
-            fontWeight: 'bold',
-            fontSize: 'var(--12px-V)',
+    margin={
+      {
+        top: 0,
+        left: 50,
+        right: 50,
+        bottom: 0,
+      }
+    }
+        slotProps={{
+          legend: {
+            hidden: true
           },
         }}
+        colors={roomSummaryData.map((item) => item.color)}
+       
+        
       />
       <p className="DashboardWigetPieChartText">
         {RoomList.length} Total rooms

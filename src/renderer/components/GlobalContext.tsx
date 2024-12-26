@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 
 interface GlobalContextType {
   AllRoomPayInfo: RoomPayInfo[];
@@ -33,6 +33,7 @@ interface GlobalContextType {
 
   isOnTutorial: boolean;
   setIsOnTutorial: React.Dispatch<React.SetStateAction<boolean>>;
+  isMobileState: boolean;
 }
 
 const GlobalContext = createContext<GlobalContextType | undefined>(undefined);
@@ -56,6 +57,15 @@ const [isOnTutorial, setIsOnTutorial] = useState<boolean>(false);
 const [tutorialNewAppUserId, setTutorialNewAppUserId] = useState<string>("");
 const [tutorialNewExpenseId, setTutorialNewExpenseId] = useState<string>("");
 const [tutorialNewRoomId, setTutorialNewRoomId] = useState<string>("");
+function isMobile() {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+}
+
+
+const [isMobileState, setIsMobileState] = useState<boolean>(false);
+useEffect(() => {
+  setIsMobileState(isMobile());
+}, []);
 return (
     <GlobalContext.Provider 
       value={{
@@ -87,7 +97,7 @@ return (
         setTutorialNewExpenseId,
         tutorialNewRoomId,setTutorialNewRoomId,
         isOnTutorial,
-        setIsOnTutorial,
+        setIsOnTutorial,isMobileState
       }}
     >
       {children}

@@ -440,6 +440,7 @@ const [leftMargin, setLeftMargin] = useState(0);
   return (
     <div
       className="DashboardWigetMainContainer"
+      id="DashbTotalCollected"
       style={{
         width: 'var(--710px-V)',
         height: 'var(--510px-V)',

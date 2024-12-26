@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import Room from '../Helpers/Room';
 import CalendarGUI from '../Helpers/GUIs/CalendarGUI';
+import { useGlobal } from 'renderer/components/GlobalContext';
 export function CalendarPage({
   updateRoomProperty,
   sortedAndFilteredRooms,
@@ -12,6 +13,7 @@ export function CalendarPage({
   useEffect(() => {
     console.log(sortedAndFilteredRooms);
   }, []);
+  const { isMobileState } = useGlobal();
   return (
     <>
       <div className="SecondNavBarContainer" style={{ width: '100%' }}></div>
@@ -19,7 +21,7 @@ export function CalendarPage({
         className="RoomContainerContainer"
         style={{
           width: '100%',
-          height: 'calc(100% - var(--60px-V))',
+          height: isMobileState ? "calc(100% - var(--0px-V))":'calc(100% - var(--60px-V))',
 
           overflowY: 'hidden',
         }}

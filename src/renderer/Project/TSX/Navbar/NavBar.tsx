@@ -15,6 +15,7 @@ import {
 import { getUserPrivileges } from '../../../App';
 import { dropAllRowsInTable } from '../../../../Backend/localServerApis';
 import { useConfirm } from '../../../components/useConfirm';
+import { useGlobal } from 'renderer/components/GlobalContext';
 
 interface Props {
   Image: string;
@@ -148,7 +149,7 @@ const NavBar = ({
     setShowSignOutConfirm(false);
   };
   const [DownloadAssetsProgress, setDownloadAssetsProgress] = useState(0);
-
+  const {isMobileState} = useGlobal()
   useEffect(() => {
     if (uploadProgress >= 50) {
       setIsSyncing(true);
@@ -293,17 +294,17 @@ const NavBar = ({
             style={{ fontSize: 'var(--14px-V)', height: 'auto' }}
           >
             <span style={{ color: 'grey' }}>
-              {storageManager.get('users')[0].email} -{' '}
+              {storageManager.get('users')?.[0]?.email || ""} -{' '}
             </span>
             {storageManager.get('SelectedAppUserId') === 'admin' ? (
               <> Admin user</>
             ) : (
               storageManager
-                .get('app_users')
-                .find(
+                ?.get('app_users')
+                ?.find(
                   (appUser: appUser) =>
                     appUser.id === storageManager.get('SelectedAppUserId')
-                )?.roleName
+                )?.roleName||""
             )}{' '}
             <span
               style={{
@@ -331,7 +332,7 @@ const NavBar = ({
           </p>
         </div>
       </div>
-      <div className="TopPageNavigatorContainer">
+    {!isMobileState &&  <div className="TopPageNavigatorContainer">
         {privileges.viewDashboard && (
           <button
             className={
@@ -382,7 +383,7 @@ const NavBar = ({
             Tools
           </button>
         )}
-      </div>
+      </div>} 
 
       <div className="RightSide">
         <div></div>
@@ -752,7 +753,7 @@ const NavBar = ({
         ) : (
           <>
             {' '}
-            <button
+           {!isMobileState && <button
               style={{
                 marginLeft: 'var(--10px-V)',
               }}
@@ -761,7 +762,7 @@ const NavBar = ({
               }}
             >
               Refresh Data
-            </button>
+              </button>}
           </>
         )}
         <button
@@ -774,20 +775,14 @@ const NavBar = ({
           {ThemeMode === 'light' ? 'light' : ThemeMode === 'dark' ? 'dark' : ''}
         </button>
 
-        <div className="CurrentTimeContainer">
+        {!isMobileState && <><div className="CurrentTimeContainer">
           <p className="CurrentTime">
             {currentHour}:{currentMinute}
           </p>
           <p className="CurrentTimeSmall">
             {currentMonth}/{new Date(currentTime).getDate()}/{currentYear}
           </p>
-        </div>
-        <input
-          id="image-input"
-          type="file"
-          accept=".png,.jpg,.jpeg"
-          style={{ display: 'none' }}
-        />
+        </div></>}
       </div>
       {showSignOutConfirm && (
         <div className="signOutConfirmation">

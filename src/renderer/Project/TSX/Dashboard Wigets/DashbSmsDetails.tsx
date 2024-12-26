@@ -31,6 +31,7 @@ const DashbSmsDetails = ({ SelectedUserId, RoomList }: props) => {
   const [selectedDate, setSelectedDate] = useState<string>(
     new Date().toISOString().substr(0, 7)
   );
+  const { isMobileState } = useGlobal();
   const [searchConfig, setSearchConfig] = useState({
     receiver: '',
     body: '',
@@ -137,7 +138,10 @@ const DashbSmsDetails = ({ SelectedUserId, RoomList }: props) => {
 
     const smsToCount = applyFiltersToGraph ? filteredSms : smsHistory;
 
-    const dailySmsCounts = daysInMonth.map((day) => {
+    const dailySmsCounts = daysInMonth.map((day, index) => {
+      if (isMobileState && index % 2 !== 0) {
+        return null;
+      }
       const daySms = smsToCount.filter((sms) => {
         const smsDate = new Date(sms.sentDate);
         return (
@@ -150,7 +154,7 @@ const DashbSmsDetails = ({ SelectedUserId, RoomList }: props) => {
         date: format(day, 'd'),
         sms: daySms.reduce((acc, sms) => acc + (sms.countsAs || 1), 0),
       };
-    });
+    }).filter(Boolean); 
 
     const totalSms = smsToCount.reduce((acc, sms) => {
       const smsDate = new Date(sms.sentDate);
@@ -191,12 +195,13 @@ const DashbSmsDetails = ({ SelectedUserId, RoomList }: props) => {
               dataKey: 'sms',
               label: 'SMS Count',
               area: true,
+              
               valueFormatter: (value) => value?.toString() || '0',
             },
           ]}
           dataset={smsStats.dailySmsCounts}
           height={250}
-          margin={{ left: 70, right: 30, top: 30, bottom: 30 }}
+          margin={{ left: isMobileState ? 30 : 70, right: 30, top: 30, bottom: 30 }}
           sx={{
             '.MuiLineElement-root': {
               stroke: 'var(--Primary-Color)',
@@ -337,7 +342,7 @@ const DashbSmsDetails = ({ SelectedUserId, RoomList }: props) => {
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: '1fr 1fr 1fr',
+              gridTemplateColumns: isMobileState ? '1fr' : '1fr 1fr 1fr',
               gap: 'var(--10px-V)',
             }}
           >

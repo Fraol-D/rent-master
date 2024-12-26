@@ -11,6 +11,7 @@ import {
 } from '../Tutorial Components/tutorialData';
 import TutorialManager from '../Tutorial Components/TutorialManager';
 import { getUserPrivileges } from 'renderer/App';
+import { useGlobal } from 'renderer/components/GlobalContext';
 
 const CornerSupport = ({
   SelectedUserId,
@@ -41,7 +42,7 @@ const CornerSupport = ({
   const [currentPageInital, setCurrentPageInital] = useState(0);
   const [currentSectionInital, setCurrentSectionInital] = useState(0);
   const [tutorialShow, setTutorialShow] = useState(false);
-
+const {isMobileState} = useGlobal()
   useEffect(() => {
     const checkAndStartTutorial = () => {
       const tutorialPreferences = storageManager.get('tutorialPreferences') || {};
@@ -203,6 +204,10 @@ const CornerSupport = ({
   };
 
   const handleTutorialStart = (pageIndex: number, sectionIndex: number) => {
+    if(isMobileState) {
+      setIsOpen(false)
+      setSelectedOption(null)
+    }
     setShowTutorialPrompt(false);
     setTutorialShow(true);
     setCurrentPageInital(pageIndex);
@@ -626,7 +631,7 @@ const CornerSupport = ({
       <div
         style={{
           position: 'fixed',
-          bottom: 'var(--20px-V)',
+          bottom:  'var(--20px-V)',
           right: 'var(--20px-V)',
           zIndex: 600,
         }}
@@ -657,7 +662,7 @@ const CornerSupport = ({
           <div
             style={{
               position: 'absolute',
-              bottom: 'var(--3px-V)',
+              bottom:  'var(--3px-V)',
               right: 'var(--28px-V)',
               display: 'flex',
               flexDirection: 'row',
@@ -701,7 +706,7 @@ const CornerSupport = ({
             style={{
               position: 'fixed',
               right: 'var(--47px-V)',
-              bottom: 'var(--65px-V)',
+              bottom:  'var(--65px-V)',
               width: 'var(--320px-V)',
               height: '75vh',
               backgroundColor: 'var(--Background-Color)',

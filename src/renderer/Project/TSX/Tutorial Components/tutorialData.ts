@@ -543,7 +543,6 @@ export const tutorialData: TutorialSystem = {
               requiresInteraction: false,
               allowBack: true,
               isJsId: true,
-
             },
             {
               description:
@@ -1242,6 +1241,203 @@ export const tutorialData: TutorialSystem = {
             },
           ],
         },
+      ],
+    },
+    {
+      pageTitle: 'Dashboard',
+      hasToBeIn: 'dashboard',
+      overview: {
+        mainTitle: 'Dashboard Overview',
+        description:
+          'Learn about the key features and widgets on your dashboard',
+        steps: [
+          {
+            description:
+              'Welcome to your dashboard! Here you can monitor all aspects of your property management.',
+            targetElementId: 'dashboard-title',
+            position: 'down',
+            allowBack: true,
+          },  {
+            description:
+              'Click here to view the overview section.',
+            targetElementId: 'dashboard-overview-tab',
+            position: 'right',requiresInteraction: true,
+            allowBack: true,
+          },
+          {
+            description:
+              'Here you can see a pie chart of Taken and empty rooms.',
+            targetElementId: 'DashbRoomSummary',
+            position: 'down',
+            allowBack: true,
+          },
+          {
+            description:
+              'Here you can see the total collected rent income and the expected income(uncollected rent), of every month in a bar graph.',
+            targetElementId: 'DashbTotalCollected',
+            position: 'down',
+            allowBack: true,
+          },
+          {
+            description:
+              'Here you can see the unpaid payments that are past due and the upcoming payments.',
+            targetElementId: 'DashbPastPayments',
+            position: 'left',
+            allowBack: true,
+          },
+          {
+            description:
+              "Here you can see the revenue generated per square meter.",
+            targetElementId: 'DashbRevenuePerSquareFoot',
+            position: 'left',
+            allowBack: true,
+          },
+          {
+            description:
+              'Here you can see the top performing units, brokers, and most loyal tenants.',
+            targetElementId: 'TopPerformingUnits',
+            position: 'left',
+            allowBack: true,
+          },
+          {
+            description:
+              'Here you can see the tenant acquisition trends over time.',
+            targetElementId: 'TenantGrowthWidget',
+            position: 'left',
+            allowBack: true,
+          },
+          {
+            description:
+              'Here you can see the tax obligations in a bar graph.',
+            targetElementId: 'DashbOverAllTax',
+            position: 'left',
+            allowBack: true,
+          },
+          {
+            description:
+              'Stay informed about lease agreements that are approaching renewal or expiration.',
+            targetElementId: 'UpcomingAgreements',
+            position: 'left',
+            allowBack: true,
+          },
+        ],
+      },
+      sections: [
+      {
+     
+        description: 'See the expenses statistics of your property',
+        mainTitle: 'Expense Section',
+        steps: [
+          {
+            description: 'Click here to access the Expenses section of your dashboard.',
+            targetElementId: 'dashboard-expenses-tab',
+            position: 'right',
+            requiresInteraction: true,
+            allowBack: true,
+          },
+          {
+            description: 
+              'Here you can see the net profit of your property, total collected rent - total expenses. And the second bar shows the Expected income(uncollected rent) - expenses.',
+            targetElementId: 'DashbNetProfitTotalCollected',
+            position: 'down',
+            allowBack: true,
+          },
+          {
+            description:
+              'Here you can see the expenses of your property month by month.',
+            targetElementId: 'DashbMonthlyExpenseTrendWidget', 
+            position: 'left',
+            allowBack: true,
+          },
+          {
+            description:
+              'Here you can see the history of your expenses.',
+            targetElementId: 'DashbExpenseHistory',
+            position: 'left',
+            allowBack: true,
+          },
+          {
+            description: 
+              'Here you can see the upcoming expenses of your property.',
+            targetElementId: 'DashbUpcomingExpensesWidget',
+            position: 'left',
+            allowBack: true,
+          }
+        ]
+      },
+   {   description: 'See the lists of people',
+      mainTitle: 'People List Section',
+      steps: [
+        {
+          description: 'Click here to see the list of all your tenants.',
+          targetElementId: 'dashboard-tenants-list-tab',
+          position: 'right',
+          requiresInteraction: true,
+          allowBack: true,
+        },
+        {
+          description: 'Click here to see the list of all your brokers.',
+          targetElementId: 'dashboard-broker-list-tab',
+          position: 'right',
+          requiresInteraction: true,
+          allowBack: true,
+        },
+        {
+          description: 'Click here to see the list of tenant reviews.',
+          targetElementId: 'dashboard-tenant-reviews-tab',
+          position: 'right',
+          requiresInteraction: true,
+          allowBack: true,
+        },
+       
+      ]},
+   {   description: 'See the email and sms history',
+      mainTitle: 'Email and SMS History Section',
+      steps: [
+        {
+          description: 'Click here to see your email history. You can view all emails sent to tenants, including payment reminders and other notifications.',
+          targetElementId: 'dashboard-email-history-tab',
+          position: 'right',
+          requiresInteraction: true,
+          allowBack: true,
+        },
+        {
+          description: 'Click here to see your SMS history. You can track all text messages sent to tenants for important updates and reminders.',
+          targetElementId: 'dashboard-sms-history-tab',
+          position: 'right',
+          requiresInteraction: true,
+          allowBack: true,
+        },
+      
+      ]},
+   {   description: 'Track and monitor all actions performed in your property management system by different users, including changes to rooms, tenants, payments and more',
+      mainTitle: 'Action History Section', 
+      steps: [
+        {
+          description: 'Click here to access the Action History dashboard where you can view a detailed log of all actions of every user in your property management system. You can filter by action type, date ranges, and users who performed the actions. The history shows important details like what changed, who made the change, and when it occurred.',
+          targetElementId: 'dashboard-action-history-tab',
+          position: 'right',
+          requiresInteraction: true,
+          allowBack: true,
+        },
+       
+      ]}
+      
+      ,
+      {   description: 'See the report of your property',
+         mainTitle: 'Report Section', 
+         steps: [
+           {
+             description: 'Here you can see the basic rental income report of your property. Input a date range then click generate to see the report.',
+             targetElementId: 'dashboard-basic-rental-income-report-tab',
+             position: 'right',
+             requiresInteraction: true,
+             allowBack: true,
+           },
+          
+         ]}
+     
+      
       ],
     },
   ],

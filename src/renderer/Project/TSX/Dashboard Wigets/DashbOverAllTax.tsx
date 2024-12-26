@@ -350,6 +350,7 @@ const DashbOverAllTax = ({
   return (
     <div
       className="DashboardWigetMainContainer"
+      id="DashbOverAllTax"
       style={{ width: 'var(--710px-V)', height: 'var(--500px-V)' }}
     >
       <p className="DashboardWigetPieChartTextHeader">

@@ -80,7 +80,7 @@ export function RoomListComponent({
         className="RoomContainerContainer"
         style={{
           width: '100%',
-          height: 'calc(100% - var(--60px-V))',
+          height: '100%',
         }}
         ref={roomListContainerRef}
       >
@@ -192,25 +192,8 @@ export function RoomListComponent({
           )}
         </div>
       </div>
-      <button
-        onClick={() => setShowExpenseCalendar(!showExpenseCalendar)}
-        className="RoomListButton"
-        id="RoomListButton"
-      >
-        {showExpenseCalendar ? 'Hide Calendar' : 'Show Calendar'}
-      </button>
-      {showExpenseCalendar && (
-        <div style={{ height: '500px', margin: '20px 0' }}>
-          <ExpenseCalendar
-            id="room-calendar"
-            expenses={AllExpenses.filter(
-              (e) => e.branchId === SelectedBranchId
-            )}
-            initialMonths={3}
-            initialMonthsPast={1}
-          />
-        </div>
-      )}
+    
+     
     </>
   );
 }

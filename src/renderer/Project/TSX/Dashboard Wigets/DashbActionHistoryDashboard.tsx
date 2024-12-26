@@ -3,6 +3,7 @@ import { getValuesWithSql } from 'Backend/localServerApis';
 import { format } from 'date-fns';
 import { Input } from '../Helpers/CustomReactComponents';
 import loadingGif from "./../../../assets/assets/Loading/Rolling-1s-200px.gif"
+import { useGlobal } from 'renderer/components/GlobalContext';
 
 interface ActionHistoryItem {
   id: string;
@@ -164,11 +165,11 @@ const DashbActionHistoryDashboard: React.FC = ({ SelectedBranchId }: any) => {
   const handleLimitChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setLimit(Number(e.target.value));
   };
-
+  const { isMobileState } = useGlobal();
   return (
     <div
       style={{
-        padding: 'var(--30px-V)',
+        padding: isMobileState ? 'var(--5px-V)' : 'var(--30px-V)',
         marginBottom: 'var(--30px-V)',
         boxShadow: '0 var(--10px-V) var(--30px-V) rgba(0, 0, 0, 0.1)',
         borderRadius: 'var(--15px-V)',
@@ -177,50 +178,62 @@ const DashbActionHistoryDashboard: React.FC = ({ SelectedBranchId }: any) => {
         height: '100%',
       }}
     >
-      {isLoading && <div
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100%',
-          backgroundColor: 'rgba(0, 0, 0, 0.2)',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          zIndex: 1000,
-        }}
-      >
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flexDirection: 'column' }}>
-          <img src={loadingGif} alt="Loading..." style={{width:'100px',height:'100px'}}/>
-        </div>
-      </div>}
-      <h2
-        style={{
-          marginBottom: 'var(--24px-V)',
-          width: '100%',
-          fontSize: 'var(--28px-V)',
-          color: 'var(--Text-Color)',
-          borderBottom: 'var(--2px-V) solid var(--Secondary-Color)',
-          paddingBottom: 'var(--10px-V)',
-        }}
-      >
-        Action History{' '}
-        <button
-          onClick={() => setShowFilters(!showFilters)}
+      {isLoading && (
+        <div
           style={{
-            padding: 'var(--8px-V) var(--16px-V)',
-            backgroundColor: 'var(--Secondary-Color)',
-            color: 'var(--Text-Color)',
-            border: 'none',
-            borderRadius: 'var(--5px-V)',
-            cursor: 'pointer',
-            transition: 'all 0.3s ease',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 1000,
+            borderRadius: 'var(--15px-V)',
           }}
         >
-          {showFilters ? 'Hide Filters' : 'Show Filters'}
-        </button> {showFilters && (
-        <button
+          <img src={loadingGif} alt="Loading..." style={{width:'100px',height:'100px'}}/>
+        </div>
+      )}
+
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 'var(--24px-V)',
+        borderBottom: 'var(--2px-V) solid var(--Secondary-Color)',
+        paddingBottom: 'var(--10px-V)',
+      }}>
+        <h2 style={{
+          fontSize: 'var(--28px-V)',
+          color: 'var(--Text-Color)',
+          margin: 0,
+        }}>
+          Action History  <span style={{ fontSize: 'var(--20px-V)' }}>of {format(new Date(), 'MMM yyyy')}</span>
+        </h2>
+        
+        <div style={{display: 'flex', gap: 'var(--10px-V)'}}>
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            style={{
+              padding: 'var(--8px-V) var(--16px-V)',
+              backgroundColor: 'var(--Secondary-Color)',
+              color: 'var(--Text-Color)',
+              border: 'none',
+              borderRadius: 'var(--5px-V)',
+              cursor: 'pointer',
+              transition: 'all 0.3s ease',
+              fontWeight: 'bold',
+            }}
+          >
+            {showFilters ? 'Hide Filters' : 'Show Filters'}
+          </button>
+          
+          {showFilters && (
+            <button
               onClick={clearFilters}
               style={{
                 padding: 'var(--8px-V) var(--16px-V)',
@@ -230,95 +243,115 @@ const DashbActionHistoryDashboard: React.FC = ({ SelectedBranchId }: any) => {
                 borderRadius: 'var(--5px-V)',
                 cursor: 'pointer',
                 transition: 'all 0.3s ease',
+                fontWeight: 'bold',
               }}
             >
               Clear Filters
             </button>
-        )}
-        
-      </h2>
-
-      <div
-        style={{
-          display: 'flex',
-          flexDirection: 'row',
-          gap: 'var(--15px-V)',
-          alignItems: 'center',
-          marginBottom: 'var(--20px-V)',
-        }}
-      >
-        {showFilters && (
-          <>
-            <span style={{ color: 'var(--Text-Color)', fontWeight: 'bold' }}>
-              Filter specific date:
-            </span>
-            <select
-              value={dateRange}
-              onChange={handleDateRangeChange}
-              style={{
-                padding: 'var(--8px-V)',
-                borderRadius: 'var(--5px-V)',
-                border: 'var(--1px-V) solid var(--Secondary-Color)',
-              }}
-            >
-              <option value="month">Month</option>
-              <option value="year">Year</option>
-            </select>
-            <input
-              type={dateRange === 'month' ? 'month' : 'number'}
-              value={selectedDate}
-              onChange={handleDateChange}
-              placeholder={dateRange === 'month' ? 'YYYY-MM' : 'YYYY'}
-              style={{
-                padding: 'var(--8px-V)',
-                borderRadius: 'var(--5px-V)',
-                border: `var(--1px-V) solid ${
-                  isValidDate ? 'var(--Secondary-Color)' : 'red'
-                }`,
-                width:
-                  dateRange === 'month' ? 'var(--150px-V)' : 'var(--80px-V)',
-              }}
-            />
-            <button
-              onClick={handleFindClick}
-              style={{
-                padding: 'var(--8px-V) var(--16px-V)',
-                color: 'var(--Text-Color)',
-                border: 'none',
-                borderRadius: 'var(--5px-V)',
-                cursor: 'pointer',
-                transition: 'all 0.3s ease',
-              }}
-            >
-              Find
-            </button>
-          </>
-        )}
-        {!isValidDate && (
-          <span style={{ color: 'red', fontStyle: 'italic' }}>
-            Invalid date format
-          </span>
-        )}
-        <span style={{ color: 'var(--Text-Color)', fontWeight: 'bold' }}>
-          Show:
-        </span>
-        <select
-          value={limit}
-          onChange={handleLimitChange}
-          style={{
-            padding: 'var(--8px-V)',
-            borderRadius: 'var(--5px-V)',
-            border: 'var(--1px-V) solid var(--Secondary-Color)',
-          }}
-        >
-          <option value={25}>25</option>
-          <option value={50}>50</option>
-          <option value={100}>100</option>
-          <option value={500}>500</option>
-          <option value={1000}>1000</option>
-        </select>
+          )}
+        </div>
       </div>
-      <div style={{ overflowX: 'auto' }}>
+
+      {showFilters && (
+        <div style={{
+          padding: 'var(--15px-V)',
+          borderRadius: 'var(--10px-V)',
+          marginBottom: 'var(--20px-V)',
+        }}>
+          <div style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: 'var(--15px-V)',
+            alignItems: 'center',
+          }}>
+            <div style={{display: 'flex', alignItems: 'center', gap: 'var(--10px-V)'}}>
+              <span style={{color: 'var(--Text-Color)', fontWeight: 'bold'}}>
+                Filter by:
+              </span>
+              <select
+                value={dateRange}
+                onChange={handleDateRangeChange}
+                style={{
+                  padding: 'var(--8px-V)',
+                  borderRadius: 'var(--5px-V)',
+                  border: 'var(--1px-V) solid var(--Secondary-Color)',
+                  color: 'var(--Text-Color)',
+                  cursor: 'pointer',
+                }}
+              >
+                <option value="month">Month</option>
+                <option value="year">Year</option>
+              </select>
+              <input
+                type={dateRange === 'month' ? 'month' : 'number'}
+                value={selectedDate}
+                onChange={handleDateChange}
+                placeholder={dateRange === 'month' ? 'YYYY-MM' : 'YYYY'}
+                style={{
+                  padding: 'var(--8px-V)',
+                  borderRadius: 'var(--5px-V)',
+                  border: `var(--1px-V) solid ${isValidDate ? 'var(--Secondary-Color)' : 'red'}`,
+                  width: dateRange === 'month' ? 'var(--150px-V)' : 'var(--80px-V)',
+                  color: 'var(--Text-Color)',
+                }}
+              />
+              <button
+                onClick={handleFindClick}
+                style={{
+                  padding: 'var(--8px-V) var(--16px-V)',
+                  backgroundColor: 'var(--Accent-Color)',
+                  color: 'var(--Text-Color)',
+                  border: 'none',
+                  borderRadius: 'var(--5px-V)',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease',
+                  fontWeight: 'bold',
+                }}
+              >
+                Find
+              </button>
+            </div>
+
+            <div style={{display: 'flex', alignItems: 'center', gap: 'var(--10px-V)'}}>
+              <span style={{color: 'var(--Text-Color)', fontWeight: 'bold'}}>
+                Show:
+              </span>
+              <select
+                value={limit}
+                onChange={handleLimitChange}
+                style={{
+                  padding: 'var(--8px-V)',
+                  borderRadius: 'var(--5px-V)',
+                  border: 'var(--1px-V) solid var(--Secondary-Color)',
+                  color: 'var(--Text-Color)',
+                  cursor: 'pointer',
+                }}
+              >
+                <option value={25}>25 entries</option>
+                <option value={50}>50 entries</option>
+                <option value={100}>100 entries</option>
+                <option value={500}>500 entries</option>
+                <option value={1000}>1000 entries</option>
+              </select>
+            </div>
+          </div>
+
+          {!isValidDate && (
+            <div style={{
+              color: 'red',
+              fontStyle: 'italic',
+              marginTop: 'var(--10px-V)',
+            }}>
+              Invalid date format
+            </div>
+          )}
+        </div>
+      )}
+
+      <div style={{
+        overflowX: 'auto',
+        borderRadius: 'var(--10px-V)',
+      }}>
         <table
           style={{
             width: '100%',
@@ -338,36 +371,36 @@ const DashbActionHistoryDashboard: React.FC = ({ SelectedBranchId }: any) => {
                 <th
                   key={header}
                   style={{
-                    padding: 'var(--5px-V)',
+                    padding: 'var(--15px-V) var(--5px-V)',
                     textAlign: 'left',
                     borderBottom: 'var(--2px-V) solid var(--Secondary-Color)',
                     color: 'var(--Text-Color)',
                     fontWeight: 'bold',
+                    position: 'relative',
                   }}
                 >
-                  <div style={{ marginBottom: 'var(--10px-V)' }}>
-                    {header}{' '}
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 'var(--5px-V)',
+                    marginBottom: showFilters ? 'var(--10px-V)' : 0,
+                  }}>
+                    {header}
                     {header !== 'Date' && showFilters && (
                       <button
-                        onClick={() =>
-                          handleSort(
-                            header
-                              .toLowerCase()
-                              .replace(' ', '_') as keyof ActionHistoryItem
-                          )
-                        }
+                        onClick={() => handleSort(header.toLowerCase().replace(' ', '_') as keyof ActionHistoryItem)}
                         style={{
                           cursor: 'pointer',
-                          marginLeft: 'var(--5px-V)',
-                
                           border: 'none',
-                     
+                          background: 'none',
+                          color: 'var(--Text-Color)',
+                          padding: 'var(--2px-V) var(--5px-V)',
+                          borderRadius: 'var(--3px-V)',
                         }}
                       >
-                        Sort{' '}
-                        {sortConfig.key ===
-                          header.toLowerCase().replace(' ', '_') &&
-                          (sortConfig.direction === 'asc' ? '▲' : '▼')}
+                        {sortConfig.key === header.toLowerCase().replace(' ', '_') 
+                          ? (sortConfig.direction === 'asc' ? '↑' : '↓')
+                          : '↕'}
                       </button>
                     )}
                   </div>
@@ -377,20 +410,13 @@ const DashbActionHistoryDashboard: React.FC = ({ SelectedBranchId }: any) => {
                       type="text"
                       name={header.toLowerCase().replace(' ', '_')}
                       placeholder={`Filter ${header}`}
-                      value={
-                        filters[
-                          header
-                            .toLowerCase()
-                            .replace(' ', '_') as keyof typeof filters
-                        ]
-                      }
+                      value={filters[header.toLowerCase().replace(' ', '_') as keyof typeof filters]}
                       onChange={handleFilterChange}
                       style={{
-                        width: 'var(--150px-V)',
+                        width: '70%',
                         padding: 'var(--8px-V)',
                         borderRadius: 'var(--5px-V)',
                         border: 'var(--1px-V) solid var(--Secondary-Color)',
-                        backgroundColor: 'var(--Secondary-Color)',
                         color: 'var(--Text-Color)',
                         minWidth: 'var(--90px-V)',
                       }}

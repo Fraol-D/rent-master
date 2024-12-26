@@ -49,6 +49,7 @@ import { storageManager } from 'renderer/storeManager';
 import { checkRoomLimit } from 'Backend/OnlineServerApis';
 import ExpenseManager from './Tools page components/ExpenseManager';
 import ExpenseCalendar from './Tools page components/ExpenseCalendar';
+import { dividerClasses } from '@mui/material';
 
 type FilterOption = {
   key: string;
@@ -374,6 +375,7 @@ const MainPage = ({
     setTutorialNewExpenseId,
     tutorialNewRoomId,
     setTutorialNewRoomId,
+    isMobileState,
   } = useGlobal();
 
   const [floorFilter, setFloorFilter] = useState<string>('');
@@ -1228,7 +1230,10 @@ const MainPage = ({
 
   const SideBarItem = ({ page, currentPage, onClick, children, id }: any) => (
     <button
-      onClick={onClick}
+      onClick={() => {
+        onClick();
+        if (isMobileState) handleCloseSideBar();
+      }}
       style={{ display: SideBarShowState ? '' : 'none' }}
       id={id || ''}
       className={
@@ -1587,6 +1592,7 @@ const MainPage = ({
     if (isOnTutorial) {
       setTutorialNewExpenseId(newExpense.id);
     }
+    if(isMobileState) handleCloseSideBar();
     setEditingExpenseId(newExpense.id);
     setEditedExpense(newExpense);
     await addValue('expenses', newExpense, setChangeMade);
@@ -1633,39 +1639,84 @@ const MainPage = ({
   return (
     <>
       <LoadingOverlay />
+      {isMobileState && (
+        <BottomNavBar
+          SelectedPage={SelectedPage}
+          setSelectedPage={setSelectedPage}
+        />
+      )}
       <div
         className="MainContainerMain"
         style={{
           height:
             SelectedPage === 'Dashboard'
-              ? 'calc(100% - var(--60px-V))'
-              : '100%',
+              ? !isMobileState
+                ? 'calc(100% - var(--60px-V))'
+                : 'calc(100% - var(--50px-V) - var(--70px-V))'
+              : !isMobileState
+              ? '100%'
+              : 'calc(100% - var(--60px-V));',
         }}
       >
         <button
           className="SideBarShowButton"
           onClick={handleCloseSideBar}
-          style={{
-            zIndex: 2,
-            visibility: SideBarShowState
-              ? 'hidden'
-              : HideSideBarForCalendar
-              ? 'hidden'
-              : HideSideBarForDashboard
-              ? 'hidden'
-              : 'visible',
-          }}
+          style={
+            isMobileState
+              ? {
+               
+                height: 'var(--35px-V)',
+                background: 'var(--Secondary-Color)',
+                display: 'flex',
+                alignItems: 'center',
+                top: 'var(--70px-V)',
+                left: 'var(--10px-V)',
+                margin: 'var(--0px-V)',
+              }
+              : {
+                  zIndex: 2,   display: 'flex',
+                  alignItems: 'center',
+                  visibility: SideBarShowState
+                    ? 'hidden'
+                    : HideSideBarForCalendar
+                    ? 'hidden'
+                    : HideSideBarForDashboard
+                    ? 'hidden'
+                    : 'visible',
+                }
+          }
         >
-          Show Sidebar
+          <img
+            src={IconsGUI().Left2ArrowIcon}
+            style={{
+              width: 'var(--25px-V)',
+              height: 'var(--25px-V)',
+              rotate: !SideBarShowState ? '180deg' : '0deg',
+            }}
+            alt=""
+          />{' '}
+          {SideBarShowState ? 'Hide' : 'Show'}
         </button>
         <div
           className="SideBarContainer"
           style={{
-            width: HideSideBarForCalendar
-              ? 'var(--0px-V)'
-              : `var(--${SideBarWidth}px-V)`,
-            transition: 'all .2s',
-            visibility: HideSideBarForCalendar ? 'hidden' : 'visible',
+            ...(isMobileState
+              ? {
+                  width: `var(--${SideBarWidth}px-V)`,
+                  transition: '0.2s',
+                  visibility: 'visible',
+                  position: 'absolute',
+                  height: 'calc(100% - var(--110px-V))',
+                  background: 'var(--Background-Color2)',
+                  zIndex: '2',
+                }
+              : {
+                  width: HideSideBarForCalendar
+                    ? 'var(--0px-V)'
+                    : `var(--${SideBarWidth}px-V)`,
+                  transition: 'all .2s',
+                  visibility: HideSideBarForCalendar ? 'hidden' : 'visible',
+                }),
           }}
         >
           {SelectedPage === 'Rooms' ? (
@@ -1689,15 +1740,17 @@ const MainPage = ({
                   width: '90%',
                 }}
               >
-                <button
-                  className="SideBarTopButton"
-                  onClick={handleCloseSideBar}
-                  title="Close Sidebar"
-                  style={{ display: SideBarShowState ? '' : 'none' }}
+                {!isMobileState && (
+                  <button
+                    className="SideBarTopButton"
+                    onClick={handleCloseSideBar}
+                    title="Close Sidebar"
+                    style={{ display: SideBarShowState ? '' : 'none' }}
                 >
                   {/* <img src={IconsGUI().Left2ArrowIcon} alt="" /> */}
-                  Close sidebar
-                </button>
+                    Close sidebar
+                  </button>
+                )}
                 {privileges.addRoom ? (
                   <button
                     className="SideBarTopButton"
@@ -2102,7 +2155,9 @@ const MainPage = ({
                 className="SideBarRoomPageBottomPartAddRoom"
                 style={{
                   height: AddARoomState
-                    ? 'calc(100% - var(--180px-V) - var(--10px-V))'
+                    ? isMobileState
+                      ? '100%'
+                      : 'calc(100% - var(--180px-V) - var(--10px-V))'
                     : '0%',
                 }}
               >
@@ -2611,6 +2666,7 @@ const MainPage = ({
                 page="TenantsList"
                 currentPage={PeopleSelectedPage}
                 onClick={() => setPeopleSelectedPage('TenantsList')}
+                id="dashboard-tenants-list-tab"
               >
                 Tenant list
               </SideBarItem>
@@ -2618,6 +2674,7 @@ const MainPage = ({
                 page="BrokersList"
                 currentPage={PeopleSelectedPage}
                 onClick={() => setPeopleSelectedPage('BrokersList')}
+                id="dashboard-broker-list-tab"
               >
                 Broker list
               </SideBarItem>
@@ -2625,6 +2682,7 @@ const MainPage = ({
                 page="TenantReviews"
                 currentPage={PeopleSelectedPage}
                 onClick={() => setPeopleSelectedPage('TenantReviews')}
+                id="dashboard-tenant-reviews-tab"
               >
                 Tenant Reviews
               </SideBarItem>
@@ -2699,6 +2757,7 @@ const MainPage = ({
                   fontSize: 'var(--28px-V)',
                   margin: 'var(--15px-V) 0px var(--15px-V) 0px',
                 }}
+                id="dashboard-title"
               >
                 Dashboard
               </h3>
@@ -2715,6 +2774,7 @@ const MainPage = ({
                 page="Overview"
                 currentPage={DashboardSelectedPage}
                 onClick={() => setDashboardSelectedPage('Overview')}
+                id="dashboard-overview-tab"
               >
                 Overview
               </SideBarItem>
@@ -2723,6 +2783,7 @@ const MainPage = ({
                 page="Expenses"
                 currentPage={DashboardSelectedPage}
                 onClick={() => setDashboardSelectedPage('Expenses')}
+                id="dashboard-expenses-tab"
               >
                 Expenses
               </SideBarItem>
@@ -2739,6 +2800,7 @@ const MainPage = ({
                 page="TenantsList"
                 currentPage={DashboardSelectedPage}
                 onClick={() => setDashboardSelectedPage('TenantsList')}
+                id="dashboard-tenants-list-tab"
               >
                 Tenant list
               </SideBarItem>
@@ -2746,6 +2808,7 @@ const MainPage = ({
                 page="BrokersList"
                 currentPage={DashboardSelectedPage}
                 onClick={() => setDashboardSelectedPage('BrokersList')}
+                id="dashboard-broker-list-tab"
               >
                 Broker list
               </SideBarItem>
@@ -2753,6 +2816,7 @@ const MainPage = ({
                 page="TenantReviews"
                 currentPage={DashboardSelectedPage}
                 onClick={() => setDashboardSelectedPage('TenantReviews')}
+                id="dashboard-tenant-reviews-tab"
               >
                 Tenant Reviews
               </SideBarItem>
@@ -2769,6 +2833,7 @@ const MainPage = ({
                 page="Email History"
                 currentPage={DashboardSelectedPage}
                 onClick={() => setDashboardSelectedPage('Email History')}
+                id="dashboard-email-history-tab"
               >
                 Email History
               </SideBarItem>
@@ -2776,6 +2841,7 @@ const MainPage = ({
                 page="SMS Details"
                 currentPage={DashboardSelectedPage}
                 onClick={() => setDashboardSelectedPage('SMS Details')}
+                id="dashboard-sms-history-tab"
               >
                 SMS Details
               </SideBarItem>
@@ -2792,6 +2858,7 @@ const MainPage = ({
                 page="Action History"
                 currentPage={DashboardSelectedPage}
                 onClick={() => setDashboardSelectedPage('Action History')}
+                id="dashboard-action-history-tab"
               >
                 Action History
               </SideBarItem>
@@ -2810,6 +2877,7 @@ const MainPage = ({
                 onClick={() =>
                   setDashboardSelectedPage('Basic Rental income report')
                 }
+                id="dashboard-basic-rental-income-report-tab"
               >
                 Basic Rental income report
               </SideBarItem>
@@ -2845,7 +2913,7 @@ const MainPage = ({
                 }}
               >
                 {' '}
-                <button
+                {!isMobileState && <button
                   className="SideBarTopButton"
                   onClick={handleCloseSideBar}
                   title="Close Sidebar"
@@ -2853,7 +2921,7 @@ const MainPage = ({
                 >
                   {/* <img src={IconsGUI().Left2ArrowIcon} alt="" /> */}
                   Close sidebar
-                </button>{' '}
+                </button>}
                 <button
                   className="SideBarTopButton"
                   onClick={handleAddExpense}
@@ -2865,7 +2933,7 @@ const MainPage = ({
                 </button>
                 <button
                   className="SideBarTopButton"
-                  onClick={() => setShowExpenseCalendar(!showExpenseCalendar)}
+                  onClick={() => {setShowExpenseCalendar(!showExpenseCalendar); if(isMobileState) handleCloseSideBar()}}
                   style={{ display: SideBarShowState ? '' : 'none' }}
                   title="Show Calendar"
                   id="expense-calendar-toggle"
@@ -3238,7 +3306,7 @@ const MainPage = ({
                 setDeleteConfimation(false);
               }}
             ></div>{' '}
-            <div className="EditRoomScreenMainContainer">
+            <div className="EditRoomScreenMainContainer" style={{width: isMobileState ? '95%' : ''}}>
               <div style={{ display: 'flex' }}>
                 <button
                   onClick={() => {
@@ -3352,6 +3420,7 @@ const MainPage = ({
                       ).status === 'Empty'
                         ? 'var(--440px-V)'
                         : 'var(--480px-V)',
+                    width: isMobileState ? '70%' : '',
                   }}
                   className={`RoomSpecficationsMainContainer ${
                     highlightedFields.includes('specifications')
@@ -3547,7 +3616,7 @@ const MainPage = ({
                               );
                             }}
                           />{' '}
-                          Number{' - - '}
+                          Number
                           <button
                             onClick={() => {
                               roomSpecificationAPI.deleteRoomSpecificationApi(
@@ -3588,18 +3657,31 @@ const MainPage = ({
         )}
         <div
           style={{
-            width: HideSideBarForCalendar
-              ? '100%'
-              : `calc(100% - var(--${SideBarWidth}px-V))`,
+            width:
+              HideSideBarForCalendar || isMobileState
+                ? '100%'
+                : `calc(100% - var(--${SideBarWidth}px-V))`,
             overflowY: SelectedPage === 'Database' ? 'hidden' : 'auto',
-            height:
-              SelectedPage === 'Database' ||
-              SelectedPage === 'Tools' ||
-              SelectedPage === 'Expense'
-                ? 'calc(100% - var(--60px-V))'
-                : '',
           }}
         >
+          {isMobileState && SideBarShowState ? (
+            <>
+              <div
+                onClick={() => handleCloseSideBar()}
+                style={{
+                  position: 'absolute',
+                  width: '100%',
+                  height: 'calc(100% - var(--110px-V))',
+                  backgroundColor: '#000000',
+                  opacity: '0.5',
+                  zIndex: '1',
+                }}
+              ></div>
+            </>
+          ) : (
+            <></>
+          )}
+
           {SelectedPage === 'Rooms' && (
             <>
               {showRoomCalendar ? (

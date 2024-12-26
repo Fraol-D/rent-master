@@ -81,6 +81,7 @@ const TenantGrowthWidget = () => {
   return (
     <div
       className="DashboardWigetMainContainer"
+      id="TenantGrowthWidget"
       style={{ width: 'var(--400px-V)', height: 'var(--165px-V)' }}
     >
       <div style={{ display: 'flex', alignItems: 'center' }}>

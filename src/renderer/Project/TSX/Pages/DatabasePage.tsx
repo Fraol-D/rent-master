@@ -7,6 +7,7 @@ import {
 import React, { useEffect, useMemo, useState } from 'react';
 import { getUserPrivileges } from 'renderer/App';
 import loadingGif from '../../../assets/assets/Loading/Rolling-1s-200px.gif';
+import { useGlobal } from 'renderer/components/GlobalContext';
 const DatabasePage = ({
   setChangeMade,
   SelectedAppUser,
@@ -233,7 +234,7 @@ const DatabasePage = ({
   const handleRefresh = () => {
     GetDataBaseData(SelectedTable);
   };
-
+  const { isMobileState } = useGlobal();
   return (
     <div className="CalenderContainer">
       <div
@@ -243,31 +244,45 @@ const DatabasePage = ({
         }}
       >
         <div className="CalenderOptionsMainContainer">
-          <label htmlFor="monthsFutureInput">Select a table: </label>
-          <select
-            value={SelectedTable}
-            onChange={OnChangeSelect}
-            style={{ height: 'var(--30px-V)' }}
-          >
-            {validTables.map((val, index) => (
-              <option key={index} value={val}>
-                {val}
-              </option>
-            ))}
-          </select>
-          <label htmlFor="monthsFutureInput">Search all fields: </label>
-          <input
-            type="text"
+          <div
             style={{
-              padding: 'var(--5px-V)',
-              borderRadius: 'var(--3px-V)',
-              border: 'var(--1px-V) solid rgb(204, 204, 204)',
+              display: 'flex',
+              flexDirection: isMobileState ? 'column' : 'row',
+              gap: 'var(--10px-V)',
             }}
-            value={mainSearch}
-            onChange={(e) => setMainSearch(e.target.value)}
-            placeholder="Main search"
-            id="mainSearch"
-          />
+          >
+           
+              <div> <label htmlFor="monthsFutureInput">Select a table: </label>
+         
+              <select
+                value={SelectedTable}
+                onChange={OnChangeSelect}
+                style={{ height: 'var(--30px-V)' }}
+              >
+                {validTables.map((val, index) => (
+                  <option key={index} value={val}>
+                    {val}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              {' '}
+              <label htmlFor="monthsFutureInput">Search all fields: </label>
+              <input
+                type="text"
+                style={{
+                  padding: 'var(--5px-V)',
+                  borderRadius: 'var(--3px-V)',
+                  border: 'var(--1px-V) solid rgb(204, 204, 204)',
+                }}
+                value={mainSearch}
+                onChange={(e) => setMainSearch(e.target.value)}
+                placeholder="Main search"
+                id="mainSearch"
+              />{' '}
+            </div>{' '}
+          </div>
           <button
             id="refresh"
             onClick={handleRefresh}
@@ -279,7 +294,7 @@ const DatabasePage = ({
         <div
           style={{
             overflowX: 'auto',
-            height: 'calc(100% - var(--55px-V))',
+            height: isMobileState ?'calc(100% - var(--90px-V) - var(--5px-V))' :'calc(100% - var(--55px-V))',
             marginTop: 'var(--5px-V)',
           }}
         >

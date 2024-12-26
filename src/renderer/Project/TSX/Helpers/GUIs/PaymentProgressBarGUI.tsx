@@ -702,7 +702,7 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
             ? `${formatNumberWithSuffix(agreedPrice.toLocaleString())}`
             : `${formatNumberWithSuffix(d.Value.toLocaleString())}`;
         })
-        .style('font-size', `${fontSize - 3}px`)
+        .style('font-size', `${fontSize - 1}px`)
         .append('tspan')
         .text((d: any) => CurrencySign(Currency))
         .on('click', (event, d) => handlePayClick(d));
