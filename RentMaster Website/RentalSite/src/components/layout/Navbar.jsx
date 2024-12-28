@@ -61,16 +61,16 @@ const Navbar = () => {
           <div className="nav-straightline"></div>
           <div className="diamond-bottom"></div>
         </div>
-        <a href="#faq" onClick={handleLinkClick}>
-          <div className="nav-link-container">FAQ</div>
+        <a href="#about" onClick={handleLinkClick}>
+          <div className="nav-link-container">About</div>
         </a>
         <div className="nav-separator">
           <div className="diamond-top"></div>
           <div className="nav-straightline"></div>
           <div className="diamond-bottom"></div>
         </div>
-        <a href="#about" onClick={handleLinkClick}>
-          <div className="nav-link-container">About</div>
+        <a href="#faq" onClick={handleLinkClick}>
+          <div className="nav-link-container">FAQ</div>
         </a>
         <div className="nav-separator">
           <div className="diamond-top"></div>

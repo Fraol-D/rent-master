@@ -5,12 +5,12 @@
   width: 100%;
   background-position-y: -66px;
   background-size: 1700px;
-  background-image: url("../../assets/img/Rectangle 4.png");
+  background-image: url('../../assets/img/Rectangle 4.png');
 }
 .hero-button {
   background: var(--Primary-Color);
   color: var(--White-Color);
-  padding: .8rem 1.2rem;
+  padding: 0.8rem 1.2rem;
   font-size: 1rem;
   font-weight: 500;
   border-radius: 4px;
@@ -35,7 +35,7 @@
 }
 
 .hero-background::after {
-  content: "";
+  content: '';
   position: absolute;
   top: 0;
   left: 0;
@@ -70,7 +70,7 @@
 }
 
 .hero-p {
-  font-size: 1.2rem;
+  font-size: 1.4rem;
   margin-bottom: 1rem;
   color: var(--Primary-Color);
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
@@ -83,6 +83,7 @@
   width: 473px;
   color: #4e657c;
   font-weight: 500;
+  font-size: 1.2rem;
 }
 .cta-button {
   background: var(--accent);
@@ -148,15 +149,15 @@
   }
 
   .hero h1 {
-    font-size: 2.5rem;
+    font-size: 2.8rem;
   }
 
   .hero-p {
-    font-size: 1rem;
+    font-size: 1.2rem;
   }
 
   .hero-p-2 {
-    font-size: 0.9rem;
+    font-size: 1.1rem;
   }
 }
 
