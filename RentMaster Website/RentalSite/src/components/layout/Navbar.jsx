@@ -13,12 +13,6 @@ const Navbar = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const handleLinkClick = () => {
-    if (window.innerWidth <= 1024) {
-      setIsMenuOpen(false);
-    }
-  };
-
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
   };
@@ -37,7 +31,7 @@ const Navbar = () => {
       </button>
 
       <div className={`nav-links ${isMenuOpen ? 'open' : ''}`}>
-        <a href="#hero" onClick={handleLinkClick}>
+        <a href="#hero" onClick={toggleMenu}>
           <div className="nav-link-container">Home</div>
         </a>
         <div className="nav-separator">
@@ -45,7 +39,7 @@ const Navbar = () => {
           <div className="nav-straightline"></div>
           <div className="diamond-bottom"></div>
         </div>
-        <a href="#features" onClick={handleLinkClick}>
+        <a href="#features" onClick={toggleMenu}>
           <div className="nav-link-container">Features</div>
         </a>
         <div className="nav-separator">
@@ -53,7 +47,7 @@ const Navbar = () => {
           <div className="nav-straightline"></div>
           <div className="diamond-bottom"></div>
         </div>
-        <a href="#pricing" onClick={handleLinkClick}>
+        <a href="#pricing" onClick={toggleMenu}>
           <div className="nav-link-container">Pricing</div>
         </a>
         <div className="nav-separator">
@@ -61,7 +55,7 @@ const Navbar = () => {
           <div className="nav-straightline"></div>
           <div className="diamond-bottom"></div>
         </div>
-        <a href="#faq" onClick={handleLinkClick}>
+        <a href="#faq" onClick={toggleMenu}>
           <div className="nav-link-container">FAQ</div>
         </a>
         <div className="nav-separator">
@@ -69,7 +63,7 @@ const Navbar = () => {
           <div className="nav-straightline"></div>
           <div className="diamond-bottom"></div>
         </div>
-        <a href="#about" onClick={handleLinkClick}>
+        <a href="#about" onClick={toggleMenu}>
           <div className="nav-link-container">About</div>
         </a>
         <div className="nav-separator">
@@ -77,7 +71,7 @@ const Navbar = () => {
           <div className="nav-straightline"></div>
           <div className="diamond-bottom"></div>
         </div>
-        <a href="#contact" onClick={handleLinkClick}>
+        <a href="#contact" onClick={toggleMenu}>
           <div className="nav-link-container">Contact</div>
         </a>
       </div>

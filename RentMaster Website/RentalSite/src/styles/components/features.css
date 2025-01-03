@@ -33,7 +33,7 @@
 
 .feature-icon {
   color: var(--Accent-Color);
-  font-size: 1.5rem;
+  font-size: 2rem;
   margin-bottom: 1rem;
 }
 
@@ -208,20 +208,6 @@
     width: calc(100% - 1rem);
     margin: 1rem 0.5rem;
     padding: 1rem;
-  }
-}
-
-@media (max-width: 768px) {
-  .feature-icon {
-    font-size: 1.25rem;
-  }
-
-  .feature-card {
-    padding: 1.5rem;
-  }
-
-  .feature-card h3 {
-    font-size: 1rem;
   }
 }
  

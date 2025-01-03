@@ -1,13 +1,12 @@
 .pain-points {
   padding: 1rem 2rem;
-  min-height: auto;
+  min-height: 125rem;
   display: flex;
   align-items: flex-start;
 
-  background-position: center;
-  background-size: cover;
+  background-position-y: -66px;
+  background-size: 1700px;
   background-image: url("../../assets/img/Rectangle 1.png");
-  background-repeat: no-repeat;
 }
 .pain-points-description {
   margin-top: 0;
@@ -25,9 +24,6 @@
   align-items: center;
   justify-content: center;
   gap: 2rem;
-  padding: 2rem 0;
-  margin-bottom: 4rem;
-  width: 100%;
 }
 .central-icon {
   position: absolute;
@@ -82,12 +78,7 @@
 .pain-point-solution{
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 20px;
-  width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
-  flex-wrap: wrap;
+  gap: 20px; width: 100%;
 }
 .pain-point-branch {
   position: absolute;
@@ -405,17 +396,6 @@
   .pain-points-circle {
     grid-template-columns: 1fr;
   }
-
-  .pain-point-solution {
-    flex-direction: column;
-    align-items: center;
-  }
-
-  .pain-point-content-Solution,
-  .solution-card {
-    width: 90%;
-    max-width: 320px;
-  }
 }
 
 /* Add visibility classes */
@@ -601,41 +581,5 @@
 
   .solution-card p {
     font-size: 0.85rem;
-  }
-}
-
-.pain-point-solution {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 20px;
-  width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
-  flex-wrap: wrap;
-}
-
-.pain-point-content-Solution,
-.solution-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  width: calc(50% - 20px);
-  max-width: 320px;
-  margin: 0 auto;
-}
-
-@media (max-width: 768px) {
-  .pain-point-solution {
-    flex-direction: column;
-    align-items: center;
-  }
-
-  .pain-point-content-Solution,
-  .solution-card {
-    width: 90%;
-    max-width: 320px;
-    margin: 0 auto;
   }
 }
