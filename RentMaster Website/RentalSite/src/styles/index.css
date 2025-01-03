@@ -41,47 +41,17 @@ body {
 }
 
 section {
-  width: 100%;
-  padding: 0;
-  margin: 0;
+ 
   background-position: center;
   background-repeat: no-repeat;
+
 }
 
 .app .container {
-  width: 100%;
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 0;
-  max-width: 100%;
-}
-
-@media (max-width: 1300px) {
-  .app .container {
-    max-width: 100%;
-    padding: 0 1.5rem;
-  }
-}
-
-@media (max-width: 750px) {
-  .app .container {
-    padding: 0 1rem;
-  }
-
-  section {
-    padding-left: 0.5rem !important;
-    padding-right: 0.5rem !important;
-  }
-}
-
-@media (max-width: 500px) {
-  .app .container {
-    padding: 0 0.5rem;
-  }
-
-  section {
-    padding-left: 0.25rem !important;
-    padding-right: 0.25rem !important;
-  }
+  width: 100%;
+  padding: 0 2rem;
 }
 
 .app h2 {
@@ -108,116 +78,3 @@ section {
     font-size: 2rem;
   }
 } 
-
-/* Responsive Typography */
-@media (max-width: 768px) {
-  html {
-    font-size: 14px;
-  }
-
-  .app h2 {
-    font-size: 2rem;
-  }
-
-  section {
-    padding: 4rem 1rem;
-  }
-
-  .container {
-    padding: 0 1rem;
-  }
-}
-
-@media (max-width: 480px) {
-  html {
-    font-size: 12px;
-  }
-
-  .app h2 {
-    font-size: 1.8rem;
-  }
-}
-
-/* Tablet Styles */
-@media (min-width: 769px) and (max-width: 1024px) {
-  html {
-    font-size: 15px;
-  }
-
-  .container {
-    padding: 0 2rem;
-  }
-}
-
-/* Large Desktop Styles */
-@media (min-width: 1367px) {
-  html {
-    font-size: 18px;
-  }
-
-  .container {
-    max-width: 1400px;
-  }
-}
-
-/* Handle very small screens */
-@media (max-width: 320px) {
-  html {
-    font-size: 11px;
-  }
-
-  .container {
-    padding: 0 0.5rem;
-  }
-}
-
-/* Handle orientation changes */
-@media (orientation: landscape) and (max-height: 500px) {
-  .nav-links.open {
-    overflow-y: auto;
-  }
-}
-
-/* Add these specific breakpoint styles */
-@media (min-width: 770px) and (max-width: 970px) {
-  .app .container {
-    max-width: 100%;
-    padding: 0 1rem;
-  }
-
-  section {
-    padding-left: 0.75rem !important;
-    padding-right: 0.75rem !important;
-  }
-}
-
-@media (min-width: 1020px) and (max-width: 1290px) {
-  .app .container {
-    max-width: 100%;
-    padding: 0 1.5rem;
-  }
-
-  section {
-    padding-left: 1rem !important;
-    padding-right: 1rem !important;
-  }
-}
-
-/* Mobile First Approach */
-@media (max-width: 480px) {
-  .app .container,
-  section {
-    padding: 0;
-    width: 100vw;
-    overflow-x: hidden;
-  }
-
-  .app h2 {
-    font-size: 1.5rem;
-    padding: 0 1rem;
-  }
-
-  html {
-    font-size: 14px;
-  }
-}
