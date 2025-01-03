@@ -2203,6 +2203,7 @@ const ToolsPage = ({
                   justifyContent: 'space-between',
                   flexDirection: isMobileState ? 'column' : 'row',
                 }}
+              
               >
                 <h1>Settings</h1>{' '}
                 <div
@@ -2217,7 +2218,7 @@ const ToolsPage = ({
                   <button onClick={handleSignOut}>Sign Out</button>{' '}
                 </div>
               </div>
-              <div className="settings-container">
+              <div className="settings-container"  id="tax-percentage">
                 {' '}
                 <div
                   style={{
@@ -2764,7 +2765,7 @@ const ToolsPage = ({
                   )}
                 </div>
               </div>
-              <div className="settings-container">
+              <div className="settings-container" id="formating-numbers">
                 {' '}
                 <h2 style={{ fontSize: 'var(--25px-V)' }}>Formating numbers</h2>
                 <div style={{ marginLeft: 'var(--20px-V)' }}>
@@ -2806,7 +2807,7 @@ const ToolsPage = ({
                   <br />
                 </div>
               </div>
-              <div className="settings-container">
+              <div className="settings-container" id="representativeEmails">
                 <h2
                   style={{
                     fontSize: 'var(--25px-V)',

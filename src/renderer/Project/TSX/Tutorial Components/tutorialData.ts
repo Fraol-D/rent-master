@@ -1119,58 +1119,20 @@ export const tutorialData: TutorialSystem = {
               requiresInteraction: true,
             },
             {
-              targetElementId: 'tax-percentage-input',
+              targetElementId: 'tax-percentage',
               description:
                 'Enter your tax percentage, which will be used for reports and statistics.',
-              position: 'right',
+              position: 'down',
               allowBack: true,
             },
-            {
-              targetElementId: 'tax-percentage-save',
-              description: 'Click Save to apply your new tax percentage.',
-              position: 'right',
-              allowBack: true,
-            },
+           
             {
               targetElementId: 'room-specs-section',
               description:
                 'In this section, you can define default specifications available when creating or editing rooms.',
               position: 'down',
               allowBack: true,
-            },
-            {
-              targetElementId: 'add-room-spec-button',
-              description: 'Click Add to create a new room specification.',
-              position: 'down',
-              allowBack: true,
-              requiresInteraction: true,
-            },
-            {
-              targetElementId: 'room-spec-name-input',
-              description:
-                "Enter a name for your specification (e.g., 'Balcony', 'Furnishing', 'Bedrooms',etc.).",
-              position: 'down',
-              allowBack: true,
-            },
-            {
-              targetElementId: 'room-spec-type-radio',
-              description:
-                'Choose whether this specification is a Yes/No option or requires a number value.',
-              position: 'down',
-              allowBack: true,
-            },
-            {
-              targetElementId: 'room-spec-input',
-              description: 'Enter the value based on the type you selected.',
-              position: 'right',
-              allowBack: true,
-            },
-            {
-              targetElementId: 'room-spec-save-button',
-              description: 'Click Save to apply your new room specifications.',
-              position: 'right',
-              allowBack: true,
-            },
+            },  
             {
               targetElementId: 'default-currency-select',
               description:
@@ -1197,50 +1159,21 @@ export const tutorialData: TutorialSystem = {
               allowBack: true,
             },
             {
-              targetElementId: 'abbreviate-numbers-checkbox',
+              targetElementId: 'formating-numbers',
               description:
-                'Enable to display large numbers in shortened format (e.g., 1M instead of 1,000,000).',
-              position: 'right',
+                'Enable this to display large numbers in shortened format (e.g., 1M instead of 1,000,000) for better readability.',
+              position: 'down',
               allowBack: true,
             },
-            {
-              targetElementId: 'decimal-places-input',
-              description: 'Set decimal places for abbreviated numbers.',
-              position: 'right',
-              allowBack: true,
-            },
+        
             {
               targetElementId: 'representativeEmails',
               description:
-                'Add email addresses for notifications. Add multiple by typing and pressing Enter.',
+                'Here you edit the representative emails for your property so they can receive rent reminders and utility reminders through email and sms, and under it you can see the landloard email and phone number which will show in the emails and sms sent to tenants.',
               position: 'right',
               allowBack: true,
             },
-            {
-              targetElementId: 'representativePhoneNumbers',
-              description:
-                'Add phone numbers (minimum 10 digits) for SMS notifications.',
-              position: 'right',
-              allowBack: true,
-            },
-            {
-              targetElementId: 'landlordDisplayName',
-              description: 'Enter the name to show in tenant communications.',
-              position: 'right',
-              allowBack: true,
-            },
-            {
-              targetElementId: 'landlordEmail',
-              description: 'Enter the email address for tenant communications.',
-              position: 'right',
-              allowBack: true,
-            },
-            {
-              targetElementId: 'landlordTelephone',
-              description: 'Enter the phone number for tenant communications.',
-              position: 'right',
-              allowBack: true,
-            },
+            
           ],
         },
       ],
@@ -1339,7 +1272,7 @@ export const tutorialData: TutorialSystem = {
           },
           {
             description: 
-              'Here you can see the net profit of your property, total collected rent - total expenses. And the second bar shows the Expected income(uncollected rent) - expenses.',
+              'Here you can see the net profit of your property, total collected rent - total expenses. And the second bar shows the Expected income(uncollected rent+collected rent) - expenses.',
             targetElementId: 'DashbNetProfitTotalCollected',
             position: 'down',
             allowBack: true,
@@ -1348,21 +1281,21 @@ export const tutorialData: TutorialSystem = {
             description:
               'Here you can see the expenses of your property month by month.',
             targetElementId: 'DashbMonthlyExpenseTrendWidget', 
-            position: 'left',
+            position: 'down',
             allowBack: true,
           },
           {
             description:
               'Here you can see the history of your expenses.',
             targetElementId: 'DashbExpenseHistory',
-            position: 'left',
+            position: 'up',
             allowBack: true,
           },
           {
             description: 
               'Here you can see the upcoming expenses of your property.',
             targetElementId: 'DashbUpcomingExpensesWidget',
-            position: 'left',
+            position: 'up',
             allowBack: true,
           }
         ]

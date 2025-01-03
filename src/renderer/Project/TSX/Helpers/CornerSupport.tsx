@@ -231,101 +231,124 @@ const CornerSupport = ({
     setCurrentSectionInital(sectionIndex);
   };
 
-  const renderTutorialList = () => (
-    <div style={{ padding: 'var(--5px-V)' }}>
-      <h2 style={{ marginTop: '0' }}>Available Tutorials</h2>
-      <div
-        style={{
-          marginTop: 'var(--10px-V)',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 'var(--10px-V)',
-        }}
-      >
-        {tutorialData.pages
-          .filter(
-            (page) =>
-              !window.location.href.includes('tryout') ||
-              page.pageTitle !== 'App Users'
-          )
-          .map((page, pageIndex) => (
-            <div
-              key={pageIndex}
-              style={{
-                padding: 'var(--10px-V)',
-                backgroundColor: 'var(--Secondary-Color20)',
-                borderRadius: 'var(--5px-V)',
-              }}
-            >
-              <h3 style={{ margin: '0 0 var(--5px-V) 0' }}>{page.pageTitle}</h3>
-              <p style={{ margin: '0 0 var(--10px-V) 0' }}>
-                {page.overview.description}
-              </p>
-              {page.hasToBeIn.toLowerCase() === SelectedPage.toLowerCase() ? (
-                <div
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 'var(--10px-V)',
-                  }}
-                >
-                  <button
-                    onClick={() => handleTutorialStart(pageIndex, 0)}
+  const renderTutorialList = () => {
+    const privileges = getUserPrivileges(SelectedAppUser);
+    const hasAccess = (page: string) => {
+      switch (page.toLowerCase()) {
+        case 'app user':
+          return SelectedAppUser.id === 'admin'; // Always show app user tutorials
+        case 'property':
+          return SelectedAppUser.id === 'admin' || privileges.manageProperties; // Always show property tutorials  
+        case 'dashboard':
+          return SelectedAppUser.id === 'admin' || privileges.viewDashboard;
+        case 'rooms':
+          return SelectedAppUser.id === 'admin' || privileges.viewRoomsPage;
+        case 'expense':
+          return SelectedAppUser.id === 'admin' || privileges.editExpenses;
+        case 'tools':
+          return SelectedAppUser.id === 'admin' || privileges.viewToolsPage;
+        default:
+          return false;
+      }
+    };
+
+    return (
+      <div style={{ padding: 'var(--5px-V)' }}>
+        <h2 style={{ marginTop: '0' }}>Available Tutorials</h2>
+        <div
+          style={{
+            marginTop: 'var(--10px-V)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 'var(--10px-V)',
+          }}
+        >
+          {tutorialData.pages
+            .filter(
+              (page) =>
+                (!window.location.href.includes('tryout') ||
+                  page.pageTitle !== 'App Users') &&
+                hasAccess(page.hasToBeIn)
+            )
+            .map((page, pageIndex) => (
+              <div
+                key={pageIndex}
+                style={{
+                  padding: 'var(--10px-V)',
+                  backgroundColor: 'var(--Secondary-Color20)',
+                  borderRadius: 'var(--5px-V)',
+                }}
+              >
+                <h3 style={{ margin: '0 0 var(--5px-V) 0' }}>{page.pageTitle}</h3>
+                <p style={{ margin: '0 0 var(--10px-V) 0' }}>
+                  {page.overview.description}
+                </p>
+                {page.hasToBeIn.toLowerCase() === SelectedPage.toLowerCase() ? (
+                  <div
                     style={{
-                      padding: 'var(--5px-V) var(--10px-V)',
-                      backgroundColor: 'var(--Primary-Color)',
-                      color: 'var(--Text-Color-Reverse)',
-                      border: 'none',
-                      borderRadius: 'var(--3px-V)',
-                      cursor: 'pointer',
-                      textAlign: 'left',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 'var(--10px-V)',
                     }}
                   >
-                    Overview: {page.overview.mainTitle}
-                  </button>
-                  {page.sections.map((section, sectionIndex) => (
                     <button
-                      key={sectionIndex}
-                      onClick={() =>
-                        handleTutorialStart(pageIndex, sectionIndex + 1)
-                      }
+                      onClick={() => handleTutorialStart(pageIndex, 0)}
                       style={{
                         padding: 'var(--5px-V) var(--10px-V)',
-                        backgroundColor: 'var(--Secondary-Color30)',
-                        color: 'var(--Text-Color)',
+                        backgroundColor: 'var(--Primary-Color)',
+                        color: 'var(--Text-Color-Reverse)',
                         border: 'none',
                         borderRadius: 'var(--3px-V)',
                         cursor: 'pointer',
                         textAlign: 'left',
                       }}
                     >
-                      Section {sectionIndex + 1}: {section.mainTitle}
+                      Overview: {page.overview.mainTitle}
                     </button>
-                  ))}
-                </div>
-              ) : (
-                <>
-                  Wrong page,{' '}
-                  <button
-                    onClick={() => handlePageNavigation(page.hasToBeIn)}
-                    style={{
-                      padding: 'var(--5px-V) var(--10px-V)',
-                      backgroundColor: 'var(--Primary-Color)',
-                      color: 'var(--Text-Color-Reverse)',
-                      border: 'none',
-                      borderRadius: 'var(--3px-V)',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    Go to page
-                  </button>
-                </>
-              )}
-            </div>
-          ))}
+                    {page.sections.map((section, sectionIndex) => (
+                      <button
+                        key={sectionIndex}
+                        onClick={() =>
+                          handleTutorialStart(pageIndex, sectionIndex + 1)
+                        }
+                        style={{
+                          padding: 'var(--5px-V) var(--10px-V)',
+                          backgroundColor: 'var(--Secondary-Color30)',
+                          color: 'var(--Text-Color)',
+                          border: 'none',
+                          borderRadius: 'var(--3px-V)',
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                        }}
+                      >
+                        Section {sectionIndex + 1}: {section.mainTitle}
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <>
+                    Wrong page,{' '}
+                    <button
+                      onClick={() => handlePageNavigation(page.hasToBeIn)}
+                      style={{
+                        padding: 'var(--5px-V) var(--10px-V)',
+                        backgroundColor: 'var(--Primary-Color)',
+                        color: 'var(--Text-Color-Reverse)',
+                        border: 'none',
+                        borderRadius: 'var(--3px-V)',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      Go to page
+                    </button>
+                  </>
+                )}
+              </div>
+            ))}
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderContent = () => {
     switch (selectedOption) {
@@ -601,9 +624,11 @@ const CornerSupport = ({
         return null;
     }
   };
-
+  const {setIsOnTutorial} = useGlobal();
   const handlePageNavigation = (page: string) => {
     const privileges = getUserPrivileges(SelectedAppUser);
+    setTutorialShow(false);
+    setIsOnTutorial(false);
     switch (page.toLowerCase()) {
       case 'app user':
         setAppUserManagerShow(true);

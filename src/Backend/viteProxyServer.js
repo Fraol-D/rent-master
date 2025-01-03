@@ -18,7 +18,7 @@ const axiosInstance = axios.create({
 });
 
 // Toggle encryption on or off
-const encryptData = false;
+const encryptData = true;
 
 const secretKey = process.env.VITE_ENCRYPTION_KEY;
 const apiKey = process.env.VITE_AppCodeElectronString;

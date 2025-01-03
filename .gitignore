@@ -4,9 +4,13 @@ logs
 
 # ENVS
 .env
+# Personal
 organize_faculty.py
 faculty_organized.csv
 page-35-year-china-batch-website
+decrypt_tool.html
+AddLineTocode.py
+
 # Runtime data
 pids
 *.pid

@@ -58,6 +58,7 @@
   font-size: var(--15px-V);
   line-height: 1.5;
   margin: var(--10px-V) 0;
+  text-align: justify;
 }
 
 .tutorial-controls {
@@ -208,5 +209,5 @@
   color: var(--Text-Color-Grey2);
   font-size: var(--16px-V);
   margin: var(--10px-V) 0;
-  text-align: center;
+  text-align: left;
 }

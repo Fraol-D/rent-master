@@ -2104,6 +2104,7 @@ export const getUserPrivileges = (
   editTenantRoomTenantStay: boolean;
   addTenant: boolean;
   addBranch: boolean;
+  manageProperties: boolean;
 } => {
   const privilegeObject: { [key: string]: boolean } = {
     viewDashboard: false,
@@ -2129,6 +2130,7 @@ export const getUserPrivileges = (
     editTenantRoomTenantStay: false,
     addTenant: false,
     addBranch: false,
+    manageProperties: false,
   };
 
   if (selectedAppUser) {
@@ -2207,6 +2209,9 @@ export const getUserPrivileges = (
             break;
           case 'add a branch':
             privilegeObject.addBranch = true;
+            break;
+          case 'manage properties':
+            privilegeObject.manageProperties = true;
             break;
         }
       });

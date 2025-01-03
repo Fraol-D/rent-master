@@ -1,6 +1,6 @@
 import CryptoJS from 'crypto-js';
 
-const encryptData = false;
+const encryptData = true;
 const secretKey = window.electron ? '' : import.meta.env.VITE_ENCRYPTION_KEY;
 
 const MAX_RETRIES = 3;

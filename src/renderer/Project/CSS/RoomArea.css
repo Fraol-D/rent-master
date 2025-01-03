@@ -457,7 +457,7 @@
   color: white;
 }
 .appUserItemContainer{
-  background-color: var(--Secondary-Color30);
+  background-color: var(--Secondary-Color20);
   margin: var(--10px-V);
   border-radius: var(--10px-V);
   padding: var(--10px-V);

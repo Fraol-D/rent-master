@@ -26,7 +26,7 @@ const makeRequest = async (input, init = {}) => {
   try {
     const users = await storageManager.get('users');
     if (!users?.[0]?.id) {
-      throw new Error('User ID not found');
+      return [];
     }
     const userId = users[0].id;
 

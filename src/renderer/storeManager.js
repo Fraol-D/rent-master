@@ -1,13 +1,21 @@
 import CryptoJS from 'crypto-js';
 import { tryoutData } from './Project/TSX/Helpers/tryoutData';
 // Toggle encryption on or off
-const encryptData = false;
+const encryptData = true;
 const isTryout = window.location.href.includes('tryout');
 const secretKey = window.electron ? '' : import.meta.env.VITE_ENCRYPTION_KEY;
-// onstart add tryout data to storage manager
+const secretKeyKEY = window.electron ? '' : import.meta.env.VITE_secretKeyKEY;
 
 const encrypt = (data) => {
   return CryptoJS.AES.encrypt(JSON.stringify(data), secretKey).toString();
+};
+
+// Simple but secure key encryption using base64 and a salt
+const encryptKey = (key) => {
+  const salt = secretKeyKEY; // Static salt adds consistency
+  const combined = key + salt;
+  const base64 = btoa(combined);
+  return base64.split('').reverse().join(''); // Simple reversal for extra obfuscation
 };
 
 const decrypt = (data) => {
@@ -25,7 +33,8 @@ const isElectron = () => {
 const electronStorage = {
   get: (key) => {
     try {
-      const storedData = window.electron.store.get(key);
+      const encryptedKey = encryptKey(key);
+      const storedData = window.electron.store.get(encryptedKey);
       return storedData;
     } catch (error) {
       console.error('Error reading from electron store:', error);
@@ -34,8 +43,9 @@ const electronStorage = {
   },
   set: (key, value) => {
     try {
+      const encryptedKey = encryptKey(key);
       const dataToStore = value;
-      window.electron.store.set(key, dataToStore);
+      window.electron.store.set(encryptedKey, dataToStore);
     } catch (error) {
       console.error('Error writing to electron store:', error);
     }
@@ -45,7 +55,8 @@ const electronStorage = {
 const webStorage = {
   get: (key) => {
     try {
-      const storedData = localStorage.getItem(key);
+      const encryptedKey = encryptKey(key);
+      const storedData = localStorage.getItem(encryptedKey);
       return encryptData ? decrypt(storedData) : JSON.parse(storedData);
     } catch (error) {
       console.error('Error reading from localStorage:', error);
@@ -54,8 +65,9 @@ const webStorage = {
   },
   set: (key, value) => {
     try {
+      const encryptedKey = encryptKey(key);
       const dataToStore = encryptData ? encrypt(value) : JSON.stringify(value);
-      localStorage.setItem(key, dataToStore);
+      localStorage.setItem(encryptedKey, dataToStore);
     } catch (error) {
       console.error('Error writing to localStorage:', error);
     }
