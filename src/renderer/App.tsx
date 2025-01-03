@@ -15,7 +15,7 @@ import loadingGif from './assets/assets/Loading/Rolling-1s-200px.gif';
 import { v4 as uuidv4 } from 'uuid';
 import {
   addValue,
-  addValueROOM,
+ 
   deleteValue,
   getValues,
   getValuesWithSql,
@@ -225,19 +225,26 @@ function Hello({ tryout, username, signup }: any) {
       AllAgreements2: any
     ) => {
       let useBranchId = storageManager.get('SelectedBranchId');
-      const roomsRaw = await getValuesWithSql(
-        'rooms',
-        `WHERE 1 AND branchId = '${useBranchId}'`
-      );
+      
+      let roomsRaw 
+      if(isTryout){
+       roomsRaw = await storageManager.get('rooms')
+      }else{
+        roomsRaw = await getValuesWithSql(
+          'rooms',
+          `WHERE 1 AND branchId = '${useBranchId}'`
+        );
+      }
+     
 
       if (roomsRaw) {
         const rooms = await Promise.all(
           roomsRaw.map(async (room: RoomType) => {
             const roomSpecifications = AllRoomSpecifications2.filter(
-              (r) => r.roomId === room.id
+              (r: { roomId: string }) => r.roomId === room.id
             );
             const utilityPayments = AllUtilityPaymentsSettings2.filter(
-              (u) => u.roomId === room.id
+              (u: { roomId: string }) => u.roomId === room.id
             );
             const defaultUtilities = [
               'Security',
@@ -254,14 +261,15 @@ function Hello({ tryout, username, signup }: any) {
               const existingUtility = utilityPayments.find(
                 (u) => u.type === type
               );
+              console.log("existingUtility", existingUtility);
               return {
                 type,
                 useThis: existingUtility
-                  ? existingUtility.useThis === 1
+                  ? existingUtility.useThis === 1 || existingUtility.useThis === true
                   : false,
                 price: existingUtility ? existingUtility.price.toString() : '',
                 alwaysAsk: existingUtility
-                  ? existingUtility.alwaysAsk === 1
+                  ? existingUtility.alwaysAsk === 1 || existingUtility.alwaysAsk === true
                   : false,
                 Currency: existingUtility
                   ? existingUtility.Currency
@@ -281,7 +289,7 @@ function Hello({ tryout, username, signup }: any) {
             // Calculate days till next payment
             const DaysTillNextPayment =
               calculateDaysTillNextPayment(predictedPayments);
-
+            console.log("utility for ", room.id, formattedUtilityPayments, "and filtered",utilityPayments, "and unfliterd" ,AllUtilityPaymentsSettings2);
             return {
               id: room.id,
               floor: room.floor,
@@ -365,7 +373,7 @@ function Hello({ tryout, username, signup }: any) {
       try {
         //Add room
 
-        await addValueROOM(
+        await addValue(
           'rooms',
           {
             id: roomID || uuidv4(), // Assuming you have a uuidv4 function for generating IDs
@@ -1136,63 +1144,56 @@ function Hello({ tryout, username, signup }: any) {
         const userId = storageManager.get('users')[0].id;
         const branchId = storageManager.get('SelectedBranchId');
 
-        const AllRoomPayInfo2 = await getValuesWithSql(
-          'room_pay_info',
-          `WHERE userId = '${userId}' AND branchId = '${branchId}'`
-        );
+        let AllRoomPayInfo2;
+        let AllTenants2;
+        let AllUtilityPayments2;
+        let AllAgreement2;
+        let utilityPaymentsSettings2;
+        let AllEmailTemplates2;
+        let AllSmsTemplates2;
+        let AllRoomSpecifications2;
+        let AllNotificationTemplateSelection2;
+        let AllRoomPayInfoHistory2;
+        let AllExpenses2;
+
+        if(isTryout) {
+          AllRoomPayInfo2 = await storageManager.get('room_pay_info') || [];
+          AllTenants2 = await storageManager.get('tenants') || [];
+          AllUtilityPayments2 = await storageManager.get('utility_payments') || [];
+          AllAgreement2 = await storageManager.get('agreements') || [];
+          utilityPaymentsSettings2 = await storageManager.get('utility_payments_settings') || [];
+          AllEmailTemplates2 = await storageManager.get('email_templates') || [];
+          AllSmsTemplates2 = await storageManager.get('sms_templates') || [];
+          AllRoomSpecifications2 = await storageManager.get('room_specifications') || [];
+          AllNotificationTemplateSelection2 = await storageManager.get('notification_template_selections') || [];
+          AllRoomPayInfoHistory2 = await storageManager.get('room_pay_info_history') || [];
+          AllExpenses2 = await storageManager.get('expenses') || [];
+        } else {
+          AllRoomPayInfo2 = await getValuesWithSql('room_pay_info', `WHERE userId = '${userId}' AND branchId = '${branchId}'`);
+          AllTenants2 = await getValuesWithSql('tenants', `WHERE userId = '${userId}' AND branchId = '${branchId}'`);
+          AllUtilityPayments2 = await getValuesWithSql('utility_payments', `WHERE userId = '${userId}' AND branchId = '${branchId}'`);
+          AllAgreement2 = await getValuesWithSql('agreements', `WHERE userId = '${userId}' AND branchId = '${branchId}'`);
+          utilityPaymentsSettings2 = await getValuesWithSql('utility_payments_settings', `WHERE userId = '${userId}' AND branchId = '${branchId}'`);
+          AllEmailTemplates2 = await getValuesWithSql('email_templates', `WHERE userId = '${userId}'`);
+          AllSmsTemplates2 = await getValuesWithSql('sms_templates', `WHERE userId = '${userId}'`);
+          AllRoomSpecifications2 = await getValuesWithSql('room_specifications', `WHERE userId = '${userId}' AND branchId = '${branchId}'`);
+          AllNotificationTemplateSelection2 = await getValuesWithSql('notification_template_selections', `WHERE userId = '${userId}' AND branchId = '${branchId}'`);
+          AllRoomPayInfoHistory2 = await getValuesWithSql('room_pay_info_history', `WHERE userId = '${userId}' AND branchId = '${branchId}'`);
+          AllExpenses2 = await getValuesWithSql('expenses', `WHERE userId = '${userId}' AND branchId = '${branchId}'`);
+        }
+
         setAllRoomPayInfo(AllRoomPayInfo2);
-        const AllTenants2 = await getValuesWithSql(
-          'tenants',
-          `WHERE userId = '${userId}' AND branchId = '${branchId}'`
-        );
         setAllTenants(AllTenants2);
-        const AllUtilityPayments2 = await getValuesWithSql(
-          'utility_payments',
-          `WHERE userId = '${userId}' AND branchId = '${branchId}'`
-        );
         setAllUtilityPayments(AllUtilityPayments2);
-        const AllAgreement2 = await getValuesWithSql(
-          'agreements',
-          `WHERE userId = '${userId}' AND branchId = '${branchId}'`
-        );
         setAllAgreements(AllAgreement2);
-        const utilityPaymentsSettings2 = await getValuesWithSql(
-          'utility_payments_settings',
-          `WHERE userId = '${userId}' AND branchId = '${branchId}'`
-        );
         setAllUtilityPaymentsSettings(utilityPaymentsSettings2);
-        const AllEmailTemplates2 = await getValuesWithSql(
-          'email_templates',
-          `WHERE userId = '${userId}'`
-        );
         setAllEmailTemplates(AllEmailTemplates2);
-        const AllSmsTemplates2 = await getValuesWithSql(
-          'sms_templates',
-          `WHERE userId = '${userId}'`
-        );
         setAllSmsTemplates(AllSmsTemplates2);
-        const AllRoomSpecifications2 = await getValuesWithSql(
-          'room_specifications',
-          `WHERE userId = '${userId}' AND branchId = '${branchId}'`
-        );
-
         setAllRoomSpecifications(AllRoomSpecifications2);
-        const AllNotificationTemplateSelection2 = await getValuesWithSql(
-          'notification_template_selections',
-          `WHERE userId = '${userId}' AND branchId = '${branchId}'`
-        );
         setAllNotificationTemplateSelections(AllNotificationTemplateSelection2);
-        const AllRoomPayInfoHistory2 = await getValuesWithSql(
-          'room_pay_info_history',
-          `WHERE userId = '${userId}' AND branchId = '${branchId}'`
-        );
         setAllRoomPayInfoHistory(AllRoomPayInfoHistory2);
-        const AllExpenses2 = await getValuesWithSql(
-          'expenses',
-          `WHERE userId = '${userId}' AND branchId = '${branchId}'`
-        );
         setAllExpenses(AllExpenses2);
-
+        
         roomAPI.getRoomFromApi(
           AllRoomSpecifications2,
           utilityPaymentsSettings2,
@@ -1200,7 +1201,6 @@ function Hello({ tryout, username, signup }: any) {
           AllAgreement2
         );
         brokerApi.getBrokersApi();
-
         pastTenantReviewApi.getPastTenantReviewLatestApi();
         brokersRecommendationListApi.getBrokerRecommendationsFromApi();
       } catch (error: any) {
@@ -1285,7 +1285,6 @@ function Hello({ tryout, username, signup }: any) {
   const [Refresh, setRefresh] = useState(0);
   const [isSignedIn, setisSignedIn] = useState(false);
   const signOutUserAndRestart = async () => {
-   
     await SignOutUser();
     await storageManager.set('MainBackupPath', '');
     await storageManager.set('SelectedBranchId', '');
@@ -1620,13 +1619,22 @@ function Hello({ tryout, username, signup }: any) {
 
     return 0;
   };
+  const isTryout = window.location.href.includes('tryout');
   const fetchBranches = async () => {
     if (navigator.onLine) {
+      if(isTryout) {
+
+        const branches = await storageManager.get('Branches');
+        setBranches(branches);
+         return;
+      }
+     
       if (storageManager.get('users')?.[0]) {
         const branches = await getValuesWithSql_Online(
           'branches',
           `WHERE userId = '${storageManager.get('users')[0].id}'`
         );
+        console.log(branches,'branches')
         if (branches)
           if (getBranchData) {
             const branchesWithData = await Promise.all(
@@ -1769,6 +1777,17 @@ function Hello({ tryout, username, signup }: any) {
     return () => perfObserver.disconnect();
   }, []);
   const [ShowAdvancedUpload, setShowAdvancedUpload] = useState(false);
+  const handleOpenSideBar = () => {
+    setSideBarWidth(290);
+    setSideBarShowState(true);
+  };
+  const handleCloseSideBar = () => {
+    setSideBarWidth(0);
+    setSideBarShowState(false);
+  };
+  const [SideBarWidth, setSideBarWidth] = useState<number>(290);
+  const [SideBarShowState, setSideBarShowState] = useState<boolean>(true);
+  const [initialLoading, setInitialLoading] = useState(true);
 
   return (
     <AlertProvider>
@@ -1824,6 +1843,8 @@ function Hello({ tryout, username, signup }: any) {
           )}
           <SyncLoadingPopup colors={colors} isVisible={isSyncing} />
           <AccountManager
+            setInitialLoading={setInitialLoading}
+            initialLoading={initialLoading}
             setSelectedPage={setSelectedPage}
             Refresh={Refresh}
             isSignedIn={isSignedIn}
@@ -1857,6 +1878,7 @@ function Hello({ tryout, username, signup }: any) {
             getBranchData={getBranchData}
             ProvidedInitialUsername={username}
             ForceSignUp={signup}
+            isTryout={tryout}
           >
             <>
               <NavBar
@@ -1921,10 +1943,17 @@ function Hello({ tryout, username, signup }: any) {
                 SelectedAppUser={SelectedAppUser}
                 SelectedUserId={SelectedUserId}
                 SelectedBranchId={SelectedBranchId}
+                SideBarWidth={SideBarWidth}
+                setSideBarWidth={setSideBarWidth}
+                SideBarShowState={SideBarShowState}
+                setSideBarShowState={setSideBarShowState}
               />
             </>
           </AccountManager>{' '}
           <CornerSupport
+            initialLoading={initialLoading}
+            handleOpenSideBar={handleOpenSideBar}
+            handleCloseSideBar={handleCloseSideBar}
             RoomList={RoomList}
             SelectedPage={
               AppUserManagerShow

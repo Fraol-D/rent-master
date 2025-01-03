@@ -294,10 +294,10 @@ const NavBar = ({
             style={{ fontSize: 'var(--14px-V)', height: 'auto' }}
           >
             <span style={{ color: 'grey' }}>
-              {storageManager.get('users')?.[0]?.email || ""} -{' '}
+              {storageManager.get('users')?.[0]?.email || ""} {' '}
             </span>
             {storageManager.get('SelectedAppUserId') === 'admin' ? (
-              <> Admin user</>
+              <>{window.location.href.includes('tryout')?"  " :" - "} Admin user</>
             ) : (
               storageManager
                 ?.get('app_users')
@@ -306,7 +306,7 @@ const NavBar = ({
                     appUser.id === storageManager.get('SelectedAppUserId')
                 )?.roleName||""
             )}{' '}
-            <span
+           {!window.location.href.includes('tryout')&& <span
               style={{
                 marginLeft: 'var(--10px-V)',
                 cursor: 'pointer',
@@ -328,7 +328,7 @@ const NavBar = ({
               {storageManager.get('SelectedAppUserId') === 'admin'
                 ? 'Go to App Users'
                 : 'Switch User'}
-            </span>
+            </span>}
           </p>
         </div>
       </div>
@@ -340,7 +340,7 @@ const NavBar = ({
                 ? 'PageNavigatorButtonSelected'
                 : 'PageNavigatorButton'
             }
-            onClick={() => setSelectedPage('Dashboard')}
+            onClick={() => setSelectedPage('Dashboard')}   id="top-nav-button-dashboard"
           >
             Dashboard
           </button>
@@ -353,7 +353,7 @@ const NavBar = ({
                 ? 'PageNavigatorButtonSelected'
                 : 'PageNavigatorButton'
             }
-            onClick={() => setSelectedPage('Rooms')}
+            onClick={() => setSelectedPage('Rooms')}   id="top-nav-button-rooms"
           >
             Rooms
           </button>
@@ -366,7 +366,7 @@ const NavBar = ({
                 ? 'PageNavigatorButtonSelected'
                 : 'PageNavigatorButton'
             }
-            onClick={() => setSelectedPage('Expense')}
+            onClick={() => setSelectedPage('Expense')}   id="top-nav-button-expenses"
           >
             Expenses
           </button>
@@ -378,7 +378,7 @@ const NavBar = ({
                 ? 'PageNavigatorButtonSelected'
                 : 'PageNavigatorButton'
             }
-            onClick={() => setSelectedPage('Tools')}
+            onClick={() => setSelectedPage('Tools')}   id="top-nav-button-tools"
           >
             Tools
           </button>

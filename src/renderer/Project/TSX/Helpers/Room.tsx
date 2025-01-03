@@ -44,6 +44,7 @@ import { getUserPrivileges } from '../../../App';
 import { storageManager } from 'renderer/storeManager';
 import loadingGif from 'renderer/assets/assets/Loading/Rolling-1s-200px.gif';
 import { useGlobal } from 'renderer/components/GlobalContext';
+import { useAlert } from 'renderer/components/useAlert';
 const Room = ({
   roomType,
   updateRoomProperty,
@@ -477,6 +478,7 @@ const Room = ({
         return custom + ' days';
     }
   };
+  const { showAlert }  = useAlert();
   const handleAddTenantButton = async () => {
     if (AddTenantUseBrokerState && AddTenantSelectedBrokerId == '') return;
     if (isNaN(new Date(startTime).getTime())) return;
@@ -484,7 +486,7 @@ const Room = ({
       handleTenantSelectWhenNew();
       return;
     }
-
+    if(AllTenants.some((t:any) => t.name === name)) {showAlert('Tenant already exists');return;} 
     if (name.length >= 3 && tel1.length >= 6 && startTime.length >= 1) {
       const fixedName = name.trim();
       setIsUpdatingTenantList(true);
@@ -843,7 +845,7 @@ const Room = ({
         );
         if (currentAgreement) {
           // Get all payments for this agreement
-          const payments = AllRoomPayInfo(
+          const payments = AllRoomPayInfo.filter(
             (r: RoomPayInfo) =>
               r.roomId === roomType.id &&
               r.Day <= Date.now() &&

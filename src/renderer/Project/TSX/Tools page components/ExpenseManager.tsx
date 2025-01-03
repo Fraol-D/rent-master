@@ -1911,7 +1911,7 @@ const ExpenseManager = ({
                                   </div>
                                 ) : editingExpenseId === expense.id ? (
                                   <></>
-                                ) : calculateNextPayment(expense) === null ? (
+                                ) : calculateNextPayment(expense) === null||!expense.doesReoccur ? (
                                   <>No payments into the future</>
                                 ) : (
                                   <>
@@ -2029,6 +2029,7 @@ const ExpenseManager = ({
                   <tbody>
                     {filteredExpenses
                       .filter((expense) => !expense.doesReoccur)
+                      .sort((a, b) => a.date - b.date)
                       .map(
                         (
                           expense: {
@@ -2956,19 +2957,19 @@ const ExpenseManager = ({
                                   </div>
                                 ) : editingExpenseId === expense.id ? (
                                   <></>
-                                ) : calculateNextPayment(expense) === null ? (
+                                ) : calculateNextPayment(expense) === null || new Date(expense.date).getTime() < new Date().setHours(0,0,0,0) ? (
                                   <>No payments into the future</>
                                 ) : (
                                   <>
-                                    {calculateNextPayment(expense) ===
-                                    'today' ? (
+                                    {calculateNextPayment(expense) === 'today' || 
+                                     (new Date().toDateString() === new Date(expense.date).toDateString()) ? (
                                       <div
                                         style={{
-                                          color: 'var(--Accent-Color)',
+                                          color: 'var(--Accent-Color)', 
                                           fontWeight: 'bold',
                                         }}
                                       >
-                                        Payment Due TODAY!
+                                        Payment Today
                                       </div>
                                     ) : (
                                       <>

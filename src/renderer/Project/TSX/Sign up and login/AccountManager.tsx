@@ -59,6 +59,9 @@ interface MyComponentProps {
   ProvidedInitialUsername: string;
   ForceSignUp: string;
   setSelectedPage: (newval: string) => void;
+  isTryout: boolean;
+  setInitialLoading: (newval: boolean) => void;
+  initialLoading: boolean;
 }
 
 const timeoutPromise = (ms: number) => {
@@ -102,6 +105,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
   ProvidedInitialUsername,
   ForceSignUp,
   setSelectedPage,
+  isTryout,initialLoading,setInitialLoading
 }: any) => {
   const [TrialExpiredState, setTrialExpiredState] = useState(false);
   const [IsAllowedState, setIsAllowedState] = useState(false);
@@ -126,7 +130,6 @@ const AccountManager = (React.FC<MyComponentProps> = ({
     ];
     return mainTabs.some((tab) => privileges.includes(tab));
   };
-  const [initialLoading, setInitialLoading] = useState(true);
   const [hasNotPaid, setHasNotPaid] = useState(false);
 
   const [providedUserNameErrorMessage, setProvidedUserNameErrorMessage] =
@@ -139,124 +142,42 @@ const AccountManager = (React.FC<MyComponentProps> = ({
     console.log(`[${getSeconds()}s] Starting checkIfSignedIn...`);
     setInitialLoading(true);
 
+    if (isTryout) {
+      setisSignedIn(true);
+      setSelectedUserId('tryout');
+      setIsAllowedState(true);
+      setHasNotPaid(true);
+
+      setAppUsers([
+        {
+          id: 'admin',
+          roleName: 'admin',
+          privileges: '',
+          userId: 'tryout',
+          addedDate: Date.now(),
+          password: '',
+          EnterWithPassword: false,
+          AllowedBranches: 'ALL',
+        },
+      ]);
+      setSelectedAppUser({
+        id: 'admin',
+        roleName: 'admin',
+        privileges: '',
+        userId: 'tryout',
+        addedDate: Date.now(),
+        AllowedBranches: 'ALL',
+      });
+      handleFetchBranches();
+      setInitialLoading(false);
+
+      return;
+    }
+
     if (ProvidedInitialUsername === 'login') {
     } else if (ProvidedInitialUsername === 'signup') {
     }
 
-    //     const checkProvidedUserName = async () => {
-    //       if (ProvidedInitialUsername !== 'none_provided') {
-    //         const allUsers = storageManager.get('users') || [];
-
-    //         if (allUsers) {
-    //           if (allUsers.companyName !== ProvidedInitialUsername) {
-    //             setProvidedUserNameErrorMessage("User credentials not found please login again");
-    //             return "User Credentials Not Found";
-    //           }
-    //           const userCheck = async () => {
-    //             const userONLINE = await getValuesWithSql_Online(
-    //               'users',
-    //               `WHERE id = '${allUsers[0].id}' AND password = '${allUsers[0].password}'`
-    //             );
-    //             console.log(`[${getSeconds()}s] Online SQL query complete`);
-    //             return userONLINE;
-    //           };
-    //           const user = await userCheck();
-    //           if(user) {
-    //             setProvidedUserNameErrorMessage("");
-    //             setisSignedIn(true);
-
-    //             const check = async () => {
-    //               console.log(`[${getSeconds()}s] Starting user check...`);
-    //               const userRaw = allUsers[0];
-
-    //               if (userRaw.packageType === '7daytrial') {
-    //                 console.log(`[${getSeconds()}s] Checking trial status...`);
-    //                 if (userRaw.TrailEndDate < Date.now()) {
-    //                   setTrialExpiredState(true);
-    //                   console.log(`[${getSeconds()}s] Trial expired`);
-    //                 }
-
-    //                 if (userRaw.TrailEndDate - 7 * 24 * 60 * 60 * 1000 > Date.now()) {
-    //                   setTrialExpiredState(true);
-    //                   console.log(
-    //                     `[${getSeconds()}s] Trial Has expired bc invalid date input`
-    //                   );
-    //                 }
-
-    //                 if (
-    //                   userRaw.TrailEndDate > Date.now() &&
-    //                   userRaw.TrailEndDate - 7 * 24 * 60 * 60 * 1000 < Date.now()
-    //                 ) {
-    //                   setTrialExpiredState(false);
-    //                   console.log(`[${getSeconds()}s] Trial is still active`);
-    //                 }
-    //               }
-
-    //               if (navigator.onLine) {
-    //                 console.log(
-    //                   `[${getSeconds()}s] Online mode - fetching latest user data...`
-    //                 );
-    //                 try {
-    //                   console.log(`[${getSeconds()}s] Got online user data`);
-    //                   setIsAllowedState(userONLINE[0].Allowed);
-    //                   setHasNotPaid(userONLINE[0].LockBcNotPaid || false);
-
-    //                   const updatedUsers = allUsers.map((user: any) =>
-    //                     user.id === userRaw.id
-    //                       ? {
-    //                           ...user,
-    //                           Allowed: userONLINE[0].Allowed,
-    //                           LockBcNotPaid: userONLINE[0].LockBcNotPaid,
-    //                         }
-    //                       : user
-    //                   );
-    //                   storageManager.set('users', updatedUsers);
-    //                   setChangeMade(true);
-    //                   console.log(`[${getSeconds()}s] Updated local user data`);
-    //                 } catch (error) {
-    //                   console.log(
-    //                     `[${getSeconds()}s] Error fetching online user data:`,
-    //                     error
-    //                   );
-    //                   setIsAllowedState(userRaw.Allowed);
-    //                   setHasNotPaid(userRaw.LockBcNotPaid || false);
-    //                 }
-    //               } else {
-    //                 console.log(
-    //                   `[${getSeconds()}s] Offline mode - using local allowed state`
-    //                 );
-    //                 setIsAllowedState(userRaw.Allowed);
-    //                 setHasNotPaid(userRaw.LockBcNotPaid || false);
-    //               }
-    //             };
-
-    //             console.log(`[${getSeconds()}s] Running user check...`);
-    //             await check();
-    //             setSelectedUserId(allUsers[0].id);
-
-    //             if (!storageManager.get('SelectedAppUserId')) {
-    //               console.log(`[${getSeconds()}s] Setting app user manager show`);
-    //               setAppUserManagerShow(true);
-    //             }
-    //             console.log(`[${getSeconds()}s] Fetching branches...`);
-    //             await handleFetchBranches();
-    //             console.log(`[${getSeconds()}s] Managing app users...`);
-    //             await appUsersManagement();
-    //             return "Signed in";
-
-    //           } else {
-    //             setProvidedUserNameErrorMessage("User Credentials Not Found");
-    //             return "User Credentials Not Found";
-    //           }
-    //         }
-    //       }
-    //     };
-    // const result = await checkProvidedUserName();
-    // console.log(result,"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAaa")
-    // if(result === 'Signed in') {
-    //   console.log("SIGNED IN WITH THE USRE NAME ABOVE ----------------------------------------------")
-    //   return;
-    // }
     const allUsers = storageManager.get('users') || [];
     console.log(
       `[${getSeconds()}s] Got users from store:`,
@@ -594,7 +515,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
   };
   // Effect to check trial status when signed in
   useEffect(() => {
-    if (isSignedIn === true) {
+    if (isSignedIn === true && !isTryout) {
       const check = async () => {
         const users = storageManager.get('users') || [];
         const userRaw = users[0];
@@ -1314,8 +1235,17 @@ const AccountManager = (React.FC<MyComponentProps> = ({
       };
 
       // Add to online database
-      const result = await addValueOnline('branches', branchToAdd);
-      console.log('Add property result:', result);
+      if (!isTryout) {
+        const result = await addValueOnline('branches', branchToAdd);
+        console.log('Add property result:', result);
+      } else {
+        if (Branches.length < 3) {
+          await storageManager.set('Branches', [...Branches, branchToAdd]);
+        } else {
+          showAlert('You have reached the tryout limit of 3 properties');
+          return;
+        }
+      }
 
       // If user is not admin, add branch to their allowed branches
       const currentUser = storageManager.get('SelectedAppUserId');
@@ -1366,7 +1296,6 @@ const AccountManager = (React.FC<MyComponentProps> = ({
     null
   );
   const handleSelectBranch = (branchId: string) => {
-   
     setSelectedBranchId(branchId);
     setBranchName(
       Branches.find((branch) => branch.id === branchId)?.name || ''
@@ -1380,13 +1309,12 @@ const AccountManager = (React.FC<MyComponentProps> = ({
       storageManager.set('LockBranchToPc', true);
     else storageManager.set('LockBranchToPc', false);
     const tutorialPreferences = storageManager.get('tutorialPreferences') || {};
-if(!tutorialPreferences["rooms"]) {
-  setSelectedPage("Rooms");
-}
+    if (!tutorialPreferences['rooms']) {
+      setSelectedPage('Rooms');
+    }
     setViewBranchManagementPage(false);
     if (!window.electron) RefreshDataFromSqlite();
-    syncWithOnline(SelectedUserId); 
-    
+    syncWithOnline(SelectedUserId);
   };
   const [isEditingBranch, setIsEditingBranch] = useState(false);
   const [showEditBranchModal, setShowEditBranchModal] = useState(false);
@@ -1528,6 +1456,13 @@ if(!tutorialPreferences["rooms"]) {
     if (navigator.onLine) {
       if (storageManager.get('users')) {
         if (storageManager.get('users')[0]) {
+          if (isTryout) {
+            return {
+              maxBranches: 3,
+              currentBranches: 1,
+            };
+          }
+
           const userMaxBranches = await getValuesWithSql_Online(
             'users',
             `WHERE id = '${storageManager.get('users')[0].id}'`
@@ -1579,18 +1514,24 @@ if(!tutorialPreferences["rooms"]) {
       setBranchLimit(maxBranches);
 
       if (maxBranches <= currentBranches) {
-        showAlert(
-          'You have reached the maximum number of properties allowed for now. Please contact support to increase your limit. +2519 4450 9999, or email rentmaster.et@gmail.com This is in case of data abuse',
-          'error'
-        );
+        if (window.location.href.includes('tryout')) {
+          showAlert(
+            'You have reached the maximum number of properties allowed for now. Please sign up to add more properties.'
+          );
+          return;
+        } else {
+          showAlert(
+            'You have reached the maximum number of properties allowed for now. Please contact support to increase your limit. +2519 4450 9999, or email rentmaster.et@gmail.com This is in case of data abuse',
+            'error'
+          );
 
-        return;
+          return;
+        }
       }
-
       setShowAddBranchModal(true);
     } catch (error) {
       showAlert(
-        'Failed to get user branch limit. Please check your internet connection and try again.',
+        'Failed to get user property limit. Please check your internet connection and try again.',
         'error'
       );
     }
@@ -2871,52 +2812,58 @@ if(!tutorialPreferences["rooms"]) {
                                   style={{ width: 'max-content' }}
                                 >
                                   {' '}
-                                  {storageManager.get('SelectedAppUserId') ===
-                                  'admin' ? (
+                                  {!isTryout &&
+                                    (storageManager.get('SelectedAppUserId') ===
+                                    'admin' ? (
+                                      <>
+                                        Admin -{' '}
+                                        <button
+                                          onClick={
+                                            handleSwitchUserInBranchManagement
+                                          }
+                                        >
+                                          Go to App Users
+                                        </button>
+                                      </>
+                                    ) : (
+                                      <>
+                                        {
+                                          appUsers.find(
+                                            (appUser) =>
+                                              appUser.id ===
+                                              storageManager.get(
+                                                'SelectedAppUserId'
+                                              )
+                                          )?.roleName
+                                        }{' '}
+                                        -{' '}
+                                        <button
+                                          onClick={
+                                            handleSwitchUserInBranchManagement
+                                          }
+                                        >
+                                          Switch user
+                                        </button>
+                                      </>
+                                    ))}
+                                </p>
+                              </div>
+                              {isMobileState ? (
+                                <></>
+                              ) : (
+                                <p style={{ width: '40%' }}>
+                                  {storageManager.get('SelectedAppUserId') !==
+                                    'admin' && (
                                     <>
-                                      Admin -{' '}
-                                      <button
-                                        onClick={
-                                          handleSwitchUserInBranchManagement
-                                        }
-                                      >
-                                        Go to App Users
-                                      </button>
-                                    </>
-                                  ) : (
-                                    <>
-                                      {
-                                        appUsers.find(
-                                          (appUser) =>
-                                            appUser.id ===
-                                            storageManager.get(
-                                              'SelectedAppUserId'
-                                            )
-                                        )?.roleName
-                                      }{' '}
-                                      -{' '}
-                                      <button
-                                        onClick={
-                                          handleSwitchUserInBranchManagement
-                                        }
-                                      >
-                                        Switch user
-                                      </button>
+                                      You are only able to view the properties
+                                      selected for your user account. If this is
+                                      incorrect, please contact the
+                                      administrator to enable access to more
+                                      properties.
                                     </>
                                   )}
                                 </p>
-                              </div>
-                             {isMobileState ? <></> : <p style={{ width: '40%' }}>
-                                {storageManager.get('SelectedAppUserId') !==
-                                  'admin' && (
-                                  <>
-                                    You are only able to view the properties
-                                    selected for your user account. If this is
-                                    incorrect, please contact the administrator
-                                    to enable access to more properties.
-                                  </>
-                                )}
-                              </p>}{' '}
+                              )}{' '}
                               <div
                                 id="Property-Management-Buttons"
                                 style={{
@@ -2924,7 +2871,9 @@ if(!tutorialPreferences["rooms"]) {
                                   gap: 'var(--15px-V)',
                                   alignItems: 'center',
                                   padding: 'var(--10px-V)',
-                                  flexDirection: isMobileState ? 'column-reverse' : 'row',
+                                  flexDirection: isMobileState
+                                    ? 'column-reverse'
+                                    : 'row',
                                 }}
                               >
                                 {/* {(storageManager.get('SelectedAppUserId') ===
@@ -2999,10 +2948,13 @@ if(!tutorialPreferences["rooms"]) {
                                   flexWrap: 'wrap',
                                   gap: 'var(--20px-V)',
                                   overflowY: 'auto',
-                                  justifyContent: isMobileState ? 'center' : 'flex-start',
+                                  justifyContent: isMobileState
+                                    ? 'center'
+                                    : 'flex-start',
                                 }}
                               >
-                                {Branches.filter(
+                                {Branches &&
+                                Branches.filter(
                                   (branch: any) =>
                                     storageManager.get('SelectedAppUserId') ===
                                       'admin' ||
@@ -3021,6 +2973,8 @@ if(!tutorialPreferences["rooms"]) {
                                     clicking refresh.
                                   </div>
                                 ) : (
+                                  Branches &&
+                                  Branches.length > 0 &&
                                   Branches.filter(
                                     (branch: any) =>
                                       storageManager.get(
@@ -3315,54 +3269,66 @@ if(!tutorialPreferences["rooms"]) {
                                     </div>
                                   ))
                                 )}
-                                  {!isMobileState ? <></> : <p style={{ width: '80%' }}>
-                                {storageManager.get('SelectedAppUserId') !==
-                                  'admin' && (
-                                  <p style={{color:"var(--Text-Color-Grey)"}}>
-                                    You are only able to view the properties
-                                    selected for your user account.
+                                {!isMobileState ? (
+                                  <></>
+                                ) : (
+                                  <p style={{ width: '80%' }}>
+                                    {storageManager.get('SelectedAppUserId') !==
+                                      'admin' && (
+                                      <p
+                                        style={{
+                                          color: 'var(--Text-Color-Grey)',
+                                        }}
+                                      >
+                                        You are only able to view the properties
+                                        selected for your user account.
+                                      </p>
+                                    )}
                                   </p>
                                 )}
-                              </p>}
                                 {Math.abs(
-                                  Branches.filter(
-                                    (branch: any) =>
-                                      storageManager.get(
-                                        'SelectedAppUserId'
-                                      ) === 'admin' ||
-                                      appUsers
-                                        .find(
-                                          (appUser) =>
-                                            appUser.id ===
-                                            storageManager.get(
-                                              'SelectedAppUserId'
-                                            )
-                                        )
-                                        ?.AllowedBranches.includes(branch.id)
-                                  ).length - Branches.length
+                                  Branches &&
+                                    Branches.length > 0 &&
+                                    Branches.filter(
+                                      (branch: any) =>
+                                        storageManager.get(
+                                          'SelectedAppUserId'
+                                        ) === 'admin' ||
+                                        appUsers
+                                          .find(
+                                            (appUser) =>
+                                              appUser.id ===
+                                              storageManager.get(
+                                                'SelectedAppUserId'
+                                              )
+                                          )
+                                          ?.AllowedBranches.includes(branch.id)
+                                    ).length - Branches.length
                                 ) === 0
                                   ? ''
                                   : Math.abs(
-                                      Branches.filter(
-                                        (branch: any) =>
-                                          storageManager.get(
-                                            'SelectedAppUserId'
-                                          ) === 'admin' ||
-                                          appUsers
-                                            .find(
-                                              (appUser) =>
-                                                appUser.id ===
-                                                storageManager.get(
-                                                  'SelectedAppUserId'
-                                                )
-                                            )
-                                            ?.AllowedBranches.includes(
-                                              branch.id
-                                            )
-                                      ).length - Branches.length
+                                      Branches &&
+                                        Branches.length > 0 &&
+                                        Branches.filter(
+                                          (branch: any) =>
+                                            storageManager.get(
+                                              'SelectedAppUserId'
+                                            ) === 'admin' ||
+                                            appUsers
+                                              .find(
+                                                (appUser) =>
+                                                  appUser.id ===
+                                                  storageManager.get(
+                                                    'SelectedAppUserId'
+                                                  )
+                                              )
+                                              ?.AllowedBranches.includes(
+                                                branch.id
+                                              )
+                                        ).length - Branches.length
                                     ) + ' Hidden'}
 
-                                {Branches.length === 0 && (
+                                {Branches && Branches.length === 0 && (
                                   <div
                                     style={{
                                       width: '100%',

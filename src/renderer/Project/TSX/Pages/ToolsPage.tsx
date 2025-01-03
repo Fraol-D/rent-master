@@ -10,6 +10,7 @@ import React, { useEffect, useState, useRef, useMemo } from 'react';
 
 import {
   addValueOnline,
+  downloadAllUserFiles,
   getValuesWithSql_Online,
   sendEmailAPI,
   sendSMS,
@@ -1961,73 +1962,101 @@ const ToolsPage = ({
       privileges.editEmailTemplates ||
       privileges.editSmsTemplates ? (
         <>
-          {ToolsSelectedPage === 'EmailTemplates' && (
-            <EmailTemplates
-              emailTemplates={emailTemplates}
-              handleReplaceWithDefault={handleReplaceWithDefault}
-              openTemplateId={openTemplateId}
-              editingTemplateId={editingTemplateId}
-              editedTemplate={editedTemplate}
-              variables={variables}
-              variableValues={variableValues}
-              recipientEmail={recipientEmail}
-              emailSendingwith={emailSendingwith}
-              handleAddEmailTemplate={handleAddEmailTemplate}
-              toggleTemplate={toggleTemplate}
-              startEditing={startEditing}
-              saveChanges={saveChanges}
-              cancelEditing={cancelEditing}
-              deleteEmailTemplate={deleteEmailTemplate}
-              handleEditChange={handleEditChange}
-              insertVariable={insertVariable}
-              extractVariables={extractVariables}
-              handleTryOut={handleTryOut}
-              tryOutMode={tryOutMode}
-              setTryOutMode={setTryOutMode}
-              formatEmailBody={formatEmailBody}
-              replaceVariables={replaceVariables}
-              handleVariableValueChange={handleVariableValueChange}
-              setRecipientEmail={setRecipientEmail}
-              handleSendEmail={handleSendEmail}
-              subjectInputRef={subjectInputRef}
-              bodyTextareaRef={bodyTextareaRef}
-              isSending={isSending}
-              setSelectedInput={setSelectedInput}
-              emailSentSuccessstring={emailSentSuccessstring}
-            />
-          )}
+          {ToolsSelectedPage === 'EmailTemplates' ? (
+            window.location.href.includes('tryout') ? (
+              <p
+                style={{
+                  margin: 'auto',
+                  textAlign: 'center',
+                  marginTop: 'var(--100px-V)',
+                  fontSize: 'var(--18px-V)',
+                  color: 'grey',
+                }}
+              >
+                Email templates are not available in tryout mode
+              </p>
+            ) : (
+              <EmailTemplates
+                emailTemplates={emailTemplates}
+                handleReplaceWithDefault={handleReplaceWithDefault}
+                openTemplateId={openTemplateId}
+                editingTemplateId={editingTemplateId}
+                editedTemplate={editedTemplate}
+                variables={variables}
+                variableValues={variableValues}
+                recipientEmail={recipientEmail}
+                emailSendingwith={emailSendingwith}
+                handleAddEmailTemplate={handleAddEmailTemplate}
+                toggleTemplate={toggleTemplate}
+                startEditing={startEditing}
+                saveChanges={saveChanges}
+                cancelEditing={cancelEditing}
+                deleteEmailTemplate={deleteEmailTemplate}
+                handleEditChange={handleEditChange}
+                insertVariable={insertVariable}
+                extractVariables={extractVariables}
+                handleTryOut={handleTryOut}
+                tryOutMode={tryOutMode}
+                setTryOutMode={setTryOutMode}
+                formatEmailBody={formatEmailBody}
+                replaceVariables={replaceVariables}
+                handleVariableValueChange={handleVariableValueChange}
+                setRecipientEmail={setRecipientEmail}
+                handleSendEmail={handleSendEmail}
+                subjectInputRef={subjectInputRef}
+                bodyTextareaRef={bodyTextareaRef}
+                isSending={isSending}
+                setSelectedInput={setSelectedInput}
+                emailSentSuccessstring={emailSentSuccessstring}
+              />
+            )
+          ) : null}
 
-          {ToolsSelectedPage === 'SMSTemplates' && (
-            <SMSTemplates
-              smsTemplates={smsTemplates}
-              openTemplateId={openTemplateId}
-              handleReplaceWithDefaultSms={handleReplaceWithDefaultSms}
-              editingTemplateId={editingTemplateId}
-              editedTemplate={editedTemplate}
-              variables={variables}
-              variableValues={variableValues}
-              recipientEmail={recipientEmail}
-              handleAddSMSTemplate={handleAddSMSTemplate}
-              toggleTemplate={toggleTemplate}
-              startEditing={startEditing}
-              saveChanges={saveChanges}
-              cancelEditing={cancelEditing}
-              deleteSMSTemplate={deleteSMSTemplate}
-              handleEditChange={handleEditChange}
-              insertVariable={insertVariable}
-              extractVariables={extractVariables}
-              handleTryOut={handleTryOut}
-              tryOutMode={tryOutMode}
-              setTryOutMode={setTryOutMode}
-              formatEmailBody={formatEmailBody}
-              replaceVariables={replaceVariables}
-              handleVariableValueChange={handleVariableValueChange}
-              setRecipientEmail={setRecipientEmail}
-              handleSendSMS={handleSendSMS}
-              bodyTextareaRef={bodyTextareaRef}
-              setSelectedInput={setSelectedInput}
-            />
-          )}
+          {ToolsSelectedPage === 'SMSTemplates' ? (
+            window.location.href.includes('tryout') ? (
+              <p
+                style={{
+                  margin: 'auto',
+                  textAlign: 'center',
+                  marginTop: 'var(--100px-V)',
+                  fontSize: 'var(--18px-V)',
+                  color: 'grey',
+                }}
+              >
+                SMS templates are not available in tryout mode
+              </p>
+            ) : (
+              <SMSTemplates
+                smsTemplates={smsTemplates}
+                openTemplateId={openTemplateId}
+                handleReplaceWithDefaultSms={handleReplaceWithDefaultSms}
+                editingTemplateId={editingTemplateId}
+                editedTemplate={editedTemplate}
+                variables={variables}
+                variableValues={variableValues}
+                recipientEmail={recipientEmail}
+                handleAddSMSTemplate={handleAddSMSTemplate}
+                toggleTemplate={toggleTemplate}
+                startEditing={startEditing}
+                saveChanges={saveChanges}
+                cancelEditing={cancelEditing}
+                deleteSMSTemplate={deleteSMSTemplate}
+                handleEditChange={handleEditChange}
+                insertVariable={insertVariable}
+                extractVariables={extractVariables}
+                handleTryOut={handleTryOut}
+                tryOutMode={tryOutMode}
+                setTryOutMode={setTryOutMode}
+                formatEmailBody={formatEmailBody}
+                replaceVariables={replaceVariables}
+                handleVariableValueChange={handleVariableValueChange}
+                setRecipientEmail={setRecipientEmail}
+                handleSendSMS={handleSendSMS}
+                bodyTextareaRef={bodyTextareaRef}
+                setSelectedInput={setSelectedInput}
+              />
+            )
+          ) : null}
           {ToolsSelectedPage === 'Database' && (
             <>
               {/* <ExpenseManager
@@ -2167,13 +2196,13 @@ const ToolsPage = ({
           {ToolsSelectedPage === 'Settings' && (
             <div className="settings-main-container">
               <div
-               style={{
-                display: 'flex',
-                alignItems: isMobileState ? 'flex-start' : 'center',
-                paddingLeft: isMobileState ? 'var(--20px-V)' : '0',
-                justifyContent: 'space-between',
-                flexDirection: isMobileState ? 'column' : 'row',
-              }}
+                style={{
+                  display: 'flex',
+                  alignItems: isMobileState ? 'flex-start' : 'center',
+                  paddingLeft: isMobileState ? 'var(--20px-V)' : '0',
+                  justifyContent: 'space-between',
+                  flexDirection: isMobileState ? 'column' : 'row',
+                }}
               >
                 <h1>Settings</h1>{' '}
                 <div
@@ -2183,8 +2212,8 @@ const ToolsPage = ({
                     gap: 'var(--10px-V)',
                   }}
                 >
-                  {storageManager.get('users')?.[0]?.email || ""} -{' '}
-                  {storageManager.get('users')?.[0]?.companyName || ""}
+                  {storageManager.get('users')?.[0]?.email || ''} -{' '}
+                  {storageManager.get('users')?.[0]?.companyName || ''}
                   <button onClick={handleSignOut}>Sign Out</button>{' '}
                 </div>
               </div>
@@ -3098,9 +3127,34 @@ const ToolsPage = ({
                   </>
                 ) : (
                   <div style={{ marginLeft: 'var(--20px-V)' }}>
-                    Please connect to internet to cahnge these settings
+                    Please connect to internet to change these settings
                   </div>
                 )}
+              </div>
+              <div className="settings-container">
+                <h2 style={{ fontSize: 'var(--25px-V)' }}>
+                  Download All Files
+                </h2>
+                <div style={{ marginLeft: 'var(--20px-V)' }}>
+                  <button
+                    onClick={async () => {
+                      try {
+                        await downloadAllUserFiles(SelectedUserId);
+                      } catch (error) {
+                        console.error('Error downloading files:', error);
+                      }
+                    }}
+                    style={{
+                      backgroundColor: 'var(--Primary-Color)',
+                      color: 'var(--Text-Color-Reverse)',
+                      padding: 'var(--10px-V)',
+                      borderRadius: 'var(--5px-V)',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Download All Files
+                  </button>
+                </div>
               </div>
             </div>
           )}
@@ -3244,8 +3298,8 @@ const ToolsPage = ({
                     gap: 'var(--10px-V)',
                   }}
                 >
-                  {storageManager.get('users')?.[0]?.email || ""} -{' '}
-                  {storageManager.get('users')?.[0]?.companyName || ""}
+                  {storageManager.get('users')?.[0]?.email || ''} -{' '}
+                  {storageManager.get('users')?.[0]?.companyName || ''}
                   <button onClick={handleSignOut}>Sign Out</button>{' '}
                 </div>
               </div>

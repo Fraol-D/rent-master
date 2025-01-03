@@ -21,7 +21,11 @@ const CornerSupport = ({
   setViewBranchManagementPage,
   setViewBranchManagementPageNONAdm,
   setAppUserManagerPromptPassword,
-  setAppUserManagerShow,RoomList
+  setAppUserManagerShow,
+  RoomList,
+  handleOpenSideBar,
+  handleCloseSideBar,
+  initialLoading,
 }: any) => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedOption, setSelectedOption] = useState<
@@ -42,40 +46,47 @@ const CornerSupport = ({
   const [currentPageInital, setCurrentPageInital] = useState(0);
   const [currentSectionInital, setCurrentSectionInital] = useState(0);
   const [tutorialShow, setTutorialShow] = useState(false);
-const {isMobileState} = useGlobal()
-  useEffect(() => {
-    const checkAndStartTutorial = () => {
-      const tutorialPreferences = storageManager.get('tutorialPreferences') || {};
+  const { isMobileState } = useGlobal();
+  const checkAndStartTutorial = () => {
+    console.log('checkAndStartTutorial');
+    const tutorialPreferences = storageManager.get('tutorialPreferences') || {};
 
-      const pageTutorial = tutorialData.pages.find(
-        (page) => page.hasToBeIn.toLowerCase() === SelectedPage.toLowerCase()
+    const pageTutorial = tutorialData.pages.find(
+      (page) => page.hasToBeIn.toLowerCase() === SelectedPage.toLowerCase()
+    );
+
+    if (pageTutorial) {
+      // Check if first step target element exists
+      const firstStepElement = document.getElementById(
+        pageTutorial.overview.steps[0].targetElementId
       );
 
-      if (pageTutorial) {
-        // Check if first step target element exists
-        const firstStepElement = document.getElementById(pageTutorial.overview.steps[0].targetElementId);
-        
-        if (firstStepElement && !tutorialPreferences[SelectedPage.toLowerCase()]) {
-          // If element exists and tutorial not seen, start tutorial automatically
-          const pageIndex = tutorialData.pages.findIndex(p => p.hasToBeIn.toLowerCase() === SelectedPage.toLowerCase());
-          
-          setTutorialShow(true);
-          setCurrentPageInital(pageIndex);
-          setCurrentSectionInital(0);
-          setSelectedTutorial(tutorialData);
-          setSelectedTutorialIndex(pageIndex);
-          
-          // Mark tutorial as seen
-          tutorialPreferences[SelectedPage.toLowerCase()] = true;
-          storageManager.set('tutorialPreferences', tutorialPreferences);
-        }
-      }
-    };
+     if (
+        firstStepElement &&
+        !tutorialPreferences[SelectedPage.toLowerCase()]
+      ) {
+        // If element exists and tutorial not seen, start tutorial automatically
+        const pageIndex = tutorialData.pages.findIndex(
+          (p) => p.hasToBeIn.toLowerCase() === SelectedPage.toLowerCase()
+        );
 
+        setTutorialShow(true);
+        setCurrentPageInital(pageIndex);
+        setCurrentSectionInital(0);
+        setSelectedTutorial(tutorialData);
+        setSelectedTutorialIndex(pageIndex);
+
+        // Mark tutorial as seen
+        tutorialPreferences[SelectedPage.toLowerCase()] = true;
+        storageManager.set('tutorialPreferences', tutorialPreferences);
+      }
+    }
+  };
+  useEffect(() => {
     // Small delay to ensure DOM elements are rendered
     const timeoutId = setTimeout(checkAndStartTutorial, 500);
     return () => clearTimeout(timeoutId);
-  }, [SelectedPage]);
+  }, [SelectedPage, initialLoading]);
 
   const toggleOpen = () => {
     if (isOpen && selectedOption) {
@@ -90,6 +101,9 @@ const {isMobileState} = useGlobal()
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
+    if (window.location.href.includes('tryout')) {
+      return;
+    }
     const fetchSmsHistory = async () => {
       setIsLoading(true);
       const user = await getValuesWithSql_Online(
@@ -149,7 +163,9 @@ const {isMobileState} = useGlobal()
     setIsSendingReviewMessage(true);
     const review = reviewFormMEssage;
     const userDATA = await storageManager.get('users');
-    const userEmail = userDATA[0].email;
+    const userEmail = window.location.href.includes('tryout')
+      ? 'tryout@rentmaster.et'
+      : userDATA[0].email;
 
     await sendEmailAPI(
       'rentmaster.et@gmail.com',
@@ -168,7 +184,9 @@ const {isMobileState} = useGlobal()
     setIsSendingReview(true);
     const review = reviewForm;
     const userDATA = await storageManager.get('users');
-    const userEmail = userDATA[0].email;
+    const userEmail = window.location.href.includes('tryout')
+      ? 'tryout@rentmaster.et'
+      : userDATA[0].email;
 
     await sendEmailAPI(
       'rentmaster.et@gmail.com',
@@ -204,10 +222,9 @@ const {isMobileState} = useGlobal()
   };
 
   const handleTutorialStart = (pageIndex: number, sectionIndex: number) => {
-    if(isMobileState) {
-      setIsOpen(false)
-      setSelectedOption(null)
-    }
+    setIsOpen(false);
+    setSelectedOption(null);
+
     setShowTutorialPrompt(false);
     setTutorialShow(true);
     setCurrentPageInital(pageIndex);
@@ -225,81 +242,87 @@ const {isMobileState} = useGlobal()
           gap: 'var(--10px-V)',
         }}
       >
-        {tutorialData.pages.map((page, pageIndex) => (
-          <div
-            key={pageIndex}
-            style={{
-              padding: 'var(--10px-V)',
-              backgroundColor: 'var(--Secondary-Color20)',
-              borderRadius: 'var(--5px-V)',
-            }}
-          >
-            <h3 style={{ margin: '0 0 var(--5px-V) 0' }}>{page.pageTitle}</h3>
-            <p style={{ margin: '0 0 var(--10px-V) 0' }}>
-              {page.overview.description}
-            </p>
-            {page.hasToBeIn.toLowerCase() === SelectedPage.toLowerCase() ? (
-              <div
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 'var(--10px-V)',
-                }}
-              >
-                <button
-                  onClick={() => handleTutorialStart(pageIndex, 0)}
+        {tutorialData.pages
+          .filter(
+            (page) =>
+              !window.location.href.includes('tryout') ||
+              page.pageTitle !== 'App Users'
+          )
+          .map((page, pageIndex) => (
+            <div
+              key={pageIndex}
+              style={{
+                padding: 'var(--10px-V)',
+                backgroundColor: 'var(--Secondary-Color20)',
+                borderRadius: 'var(--5px-V)',
+              }}
+            >
+              <h3 style={{ margin: '0 0 var(--5px-V) 0' }}>{page.pageTitle}</h3>
+              <p style={{ margin: '0 0 var(--10px-V) 0' }}>
+                {page.overview.description}
+              </p>
+              {page.hasToBeIn.toLowerCase() === SelectedPage.toLowerCase() ? (
+                <div
                   style={{
-                    padding: 'var(--5px-V) var(--10px-V)',
-                    backgroundColor: 'var(--Primary-Color)',
-                    color: 'var(--Text-Color-Reverse)',
-                    border: 'none',
-                    borderRadius: 'var(--3px-V)',
-                    cursor: 'pointer',
-                    textAlign: 'left',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 'var(--10px-V)',
                   }}
                 >
-                  Overview: {page.overview.mainTitle}
-                </button>
-                {page.sections.map((section, sectionIndex) => (
                   <button
-                    key={sectionIndex}
-                    onClick={() =>
-                      handleTutorialStart(pageIndex, sectionIndex + 1)
-                    }
+                    onClick={() => handleTutorialStart(pageIndex, 0)}
                     style={{
                       padding: 'var(--5px-V) var(--10px-V)',
-                      backgroundColor: 'var(--Secondary-Color30)',
-                      color: 'var(--Text-Color)',
+                      backgroundColor: 'var(--Primary-Color)',
+                      color: 'var(--Text-Color-Reverse)',
                       border: 'none',
                       borderRadius: 'var(--3px-V)',
                       cursor: 'pointer',
                       textAlign: 'left',
                     }}
                   >
-                    Section {sectionIndex + 1}: {section.mainTitle}
+                    Overview: {page.overview.mainTitle}
                   </button>
-                ))}
-              </div>
-            ) : (
-              <>
-                Wrong page,{' '}
-                <button
-                  onClick={() => handlePageNavigation(page.hasToBeIn)}
-                  style={{
-                    padding: 'var(--5px-V) var(--10px-V)',
-                    backgroundColor: 'var(--Primary-Color)',
-                    color: 'var(--Text-Color-Reverse)',
-                    border: 'none',
-                    borderRadius: 'var(--3px-V)',
-                    cursor: 'pointer',
-                  }}
-                >
-                  Go to page
-                </button>
-              </>
-            )}
-          </div>
-        ))}
+                  {page.sections.map((section, sectionIndex) => (
+                    <button
+                      key={sectionIndex}
+                      onClick={() =>
+                        handleTutorialStart(pageIndex, sectionIndex + 1)
+                      }
+                      style={{
+                        padding: 'var(--5px-V) var(--10px-V)',
+                        backgroundColor: 'var(--Secondary-Color30)',
+                        color: 'var(--Text-Color)',
+                        border: 'none',
+                        borderRadius: 'var(--3px-V)',
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                      }}
+                    >
+                      Section {sectionIndex + 1}: {section.mainTitle}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <>
+                  Wrong page,{' '}
+                  <button
+                    onClick={() => handlePageNavigation(page.hasToBeIn)}
+                    style={{
+                      padding: 'var(--5px-V) var(--10px-V)',
+                      backgroundColor: 'var(--Primary-Color)',
+                      color: 'var(--Text-Color-Reverse)',
+                      border: 'none',
+                      borderRadius: 'var(--3px-V)',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Go to page
+                  </button>
+                </>
+              )}
+            </div>
+          ))}
       </div>
     </div>
   );
@@ -438,7 +461,11 @@ const {isMobileState} = useGlobal()
         );
 
       case 'Subscription':
-        return (
+        return window.location.href.includes('tryout') ? (
+          <div style={{ padding: 'var(--5px-V)' }}>
+            You are currently in the tryout mode. Sign up to get full access
+          </div>
+        ) : (
           <div style={{ padding: 'var(--5px-V)' }}>
             <h2 style={{ marginTop: '0' }}>Current Plan</h2>
             <div
@@ -588,24 +615,28 @@ const {isMobileState} = useGlobal()
         setViewBranchManagementPage(true);
         break;
       case 'dashboard':
-        if (SelectedAppUser.id === 'admin' || privileges.viewDashboard)
-          {setSelectedPage('Dashboard'); setAppUserManagerShow(false);}
-        else console.log('Access denied');
+        if (SelectedAppUser.id === 'admin' || privileges.viewDashboard) {
+          setSelectedPage('Dashboard');
+          setAppUserManagerShow(false);
+        } else console.log('Access denied');
         break;
       case 'rooms':
-        if (SelectedAppUser.id === 'admin' || privileges.viewRoomsPage)
-          {setSelectedPage('Rooms');setAppUserManagerShow(false);}
-        else console.log('Access denied');
+        if (SelectedAppUser.id === 'admin' || privileges.viewRoomsPage) {
+          setSelectedPage('Rooms');
+          setAppUserManagerShow(false);
+        } else console.log('Access denied');
         break;
       case 'expense':
-        if (SelectedAppUser.id === 'admin' || privileges.editExpenses)
-          {setSelectedPage('Expense');setAppUserManagerShow(false);}
-        else console.log('Access denied');
+        if (SelectedAppUser.id === 'admin' || privileges.editExpenses) {
+          setSelectedPage('Expense');
+          setAppUserManagerShow(false);
+        } else console.log('Access denied');
         break;
       case 'tools':
-        if (SelectedAppUser.id === 'admin' || privileges.viewToolsPage)
-          {setSelectedPage('Tools');setAppUserManagerShow(false);}
-        else console.log('Access denied');
+        if (SelectedAppUser.id === 'admin' || privileges.viewToolsPage) {
+          setSelectedPage('Tools');
+          setAppUserManagerShow(false);
+        } else console.log('Access denied');
         break;
     }
   };
@@ -619,10 +650,12 @@ const {isMobileState} = useGlobal()
           onClose={() => {
             setTutorialShow(false);
           }}
+          handleOpenSideBar={handleOpenSideBar}
+          handleCloseSideBar={handleCloseSideBar}
           currentPageInital={currentPageInital}
           currentSectionInital={currentSectionInital}
           onNavigate={handlePageNavigation}
-          selectedAppUserId={SelectedAppUser.id}
+          selectedAppUserId={SelectedAppUser && SelectedAppUser.id}
           userPrivileges={getUserPrivileges(SelectedAppUser)}
           RoomList={RoomList}
         />
@@ -631,7 +664,7 @@ const {isMobileState} = useGlobal()
       <div
         style={{
           position: 'fixed',
-          bottom:  'var(--20px-V)',
+          bottom: 'var(--20px-V)',
           right: 'var(--20px-V)',
           zIndex: 600,
         }}
@@ -662,7 +695,7 @@ const {isMobileState} = useGlobal()
           <div
             style={{
               position: 'absolute',
-              bottom:  'var(--3px-V)',
+              bottom: 'var(--3px-V)',
               right: 'var(--28px-V)',
               display: 'flex',
               flexDirection: 'row',
@@ -706,7 +739,7 @@ const {isMobileState} = useGlobal()
             style={{
               position: 'fixed',
               right: 'var(--47px-V)',
-              bottom:  'var(--65px-V)',
+              bottom: 'var(--65px-V)',
               width: 'var(--320px-V)',
               height: '75vh',
               backgroundColor: 'var(--Background-Color)',

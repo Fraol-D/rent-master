@@ -34,6 +34,11 @@ const ImageInteractor2: React.FC<ImageInteractorProps> = ({
   const [images, setImages] = useState([]);
   const containerRef = useRef<HTMLDivElement>(null);
   const [isHovering, setIsHovering] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [totalFiles, setTotalFiles] = useState(0);
+  const [uploadedFiles, setUploadedFiles] = useState(0);
+
   useEffect(() => {
     if (isAddRoomImage) {
       if (refreshState) {
@@ -142,37 +147,49 @@ const ImageInteractor2: React.FC<ImageInteractorProps> = ({
     input.onchange = async (event) => {
       const files = (event.target as HTMLInputElement).files;
       if (files && files.length > 0) {
-        const filteredFiles = Array.from(files).filter(file => file.size <= 5 * 1024 * 1024); // 5MB limit
-        if(filteredFiles.length === 0){
-          showAlert('All files are above the 5MB limit.', 'error');
-          return;
-        } else if (filteredFiles.length < files.length) {
-          showAlert('Some files exceeded the 5MB limit and were not uploaded.', 'error');
-        }
-
         try {
+          setIsUploading(true);
+          setTotalFiles(files.length);
+          setUploadedFiles(0);
+          const filteredFiles = Array.from(files).filter(file => file.size <= 5 * 1024 * 1024); // 5MB limit
+          if(filteredFiles.length === 0){
+            showAlert('All files are above the 5MB limit.', 'error');
+            setIsUploading(false);
+            return;
+          } else if (filteredFiles.length < files.length) {
+            showAlert('Some files exceeded the 5MB limit and were not uploaded.', 'error');
+          }
+
           const folderText = isAddRoomImage
             ? 'Add a room images'
             : room
             ? `Floor ${room.floor}, Room ${room.roomIndex} - ${room.id}`
             : '';
-          const results = await AddRoomImageToFiles(filteredFiles, folderText);
-          if (results) {
-            if (!isAddRoomImage && room) {
-              fetchRoomImages();
-            } else {
-              fetchRoomImages2();
+
+          for (let i = 0; i < filteredFiles.length; i++) {
+            const results = await AddRoomImageToFiles([filteredFiles[i]], folderText);
+            if (results) {
+              setUploadedFiles(prev => prev + 1);
+              setUploadProgress(((i + 1) / filteredFiles.length) * 100);
             }
-            showAlert('Images uploaded successfully!', 'success');
-          } else {
-            console.error('Failed to upload images');
-            showAlert('Failed to upload images. Please try again.');
           }
+
+          if (!isAddRoomImage && room) {
+            fetchRoomImages();
+          } else {
+            fetchRoomImages2();
+          }
+          showAlert('Images uploaded successfully!', 'success');
         } catch (error) {
           console.error('Error uploading files:', error);
           showAlert(
             'An error occurred while uploading files. Please try again.'
           );
+        } finally {
+          setIsUploading(false);
+          setUploadProgress(0);
+          setTotalFiles(0);
+          setUploadedFiles(0);
         }
       }
     };
@@ -245,10 +262,54 @@ const ImageInteractor2: React.FC<ImageInteractorProps> = ({
     <div
       ref={containerRef}
       className="image-interactor"
-      style={{ width: '100%', height: '100%' }}
+      style={{ width: '100%', height: '100%', position: 'relative' }}
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
     >
+      {isUploading && (
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 1000,
+          borderRadius: 'inherit'
+        }}>
+          <div style={{
+            color: 'white',
+            padding: '20px',
+            borderRadius: '5px',
+            textAlign: 'center'
+          }}>
+            <div>Uploading Images...</div>
+            <div style={{marginTop: '10px'}}>
+              {uploadedFiles} of {totalFiles} files uploaded
+            </div>
+            <div style={{
+              width: '200px',
+              height: '20px',
+              backgroundColor: 'rgba(255, 255, 255, 0.2)',
+              borderRadius: '10px',
+              marginTop: '10px',
+              overflow: 'hidden'
+            }}>
+              <div style={{
+                width: `${uploadProgress}%`,
+                height: '100%',
+                backgroundColor: 'white',
+                transition: 'width 0.3s ease-in-out'
+              }} />
+            </div>
+            <div style={{marginTop: '5px'}}>{Math.round(uploadProgress)}%</div>
+          </div>
+        </div>
+      )}
       {images.length > 0 ? (
         <>
           <div
@@ -289,9 +350,10 @@ const ImageInteractor2: React.FC<ImageInteractorProps> = ({
                 justifyContent: 'space-between',
               }}
             >
-              <button onClick={handleDeleteImage}>Del</button>
+              <button onClick={handleDeleteImage} disabled={isUploading}>Del</button>
               <button
                 onClick={() => handleShowInExplorer(images[currentIndex])}
+                disabled={isUploading}
               >
                {window.electron ? 'Files' : 'Download'}
               </button>
@@ -312,14 +374,14 @@ const ImageInteractor2: React.FC<ImageInteractorProps> = ({
                   />
                 ))}
               </div>
-              <button onClick={handleOnAddImage}>Add</button>
+              <button onClick={handleOnAddImage} disabled={isUploading}>Add</button>
             </div>
           </div>
         </>
       ) : (
         <div className="no-images">
           <p>No images available</p>
-          <button onClick={handleOnAddImage} style={{}}>
+          <button onClick={handleOnAddImage} disabled={isUploading} style={{}}>
             Add Image
           </button>
         </div>

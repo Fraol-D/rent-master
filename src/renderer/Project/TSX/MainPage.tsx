@@ -364,6 +364,10 @@ const MainPage = ({
   signOutUserAndRestart,
   setChangeProgress,
   changeProgress,
+  SideBarWidth,
+  setSideBarWidth,
+  SideBarShowState,
+  setSideBarShowState,
 }: any) => {
   const {
     AllRoomSpecifications,
@@ -857,6 +861,15 @@ const MainPage = ({
   const handleAddRoom = async (continueAdding = false) => {
     if (isAddingRoom) return; // Prevent multiple clicks
     if (navigator.onLine) {
+     if(window.location.href.includes('tryout')){
+      const limit = 5
+      const reachedLimit = RoomList.length >= limit;
+      if(reachedLimit){
+        showAlert('Room limit reached. Please sign up to add more rooms.');
+        return;
+      }
+
+     } else {
       const reachedLimit = await checkRoomLimit(SelectedUserId);
 
       console.log(reachedLimit);
@@ -864,7 +877,7 @@ const MainPage = ({
         showAlert('Room limit reached. Please upgrade to add more rooms.');
 
         return;
-      }
+      }}
     } else {
       //IMPLIMENT ROOM LIMIT ON offline electron
     }
@@ -1164,8 +1177,6 @@ const MainPage = ({
       setAddRoomFormRoomIndex(a);
     }
   };
-  const [SideBarWidth, setSideBarWidth] = useState<number>(290);
-  const [SideBarShowState, setSideBarShowState] = useState<boolean>(true);
 
   const handleCloseSideBar = () => {
     if (SideBarShowState) {
@@ -1177,6 +1188,8 @@ const MainPage = ({
       setSideBarShowState(true);
     }
   };
+
+ 
   function handleClearFilters() {
     setFilterOptions([]);
     setFloorFilter('');
@@ -1195,7 +1208,7 @@ const MainPage = ({
   }
   const [RefreshInspectorForAddRoom, setRefreshInspectorForAddRoom] =
     useState(false);
-  useEffect(() => {}, []);
+ 
   const handleAddImage = (roomId: string) => {
     // This function will be implemented later
     console.log('Add image for room', roomId);
@@ -3661,7 +3674,8 @@ const MainPage = ({
               HideSideBarForCalendar || isMobileState
                 ? '100%'
                 : `calc(100% - var(--${SideBarWidth}px-V))`,
-            overflowY: SelectedPage === 'Database' ? 'hidden' : 'auto',
+            height:isMobileState?"": SelectedPage === 'Tools' ? 'calc(100% - var(--60px-V))' :SelectedPage === 'Rooms' ?  'calc(100% - var(--60px-V))' :SelectedPage === 'Expense' ? 'calc(100% - var(--60px-V))' : '',
+            overflowY: SelectedPage === 'Tools' ?  ToolsSelectedPage === "Database" ? "hidden":'auto' : 'auto',
           }}
         >
           {isMobileState && SideBarShowState ? (

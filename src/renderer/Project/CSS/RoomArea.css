@@ -468,6 +468,7 @@
   scrollbar-width: thin;
 }
 .appUserItem {
+  height: max-content;
   width: var(--350px-V);
   background-color: var(--Secondary-Color30);
   border-radius: var(--5px-V);

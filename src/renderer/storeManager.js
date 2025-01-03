@@ -1,9 +1,10 @@
 import CryptoJS from 'crypto-js';
-
+import { tryoutData } from './Project/TSX/Helpers/tryoutData';
 // Toggle encryption on or off
-const encryptData = true;
-
-const secretKey = window.electron ? '':import.meta.env.VITE_ENCRYPTION_KEY;
+const encryptData = false;
+const isTryout = window.location.href.includes('tryout');
+const secretKey = window.electron ? '' : import.meta.env.VITE_ENCRYPTION_KEY;
+// onstart add tryout data to storage manager
 
 const encrypt = (data) => {
   return CryptoJS.AES.encrypt(JSON.stringify(data), secretKey).toString();
@@ -65,8 +66,13 @@ const webStorage = {
     } catch (error) {
       console.error('Error clearing localStorage:', error);
     }
-  }
+  },
 };
 
 // Export the appropriate storage implementation
 export const storageManager = isElectron() ? electronStorage : webStorage;
+if (isTryout) {
+  Object.keys(tryoutData).forEach(key => {
+    storageManager.set(key, tryoutData[key]);
+  });
+}

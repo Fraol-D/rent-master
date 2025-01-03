@@ -52,6 +52,8 @@ interface TutorialManagerProps {
   currentPageInital: number;
   currentSectionInital: number;
   RoomList: RoomType[];
+  handleOpenSideBar: () => void;
+  handleCloseSideBar: () => void;
 }
 
 const TutorialManager = ({
@@ -64,6 +66,8 @@ const TutorialManager = ({
   currentPageInital,
   currentSectionInital,
   RoomList,
+  handleOpenSideBar,
+  handleCloseSideBar,
 }: TutorialManagerProps) => {
   // Add error checking
   if (!tutorialData || !tutorialData.pages || tutorialData.pages.length === 0) {
@@ -115,7 +119,14 @@ const TutorialManager = ({
     currentSection === 0
       ? currentPageData.overview
       : currentPageData.sections[currentSection - 1];
-  const currentStepData = currentSectionData.steps[currentStep];
+
+  // Filter out steps that should not be shown in tryout mode
+  const isTryoutMode = window.location.href.includes('tryout');
+  const filteredSteps = currentSectionData.steps.filter(step => {
+    return !(isTryoutMode && step.dontShowInTryout);
+  });
+  
+  const currentStepData = filteredSteps[currentStep];
 
   // Function to position the tutorial card relative to target element
   const positionCard = (elementId: string | undefined, position: string) => {
@@ -159,8 +170,14 @@ const TutorialManager = ({
       ? currentStepData.marginInDirection * scaleFactor
       : 0;
     let style: { [key: string]: string } = {};
-
-    switch (position) {
+    const realPos = isMobileState
+      ? position === 'left'
+        ? 'up'
+        : position === 'right'
+        ? 'down'
+        : position
+      : position;
+    switch (realPos) {
       case 'left2':
         style = {
           top: `${rect.top + rect.height / 2}px`,
@@ -287,8 +304,12 @@ const TutorialManager = ({
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
-  const { tutorialNewAppUserId, tutorialNewExpenseId, tutorialNewRoomId } =
-    useGlobal();
+  const {
+    tutorialNewAppUserId,
+    tutorialNewExpenseId,
+    tutorialNewRoomId,
+    isMobileState,
+  } = useGlobal();
 
   // Effect to check and update card position and styles every 2 seconds
   useEffect(() => {
@@ -300,6 +321,10 @@ const TutorialManager = ({
 
       // Check if we need to verify parent element
       let finalTargetId = targetId;
+      if (targetId.includes('-tab') && isMobileState && !hasInteracted) {
+        handleOpenSideBar();
+        console.log('Mobile tab interaction needed');
+      }
       if (currentStepData.checkUnderElementId && targetId) {
         const parentElement = document.getElementById(
           currentStepData.checkUnderElementIsJS
@@ -395,7 +420,9 @@ const TutorialManager = ({
 
       // Handle blinking element if specified
       if (currentStepData.blinkAsWellId) {
-        const blinkElement = document.getElementById(currentStepData.blinkAsWellId);
+        const blinkElement = document.getElementById(
+          currentStepData.blinkAsWellId
+        );
         if (blinkElement) {
           blinkElement.setAttribute('data-tutorial-target', 'true');
           blinkElement.style.zIndex = '504';
@@ -546,11 +573,47 @@ const TutorialManager = ({
 
   const handleNext = () => {
     if (!canProgress) return;
+    // Check if target ID contains "-tab" and we're on mobile
+    if (currentStepData.targetElementId.includes('-tab') && isMobileState) {
+      handleOpenSideBar();
+      console.log('Mobile tab interaction needed');
+    }
 
     setHasInteracted(false);
     setErrorMessage(null);
+
+
     if (isLastStep()) {
       setShowCompletionMessage(true);
+    // Special case for tryout mode - at the end of each section
+    const isTryoutMode = window.location.href.includes('tryout');
+    const isLastStepInSection =
+      currentStep === currentSectionData.steps.length - 1;
+
+    if (isTryoutMode && isLastStepInSection && !showCompletionMessage) {
+      // Highlight all navigation tabs
+      const navButtons = document.querySelectorAll('#top-nav-button');
+      navButtons.forEach((button) => {
+        if (button instanceof HTMLElement) {
+          button.setAttribute('data-tutorial-target', 'true');
+          button.style.zIndex = '504';
+        }
+      });
+
+      // Show a message about exploring other sections
+      setShowCompletionMessage(true);
+      setTimeout(() => {
+        // Clean up highlights
+        navButtons.forEach((button) => {
+          if (button instanceof HTMLElement) {
+            button.removeAttribute('data-tutorial-target');
+            button.style.zIndex = '';
+          }
+        });
+        onClose();
+      }, 5000);
+      return;
+    }
       // Close tutorial after showing completion message
       setTimeout(() => {
         onClose();
@@ -558,7 +621,7 @@ const TutorialManager = ({
       return;
     }
 
-    if (currentStep < currentSectionData.steps.length - 1) {
+    if (currentStep < filteredSteps.length - 1) {
       setCurrentStep((prev) => prev + 1);
     } else if (currentSection < currentPageData.sections.length) {
       setCurrentSection((prev) => prev + 1);
@@ -643,9 +706,21 @@ const TutorialManager = ({
           };
         } else if (currentStepData.requiresInteraction) {
           const handleInteraction = () => {
-            setHasInteracted(true);
-            if (currentStepData.whenClickedGoNextStep) {
+            if (
+              currentStepData.targetElementId.includes('-tab') &&
+              isMobileState
+            ) {
+              handleCloseSideBar();
+              setHasInteracted(true);
+
               handleNext();
+
+              console.log('Mobile taeeded');
+            } else {
+              setHasInteracted(true);
+              if (currentStepData.whenClickedGoNextStep) {
+                handleNext();
+              }
             }
           };
           element.addEventListener('click', handleInteraction);
@@ -685,7 +760,7 @@ const TutorialManager = ({
     const isLastPage = currentPage === tutorialSystem.pages.length - 1;
     const isLastSection = currentSection === currentPageData.sections.length;
     const isLastStepInSection =
-      currentStep === currentSectionData.steps.length - 1;
+      currentStep === filteredSteps.length - 1;
 
     return isLastPage && isLastSection && isLastStepInSection;
   };
@@ -721,7 +796,7 @@ const TutorialManager = ({
         return userPrivileges.viewDashboard;
       case 'people':
         return userPrivileges.viewPeoplesPage;
-     
+
       case 'Tools':
         return userPrivileges.viewToolsPage;
       default:
@@ -795,15 +870,37 @@ const TutorialManager = ({
       <div className="tutorial-card" style={cardPosition}>
         {showCompletionMessage ? (
           <div className="tutorial-completion">
-            <h2>You are all set and ready!</h2>
-            <p>Tutorial completed successfully</p>
-            <button
-              onClick={() => {
-                onClose();
-              }}
-            >
-              Close
-            </button>
+            {window.location.href.includes('tryout') ? (
+              <>
+                <h2>Great job completing this section!</h2>
+                <p>
+                  Feel free to explore other sections highlighted above to learn
+                  more about RentMaster's features.
+                </p>
+                <p>
+                  Each section has its own tutorial to help you get started.
+                </p>
+                <button
+                  onClick={() => {
+                    onClose();
+                  }}
+                >
+                  Continue Exploring
+                </button>
+              </>
+            ) : (
+              <>
+                <h2>You can proceed to the next step!</h2>
+                <p>Tutorial completed successfully, you can view any other pages now.</p>
+                <button
+                  onClick={() => {
+                    onClose();
+                  }}
+                >
+                  Close
+                </button>
+              </>
+            )}
           </div>
         ) : (
           <>
@@ -826,8 +923,7 @@ const TutorialManager = ({
 
             <div className="tutorial-controls">
               <div className="tutorial-progress">
-                Step {currentStep + 1} of {currentSectionData.steps.length}
-                
+                Step {currentStep + 1} of {filteredSteps.length}
               </div>
               <div className="tutorial-buttons">
                 {currentStepData.allowBack && currentStep !== 0 && (

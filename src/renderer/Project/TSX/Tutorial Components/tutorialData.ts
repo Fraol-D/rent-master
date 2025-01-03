@@ -15,6 +15,7 @@ export type TutorialStep = {
   toContinueVarHasToBeAvailable?: string;
   marginInDirection?: number;
   blinkAsWellId?: string;
+  dontShowInTryout?: boolean;
 };
 
 export type TutorialSection = {
@@ -72,6 +73,7 @@ export const tutorialData: TutorialSystem = {
             requiresInteraction: false,
             allowBack: true,
             dontInteract: true,
+            dontShowInTryout: true,
           },
           {
             description: 'This is where your properties will be listed.',
@@ -582,7 +584,7 @@ export const tutorialData: TutorialSystem = {
               allowBack: true,
               isJsId: true,
             },
-            {
+           {
               description:
                 'For open-ended agreements, you can extend the payment schedule by clicking this button.',
               targetElementId: `'payment-timeline-extend' + (RoomList.find(room => room.status === 'Taken')?.id)`,

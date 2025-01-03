@@ -17,8 +17,7 @@
   "scripts": {
     "dev": " concurrently \"vite\" \"npx nodemon ./src/Backend/viteProxyServer.js\"",
     "dev-35": "cd ./page-35-year-china-batch-website && vite",
-
-
+    "build-35": "cd ./page-35-year-china-batch-website && vite build",
     "dev-page": "vite ./RentMaster\\ Website/RentalSite/",
     "react-build": "vite build",   
      "build": "concurrently \"npm run build:main\" \"npm run build:renderer\"",

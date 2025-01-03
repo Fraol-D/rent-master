@@ -46,6 +46,9 @@ const DocumentInteractor: React.FC<DocumentInteractorProps> = ({
   const [documents, setDocuments] = useState<string[]>([]);
   const [selectedDocument, setSelectedDocument] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [totalFiles, setTotalFiles] = useState(0);
+  const [uploadedFiles, setUploadedFiles] = useState(0);
 
   useEffect(() => {
     if (isAddRoomDocument && refreshState) {
@@ -126,6 +129,8 @@ const DocumentInteractor: React.FC<DocumentInteractorProps> = ({
       if (files && files.length > 0) {
         try {
           setIsUploading(true);
+          setTotalFiles(files.length);
+          setUploadedFiles(0);
           const filteredFiles = Array.from(files).filter(file => file.size <= 5 * 1024 * 1024); // 5MB limit
           console.log(filteredFiles.length,files.length)
           if(filteredFiles.length === 0){
@@ -138,18 +143,15 @@ const DocumentInteractor: React.FC<DocumentInteractorProps> = ({
           
           if (isAddRoomDocument) {
             const roomId = 'Add a tenant documents';
-            const uploadPromises = filteredFiles.map((file) =>
-              uploadTenantDocument(file, roomId)
-            );
-            const results = await Promise.all(uploadPromises);
-            if (results.every((result) => result)) {
-              showAlert('Documents uploaded successfully', 'success');
-              console.log('Tenant documents uploaded successfully:', results);
-              fetchRoomDocuments2();
-            } else {
-              console.error('Failed to upload some tenant documents');
-              showAlert('Failed to upload some tenant documents. Please try again.', 'error');
+            for (let i = 0; i < filteredFiles.length; i++) {
+              const file = filteredFiles[i];
+              await uploadTenantDocument(file, roomId);
+              setUploadedFiles(prev => prev + 1);
+              setUploadProgress(((i + 1) / filteredFiles.length) * 100);
             }
+            showAlert('Documents uploaded successfully', 'success');
+            console.log('Tenant documents uploaded successfully');
+            fetchRoomDocuments2();
           } else {
             const roomId = room?.id || 'default-room-id';
             const tenantId = room?.tenantId || '';
@@ -187,6 +189,9 @@ const DocumentInteractor: React.FC<DocumentInteractorProps> = ({
           showAlert('Error uploading files. Please try again.', 'error');
         } finally {
           setIsUploading(false);
+          setUploadProgress(0);
+          setTotalFiles(0);
+          setUploadedFiles(0);
         }
       }
     };
@@ -308,6 +313,7 @@ const handleOpenDocument = async () => {
           bottom: 0,
           backgroundColor: 'rgba(0, 0, 0, 0.5)',
           display: 'flex',
+          flexDirection: 'column',
           justifyContent: 'center',
           alignItems: 'center',
           zIndex: 1000,
@@ -320,7 +326,25 @@ const handleOpenDocument = async () => {
             textAlign: 'center'
           }}>
             <div>Uploading Documents...</div>
-            <div style={{marginTop: '10px'}}>Please wait</div>
+            <div style={{marginTop: '10px'}}>
+              {uploadedFiles} of {totalFiles} files uploaded
+            </div>
+            <div style={{
+              width: '200px',
+              height: '20px',
+              backgroundColor: 'rgba(255, 255, 255, 0.2)',
+              borderRadius: '10px',
+              marginTop: '10px',
+              overflow: 'hidden'
+            }}>
+              <div style={{
+                width: `${uploadProgress}%`,
+                height: '100%',
+                backgroundColor: 'white',
+                transition: 'width 0.3s ease-in-out'
+              }} />
+            </div>
+            <div style={{marginTop: '5px'}}>{Math.round(uploadProgress)}%</div>
           </div>
         </div>
       )}

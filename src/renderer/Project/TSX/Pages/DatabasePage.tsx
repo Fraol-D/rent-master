@@ -240,7 +240,7 @@ const DatabasePage = ({
       <div
         className="CalanderMainContainer"
         style={{
-          height: 'calc(100% - var(--30px-V))',
+          height: isMobileState ? 'calc(100% - var(--30px-V))' : 'calc(100% - var(--30px-V))',
         }}
       >
         <div className="CalenderOptionsMainContainer">

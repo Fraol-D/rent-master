@@ -5,13 +5,15 @@ import {
   getValuesWithSql,
 } from './localServerApis';
 const baseUrl = 'https://www.rentmaster.markethubet.com/api';
+const baseUrl2 = 'https://www.rentmaster.markethubet.com';
 const baseUrlLocal = 'http://localhost:8100';
 import {
   makeProxyRequest,
   makeProxyRequestFileManager,
 } from './viteApiHandler';
 import axios from 'axios';
-const makeRequest = async (input, init = {}) => {
+const isTryout = window.location.href.includes('tryout');
+const makeRequest = async (input, init = {}, onlineOnly = false) => {
   const {
     method = 'GET',
     headers = {},
@@ -19,7 +21,7 @@ const makeRequest = async (input, init = {}) => {
     isFileManager = false,
     useProxy = !window.electron,
   } = init;
-  //if(window.electron) return await fetch(input,init)
+
   try {
     const users = await storageManager.get('users');
     if (!users?.[0]?.id) {
@@ -27,8 +29,66 @@ const makeRequest = async (input, init = {}) => {
     }
     const userId = users[0].id;
 
-    // Normalize URL
+    // If in tryout mode, handle data locally using storageManager
+    if (isTryout && !onlineOnly) {
+      const url = new URL(input);
+      const pathParts = url.pathname.split('/');
+      const tableName = pathParts[pathParts.length - 1];
 
+      if (method === 'GET') {
+        // For SQL queries
+        if (pathParts.length > 2) {
+          const sqlQuery = decodeURIComponent(pathParts[pathParts.length - 1]);
+          const tableData = (await storageManager.get(tableName)) || [];
+          // Basic SQL WHERE clause parsing
+          if (sqlQuery.includes('WHERE')) {
+            const conditions = sqlQuery.split('WHERE')[1].trim();
+            return tableData.filter((item) => {
+              // Very basic condition evaluation
+              return eval(conditions.replace(/'/g, '"'));
+            });
+          }
+          return tableData;
+        }
+        return (await storageManager.get(tableName)) || [];
+      }
+
+      if (method === 'POST') {
+        const tableData = (await storageManager.get(tableName)) || [];
+        const newData = JSON.parse(body);
+        tableData.push(newData);
+        await storageManager.set(tableName, tableData);
+        return newData;
+      }
+
+      if (method === 'PUT') {
+        const tableData = (await storageManager.get(tableName)) || [];
+        const id = pathParts[pathParts.length - 2];
+        const columnName = pathParts[pathParts.length - 1];
+        const newValue = JSON.parse(body)[columnName];
+
+        const updatedData = tableData.map((item) => {
+          if (item.id === id) {
+            return { ...item, [columnName]: newValue };
+          }
+          return item;
+        });
+
+        await storageManager.set(tableName, updatedData);
+        return { success: true };
+      }
+
+      if (method === 'DELETE') {
+        const tableData = (await storageManager.get(tableName)) || [];
+        const id = pathParts[pathParts.length - 1];
+        const filteredData = tableData.filter((item) => item.id !== id);
+        await storageManager.set(tableName, filteredData);
+        return { success: true };
+      }
+      return;
+    }
+
+    // Normal API request flow
     if (useProxy) {
       const proxyResponse = await makeProxyRequest(
         'local',
@@ -378,11 +438,6 @@ export const getAllUsers = async () => {
 
 export async function verifyCredentials(email, password) {
   try {
-    console.log(
-      email,
-      password,
-      'PASSWORD AND EMAIL 222222222222222222222222222222222222'
-    );
     const url = `${baseUrl}/verify-credentials`;
     const headers = {
       'Content-Type': 'application/json',
@@ -421,20 +476,31 @@ export async function verifyAppUserCredentials(email, password) {
 
 export const getValuesWithSql_Online = async (tableName, sqlCode) => {
   try {
-  if(window.electron) {
-   if (navigator.onLine) {
-      const url = `${baseUrl}/${tableName}/${encodeURIComponent(sqlCode)}`;
-      const headers = {
-        'Content-Type': 'application/json',
-      };
-      const answer = await makeRequest(url, { method: 'get', headers });
-      console.log(answer)
-      return  answer
+    if (window.electron) {
+      if (navigator.onLine) {
+        const url = `${baseUrl}/${tableName}/${encodeURIComponent(sqlCode)}`;
+        const headers = {
+          'Content-Type': 'application/json',
+        };
+        const answer = await makeRequest(url, { method: 'get', headers });
+        console.log(answer);
+        return answer;
+      }
+    } else {
+      if (
+        window.location.href.includes('tryout') &&
+        tableName === 'Exchange_RatesUSDtoETB'
+      ) {
+        const url = `${baseUrl}/${tableName}/${encodeURIComponent(sqlCode)}`;
+        const headers = {
+          'Content-Type': 'application/json',
+        };
+        const answer = await makeRequest(url, { method: 'get', headers }, true);
+        console.log(answer);
+        return answer;
+      }
+      return await getValuesWithSql(tableName, sqlCode);
     }
-  } else {
-return await getValuesWithSql(tableName, sqlCode)
-  }
- 
   } catch (error) {
     console.error('Error in getValuesWithSql_Online:', error);
     return [];
@@ -1535,10 +1601,51 @@ export const checkRoomLimit = async (SelectedUserId) => {
       method: 'post',
       headers,
       data,
-    })
-    console.log(response)
+    });
+    console.log(response);
     return !response.valid;
+  } catch (error) {}
+};
+export const downloadAllUserFiles = async (userId) => {
+  try {
+    const response = await axios({
+      method: 'POST',
+      url: `${baseUrl2}/download-all-user-files`,
+      data: { userId },
+      headers: {
+        'user-id': userId,
+      },
+      responseType: 'blob',
+      timeout: 300000, // 5 minute timeout
+      onDownloadProgress: (progressEvent) => {
+        const percentCompleted = Math.round(
+          (progressEvent.loaded * 100) / progressEvent.total
+        );
+        // You can use this to update a progress bar
+        console.log(`Download Progress: ${percentCompleted}%`);
+      },
+    });
+
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement('a');
+    const filename =
+      response.headers['content-disposition']
+        ?.split('filename=')[1]
+        ?.replace(/"/g, '') || `user_${userId}_files.zip`;
+
+    link.href = url;
+    link.setAttribute('download', filename);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+
+    return true;
   } catch (error) {
-    
+    console.error('Error downloading user files:', error);
+    throw new Error(
+      error.response?.data?.error ||
+        'Failed to download files. Please try again.'
+    );
   }
-}
+};

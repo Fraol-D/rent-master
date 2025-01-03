@@ -12,7 +12,7 @@ import {
   makeProxyRequest,
   makeProxyRequestFileManager,
 } from './viteApiHandler';
-
+const isTryout = window.location.href.includes('tryout');
 // Base request function
 const makeRequest = async (input, init = {}) => {
   const {
@@ -22,7 +22,7 @@ const makeRequest = async (input, init = {}) => {
     isFileManager = false,
     useProxy = !window.electron,
   } = init;
-  //if(window.electron) return await fetch(input,init)
+
   try {
     const users = await storageManager.get('users');
     if (!users?.[0]?.id) {
@@ -30,8 +30,73 @@ const makeRequest = async (input, init = {}) => {
     }
     const userId = users[0].id;
 
-    // Normalize URL
+    // If in tryout mode, handle data locally using storageManager
+    if (isTryout) {
+      const url = new URL(input);
+      const pathParts = url.pathname.split('/');
+      const tableName = pathParts[pathParts.length - 1];
 
+      if (method === 'GET') {
+        // For SQL queries
+        if (pathParts.length > 2) {
+          const sqlQuery = decodeURIComponent(pathParts[pathParts.length - 1]);
+          const tableData = await storageManager.get(tableName) || [];
+          console.log("==============================");
+          console.log("Table Data",tableData);
+          console.log("Table Name",tableName);
+          console.log("Path Parts",pathParts);
+          console.log("SQL Query",sqlQuery); 
+          console.log("URL",url);console.log("==============================");
+          // Basic SQL WHERE clause parsing
+          if (sqlQuery.includes('WHERE')) {
+            const conditions = sqlQuery.split('WHERE')[1].trim();
+            return tableData.filter(item => {
+              // Very basic condition evaluation
+              console.log(conditions.replace(/'/g, '"'));
+              return eval(conditions.replace(/'/g, '"'));
+            });
+          }
+          return tableData;
+        }
+        return await storageManager.get(tableName) || [];
+      }
+
+      if (method === 'POST') {
+        const tableData = await storageManager.get(tableName) || [];
+        const newData = JSON.parse(body);
+        tableData.push(newData);
+        await storageManager.set(tableName, tableData);
+        return newData;
+      }
+
+      if (method === 'PUT') {
+        const tableData = await storageManager.get(tableName) || [];
+        const id = pathParts[pathParts.length - 2];
+        const columnName = pathParts[pathParts.length - 1];
+        const newValue = JSON.parse(body)[columnName];
+        
+        const updatedData = tableData.map(item => {
+          if (item.id === id) {
+            return {...item, [columnName]: newValue};
+          }
+          return item;
+        });
+        
+        await storageManager.set(tableName, updatedData);
+        return {success: true};
+      }
+
+      if (method === 'DELETE') {
+        const tableData = await storageManager.get(tableName) || [];
+        const id = pathParts[pathParts.length - 1];
+        const filteredData = tableData.filter(item => item.id !== id);
+        await storageManager.set(tableName, filteredData);
+        return {success: true};
+      }
+      return;
+    }
+
+    // Normal API request flow
     if (useProxy) {
       const proxyResponse = await makeProxyRequest(
         'local',
@@ -55,7 +120,6 @@ const makeRequest = async (input, init = {}) => {
     throw error;
   }
 };
-
 export const dropAllRowsInTable = async (tableName) => {
   try {
     const response = await makeRequest(
@@ -76,42 +140,10 @@ export const dropAllRowsInTable = async (tableName) => {
     return null;
   }
 };
-export const addValueROOM = async (tableName, value, setChangeMade) => {
-  try {
-    console.log('Adding room value:', { tableName, value });
 
-    const response = await makeRequest(`${baseUrl}/${tableName}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(value),
-    });
-
-    if (!response) {
-      throw new Error('No response received from server');
-    }
-
-    await addRowToOfflineChanges(
-      tableName,
-      value.id,
-      'not_needed',
-      'not_needed',
-      'add',
-      value,
-      setChangeMade,
-      'Not needed',
-      true
-    );
-
-    return response;
-  } catch (error) {
-    console.error('Error adding value:', error);
-    throw error;
-  }
-};
 export const getValuesWithSql = async (tableName, sqlCode) => {
   try {
+    
     const response = await makeRequest(
       `${baseUrl}/${tableName}/${encodeURIComponent(sqlCode)}`,
       {
@@ -547,7 +579,12 @@ export const updateValue = async (
     // get original value false new value is true so add but if it exist in offline changes and when it went from true back to false it needs to know what the value was when first changing it
     // So add a column to offline changes that says original value then wehn adding a new row to offline changes
     // set orignal value to original value then when editing a offline changes check if the new value is equal to the orignal value and if it is remove it
-
+    if(window.location.href.includes('tryout')){
+      
+      storageManager.set(tableName, [...storageManager.get(tableName), {id: id, [columnName]: columnValue}]);
+      
+      return;
+    }
     const response = await makeRequest(
       `${baseUrl}/${tableName}/${id}/${columnName}`,
       {
@@ -579,6 +616,12 @@ export const updateValue = async (
 };
 export const deleteValue = async (tableName, id, setChangeMade) => {
   try {
+    if(window.location.href.includes('tryout')){
+      
+      storageManager.set(tableName, storageManager.get(tableName).filter(item => item.id !== id));
+      
+      return;
+    }
     const response = await makeRequest(`${baseUrl}/${tableName}/${id}`, {
       method: 'DELETE',
       headers: {},
@@ -604,6 +647,7 @@ export const deleteValue = async (tableName, id, setChangeMade) => {
 
 export const deleteValueALL = async () => {
   try {
+    
     const response = await makeRequest(`${baseUrl}/delete-all-data`, {
       method: 'DELETE',
     });

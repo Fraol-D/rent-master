@@ -21,7 +21,7 @@ export function CalendarPage({
         className="RoomContainerContainer"
         style={{
           width: '100%',
-          height: isMobileState ? "calc(100% - var(--0px-V))":'calc(100% - var(--60px-V))',
+          height: isMobileState ? "calc(100% - var(--0px-V))":'calc(100% - var(--0px-V))',
 
           overflowY: 'hidden',
         }}

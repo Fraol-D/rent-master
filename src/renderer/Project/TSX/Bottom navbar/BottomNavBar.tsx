@@ -17,6 +17,7 @@ const BottomNavBar = ({ SelectedPage, setSelectedPage }: any) => {
               ? 'PageNavigatorButtonSelected'
               : 'PageNavigatorButton'
           }
+          id="top-nav-button-dashboard"
         >
           Dashboard
         </button>
@@ -29,7 +30,7 @@ const BottomNavBar = ({ SelectedPage, setSelectedPage }: any) => {
             SelectedPage === 'Rooms'
               ? 'PageNavigatorButtonSelected'
               : 'PageNavigatorButton'
-          }
+          }   id="top-nav-button-rooms"
         >
           Rooms
         </button>
@@ -43,7 +44,7 @@ const BottomNavBar = ({ SelectedPage, setSelectedPage }: any) => {
             SelectedPage === 'Expense'
               ? 'PageNavigatorButtonSelected'
               : 'PageNavigatorButton'
-          }
+          }   id="top-nav-button-expenses"
         >
           Expenses
         </button>
@@ -56,7 +57,7 @@ const BottomNavBar = ({ SelectedPage, setSelectedPage }: any) => {
             SelectedPage === 'Tools'
               ? 'PageNavigatorButtonSelected'
               : 'PageNavigatorButton'
-          }
+          }   id="top-nav-button-tools"
         >
           Settings
         </button>

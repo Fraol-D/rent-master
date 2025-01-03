@@ -19,7 +19,6 @@ import { useAlert } from 'renderer/components/useAlert';
 import { useGlobal } from 'renderer/components/GlobalContext';
 
 const AgreementViewerForRoom = ({
- 
   roomType,
   getCorrectPaymentStatment,
   updateRoomPropertyLocal,
@@ -338,7 +337,7 @@ const AgreementViewerForRoom = ({
                 roomType.selectedAgreementId
                   ? 'Current'
                   : 'Expired ' +
-                    (Agreements.indexOf(Agreements[CurrentAgreementIndex]) + 1)}
+                    (Agreements.length - Agreements.indexOf(Agreements[CurrentAgreementIndex]))}
               </strong>{' '}
               {Agreements.length > 1 && (
                 <button
