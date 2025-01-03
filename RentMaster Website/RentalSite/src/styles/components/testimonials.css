@@ -91,7 +91,7 @@
 
 .testimonial-author h4 {
   color: var(--Text-Color);
-  font-size: 1.3rem;
+  font-size: 1.1rem;
   margin-bottom: 0.3rem;
 }
 
@@ -110,7 +110,7 @@
 .testimonial-text {
   color: var(--Text-Color-Grey);
   line-height: 1.6;
-  font-size: 1.1rem;
+  font-size: 0.95rem;
   margin: 0;
 }
 
@@ -153,7 +153,7 @@
   }
 
   .testimonial-text {
-    font-size: 1rem;
+    font-size: 0.85rem;
   }
 
   .testimonials {
@@ -212,4 +212,4 @@
     width: 30px;
     height: 30px;
   }
-}
+} 
