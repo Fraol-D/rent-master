@@ -3,24 +3,19 @@
   --Text-Color: #000000;
   --Text-Color-Reverse50: rgba(0, 0, 0, 0.5);
   --Text-Color-Reverse: rgb(0, 0, 0);
-  --Background-Color: #e2e2e2;
-  --Background-Color2: #e0e0e0;
-
+  --Background-Color: #ffffff;
+  --Background-Color2: #ffffff;
   --Primary-Color: #00e1ff;
   --Primary-Color25: hsla(187, 100%, 50%, 0.25);
   --Primary-Color50: hsla(187, 100%, 50%, 0.5);
-
   --Secondary-Color: #a6aaba;
   --Secondary-Color20: hsla(228, 13%, 69%, 0.2);
   --Secondary-Color30: hsla(228, 13%, 69%, 0.3);
   --Secondary-Color40: hsla(228, 13%, 69%, 0.4);
   --Secondary-Color50: hsla(228, 13%, 69%, 0.5);
   --Secondary-Color60: hsla(228, 13%, 69%, 0.6);
-
-  --Accent-Color: #db911a;
+  --Accent-Color: #ff9d00;
   --Accent-Color50: hsla(37, 79%, 48%, 0.5);
-
-  /* Aliases for existing component references */
   --primary: var(--Primary-Color);
   --secondary: var(--Secondary-Color);
   --background: var(--Background-Color);

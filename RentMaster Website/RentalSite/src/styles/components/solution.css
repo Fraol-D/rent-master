@@ -4,10 +4,10 @@
   min-height: 65rem;
   display: flex;
   align-items: flex-start;
-  background-position-y: -66px;
-  background-size: 100%;
- 
-  background-image: url("../../assets/img/Rectangle 2.png");
+  background-position: center;
+  background-size: cover;
+
+  background-image: url('../../assets/img/Rectangle 2.png');
 }
 
 .section-description {
@@ -22,7 +22,8 @@
   grid-template-columns: repeat(3, 1fr);
   gap: 2rem;
   margin-top: 4rem;
-  grid-auto-rows: minmax(100px, auto);    justify-items: center;
+  grid-auto-rows: minmax(100px, auto);
+  justify-items: center;
 }
 
 .solution-visual {
@@ -37,12 +38,9 @@
 
 .solution-image {
   width: 200px;
-
-
 }
 .solution-image2 {
   width: 170px;
-
 }
 
 .dashboard-bg-image {
@@ -58,7 +56,6 @@
   gap: 2rem;
 }
 
-
 .solution-icon {
   color: var(--Accent-Color);
   font-size: 2rem;
@@ -67,18 +64,18 @@
 
 .solution-main-benift {
   display: flex;
-      background: rgb(226 226 226) !important;
-      justify-content: center;
-      flex-direction: column;
-      align-items: flex-start;
-      width: 345px;
-      background: var(--Background-Color);
-      padding: 1.5rem;
-      border-radius: 8px;
-      border: 1px solid var(--Secondary-Color30);
-      box-shadow: 0 4px 6px var(--Secondary-Color20);
+
+  justify-content: center;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 345px;
+  background: var(--Background-Color);
+  padding: 1.5rem;
+  border-radius: 8px;
+  border: 1px solid var(--Secondary-Color30);
+  box-shadow: 0 4px 6px var(--Secondary-Color20);
 }
-.solution-description{
+.solution-description {
   font-size: 0.9rem;
   color: var(--Text-Color-Grey);
   width: 300px;
@@ -91,7 +88,6 @@
   flex-direction: column;
   align-items: flex-start;
   width: 320px;
-
 }
 .inside-main-benift {
   display: flex;
@@ -100,7 +96,7 @@
 }
 .inside-main-benift h3 {
   font-size: 1.3rem;
-  color: rgb(49 79 111 / 74%) !important;
+  color: rgb(53 111 173 / 74%) !important;
   margin-top: 1rem;
 }
 .solution-card li {
@@ -119,11 +115,11 @@
   flex-shrink: 0;
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 1234px) {
   .solution-content {
     grid-template-columns: repeat(2, 1fr);
   }
-  
+
   .solution-visual {
     order: -1;
     margin-bottom: 2rem;
@@ -141,8 +137,8 @@
   .solution {
     padding: 6rem 1rem;
   }
-  
+
   .solution-grid {
     grid-template-columns: 1fr;
   }
-} 
+}

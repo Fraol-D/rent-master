@@ -1,9 +1,15 @@
-import Lottie from 'lottie-react'
-import { FaRocket, FaUsers, FaChartLine } from 'react-icons/fa'
-import animationData from '../../assets/animations/property-dashboard.json'
-import teamImage from '../../assets/img/team.jpeg'
+import React, { useState, useEffect } from 'react';
+import { FaChartLine, FaUsers,FaRocket } from 'react-icons/fa';
+import Lottie from 'lottie-react';
+import animationData from '../../assets/animations/property-dashboard.json';
 
 const About = () => {
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    setIsVisible(true);
+  }, []);
+
   const values = [
     {
       icon: <FaRocket />,
@@ -25,18 +31,30 @@ const About = () => {
   return (
     <section id="about" className="about">
       <div className="container">
-        <h2>About RentMaster</h2>
+        <div className={`section-header ${isVisible ? 'visible' : ''}`}>
+          <h2>About RentMaster</h2>
+        </div>
+
         <div className="about-content">
-          <div className="about-main">
+          <div className={`about-main ${isVisible ? 'visible' : ''}`}>
             <div className="mission-values">
               <div className="mission">
                 <h3>Our Mission</h3>
-                <p>To revolutionize property management through innovative technology solutions that empower property owners and managers to work smarter, not harder.</p>
+                <p>
+                  To simplify property management through an innovative system
+                  that helps property owners manage their rooms efficiently,
+                  communicate with tenants effectively through SMS, and scale
+                  their business with ease.
+                </p>
               </div>
-              
+
               <div className="values-grid">
                 {values.map((value, index) => (
-                  <div key={index} className="value-card">
+                  <div
+                    key={index}
+                    className="value-card"
+                    style={{ animationDelay: `${index * 0.2}s` }}
+                  >
                     <div className="value-icon">{value.icon}</div>
                     <h4>{value.title}</h4>
                     <p>{value.description}</p>
@@ -44,12 +62,11 @@ const About = () => {
                 ))}
               </div>
             </div>
-
           </div>
         </div>
       </div>
     </section>
-  )
-}
+  );
+};
 
-export default About 
+export default About;

@@ -537,7 +537,7 @@ app
     app.on('activate', () => {
       if (mainWindow === null) createWindow();
     });
-   
+
     // Check for backup on app start
     if (store.get('users'))
       if (store.get('users')[0])
@@ -561,7 +561,6 @@ ipcMain.on('SendCustomEmail', async (event, message) => {
     userEmail: any,
     userPassword: any
   ) => {
-    
     // Prepare data for API call
     const data = {
       email: email,
@@ -623,8 +622,8 @@ ipcMain.on('SendVerificationCode', (event, message) => {
       port: 465,
       secure: true, // true for 465, false for other ports
       auth: {
-          user: process.env.VITE_VERIFY_EMAIL_USER,
-          pass: process.env.VITE_VERIFY_EMAIL_PASS,
+        user: process.env.VITE_VERIFY_EMAIL_USER,
+        pass: process.env.VITE_VERIFY_EMAIL_PASS,
       },
     });
 
@@ -741,7 +740,7 @@ const fs = require('fs');
 const appDB = express();
 appDB.use(express.static(path.join(__dirname, 'src/renderer')));
 
-const port =8100;
+const port = 8100;
 const dev = false;
 const appname = dev ? 'Electron' : 'rent-master';
 appDB.use(
@@ -761,10 +760,9 @@ appDB.use(bodyParser.json());
 
 // To:
 require('dotenv').config({
-  path: path.resolve(__dirname, '../../.env')
+  path: path.resolve(__dirname, '../../.env'),
 });
-const apiKey = process.env.VITE_AppCodeElectronString;  // Add VITE_ prefix
-
+const apiKey = process.env.VITE_AppCodeElectronString; // Add VITE_ prefix
 
 // Function to validate table names
 const validateTableName = (tableName: string) => {
@@ -1376,191 +1374,236 @@ appDB.post(
 // Add these constants but keep existing ones
 const UPLOAD_TIMEOUT = 60000;
 
-ipcMain.handle('upload-user-files', async (event, { userId }: { userId: string }) => {
-  try {
-    // Send progress updates dynamically
-    const updateProgress = (progress: number) => {
-      event.sender.send('upload-progress', progress);
-    };
-    const getLocalUserDirectory2 = async () => {
-      const userDataPath = process.env.APPDATA || app.getPath('userData');
-      const bmsFolderPath = path.join(userDataPath, appname);
-
-      function directoryToJson(dir: string) {
-        const result = {
-          name: path.basename(dir),
-          type: 'directory',
-          children: [],
-        };
-        const files = fs.readdirSync(dir, { withFileTypes: true });
-
-        files.forEach((file: { name: string; isDirectory: () => any }) => {
-          const filePath = path.join(dir, file.name);
-          if (file.isDirectory()) {
-            result.children.push(directoryToJson(filePath));
+ipcMain.handle(
+  'upload-user-files',
+  async (event, { userId }: { userId: string }) => {
+    try {
+      let currentProgress = 0;
+      const smoothProgress = (targetProgress: number) => {
+        const step = 0.5;
+        const interval = setInterval(() => {
+          if (currentProgress < targetProgress) {
+            currentProgress += step;
+            event.sender.send('upload-progress', currentProgress);
           } else {
-            result.children.push({ name: file.name, type: 'file' });
+            clearInterval(interval);
           }
-        });
+        }, 16); // ~60fps
+      };
 
-        return result;
-      }
+      smoothProgress(5);
+      console.log('Getting local directory...');
+      const getLocalUserDirectory2 = async () => {
+        const userDataPath = process.env.APPDATA || app.getPath('userData');
+        const bmsFolderPath = path.join(userDataPath, appname);
 
-      try {
-        const directoryStructure = directoryToJson(bmsFolderPath);
-        return directoryStructure;
-      } catch (error) {
-        console.error('Error reading directory structure:', error);
-        return null;
-      }
-    };
-    updateProgress(0);
-    console.log('Getting local directory...');
-    const localDirectory = await getLocalUserDirectory2();
-    const filteredDirectory = {
-      name: localDirectory.name,
-      type: 'directory',
-      children: localDirectory.children.filter((child) =>
-        ['Room Pictures', 'Room Documents'].includes(child.name)
-      ),
-    };
+        function directoryToJson(dir: string) {
+          const result = {
+            name: path.basename(dir),
+            type: 'directory',
+            children: [],
+          };
+          const files = fs.readdirSync(dir, { withFileTypes: true });
 
-    console.log(
-      'Filtered directory structure:',
-      JSON.stringify(filteredDirectory, null, 2)
-    );
-    updateProgress(10);
+          files.forEach((file: { name: string; isDirectory: () => any }) => {
+            const filePath = path.join(dir, file.name);
+            if (file.isDirectory()) {
+              result.children.push(directoryToJson(filePath));
+            } else {
+              result.children.push({ name: file.name, type: 'file' });
+            }
+          });
 
-    console.log('Sending directory data to online database...');
-    const checkResponse = await axios.post(
-      `${baseUrl}/check-user-directory`,
-      {
-        userId,
-        directory: filteredDirectory,
-      },
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': apiKey,
-        },
-        httpsAgent: secureAgent,
-      }
-    );
-
-    const { requiredFiles } = checkResponse.data;
-    console.log('Response received from online database:', requiredFiles);
-    updateProgress(30);
-
-    if (requiredFiles?.length > 0) {
-      console.log('Required files missing:', requiredFiles);
-
-      // Create zip file
-      const zip = new JSZip();
-      let totalSize = 0;
-      let filesProcessed = 0;
-
-      // Add files to zip and dynamically update progress
-      for (const filePath of requiredFiles) {
-        try {
-          // Only process files from Room Pictures or Room Documents
-          if (
-            !filePath.startsWith('Room Pictures/') &&
-            !filePath.startsWith('Room Documents/')
-          ) {
-            console.log('Skipping non-room file:', filePath);
-            continue;
-          }
-
-          const fullPath = path.join(
-            process.env.APPDATA || '',
-            appname,
-            filePath
-          );
-          if (fs.existsSync(fullPath)) {
-            const fileContent = fs.readFileSync(fullPath);
-            zip.file(filePath, fileContent);
-            totalSize += fileContent.length;
-            filesProcessed++;
-            // Dynamically update progress based on the number of files processed
-            updateProgress(30 + (filesProcessed / requiredFiles.length) * 60);
-          } else {
-            console.warn(`File not found: ${fullPath}`);
-          }
-        } catch (error) {
-          console.warn(`Error adding file ${filePath} to zip:`, error);
+          return result;
         }
-      }
 
-      console.log(`Total upload size: ${totalSize} bytes`);
-      updateProgress(90);
+        try {
+          const directoryStructure = directoryToJson(bmsFolderPath);
+          return directoryStructure;
+        } catch (error) {
+          console.error('Error reading directory structure:', error);
+          return null;
+        }
+      };
 
-      if (totalSize === 0) {
-        console.log('No valid files to upload');
-        return {
-          success: true,
-          message: 'No files needed to be uploaded',
-        };
-      }
+      const localDirectory = await getLocalUserDirectory2();
+      const filteredDirectory = {
+        name: localDirectory.name,
+        type: 'directory',
+        children: localDirectory.children.filter((child) =>
+          ['Room Pictures', 'Room Documents'].includes(child.name)
+        ),
+      };
 
-      const zipBuffer = await zip.generateAsync({ type: 'nodebuffer' });
+      console.log(
+        'Filtered directory structure:',
+        JSON.stringify(filteredDirectory, null, 2)
+      );
+      smoothProgress(15);
 
-      console.log('Sending zip file to online database...');
-      const form = new FormData();
-      form.append('files', zipBuffer, {
-        filename: 'required_files.zip',
-        contentType: 'application/zip',
-      });
-      form.append('userId', userId);
-      const uploadResponse = await axios.post(
-        `${baseUrl}/upload-missing-files`,
-        form,
+      console.log('Sending directory data to online database...');
+      const checkResponse = await axios.post(
+        `${baseUrl}/check-user-directory`,
+        {
+          userId,
+          directory: filteredDirectory,
+        },
         {
           headers: {
+            'Content-Type': 'application/json',
             'x-api-key': apiKey,
-            ...form.getHeaders(),
           },
-          maxContentLength: Infinity,
-          maxBodyLength: Infinity,
           httpsAgent: secureAgent,
         }
       );
 
-      if (!uploadResponse.data?.success) {
+      const { requiredFiles } = checkResponse.data;
+      console.log('Response received from online database:', requiredFiles);
+      smoothProgress(25);
+
+      if (requiredFiles?.length > 0) {
+        console.log('Required files missing:', requiredFiles);
+
+        const zip = new JSZip();
+        let totalSize = 0;
+        let processedSize = 0;
+
+        // First pass to calculate total size
+        for (const filePath of requiredFiles) {
+          if (
+            filePath.startsWith('Room Pictures/') ||
+            filePath.startsWith('Room Documents/')
+          ) {
+            const fullPath = path.join(process.env.APPDATA || '', appname, filePath);
+            if (fs.existsSync(fullPath)) {
+              const stats = fs.statSync(fullPath);
+              totalSize += stats.size;
+            }
+          }
+        }
+
+        // Second pass to add files and update progress
+        for (const filePath of requiredFiles) {
+          try {
+            if (
+              !filePath.startsWith('Room Pictures/') &&
+              !filePath.startsWith('Room Documents/')
+            ) {
+              console.log('Skipping non-room file:', filePath);
+              continue;
+            }
+
+            const fullPath = path.join(
+              process.env.APPDATA || '',
+              appname,
+              filePath
+            );
+            if (fs.existsSync(fullPath)) {
+              const fileContent = fs.readFileSync(fullPath);
+              zip.file(filePath, fileContent);
+              processedSize += fileContent.length;
+              
+              // Calculate progress between 25-85 based on processed size
+              const fileProgress = 25 + ((processedSize / totalSize) * 60);
+              smoothProgress(fileProgress);
+            } else {
+              console.warn(`File not found: ${fullPath}`);
+            }
+          } catch (error) {
+            console.warn(`Error adding file ${filePath} to zip:`, error);
+          }
+        }
+
+        console.log(`Total upload size: ${totalSize} bytes`);
+        smoothProgress(85);
+
+        if (totalSize === 0) {
+          console.log('No valid files to upload');
+          smoothProgress(100);
+          return {
+            success: true,
+            message: 'No files needed to be uploaded',
+          };
+        }
+
+        const zipBuffer = await zip.generateAsync({ 
+          type: 'nodebuffer',
+          compression: 'DEFLATE',
+          compressionOptions: { level: 6 },
+          onUpdate: (metadata) => {
+            // Progress during zip compression (85-90)
+            const compressionProgress = 85 + (metadata.percent * 0.05);
+            smoothProgress(compressionProgress);
+          }
+        });
+
+        console.log('Sending zip file to online database...');
+        const form = new FormData();
+        form.append('files', zipBuffer, {
+          filename: 'required_files.zip',
+          contentType: 'application/zip',
+        });
+        form.append('userId', userId);
+        
+        smoothProgress(90);
+        
+        const uploadResponse = await axios.post(
+          `${baseUrl}/upload-missing-files`,
+          form,
+          {
+            headers: {
+              'x-api-key': apiKey,
+              ...form.getHeaders(),
+            },
+            maxContentLength: Infinity,
+            maxBodyLength: Infinity,
+            httpsAgent: secureAgent,
+            onUploadProgress: (progressEvent) => {
+              // Progress during final upload (90-100)
+              const uploadProgress = 90 + ((progressEvent.loaded / progressEvent.total) * 10);
+              smoothProgress(uploadProgress);
+            }
+          }
+        );
+
+        if (!uploadResponse.data?.success) {
+          throw new Error('Upload response indicated failure');
+        }
+
+        console.log('Upload completed successfully:', uploadResponse.data);
+        smoothProgress(100);
+      } else {
+        console.log('No files need to be uploaded');
+        smoothProgress(100);
       }
 
-      console.log('Upload completed successfully:', uploadResponse.data);
-      updateProgress(100);
-    } else {
-      console.log('No files need to be uploaded');
-      updateProgress(100);
-    }
+      return {
+        success: true,
+        message: 'Upload completed successfully',
+      };
+    } catch (error) {
+      console.error('Upload error:', error);
 
-    return {
-      success: true,
-      message: 'Upload completed successfully',
-    };
-  } catch (error) {
-    console.error('Upload error:', error);
+      if (axios.isAxiosError(error)) {
+        const errorMessage = error.response?.data?.message || error.message;
+        const statusCode = error.response?.status;
+        return {
+          success: false,
+          message: `Upload failed (${statusCode}): ${errorMessage}`,
+          error: {
+            status: statusCode,
+            data: error.response?.data,
+          },
+        };
+      }
 
-    if (axios.isAxiosError(error)) {
-      const errorMessage = error.response?.data?.message || error.message;
-      const statusCode = error.response?.status;
       return {
         success: false,
-        message: `Upload failed (${statusCode}): ${errorMessage}`,
-        error: {
-          status: statusCode,
-          data: error.response?.data,
-        },
+        message: error.message || 'Unknown error occurred',
       };
     }
-
-    return {
-      success: false,
-      message: error.message || 'Unknown error occurred',
-    };
   }
-});
+);
 
 // Add helper function for retrying uploads
 const retryUpload = async (
@@ -1725,7 +1768,6 @@ appDB.delete(
   ) => {
     const { tableName } = req.params;
 
-   
     // Validate the table name
     if (!validateTableName(tableName)) {
       return res.status(400).send('Invalid table name');
@@ -3278,7 +3320,7 @@ ipcMain.handle(
 // File download handler with improved error handling
 ipcMain.handle('download-files', async (event, { userId }) => {
   const sendProgress = (progress: number) => {
-    //  event.sender.send('download-progress', progress);
+    event.sender.send('download-progress2', progress);
   };
 
   try {
@@ -3293,35 +3335,48 @@ ipcMain.handle('download-files', async (event, { userId }) => {
 
     // Get local directory structure
     const localDirectory = await getLocalUserDirectory2();
+    console.log('Local directory obtained:', localDirectory);
     sendProgress(20);
 
     // Request file list with timeout and retry
+    console.log('Sending directory data to online database...');
     const fileListResponse = await axiosInstance.post('/check-missing-files', {
       userId,
       localDirectory,
     });
 
     const { missingFiles } = fileListResponse.data;
+    console.log('Response received from online database:', missingFiles);
     sendProgress(40);
 
     if (missingFiles.length === 0) {
+      console.log('No files needed to be downloaded');
+      sendProgress(100);
       return {
         success: true,
         message: 'No files needed to be downloaded',
       };
     }
 
+    console.log('Required files missing:', missingFiles);
+
     // Download missing files
+    console.log('Downloading missing files...');
+    const startTime = Date.now();
     const downloadResponse = await axiosInstance.post(
       '/download-missing-files',
       { userId, missingFiles },
       { responseType: 'arraybuffer' }
     );
-
+    const endTime = Date.now();
+    const downloadTime = (endTime - startTime) / 1000;
+    console.log(`Download completed in ${downloadTime} seconds`);
     sendProgress(70);
 
     // Extract files
+    console.log('Extracting downloaded files...');
     await extractDownloadedFiles(Buffer.from(downloadResponse.data), userId);
+    console.log('Files extracted successfully');
     sendProgress(100);
 
     return {
@@ -3329,7 +3384,7 @@ ipcMain.handle('download-files', async (event, { userId }) => {
       message: 'Files downloaded and extracted successfully',
       filesCount: missingFiles.length,
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error('Download process failed:', error);
     sendProgress(0);
 

@@ -1,0 +1,271 @@
+.download-page {
+  padding: 6rem 2rem;
+  min-height: 100vh;
+  background-color: var(--Background-Color);
+}
+
+.download-container {
+  max-width: 80%;
+  margin-top: 8rem;
+  margin: 0 auto;
+}
+
+.download-page h1 {
+  text-align: center;
+  color: var(--Text-Color);
+  font-size: 2.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.download-description {
+  text-align: center;
+  max-width: 800px;
+  margin: 0 auto 3rem;
+  color: var(--Secondary-Text-Color);
+  font-size: 1.1rem;
+  line-height: 1.6;
+}
+
+.download-content-wrapper {
+  display: flex;
+  gap: 4rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.download-benefits {
+  flex: 1;
+  max-width: 400px;
+}
+
+.download-benefits h2 {
+  text-align: left;
+  color: var(--Text-Color);
+  margin-bottom: 1.5rem;
+  font-size: 1.5rem;
+}
+
+.benefits-list {
+  list-style: none;
+  padding: 0;
+}
+.download-title {
+  font-size: 2.5rem;
+  text-align: center;
+
+  margin-bottom: 2rem;
+  text-align: center;
+  color: rgb(53 111 173 / 74%) !important;
+}
+.benefits-list li {
+  color: var(--Secondary-Text-Color);
+  margin-bottom: 1rem;
+  padding-left: 1.5rem;
+  position: relative;
+}
+
+.benefits-list li::before {
+  content: '•';
+  color: var(--Primary-Color);
+  position: absolute;
+  left: 0;
+  font-size: 1.2rem;
+}
+
+.download-options {
+  flex: 1.5;
+}
+
+.platform-buttons {
+  display: flex;
+  flex-direction: row;
+  gap: 1rem;
+}
+
+.platform-button {
+  width: 100%;
+  max-width: none;
+}
+
+.platform-button {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.5rem 2rem;
+  border: none;
+  border-radius: 10px;
+  background: #ffffff;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 200px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.platform-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+}
+
+.platform-icon {
+  font-size: 2.5rem;
+  color: var(--Primary-Color);
+}
+
+.platform-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.platform-info span {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--Text-Color);
+}
+
+.platform-info small {
+  color: var(--Secondary-Text-Color);
+}
+
+.coming-soon {
+  color: var(--Secondary-Text-Color);
+  font-style: italic;
+}
+
+@media (max-width: 968px) {
+  .download-content-wrapper {
+    flex-direction: column;
+    gap: 2rem;
+  }
+
+  .download-benefits {
+    max-width: none;
+  }
+
+  .download-benefits h2 {
+    text-align: center;
+  }
+
+  .benefits-list {
+    max-width: 500px;
+    margin: 0 auto;
+  }
+}
+
+@media (max-width: 768px) {
+  .download-page {
+    padding: 4rem 1rem;
+  }
+
+  .platform-buttons {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .platform-button {
+    width: 100%;
+    max-width: 300px;
+  }
+}
+
+.version-badge {
+  background: rgb(53 111 173 / 15%);
+  color: rgb(53 111 173);
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  display: inline-block;
+  margin: 0 auto 1rem;
+  font-weight: 500;
+  text-align: center;
+  position: relative;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.download-size {
+  font-size: 0.8rem;
+  color: #666;
+  margin-top: 0.25rem;
+}
+
+.changelog-section {
+  margin-top: 2rem;
+  margin-bottom: 6rem;
+  padding: 2rem;
+  background: #ffffff;
+  border-radius: 10px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.changelog-container {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.changelog-entry {
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #eee;
+}
+
+.changelog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.changelog-date {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.changelog-entry ul {
+  list-style-type: disc;
+  padding-left: 1.5rem;
+  color: #444;
+}
+
+.changelog-entry li {
+  margin-bottom: 0.5rem;
+}
+
+.system-requirements {
+  margin-top: 3rem;
+  margin-bottom: 3rem;
+  padding: 2rem;
+  background: #ffffff;
+  border-radius: 10px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.requirements-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 2rem;
+  margin-top: 1rem;
+}
+
+.system-requirements h3 {
+  color: rgb(53 111 173);
+  margin-bottom: 1rem;
+}
+
+.system-requirements ul {
+  list-style-type: disc;
+  padding-left: 1.5rem;
+  color: #444;
+}
+
+.system-requirements li {
+  margin-bottom: 0.5rem;
+}
+
+@media (max-width: 768px) {
+  .changelog-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+}

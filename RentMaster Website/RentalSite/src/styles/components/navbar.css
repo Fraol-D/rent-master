@@ -5,8 +5,7 @@
   left: 0;
   backdrop-filter: blur(5px);
   width: 100%;
-  display: flex
-;
+  display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 1rem 2rem;
@@ -15,12 +14,14 @@
   box-shadow: 0 2px 8px rgba(166, 170, 186, 0.15);
   border-bottom: 1px solid rgba(166, 170, 186, 0.2);
 }
+
 .logo-highlight {
   color: var(--Primary-Color);
 }
+
 .logo {
   color: #414141;
-  font-weight: 300;
+
   font-size: 1.5rem;
   text-decoration: none;
 }
@@ -39,17 +40,20 @@
   height: 20px;
   font-size: 1rem;
 }
-.nav-link-container{
+
+.nav-link-container {
   display: flex;
   flex-direction: row;
   align-items: center;
 }
+
 .nav-straightline {
   width: 1px;
   height: 15px;
   background: #414141;
   transition: all 0.3s ease;
 }
+
 .nav-links a:hover {
   color: var(--Primary-Color);
 }
@@ -67,9 +71,6 @@
 
 .nav-links a:hover::after {
   background: var(--Primary-Color);
-}
-
-.nav-links a:hover::after {
   width: 100%;
 }
 
@@ -78,7 +79,8 @@
   gap: 1rem;
 }
 
-.login-btn, .signup-btn {
+.login-btn,
+.signup-btn {
   background: var(--Primary-Color);
   color: var(--Text-Color);
   padding: 0.5rem 1.2rem;
@@ -88,7 +90,8 @@
   transition: all 0.3s ease;
 }
 
-.login-btn:hover, .signup-btn:hover {
+.login-btn:hover,
+.signup-btn:hover {
   background: var(--Primary-Color);
   transform: translateY(-2px);
 }
@@ -107,19 +110,124 @@
 .tryout-btn:hover {
   background: var(--Primary-Color);
   font-weight: 600;
-
   color: black;
 }
 
-@media (max-width: 768px) {
-  .nav-links {
-    display: none;
-  }
-  
+.hamburger {
+  display: none;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0.5rem;
+  width: 40px;
+
+  position: relative;
+  z-index: 1002;
+}
+
+.bar {
+  display: block;
+  width: 25px;
+  height: 3px;
+  margin: 5px auto;
+  transition: all 0.3s ease-in-out;
+  background-color: #414141;
+  border-radius: 4px;
+  position: relative;
+}
+
+@media (max-width: 1030px) {
   .navbar {
     padding: 1rem;
   }
-} 
+
+  .hamburger {
+    display: block;
+  }
+
+  .hamburger .bar.active:nth-child(2) {
+    opacity: 0;
+  }
+
+  .hamburger .bar.active:nth-child(1) {
+    transform: translateY(8px) rotate(45deg);
+    background-color: var(--Primary-Color);
+  }
+
+  .hamburger .bar.active:nth-child(3) {
+    transform: translateY(-8px) rotate(-45deg);
+    background-color: var(--Primary-Color);
+  }
+
+  .nav-links {
+    position: fixed;
+    left: -100%;
+    top: 60px;
+    gap: 0;
+    flex-direction: column;
+    background-color: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(10px);
+    width: 100%;
+    height: calc(100vh - 60px);
+    text-align: center;
+    transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    padding: 2rem 0;
+    overflow-y: auto;
+    z-index: 1001;
+  }
+
+  .nav-links.active {
+    left: 0;
+  }
+
+  .nav-links a {
+    margin: 0.8rem 0;
+    font-size: 1.1rem;
+    height: auto;
+    padding: 0.5rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    color: #2c2c2c;
+  }
+
+  .nav-link-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding: 0 1rem;
+  }
+
+  .nav-link-arrow {
+    width: 8px;
+    height: 8px;
+    border-right: 2px solid #414141;
+    border-bottom: 2px solid #414141;
+    transform: rotate(-45deg);
+    margin-left: 10px;
+    transition: all 0.3s ease;
+  }
+
+  .nav-links a:hover .nav-link-arrow {
+    border-color: var(--Primary-Color);
+    transform: rotate(-45deg) translate(-2px, -2px);
+  }
+
+  .nav-separator {
+    display: none;
+  }
+
+  .auth-buttons {
+    margin-left: auto;
+    margin-right: 1rem;
+  }
+
+  .nav-links a:hover {
+    background-color: rgba(0, 0, 0, 0.03);
+  }
+}
 
 .nav-separator {
   display: flex;
@@ -129,7 +237,8 @@
   height: 24px;
 }
 
-.diamond-top, .diamond-bottom {
+.diamond-top,
+.diamond-bottom {
   width: 3px;
   height: 3px;
   background-color: #414141;
@@ -142,4 +251,3 @@
 .nav-separator:hover .nav-straightline {
   background-color: var(--Primary-Color);
 }
-

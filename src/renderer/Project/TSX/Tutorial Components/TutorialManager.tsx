@@ -49,8 +49,8 @@ interface TutorialManagerProps {
   onNavigate?: (page: string) => void;
   userPrivileges: any;
   selectedAppUserId: string;
-  currentPageInital: number;
-  currentSectionInital: number;
+  currentPageName: string;
+  currentSectionName: string;
   RoomList: RoomType[];
   handleOpenSideBar: () => void;
   handleCloseSideBar: () => void;
@@ -63,13 +63,13 @@ const TutorialManager = ({
   onNavigate,
   selectedAppUserId,
   userPrivileges,
-  currentPageInital,
-  currentSectionInital,
+  currentPageName,
+  currentSectionName,
   RoomList,
   handleOpenSideBar,
   handleCloseSideBar,
 }: TutorialManagerProps) => {
-  // Add error checking
+  // Error checking first
   if (!tutorialData || !tutorialData.pages || tutorialData.pages.length === 0) {
     return (
       <div className="tutorial-manager">
@@ -84,23 +84,29 @@ const TutorialManager = ({
     );
   }
 
-  // Replace the hardcoded tutorialSystem with the prop
-  const tutorialSystem = tutorialData;
-
-  // Add close button to the UI
-  const handleClose = () => {
-    onClose();
-    setIsOnTutorial(false);
-  };
   const { isOnTutorial, setIsOnTutorial } = useGlobal();
 
-  useEffect(() => {
-    setIsOnTutorial(true);
-  }, []);
+  // Initialize currentPage first
+  const [currentPage, setCurrentPage] = useState(() => {
+    const pageIndex = tutorialData.pages.findIndex(
+      (p) => p.pageTitle === currentPageName
+    );
+    return pageIndex >= 0 ? pageIndex : 0;
+  });
 
-  // State to track current position in tutorial
-  const [currentPage, setCurrentPage] = useState(currentPageInital);
-  const [currentSection, setCurrentSection] = useState(currentSectionInital);
+  // Get currentPageData after currentPage is initialized
+  const currentPageData = tutorialData.pages[currentPage];
+
+  // Now we can safely initialize currentSection using currentPageData
+  const [currentSection, setCurrentSection] = useState(() => {
+    if (currentSectionName === 'overview') return 0;
+    const sectionIndex = currentPageData.sections.findIndex(
+      (s) => s.mainTitle === currentSectionName
+    );
+    return sectionIndex >= 0 ? sectionIndex + 1 : 0;
+  });
+
+  // Rest of the state
   const [currentStep, setCurrentStep] = useState(0);
   const [hasInteracted, setHasInteracted] = useState(false);
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
@@ -109,24 +115,31 @@ const TutorialManager = ({
     left: '50%',
     transform: 'translate(-50%, -50%)',
   });
-
-  // Add state for error message
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Get current tutorial content
-  const currentPageData = tutorialSystem.pages[currentPage];
+  // Get current section data
   const currentSectionData =
     currentSection === 0
       ? currentPageData.overview
       : currentPageData.sections[currentSection - 1];
 
-  // Filter out steps that should not be shown in tryout mode
+  // Filter steps
   const isTryoutMode = window.location.href.includes('tryout');
-  const filteredSteps = currentSectionData.steps.filter(step => {
+  const filteredSteps = currentSectionData.steps.filter((step) => {
     return !(isTryoutMode && step.dontShowInTryout);
   });
-  
+
+  // Get current step data
   const currentStepData = filteredSteps[currentStep];
+
+  const handleClose = () => {
+    onClose();
+    setIsOnTutorial(false);
+  };
+
+  useEffect(() => {
+    setIsOnTutorial(true);
+  }, []);
 
   // Function to position the tutorial card relative to target element
   const positionCard = (elementId: string | undefined, position: string) => {
@@ -437,14 +450,16 @@ const TutorialManager = ({
 
     return () => clearInterval(intervalId);
   }, [
-    currentStepData,
-    currentStepData.targetElementId,
-    currentStepData.position,
-    currentStepData.isJsId,
-    currentStepData.checkUnderElementId,
-    currentStepData.checkUnderElementIsJS,
-    currentStepData.blinkAsWellId,
-    // Don't include cardPosition in dependencies to prevent infinite loop
+    currentStep,
+    currentStepData?.targetElementId,
+    currentStepData?.position,
+    currentStepData?.isJsId,
+    currentStepData?.checkUnderElementId,
+    currentStepData?.checkUnderElementIsJS,
+    currentStepData?.blinkAsWellId,
+    isMobileState,
+    handleOpenSideBar,
+    handleCloseSideBar,
   ]);
 
   // Effect to highlight target element and additional elements
@@ -561,19 +576,23 @@ const TutorialManager = ({
       }
     };
   }, [
-    currentStepData.targetElementId,
-    currentStepData.additionalZIndexElements,
-    currentStepData.requiresInteraction,
-    currentStepData.requiresInteractionInput,
-    currentStepData.checkUnderElementId,
-    currentStepData.isJsId,
-    currentStepData.checkUnderElementIsJS,
-    currentStepData.blinkAsWellId,
+    currentStep,
+    currentStepData?.targetElementId,
+    currentStepData?.additionalZIndexElements,
+    currentStepData?.requiresInteraction,
+    currentStepData?.requiresInteractionInput,
+    currentStepData?.checkUnderElementId,
+    currentStepData?.isJsId,
+    currentStepData?.checkUnderElementIsJS,
+    currentStepData?.blinkAsWellId,
+    isMobileState,
+    handleOpenSideBar,
+    handleCloseSideBar,
   ]);
 
   const handleNext = () => {
     if (!canProgress) return;
-    // Check if target ID contains "-tab" and we're on mobile
+
     if (currentStepData.targetElementId.includes('-tab') && isMobileState) {
       handleOpenSideBar();
       console.log('Mobile tab interaction needed');
@@ -582,39 +601,35 @@ const TutorialManager = ({
     setHasInteracted(false);
     setErrorMessage(null);
 
-
     if (isLastStep()) {
       setShowCompletionMessage(true);
-    // Special case for tryout mode - at the end of each section
-    const isTryoutMode = window.location.href.includes('tryout');
-    const isLastStepInSection =
-      currentStep === currentSectionData.steps.length - 1;
+      // Special case for tryout mode - at the end of each section
+      const isTryoutMode = window.location.href.includes('tryout');
+      const isLastStepInSection =
+        currentStep === currentSectionData.steps.length - 1;
 
-    if (isTryoutMode && isLastStepInSection && !showCompletionMessage) {
-      // Highlight all navigation tabs
-      const navButtons = document.querySelectorAll('#top-nav-button');
-      navButtons.forEach((button) => {
-        if (button instanceof HTMLElement) {
-          button.setAttribute('data-tutorial-target', 'true');
-          button.style.zIndex = '504';
-        }
-      });
-
-      // Show a message about exploring other sections
-      setShowCompletionMessage(true);
-      setTimeout(() => {
-        // Clean up highlights
+      if (isTryoutMode && isLastStepInSection && !showCompletionMessage) {
+        // Highlight all navigation tabs
+        const navButtons = document.querySelectorAll('#top-nav-button');
         navButtons.forEach((button) => {
           if (button instanceof HTMLElement) {
-            button.removeAttribute('data-tutorial-target');
-            button.style.zIndex = '';
+            button.setAttribute('data-tutorial-target', 'true');
+            button.style.zIndex = '504';
           }
         });
-        onClose();
-      }, 5000);
-      return;
-    }
-      // Close tutorial after showing completion message
+
+        setShowCompletionMessage(true);
+        setTimeout(() => {
+          navButtons.forEach((button) => {
+            if (button instanceof HTMLElement) {
+              button.removeAttribute('data-tutorial-target');
+              button.style.zIndex = '';
+            }
+          });
+          onClose();
+        }, 5000);
+        return;
+      }
       setTimeout(() => {
         onClose();
       }, 5000);
@@ -626,14 +641,13 @@ const TutorialManager = ({
     } else if (currentSection < currentPageData.sections.length) {
       setCurrentSection((prev) => prev + 1);
       setCurrentStep(0);
-    } else if (currentPage < tutorialSystem.pages.length - 1) {
+    } else if (currentPage < tutorialData.pages.length - 1) {
       if (currentPageData.autoNext) {
         setCurrentPage((prev) => prev + 1);
         setCurrentSection(0);
         setCurrentStep(0);
       } else {
         setShowCompletionMessage(true);
-        // Close tutorial after showing completion message
         setTimeout(() => {
           onClose();
         }, 5000);
@@ -751,16 +765,15 @@ const TutorialManager = ({
     }
   }, [currentStepData, handleNext]);
 
-  const canProgress = !currentStepData.requiresInteraction || hasInteracted;
+  const canProgress = !currentStepData?.requiresInteraction || hasInteracted;
 
   const [showCompletionMessage, setShowCompletionMessage] = useState(false);
 
   // Function to check if it's the last step of the last section
   const isLastStep = () => {
-    const isLastPage = currentPage === tutorialSystem.pages.length - 1;
+    const isLastPage = currentPage === tutorialData.pages.length - 1;
     const isLastSection = currentSection === currentPageData.sections.length;
-    const isLastStepInSection =
-      currentStep === filteredSteps.length - 1;
+    const isLastStepInSection = currentStep === filteredSteps.length - 1;
 
     return isLastPage && isLastSection && isLastStepInSection;
   };
@@ -777,7 +790,7 @@ const TutorialManager = ({
       setCurrentStep(currentSectionData.steps.length - 1);
     } else if (currentPage > 0) {
       setCurrentPage((prev) => prev - 1);
-      const prevPage = tutorialSystem.pages[currentPage - 1];
+      const prevPage = tutorialData.pages[currentPage - 1];
       setCurrentSection(prevPage.sections.length);
       setCurrentStep(
         prevPage.sections[prevPage.sections.length - 1].steps.length - 1
@@ -871,33 +884,68 @@ const TutorialManager = ({
         {showCompletionMessage ? (
           <div className="tutorial-completion">
             {window.location.href.includes('tryout') ? (
+              currentPageData.pageTitle == 'property' ? (
+                <>
+                  <h2>Completed!</h2>
+                  <p>
+                    If you have a property, you can click manage propery to view
+                    your property.
+                  </p>
+                  <br />
+                  <button
+                    onClick={() => {
+                      onClose();
+                    }}
+                  >
+                    Close
+                  </button>
+                </>
+              ) : currentPageData.pageTitle != "appuser" ? (
+                <>
+                  <h2>Completed!</h2>
+                  <p>
+                    Tutorial completed successfully, you can view any other
+                    pages now.
+                  </p>
+                  <br />
+                  <button
+                    onClick={() => {
+                      onClose();
+                    }}
+                  >
+                    Close
+                  </button>
+                </>
+              ) : (
+                <>
+                  <h2>Completed!</h2>
+                  <p>
+                    Tutorial completed successfully, you can view any other
+                    pages now.
+                  </p>
+                  <br />
+                  <button
+                    onClick={() => {
+                      onClose();
+                    }}
+                  >
+                    Close
+                  </button>
+                </>
+              )
+            ) : (
               <>
-                <h2>Great job completing this section!</h2>
+                <h2>Completed!</h2>
                 <p>
-                  Feel free to explore other sections highlighted above to learn
-                  more about RentMaster's features.
+                  You can click select to use the app with that user.
                 </p>
-                <p>
-                  Each section has its own tutorial to help you get started.
-                </p>
+                <br />
                 <button
                   onClick={() => {
                     onClose();
                   }}
                 >
                   Continue Exploring
-                </button>
-              </>
-            ) : (
-              <>
-                <h2>You can proceed to the next step!</h2>
-                <p>Tutorial completed successfully, you can view any other pages now.</p>
-                <button
-                  onClick={() => {
-                    onClose();
-                  }}
-                >
-                  Close
                 </button>
               </>
             )}

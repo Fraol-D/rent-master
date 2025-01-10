@@ -4,6 +4,7 @@ import { format } from 'date-fns';
 import { Input } from '../Helpers/CustomReactComponents';
 import loadingGif from "./../../../assets/assets/Loading/Rolling-1s-200px.gif"
 import { useGlobal } from 'renderer/components/GlobalContext';
+import { storageManager } from 'renderer/storeManager';
 
 interface ActionHistoryItem {
   id: string;
@@ -42,13 +43,23 @@ const DashbActionHistoryDashboard: React.FC = ({ SelectedBranchId }: any) => {
     const fetchActionHistory = async () => {
       setIsLoading(true);
       try {
-        const result = await getValuesWithSql(
+     if(window.location.href.includes('tryout')) {
+      const result = storageManager.get("action_history").sort((a: ActionHistoryItem, b: ActionHistoryItem) => {
+        return b.action_date - a.action_date;
+      });
+      setHistory(result);
+      setFilteredHistory(result.slice(0, limit));
+      setIsLoading(false);
+     } else 
+     {
+       const result = await getValuesWithSql(
           'action_history',
           `WHERE branchId = '${SelectedBranchId}' ORDER BY action_date DESC`
         );
         setHistory(result);
         setFilteredHistory(result.slice(0, limit));
         setIsLoading(false);
+     }  
       } catch (error) {
         console.error('Failed to fetch action history:', error);
         setIsLoading(false);

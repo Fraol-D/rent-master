@@ -43,8 +43,8 @@ const CornerSupport = ({
   const [showTutorialPrompt, setShowTutorialPrompt] = useState(false);
   const [tutorialPromptPage, setTutorialPromptPage] = useState('');
 
-  const [currentPageInital, setCurrentPageInital] = useState(0);
-  const [currentSectionInital, setCurrentSectionInital] = useState(0);
+  const [currentPageName, setCurrentPageName] = useState('');
+  const [currentSectionName, setCurrentSectionName] = useState('');
   const [tutorialShow, setTutorialShow] = useState(false);
   const { isMobileState } = useGlobal();
   const checkAndStartTutorial = () => {
@@ -61,7 +61,7 @@ const CornerSupport = ({
         pageTutorial.overview.steps[0].targetElementId
       );
 
-     if (
+      if (
         firstStepElement &&
         !tutorialPreferences[SelectedPage.toLowerCase()]
       ) {
@@ -71,8 +71,8 @@ const CornerSupport = ({
         );
 
         setTutorialShow(true);
-        setCurrentPageInital(pageIndex);
-        setCurrentSectionInital(0);
+        setCurrentPageName(pageTutorial.pageTitle);
+        setCurrentSectionName('overview');
         setSelectedTutorial(tutorialData);
         setSelectedTutorialIndex(pageIndex);
 
@@ -105,6 +105,8 @@ const CornerSupport = ({
       return;
     }
     const fetchSmsHistory = async () => {
+      if(navigator.onLine){
+      try{
       setIsLoading(true);
       const user = await getValuesWithSql_Online(
         'users',
@@ -131,7 +133,7 @@ const CornerSupport = ({
           return smsDate >= monthStart && smsDate <= monthEnd;
         })
         .reduce((acc: number, sms: any) => acc + (sms.countsAs || 1), 0);
-
+      console.log(user);
       const package2 = user[0].PackageSelected || 'Canot get';
       setCurrentPlanInfo({
         name: package2,
@@ -139,7 +141,11 @@ const CornerSupport = ({
         roomsLimit: user[0].MaxAmountOfRooms,
         smsUsed: totalSms || 0,
         smsLimit: user[0].SMSMonthlyLimit,
-      });
+      }); }catch(e){ console.log(e);
+    }
+    }
+   
+     
     };
     if (navigator.onLine) fetchSmsHistory();
   }, [SelectedUserId, isOpen]);
@@ -221,14 +227,13 @@ const CornerSupport = ({
     }, 2000);
   };
 
-  const handleTutorialStart = (pageIndex: number, sectionIndex: number) => {
+  const handleTutorialStart = (pageName: string, sectionName: string) => {
     setIsOpen(false);
     setSelectedOption(null);
-
     setShowTutorialPrompt(false);
     setTutorialShow(true);
-    setCurrentPageInital(pageIndex);
-    setCurrentSectionInital(sectionIndex);
+    setCurrentPageName(pageName);
+    setCurrentSectionName(sectionName);
   };
 
   const renderTutorialList = () => {
@@ -238,7 +243,7 @@ const CornerSupport = ({
         case 'app user':
           return SelectedAppUser.id === 'admin'; // Always show app user tutorials
         case 'property':
-          return SelectedAppUser.id === 'admin' || privileges.manageProperties; // Always show property tutorials  
+          return SelectedAppUser.id === 'admin' || privileges.manageProperties; // Always show property tutorials
         case 'dashboard':
           return SelectedAppUser.id === 'admin' || privileges.viewDashboard;
         case 'rooms':
@@ -270,16 +275,18 @@ const CornerSupport = ({
                   page.pageTitle !== 'App Users') &&
                 hasAccess(page.hasToBeIn)
             )
-            .map((page, pageIndex) => (
+            .map((page) => (
               <div
-                key={pageIndex}
+                key={page.pageTitle}
                 style={{
                   padding: 'var(--10px-V)',
                   backgroundColor: 'var(--Secondary-Color20)',
                   borderRadius: 'var(--5px-V)',
                 }}
               >
-                <h3 style={{ margin: '0 0 var(--5px-V) 0' }}>{page.pageTitle}</h3>
+                <h3 style={{ margin: '0 0 var(--5px-V) 0' }}>
+                  {page.pageTitle}
+                </h3>
                 <p style={{ margin: '0 0 var(--10px-V) 0' }}>
                   {page.overview.description}
                 </p>
@@ -292,7 +299,7 @@ const CornerSupport = ({
                     }}
                   >
                     <button
-                      onClick={() => handleTutorialStart(pageIndex, 0)}
+                      onClick={() => handleTutorialStart(page.pageTitle, 'overview')}
                       style={{
                         padding: 'var(--5px-V) var(--10px-V)',
                         backgroundColor: 'var(--Primary-Color)',
@@ -305,15 +312,13 @@ const CornerSupport = ({
                     >
                       Overview: {page.overview.mainTitle}
                     </button>
-                    {page.sections.map((section, sectionIndex) => (
+                    {page.sections.map((section) => (
                       <button
-                        key={sectionIndex}
-                        onClick={() =>
-                          handleTutorialStart(pageIndex, sectionIndex + 1)
-                        }
+                        key={section.mainTitle}
+                        onClick={() => handleTutorialStart(page.pageTitle, section.mainTitle)}
                         style={{
                           padding: 'var(--5px-V) var(--10px-V)',
-                          backgroundColor: 'var(--Secondary-Color30)',
+                          backgroundColor: 'var(--Secondary-Color)',
                           color: 'var(--Text-Color)',
                           border: 'none',
                           borderRadius: 'var(--3px-V)',
@@ -321,7 +326,7 @@ const CornerSupport = ({
                           textAlign: 'left',
                         }}
                       >
-                        Section {sectionIndex + 1}: {section.mainTitle}
+                        Section: {section.mainTitle}
                       </button>
                     ))}
                   </div>
@@ -332,8 +337,8 @@ const CornerSupport = ({
                       onClick={() => handlePageNavigation(page.hasToBeIn)}
                       style={{
                         padding: 'var(--5px-V) var(--10px-V)',
-                        backgroundColor: 'var(--Primary-Color)',
-                        color: 'var(--Text-Color-Reverse)',
+                        backgroundColor: 'var(--Secondary-Color)',
+                        color: 'var(--Text-Color)',
                         border: 'none',
                         borderRadius: 'var(--3px-V)',
                         cursor: 'pointer',
@@ -624,7 +629,7 @@ const CornerSupport = ({
         return null;
     }
   };
-  const {setIsOnTutorial} = useGlobal();
+  const { setIsOnTutorial } = useGlobal();
   const handlePageNavigation = (page: string) => {
     const privileges = getUserPrivileges(SelectedAppUser);
     setTutorialShow(false);
@@ -677,8 +682,8 @@ const CornerSupport = ({
           }}
           handleOpenSideBar={handleOpenSideBar}
           handleCloseSideBar={handleCloseSideBar}
-          currentPageInital={currentPageInital}
-          currentSectionInital={currentSectionInital}
+          currentPageName={currentPageName}
+          currentSectionName={currentSectionName}
           onNavigate={handlePageNavigation}
           selectedAppUserId={SelectedAppUser && SelectedAppUser.id}
           userPrivileges={getUserPrivileges(SelectedAppUser)}

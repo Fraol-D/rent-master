@@ -191,18 +191,21 @@
   color: var(--Primary-Color);
   font-size: var(--24px-V);
   margin: 0 0 var(--10px-V) 0;
+  width: 100%;
 }
 
 .tutorial-completion p {
   color: var(--Text-Color-Grey);
   font-size: var(--16px-V);
   margin: 0;
+
 }
 
 .tutorial-card h2 {
   color: var(--Text-Color);
   font-size: var(--24px-V);
   margin: 0 0 var(--15px-V) 0;
+  text-align: left;
 }
 
 .tutorial-card p {

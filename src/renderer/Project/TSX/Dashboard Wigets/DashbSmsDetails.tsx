@@ -48,36 +48,63 @@ const DashbSmsDetails = ({ SelectedUserId, RoomList }: props) => {
     setAllSmsTemplates,AllTenants
   } = useGlobal();
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
   useEffect(() => {
-    const fetchSmsHistory = async () => {
+    const fetchSmsHistory = async (retryCount = 0) => {
       setIsLoading(true);
-      const user = await getValuesWithSql_Online(
-        'users',
-        `WHERE id = '${SelectedUserId}'`
-      );
-
-      setSMSMonthlyLimit(await user[0].SMSMonthlyLimit);
-      const smsHistoryRaw = await getValuesWithSql_Online(
-        'sms_history', 
-        `WHERE userId = '${SelectedUserId}'`
-      );
-      const smsTemplates = AllSmsTemplates;
-      setSmsTemplates(smsTemplates);
+      setError(null);
       
-      // Add countsAs field to each SMS history item
-      const smsHistoryWithCounts = smsHistoryRaw.map((sms: any) => {
-        const template = smsTemplates.find(t => t.id === sms.templateId);
-        return {
-          ...sms,
-          countsAs: template?.countsAs || 1
-        };
-      });
+      try {
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('Request timed out')), 10000); // 10 second timeout
+        });
 
-      const sortedSmsHistory = smsHistoryRaw.sort(
-        (a: smsHistoryType, b: smsHistoryType) => b.sentDate - a.sentDate
-      );
-      setSmsHistory(sortedSmsHistory);
-      setIsLoading(false);
+        const userPromise = getValuesWithSql_Online(
+          'users',
+          `WHERE id = '${SelectedUserId}'`
+        );
+
+        const user = await Promise.race([userPromise, timeoutPromise]);
+        setSMSMonthlyLimit(user[0].SMSMonthlyLimit);
+
+        const smsHistoryPromise = getValuesWithSql_Online(
+          'sms_history',
+          `WHERE userId = '${SelectedUserId}'`
+        );
+
+        const smsHistoryRaw = await Promise.race([smsHistoryPromise, timeoutPromise]);
+        const smsTemplates = AllSmsTemplates;
+        setSmsTemplates(smsTemplates);
+        
+        // Add countsAs field to each SMS history item
+        const smsHistoryWithCounts = smsHistoryRaw.map((sms: any) => {
+          const template = smsTemplates.find(t => t.id === sms.templateId);
+          return {
+            ...sms,
+            countsAs: template?.countsAs || 1
+          };
+        });
+
+        const sortedSmsHistory = smsHistoryRaw.sort(
+          (a: smsHistoryType, b: smsHistoryType) => b.sentDate - a.sentDate
+        );
+        setSmsHistory(sortedSmsHistory);
+        setIsLoading(false);
+
+      } catch (err) {
+        console.error('Error fetching SMS history:', err);
+        
+        if (retryCount < 3) { // Retry up to 3 times
+          setError(`Failed to load data. Retrying... (Attempt ${retryCount + 1}/3)`);
+          setTimeout(() => {
+            fetchSmsHistory(retryCount + 1);
+          }, 2000 * (retryCount + 1)); // Exponential backoff
+        } else {
+          setError('Failed to load SMS history. Please try again later.');
+          setIsLoading(false);
+        }
+      }
     };
 
     if (navigator.onLine) fetchSmsHistory();
@@ -258,6 +285,7 @@ const DashbSmsDetails = ({ SelectedUserId, RoomList }: props) => {
       >
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flexDirection: 'column' }}>
           <img src={loadingGif} alt="Loading..." style={{width:'100px',height:'100px'}}/>
+          {error && <p style={{color: 'var(--Error-Color)', marginTop: '10px'}}>{error}</p>}
         </div>
       </div>}
       <h1 style={{ margin: 'var(--10px-V)' }}>SMS History</h1>

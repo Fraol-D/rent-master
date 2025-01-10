@@ -1,12 +1,12 @@
 .pain-points {
   padding: 1rem 2rem;
-  min-height: 125rem;
+  min-height: 145rem;
   display: flex;
   align-items: flex-start;
 
-  background-position-y: -66px;
-  background-size: 1700px;
-  background-image: url("../../assets/img/Rectangle 1.png");
+  background-position: center;
+  background-size: cover;
+  background-image: url('../../assets/img/Rectangle 1.png');
 }
 .pain-points-description {
   margin-top: 0;
@@ -18,7 +18,7 @@
   height: 800px;
   margin: 2rem auto;
 }
-.pain-point-content-solution-container{
+.pain-point-content-solution-container {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -32,7 +32,7 @@
   transform: translate(-50%, -50%);
   width: 120px;
   height: 120px;
-  background: var(--Background-Color);
+  background: white;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -40,9 +40,6 @@
   border: 3px solid var(--Accent-Color);
   box-shadow: 0 0 20px var(--Secondary-Color30);
   z-index: 2;
-
-  
-
 }
 
 .central-icon svg {
@@ -50,9 +47,8 @@
   color: var(--Accent-Color);
   opacity: 0;
   transform: scale(0);
-  will-change: transform, opacity; 
-   animation: bounce 2s infinite;
-   box-shadow: 0 0 20px var(--Secondary-Color30);
+  will-change: transform, opacity;
+  animation: bounce 2s infinite;
 }
 
 @keyframes scaleDown {
@@ -72,13 +68,15 @@
 
 .pain-points-circle {
   position: relative;
-  width: 100%;margin-bottom: 120px;
+  width: 100%;
+  margin-bottom: 120px;
   height: 100%;
 }
-.pain-point-solution{
+.pain-point-solution {
   display: flex;
   align-items: center;
-  gap: 20px; width: 100%;
+  gap: 20px;
+  width: 100%;
 }
 .pain-point-branch {
   position: absolute;
@@ -90,7 +88,7 @@
   will-change: transform, opacity;
 }
 .pain-point-content-Solution {
-  background: #ffd2d2;
+  background: white;
   padding: 1.5rem;
   border-radius: 8px;
   border: 1px solid var(--Secondary-Color30);
@@ -98,122 +96,120 @@
   width: 289px;
   z-index: 2;
   position: relative;
-
-  
 }
 /* Position branches in a circle */
 /* Right side branches */
-.branch-0 { 
+.branch-0 {
   left: 50%;
   animation: none;
 }
-.branch-1 { 
+.branch-1 {
   left: 50%;
   animation: none;
 }
-.branch-2 { 
+.branch-2 {
   left: 50%;
   animation: none;
 }
 
 /* Left side branches */
-.branch-3 { 
+.branch-3 {
   left: 50%;
   animation: none;
 }
-.branch-4 { 
+.branch-4 {
   left: 50%;
   animation: none;
 }
-.branch-5 { 
+.branch-5 {
   left: 50%;
   animation: none;
 }
-.branch-6 { 
+.branch-6 {
   left: 50%;
   animation: none;
 }
-.branch-7 { 
+.branch-7 {
   left: 50%;
   animation: none;
 }
 
 @keyframes moveBranch0 {
-  from { 
+  from {
     transform: translate(0, 0);
     opacity: 0;
   }
-  to { 
+  to {
     transform: translate(-670px, -270px);
     opacity: 1;
   }
 }
 @keyframes moveBranch1 {
-  from { 
+  from {
     transform: translate(0, 0);
     opacity: 0;
   }
-  to { 
+  to {
     transform: translate(-280px, -350px);
     opacity: 1;
   }
 }
 @keyframes moveBranch2 {
-  from { 
+  from {
     transform: translate(0, 0);
     opacity: 0;
   }
-  to { 
+  to {
     transform: translate(112px, -254px);
     opacity: 1;
   }
 }
 @keyframes moveBranch3 {
-  from { 
+  from {
     transform: translate(0, 0);
     opacity: 0;
   }
-  to { 
+  to {
     transform: translate(-630px, -70px);
     opacity: 1;
   }
 }
 @keyframes moveBranch4 {
-  from { 
+  from {
     transform: translate(0, 0);
     opacity: 0;
   }
-  to { 
+  to {
     transform: translate(275px, -70px);
     opacity: 1;
   }
 }
 @keyframes moveBranch5 {
-  from { 
+  from {
     transform: translate(0, 0);
     opacity: 0;
   }
-  to { 
+  to {
     transform: translate(-570px, 115px);
     opacity: 1;
   }
 }
 @keyframes moveBranch6 {
-  from { 
+  from {
     transform: translate(0, 0);
     opacity: 0;
   }
-  to { 
+  to {
     transform: translate(-176px, 210px);
     opacity: 1;
   }
 }
 @keyframes moveBranch7 {
-  from { 
+  from {
     transform: translate(0, 0);
     opacity: 0;
   }
-  to { 
+  to {
     transform: translate(220px, 117px);
     opacity: 1;
   }
@@ -227,7 +223,6 @@
   opacity: 0;
   animation: none;
 }
-
 
 .branch-line-0 {
   right: -213px;
@@ -278,15 +273,11 @@
   width: 232px;
 }
 
-
-
-
 /* Content positioning adjustments */
 .branch-3 .pain-point-content,
 .branch-4 .pain-point-content,
 .branch-5 .pain-point-content {
   margin-right: 100px;
-
 }
 
 .branch-0 .pain-point-content,
@@ -302,7 +293,7 @@
   }
 }
 .pain-point-content {
-  background: var(--Background-Color);
+  background: white;
   padding: 1.5rem;
   border-radius: 8px;
   border: 1px solid var(--Secondary-Color30);
@@ -325,13 +316,12 @@
   color: var(--Text-Color);
 
   font-size: 1.2rem;
-  
+
   text-align: left;
   display: flex;
   align-items: center;
   gap: 0.8rem;
 }
-
 
 .pain-point-icon {
   color: var(--Primary-Color);
@@ -348,7 +338,7 @@
 }
 
 .point-lines p::before {
-  content: "";
+  content: '';
   position: absolute;
   left: 0;
   top: 50%;
@@ -392,11 +382,6 @@
   }
 }
 
-@media (max-width: 768px) {
-  .pain-points-circle {
-    grid-template-columns: 1fr;
-  }
-}
 
 /* Add visibility classes */
 .pain-points:not(.animate-visible) .central-icon svg {
@@ -464,18 +449,18 @@
 }
 /* Update movement animations to include opacity */
 @keyframes moveBranch0 {
-  from { 
+  from {
     transform: translate(0, 0);
     opacity: 0;
   }
-  to { 
+  to {
     transform: translate(-670px, -270px);
     opacity: 1;
   }
 }
 
 /* Update all other moveBranch animations similarly */
-/* ... rest of the existing styles remain the same ... */ 
+/* ... rest of the existing styles remain the same ... */
 
 .solutions-grid {
   display: grid;
@@ -530,12 +515,322 @@
   margin-bottom: 1rem;
 }
 
-.solution-card h3 {
-  color: rgb(49 79 111 / 74%) !important;
-  margin-bottom: 0.5rem;
+.solution-card p {
+  color: rgb(0, 0, 0) !important;
+  line-height: 1.5;
 }
 
-.solution-card p {
-  color: rgb(49 79 111 / 74%) !important;
+.point-lines p::before {
+  content: '•';
+  color: var(--Primary-Color);
+  margin-right: 0.5rem;
+  font-size: 1.2rem;
+}
+
+.solution-preview {
+  background: rgba(var(--Primary-Color-RGB), 0.05);
+  padding: 1.5rem;
+  border-radius: 8px;
+  margin-top: 1rem;
+  transform: translateY(100%);
+  opacity: 0;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.pain-point-card.active .solution-preview {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.solution-content h4 {
+  color: var(--Primary-Color);
+  margin-bottom: 0.5rem;
+  font-size: 1.1rem;
+}
+
+.solution-content p {
+  color: var(--Text-Color-Grey);
+  font-size: 0.9rem;
   line-height: 1.5;
+}
+
+.learn-more {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--Primary-Color);
+  font-size: 0.9rem;
+  margin-top: 1rem;
+  cursor: pointer;
+  transition: gap 0.3s ease;
+}
+
+.learn-more:hover {
+  gap: 0.8rem;
+}
+
+.solutions-section {
+  margin-top: 6rem;
+}
+
+.solutions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 2rem;
+  margin-top: 3rem;
+}
+
+.solution-card {
+  background: rgba(255, 255, 255, 0.9);
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+  border: 1px solid rgba(78, 101, 124, 0.1);
+  opacity: 0;
+  transform: translateY(20px);
+  animation: fadeInUp 0.6s ease-out forwards;
+}
+
+.solution-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+}
+
+.solution-icon {
+  font-size: 2rem;
+  color: var(--Primary-Color);
+  margin-bottom: 1.5rem;
+}
+
+
+
+.pain-point-icon {
+  color: var(--Primary-Color);
+  font-size: 1.4rem;
+  flex-shrink: 0;
+}
+
+.point-lines p {
+  color: var(--Text-Color-Grey);
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+  position: relative;
+  padding-left: 20px;
+}
+
+.point-lines p::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 12px;
+  height: 2px;
+  background: var(--Primary-Color);
+}
+
+.solutions-title {
+  text-align: center;
+  margin: 4rem 0 2rem;
+}
+
+.pain-point-content-solution-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+}
+
+.solution-card {
+  background: #f1fdff;
+  padding: 1.5rem;
+  width: 70%;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.solution-card:hover {
+  transform: translateX(10px);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+}
+
+.solution-card h3 {
+  color: var(--Primary-Color);
+  margin-bottom: 0.8rem;
+}
+
+
+/* Animation keyframes */
+@keyframes moveBranch0 {
+  to {
+    transform: translate(-670px, -270px);
+    opacity: 1;
+  }
+}
+@keyframes moveBranch1 {
+  to {
+    transform: translate(-280px, -350px);
+    opacity: 1;
+  }
+}
+@keyframes moveBranch2 {
+  to {
+    transform: translate(112px, -254px);
+    opacity: 1;
+  }
+}
+@keyframes moveBranch3 {
+  to {
+    transform: translate(-630px, -70px);
+    opacity: 1;
+  }
+}
+@keyframes moveBranch4 {
+  to {
+    transform: translate(275px, -70px);
+    opacity: 1;
+  }
+}
+@keyframes moveBranch5 {
+  to {
+    transform: translate(-570px, 115px);
+    opacity: 1;
+  }
+}
+@keyframes moveBranch6 {
+  to {
+    transform: translate(-176px, 210px);
+    opacity: 1;
+  }
+}
+@keyframes moveBranch7 {
+  to {
+    transform: translate(220px, 117px);
+    opacity: 1;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .pain-points-radial {
+    height: auto;
+  }
+ 
+  .central-icon {
+    position: relative;
+    transform: none;
+    top: 0;
+    left: 0;
+    margin: 2rem auto;
+  }
+
+  .pain-points-circle {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    margin-top: 2rem;
+  }
+
+  .pain-point-branch {
+    position: relative;
+    transform: none !important;
+    top: 0;
+    left: 0;
+    opacity: 1;
+  }
+
+  .branch-line {
+    display: none;
+  }
+
+  .pain-point-content {
+    width: 100%;
+  }
+}
+.pain-point-content-Solution {
+  padding: 1.5rem;
+  border-radius: 8px;
+  border: 1px solid var(--Secondary-Color30);
+  box-shadow: 0 4px 6px var(--Secondary-Color20);
+  width: 289px;
+  z-index: 2;
+  position: relative;
+  backdrop-filter: blur(5px);
+}
+
+.pain-point-solution {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  width: 100%;
+  opacity: 0;
+  transform: translateX(-20px);
+  animation: slideIn 0.5s ease-out forwards;
+}
+@media (max-width: 768px) {
+  .pain-points-circle {
+    grid-template-columns: 1fr;
+  }
+   .pain-point-solution {
+    flex-direction: column;
+
+  }
+  .solution-card {
+   width: 100%;
+  }
+}
+@media (max-width:555px) {
+ .solution-card {
+   width: 100%;
+  }
+  .pain-point-content-Solution {
+width: 100%;
+  }
+}
+@media (max-width: 1240px) and (min-width: 1028px) {
+.branch-0 {
+left: 53%;
+}
+.branch-1 {
+left: 50%;
+
+}
+.branch-2 {
+left: 47%;
+
+
+}
+.branch-3 {
+left: 53%;
+
+}
+.branch-4 {
+left: 47%;
+
+}
+.branch-5{
+left: 53%;
+
+}
+.branch-6 {
+left: 50%;
+
+
+}
+.branch-7 {
+left: 47%;
+
+}
 }

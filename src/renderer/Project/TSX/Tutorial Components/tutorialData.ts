@@ -381,7 +381,7 @@ export const tutorialData: TutorialSystem = {
             {
               description: 'Click the button to add a tenant.',
               targetElementId: `'room-status-add-tenant-button' + (RoomList.find(room => room.status === 'Empty')?.id)`,
-              position: 'right',
+              position: 'down',
               requiresInteraction: true,
               allowBack: true,
 
@@ -442,7 +442,7 @@ export const tutorialData: TutorialSystem = {
               description:
                 'Click the view agreement button to view the agreement of the tenant.',
               targetElementId: `'room-view-agreement-button' + (RoomList.find(room => room.status === 'Taken')?.id)`,
-              position: 'right',
+              position: 'down',
               requiresInteraction: true,
               allowBack: true,
               isJsId: true,
@@ -532,7 +532,7 @@ export const tutorialData: TutorialSystem = {
             {
               description: 'Click here to view the payment timeline.',
               targetElementId: `'room-payment-timeline-button' + (RoomList.find(room => room.status === 'Taken')?.id)`,
-              position: 'right',
+              position: 'down',
               requiresInteraction: true,
               allowBack: true,
               isJsId: true,

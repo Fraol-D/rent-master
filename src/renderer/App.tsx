@@ -1950,7 +1950,7 @@ function Hello({ tryout, username, signup }: any) {
               />
             </>
           </AccountManager>{' '}
-          <CornerSupport
+          {isSignedIn && <CornerSupport
             initialLoading={initialLoading}
             handleOpenSideBar={handleOpenSideBar}
             handleCloseSideBar={handleCloseSideBar}
@@ -1970,21 +1970,11 @@ function Hello({ tryout, username, signup }: any) {
               setViewBranchManagementPageNONAdm
             }
             setAppUserManagerPromptPassword={setAppUserManagerPromptPassword}
-            setAppUserManagerShow={setAppUserManagerShow}
-          />
+              setAppUserManagerShow={setAppUserManagerShow}
+            />
+        }
           {/**/}
-          {tryout && (
-            <p
-              style={{
-                position: 'absolute',
-                left: '50%',
-                top: '50%',
-                transform: 'translate(50%, 50%)',
-              }}
-            >
-              THIS IS A TUTORIAL
-            </p>
-          )}
+         
         </>
       </ConfirmProvider>
     </AlertProvider>
@@ -2052,7 +2042,7 @@ export default function App() {
               <Hello tryout={true} username={'none_provided'} signup={''} />
             </GlobalProvider>
           }
-        />
+        />  <Route path="/download" element={<Download />} />
         {/* <Route path="/login" element={
           <GlobalProvider>
             <Hello tryout={true} username={'login'}/>
@@ -2078,6 +2068,7 @@ export default function App() {
 }
 
 import AppABC from '../../RentMaster Website/RentalSite/src/App';
+import Download from '../../RentMaster Website/RentalSite/src/components/sections/Download';
 export const getUserPrivileges = (
   selectedAppUser: appUser | null
 ): {

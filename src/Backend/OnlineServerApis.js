@@ -101,11 +101,13 @@ const makeRequest = async (input, init = {}, onlineOnly = false) => {
 
       return await proxyResponse;
     } else {
-      const response = await fetch(input, init);
+      const response = await window.electron.ipcRenderer.invoke(
+        'api-request',
+        init
+      );
 
-      return response.headers.get('content-type')?.includes('application/json')
-        ? response.json()
-        : response.text();
+      console.log(response);
+      return response;
     }
   } catch (error) {
     console.error('Request error:', error);
@@ -482,7 +484,11 @@ export const getValuesWithSql_Online = async (tableName, sqlCode) => {
         const headers = {
           'Content-Type': 'application/json',
         };
-        const answer = await makeRequest(url, { method: 'get', headers });
+        const answer = await window.electron.ipcRenderer.invoke('api-request', {
+          url,
+          method: 'get',
+          headers,
+        });
         console.log(answer);
         return answer;
       }
@@ -1218,15 +1224,14 @@ export const DownloadUserFilesFromOnlineDatabase = async (
   let cleanup = null;
   try {
     console.log('Starting file download process...');
-    setProgressValue(0);
+    
+  // Create a progress handler
+  const handleProgress = (progress) => {
+    setProgressValue(progress);
+  };
 
-    // Set up progress listener
-    const handleProgress = (event, progress) => {
-      if (typeof setProgressValue === 'function') {
-        setProgressValue(progress);
-      }
-    };
-    window.electron.ipcRenderer.on('download-progress', handleProgress);
+  // Register progress listener
+    window.electron.ipcRenderer.on('download-progress2', handleProgress);
 
     const result = await window.electron.ipcRenderer.invoke('download-files', {
       userId,

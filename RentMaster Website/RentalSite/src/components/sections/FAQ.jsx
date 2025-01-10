@@ -9,7 +9,7 @@ const FAQ = () => {
 
 
       question: "What makes RentMaster different from other property management solutions?",
-      answer: "RentMaster streamlines your entire property management process by offering centralized management for all tenant information, automated payment reminders via SMS and email, real-time building performance insights, secure online document storage, and comprehensive financial tracking - all in one user-friendly platform."
+      answer: "RentMaster offers management for all tenant information, automated payment reminders via SMS and email, real-time building performance insights, secure online document storage, and comprehensive financial tracking - all in one user-friendly platform."
     },
     {
 

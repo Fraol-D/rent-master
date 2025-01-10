@@ -59,14 +59,14 @@
 
 .feature-list li::before {
   content: "✓";
-  color: var(--Primary-Color);
+  color: rgb(53 111 173 / 74%);
   position: absolute;
   left: 0;
 }
 
 .try-now-section {
   text-align: center;
-  margin-top: 4rem;
+  margin-top: 2rem;
   padding: 3rem;
   background: var(--Background-Color);
   border-radius: 8px;

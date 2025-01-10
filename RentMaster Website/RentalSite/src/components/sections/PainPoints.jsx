@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from 'react';
 import {
   FaQuestionCircle,
   FaClock,
@@ -11,64 +11,70 @@ import {
   FaMoneyBill,
   FaTools,
   FaExclamationTriangle,
-} from "react-icons/fa";
-import "../../styles/components/pain-points.css";
+} from 'react-icons/fa';
+import '../../styles/components/pain-points.css';
 
 const PainPoints = () => {
   const sectionRef = useRef(null);
   const solutions = [
     {
       icon: <FaFileAlt />,
-      title: "Digital Documents",
-      description: "Stores all your documents in a digital format"
+      title: 'Digital Documents',
+      description: 'Stores all your documents in a digital format',
     },
     {
       icon: <FaClock />,
-      title: "Automated Payments",
-      description: "Set up automatic rent collection and payment reminders to ensure timely payments"
+      title: 'Automated Payments',
+      description:
+        'Set up automatic rent collection and payment reminders to ensure timely payments',
     },
     {
       icon: <FaChartLine />,
-      title: "Real-time Analytics",
-      description: "Access detailed dashboards showing property performance"
+      title: 'Real-time Analytics',
+      description: 'Access detailed dashboards showing property performance',
     },
     {
       icon: <FaFolder />,
-      title: "Cloud Storage",
-      description: "Securely store and instantly access all documents in our organized cloud system"
+      title: 'Cloud Storage',
+      description:
+        'Securely store and instantly access all documents in our organized cloud system',
     },
     {
       icon: <FaChartBar />,
-      title: "Instant Reports",
-      description: "Generate detailed financial and property reports with one click"
+      title: 'Instant Reports',
+      description:
+        'Generate detailed financial and property reports with one click',
     },
     {
       icon: <FaDatabase />,
-      title: "Secure Backup",
-      description: "Automatic cloud backups and security for your data"
+      title: 'Secure Backup',
+      description: 'Automatic cloud backups and security for your data',
     },
     {
       icon: <FaReceipt />,
-      title: "Expense Manager",
-      description: "Track and manage all property expenses and maintenance costs with detailed categorization"    },
+      title: 'Expense Manager',
+      description:
+        'Track and manage all property expenses and maintenance costs with detailed categorization',
+    },
     {
       icon: <FaExclamationTriangle />,
-      title: "24/7 Access",
-      description: "Access your property data anytime, anywhere through our web and apps"
-    }
+      title: '24/7 Access',
+      description:
+        'Access your property data anytime, anywhere through our web and apps',
+    },
   ];
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            entry.target.classList.add("animate-visible");
+            entry.target.classList.add('animate-visible');
           }
         });
       },
       {
         threshold: 0.1,
-        rootMargin: "0px 0px -100px 0px",
+        rootMargin: '0px 0px -100px 0px',
       }
     );
 
@@ -86,56 +92,55 @@ const PainPoints = () => {
   const painPoints = [
     {
       icon: <FaFileAlt />,
-      title: "Paper Work",
+      title: 'Paper Work',
       lines: [
-        "Too many papers to handle",
-        "Making mistakes with manual handling",
+        'Too many papers to handle',
+        'Making mistakes with manual handling',
       ],
     },
     {
       icon: <FaClock />,
-      title: "Slow Pay",
-      lines: ["Not paying rent on time", "Wasting time chasing payments"],
+      title: 'Slow Pay',
+      lines: ['Not paying rent on time', 'Wasting time chasing payments'],
     },
     {
       icon: <FaChartLine />,
-      title: "No Data View",
-      lines: ["Can't see patterns easily", "Missing chances to grow"],
+      title: 'No Data View',
+      lines: ["Can't see patterns easily", 'Missing chances to grow'],
     },
     {
       icon: <FaFolder />,
-      title: "Lost Files",
-      lines: ["Lose track of tenant documents", "Hard to find documents"],
+      title: 'Lost Files',
+      lines: ['Lose track of tenant documents', 'Hard to find documents'],
     },
     {
       icon: <FaChartBar />,
-      title: "Reporting Struggles",
+      title: 'Reporting Struggles',
       lines: [
         "Can't generate financial reports quickly",
-        "Manual reporting is time-consuming",
+        'Manual reporting is time-consuming',
       ],
     },
     {
       icon: <FaDatabase />,
-      title: "Data Safety",
-      lines: ["No good backups", "Might lose important files"],
+      title: 'Data Safety',
+      lines: ['No good backups', 'Might lose important files'],
     },
     {
       icon: <FaReceipt />,
-      title: "Expense Tracking",
-      lines: ["Untracked maintenance costs", "Hard to track spending"],
+      title: 'Expense Tracking',
+      lines: ['Untracked maintenance costs', 'Hard to track spending'],
     },
     {
       icon: <FaExclamationTriangle />,
-      title: "Limited Access",
+      title: 'Limited Access',
       lines: [
         "Can't check data from anywhere",
-        "Need to be at office or on calls",
+        'Need to be at office or on calls',
       ],
     },
   ];
 
- 
   return (
     <section ref={sectionRef} id="pain-points" className="pain-points">
       <div className="container">
@@ -167,29 +172,20 @@ const PainPoints = () => {
               </div>
             ))}
           </div>
-          <h2 className="">
-            Our Solutions
-          </h2>
+          <h2 className="solutions-title">Our Solutions</h2>
           <div className="pain-point-content-solution-container">
-          {painPoints.map((point, index) => (
-            <div className="pain-point-solution" >
-              {" "}
-              <div className="pain-point-content-Solution">
-                <h3>
-                  
-                  {point.title}
-                </h3>
-              </div>
-         
-              
-                <div key={index} className="solution-card">
-                 
+            {painPoints.map((point, index) => (
+              <div key={index} className="pain-point-solution">
+                <div className="pain-point-content-Solution">
+                  <h3>{point.title}</h3>
+                </div>
+                <div className="solution-card">
                   <h3>{solutions[index].title}</h3>
                   <p>{solutions[index].description}</p>
                 </div>
-              
-            </div>
-          ))}</div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </section>
