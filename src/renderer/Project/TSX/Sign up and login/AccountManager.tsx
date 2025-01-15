@@ -62,6 +62,10 @@ interface MyComponentProps {
   isTryout: boolean;
   setInitialLoading: (newval: boolean) => void;
   initialLoading: boolean;
+  IsAllowedState: boolean;
+  setIsAllowedState: (newval: boolean) => void;
+  setHasNotPaid: (newval: boolean) => void;
+  hasNotPaid: boolean;
 }
 
 const timeoutPromise = (ms: number) => {
@@ -100,15 +104,14 @@ const AccountManager = (React.FC<MyComponentProps> = ({
   setBranches,
   setBranchName,
   setGetBranchData,
-  getBranchData,
-  SelectedAppUser,
-  ProvidedInitialUsername,
-  ForceSignUp,
+  getBranchData,hasNotPaid,
+  SelectedAppUser,setHasNotPaid,
+  ProvidedInitialUsername,setIsAllowedState,
+  ForceSignUp,IsAllowedState,
   setSelectedPage,
   isTryout,initialLoading,setInitialLoading
 }: any) => {
   const [TrialExpiredState, setTrialExpiredState] = useState(false);
-  const [IsAllowedState, setIsAllowedState] = useState(false);
   const [isSignUpMode, setisSignUpMode] = useState(true);
   const [loading, setLoading] = useState(false);
   const [appUsers, setAppUsers] = useState<appUser[]>([]);
@@ -130,7 +133,6 @@ const AccountManager = (React.FC<MyComponentProps> = ({
     ];
     return mainTabs.some((tab) => privileges.includes(tab));
   };
-  const [hasNotPaid, setHasNotPaid] = useState(false);
 
   const [providedUserNameErrorMessage, setProvidedUserNameErrorMessage] =
     useState('');
@@ -549,12 +551,23 @@ const AccountManager = (React.FC<MyComponentProps> = ({
   const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+
   const handleFullSignOutAndDeleteUser = async () => {
+    const choice = await confirm(
+      'Are you sure you want to sign out.',
+      {
+        title: 'Delete Property',
+        confirmText: 'Sign out',
+        cancelText: 'Cancel',
+        type: 'warning',
+      }
+    );
+    if(choice) {
     const usersId = await storageManager.get('users')[0].id;
     console.log(usersId);
     // await deleteValueOnline('users', usersId);
 
-    signOutUserAndRestart();
+    signOutUserAndRestart();}
   };
   const AccountCheck = ({
     TextBackgroundColorText,
@@ -574,35 +587,35 @@ const AccountManager = (React.FC<MyComponentProps> = ({
             <strong>{storageManager.get('users')[0].email || ''}</strong>
             ?
             <br />
-            If not,{' '}
-            <button
+            If not,
+          {" "}  <a
               onClick={handleFullSignOutAndDeleteUser}
-              className="SignUpSignOutTryAgain"
+            style={{color:"var(--Primary-Color)", cursor:"pointer"}}
             >
-              <p>Sign out</p>{' '}
-            </button>
-          </p>
-          You are not approved. Please call this number to activate your
+              Sign out?
+            </a>
+          </p> <br />
+         Please contact us to activate your
           account: <br />
-          <span className="activation-number">-{'>'} 09 44 50 9999</span>
-          <br />
-          <span className="activation-number">-{'>'} 09 44 50 8888</span>
+          <span className="activation-number">-{'>'} Call +2519 44 50 9999</span>
+          <br /> <span className="activation-number">-{'>'} Telegram @rent_master</span>
+          <br /> <span className="activation-number">-{'>'} Email: rentmaster.et@gmail.com</span>
           <br />
           <br />
           If this is your first time signing in please be connected to the
           internet. It's possible you're seeing this message due to a lack of
-          internet connection.
-          <br />
-          <div style={{ display: 'flex' }}>
-            <button
+          internet connection.  <button
               onClick={() => {
                 setLoading(true);
                 checkIfSignedIn().finally(() => setLoading(false));
               }}
-              className="SignUpSignOutTryAgain"
+           
             >
               <p>Retry</p>{' '}
             </button>
+         
+          <div style={{ display: 'flex' }}>
+          
           </div>
         </div>
       </div>
@@ -620,52 +633,37 @@ const AccountManager = (React.FC<MyComponentProps> = ({
     return (
       <div className="signup-success-message">
         <div style={{ padding: 'var(--10px-V)', margin: 'var(--0px-V)' }}>
-          <h2>Your account has been locked due to payment issues</h2>
+          <h2>Your account has been locked due to payment issues</h2>{' '}
           <p className="signOutAndIfNot">
             Logged in as:{' '}
-            <strong>{storageManager.get('users')[0].email || ''}</strong>
-            <br />
-            <button
+            <strong>{storageManager.get('users')[0].email || ''}</strong>{" "}<a
               onClick={handleFullSignOutAndDeleteUser}
-              className="SignUpSignOutTryAgain"
+              style={{color:"var(--Primary-Color)", cursor:"pointer"}}
             >
-              <p>Sign out</p>
-            </button>
-          </p>
-
-          <p>
-            Your account has been locked because of a payment issue. Please
-            contact support to resolve this:
-          </p>
-
-          <span className="activation-number">-{'>'} Phone: 09 44 50 9999</span>
-          <br />
-          <span className="activation-number">
-            -{'>'} Email: rentmaster.et@gmail.com
-          </span>
-          <br />
-          <span className="activation-number">
-            -{'>'} Telegram: @Rent_Master
-          </span>
-
+              Sign out?
+            </a>
+           
+            {" "}
+          </p> <br />
+          Please contact us to resolve this payment issue: <br />
+          <span className="activation-number">-{'>'} Call +2519 44 50 9999</span>
+          <br /> <span className="activation-number">-{'>'} Telegram @rent_master</span>
+          <br /> <span className="activation-number">-{'>'} Email: rentmaster.et@gmail.com</span>
           <br />
           <br />
-
-          <p>
-            Once payment is confirmed, please retry signing in while connected
-            to the internet.
-          </p>
-
-          <div style={{ display: 'flex' }}>
-            <button
+          Once payment is confirmed, please retry signing in while connected to the
+          internet. It's possible you're seeing this message due to a lack of
+          internet connection.  <button
               onClick={() => {
                 setLoading(true);
                 checkIfSignedIn().finally(() => setLoading(false));
               }}
-              className="SignUpSignOutTryAgain"
             >
-              <p>Retry</p>
+              <p>Retry</p>{' '}
             </button>
+         
+          <div style={{ display: 'flex' }}>
+          
           </div>
         </div>
       </div>
@@ -1453,57 +1451,60 @@ const AccountManager = (React.FC<MyComponentProps> = ({
   const [count, setCount] = useState(0);
   const [BranchLimit, setBranchLimit] = useState(0);
   const getBranchLimitInfo = async () => {
-    if (navigator.onLine) {
-      if (storageManager.get('users')) {
-        if (storageManager.get('users')[0]) {
-          if (isTryout) {
-            return {
-              maxBranches: 3,
-              currentBranches: 1,
-            };
-          }
+    // Default response for offline/error cases
+    const defaultResponse = {
+      maxBranches: 0,
+      currentBranches: 0
+    };
 
-          const userMaxBranches = await getValuesWithSql_Online(
-            'users',
-            `WHERE id = '${storageManager.get('users')[0].id}'`
-          );
-          const AllBranches = await getValuesWithSql_Online(
-            'branches',
-            `WHERE userId = '${storageManager.get('users')[0].id}'`
-          );
-          console.log(userMaxBranches, AllBranches);
-          if (!userMaxBranches) {
-            return {
-              maxBranches: 0,
-              currentBranches: 0,
-            };
-          }
-          if (userMaxBranches[0].maxNumberOfBranches)
-            return {
-              maxBranches: userMaxBranches[0].maxNumberOfBranches,
-              currentBranches: AllBranches.length,
-            };
-          else
-            return {
-              maxBranches: 0,
-              currentBranches: 0,
-            };
-        } else {
-          return {
-            maxBranches: 0,
-            currentBranches: 0,
-          };
-        }
+    // Check if online
+    if (!navigator.onLine) {
+      return defaultResponse;
+    }
+
+    // Get users from storage
+    const users = storageManager.get('users');
+    const currentUser = users?.[0];
+    
+    if (!currentUser) {
+      return defaultResponse;
+    }
+
+    // Handle tryout mode
+    if (isTryout) {
+      return {
+        maxBranches: 3,
+        currentBranches: 1
+      };
+    }
+
+    try {
+      // Get user branch limits and current branches
+      const [userMaxBranches, AllBranches] = await Promise.all([
+        getValuesWithSql_Online(
+          'users',
+          `WHERE id = '${currentUser.id}'`
+        ),
+        getValuesWithSql_Online(
+          'branches', 
+          `WHERE userId = '${currentUser.id}'`
+        )
+      ]);
+
+      // If no user data found, return default
+      if (!userMaxBranches?.length) {
+        return defaultResponse;
       }
+
+      // Return branch limits
       return {
-        maxBranches: 0,
-        currentBranches: 0,
+        maxBranches: userMaxBranches[0].maxNumberOfBranches || 0,
+        currentBranches: AllBranches?.length || 0
       };
-    } else {
-      return {
-        maxBranches: 0,
-        currentBranches: 0,
-      };
+
+    } catch (error) {
+      console.error('Error getting branch limits:', error);
+      return defaultResponse;
     }
   };
   const { showAlert } = useAlert();
@@ -2953,61 +2954,51 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                     : 'flex-start',
                                 }}
                               >
-                                {Branches &&
-                                Branches.filter(
-                                  (branch: any) =>
-                                    storageManager.get('SelectedAppUserId') ===
-                                      'admin' ||
-                                    appUsers
-                                      .find(
-                                        (appUser) =>
-                                          appUser.id ===
-                                          storageManager.get(
-                                            'SelectedAppUserId'
-                                          )
-                                      )
-                                      ?.AllowedBranches.includes(branch.id)
-                                ).length === 0 ? (
+                                {!Array.isArray(Branches) ? (
+                                  <div>Loading properties...</div>
+                                ) : Branches.length === 0 ? (
+                                  <div>No properties available</div>
+                                ) : Branches.filter(
+                                    (branch: any) =>
+                                      storageManager.get('SelectedAppUserId') === 'admin' ||
+                                      appUsers
+                                        .find(
+                                          (appUser) =>
+                                            appUser.id ===
+                                            storageManager.get('SelectedAppUserId')
+                                        )
+                                        ?.AllowedBranches.includes(branch.id)
+                                  ).length === 0 ? (
                                   <div>
                                     Could not find any properties. Please try
                                     clicking refresh.
                                   </div>
                                 ) : (
-                                  Branches &&
-                                  Branches.length > 0 &&
                                   Branches.filter(
                                     (branch: any) =>
-                                      storageManager.get(
-                                        'SelectedAppUserId'
-                                      ) === 'admin' ||
+                                      storageManager.get('SelectedAppUserId') === 'admin' ||
                                       appUsers
                                         .find(
                                           (appUser) =>
                                             appUser.id ===
-                                            storageManager.get(
-                                              'SelectedAppUserId'
-                                            )
+                                            storageManager.get('SelectedAppUserId')
                                         )
                                         ?.AllowedBranches.includes(branch.id)
                                   ).map((branch: any) => (
                                     <div
                                       key={branch.id}
-                                      className="branch-card"
+                                      className="branch-card" 
                                       style={{
-                                        backgroundColor:
-                                          'var(--Secondary-Color20)',
+                                        backgroundColor: 'var(--Secondary-Color20)',
                                         borderRadius: 'var(--12px-V)',
                                         padding: 'var(--25px-V)',
-                                        width: 'var(--390px-V)',
-                                        boxShadow:
-                                          '0 var(--2px-V) var(--15px-V) rgba(0, 0, 0, 0.08)',
+                                        width: 'var(--390px-V)', 
+                                        boxShadow: '0 var(--2px-V) var(--15px-V) rgba(0, 0, 0, 0.08)',
                                         display: 'flex',
                                         flexDirection: 'column',
                                         gap: 'var(--20px-V)',
-                                        transition:
-                                          'transform 0.2s, box-shadow 0.2s',
+                                        transition: 'transform 0.2s, box-shadow 0.2s',
                                         cursor: 'default',
-
                                         position: 'relative',
                                       }}
                                     >
@@ -3017,8 +3008,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                           display: 'flex',
                                           justifyContent: 'space-between',
                                           alignItems: 'center',
-                                          borderBottom:
-                                            '1px solid var(--Border-Color)',
+                                          borderBottom: '1px solid var(--Border-Color)',
                                           paddingBottom: 'var(--15px-V)',
                                         }}
                                       >
@@ -3040,12 +3030,9 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                         >
                                           <button
                                             className="appUserButtons"
-                                            onClick={() =>
-                                              handleStartEdit(branch)
-                                            }
+                                            onClick={() => handleStartEdit(branch)}
                                             style={{
-                                              padding:
-                                                'var(--8px-V) var(--12px-V)',
+                                              padding: 'var(--8px-V) var(--12px-V)',
                                               fontSize: 'var(--14px-V)',
                                             }}
                                           >
@@ -3098,11 +3085,9 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                             <div
                                               style={{
                                                 display: 'grid',
-                                                gridTemplateColumns:
-                                                  'repeat(2, 1fr)',
+                                                gridTemplateColumns: 'repeat(2, 1fr)',
                                                 gap: 'var(--15px-V)',
-                                                backgroundColor:
-                                                  'var(--Background-Color)',
+                                                backgroundColor: 'var(--Background-Color)',
                                                 padding: 'var(--15px-V)',
                                                 borderRadius: 'var(--8px-V)',
                                               }}
@@ -3121,9 +3106,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                               />
                                               <StatItem
                                                 label="Occupied Rooms"
-                                                value={
-                                                  branch.occupiedRooms || 0
-                                                }
+                                                value={branch.occupiedRooms || 0}
                                               />
                                               <StatItem
                                                 label="Vacant Rooms"
@@ -3132,24 +3115,17 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                             </div>
 
                                             {/* Financial Section */}
-                                            {storageManager.get(
-                                              'SelectedAppUserId'
-                                            ) === 'admin' ||
+                                            {storageManager.get('SelectedAppUserId') === 'admin' ||
                                             appUsers
                                               .find(
                                                 (appUser) =>
                                                   appUser.id ===
-                                                  storageManager.get(
-                                                    'SelectedAppUserId'
-                                                  )
+                                                  storageManager.get('SelectedAppUserId')
                                               )
-                                              ?.privileges.includes(
-                                                'View dashboard page'
-                                              ) ? (
+                                              ?.privileges.includes('View dashboard page') ? (
                                               <div
                                                 style={{
-                                                  backgroundColor:
-                                                    'var(--Background-Color)',
+                                                  backgroundColor: 'var(--Background-Color)',
                                                   padding: 'var(--15px-V)',
                                                   borderRadius: 'var(--8px-V)',
                                                 }}
@@ -3157,11 +3133,9 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                                 <h4
                                                   style={{
                                                     margin: 0,
-                                                    marginBottom:
-                                                      'var(--10px-V)',
+                                                    marginBottom: 'var(--10px-V)',
                                                     fontSize: 'var(--16px-V)',
-                                                    color:
-                                                      'var(--Text-Color-80)',
+                                                    color: 'var(--Text-Color-80)',
                                                     fontWeight: '600',
                                                   }}
                                                 >
@@ -3170,8 +3144,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                                 <div
                                                   style={{
                                                     display: 'flex',
-                                                    justifyContent:
-                                                      'space-between',
+                                                    justifyContent: 'space-between',
                                                   }}
                                                 >
                                                   <FinancialItem
@@ -3214,16 +3187,13 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                           display: 'flex',
                                           flexDirection: 'column',
                                           gap: 'var(--10px-V)',
-                                          borderTop:
-                                            '1px solid var(--Border-Color)',
+                                          borderTop: '1px solid var(--Border-Color)',
                                           paddingTop: 'var(--15px-V)',
                                         }}
                                       >
                                         <button
                                           className="appUserButtons"
-                                          onClick={() =>
-                                            handleSelectBranch(branch.id)
-                                          }
+                                          onClick={() => handleSelectBranch(branch.id)}
                                           style={{
                                             width: '100%',
                                             padding: 'var(--12px-V)',
@@ -3235,36 +3205,6 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                                         >
                                           Manage Property
                                         </button>
-
-                                        {/* <label
-                                          style={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: 'var(--8px-V)',
-                                            fontSize: 'var(--14px-V)',
-                                            color: 'var(--Text-Color-60)',
-                                            justifyContent: 'center',
-                                          }}
-                                        >
-                                          <input
-                                            type="checkbox"
-                                            checked={branch?.lock || false}
-                                            onChange={(e) => {
-                                              setBranches((prev) =>
-                                                prev.map((brancha) =>
-                                                  brancha.id === branch.id
-                                                    ? {
-                                                        ...brancha,
-                                                        lock: e.target.checked,
-                                                      }
-                                                    : brancha
-                                                )
-                                              );
-                                            }}
-                                            style={{ margin: 0 }}
-                                          />
-                                          Lock this PC to this branch
-                                        </label> */}
                                       </div>
                                     </div>
                                   ))
@@ -3389,22 +3329,15 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                       </button>
                     </div>
                   )}
-                  <LoginPage
-                    setisSignUpMode={setisSignUpMode}
-                    setisSignedIn={setisSignedIn}
-                    setChangeMade={setChangeMade}
-                    email={email}
-                    password={password}
-                    setEmail={setEmail}
-                    username={username}
-                    setUsername={setUsername}
-                    setPassword={setPassword}
-                    setSelectedAppUser={setSelectedAppUser}
-                    setAppUserManagerShow={setAppUserManagerShow}
-                    fetchBranches={handleShowBranches}
-                    RefreshComponent={RefreshComponent}
-                    setViewBranchManagementPage={setViewBranchManagementPage}
-                  />
+                    <SignUpPage
+                      setisSignUpMode={setisSignUpMode}
+                      setisSignedIn={setisSignedIn}
+                      setChangeMade={setChangeMade}
+                      email={email}
+                      password={password}
+                      setEmail={setEmail}
+                      setPassword={setPassword}
+                    />
                 </div>
               ) : (
                 <div

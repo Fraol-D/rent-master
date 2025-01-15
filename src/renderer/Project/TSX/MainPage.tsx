@@ -291,6 +291,7 @@ declare global {
     userId: string;
   };
   type expenses = {
+    category: string;
     id: string;
     fullBuilding: boolean;
     floor: number;
@@ -861,23 +862,23 @@ const MainPage = ({
   const handleAddRoom = async (continueAdding = false) => {
     if (isAddingRoom) return; // Prevent multiple clicks
     if (navigator.onLine) {
-     if(window.location.href.includes('tryout')){
-      const limit = 5
-      const reachedLimit = RoomList.length >= limit;
-      if(reachedLimit){
-        showAlert('Room limit reached. Please sign up to add more rooms.');
-        return;
+      if (window.location.href.includes('tryout')) {
+        const limit = 5;
+        const reachedLimit = RoomList.length >= limit;
+        if (reachedLimit) {
+          showAlert('Room limit reached. Please sign up to add more rooms.');
+          return;
+        }
+      } else {
+        const reachedLimit = await checkRoomLimit(SelectedUserId);
+
+        console.log(reachedLimit);
+        if (reachedLimit) {
+          showAlert('Room limit reached. Please upgrade to add more rooms.');
+
+          return;
+        }
       }
-
-     } else {
-      const reachedLimit = await checkRoomLimit(SelectedUserId);
-
-      console.log(reachedLimit);
-      if (reachedLimit) {
-        showAlert('Room limit reached. Please upgrade to add more rooms.');
-
-        return;
-      }}
     } else {
       //IMPLIMENT ROOM LIMIT ON offline electron
     }
@@ -1189,7 +1190,6 @@ const MainPage = ({
     }
   };
 
- 
   function handleClearFilters() {
     setFilterOptions([]);
     setFloorFilter('');
@@ -1208,7 +1208,7 @@ const MainPage = ({
   }
   const [RefreshInspectorForAddRoom, setRefreshInspectorForAddRoom] =
     useState(false);
- 
+
   const handleAddImage = (roomId: string) => {
     // This function will be implemented later
     console.log('Add image for room', roomId);
@@ -1605,7 +1605,7 @@ const MainPage = ({
     if (isOnTutorial) {
       setTutorialNewExpenseId(newExpense.id);
     }
-    if(isMobileState) handleCloseSideBar();
+    if (isMobileState) handleCloseSideBar();
     setEditingExpenseId(newExpense.id);
     setEditedExpense(newExpense);
     await addValue('expenses', newExpense, setChangeMade);
@@ -1677,17 +1677,17 @@ const MainPage = ({
           style={
             isMobileState
               ? {
-               
-                height: 'var(--35px-V)',
-                background: 'var(--Secondary-Color)',
-                display: 'flex',
-                alignItems: 'center',
-                top: 'var(--70px-V)',
-                left: 'var(--10px-V)',
-                margin: 'var(--0px-V)',
-              }
+                  height: 'var(--35px-V)',
+                  background: 'var(--Secondary-Color)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  top: 'var(--70px-V)',
+                  left: 'var(--10px-V)',
+                  margin: 'var(--0px-V)',
+                }
               : {
-                  zIndex: 2,   display: 'flex',
+                  zIndex: 2,
+                  display: 'flex',
                   alignItems: 'center',
                   visibility: SideBarShowState
                     ? 'hidden'
@@ -1759,8 +1759,8 @@ const MainPage = ({
                     onClick={handleCloseSideBar}
                     title="Close Sidebar"
                     style={{ display: SideBarShowState ? '' : 'none' }}
-                >
-                  {/* <img src={IconsGUI().Left2ArrowIcon} alt="" /> */}
+                  >
+                    {/* <img src={IconsGUI().Left2ArrowIcon} alt="" /> */}
                     Close sidebar
                   </button>
                 )}
@@ -2926,15 +2926,17 @@ const MainPage = ({
                 }}
               >
                 {' '}
-                {!isMobileState && <button
-                  className="SideBarTopButton"
-                  onClick={handleCloseSideBar}
-                  title="Close Sidebar"
-                  style={{ display: SideBarShowState ? '' : 'none' }}
-                >
-                  {/* <img src={IconsGUI().Left2ArrowIcon} alt="" /> */}
-                  Close sidebar
-                </button>}
+                {!isMobileState && (
+                  <button
+                    className="SideBarTopButton"
+                    onClick={handleCloseSideBar}
+                    title="Close Sidebar"
+                    style={{ display: SideBarShowState ? '' : 'none' }}
+                  >
+                    {/* <img src={IconsGUI().Left2ArrowIcon} alt="" /> */}
+                    Close sidebar
+                  </button>
+                )}
                 <button
                   className="SideBarTopButton"
                   onClick={handleAddExpense}
@@ -2946,7 +2948,10 @@ const MainPage = ({
                 </button>
                 <button
                   className="SideBarTopButton"
-                  onClick={() => {setShowExpenseCalendar(!showExpenseCalendar); if(isMobileState) handleCloseSideBar()}}
+                  onClick={() => {
+                    setShowExpenseCalendar(!showExpenseCalendar);
+                    if (isMobileState) handleCloseSideBar();
+                  }}
                   style={{ display: SideBarShowState ? '' : 'none' }}
                   title="Show Calendar"
                   id="expense-calendar-toggle"
@@ -3319,7 +3324,10 @@ const MainPage = ({
                 setDeleteConfimation(false);
               }}
             ></div>{' '}
-            <div className="EditRoomScreenMainContainer" style={{width: isMobileState ? '95%' : ''}}>
+            <div
+              className="EditRoomScreenMainContainer"
+              style={{ width: isMobileState ? '95%' : '' }}
+            >
               <div style={{ display: 'flex' }}>
                 <button
                   onClick={() => {
@@ -3674,8 +3682,21 @@ const MainPage = ({
               HideSideBarForCalendar || isMobileState
                 ? '100%'
                 : `calc(100% - var(--${SideBarWidth}px-V))`,
-            height:isMobileState?"": SelectedPage === 'Tools' ? 'calc(100% - var(--60px-V))' :SelectedPage === 'Rooms' ?  'calc(100% - var(--60px-V))' :SelectedPage === 'Expense' ? 'calc(100% - var(--60px-V))' : '',
-            overflowY: SelectedPage === 'Tools' ?  ToolsSelectedPage === "Database" ? "hidden":'auto' : 'auto',
+            height: isMobileState
+              ? ''
+              : SelectedPage === 'Tools'
+              ? 'calc(100% - var(--60px-V))'
+              : SelectedPage === 'Rooms'
+              ? 'calc(100% - var(--60px-V))'
+              : SelectedPage === 'Expense'
+              ? 'calc(100% - var(--60px-V))'
+              : '',
+            overflowY:
+              SelectedPage === 'Tools'
+                ? ToolsSelectedPage === 'Database'
+                  ? 'hidden'
+                  : 'auto'
+                : 'auto',
           }}
         >
           {isMobileState && SideBarShowState ? (

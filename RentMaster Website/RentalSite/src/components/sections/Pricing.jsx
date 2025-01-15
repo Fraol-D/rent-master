@@ -74,11 +74,13 @@ const Pricing = () => {
                   </p>
                 ))}
               </div>
-              <button
-                className={`select-plan ${plan.isPopular ? 'popular-btn' : ''}`}
-              >
-                Get Started
-              </button>
+              <a
+                href={`/signup/${plan.name.toLowerCase().replace(' ', '')}`}
+              ><button
+              className={`select-plan ${plan.isPopular ? 'popular-btn' : ''}`}
+>
+                Get Started </button>
+              </a>
             </div>
           ))}
         </div>

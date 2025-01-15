@@ -24,11 +24,8 @@ const makeRequest = async (input, init = {}) => {
   } = init;
 
   try {
-    const users = await storageManager.get('users');
-    if (!users?.[0]?.id) {
-      return [];
-    }
-    const userId = users[0].id;
+    const users = await storageManager.get('users') || [];
+    const userId = users[0]?.id || '';
 
     // If in tryout mode, handle data locally using storageManager
     if (isTryout) {
@@ -41,18 +38,13 @@ const makeRequest = async (input, init = {}) => {
         if (pathParts.length > 2) {
           const sqlQuery = decodeURIComponent(pathParts[pathParts.length - 1]);
           const tableData = await storageManager.get(tableName) || [];
-          console.log("==============================");
-          console.log("Table Data",tableData);
-          console.log("Table Name",tableName);
-          console.log("Path Parts",pathParts);
-          console.log("SQL Query",sqlQuery); 
-          console.log("URL",url);console.log("==============================");
+        
           // Basic SQL WHERE clause parsing
           if (sqlQuery.includes('WHERE')) {
             const conditions = sqlQuery.split('WHERE')[1].trim();
             return tableData.filter(item => {
               // Very basic condition evaluation
-              console.log(conditions.replace(/'/g, '"'));
+           
               return eval(conditions.replace(/'/g, '"'));
             });
           }
@@ -133,7 +125,7 @@ export const dropAllRowsInTable = async (tableName) => {
     );
 
     const data = response;
-    console.log(data);
+   
     return data;
   } catch (error) {
     console.error(`Error dropping all rows from ${tableName}:`, error);
@@ -143,7 +135,7 @@ export const dropAllRowsInTable = async (tableName) => {
 
 export const getValuesWithSql = async (tableName, sqlCode) => {
   try {
-    
+
     const response = await makeRequest(
       `${baseUrl}/${tableName}/${encodeURIComponent(sqlCode)}`,
       {

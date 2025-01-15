@@ -381,6 +381,24 @@ export const tryoutData = {
       tenantId: '9ffa6778-35a7-4da5-bd2d-8f55b9390c6c',
       userId: 'fdb677f8-ef49-4b2c-ba8f-145e75eaee16',
       branchId: 'b956841a-231d-4a74-91b8-adf39a3c7a00'
+    },{
+      id: '33f2ead1-1b72-43be-92d4-0051745d0f73-1735257600000',
+      roomId: '33f2ead1-1b72-43be-92d4-0051745d0f73',
+      Day: 1735257600000,
+      Paid: 1,
+      Value: 24000,
+      tenantId: '991697f9-0a18-4651-9f06-207311e1590b',
+      userId: 'tryout',
+      branchId: 'b956841a-231d-4a74-91b8-adf39a3c7a00'
+    },{
+      id: '54230d38-1a21-4239-a941-bb8303722411-1737936000000',
+      roomId: '54230d38-1a21-4239-a941-bb8303722411',
+      Day: 1737936000000,
+      Paid: 1,
+      Value: 28000,
+      tenantId: '9ffa6778-35a7-4da5-bd2d-8f55b9390c6c',
+      userId: 'tryout',
+      branchId: 'b956841a-231d-4a74-91b8-adf39a3c7a00'
     }
   ],
 
@@ -1467,7 +1485,7 @@ export const tryoutData = {
       roomId: '54230d38-1a21-4239-a941-bb8303722411',
       type: 'Water',
       useThis: true,
-      price: 0,
+      price: 800,
       alwaysAsk: false,
       Currency: 'ETB',
       userId: 'fdb677f8-ef49-4b2c-ba8f-145e75eaee16',
@@ -1478,7 +1496,7 @@ export const tryoutData = {
       roomId: '54230d38-1a21-4239-a941-bb8303722411',
       type: 'Electricity',
       useThis: true,
-      price: 0,
+      price: 1200,
       alwaysAsk: false,
       Currency: 'ETB',
       userId: 'fdb677f8-ef49-4b2c-ba8f-145e75eaee16',

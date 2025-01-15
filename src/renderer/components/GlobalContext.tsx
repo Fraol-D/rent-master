@@ -23,6 +23,8 @@ interface GlobalContextType {
   setAllRoomSpecifications: React.Dispatch<React.SetStateAction<RoomSpecificationType[]>>;
   AllRoomPayInfoHistory: AllRoomPayInfoHistory[];
   setAllRoomPayInfoHistory: React.Dispatch<React.SetStateAction<AllRoomPayInfoHistory[]>>;
+  RoomList: RoomType[];
+  setRoomList: React.Dispatch<React.SetStateAction<RoomType[]>>;
 
   tutorialNewAppUserId: string;
   setTutorialNewAppUserId: React.Dispatch<React.SetStateAction<string>>;
@@ -50,6 +52,7 @@ const [AllSmsTemplates, setAllSmsTemplates] = useState<SMSTemplate[]>([]);
 const [AllNotificationTemplateSelections, setAllNotificationTemplateSelections] = useState<notification_template_selections[]>([]);
 const [AllRoomSpecifications, setAllRoomSpecifications] = useState<RoomSpecificationType[]>([]);
 const [AllRoomPayInfoHistory, setAllRoomPayInfoHistory] = useState<AllRoomPayInfoHistory[]>([]);
+const [RoomList, setRoomList] = useState<RoomType[]>([]);
 
 
 //TUTORIAL DATA
@@ -91,6 +94,8 @@ return (
         setAllRoomSpecifications,
         AllRoomPayInfoHistory,
         setAllRoomPayInfoHistory,
+        RoomList,
+        setRoomList,
         tutorialNewAppUserId,
         setTutorialNewAppUserId,
         tutorialNewExpenseId,

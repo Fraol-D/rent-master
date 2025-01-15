@@ -1,7 +1,7 @@
 import CryptoJS from 'crypto-js';
 import { tryoutData } from './Project/TSX/Helpers/tryoutData';
 // Toggle encryption on or off
-const encryptData = true;
+const encryptData = false;
 const isTryout = window.location.href.includes('tryout');
 const secretKey = window.electron ? '' : import.meta.env.VITE_ENCRYPTION_KEY;
 const secretKeyKEY = window.electron ? '' : import.meta.env.VITE_secretKeyKEY;
@@ -12,6 +12,9 @@ const encrypt = (data) => {
 
 // Simple but secure key encryption using base64 and a salt
 const encryptKey = (key) => {
+  if (!encryptData) {
+    return key;
+  }
   const salt = secretKeyKEY; // Static salt adds consistency
   const combined = key + salt;
   const base64 = btoa(combined);

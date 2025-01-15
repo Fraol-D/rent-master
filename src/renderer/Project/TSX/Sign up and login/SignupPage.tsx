@@ -7,6 +7,7 @@ import {
   checkIfCompanyNameExists,
   getValuesWithSql_Online,
   sendEmailAPIForVerify,
+  sendEmailAPIForWebsite,
 } from '../../../../Backend/OnlineServerApis';
 
 import {
@@ -64,31 +65,20 @@ const SignupPage = ({
 
   const handleSubmit = async () => {
     setErrorMessage('');
-    setLoading(true);
-    // Check online database if email exists
-    const users = await getValuesWithSql_Online(
+    setLoading(true);    
+     const users = await getValuesWithSql_Online(
       'users',
       `WHERE email = '${email}'`
-    );
-    console.log(users, email);
-    function isValidEmail(email: string) {
-      // Regular expression for a simple email validation
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-      // Test the email against the regular expression
-      return emailRegex.test(email);
-    }
-    if (!isValidEmail(email.toLowerCase())) {
-      setErrorMessage('The email is not valid.');
-      setLoading(false);
-      return false;
-    }
-    if (users.length >= 1) {
+    );if (users.length >= 1) {
       setErrorMessage('Email already exists, please Login.');
       setLoading(false);
       return;
     }
-    if (password.length <= 6) {
+   if (!isValidEmail(email.toLowerCase())) {
+      setErrorMessage('The email is not valid.');
+      setLoading(false);
+      return false;
+    }  if (password.length <= 6) {
       setErrorMessage('Password has to be 6 or more letters.');
       setLoading(false);
       return;
@@ -97,18 +87,25 @@ const SignupPage = ({
       setErrorMessage('Passwords do not match.');
       setLoading(false);
       return;
+    } // Check online database if email exists
+   
+    
+    function isValidEmail(email: string) {
+      // Regular expression for a simple email validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+      // Test the email against the regular expression
+      return emailRegex.test(email);
     }
+
+  
 
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     setVerificationCode(code);
     setCodeSent(true);
     setCodeExpired(false);
     setErrorMessage('Verification code sent to your email.');
-    if(window.electron) window.electron.ipcRenderer.send('SendVerificationCode', {
-      to: email,
-      code: code,
-    }); 
-    else sendEmailAPIForVerify(email, code);
+  sendEmailAPIForVerify(email, code);
     setLoading(false);
     setTimeout(() => {
       setCodeExpired(true);
@@ -536,7 +533,7 @@ const SignupPage = ({
 
   const handleSignUp = async () => {
     setLoading(true);
-    
+
     if (!fullName || !companyName || !phoneNumber) {
       setErrorMessage('Please fill out all fields.');
       setLoading(false);
@@ -544,7 +541,7 @@ const SignupPage = ({
     }
     const checkIfExists = await checkIfCompanyNameExists(companyName);
     console.log(checkIfExists.valid);
-    if(!checkIfExists.valid) {
+    if (!checkIfExists.valid) {
       setErrorMessage('Company name already exists.');
       setLoading(false);
       return;
@@ -560,6 +557,16 @@ const SignupPage = ({
         (endDate.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24)
       );
       storageManager.set('useLiveExchangeRates', true);
+      await sendEmailAPIForWebsite(
+        'rentmaster.et@gmail.com',
+        `A new user has signed up with the following details:
+Email: ${email}
+Full Name: ${fullName} 
+Company Name: ${companyName}
+Phone Number: ${phoneNumber}
+Package Type: 7 day trial`,
+        'New User Signed up'
+      );
       await AddUserOnline(
         JSON.stringify({
           id: userID,
@@ -595,7 +602,19 @@ const SignupPage = ({
       console.log('Days until end of trial:', daysUntilEnd);
     }
     if (subscriptionType === 'fullpackage') {
-      await AddUserOnline(
+      await sendEmailAPIForWebsite(
+        'rentmaster.et@gmail.com',
+        `A new user has signed up with the following details:
+id: ${userID}
+Email: ${email}
+Full Name: ${fullName} 
+Company Name: ${companyName}
+Phone Number: ${phoneNumber}
+Package Type: ${!window.electron
+  ? window.location.pathname.split('/signup/')[1]
+  : ''}`,
+        'New User Signed up'
+      );await AddUserOnline(
         JSON.stringify({
           id: userID,
           Allowed: 0,
@@ -606,6 +625,9 @@ const SignupPage = ({
           companyName: companyName,
           maxNumberOfBranches: 1,
           packageType: 'fullpackage',
+          PackageSelected: !window.electron
+            ? window.location.pathname.split('/signup/')[1]
+            : '',
           TrailEndDate: 0,
         })
       );
@@ -628,27 +650,27 @@ const SignupPage = ({
     for (let i = 0; i < getEmailTemplates2(userID).length; i++) {
       const element = getEmailTemplates2(userID)[i];
       await addValueOnline('email_templates', element);
-      if(window.electron)await addValueWithOutOfflineChange('email_templates', element);
+      if (window.electron)
+        await addValueWithOutOfflineChange('email_templates', element);
     }
 
     for (let i = 0; i < getSmsTemplates(userID).length; i++) {
       const element = getSmsTemplates(userID)[i];
       await addValueOnline('sms_templates', element);
-      if(window.electron) await addValueWithOutOfflineChange('sms_templates', element);
+      if (window.electron)
+        await addValueWithOutOfflineChange('sms_templates', element);
     }
-    if(!window.electron)window.location.pathname = '/app';
+    if (!window.electron) window.location.pathname = '/app';
     setisSignedIn(true);
     setErrorMessage('Sign up successful!');
     setLoading(false);
   };
 
   const handleOrLoginButtonClick = () => {
-    if(window.electron) setisSignUpMode(false);
-    else window.location.pathname = "/login";
+    if (window.electron) setisSignUpMode(false);
+    else window.location.pathname = '/login';
   };
 
-  
-  
   return (
     <>
       {loading && (
@@ -748,7 +770,11 @@ const SignupPage = ({
 
         {formStage === 'verification' && (
           <>
-            <button onClick={handleBack} className="LoginButton" style={{border:'none'}}>
+            <button
+              onClick={handleBack}
+              className="LoginButton"
+              style={{ border: 'none' }}
+            >
               Back
             </button>
             {!verificationSuccess && (
@@ -810,24 +836,31 @@ const SignupPage = ({
                   placeholder="Full Name"
                   className="userName-input"
                 />
-              <div style={{width: '92%',
-display: 'flex',
-justifyContent: 'space-between' }}> <input
-                  type="text"
-                  value={companyName}
-                  onChange={handleCompanyNameChange}
-                  placeholder="Company Name"
-                  style={{width:"55%",marginBottom:"0px"}}
-                  className="userName-input"
-                />
-                <input
-                  type="text"
-                  value={phoneNumber}
-                  onChange={handlePhoneNumberChange}
-                  style={{width:"38%",marginBottom:"0px"}}
-                  placeholder="Phone Number"
-                  className="userName-input"
-                /></div> 
+                <div
+                  style={{
+                    width: '92%',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                  }}
+                >
+                  {' '}
+                  <input
+                    type="text"
+                    value={companyName}
+                    onChange={handleCompanyNameChange}
+                    placeholder="Company Name"
+                    style={{ width: '55%', marginBottom: '0px' }}
+                    className="userName-input"
+                  />
+                  <input
+                    type="text"
+                    value={phoneNumber}
+                    onChange={handlePhoneNumberChange}
+                    style={{ width: '38%', marginBottom: '0px' }}
+                    placeholder="Phone Number"
+                    className="userName-input"
+                  />
+                </div>
 
                 <br />
                 <button onClick={handleSignUp} className="LoginButton">

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 
 import { Input } from '../CustomReactComponents';
 import { v4 as uuidv4 } from 'uuid';
+import loadingGif from 'renderer/assets/assets/Loading/Rolling-1s-200px.gif';
 
 import {
   convertToGC,
@@ -36,6 +37,7 @@ const AgreementViewerForRoom = ({
   const [CurrentAgreementIndex, setCurrentAgreementIndex] = useState(0);
   const [ShowAddAgreementPannal, setShowAddAgreementPannal] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
 
   const getAgreements = async () => {
     const agreements = await agreementApi.getAgreementsByRoomIdApi(roomType.id);
@@ -147,142 +149,147 @@ const AgreementViewerForRoom = ({
   };
   const { showAlert } = useAlert();
   const HandleAddAgreement = async () => {
-    // Validate start time and end time
-    if (!startTime || !endTime) {
-      showAlert('Please enter both start time and end time');
-      return;
-    }
-    if (signDate === '') {
-      showAlert('Please enter a sign date');
-      return;
-    }
-    if (!paymentCycle) {
-      showAlert('Please enter a payment cycle');
-      return;
-    }
-    if (paymentCycle === 'custom' && !customDays) {
-      showAlert('Please enter a custom payment cycle');
-      return;
-    }
-    const startDate = new Date(startTime);
-    const endDate = new Date(endTime);
+    setIsLoading(true);
+    try {
+      // Validate start time and end time
+      if (!startTime || !endTime) {
+        showAlert('Please enter both start time and end time');
+        return;
+      }
+      if (signDate === '') {
+        showAlert('Please enter a sign date');
+        return;
+      }
+      if (!paymentCycle) {
+        showAlert('Please enter a payment cycle');
+        return;
+      }
+      if (paymentCycle === 'custom' && !customDays) {
+        showAlert('Please enter a custom payment cycle');
+        return;
+      }
+      const startDate = new Date(startTime);
+      const endDate = new Date(endTime);
 
-    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-      showAlert('Please enter valid dates for start time and end time');
-      return;
-    }
+      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+        showAlert('Please enter valid dates for start time and end time');
+        return;
+      }
 
-    if (startDate >= endDate) {
-      showAlert('End time must be after start time');
-      return;
-    }
+      if (startDate >= endDate) {
+        showAlert('End time must be after start time');
+        return;
+      }
 
-    // Deal with deleting, keeping, and makeing true of payments
-    if (paymentOption === 'deleteUnpaid') {
-      const FutruePaymentsRaw = AllRoomPayInfo.filter(
-        (payment) =>
-          payment.roomId === roomType.id &&
-          payment.tenantId === roomType.tenantId &&
-          payment.Day >= Date.now() &&
-          payment.Paid === 0
-      );
+      // Deal with deleting, keeping, and makeing true of payments
+      if (paymentOption === 'deleteUnpaid') {
+        const FutruePaymentsRaw = AllRoomPayInfo.filter(
+          (payment) =>
+            payment.roomId === roomType.id &&
+            payment.tenantId === roomType.tenantId &&
+            payment.Day >= Date.now() &&
+            payment.Paid === 0
+        );
 
-      if (FutruePaymentsRaw.length >= 1) {
-        for (let i = 0; i < FutruePaymentsRaw.length; i++) {
-          const element = FutruePaymentsRaw[i];
-          await deleteValue('room_pay_info', element.id);
-          setAllRoomPayInfo((prev) =>
-            prev.filter((payment) => payment.id !== element.id)
-          );
+        if (FutruePaymentsRaw.length >= 1) {
+          for (let i = 0; i < FutruePaymentsRaw.length; i++) {
+            const element = FutruePaymentsRaw[i];
+            await deleteValue('room_pay_info', element.id);
+            setAllRoomPayInfo((prev) =>
+              prev.filter((payment) => payment.id !== element.id)
+            );
+          }
+        }
+      } else if (paymentOption === 'keepUnpaid') {
+      } else if (paymentOption === 'makeAllPaid') {
+        const FutruePaymentsRaw = AllRoomPayInfo.filter(
+          (payment) =>
+            payment.roomId === roomType.id &&
+            payment.tenantId === roomType.tenantId &&
+            payment.Day >= Date.now() &&
+            payment.Paid === 0
+        );
+        console.log(FutruePaymentsRaw.length, 'length');
+        if (FutruePaymentsRaw.length >= 1) {
+          for (let i = 0; i < FutruePaymentsRaw.length; i++) {
+            const element = FutruePaymentsRaw[i];
+            await updateValue(
+              'room_pay_info',
+              element.id,
+              'Paid',
+              1,
+              setChangeMade,
+              0
+            );
+            setAllRoomPayInfo((prev) =>
+              prev.map((payment) =>
+                payment.id === element.id ? { ...payment, Paid: true } : payment
+              )
+            );
+          }
         }
       }
-    } else if (paymentOption === 'keepUnpaid') {
-    } else if (paymentOption === 'makeAllPaid') {
-      const FutruePaymentsRaw = AllRoomPayInfo.filter(
-        (payment) =>
-          payment.roomId === roomType.id &&
-          payment.tenantId === roomType.tenantId &&
-          payment.Day >= Date.now() &&
-          payment.Paid === 0
+      const agreementId = uuidv4();
+
+      // Move existing payments to history
+      await movePaymentsToHistory(roomType.id, agreementId);
+
+      // Create new payment data from start time to endtime using payment cycle
+      console.log(paymentCycle);
+      const paymentIntervals = {
+        '30': 30,
+        '15': 15,
+        '7': 7,
+        monthly: 1,
+        daily: 1,
+        custom: parseInt(customDays, 10) || 30, // Provide a fallback value
+      };
+
+      let interval: number =
+        paymentIntervals[paymentCycle as keyof typeof paymentIntervals] || 30;
+
+      console.log('reached1', interval);
+      // Create a new agreement ID first
+
+      // Create a new agreement and add it to the agreements table
+      agreementApi.addAgreementApi(
+        agreementId,
+        roomType.id,
+        roomType.tenantId,
+        new Date(startTime).getTime(),
+        new Date(endTime).getTime(),
+        new Date(signDate).getTime(),
+        agreedPrice,
+        paymentCycle === 'custom' ? '-' + customDays : paymentCycle,
+        '',
+        '',
+        Representative,
+        AddAgreementFormCurrency
       );
-      console.log(FutruePaymentsRaw.length, 'length');
-      if (FutruePaymentsRaw.length >= 1) {
-        for (let i = 0; i < FutruePaymentsRaw.length; i++) {
-          const element = FutruePaymentsRaw[i];
-          await updateValue(
-            'room_pay_info',
-            element.id,
-            'Paid',
-            1,
-            setChangeMade,
-            0
-          );
-          setAllRoomPayInfo((prev) =>
-            prev.map((payment) =>
-              payment.id === element.id ? { ...payment, Paid: true } : payment
-            )
-          );
-        }
-      }
+      // Set the roomType.SelectedAgreementId to the new agreement Id
+      updateRoomProperty(roomType.id, 'selectedAgreementId', agreementId);
+      updateRoomProperty(roomType.id, 'AgreedPrice', agreedPrice);
+      updateRoomProperty(roomType.id, 'PaymentCycleType', paymentCycle);
+      updateRoomProperty(roomType.id, 'PaymentCycleCustomeDays', customDays);
+
+      //Refresh component to render new data
+      setRefreshKey((prevKey) => prevKey + 1);
+
+      handlePaymentRefresh();
+      // Reset all the input fields
+      setStartTime('');
+      setEndTime('');
+      setSignDate('');
+      setRepresentative('');
+      setPaymentCycle('monthly');
+      setCustomDays('');
+      setAgreedPrice(0);
+      setAddAgreementFormCurrency(GetDefaultCurrency());
+      setShowAddAgreementPannal(false);
+      console.log('Show add agreement form');
+    } finally {
+      setIsLoading(false);
     }
-    const agreementId = uuidv4();
-
-    // Move existing payments to history
-    await movePaymentsToHistory(roomType.id, agreementId);
-
-    // Create new payment data from start time to endtime using payment cycle
-    console.log(paymentCycle);
-    const paymentIntervals = {
-      '30': 30,
-      '15': 15,
-      '7': 7,
-      monthly: 1,
-      daily: 1,
-      custom: parseInt(customDays, 10) || 30, // Provide a fallback value
-    };
-
-    let interval: number =
-      paymentIntervals[paymentCycle as keyof typeof paymentIntervals] || 30;
-
-    console.log('reached1', interval);
-    // Create a new agreement ID first
-
-    // Create a new agreement and add it to the agreements table
-    agreementApi.addAgreementApi(
-      agreementId,
-      roomType.id,
-      roomType.tenantId,
-      new Date(startTime).getTime(),
-      new Date(endTime).getTime(),
-      new Date(signDate).getTime(),
-      agreedPrice,
-      paymentCycle === 'custom' ? '-' + customDays : paymentCycle,
-      '',
-      '',
-      Representative,
-      AddAgreementFormCurrency
-    );
-    // Set the roomType.SelectedAgreementId to the new agreement Id
-    updateRoomProperty(roomType.id, 'selectedAgreementId', agreementId);
-    updateRoomProperty(roomType.id, 'AgreedPrice', agreedPrice);
-    updateRoomProperty(roomType.id, 'PaymentCycleType', paymentCycle);
-    updateRoomProperty(roomType.id, 'PaymentCycleCustomeDays', customDays);
-
-    //Refresh component to render new data
-    setRefreshKey((prevKey) => prevKey + 1);
-
-    handlePaymentRefresh();
-    // Reset all the input fields
-    setStartTime('');
-    setEndTime('');
-    setSignDate('');
-    setRepresentative('');
-    setPaymentCycle('monthly');
-    setCustomDays('');
-    setAgreedPrice(0);
-    setAddAgreementFormCurrency(GetDefaultCurrency());
-    setShowAddAgreementPannal(false);
-    console.log('Show add agreement form');
   };
 
   const HandleCancelAddAgreement = () => {
@@ -508,6 +515,32 @@ const AgreementViewerForRoom = ({
           <div className="PopOutContainerAgreement">
             <div className="AgreementPopUpContainerOpacity"></div>
             <div className="AgreementPopUpContainer">
+            <div
+      style={{
+        display: isLoading ? 'flex' : 'none',
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        width: '100%',
+        height: '100%',
+        paddingRight: 'var(--12px-V)',
+        backgroundColor: 'rgba(0, 0, 0, 0.3)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 1000,
+      }}
+    >
+      <img
+        src={loadingGif}
+        style={{
+          width: 'var(--40px-V)',
+          height: 'var(--40px-V)',
+        }}
+      />
+    </div>
+                    
               <div>
                 <h2>Add a new agreement</h2>
                 <p>

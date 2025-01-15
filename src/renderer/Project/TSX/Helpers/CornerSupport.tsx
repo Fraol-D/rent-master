@@ -39,6 +39,7 @@ const CornerSupport = ({
   const [selectedTutorial, setSelectedTutorial] =
     useState<TutorialSystem | null>(null);
   const [selectedTutorialIndex, setSelectedTutorialIndex] = useState<number>(0);
+  const [showHelpArrow, setShowHelpArrow] = useState(true);
 
   const [showTutorialPrompt, setShowTutorialPrompt] = useState(false);
   const [tutorialPromptPage, setTutorialPromptPage] = useState('');
@@ -47,6 +48,19 @@ const CornerSupport = ({
   const [currentSectionName, setCurrentSectionName] = useState('');
   const [tutorialShow, setTutorialShow] = useState(false);
   const { isMobileState } = useGlobal();
+
+  useEffect(() => {
+    const helpArrowShown = storageManager.get('helpArrowShown');
+    if (helpArrowShown) {
+      setShowHelpArrow(false);
+    }
+  }, []);
+
+  const handleHideHelpArrow = () => {
+    storageManager.set('helpArrowShown', true);
+    setShowHelpArrow(false);
+  };
+
   const checkAndStartTutorial = () => {
     console.log('checkAndStartTutorial');
     const tutorialPreferences = storageManager.get('tutorialPreferences') || {};
@@ -82,6 +96,7 @@ const CornerSupport = ({
       }
     }
   };
+
   useEffect(() => {
     // Small delay to ensure DOM elements are rendered
     const timeoutId = setTimeout(checkAndStartTutorial, 500);
@@ -98,6 +113,7 @@ const CornerSupport = ({
     }
     setIsOpen(!isOpen);
   };
+
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -237,21 +253,22 @@ const CornerSupport = ({
   };
 
   const renderTutorialList = () => {
+    console.log(SelectedAppUser)
     const privileges = getUserPrivileges(SelectedAppUser);
     const hasAccess = (page: string) => {
       switch (page.toLowerCase()) {
         case 'app user':
-          return SelectedAppUser.id === 'admin'; // Always show app user tutorials
+          return !SelectedAppUser ? true : SelectedAppUser.id === 'admin'; // Always show app user tutorials
         case 'property':
-          return SelectedAppUser.id === 'admin' || privileges.manageProperties; // Always show property tutorials
+          return !SelectedAppUser ? true : (SelectedAppUser.id === 'admin' || privileges.manageProperties); // Always show property tutorials 
         case 'dashboard':
-          return SelectedAppUser.id === 'admin' || privileges.viewDashboard;
+          return !SelectedAppUser ? true : (SelectedAppUser.id === 'admin' || privileges.viewDashboard);
         case 'rooms':
-          return SelectedAppUser.id === 'admin' || privileges.viewRoomsPage;
+          return !SelectedAppUser ? true : (SelectedAppUser.id === 'admin' || privileges.viewRoomsPage);
         case 'expense':
-          return SelectedAppUser.id === 'admin' || privileges.editExpenses;
+          return !SelectedAppUser ? true : (SelectedAppUser.id === 'admin' || privileges.editExpenses);
         case 'tools':
-          return SelectedAppUser.id === 'admin' || privileges.viewToolsPage;
+          return !SelectedAppUser ? true : (SelectedAppUser.id === 'admin' || privileges.viewToolsPage);
         default:
           return false;
       }
@@ -699,6 +716,53 @@ const CornerSupport = ({
           zIndex: 600,
         }}
       >
+        {showHelpArrow && (
+          <div
+            style={{
+              position: 'absolute',
+              bottom: 'var(--60px-V)',
+              right: 'var(---3px-V)',
+              backgroundColor: 'var(--Background-Color)',
+              padding: 'var(--10px-V)',
+              borderRadius: 'var(--5px-V)',
+              boxShadow: '0 0 var(--10px-V) rgba(0,0,0,0.1)',
+              width: 'var(--200px-V)',
+              animation: 'bounce 2s infinite'
+            }}
+          >
+            <div style={{
+              textAlign: 'center',
+              marginBottom: 'var(--10px-V)'
+            }}>
+              Click here to view the tutorial!
+            </div>
+            <div style={{
+              width: 0,
+              height: 0,
+              borderLeft: 'var(--10px-V) solid transparent',
+              borderRight: 'var(--10px-V) solid transparent',
+              borderTop: 'var(--10px-V) solid var(--Secondary-Color)',
+              position: 'absolute',
+              bottom: 'var(--10px-V)',
+              right: 'var(--20px-V)',
+              transform: 'translateY(100%)'
+            }}></div>
+            <button
+              onClick={handleHideHelpArrow}
+              style={{
+                width: '100%',
+                padding: 'var(--5px-V)',
+              
+                border: 'none',
+                borderRadius: 'var(--3px-V)',
+                cursor: 'pointer'
+              }}
+            >
+              OK, don't show again
+            </button>
+          </div>
+        )}
+
         <button
           onClick={toggleOpen}
           style={{

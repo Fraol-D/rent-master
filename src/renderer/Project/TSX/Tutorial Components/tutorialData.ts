@@ -122,8 +122,7 @@ export const tutorialData: TutorialSystem = {
           },
           {
             description: 'Enter the name or role of the app user.',
-            targetElementId:
-              'tutorialNewAppUserId + " app-user-edit-name-input"',
+            targetElementId: 'tutorialNewAppUserId + " app-user-edit-name-input"',
             position: 'left',
             requiresInteraction: true,
             allowBack: false,
@@ -132,8 +131,7 @@ export const tutorialData: TutorialSystem = {
           },
           {
             description: 'When done click save',
-            targetElementId:
-              'tutorialNewAppUserId + " app-user-edit-name-save"',
+            targetElementId: 'tutorialNewAppUserId + " app-user-edit-name-save"',
             position: 'left',
             requiresInteraction: true,
             allowBack: true,
@@ -164,8 +162,7 @@ export const tutorialData: TutorialSystem = {
           {
             description:
               'This section is for what properties this user is able to access and manage.',
-            targetElementId:
-              'tutorialNewAppUserId + " appuser-properties-list"',
+            targetElementId: 'tutorialNewAppUserId + " appuser-properties-list"',
             position: 'left',
             requiresInteraction: false,
             allowBack: true,
@@ -175,8 +172,7 @@ export const tutorialData: TutorialSystem = {
           {
             description:
               'This section allows you to enable password and username login for this user account. Anyone with the correct username and password will be able to log in.',
-            targetElementId:
-              'tutorialNewAppUserId + " appuser-account-password"',
+            targetElementId: 'tutorialNewAppUserId + " appuser-account-password"',
             position: 'left',
             requiresInteraction: false,
             allowBack: true,
@@ -323,7 +319,7 @@ export const tutorialData: TutorialSystem = {
             },
             {
               description: 'This is the room you just added.',
-              targetElementId: `'room-' + tutorialNewRoomId`,
+              targetElementId: "'room-' + tutorialNewRoomId",
               position: 'up',
               requiresInteraction: false,
               allowBack: false,
@@ -338,7 +334,7 @@ export const tutorialData: TutorialSystem = {
             {
               description:
                 'Here you will see the floor and room number and a edit button.',
-              targetElementId: `'room-floorRoom-text-' + (RoomList.find(room => room.status === 'Empty')?.id)`,
+              targetElementId: "'room-floorRoom-text-' + (RoomList.find(room => room.status === 'Empty')?.id)",
               position: 'right',
               requiresInteraction: false,
               allowBack: true,
@@ -347,7 +343,7 @@ export const tutorialData: TutorialSystem = {
             },
             {
               description: 'Here you will see the price and payment cycle.',
-              targetElementId: `'room-price-payment-cycle' + (RoomList.find(room => room.status === 'Empty')?.id)`,
+              targetElementId: "'room-price-payment-cycle' + (RoomList.find(room => room.status === 'Empty')?.id)",
               position: 'down',
               requiresInteraction: false,
               allowBack: true,
@@ -356,7 +352,7 @@ export const tutorialData: TutorialSystem = {
             {
               description:
                 'Here you will see the room specifications and a button to show room images.',
-              targetElementId: `'room-typeOfRoomMainContainer' + (RoomList.find(room => room.status === 'Empty')?.id)`,
+              targetElementId: "'room-typeOfRoomMainContainer' + (RoomList.find(room => room.status === 'Empty')?.id)",
               position: 'left',
               requiresInteraction: false,
               allowBack: true,
@@ -365,7 +361,7 @@ export const tutorialData: TutorialSystem = {
             {
               description:
                 'Here you will see the room status and a button to add a tenant to this room.',
-              targetElementId: `'room-status-Main-container' + (RoomList.find(room => room.status === 'Empty')?.id)`,
+              targetElementId: "'room-status-Main-container' + (RoomList.find(room => room.status === 'Empty')?.id)",
               position: 'right',
               requiresInteraction: false,
               allowBack: true,
@@ -380,17 +376,16 @@ export const tutorialData: TutorialSystem = {
           steps: [
             {
               description: 'Click the button to add a tenant.',
-              targetElementId: `'room-status-add-tenant-button' + (RoomList.find(room => room.status === 'Empty')?.id)`,
+              targetElementId: "'room-status-add-tenant-button' + (RoomList.find(room => room.status === 'Empty')?.id)",
               position: 'down',
               requiresInteraction: true,
               allowBack: true,
-
               isJsId: true,
             },
             {
               description:
                 'A panel will show, enter all the details. Lets start with the tenant information. Enter the name, phone number, email, Description, TIN(if any), and rent reason.',
-              targetElementId: `'room-add-tenant-container' + (RoomList.find(room => room.status === 'Empty')?.id)`,
+              targetElementId: "'room-add-tenant-container' + (RoomList.find(room => room.status === 'Empty')?.id)",
               position: 'right',
               requiresInteraction: false,
               allowBack: true,
@@ -399,7 +394,7 @@ export const tutorialData: TutorialSystem = {
             {
               description:
                 'Then now we will enter the tenant lease information. Enter the lease start date, lease end date, the date which it was signed,rent cycle, representative, currency, agreed price.',
-              targetElementId: `'room-add-tenant-container' + (RoomList.find(room => room.status === 'Empty')?.id)`,
+              targetElementId: "'room-add-tenant-container' + (RoomList.find(room => room.status === 'Empty')?.id)",
               position: 'right',
               requiresInteraction: false,
               allowBack: true,
@@ -408,7 +403,7 @@ export const tutorialData: TutorialSystem = {
             {
               description:
                 "If this tenant was aquaierd by means of a broker, Click the track broker button, then select the broker if you haven't made one yet, just click add new broker then enter the info of the broker.",
-              targetElementId: `'room-add-tenant-container' + (RoomList.find(room => room.status === 'Empty')?.id)`,
+              targetElementId: "'room-add-tenant-container' + (RoomList.find(room => room.status === 'Empty')?.id)",
               position: 'right',
               requiresInteraction: false,
               allowBack: true,
@@ -417,7 +412,7 @@ export const tutorialData: TutorialSystem = {
             {
               description:
                 'Then if you have any attachments or documents you can add it on the final area.',
-              targetElementId: `'room-add-tenant-container' + (RoomList.find(room => room.status === 'Empty')?.id)`,
+              targetElementId: "'room-add-tenant-container' + (RoomList.find(room => room.status === 'Empty')?.id)",
               position: 'right',
               requiresInteraction: false,
               allowBack: true,
@@ -426,7 +421,7 @@ export const tutorialData: TutorialSystem = {
             {
               description:
                 'When complete just click the add button to add the tenant.',
-              targetElementId: `'room-add-tenant-container' + (RoomList.find(room => room.status === 'Empty')?.id)`,
+              targetElementId: "'room-add-tenant-container' + (RoomList.find(room => room.status === 'Empty')?.id)",
               position: 'right',
               requiresInteraction: false,
               allowBack: true,
@@ -441,7 +436,7 @@ export const tutorialData: TutorialSystem = {
             {
               description:
                 'Click the view agreement button to view the agreement of the tenant.',
-              targetElementId: `'room-view-agreement-button' + (RoomList.find(room => room.status === 'Taken')?.id)`,
+              targetElementId: "'room-view-agreement-button' + (RoomList.find(room => room.status === 'Taken')?.id)",
               position: 'down',
               requiresInteraction: true,
               allowBack: true,
@@ -450,7 +445,7 @@ export const tutorialData: TutorialSystem = {
             {
               description:
                 'In this panel you can view every detail of the tenant and the agreement.',
-              targetElementId: `'room-view-agreement-container' + (RoomList.find(room => room.status === 'Taken')?.id)`,
+              targetElementId: "'room-view-agreement-container' + (RoomList.find(room => room.status === 'Taken')?.id)",
               position: 'right',
               requiresInteraction: false,
               allowBack: true,
@@ -460,67 +455,67 @@ export const tutorialData: TutorialSystem = {
             {
               description:
                 'This is the tenant information section. Here you can see the tenant name, phone number, email, description, TIN(if any), and rent reason.',
-              targetElementId: `'room-view-agreement-container' + (RoomList.find(room => room.status === 'Taken')?.id)`,
+              targetElementId: "'room-view-agreement-container' + (RoomList.find(room => room.status === 'Taken')?.id)",
               position: 'right',
               requiresInteraction: false,
               allowBack: true,
               isJsId: true,
-              blinkAsWellId: `'room-view-agreement-tenant-information' + (RoomList.find(room => room.status === 'Taken')?.id)`,
+              blinkAsWellId: "'room-view-agreement-tenant-information' + (RoomList.find(room => room.status === 'Taken')?.id)",
             },
             //Then agreement information section
             {
               description:
                 'This is the agreement information section. Here you can see the lease start date, lease end date, the date which it was signed, rent cycle, representative, currency, agreed price. And you can also add a new agreement(lease).',
-              targetElementId: `'room-view-agreement-container' + (RoomList.find(room => room.status === 'Taken')?.id)`,
+              targetElementId: "'room-view-agreement-container' + (RoomList.find(room => room.status === 'Taken')?.id)",
               position: 'right',
               requiresInteraction: false,
               allowBack: true,
               isJsId: true,
-              blinkAsWellId: `'room-view-agreement-information' + (RoomList.find(room => room.status === 'Taken')?.id)`,
+              blinkAsWellId: "'room-view-agreement-information' + (RoomList.find(room => room.status === 'Taken')?.id)",
             },
             // Then the tenant portal section
             {
               description:
                 'This is the tenant portal section. The tenant portal makes it easier for you and the tenant by showing the tenant the rent payments. Here you can see the tenant portal link, and the tenant portal settings.',
-              targetElementId: `'room-view-agreement-container' + (RoomList.find(room => room.status === 'Taken')?.id)`,
+              targetElementId: "'room-view-agreement-container' + (RoomList.find(room => room.status === 'Taken')?.id)",
               position: 'right',
               requiresInteraction: false,
               allowBack: true,
               isJsId: true,
-              blinkAsWellId: `'room-view-agreement-tenant-portal' + (RoomList.find(room => room.status === 'Taken')?.id)`,
+              blinkAsWellId: "'room-view-agreement-tenant-portal' + (RoomList.find(room => room.status === 'Taken')?.id)",
             },
             //THen the utility Section
             {
               description:
                 'This is the utility section. Here you can pick what utilities to bill the tenant for, set custom prices, choose payment cycles (monthly or custom days), and mark utilities as "Always Ask" to customize the price each time. You can also select different currencies for each utility payment. You can select what kind of reminders to send.',
-              targetElementId: `'room-view-agreement-container' + (RoomList.find(room => room.status === 'Taken')?.id)`,
+              targetElementId: "'room-view-agreement-container' + (RoomList.find(room => room.status === 'Taken')?.id)",
               position: 'right',
               requiresInteraction: false,
               allowBack: true,
               isJsId: true,
-              blinkAsWellId: `'room-view-agreement-utility-settings' + (RoomList.find(room => room.status === 'Taken')?.id)`,
+              blinkAsWellId: "'room-view-agreement-utility-settings' + (RoomList.find(room => room.status === 'Taken')?.id)",
             },
             //tHEN THE fiLE ATTACHMENTS SECTION
             {
               description:
                 'This is the file attachments section. Here you can see the file attachments of the tenant. You can download, add, delete, and view the file attachments.',
-              targetElementId: `'room-view-agreement-container' + (RoomList.find(room => room.status === 'Taken')?.id)`,
+              targetElementId: "'room-view-agreement-container' + (RoomList.find(room => room.status === 'Taken')?.id)",
               position: 'right',
               requiresInteraction: false,
               allowBack: true,
               isJsId: true,
-              blinkAsWellId: `'room-view-agreement-file-attachments' + (RoomList.find(room => room.status === 'Taken')?.id)`,
+              blinkAsWellId: "'room-view-agreement-file-attachments' + (RoomList.find(room => room.status === 'Taken')?.id)",
             },
             //Then the reminders and notification sectoin
             {
               description:
                 'This is the reminders and notification section. Here you can set up automated notifications for rent payments. You can enable email and SMS notifications to be sent to both tenants and representatives at different times - 5 days before due, 3 days before, 1 day before, on the due date, and several days after. For tenant notifications, you can select specific email and SMS templates to be used for each timing.',
-              targetElementId: `'room-view-agreement-container' + (RoomList.find(room => room.status === 'Taken')?.id)`,
+              targetElementId: "'room-view-agreement-container' + (RoomList.find(room => room.status === 'Taken')?.id)",
               position: 'right',
               requiresInteraction: false,
               allowBack: true,
               isJsId: true,
-              blinkAsWellId: `'room-view-agreement-reminders-and-notifications' + (RoomList.find(room => room.status === 'Taken')?.id)`,
+              blinkAsWellId: "'room-view-agreement-reminders-and-notifications' + (RoomList.find(room => room.status === 'Taken')?.id)",
             },
           ],
         },
@@ -531,7 +526,7 @@ export const tutorialData: TutorialSystem = {
           steps: [
             {
               description: 'Click here to view the payment timeline.',
-              targetElementId: `'room-payment-timeline-button' + (RoomList.find(room => room.status === 'Taken')?.id)`,
+              targetElementId: "'room-payment-timeline-button' + (RoomList.find(room => room.status === 'Taken')?.id)",
               position: 'down',
               requiresInteraction: true,
               allowBack: true,
@@ -540,7 +535,7 @@ export const tutorialData: TutorialSystem = {
             {
               description:
                 'This is the payment timeline. Each line represents a payment period.',
-              targetElementId: `'payment-timeline-container' + (RoomList.find(room => room.status === 'Taken')?.id)`,
+              targetElementId: "'payment-timeline-container' + (RoomList.find(room => room.status === 'Taken')?.id)",
               position: 'down',
               requiresInteraction: false,
               allowBack: true,
@@ -549,7 +544,7 @@ export const tutorialData: TutorialSystem = {
             {
               description:
                 'The colors indicate payment status: Red for overdue, Gold for paid, Blue for upcoming, and Cyan for payments due soon (within 10 days).',
-              targetElementId: `'payment-timeline-container' + (RoomList.find(room => room.status === 'Taken')?.id)`,
+              targetElementId: "'payment-timeline-container' + (RoomList.find(room => room.status === 'Taken')?.id)",
               position: 'left',
               requiresInteraction: false,
               allowBack: true,
@@ -559,7 +554,7 @@ export const tutorialData: TutorialSystem = {
             {
               description:
                 'Click "Pay" under any payment to mark it as paid. And click again to mark it as unpaid.',
-              targetElementId: `'payment-timeline-container' + (RoomList.find(room => room.status === 'Taken')?.id)`,
+              targetElementId: "'payment-timeline-container' + (RoomList.find(room => room.status === 'Taken')?.id)",
               position: 'left',
               requiresInteraction: false,
               allowBack: true,
@@ -569,7 +564,7 @@ export const tutorialData: TutorialSystem = {
             {
               description:
                 'Click RCT to toggle receipt view. When enabled, you can upload and manage payment receipts.',
-              targetElementId: `'payment-timeline-rct-button' + (RoomList.find(room => room.status === 'Taken')?.id)`,
+              targetElementId: "'payment-timeline-rct-button' + (RoomList.find(room => room.status === 'Taken')?.id)",
               position: 'down',
               requiresInteraction: true,
               allowBack: true,
@@ -578,7 +573,7 @@ export const tutorialData: TutorialSystem = {
             {
               description:
                 'Click "Current Date" to scroll the timeline to today\'s date.',
-              targetElementId: `'payment-timeline-current-date' + (RoomList.find(room => room.status === 'Taken')?.id)`,
+              targetElementId: "'payment-timeline-current-date' + (RoomList.find(room => room.status === 'Taken')?.id)",
               position: 'down',
               requiresInteraction: true,
               allowBack: true,
@@ -587,7 +582,7 @@ export const tutorialData: TutorialSystem = {
            {
               description:
                 'For open-ended agreements, you can extend the payment schedule by clicking this button.',
-              targetElementId: `'payment-timeline-extend' + (RoomList.find(room => room.status === 'Taken')?.id)`,
+              targetElementId: "'payment-timeline-extend' + (RoomList.find(room => room.status === 'Taken')?.id)",
               position: 'right',
               requiresInteraction: false,
               allowBack: true,
@@ -681,17 +676,19 @@ export const tutorialData: TutorialSystem = {
           steps: [
             {
               description: 'Recurring expenses are shown under this section.',
-              targetElementId: 'recurring-expenses-title',
+              targetElementId: "'recurring-expenses-title'",
               position: 'down',
               requiresInteraction: false,
               allowBack: true,
+              isJsId: true,
             },
             {
               description: 'One-time expenses are shown under this section.',
-              targetElementId: 'one-time-expenses-title',
+              targetElementId: "'one-time-expenses-title'",
               position: 'down',
               requiresInteraction: false,
               allowBack: true,
+              isJsId: true,
             },
             {
               description: 'Click here to add a new expense.',
@@ -703,8 +700,7 @@ export const tutorialData: TutorialSystem = {
             },
             {
               description: 'Enter the name of your expense.',
-              targetElementId:
-                'tutorialNewExpenseId + "-expense-row-name-input"',
+              targetElementId: "tutorialNewExpenseId + '-expense-row-name-input'",
               position: 'right',
               requiresInteraction: true,
               allowBack: true,
@@ -712,8 +708,7 @@ export const tutorialData: TutorialSystem = {
             },
             {
               description: 'Select the category for this expense.',
-              targetElementId:
-                'tutorialNewExpenseId + "-expense-category-select"',
+              targetElementId: "tutorialNewExpenseId + '-expense-category-select'",
               position: 'right',
               requiresInteraction: true,
               allowBack: true,
@@ -722,7 +717,7 @@ export const tutorialData: TutorialSystem = {
             {
               description:
                 'Specify if the amount is calculated before or after tax percentage.',
-              targetElementId: 'tutorialNewExpenseId + "-expense-tax-checkbox"',
+              targetElementId: "tutorialNewExpenseId + '-expense-tax-checkbox'",
               position: 'right',
               requiresInteraction: false,
               allowBack: true,
@@ -730,8 +725,7 @@ export const tutorialData: TutorialSystem = {
             },
             {
               description: 'Enter the expense amount and select currency.',
-              targetElementId:
-                'tutorialNewExpenseId + "-expense-row-currencyPrice-select"',
+              targetElementId: "tutorialNewExpenseId + '-expense-row-currencyPrice-select'",
               position: 'right',
               requiresInteraction: true,
               allowBack: true,
@@ -740,8 +734,7 @@ export const tutorialData: TutorialSystem = {
             {
               description:
                 'Choose if this expense applies to the full building or specific room.',
-              targetElementId:
-                'tutorialNewExpenseId + "-expense-location-select"',
+              targetElementId: "tutorialNewExpenseId + '-expense-location-select'",
               position: 'right',
               requiresInteraction: true,
               allowBack: true,
@@ -750,8 +743,7 @@ export const tutorialData: TutorialSystem = {
             {
               description:
                 'Set if this is a recurring expense and specify the recurrence pattern.',
-              targetElementId:
-                'tutorialNewExpenseId + "-expense-recurring-options"',
+              targetElementId: "tutorialNewExpenseId + '-expense-recurring-options'",
               position: 'left',
               requiresInteraction: false,
               allowBack: true,
@@ -760,7 +752,7 @@ export const tutorialData: TutorialSystem = {
             {
               description:
                 'Set the date for the expense and if it is a recurring expense, you can set a end date.',
-              targetElementId: 'tutorialNewExpenseId + "-expense-dates"',
+              targetElementId: "tutorialNewExpenseId + '-expense-dates'",
               position: 'left',
               requiresInteraction: false,
               allowBack: true,
@@ -768,8 +760,7 @@ export const tutorialData: TutorialSystem = {
             },
             {
               description: 'Configure email notifications for this expense.',
-              targetElementId:
-                'tutorialNewExpenseId + "-expense-notifications-button"',
+              targetElementId: "tutorialNewExpenseId + '-expense-notifications-button'",
               position: 'left',
               requiresInteraction: false,
               allowBack: true,
@@ -779,18 +770,15 @@ export const tutorialData: TutorialSystem = {
             {
               description:
                 'You can send an email or a SMS to yourself, First allow email/SMS then enter the days before the expense is due, then enter the email/phone numbers, you can also send to multiple people by clicking by enter.',
-              targetElementId:
-                'tutorialNewExpenseId + "-expense-notifications-container"',
+              targetElementId: "tutorialNewExpenseId + '-expense-notifications-container'",
               position: 'left',
               requiresInteraction: false,
               allowBack: true,
-
               isJsId: true,
             },
             {
               description: 'Click save to complete adding the expense.',
-              targetElementId:
-                'tutorialNewExpenseId + "-expense-row-edit-button"',
+              targetElementId: "tutorialNewExpenseId + '-expense-row-edit-button'",
               position: 'right',
               requiresInteraction: true,
               allowBack: true,

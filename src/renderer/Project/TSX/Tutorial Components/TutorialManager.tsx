@@ -1,6 +1,237 @@
 import React, { useEffect, useState } from 'react';
 import { TutorialSystem } from './tutorialData';
 import { useGlobal } from 'renderer/components/GlobalContext';
+// Function to resolve dynamic element IDs from tutorial steps into actual DOM element IDs
+// Takes the template ID and context object containing necessary IDs/data
+const resolveJsId = (id: string, context: any) => {
+  let resolvedId;
+  
+  switch (id) {
+    // App User Tutorial IDs
+    case 'tutorialNewAppUserId':
+      resolvedId = context.tutorialNewAppUserId;
+      break;
+      
+    case 'tutorialNewAppUserId + " app-user-edit-name-input"':
+      resolvedId = `${context.tutorialNewAppUserId} app-user-edit-name-input`;
+      break;
+      
+    case 'tutorialNewAppUserId + " app-user-edit-name-save"':
+      resolvedId = `${context.tutorialNewAppUserId} app-user-edit-name-save`;
+      break;
+      
+    case 'tutorialNewAppUserId + " app-user-edit-select"':
+      resolvedId = `${context.tutorialNewAppUserId} app-user-edit-select`;
+      break;
+      
+    case 'tutorialNewAppUserId + " privileges-list"':
+      resolvedId = `${context.tutorialNewAppUserId} privileges-list`;
+      break;
+      
+    case 'tutorialNewAppUserId + " appuser-properties-list"':
+      resolvedId = `${context.tutorialNewAppUserId} appuser-properties-list`;
+      break;
+      
+    case 'tutorialNewAppUserId + " appuser-account-password"':
+      resolvedId = `${context.tutorialNewAppUserId} appuser-account-password`;
+      break;
+
+    // Room Tutorial IDs  
+    case "'room-' + tutorialNewRoomId":
+      resolvedId = `room-${context.tutorialNewRoomId}`;
+      break;
+
+    case "'room-floorRoom-text-' + (RoomList.find(room => room.status === 'Empty')?.id)":
+      const emptyRoom = context.RoomList?.find((room: { status: string; }) => room.status === 'Empty');
+      resolvedId = emptyRoom ? `room-floorRoom-text-${emptyRoom.id}` : undefined;
+      break;
+
+    case "'room-price-payment-cycle' + (RoomList.find(room => room.status === 'Empty')?.id)":
+      const emptyRoomForPrice = context.RoomList?.find((room: { status: string; }) => room.status === 'Empty');
+      resolvedId = emptyRoomForPrice ? `room-price-payment-cycle${emptyRoomForPrice.id}` : undefined;
+      break;
+
+    case "'room-payment-timeline-button' + (RoomList.find(room => room.status === 'Taken')?.id)":
+      const takenRoomForTimeline = context.RoomList?.find((room: { status: string; }) => room.status === 'Taken');
+      resolvedId = takenRoomForTimeline ? `room-payment-timeline-button${takenRoomForTimeline.id}` : undefined;
+      break;
+
+    case "'payment-timeline-container' + (RoomList.find(room => room.status === 'Taken')?.id)":
+      const takenRoomForContainer2 = context.RoomList?.find((room: { status: string; }) => room.status === 'Taken');
+      resolvedId = takenRoomForContainer2 ? `payment-timeline-container${takenRoomForContainer2.id}` : undefined;
+      break;
+
+    case "'payment-timeline-rct-button' + (RoomList.find(room => room.status === 'Taken')?.id)":
+      const takenRoomForRct = context.RoomList?.find((room: { status: string; }) => room.status === 'Taken');
+      resolvedId = takenRoomForRct ? `payment-timeline-rct-button${takenRoomForRct.id}` : undefined;
+      break;
+
+    case "'payment-timeline-current-date' + (RoomList.find(room => room.status === 'Taken')?.id)":
+      const takenRoomForDate = context.RoomList?.find((room: { status: string; }) => room.status === 'Taken');
+      resolvedId = takenRoomForDate ? `payment-timeline-current-date${takenRoomForDate.id}` : undefined;
+      break;
+
+    case "'payment-timeline-extend' + (RoomList.find(room => room.status === 'Taken')?.id)":
+      const takenRoomForExtend = context.RoomList?.find((room: { status: string; }) => room.status === 'Taken');
+      resolvedId = takenRoomForExtend ? `payment-timeline-extend${takenRoomForExtend.id}` : undefined;
+      break;
+
+    case "'room-typeOfRoomMainContainer' + (RoomList.find(room => room.status === 'Empty')?.id)":
+      const emptyRoomForType = context.RoomList?.find((room: { status: string; }) => room.status === 'Empty');
+      resolvedId = emptyRoomForType ? `room-typeOfRoomMainContainer${emptyRoomForType.id}` : undefined;
+      break;
+
+    case "'room-status-Main-container' + (RoomList.find(room => room.status === 'Empty')?.id)":
+      const emptyRoomForStatus = context.RoomList?.find((room: { status: string; }) => room.status === 'Empty');
+      resolvedId = emptyRoomForStatus ? `room-status-Main-container${emptyRoomForStatus.id}` : undefined;
+      break;
+
+    case "'room-status-add-tenant-button' + (RoomList.find(room => room.status === 'Empty')?.id)":
+      const emptyRoomForButton = context.RoomList?.find((room: { status: string; }) => room.status === 'Empty');
+      resolvedId = emptyRoomForButton ? `room-status-add-tenant-button${emptyRoomForButton.id}` : undefined;
+      break;
+
+    case "'room-add-tenant-container' + (RoomList.find(room => room.status === 'Empty')?.id)":
+      const emptyRoomForContainer = context.RoomList?.find((room: { status: string; }) => room.status === 'Empty');
+      resolvedId = emptyRoomForContainer ? `room-add-tenant-container${emptyRoomForContainer.id}` : undefined;
+      break;
+
+    case "'room-view-agreement-button' + (RoomList.find(room => room.status === 'Taken')?.id)":
+      const takenRoom = context.RoomList?.find((room: { status: string; }) => room.status === 'Taken');
+      resolvedId = takenRoom ? `room-view-agreement-button${takenRoom.id}` : undefined;
+      break;
+
+    case "'room-view-agreement-container' + (RoomList.find(room => room.status === 'Taken')?.id)":
+      const takenRoomForContainer = context.RoomList?.find((room: { status: string; }) => room.status === 'Taken');
+      resolvedId = takenRoomForContainer ? `room-view-agreement-container${takenRoomForContainer.id}` : undefined;
+      break;
+
+    case "'room-view-agreement-tenant-information' + (RoomList.find(room => room.status === 'Taken')?.id)":
+      const takenRoomForInfo = context.RoomList?.find((room: { status: string; }) => room.status === 'Taken');
+      resolvedId = takenRoomForInfo ? `room-view-agreement-tenant-information${takenRoomForInfo.id}` : undefined;
+      break;
+
+    case "'room-view-agreement-information' + (RoomList.find(room => room.status === 'Taken')?.id)":
+      const takenRoomForAgreement = context.RoomList?.find((room: { status: string; }) => room.status === 'Taken');
+      resolvedId = takenRoomForAgreement ? `room-view-agreement-information${takenRoomForAgreement.id}` : undefined;
+      break;
+
+   
+    // Expense Tutorial IDs
+    case "'recurring-expenses-title'":
+      resolvedId = 'recurring-expenses-title';
+      break;
+
+    case "'one-time-expenses-title'":
+      resolvedId = 'one-time-expenses-title';
+      break;
+
+    case "tutorialNewExpenseId + '-expense-row-name-input'":
+      resolvedId = `${context.tutorialNewExpenseId}-expense-row-name-input`;
+      break;
+
+    case "tutorialNewExpenseId + '-expense-category-select'":
+      resolvedId = `${context.tutorialNewExpenseId}-expense-category-select`;
+      break;
+
+    case "tutorialNewExpenseId + '-expense-tax-checkbox'":
+      resolvedId = `${context.tutorialNewExpenseId}-expense-tax-checkbox`;
+      break;
+
+    case "tutorialNewExpenseId + '-expense-row-currencyPrice-select'":
+      resolvedId = `${context.tutorialNewExpenseId}-expense-row-currencyPrice-select`;
+      break;
+
+    case "tutorialNewExpenseId + '-expense-location-select'":
+      resolvedId = `${context.tutorialNewExpenseId}-expense-location-select`;
+      break;
+
+    case "tutorialNewExpenseId + '-expense-recurring-options'":
+      resolvedId = `${context.tutorialNewExpenseId}-expense-recurring-options`;
+      break;
+
+    case "tutorialNewExpenseId + '-expense-dates'":
+      resolvedId = `${context.tutorialNewExpenseId}-expense-dates`;
+      break;
+
+    case "tutorialNewExpenseId + '-expense-notifications-button'":
+      resolvedId = `${context.tutorialNewExpenseId}-expense-notifications-button`;
+      break;
+
+    case "tutorialNewExpenseId + '-expense-notifications-container'":
+      resolvedId = `${context.tutorialNewExpenseId}-expense-notifications-container`;
+      break;
+
+    case "tutorialNewExpenseId + '-expense-row-edit-button'":
+      resolvedId = `${context.tutorialNewExpenseId}-expense-row-edit-button`;
+      break;
+
+
+  case "'recurring-expenses-title'":
+    resolvedId = 'recurring-expenses-title';
+    break;
+
+  case "'one-time-expenses-title'":
+    resolvedId = 'one-time-expenses-title';
+    break;
+
+  case "tutorialNewExpenseId + '-expense-row-name-input'":
+    resolvedId = `${context.tutorialNewExpenseId}-expense-row-name-input`;
+    break;
+
+  case "tutorialNewExpenseId + '-expense-category-select'":
+    resolvedId = `${context.tutorialNewExpenseId}-expense-category-select`;
+    break;
+
+  case "tutorialNewExpenseId + '-expense-tax-checkbox'":
+    resolvedId = `${context.tutorialNewExpenseId}-expense-tax-checkbox`;
+    break;
+
+  case "tutorialNewExpenseId + '-expense-row-currencyPrice-select'":
+    resolvedId = `${context.tutorialNewExpenseId}-expense-row-currencyPrice-select`;
+    break;
+
+  case "tutorialNewExpenseId + '-expense-location-select'":
+    resolvedId = `${context.tutorialNewExpenseId}-expense-location-select`;
+    break;
+
+  case "tutorialNewExpenseId + '-expense-recurring-options'":
+    resolvedId = `${context.tutorialNewExpenseId}-expense-recurring-options`;
+    break;
+
+  case "tutorialNewExpenseId + '-expense-dates'":
+    resolvedId = `${context.tutorialNewExpenseId}-expense-dates`;
+    break;
+
+  case "tutorialNewExpenseId + '-expense-notifications-button'":
+    resolvedId = `${context.tutorialNewExpenseId}-expense-notifications-button`;
+    break;
+
+  case "tutorialNewExpenseId + '-expense-notifications-container'":
+    resolvedId = `${context.tutorialNewExpenseId}-expense-notifications-container`;
+    break;
+
+  case "tutorialNewExpenseId + '-expense-row-edit-button'":
+    resolvedId = `${context.tutorialNewExpenseId}-expense-row-edit-button`;
+    break;
+
+  default:
+    resolvedId = id;
+    break;
+}
+  if (!resolvedId) {
+    console.warn(`Failed to resolve ID for: ${id}`);
+  }
+
+  console.log('Resolved ID:', resolvedId);
+  return resolvedId;
+};
+
+
+
+
+
+
 
 const isElementInViewport = (element: HTMLElement) => {
   const rect = element.getBoundingClientRect();
@@ -323,25 +554,34 @@ const TutorialManager = ({
     tutorialNewRoomId,
     isMobileState,
   } = useGlobal();
-
   // Effect to check and update card position and styles every 2 seconds
   useEffect(() => {
     const checkAndUpdatePosition = () => {
-      // Get the target ID, handling JS IDs
+      // Get the target ID, handling JS IDs safely with Function constructor
       const targetId = currentStepData.isJsId
-        ? eval(currentStepData.targetElementId)
+        ? resolveJsId(currentStepData.targetElementId, {
+            tutorialNewAppUserId,
+            tutorialNewRoomId,
+            tutorialNewExpenseId,
+            RoomList
+          })
         : currentStepData.targetElementId;
 
       // Check if we need to verify parent element
       let finalTargetId = targetId;
-      if (targetId.includes('-tab') && isMobileState && !hasInteracted) {
-        handleOpenSideBar();
-        console.log('Mobile tab interaction needed');
-      }
+      // if (targetId.includes('-tab') && isMobileState && !hasInteracted) {
+      //   handleOpenSideBar();
+      //   console.log('Mobile tab interaction needed');
+      // }
       if (currentStepData.checkUnderElementId && targetId) {
         const parentElement = document.getElementById(
           currentStepData.checkUnderElementIsJS
-            ? eval(currentStepData.checkUnderElementId)
+            ? resolveJsId(currentStepData.checkUnderElementId, {
+                tutorialNewAppUserId,
+                tutorialNewRoomId,
+                tutorialNewExpenseId,
+                RoomList
+              })
             : currentStepData.checkUnderElementId
         );
         const targetElement = document.getElementById(targetId);
@@ -461,6 +701,40 @@ const TutorialManager = ({
     handleOpenSideBar,
     handleCloseSideBar,
   ]);
+  useEffect(() => {
+    if (currentStepData.targetElementId) {
+      const targetId = currentStepData.isJsId
+        ? resolveJsId(currentStepData.targetElementId, {
+            tutorialNewAppUserId,
+            tutorialNewRoomId,
+            tutorialNewExpenseId,
+            RoomList
+          })
+        : currentStepData.targetElementId;
+
+      const element = document.getElementById(targetId);
+      if (element) {
+        // Check if the element is inside SideBarContainer
+        let parent = element.parentElement;
+        let isUnderSidebar = false;
+        while (parent) {
+          if (parent.classList.contains('SideBarContainer')) {
+            isUnderSidebar = true;
+            handleOpenSideBar();
+            break;
+          }
+          parent = parent.parentElement;
+        }
+        if (isMobileState && !isUnderSidebar) {
+          handleCloseSideBar();
+        }
+      }
+    }
+    // Cleanup function
+    return () => {
+  
+    };
+  }, [currentStepData, RoomList, isMobileState, handleOpenSideBar, handleCloseSideBar]); // Dependencies array includes currentStepData, RoomList, isMobileState, handleOpenSideBar, and handleCloseSideBar
 
   // Effect to highlight target element and additional elements
   useEffect(() => {
@@ -492,14 +766,24 @@ const TutorialManager = ({
 
     // Get the target ID, handling JS IDs and parent check
     const targetId = currentStepData.isJsId
-      ? eval(currentStepData.targetElementId)
+      ? resolveJsId(currentStepData.targetElementId, {
+          tutorialNewAppUserId,
+          tutorialNewRoomId,
+          tutorialNewExpenseId,
+          RoomList
+        })
       : currentStepData.targetElementId;
     let finalTargetId = targetId;
 
     if (currentStepData.checkUnderElementId && targetId) {
       const parentElement = document.getElementById(
         currentStepData.checkUnderElementIsJS
-          ? eval(currentStepData.checkUnderElementId)
+          ? resolveJsId(currentStepData.checkUnderElementId, {
+              tutorialNewAppUserId,
+              tutorialNewRoomId,
+              tutorialNewExpenseId,
+              RoomList
+            })
           : currentStepData.checkUnderElementId
       );
       const targetElement = document.getElementById(targetId);
@@ -657,16 +941,28 @@ const TutorialManager = ({
   };
   // Effect to handle element interaction and blocking
   useEffect(() => {
-    if (currentStepData.targetElementId) {
+    if (currentStepData.targetElementId) {          
+
+
       const targetId = currentStepData.isJsId
-        ? eval(currentStepData.targetElementId)
+        ? resolveJsId(currentStepData.targetElementId, {
+            tutorialNewAppUserId,
+            tutorialNewRoomId,
+            tutorialNewExpenseId,
+            RoomList
+          })
         : currentStepData.targetElementId;
       let finalTargetId = targetId;
 
       if (currentStepData.checkUnderElementId && targetId) {
         const parentElement = document.getElementById(
           currentStepData.checkUnderElementIsJS
-            ? eval(currentStepData.checkUnderElementId)
+            ? resolveJsId(currentStepData.checkUnderElementId, {
+                tutorialNewAppUserId,
+                tutorialNewRoomId,
+                tutorialNewExpenseId,
+                RoomList
+              })
             : currentStepData.checkUnderElementId
         );
         const targetElement = document.getElementById(targetId);
@@ -720,22 +1016,12 @@ const TutorialManager = ({
           };
         } else if (currentStepData.requiresInteraction) {
           const handleInteraction = () => {
-            if (
-              currentStepData.targetElementId.includes('-tab') &&
-              isMobileState
-            ) {
-              handleCloseSideBar();
-              setHasInteracted(true);
-
-              handleNext();
-
-              console.log('Mobile taeeded');
-            } else {
+           
               setHasInteracted(true);
               if (currentStepData.whenClickedGoNextStep) {
                 handleNext();
               }
-            }
+            
           };
           element.addEventListener('click', handleInteraction);
           return () => {
@@ -884,7 +1170,7 @@ const TutorialManager = ({
         {showCompletionMessage ? (
           <div className="tutorial-completion">
             {window.location.href.includes('tryout') ? (
-              currentPageData.pageTitle == 'property' ? (
+              currentPageData.hasToBeIn == 'property' ? (
                 <>
                   <h2>Completed!</h2>
                   <p>
@@ -900,22 +1186,21 @@ const TutorialManager = ({
                     Close
                   </button>
                 </>
-              ) : currentPageData.pageTitle != "appuser" ? (
+              ) : currentPageData.hasToBeIn == "app user" ? (
                 <>
-                  <h2>Completed!</h2>
-                  <p>
-                    Tutorial completed successfully, you can view any other
-                    pages now.
-                  </p>
-                  <br />
-                  <button
-                    onClick={() => {
-                      onClose();
-                    }}
-                  >
-                    Close
-                  </button>
-                </>
+                <h2>Completed!</h2>
+                <p>
+                  You can click select to use the app with that user.
+                </p>
+                <br />
+                <button
+                  onClick={() => {
+                    onClose();
+                  }}
+                >
+                  Continue Exploring
+                </button>
+              </>
               ) : (
                 <>
                   <h2>Completed!</h2>
@@ -935,9 +1220,9 @@ const TutorialManager = ({
               )
             ) : (
               <>
-                <h2>Completed!</h2>
+                <h2>Tutorial Complete!</h2>
                 <p>
-                  You can click select to use the app with that user.
+                  Great job! You've completed this tutorial section. 
                 </p>
                 <br />
                 <button
@@ -945,7 +1230,7 @@ const TutorialManager = ({
                     onClose();
                   }}
                 >
-                  Continue Exploring
+                  Close
                 </button>
               </>
             )}

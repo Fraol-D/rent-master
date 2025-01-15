@@ -1629,7 +1629,7 @@ const ExpenseManager = ({
                                                   alignItems: 'center',
                                                 }}
                                               >
-                                                Email To:
+                                                To:
                                                 <input
                                                   type="text"
                                                   title="Enter email and press Space, Enter or Comma"
@@ -1796,7 +1796,7 @@ const ExpenseManager = ({
                                               }}
                                             >
                                               {' '}
-                                              SMS To:
+                                              To:
                                               <input
                                                 type="text"
                                                 title="Enter phone number and press Space, Enter or Comma"
@@ -2675,7 +2675,7 @@ const ExpenseManager = ({
                                                   alignItems: 'center',
                                                 }}
                                               >
-                                                Email To:
+                                                To:
                                                 <input
                                                   type="text"
                                                   title="Enter email and press Space, Enter or Comma"
@@ -2842,7 +2842,7 @@ const ExpenseManager = ({
                                               }}
                                             >
                                               {' '}
-                                              SMS To:
+                                              To:
                                               <input
                                                 type="text"
                                                 title="Enter phone number and press Space, Enter or Comma"

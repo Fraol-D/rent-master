@@ -503,9 +503,12 @@ export const getValuesWithSql_Online = async (tableName, sqlCode) => {
         };
         const answer = await makeRequest(url, { method: 'get', headers }, true);
         console.log(answer);
+
         return answer;
       }
-      return await getValuesWithSql(tableName, sqlCode);
+      const response = await getValuesWithSql(tableName, sqlCode);
+     
+      return response;
     }
   } catch (error) {
     console.error('Error in getValuesWithSql_Online:', error);

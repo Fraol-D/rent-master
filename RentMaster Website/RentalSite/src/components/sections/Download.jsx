@@ -4,27 +4,16 @@ import Navbar from '../layout/Navbar';
 import Footer from '../layout/Footer';
 
 const Download = () => {
-  const currentVersion = "1.2.0";
+  const currentVersion = "0.2.0";
   const changelog = [
     {
-      version: "1.2.0",
-      date: "March 2024",
+      version: "0.2.0",
+      date: "January 2025",
       changes: [
-        "Added automated rent payment processing",
-        "New maintenance request tracking system",
-        "Improved dashboard analytics",
-        "Bug fixes and performance improvements"
+        "Launch"
       ]
     },
-    {
-      version: "1.1.0",
-      date: "January 2024",
-      changes: [
-        "Introduced tenant portal",
-        "Enhanced reporting features",
-        "Added document storage system"
-      ]
-    }
+   
   ];
 
   return (
@@ -44,12 +33,14 @@ const Download = () => {
             <div className="download-options">
            
               <div className="platform-buttons">
-                <button className="platform-button">
+                <button className="platform-button" onClick={() => {
+                  window.open('https://rentmaster.markethubet.com/downloads/windows', '_blank');
+                }}>
                   <FaWindows className="platform-icon" />
                   <div className="platform-info">
                     <span>Windows</span>
                     <small>Windows 10/11 (64-bit)</small>
-                    <span className="download-size">Download Size: 68MB</span>
+                    <span className="download-size">Download Size: 95MB</span>
                   </div>
                 </button>
                 <button className="platform-button" disabled>

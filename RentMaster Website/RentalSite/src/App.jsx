@@ -35,7 +35,7 @@ function AppABC() {
   const sendEmail = async (name, email, topic, message) => {
     const subject = `Form Website, ${email}, ${name}, ${topic}`;
     const text = `Email sent from website Name: ${name}, Email: ${email}, Topic: ${topic} <br /> Message: ${message}`;
-    await sendEmailAPIForWebsite(email, text, subject);
+    await sendEmailAPIForWebsite('rentmaster.et@gmail.com', text, subject);
   };
   return (
     <div className="app">

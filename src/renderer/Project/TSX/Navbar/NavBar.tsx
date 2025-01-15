@@ -650,7 +650,7 @@ const NavBar = ({
                         {DownloadAssetsProgress === 100 ||
                         DownloadAssetsProgress === 0
                           ? ''
-                          : DownloadAssetsProgress.toFixed(2) + '%'}
+                          : DownloadAssetsProgress + '%'}
                       </span>
                       <div
                         style={{

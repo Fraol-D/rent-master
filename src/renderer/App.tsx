@@ -53,7 +53,7 @@ declare global {}
 function Hello({ tryout, username, signup }: any) {
   import('./App.css');
 
-  const [RoomList, setRoomList] = useState<RoomType[]>([]);
+  
   const {
     AllRoomPayInfo,
     setAllRoomPayInfo,
@@ -77,6 +77,8 @@ function Hello({ tryout, username, signup }: any) {
     setAllRoomSpecifications,
     AllRoomPayInfoHistory,
     setAllRoomPayInfoHistory,
+    RoomList,
+    setRoomList,
   } = useGlobal();
 
   const [BrokerList, setBrokerList] = useState<BrokerType[]>([]);
@@ -1441,8 +1443,8 @@ function Hello({ tryout, username, signup }: any) {
     | 'non'
   >(() => {
     const privileges = getUserPrivileges(SelectedAppUser);
-    if (privileges.viewDashboard) return 'Dashboard';
     if (privileges.viewRoomsPage) return 'Rooms';
+    if (privileges.viewDashboard) return 'Dashboard';
     if (privileges.viewPeoplesPage) return 'People';
 
     if (privileges.editExpenses) return 'Expense';
@@ -1461,8 +1463,9 @@ function Hello({ tryout, username, signup }: any) {
   useEffect(() => {
     const timer = setTimeout(() => {
       setSelectedPage((prevPage) => {
-        if (privileges.viewDashboard) return 'Dashboard';
+        if(window.location.href.includes('tryout')) return 'Rooms';
         if (privileges.viewRoomsPage) return 'Rooms';
+        if (privileges.viewDashboard) return 'Dashboard';
         if (privileges.viewPeoplesPage) return 'People';
 
         if (privileges.editExpenses) return 'Expense';
@@ -1474,26 +1477,30 @@ function Hello({ tryout, username, signup }: any) {
     return () => clearTimeout(timer);
   }, [SelectedAppUser]);
   const [branchName, setBranchName] = useState('');
-
   const getBranchName = async (branchId: string) => {
     if (navigator.onLine) {
       try {
-        console.log(storageManager.get('Branches'), 'branches');
-        const branch = storageManager
-          .get('Branches')
-          .find((b) => b.id === branchId);
-
-        if (branch) {
-          setBranchName(branch.name);
+        const branches = storageManager.get('Branches') || [];
+        console.log(branches, 'branches');
+        
+        if (Array.isArray(branches)) {
+          const branch = branches.find((b: {id: string, name: string}) => b.id === branchId);
+          if (branch) {
+            setBranchName(branch.name);
+          } else {
+            console.error('Branch not found');
+            setBranchName(storageManager.get('BranchName') || '');
+          }
         } else {
-          console.error('Branch not found');
+          console.error('Branches is not an array');
+          setBranchName(storageManager.get('BranchName') || '');
         }
       } catch (error) {
         console.error('Error fetching branch name:', error);
-        setBranchName(storageManager.get('BranchName'));
+        setBranchName(storageManager.get('BranchName') || '');
       }
     } else {
-      setBranchName(storageManager.get('BranchName'));
+      setBranchName(storageManager.get('BranchName') || '');
     }
   };
   const generateRecurringExpenses = (
@@ -1780,14 +1787,35 @@ function Hello({ tryout, username, signup }: any) {
   const handleOpenSideBar = () => {
     setSideBarWidth(290);
     setSideBarShowState(true);
+    if(isMobileState && isOnTutorial) {
+      const sideBarContainer = document.querySelector('.SideBarContainer');
+      if(sideBarContainer) {
+        sideBarContainer.style.zIndex = null;
+      }
+    } else {
+      if(isMobileState) {
+        const sideBarContainer = document.querySelector('.SideBarContainer');
+        if(sideBarContainer) {
+          sideBarContainer.style.zIndex = 2;
+        }
+      }
+    }
   };
+const {isMobileState,isOnTutorial} = useGlobal();
   const handleCloseSideBar = () => {
     setSideBarWidth(0);
-    setSideBarShowState(false);
+    setSideBarShowState(false); if(isMobileState) {
+      const sideBarContainer = document.querySelector('.SideBarContainer');
+      if(sideBarContainer) {
+        sideBarContainer.style.zIndex = 2;
+      }
+    }
   };
   const [SideBarWidth, setSideBarWidth] = useState<number>(290);
   const [SideBarShowState, setSideBarShowState] = useState<boolean>(true);
   const [initialLoading, setInitialLoading] = useState(true);
+  const [IsAllowedState, setIsAllowedState] = useState(false);
+  const [hasNotPaid, setHasNotPaid] = useState(false);
 
   return (
     <AlertProvider>
@@ -1876,9 +1904,10 @@ function Hello({ tryout, username, signup }: any) {
             setBranchName={setBranchName}
             setGetBranchData={setGetBranchData}
             getBranchData={getBranchData}
-            ProvidedInitialUsername={username}
-            ForceSignUp={signup}
-            isTryout={tryout}
+            ProvidedInitialUsername={username}IsAllowedState={IsAllowedState}
+            ForceSignUp={signup}setIsAllowedState={setIsAllowedState}
+            isTryout={tryout}setHasNotPaid={setHasNotPaid}
+            hasNotPaid={hasNotPaid}
           >
             <>
               <NavBar
@@ -1948,9 +1977,10 @@ function Hello({ tryout, username, signup }: any) {
                 SideBarShowState={SideBarShowState}
                 setSideBarShowState={setSideBarShowState}
               />
+                
             </>
           </AccountManager>{' '}
-          {isSignedIn && <CornerSupport
+        {isSignedIn &&hasNotPaid &&IsAllowedState && <CornerSupport
             initialLoading={initialLoading}
             handleOpenSideBar={handleOpenSideBar}
             handleCloseSideBar={handleCloseSideBar}
@@ -1972,7 +2002,7 @@ function Hello({ tryout, username, signup }: any) {
             setAppUserManagerPromptPassword={setAppUserManagerPromptPassword}
               setAppUserManagerShow={setAppUserManagerShow}
             />
-        }
+        } 
           {/**/}
          
         </>
@@ -2020,7 +2050,7 @@ export default function App() {
           }
         />{' '}
         <Route
-          path="/signup"
+          path="/signup/*"
           element={
             <GlobalProvider>
               <Hello tryout={false} username={'none_provided'} signup={'up'} />
@@ -2069,6 +2099,7 @@ export default function App() {
 
 import AppABC from '../../RentMaster Website/RentalSite/src/App';
 import Download from '../../RentMaster Website/RentalSite/src/components/sections/Download';
+import { isIdempotentRequestError } from 'axios-retry';
 export const getUserPrivileges = (
   selectedAppUser: appUser | null
 ): {

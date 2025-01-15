@@ -107,7 +107,7 @@ const DashbSmsDetails = ({ SelectedUserId, RoomList }: props) => {
       }
     };
 
-    if (navigator.onLine) fetchSmsHistory();
+    if (navigator.onLine && !window.location.href.includes("tryout")) fetchSmsHistory();
   }, [SelectedUserId]);
 
   const toggleExpand = (id: string) => {

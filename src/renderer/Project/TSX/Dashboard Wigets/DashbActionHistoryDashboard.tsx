@@ -509,7 +509,7 @@ const DashbActionHistoryDashboard: React.FC = ({ SelectedBranchId }: any) => {
                   >
                     {format(new Date(item.action_date), 'MMM dd, yyyy')}
                     <br />
-                    {format(new Date(item.action_date), 'HH:mm:ss')}
+                    {format(new Date(item.action_date), 'HH:mm')}
                   </td>
                 </tr>
               ))

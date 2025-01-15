@@ -119,7 +119,7 @@
 }
 
 .platform-info span {
-  font-size: 1.1rem;
+  font-size: .8rem;
   font-weight: 600;
   color: var(--Text-Color);
 }
@@ -184,7 +184,7 @@
 }
 
 .download-size {
-  font-size: 0.8rem;
+  font-size: 0.4rem;
   color: #666;
   margin-top: 0.25rem;
 }

@@ -50,7 +50,7 @@ export function formatNumberWithSuffix(input: number | string): string {
   // Check if abbreviation is enabled
   const shouldAbbreviate = storageManager.get('abbreiviateBigNumbers');
   if (!shouldAbbreviate) {
-    return num.toLocaleString('en-US');
+    return parseFloat(num).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
   }
 
   // Find appropriate threshold

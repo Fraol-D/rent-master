@@ -622,13 +622,13 @@ ipcMain.on('SendVerificationCode', (event, message) => {
       port: 465,
       secure: true, // true for 465, false for other ports
       auth: {
-        user: process.env.VITE_VERIFY_EMAIL_USER,
-        pass: process.env.VITE_VERIFY_EMAIL_PASS,
+        user: "verify@markethubet.com",
+        pass: "Plp5H9:Li(UO#6[y+26E",
       },
     });
 
     let mailOptions = {
-      from: process.env.VITE_VERIFY_EMAIL_USER,
+      from: "verify@markethubet.com",
       to: to,
       subject: 'Email Verification',
       html: `
@@ -762,7 +762,7 @@ appDB.use(bodyParser.json());
 require('dotenv').config({
   path: path.resolve(__dirname, '../../.env'),
 });
-const apiKey = process.env.VITE_AppCodeElectronString; // Add VITE_ prefix
+const apiKey = "HH(CzZuQoW@tB)e"; // Add VITE_ prefix
 
 // Function to validate table names
 const validateTableName = (tableName: string) => {
@@ -3198,7 +3198,7 @@ import { AxiosInstance } from 'axios';
 const BASE_URL = 'https://www.rentmaster.markethubet.com/api';
 
 const MAX_RETRIES = 3;
-const TIMEOUT = 30000;
+const TIMEOUT = 10000;
 
 // Create axios instance with default config
 const createAxiosInstance = (): AxiosInstance => {
@@ -3290,6 +3290,7 @@ ipcMain.handle(
         data,
         retry: MAX_RETRIES,
       };
+
 
       const response = await axiosInstance.request(config);
 

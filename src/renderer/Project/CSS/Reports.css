@@ -1,66 +1,66 @@
 .rental-report-container {
-  padding: 20px;
-  max-width: 1200px;
+  padding: var(--20px-V);
+  max-width: var(--1200px-V);
   margin: 0 auto;
-  font-size: 16px;
+  font-size: var(--16px-V);
   line-height: 1.5;
 }
 
 .report-controls {
   display: flex;
-  gap: 20px;
+  gap: var(--20px-V);
   align-items: center;
-  margin-bottom: 30px;
-  padding: 25px;
+  margin-bottom: var(--30px-V);
+  padding: var(--25px-V);
   background: var(--Secondary-Color20);
-  border-radius: 8px;
+  border-radius: var(--8px-V);
   flex-wrap: wrap;
 }
 
 .date-inputs {
   display: flex;
-  gap: 20px;
+  gap: var(--20px-V);
   align-items: center;
 }
 
 .date-inputs label {
-  font-size: 16px;
+  font-size: var(--16px-V);
   font-weight: bold;
-  min-width: 100px;
+  min-width: var(--100px-V);
 }
 
 .date-inputs input,
 .currency-select select {
-  padding: 10px 15px;
-  border: 2px solid var(--Border-Color);
-  border-radius: 4px;
+  padding: var(--10px-V) var(--15px-V);
+  border: var(--2px-V) solid var(--Border-Color);
+  border-radius: var(--4px-V);
   background: var(--Secondary-Color);
   color: var(--Text-Color);
-  min-width: 180px;
-  font-size: 16px;
+  min-width: var(--180px-V);
+  font-size: var(--16px-V);
 }
 
 .currency-select {
   display: flex;
-  gap: 15px;
+  gap: var(--15px-V);
   align-items: center;
 }
 
 .currency-select label {
-  font-size: 16px;
+  font-size: var(--16px-V);
   font-weight: bold;
-  min-width: 80px;
+  min-width: var(--80px-V);
 }
 
 .report-controls button {
-  padding: 12px 24px;
+  padding: var(--12px-V) var(--24px-V);
   background: var(--Primary-Color);
   color: var(--Text-Color-Reverse);
   border: none;
-  border-radius: 4px;
+  border-radius: var(--4px-V);
   cursor: pointer;
-  min-width: 150px;
-  font-size: 16px;
+  min-width: var(--150px-V);
+  font-size: var(--16px-V);
   font-weight: bold;
   text-transform: uppercase;
 }
@@ -70,75 +70,93 @@
 }
 
 #rental-report {
-  background: var(--Secondary-Color20);
-  padding: 40px;
-  border-radius: 8px;
-  border: 2px solid var(--Border-Color);
+  width: 60%;
+  min-height: auto;
+  margin: var(--5px-V) auto;
+  padding: var(--5mm-V) var(--5mm-V);
+  background: var(--Secondary-Color10);
+  box-shadow: 0 0 var(--10px-V) var(--Secondary-Color50);
+  position: relative;
+  border: var(--1px-V) solid var(--Border-Color);
 }
 
 .report-header {
-  margin-bottom: 40px;
   text-align: center;
-  border-bottom: 2px solid var(--Border-Color);
-  padding-bottom: 20px;
+  margin-bottom: var(--10px-V);
+  padding-bottom: var(--5px-V);
+  border-bottom: var(--1px-V) solid var(--Border-Color);
 }
 
-#rental-report h2 {
-  margin: 0 0 20px 0;
+.report-header h1 {
+  font-size: var(--18px-V);
   color: var(--Text-Color);
-  font-size: 28px;
+  margin-bottom: var(--5px-V);
+  text-transform: uppercase;
+  letter-spacing: var(--2px-V);
+}
+
+.report-header .company-info {
+  font-size: var(--12px-V);
+  color: var(--Text-Color-Grey);
+  margin-bottom: var(--10px-V);
+}
+
+.report-header .report-period {
+  font-size: var(--16px-V);
   font-weight: bold;
-  letter-spacing: 1px;
+  color: var(--Text-Color);
 }
 
 .report-period {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: var(--8px-V);
 }
 
 .period-label {
   color: var(--Text-Color-Grey);
-  font-size: 16px;
+  font-size: var(--16px-V);
   font-weight: bold;
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: var(--1px-V);
 }
 
 .period-dates {
-  font-size: 22px;
+  font-size: var(--22px-V);
   font-weight: bold;
   color: var(--Text-Color);
 }
 
 .period-duration {
   color: var(--Text-Color-Grey);
-  font-size: 16px;
+  font-size: var(--16px-V);
 }
 
 .report-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
-  gap: 30px;
-  margin-top: 40px;
+  grid-template-columns: repeat(auto-fit, minmax(var(--500px-V), 1fr));
+  gap: var(--30px-V);
+  margin-top: var(--40px-V);
 }
 
 .report-section {
-  background: var(--Secondary-Color30);
-  padding: 25px;
-  border-radius: 8px;
-  border: 2px solid var(--Border-Color);
-}
 
-.report-section h3 {
-  margin: 0 0 20px 0;
+  padding: var(--5px-V);
+
+  border-radius: var(--4px-V);
+
+}
+.expense-category{
+  font-size: var(--12px-V);
+}
+.report-section h2 {
   color: var(--Text-Color);
-  font-size: 20px;
-  padding-bottom: 15px;
-  border-bottom: 2px solid var(--Border-Color);
-  font-weight: bold;
-  letter-spacing: 0.5px;
+  font-size: var(--16px-V);
+  margin-bottom: var(--0px-V);
+  padding-bottom: var(--5px-V);
+
+  margin-top: 0px;
 }
 
 .report-table {
@@ -155,9 +173,9 @@
 
 .report-table td,
 .report-table th {
-  padding: 15px 12px;
+  padding: var(--15px-V) var(--12px-V);
   color: var(--Text-Color);
-  font-size: 16px;
+  font-size: var(--16px-V);
 }
 
 .report-table th {
@@ -173,9 +191,11 @@
   font-weight: bold;
   white-space: nowrap;
   font-family: monospace;
-  font-size: 16px;
+  font-size: var(--16px-V);
 }
-
+.total-expenses{
+  font-size: var(--13px-V);
+}
 .report-table td.amount.negative {
   color: var(--Warning-Color);
 }
@@ -183,94 +203,206 @@
 .report-table tr.total-row {
   border-top: 2px solid var(--Border-Color);
   font-weight: bold;
-  font-size: 18px;
+  font-size: var(--18px-V);
   background: var(--Secondary-Color40);
 }
 
 .report-table tr.total-row td {
-  padding-top: 20px;
-  padding-bottom: 20px;
+  padding-top: var(--20px-V);
+  padding-bottom: var(--20px-V);
 }
 
+.overview-list,
+.income-list,
+.expense-list,
+.tax-list,
+.profit-list,
+.summary-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.overview-list li,
+.income-list li,
+.expense-list li,
+.tax-list li,
+.profit-list li,
+.summary-list li {
+  padding: var(--2px-V) 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: var(--1px-V) solid var(--Border-Color20);
+  font-size: var(--12px-V);
+}
+
+.sub-item {
+  padding-left: var(--10px-V);
+
+  font-size: var(--11px-V);
+}
+
+.calculation {
+  background: var(--Secondary-Color20);
+  padding: var(--5px-V);
+  border-radius: var(--4px-V);
+  margin-top: var(--5px-V);
+  font-family: monospace;
+  font-size: var(--12px-V);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.summary {
+
+  margin-top: var(--40px-V);
+}
+
+.summary h2 {
+
+  border-bottom-color: var(--Primary-Color);
+}
+.generated-info {
+  text-align: center;
+  font-size: var(--12px-V);
+  color: var(--Text-Color-Grey);
+  margin-top: var(--10px-V);
+}
 @media print {
+  @page {
+    size: A4;
+    margin: 10mm;
+  }
+
   body * {
     visibility: hidden;
   }
 
-  #rental-report,
-  #rental-report * {
+  #print-container,
+  #print-container * {
     visibility: visible;
   }
 
-  #rental-report {
+  #print-container {
     position: absolute;
     left: 0;
     top: 0;
     width: 100%;
-    background: white !important;
-    color: black !important;
-    padding: 20px;
-  }
-
-  .report-controls {
-    display: none;
-  }
-
-  .report-section {
-    background: white !important;
-    border: 1px solid #000 !important;
-    break-inside: avoid;
-    page-break-inside: avoid;
-  }
-
-  .report-table td.amount.negative {
-    color: #d32f2f !important;
-  }
-
-  .period-label,
-  .period-duration {
-    color: #666 !important;
-  }
-
-  .report-table tr.total-row {
-    background: #f5f5f5 !important;
-  }
-
-  .report-grid {
-    grid-template-columns: 1fr !important;
-  }
-}
-
-@media (max-width: 768px) {
-  .report-controls {
-    flex-direction: column;
-    align-items: stretch;
-    padding: 15px;
-  }
-
-  .date-inputs {
-    flex-direction: column;
-  }
-
-  .currency-select {
-    flex-direction: column;
-  }
-
-  .report-grid {
-    grid-template-columns: 1fr;
+    padding: 0;
+    margin: 0;
   }
 
   #rental-report {
-    padding: 20px;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    box-shadow: none;
+    min-height: auto;
+    border: none;
+    background: white !important;
   }
 
   .report-section {
-    padding: 15px;
+    margin-bottom: var(--5px-V);
+    padding: var(--5px-V);
+    page-break-inside: avoid;
   }
 
-  .report-table td,
-  .report-table th {
-    padding: 10px 8px;
-    font-size: 14px;
+  .report-header {
+    margin-bottom: var(--10px-V);
   }
+
+  .report-header h1 {
+    font-size: var(--18px-V);
+  }
+
+  .report-section h2 {
+    font-size: var(--16px-V);
+    margin-bottom: var(--8px-V);
+  }
+
+  .overview-list li,
+  .income-list li,
+  .expense-list li,
+  .tax-list li,
+  .profit-list li,
+  .summary-list li {
+    padding: var(--2px-V) 0;
+    font-size: var(--12px-V);
+  }
+
+  .sub-item {
+    padding-left: var(--10px-V);
+    font-size: var(--11px-V);
+  }
+
+  .calculation {
+    padding: var(--8px-V);
+    font-size: var(--12px-V);
+    margin-top: var(--5px-V);
+  }
+
+  .summary {
+    page-break-inside: avoid;
+  }
+
+  .report-footer {
+    margin-top: var(--10px-V);
+    font-size: var(--10px-V);
+    color: #666;
+  }
+}
+
+@media screen and (max-width: 210mm) {
+  #rental-report {
+    width: 100%;
+    margin: var(--5px-V);
+    padding: var(--10px-V);
+  }
+
+  .report-section {
+    margin-bottom: var(--10px-V);
+    padding: var(--8px-V);
+  }
+}
+
+.financial-report {
+  max-width: var(--1200px-V);
+  margin: 0 auto;
+  padding: var(--2rem-V);
+  font-family: var(--font-family);
+}
+
+.financial-report section {
+  margin-bottom: var(--2rem-V);
+  padding-bottom: var(--1rem-V);
+  border-bottom: 1px solid var(--Border-Color);
+}
+
+.financial-report h2 {
+  color: var(--Text-Color);
+  margin-bottom: var(--1rem-V);
+}
+
+.financial-report h3 {
+  color: var(--Text-Color);
+  margin: var(--1rem-V) 0;
+}
+
+.financial-report ul {
+  list-style: none;
+  padding-left: var(--1rem-V);
+}
+
+.financial-report li {
+  margin: var(--0.5rem-V) 0;
+  color: var(--Text-Color);
+}
+
+.financial-report .summary {
+  background-color: var(--Secondary-Color);
+  padding: var(--1rem-V);
+  border-radius: var(--4px-V);
 }
