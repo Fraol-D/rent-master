@@ -1673,7 +1673,7 @@ const MainPage = ({
       >
         <button
           className="SideBarShowButton"
-          onClick={handleCloseSideBar}
+          onClick={() => {handleCloseSideBar(); if(SideBarShowState) {} }}
           style={
             isMobileState
               ? {

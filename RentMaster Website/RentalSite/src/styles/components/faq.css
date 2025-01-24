@@ -15,7 +15,7 @@
 }
 
 .faq-item {
-  background: var(--Background-Color2);
+  background: var(--Secondary-Color40);
   padding: 0;
   border-radius: 8px;
   transition: transform 0.3s ease;
@@ -44,7 +44,7 @@
 }
 
 .faq-question svg {
-  color: var(--Primary-Color);
+  color: var(--Accent-Color);
   font-size: 1.2rem;
 }
 
@@ -60,6 +60,12 @@
 }
 
 .faq-answer p {
-  color: var(--Text-Color-Grey);
+  color: var(--Text-Color);
   line-height: 1.6;
-} 
+} @media (max-width: 450px) {
+ 
+  .faq{
+    padding: 4rem 1rem;
+  }
+ 
+}

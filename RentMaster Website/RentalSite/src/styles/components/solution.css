@@ -64,12 +64,12 @@
 
 .solution-main-benift {
   display: flex;
-
+  background: var(--Secondary-Color50);
   justify-content: center;
   flex-direction: column;
   align-items: flex-start;
   width: 345px;
-  background: var(--Background-Color);
+  
   padding: 1.5rem;
   border-radius: 8px;
   border: 1px solid var(--Secondary-Color30);
@@ -96,7 +96,8 @@
 }
 .inside-main-benift h3 {
   font-size: 1.3rem;
-  color: rgb(53 111 173 / 74%) !important;
+  color:#adb9ca;
+;
   margin-top: 1rem;
 }
 .solution-card li {

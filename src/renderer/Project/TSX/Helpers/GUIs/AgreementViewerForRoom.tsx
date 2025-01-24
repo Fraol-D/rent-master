@@ -38,6 +38,7 @@ const AgreementViewerForRoom = ({
   const [ShowAddAgreementPannal, setShowAddAgreementPannal] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
+  const [shouldRefreshAgreements, setShouldRefreshAgreements] = useState(false);
 
   const getAgreements = async () => {
     const agreements = await agreementApi.getAgreementsByRoomIdApi(roomType.id);
@@ -65,8 +66,11 @@ const AgreementViewerForRoom = ({
   useEffect(() => {
     //Get
 
-    if (ShowState) getAgreements();
-  }, [ShowState, refreshKey]);
+    if (ShowState || shouldRefreshAgreements) {
+      getAgreements();
+      setShouldRefreshAgreements(false);
+    }
+  }, [ShowState, refreshKey, shouldRefreshAgreements]);
   useEffect(() => {
     if (Agreements[CurrentAgreementIndex]) {
       setMemoText(Agreements[CurrentAgreementIndex].Memo);
@@ -267,10 +271,10 @@ const AgreementViewerForRoom = ({
         AddAgreementFormCurrency
       );
       // Set the roomType.SelectedAgreementId to the new agreement Id
-      updateRoomProperty(roomType.id, 'selectedAgreementId', agreementId);
-      updateRoomProperty(roomType.id, 'AgreedPrice', agreedPrice);
-      updateRoomProperty(roomType.id, 'PaymentCycleType', paymentCycle);
-      updateRoomProperty(roomType.id, 'PaymentCycleCustomeDays', customDays);
+      await updateRoomProperty(roomType.id, 'selectedAgreementId', agreementId);
+      await updateRoomProperty(roomType.id, 'AgreedPrice', agreedPrice);
+      await updateRoomProperty(roomType.id, 'PaymentCycleType', paymentCycle);
+      await updateRoomProperty(roomType.id, 'PaymentCycleCustomeDays', customDays);
 
       //Refresh component to render new data
       setRefreshKey((prevKey) => prevKey + 1);
@@ -286,6 +290,7 @@ const AgreementViewerForRoom = ({
       setAgreedPrice(0);
       setAddAgreementFormCurrency(GetDefaultCurrency());
       setShowAddAgreementPannal(false);
+      setShouldRefreshAgreements(true);
       console.log('Show add agreement form');
     } finally {
       setIsLoading(false);

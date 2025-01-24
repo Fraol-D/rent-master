@@ -564,7 +564,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
     );
     if(choice) {
     const usersId = await storageManager.get('users')[0].id;
-    console.log(usersId);
+    
     // await deleteValueOnline('users', usersId);
 
     signOutUserAndRestart();}
@@ -680,7 +680,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
       const localUser = storageManager.get('users')[0];
 
       try {
-        console.log(localUser.email, PasswordCheckInput, 'PASSWORD AND EMAIL');
+    
         const isValid = await verifyCredentials(
           localUser.email,
           PasswordCheckInput
@@ -1618,18 +1618,9 @@ const AccountManager = (React.FC<MyComponentProps> = ({
           `WHERE roleName = "${usernameCheckInputAPPUSER}" AND password = "${PasswordCheckInputAPPUSER}" AND userId = '${userId}'`
         );
 
-        console.log(
-          getAppUser,
-          usernameCheckInputAPPUSER,
-          getAppUser[0].roleName
-        );
+       
         if (getAppUser.length > 0) {
-          console.log(
-            SelectedAppUser.roleName.toUpperCase(),
-            SelectedAppUser,
-            usernameCheckInputAPPUSER.toUpperCase()
-          );
-
+          
           if (getAppUser[0].EnterWithPassword) {
             setSelectedAppUser(getAppUser[0]);
             storageManager.set('SelectedAppUserId', getAppUser[0].id);
@@ -1706,17 +1697,9 @@ const AccountManager = (React.FC<MyComponentProps> = ({
           `WHERE roleName = "${usernameCheckInputAPPUSER}" AND password = "${PasswordCheckInputAPPUSER}" AND userId = '${userId}'`
         );
 
-        console.log(
-          getAppUser,
-          usernameCheckInputAPPUSER,
-          getAppUser[0].roleName
-        );
+      
         if (getAppUser.length > 0) {
-          console.log(
-            SelectedAppUser.roleName.toUpperCase(),
-            SelectedAppUser,
-            usernameCheckInputAPPUSER.toUpperCase()
-          );
+          
 
           if (getAppUser[0].EnterWithPassword) {
             setSelectedAppUser(getAppUser[0]);

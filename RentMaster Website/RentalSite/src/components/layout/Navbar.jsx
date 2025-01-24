@@ -38,7 +38,10 @@ const Navbar = () => {
         Rent<span className="logo-highlight">Master</span>
       </a>
       <div className={`nav-links ${isMenuOpen ? 'active' : ''}`}>
-        <a href={window.location.pathname === '/' ? '#hero' : '/#hero'} onClick={handleLinkClick}>
+        <a
+          href={window.location.pathname === '/' ? '#hero' : '/#hero'}
+          onClick={handleLinkClick}
+        >
           <div className="nav-link-container">
             Home
             {windowWidth <= 1030 && <span className="nav-link-arrow" />}
@@ -51,7 +54,10 @@ const Navbar = () => {
             <div className="diamond-bottom"></div>
           </div>
         )}
-        <a href={window.location.pathname === '/' ? '#features' : '/#features'} onClick={handleLinkClick}>
+        <a
+          href={window.location.pathname === '/' ? '#features' : '/#features'}
+          onClick={handleLinkClick}
+        >
           <div className="nav-link-container">
             Features
             {windowWidth <= 1030 && <span className="nav-link-arrow" />}
@@ -64,38 +70,15 @@ const Navbar = () => {
             <div className="diamond-bottom"></div>
           </div>
         )}
-        <a href={window.location.pathname === '/' ? '#pricing' : '/#pricing'} onClick={handleLinkClick}>
+        <a
+          href={window.location.pathname === '/' ? '#pricing' : '/#pricing'}
+          onClick={handleLinkClick}
+        >
           <div className="nav-link-container">
             Pricing
             {windowWidth <= 1030 && <span className="nav-link-arrow" />}
           </div>
         </a>
-          {windowWidth > 1030 && (
-          <div className="nav-separator">
-            <div className="diamond-top"></div>
-            <div className="nav-straightline"></div>
-            <div className="diamond-bottom"></div>
-          </div>
-        )}
-        <a href={window.location.pathname === '/' ? '#about' : '/#about'} onClick={handleLinkClick}>
-          <div className="nav-link-container">
-            About
-            {windowWidth <= 1030 && <span className="nav-link-arrow" />}
-          </div>
-        </a>{windowWidth > 1030 && (
-          <div className="nav-separator">
-            <div className="diamond-top"></div>
-            <div className="nav-straightline"></div>
-            <div className="diamond-bottom"></div>
-          </div>
-        )}
-        <a href={window.location.pathname === '/' ? '#faq' : '/#faq'} onClick={handleLinkClick}>
-          <div className="nav-link-container">
-            FAQ
-            {windowWidth <= 1030 && <span className="nav-link-arrow" />}
-          </div>
-        </a>
-      
         {windowWidth > 1030 && (
           <div className="nav-separator">
             <div className="diamond-top"></div>
@@ -103,7 +86,43 @@ const Navbar = () => {
             <div className="diamond-bottom"></div>
           </div>
         )}
-        <a href={window.location.pathname === '/' ? '#contact' : '/#contact'} onClick={handleLinkClick}>
+        <a
+          href={window.location.pathname === '/' ? '#about' : '/#about'}
+          onClick={handleLinkClick}
+        >
+          <div className="nav-link-container">
+            About
+            {windowWidth <= 1030 && <span className="nav-link-arrow" />}
+          </div>
+        </a>
+        {windowWidth > 1030 && (
+          <div className="nav-separator">
+            <div className="diamond-top"></div>
+            <div className="nav-straightline"></div>
+            <div className="diamond-bottom"></div>
+          </div>
+        )}
+        <a
+          href={window.location.pathname === '/' ? '#faq' : '/#faq'}
+          onClick={handleLinkClick}
+        >
+          <div className="nav-link-container">
+            FAQ
+            {windowWidth <= 1030 && <span className="nav-link-arrow" />}
+          </div>
+        </a>
+
+        {windowWidth > 1030 && (
+          <div className="nav-separator">
+            <div className="diamond-top"></div>
+            <div className="nav-straightline"></div>
+            <div className="diamond-bottom"></div>
+          </div>
+        )}
+        <a
+          href={window.location.pathname === '/' ? '#contact' : '/#contact'}
+          onClick={handleLinkClick}
+        >
           <div className="nav-link-container">
             Contact
             {windowWidth <= 1030 && <span className="nav-link-arrow" />}
@@ -122,15 +141,24 @@ const Navbar = () => {
             {windowWidth <= 1030 && <span className="nav-link-arrow" />}
           </div>
         </a>
-      </div>
-      <div className="auth-buttons">
+        {windowWidth <= 450 &&  <div className="auth-buttons">
         <a href="/login">
           <button className="tryout-btn login-btn">Login</button>
         </a>
         <a href="/signup">
-          <button className="login-btn">Get Started</button>
+          <button className="login-btn"style={{color: 'black'}}>Get Started</button>
         </a>
+      </div>}
+        
       </div>
+    {windowWidth >= 450 &&   <div className="auth-buttons">
+        <a href="/login">
+          <button className="tryout-btn login-btn">Login</button>
+        </a>
+        <a href="/signup">
+          <button className="login-btn"style={{color: 'black'}}>Get Started</button>
+        </a>
+      </div>} 
       <button className="hamburger" onClick={toggleMenu} aria-label="Menu">
         <span className={`bar ${isMenuOpen ? 'active' : ''}`}></span>
         <span className={`bar ${isMenuOpen ? 'active' : ''}`}></span>

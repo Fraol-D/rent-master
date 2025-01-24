@@ -17,8 +17,8 @@
 }
 
 .feature-card {
-  background: var(--Background-Color);
-  padding: 2.5rem;
+  background: var(--Secondary-Color50);
+  padding: 1.5rem;
   border-radius: 8px;
   transition: transform 0.3s ease;
   border: 1px solid var(--Secondary-Color30);
@@ -28,7 +28,7 @@
 
 .feature-card:hover {
   transform: translateY(-5px);
-  border-color: var(--Primary-Color);
+
 }
 
 .feature-icon {
@@ -38,7 +38,7 @@
 }
 
 .feature-card h3 {
-  color: #314f6fbd!important;
+  color: #adb9ca;
   margin-bottom: 1.2rem;
   font-size: 1.3rem;
 }
@@ -54,12 +54,12 @@
   padding-left: 1.5rem;
   position: relative;
   line-height: 1.4;
-  color: var(--Text-Color-Grey);
+  color: var(--Text-Color);
 }
 
 .feature-list li::before {
   content: "✓";
-  color: rgb(53 111 173 / 74%);
+  color: #adb9ca;
   position: absolute;
   left: 0;
 }
@@ -68,7 +68,7 @@
   text-align: center;
   margin-top: 2rem;
   padding: 3rem;
-  background: var(--Background-Color);
+  background: var(--Secondary-Color);
   border-radius: 8px;
   border: 1px solid var(--Secondary-Color30);
   box-shadow: 0 4px 6px var(--Secondary-Color20);
@@ -89,17 +89,17 @@
 .try-now-btn {
   display: inline-block;
   background: var(--Accent-Color);
-  color: var(--Text-Color);
+  color: black;
   padding: 1rem 2rem;
   border-radius: 4px;
-  font-weight: 600;
+  font-weight: 700;
   text-decoration: none;
   transition: all 0.3s ease;
 }
 
 .try-now-btn:hover {
   transform: translateY(-2px);
-  background: var(--Primary-Color);
+ 
 }
 
 @media (max-width: 1024px) {
@@ -107,4 +107,10 @@
     grid-template-columns: 1fr;
   }
 }
+@media (max-width: 450px) {
  
+  .features{
+    padding: 4rem 1rem;
+  }
+ 
+}

@@ -47,7 +47,7 @@
 }
 
 .pricing-card {
-  background: var(--Background-Color);
+  background: var(--Primary-Color25);
   padding: clamp(1.5rem, 3vw, 2.5rem);
   border-radius: 12px;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -67,7 +67,7 @@
 }
 
 .pricing-card.popular {
-  border: 2px solid var(--Primary-Color);
+  border: 2px solid var(--Accent-Color);
   transform: translateY(-10px) scale(1.02);
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
 }
@@ -76,7 +76,7 @@
   position: absolute;
   top: 2rem;
   right: -3rem;
-  background: var(--Primary-Color);
+  background: var(--Accent-Color);
   color: white;
   padding: 0.5rem 2.5rem;
   transform: rotate(45deg);
@@ -118,7 +118,7 @@
 }
 
 .amount {
-  color: var(--Primary-Color);
+  color: #ffffffbd;
   font-size: clamp(1.5rem, 2.5vw, 2rem);
   font-weight: 600;
 }
@@ -133,7 +133,7 @@
 }
 
 .plan-details p {
-  color: var(--Text-Color-Grey);
+  color: var(--Text-Color);
   margin: 0.8rem 0;
   display: flex;
   align-items: center;
@@ -143,12 +143,12 @@
 }
 
 .plan-details svg {
-  color: var(--Primary-Color);
+  color: #ffffffbd;
 }
 
 .select-plan {
   background: var(--Primary-Color);
-  color: white;
+  color: black;
   padding: 1rem 2rem;
   border-radius: 8px;
   border: none;
@@ -182,7 +182,7 @@
 }
 
 .enterprise-content {
-  background: var(--Background-Color);
+  background: var(--Primary-Color25);
   padding: clamp(2rem, 4vw, 3rem);
   border-radius: 12px;
   box-shadow: 0 8px 16px var(--Secondary-Color20);
@@ -211,7 +211,7 @@
 }
 
 .enterprise-description {
-  color: var(--Text-Color-Grey);
+  color: var(--Text-Color);
   font-size: clamp(1rem, 1.5vw, 1.1rem);
   margin-bottom: 1rem;
   line-height: 1.6;
@@ -224,7 +224,7 @@
 }
 
 .enterprise-features p {
-  color: var(--Text-Color-Grey);
+  color: var(--Text-Color);
   display: flex;
   align-items: center;
   gap: 0.8rem;
@@ -232,7 +232,7 @@
 }
 
 .enterprise-features svg {
-  color: var(--Primary-Color);
+  color: #314f6fbd;
   font-size: 1.2rem;
 }
 

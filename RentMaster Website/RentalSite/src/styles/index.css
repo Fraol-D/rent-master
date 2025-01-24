@@ -9,7 +9,7 @@
 @import url('components/faq.css');
 @import url('components/contact.css');
 @import url('components/footer.css');
-@import url('animations.css');
+/* @import url('animations.css'); */
 @font-face {
   font-family: 'Inter';
   font-style: italic;
@@ -189,7 +189,7 @@ body {
 .app {
   width: 100%;
   min-height: 100vh;
-  background: linear-gradient(to bottom, #ff000000, #b5b5b5);
+  background: #2e2f30;
 }
 
 .app .content {
@@ -211,7 +211,7 @@ section {
   font-size: 2.5rem;
   margin-bottom: 2rem;
   text-align: center;
-  color: rgb(53 111 173 / 74%) !important;
+  color: #adb9ca;
 }
 
 button {
@@ -230,4 +230,11 @@ button {
   .app h2 {
     font-size: 2rem;
   }
+}
+@media (max-width: 450px) {
+ 
+  .app .container{
+    padding: 0;
+  }
+ 
 }

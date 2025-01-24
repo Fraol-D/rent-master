@@ -63,7 +63,7 @@ const EthiopianCalanderConverterMenu: React.FC<
       <div style={converterStyle}>
         <h2>Ethiopian Calendar Converter</h2>
         <em>
-          Format: <strong>5/13/2015</strong> or date/month(num)/year
+          Format: <strong>20/08/2017</strong> or date/month(num)/year
         </em>
         <br></br>
         <input
@@ -91,7 +91,7 @@ const EthiopianCalanderConverterMenu: React.FC<
         <p>
           Gregorian Date: <strong>{gregorianDate}</strong>
         </p>
-        <p>Today's Ethiopian Date: {toEthiopianDateString(new Date())}</p>
+        <p style={{color: 'grey'}}>Today's Ethiopian Date: {toEthiopianDateString(new Date())}</p>
       </div>
     </div>
   );

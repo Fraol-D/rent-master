@@ -6,7 +6,7 @@
 
   background-position: center;
   background-size: cover;
-  background-image: url('../../assets/img/Rectangle 1.png');
+   background-image: url('../../assets/img/Rectangle 1.png'); 
 }
 .pain-points-description {
   margin-top: 0;
@@ -32,7 +32,7 @@
   transform: translate(-50%, -50%);
   width: 120px;
   height: 120px;
-  background: white;
+  background: var(--Secondary-Color);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -88,10 +88,9 @@
   will-change: transform, opacity;
 }
 .pain-point-content-Solution {
-  background: white;
+  background: var(--Secondary-Color30);
   padding: 1.5rem;
   border-radius: 8px;
-  border: 1px solid var(--Secondary-Color30);
   box-shadow: 0 4px 6px var(--Secondary-Color20);
   width: 289px;
   z-index: 2;
@@ -225,31 +224,31 @@
 }
 
 .branch-line-0 {
-  right: -213px;
-  top: 180px;
+  right: -227px;
+  top: 194px;
   transform: rotate(24deg);
   width: 278px;
 }
 .branch-line-1 {
   right: 86px;
-  top: 216px;
+  top: 224px;
   transform: rotate(90deg);
   width: 168px;
 }
 .branch-line-2 {
   right: 314px;
-  top: 179px;
+  top: 181px;
   transform: rotate(-23deg);
   width: 232px;
 }
 .branch-line-3 {
-  right: -148px;
+  right: -159px;
   top: 75px;
   transform: rotate(0deg);
   width: 259px;
 }
 .branch-line-4 {
-  right: 421px;
+  right: 449px;
   top: 75px;
   transform: rotate(0deg);
   width: 259px;
@@ -262,13 +261,13 @@
 }
 .branch-line-6 {
   right: 45px;
-  top: -47px;
+  top: -131px;
   transform: rotate(90deg);
   width: 259px;
 }
 .branch-line-7 {
-  right: 334px;
-  top: -40px;
+  right: 318px;
+  top: -44px;
   transform: rotate(23deg);
   width: 232px;
 }
@@ -293,10 +292,9 @@
   }
 }
 .pain-point-content {
-  background: white;
+  background:  var(--Secondary-Color30);
   padding: 1.5rem;
   border-radius: 8px;
-  border: 1px solid var(--Secondary-Color30);
   box-shadow: 0 4px 6px var(--Secondary-Color20);
   width: 350px;
   z-index: 2;
@@ -324,7 +322,7 @@
 }
 
 .pain-point-icon {
-  color: var(--Primary-Color);
+  color: #adb9ca;
   font-size: 1.4rem;
   flex-shrink: 0;
 }
@@ -344,7 +342,7 @@
   top: 50%;
   width: 12px;
   height: 2px;
-  background: var(--Primary-Color);
+  background: #314f6fbd;
 }
 
 @media (max-width: 1024px) {
@@ -471,7 +469,8 @@
 }
 
 .solution-card {
-  background: #f1fdff;
+
+  background: var(--Secondary-Color);
   padding: 0.5rem;
   width: 70%;
   border-radius: 8px;
@@ -516,16 +515,10 @@
 }
 
 .solution-card p {
-  color: rgb(0, 0, 0) !important;
+  color: rgb(255, 255, 255) !important;
   line-height: 1.5;
 }
 
-.point-lines p::before {
-  content: '•';
-  color: var(--Primary-Color);
-  margin-right: 0.5rem;
-  font-size: 1.2rem;
-}
 
 .solution-preview {
   background: rgba(var(--Primary-Color-RGB), 0.05);
@@ -549,8 +542,8 @@
 }
 
 .solution-content p {
-  color: var(--Text-Color-Grey);
-  font-size: 0.9rem;
+  color: #ffffff;
+  font-size: 1rem;
   line-height: 1.5;
 }
 
@@ -581,7 +574,8 @@
 }
 
 .solution-card {
-  background: rgba(255, 255, 255, 0.9);
+
+  background: var(--Secondary-Color);
   padding: 2rem;
   border-radius: 12px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
@@ -605,28 +599,12 @@
 
 
 
-.pain-point-icon {
-  color: var(--Primary-Color);
-  font-size: 1.4rem;
-  flex-shrink: 0;
-}
-
 .point-lines p {
   color: var(--Text-Color-Grey);
   font-size: 0.9rem;
   margin-bottom: 0.5rem;
   position: relative;
   padding-left: 20px;
-}
-
-.point-lines p::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 50%;
-  width: 12px;
-  height: 2px;
-  background: var(--Primary-Color);
 }
 
 .solutions-title {
@@ -642,7 +620,8 @@
 }
 
 .solution-card {
-  background: #f1fdff;
+
+  background: var(--Secondary-Color);
   padding: 1.5rem;
   width: 70%;
   border-radius: 8px;
@@ -833,4 +812,11 @@ left: 50%;
 left: 47%;
 
 }
+}
+@media (max-width: 450px) {
+ 
+  .pain-points{
+    padding: 1rem 1rem;
+  }
+ 
 }

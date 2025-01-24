@@ -1293,441 +1293,6 @@ appDB.use(express.raw({ type: 'application/octet-stream', limit: '50mb' }));
 
 appDB.options('/extract-downloaded-files', cors());
 
-appDB.post(
-  '/extract-downloaded-files',
-  async (
-    req: { body: any },
-    res: {
-      json: (arg0: { message: string }) => void;
-      status: (arg0: number) => {
-        (): any;
-        new (): any;
-        json: { (arg0: { error: string; details: any }): void; new (): any };
-      };
-    }
-  ) => {
-    try {
-      console.log('Received zip file for extraction');
-      const zipBuffer = req.body;
-      const zip = new JSZip();
-      await zip.loadAsync(zipBuffer);
-
-      const appDataPath =
-        process.env.APPDATA ||
-        (process.platform == 'darwin'
-          ? process.env.HOME + '/Library/Preferences'
-          : process.env.HOME + '/.local/share');
-      const basePath = path.join(appDataPath, appname);
-      console.log('Base extraction path:', basePath);
-
-      for (const [filePath, file] of Object.entries(zip.files)) {
-        const fullPath = path.join(basePath, filePath);
-        console.log('Processing:', filePath);
-
-        if (file.dir) {
-          console.log('Creating directory:', fullPath);
-          await fs2.mkdir(fullPath, { recursive: true });
-        } else {
-          console.log('Extracting file:', fullPath);
-          const content = await file.async('nodebuffer');
-          await fs2.mkdir(path.dirname(fullPath), { recursive: true });
-          await fs2.writeFile(fullPath, content);
-        }
-      }
-
-      console.log('Extraction completed successfully');
-      res.json({ message: 'Files extracted successfully' });
-    } catch (error) {
-      console.error('Error during extraction:', error);
-      res
-        .status(500)
-        .json({ error: 'Failed to extract files', details: error.message });
-    }
-
-    //Just download zip
-    /*try {
-    console.log('Received zip file for saving');
-    const zipBuffer = req.body;
-
-    const appDataPath =
-      process.env.APPDATA ||
-      (process.platform == 'darwin'
-        ? process.env.HOME + '/Library/Preferences'
-        : process.env.HOME + '/.local/share');
-    const basePath = path.join(appDataPath, appname);
-    const zipFilePath = path.join(basePath, 'downloaded_files.zip');
-
-    console.log('Saving zip file to:', zipFilePath);
-    await fs2.writeFile(zipFilePath, zipBuffer);
-
-    console.log('Zip file saved successfully');
-    res.json({ message: 'Zip file saved successfully', path: zipFilePath });
-  } catch (error) {
-    console.error('Error saving zip file:', error);
-    res
-      .status(500)
-      .json({ error: 'Failed to save zip file', details: error.message });
-  }*/
-  }
-);
-
-// Add these constants but keep existing ones
-const UPLOAD_TIMEOUT = 60000;
-
-ipcMain.handle(
-  'upload-user-files',
-  async (event, { userId }: { userId: string }) => {
-    try {
-      let currentProgress = 0;
-      const smoothProgress = (targetProgress: number) => {
-        const step = 0.5;
-        const interval = setInterval(() => {
-          if (currentProgress < targetProgress) {
-            currentProgress += step;
-            event.sender.send('upload-progress', currentProgress);
-          } else {
-            clearInterval(interval);
-          }
-        }, 16); // ~60fps
-      };
-
-      smoothProgress(5);
-      console.log('Getting local directory...');
-      const getLocalUserDirectory2 = async () => {
-        const userDataPath = process.env.APPDATA || app.getPath('userData');
-        const bmsFolderPath = path.join(userDataPath, appname);
-
-        function directoryToJson(dir: string) {
-          const result = {
-            name: path.basename(dir),
-            type: 'directory',
-            children: [],
-          };
-          const files = fs.readdirSync(dir, { withFileTypes: true });
-
-          files.forEach((file: { name: string; isDirectory: () => any }) => {
-            const filePath = path.join(dir, file.name);
-            if (file.isDirectory()) {
-              result.children.push(directoryToJson(filePath));
-            } else {
-              result.children.push({ name: file.name, type: 'file' });
-            }
-          });
-
-          return result;
-        }
-
-        try {
-          const directoryStructure = directoryToJson(bmsFolderPath);
-          return directoryStructure;
-        } catch (error) {
-          console.error('Error reading directory structure:', error);
-          return null;
-        }
-      };
-
-      const localDirectory = await getLocalUserDirectory2();
-      const filteredDirectory = {
-        name: localDirectory.name,
-        type: 'directory',
-        children: localDirectory.children.filter((child) =>
-          ['Room Pictures', 'Room Documents'].includes(child.name)
-        ),
-      };
-
-      console.log(
-        'Filtered directory structure:',
-        JSON.stringify(filteredDirectory, null, 2)
-      );
-      smoothProgress(15);
-
-      console.log('Sending directory data to online database...');
-      const checkResponse = await axios.post(
-        `${baseUrl}/check-user-directory`,
-        {
-          userId,
-          directory: filteredDirectory,
-        },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'x-api-key': apiKey,
-          },
-          httpsAgent: secureAgent,
-        }
-      );
-
-      const { requiredFiles } = checkResponse.data;
-      console.log('Response received from online database:', requiredFiles);
-      smoothProgress(25);
-
-      if (requiredFiles?.length > 0) {
-        console.log('Required files missing:', requiredFiles);
-
-        const zip = new JSZip();
-        let totalSize = 0;
-        let processedSize = 0;
-
-        // First pass to calculate total size
-        for (const filePath of requiredFiles) {
-          if (
-            filePath.startsWith('Room Pictures/') ||
-            filePath.startsWith('Room Documents/')
-          ) {
-            const fullPath = path.join(process.env.APPDATA || '', appname, filePath);
-            if (fs.existsSync(fullPath)) {
-              const stats = fs.statSync(fullPath);
-              totalSize += stats.size;
-            }
-          }
-        }
-
-        // Second pass to add files and update progress
-        for (const filePath of requiredFiles) {
-          try {
-            if (
-              !filePath.startsWith('Room Pictures/') &&
-              !filePath.startsWith('Room Documents/')
-            ) {
-              console.log('Skipping non-room file:', filePath);
-              continue;
-            }
-
-            const fullPath = path.join(
-              process.env.APPDATA || '',
-              appname,
-              filePath
-            );
-            if (fs.existsSync(fullPath)) {
-              const fileContent = fs.readFileSync(fullPath);
-              zip.file(filePath, fileContent);
-              processedSize += fileContent.length;
-              
-              // Calculate progress between 25-85 based on processed size
-              const fileProgress = 25 + ((processedSize / totalSize) * 60);
-              smoothProgress(fileProgress);
-            } else {
-              console.warn(`File not found: ${fullPath}`);
-            }
-          } catch (error) {
-            console.warn(`Error adding file ${filePath} to zip:`, error);
-          }
-        }
-
-        console.log(`Total upload size: ${totalSize} bytes`);
-        smoothProgress(85);
-
-        if (totalSize === 0) {
-          console.log('No valid files to upload');
-          smoothProgress(100);
-          return {
-            success: true,
-            message: 'No files needed to be uploaded',
-          };
-        }
-
-        const zipBuffer = await zip.generateAsync({ 
-          type: 'nodebuffer',
-          compression: 'DEFLATE',
-          compressionOptions: { level: 6 },
-          onUpdate: (metadata) => {
-            // Progress during zip compression (85-90)
-            const compressionProgress = 85 + (metadata.percent * 0.05);
-            smoothProgress(compressionProgress);
-          }
-        });
-
-        console.log('Sending zip file to online database...');
-        const form = new FormData();
-        form.append('files', zipBuffer, {
-          filename: 'required_files.zip',
-          contentType: 'application/zip',
-        });
-        form.append('userId', userId);
-        
-        smoothProgress(90);
-        
-        const uploadResponse = await axios.post(
-          `${baseUrl}/upload-missing-files`,
-          form,
-          {
-            headers: {
-              'x-api-key': apiKey,
-              ...form.getHeaders(),
-            },
-            maxContentLength: Infinity,
-            maxBodyLength: Infinity,
-            httpsAgent: secureAgent,
-            onUploadProgress: (progressEvent) => {
-              // Progress during final upload (90-100)
-              const uploadProgress = 90 + ((progressEvent.loaded / progressEvent.total) * 10);
-              smoothProgress(uploadProgress);
-            }
-          }
-        );
-
-        if (!uploadResponse.data?.success) {
-          throw new Error('Upload response indicated failure');
-        }
-
-        console.log('Upload completed successfully:', uploadResponse.data);
-        smoothProgress(100);
-      } else {
-        console.log('No files need to be uploaded');
-        smoothProgress(100);
-      }
-
-      return {
-        success: true,
-        message: 'Upload completed successfully',
-      };
-    } catch (error) {
-      console.error('Upload error:', error);
-
-      if (axios.isAxiosError(error)) {
-        const errorMessage = error.response?.data?.message || error.message;
-        const statusCode = error.response?.status;
-        return {
-          success: false,
-          message: `Upload failed (${statusCode}): ${errorMessage}`,
-          error: {
-            status: statusCode,
-            data: error.response?.data,
-          },
-        };
-      }
-
-      return {
-        success: false,
-        message: error.message || 'Unknown error occurred',
-      };
-    }
-  }
-);
-
-// Add helper function for retrying uploads
-const retryUpload = async (
-  uploadFn: () => Promise<any>,
-  maxRetries = 3
-): Promise<any> => {
-  let lastError;
-  for (let attempt = 0; attempt < maxRetries; attempt++) {
-    try {
-      return await uploadFn();
-    } catch (error) {
-      console.error(`Upload attempt ${attempt + 1} failed:`, error);
-      lastError = error;
-
-      if (attempt < maxRetries - 1) {
-        const delay = Math.pow(2, attempt) * 1000; // Exponential backoff
-        await new Promise((resolve) => setTimeout(resolve, delay));
-      }
-    }
-  }
-  throw lastError;
-};
-
-// Add error handling for the existing prepare-upload-files endpoint
-appDB.post('/prepare-upload-files', async (req, res) => {
-  const { userId, requiredFiles } = req.body;
-
-  try {
-    const zip = new JSZip();
-    let totalSize = 0;
-
-    for (const filePath of requiredFiles) {
-      try {
-        const fullPath = path.join(process.env.APPDATA, appname, filePath);
-
-        if (
-          !(await fs2
-            .access(fullPath)
-            .then(() => true)
-            .catch(() => false))
-        ) {
-          console.warn(`File not found: ${fullPath}`);
-          continue;
-        }
-
-        const fileStats = await fs2.stat(fullPath);
-        if (fileStats.size === 0) {
-          console.warn(`Empty file skipped: ${filePath}`);
-          continue;
-        }
-
-        const fileContent = await fs2.readFile(fullPath);
-        zip.file(filePath, fileContent);
-        totalSize += fileContent.length;
-      } catch (error) {
-        console.error(`Error processing file ${filePath}:`, error);
-      }
-    }
-
-    if (totalSize === 0) {
-      return res.send(null);
-    }
-
-    const zipContent = await zip.generateAsync({
-      type: 'nodebuffer',
-      compression: 'DEFLATE',
-      compressionOptions: { level: 6 },
-    });
-
-    res.send(zipContent);
-  } catch (error) {
-    console.error('Error preparing files for upload:', error);
-    res.status(500).json({
-      error: 'Failed to prepare files for upload',
-      details: error.message,
-    });
-  }
-});
-
-appDB.get(
-  '/local-user-directory',
-  (
-    req: any,
-    res: {
-      json: (arg0: { name: string; type: string; children: never[] }) => void;
-      status: (arg0: number) => {
-        (): any;
-        new (): any;
-        json: { (arg0: { error: string }): void; new (): any };
-      };
-    }
-  ) => {
-    const userDataPath = process.env.APPDATA || app.getPath('userData');
-    const bmsFolderPath = path.join(userDataPath, appname);
-
-    function directoryToJson(dir: string) {
-      const result = {
-        name: path.basename(dir),
-        type: 'directory',
-        children: [],
-      };
-      const files = fs.readdirSync(dir, { withFileTypes: true });
-
-      files.forEach((file: { name: string; isDirectory: () => any }) => {
-        const filePath = path.join(dir, file.name);
-        if (file.isDirectory()) {
-          result.children.push(directoryToJson(filePath));
-        } else {
-          result.children.push({ name: file.name, type: 'file' });
-        }
-      });
-
-      return result;
-    }
-
-    try {
-      const directoryStructure = directoryToJson(bmsFolderPath);
-      res.json(directoryStructure);
-    } catch (error) {
-      console.error('Error reading directory structure:', error);
-      res.status(500).json({ error: 'Failed to read directory structure' });
-    }
-  }
-);
 
 appDB.delete(
   '/deleteAll/:tableName',
@@ -3194,11 +2759,49 @@ process.on('unhandledRejection', (error) => {
 import dns from 'dns';
 import { promisify } from 'util';
 import { AxiosInstance } from 'axios';
+
 // Constants
 const BASE_URL = 'https://www.rentmaster.markethubet.com/api';
-
 const MAX_RETRIES = 3;
+const RETRY_DELAY = 2000; // 2 seconds
 const TIMEOUT = 10000;
+
+// Queue system for API requests
+class RequestQueue {
+  private queue: Array<{
+    request: () => Promise<any>;
+    resolve: (value: any) => void;
+    reject: (error: any) => void;
+  }> = [];
+  private isProcessing = false;
+
+  async enqueue(request: () => Promise<any>) {
+    return new Promise((resolve, reject) => {
+      this.queue.push({ request, resolve, reject });
+      this.processQueue();
+    });
+  }
+
+  private async processQueue() {
+    if (this.isProcessing || this.queue.length === 0) return;
+
+    this.isProcessing = true;
+    const { request, resolve, reject } = this.queue.shift()!;
+
+    try {
+      const result = await request();
+      resolve(result);
+    } catch (error) {
+      reject(error);
+    } finally {
+      this.isProcessing = false;
+      this.processQueue();
+    }
+  }
+}
+
+const requestQueue = new RequestQueue();
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 // Create axios instance with default config
 const createAxiosInstance = (): AxiosInstance => {
@@ -3218,46 +2821,20 @@ const createAxiosInstance = (): AxiosInstance => {
 
   // Add request interceptor for logging
   instance.interceptors.request.use((config) => {
-    console.log(
-      `Making ${config.method?.toUpperCase()} request to: ${config.url}`
-    );
+    console.log(`Making ${config.method?.toUpperCase()} request to: ${config.url}`);
     return config;
   });
-
-  // Add response interceptor for retries
-  instance.interceptors.response.use(
-    (response) => response,
-    async (error) => {
-      const config = error.config;
-
-      if (!config || !config.retry) {
-        return Promise.reject(error);
-      }
-
-      config.retry -= 1;
-
-      if (error.code === 'ETIMEDOUT' || error.code === 'ECONNREFUSED') {
-        const delay = (MAX_RETRIES - config.retry) * 2000;
-        await new Promise((resolve) => setTimeout(resolve, delay));
-        return instance(config);
-      }
-
-      return Promise.reject(error);
-    }
-  );
 
   return instance;
 };
 
-// Create a single axios instance
 const axiosInstance = createAxiosInstance();
 
 // Helper function to check server connectivity
 const checkServerConnectivity = async (): Promise<boolean> => {
   try {
     const lookup = promisify(dns.lookup);
-    const { address } = await lookup('www.rentmaster.markethubet.com');
-
+    await lookup('www.rentmaster.markethubet.com');
     return true;
   } catch (error) {
     console.error('Server connectivity check failed:', error);
@@ -3266,57 +2843,66 @@ const checkServerConnectivity = async (): Promise<boolean> => {
 };
 
 // Main API request handler
-ipcMain.handle(
-  'api-request',
-  async (event, { url, method, headers = {}, data }) => {
-    try {
-      // Check server connectivity first
-      const isConnected = await checkServerConnectivity();
-      if (!isConnected) {
-        return {
-          error: true,
-          message:
-            'Cannot connect to server. Please check your internet connection.',
+ipcMain.handle('api-request', async (event, { url, method, headers = {}, data }) => {
+  const makeRequest = async () => {
+    let lastError: any;
+
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        // Check server connectivity first
+        const isConnected = await checkServerConnectivity();
+        if (!isConnected) {
+          throw new Error('Cannot connect to server. Please check your internet connection.');
+        }
+
+        const config = {
+          url: url.replace(BASE_URL, ''),
+          method,
+          headers: {
+            ...headers,
+            'x-api-key': apiKey,
+          },
+          data,
         };
+
+        const response = await axiosInstance.request(config);
+        return response.data;
+
+      } catch (error: any) {
+        lastError = error;
+        console.error(`Attempt ${attempt} failed:`, error);
+
+        if (attempt < MAX_RETRIES) {
+          const retryDelay = RETRY_DELAY * attempt;
+          console.log(`Retrying in ${retryDelay}ms...`);
+          await delay(retryDelay);
+          continue;
+        }
+        break;
       }
-
-      const config = {
-        url: url.replace(BASE_URL, ''), // Remove base URL if included
-        method,
-        headers: {
-          ...headers,
-          'x-api-key': apiKey, // Ensure API key is always included
-        },
-        data,
-        retry: MAX_RETRIES,
-      };
-
-
-      const response = await axiosInstance.request(config);
-
-      return response.data;
-    } catch (error) {
-      console.error('API Request Failed:', {
-        url,
-        method,
-        error: {
-          message: error.message,
-          code: error.code,
-          response: error.response?.data,
-        },
-      });
-
-      // Return structured error response
-      return {
-        error: true,
-        message: error.message,
-        code: error.code,
-        status: error.response?.status,
-        details: error.response?.data,
-      };
     }
-  }
-);
+
+    console.error('API Request Failed:', {
+      url,
+      method,
+      error: {
+        message: lastError.message,
+        code: lastError.code,
+        response: lastError.response?.data,
+      },
+    });
+
+    return {
+      error: true,
+      message: lastError.message,
+      code: lastError.code,
+      status: lastError.response?.status,
+      details: lastError.response?.data,
+    };
+  };
+
+  return requestQueue.enqueue(makeRequest);
+});
 
 // File download handler with improved error handling
 ipcMain.handle('download-files', async (event, { userId }) => {
@@ -3324,82 +2910,87 @@ ipcMain.handle('download-files', async (event, { userId }) => {
     event.sender.send('download-progress2', progress);
   };
 
-  try {
-    // Check connectivity first
-    const isConnected = await checkServerConnectivity();
-    if (!isConnected) {
-      throw new Error('Cannot connect to server');
-    }
+  const makeRequest = async () => {
+    try {
+      // Check connectivity first
+      const isConnected = await checkServerConnectivity();
+      if (!isConnected) {
+        throw new Error('Cannot connect to server');
+      }
 
-    console.log('Starting file download process for user:', userId);
-    sendProgress(10);
+      console.log('Starting file download process for user:', userId);
+      sendProgress(10);
 
-    // Get local directory structure
-    const localDirectory = await getLocalUserDirectory2();
-    console.log('Local directory obtained:', localDirectory);
-    sendProgress(20);
+      // Get local directory structure
+      const localDirectory = await getLocalUserDirectory2();
+      console.log('Local directory obtained:', localDirectory);
+      sendProgress(20);
 
-    // Request file list with timeout and retry
-    console.log('Sending directory data to online database...');
-    const fileListResponse = await axiosInstance.post('/check-missing-files', {
-      userId,
-      localDirectory,
-    });
+      // Request file list with timeout and retry
+      console.log('Sending directory data to online database...');
+      const fileListResponse = await axiosInstance.post('/check-missing-files', {
+        userId,
+        localDirectory,
+      });
 
-    const { missingFiles } = fileListResponse.data;
-    console.log('Response received from online database:', missingFiles);
-    sendProgress(40);
+      const { missingFiles } = fileListResponse.data;
+      console.log('Response received from online database:', missingFiles);
+      sendProgress(40);
 
-    if (missingFiles.length === 0) {
-      console.log('No files needed to be downloaded');
+      if (missingFiles.length === 0) {
+        console.log('No files needed to be downloaded');
+        sendProgress(100);
+        return {
+          success: true,
+          message: 'No files needed to be downloaded',
+        };
+      }
+
+      console.log('Required files missing:', missingFiles);
+
+      // Download missing files
+      console.log('Downloading missing files...');
+      const startTime = Date.now();
+      const downloadResponse = await axiosInstance.post(
+        '/download-missing-files',
+        { userId, missingFiles },
+        { responseType: 'arraybuffer' }
+      );
+      const endTime = Date.now();
+      const downloadTime = (endTime - startTime) / 1000;
+      console.log(`Download completed in ${downloadTime} seconds`);
+      sendProgress(70);
+
+      // Extract files
+      console.log('Extracting downloaded files...');
+      await extractDownloadedFiles(Buffer.from(downloadResponse.data), userId);
+      console.log('Files extracted successfully');
       sendProgress(100);
+
       return {
         success: true,
-        message: 'No files needed to be downloaded',
+        message: 'Files downloaded and extracted successfully',
+        filesCount: missingFiles.length,
+      };
+    } catch (error: any) {
+      console.error('Download process failed:', error);
+      sendProgress(0);
+
+      return {
+        success: false,
+        message: error.message || 'Download failed',
+        error: {
+          code: error.code,
+          status: error.response?.status,
+          details: error.response?.data,
+        },
       };
     }
+  };
 
-    console.log('Required files missing:', missingFiles);
-
-    // Download missing files
-    console.log('Downloading missing files...');
-    const startTime = Date.now();
-    const downloadResponse = await axiosInstance.post(
-      '/download-missing-files',
-      { userId, missingFiles },
-      { responseType: 'arraybuffer' }
-    );
-    const endTime = Date.now();
-    const downloadTime = (endTime - startTime) / 1000;
-    console.log(`Download completed in ${downloadTime} seconds`);
-    sendProgress(70);
-
-    // Extract files
-    console.log('Extracting downloaded files...');
-    await extractDownloadedFiles(Buffer.from(downloadResponse.data), userId);
-    console.log('Files extracted successfully');
-    sendProgress(100);
-
-    return {
-      success: true,
-      message: 'Files downloaded and extracted successfully',
-      filesCount: missingFiles.length,
-    };
-  } catch (error: any) {
-    console.error('Download process failed:', error);
-    sendProgress(0);
-
-    return {
-      success: false,
-      message: error.message || 'Download failed',
-      error: {
-        code: error.code,
-        status: error.response?.status,
-        details: error.response?.data,
-      },
-    };
-  }
+  return requestQueue.enqueue(makeRequest);
 });
+
 const getLocalUserDirectory2 = async () => {
   const userDataPath = process.env.APPDATA || app.getPath('userData');
   const bmsFolderPath = path.join(userDataPath, appname);
@@ -3458,7 +3049,7 @@ const extractDownloadedFiles = async (zipBuffer: Buffer, userId: string) => {
         headers: {
           'Content-Type': 'application/octet-stream',
         },
-        maxBodyLength: Infinity, // Allow large file uploads
+        maxBodyLength: Infinity,
         maxContentLength: Infinity,
       }
     );
@@ -3474,3 +3065,406 @@ const extractDownloadedFiles = async (zipBuffer: Buffer, userId: string) => {
     throw error;
   }
 };
+
+appDB.post(
+  '/extract-downloaded-files',
+  async (
+    req: { body: any },
+    res: {
+      json: (arg0: { message: string }) => void;
+      status: (arg0: number) => {
+        (): any;
+        new (): any;
+        json: { (arg0: { error: string; details: any }): void; new (): any };
+      };
+    }
+  ) => {
+    try {
+      console.log('Received zip file for extraction');
+      const zipBuffer = req.body;
+      const zip = new JSZip();
+      await zip.loadAsync(zipBuffer);
+
+      const appDataPath =
+        process.env.APPDATA ||
+        (process.platform == 'darwin'
+          ? process.env.HOME + '/Library/Preferences'
+          : process.env.HOME + '/.local/share');
+      const basePath = path.join(appDataPath, appname);
+      console.log('Base extraction path:', basePath);
+
+      for (const [filePath, file] of Object.entries(zip.files)) {
+        const fullPath = path.join(basePath, filePath);
+        console.log('Processing:', filePath);
+
+        if (file.dir) {
+          console.log('Creating directory:', fullPath);
+          await fs2.mkdir(fullPath, { recursive: true });
+        } else {
+          console.log('Extracting file:', fullPath);
+          const content = await file.async('nodebuffer');
+          await fs2.mkdir(path.dirname(fullPath), { recursive: true });
+          await fs2.writeFile(fullPath, content);
+        }
+      }
+
+      console.log('Extraction completed successfully');
+      res.json({ message: 'Files extracted successfully' });
+    } catch (error) {
+      console.error('Error during extraction:', error);
+      res
+        .status(500)
+        .json({ error: 'Failed to extract files', details: error.message });
+    }
+  }
+);
+
+// Add these constants but keep existing ones
+const UPLOAD_TIMEOUT = 60000;
+
+ipcMain.handle(
+  'upload-user-files',
+  async (event, { userId }: { userId: string }) => {
+    const makeRequest = async () => {
+      try {
+        let currentProgress = 0;
+        const smoothProgress = (targetProgress: number) => {
+          const step = 0.5;
+          const interval = setInterval(() => {
+            if (currentProgress < targetProgress) {
+              currentProgress += step;
+              event.sender.send('upload-progress', currentProgress);
+            } else {
+              clearInterval(interval);
+            }
+          }, 16);
+        };
+
+        smoothProgress(5);
+        console.log('Getting local directory...');
+        const getLocalUserDirectory2 = async () => {
+          const userDataPath = process.env.APPDATA || app.getPath('userData');
+          const bmsFolderPath = path.join(userDataPath, appname);
+
+          function directoryToJson(dir: string) {
+            const result = {
+              name: path.basename(dir),
+              type: 'directory',
+              children: [],
+            };
+            const files = fs.readdirSync(dir, { withFileTypes: true });
+
+            files.forEach((file: { name: string; isDirectory: () => any }) => {
+              const filePath = path.join(dir, file.name);
+              if (file.isDirectory()) {
+                result.children.push(directoryToJson(filePath));
+              } else {
+                result.children.push({ name: file.name, type: 'file' });
+              }
+            });
+
+            return result;
+          }
+
+          try {
+            const directoryStructure = directoryToJson(bmsFolderPath);
+            return directoryStructure;
+          } catch (error) {
+            console.error('Error reading directory structure:', error);
+            return null;
+          }
+        };
+
+        const localDirectory = await getLocalUserDirectory2();
+        const filteredDirectory = {
+          name: localDirectory.name,
+          type: 'directory',
+          children: localDirectory.children.filter((child) =>
+            ['Room Pictures', 'Room Documents'].includes(child.name)
+          ),
+        };
+
+        console.log(
+          'Filtered directory structure:',
+          JSON.stringify(filteredDirectory, null, 2)
+        );
+        smoothProgress(15);
+
+        console.log('Sending directory data to online database...');
+        const checkResponse = await axiosInstance.post('/check-user-directory', {
+          userId,
+          directory: filteredDirectory,
+        });
+
+        const { requiredFiles } = checkResponse.data;
+        console.log('Response received from online database:', requiredFiles);
+        smoothProgress(25);
+
+        if (requiredFiles?.length > 0) {
+          console.log('Required files missing:', requiredFiles);
+
+          const zip = new JSZip();
+          let totalSize = 0;
+          let processedSize = 0;
+
+          // First pass to calculate total size
+          for (const filePath of requiredFiles) {
+            if (
+              filePath.startsWith('Room Pictures/') ||
+              filePath.startsWith('Room Documents/')
+            ) {
+              const fullPath = path.join(process.env.APPDATA || '', appname, filePath);
+              if (fs.existsSync(fullPath)) {
+                const stats = fs.statSync(fullPath);
+                totalSize += stats.size;
+              }
+            }
+          }
+
+          // Second pass to add files and update progress
+          for (const filePath of requiredFiles) {
+            try {
+              if (
+                !filePath.startsWith('Room Pictures/') &&
+                !filePath.startsWith('Room Documents/')
+              ) {
+                console.log('Skipping non-room file:', filePath);
+                continue;
+              }
+
+              const fullPath = path.join(
+                process.env.APPDATA || '',
+                appname,
+                filePath
+              );
+              if (fs.existsSync(fullPath)) {
+                const fileContent = fs.readFileSync(fullPath);
+                zip.file(filePath, fileContent);
+                processedSize += fileContent.length;
+                
+                // Calculate progress between 25-85 based on processed size
+                const fileProgress = 25 + ((processedSize / totalSize) * 60);
+                smoothProgress(fileProgress);
+              } else {
+                console.warn(`File not found: ${fullPath}`);
+              }
+            } catch (error) {
+              console.warn(`Error adding file ${filePath} to zip:`, error);
+            }
+          }
+
+          console.log(`Total upload size: ${totalSize} bytes`);
+          smoothProgress(85);
+
+          if (totalSize === 0) {
+            console.log('No valid files to upload');
+            smoothProgress(100);
+            return {
+              success: true,
+              message: 'No files needed to be uploaded',
+            };
+          }
+
+          const zipBuffer = await zip.generateAsync({ 
+            type: 'nodebuffer',
+            compression: 'DEFLATE',
+            compressionOptions: { level: 6 },
+            onUpdate: (metadata) => {
+              // Progress during zip compression (85-90)
+              const compressionProgress = 85 + (metadata.percent * 0.05);
+              smoothProgress(compressionProgress);
+            }
+          });
+
+          console.log('Sending zip file to online database...');
+          const form = new FormData();
+          form.append('files', zipBuffer, {
+            filename: 'required_files.zip',
+            contentType: 'application/zip',
+          });
+          form.append('userId', userId);
+          
+          smoothProgress(90);
+          
+          const uploadResponse = await axiosInstance.post(
+            '/upload-missing-files',
+            form,
+            {
+              headers: {
+                ...form.getHeaders(),
+              },
+              maxContentLength: Infinity,
+              maxBodyLength: Infinity,
+              onUploadProgress: (progressEvent) => {
+                // Progress during final upload (90-100)
+                const uploadProgress = 90 + ((progressEvent.loaded / progressEvent.total) * 10);
+                smoothProgress(uploadProgress);
+              }
+            }
+          );
+
+          if (!uploadResponse.data?.success) {
+            throw new Error('Upload response indicated failure');
+          }
+
+          console.log('Upload completed successfully:', uploadResponse.data);
+          smoothProgress(100);
+        } else {
+          console.log('No files need to be uploaded');
+          smoothProgress(100);
+        }
+
+        return {
+          success: true,
+          message: 'Upload completed successfully',
+        };
+      } catch (error) {
+        console.error('Upload error:', error);
+
+        if (axios.isAxiosError(error)) {
+          const errorMessage = error.response?.data?.message || error.message;
+          const statusCode = error.response?.status;
+          return {
+            success: false,
+            message: `Upload failed (${statusCode}): ${errorMessage}`,
+            error: {
+              status: statusCode,
+              data: error.response?.data,
+            },
+          };
+        }
+
+        return {
+          success: false,
+          message: error.message || 'Unknown error occurred',
+        };
+      }
+    };
+
+    return requestQueue.enqueue(makeRequest);
+  }
+);
+
+// Add helper function for retrying uploads
+const retryUpload = async (
+  uploadFn: () => Promise<any>,
+  maxRetries = 3
+): Promise<any> => {
+  let lastError;
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      return await uploadFn();
+    } catch (error) {
+      console.error(`Upload attempt ${attempt + 1} failed:`, error);
+      lastError = error;
+
+      if (attempt < maxRetries - 1) {
+        const delay = Math.pow(2, attempt) * 1000; // Exponential backoff
+        await new Promise((resolve) => setTimeout(resolve, delay));
+      }
+    }
+  }
+  throw lastError;
+};
+
+// Add error handling for the existing prepare-upload-files endpoint
+appDB.post('/prepare-upload-files', async (req, res) => {
+  const { userId, requiredFiles } = req.body;
+
+  try {
+    const zip = new JSZip();
+    let totalSize = 0;
+
+    for (const filePath of requiredFiles) {
+      try {
+        const fullPath = path.join(process.env.APPDATA, appname, filePath);
+
+        if (
+          !(await fs2
+            .access(fullPath)
+            .then(() => true)
+            .catch(() => false))
+        ) {
+          console.warn(`File not found: ${fullPath}`);
+          continue;
+        }
+
+        const fileStats = await fs2.stat(fullPath);
+        if (fileStats.size === 0) {
+          console.warn(`Empty file skipped: ${filePath}`);
+          continue;
+        }
+
+        const fileContent = await fs2.readFile(fullPath);
+        zip.file(filePath, fileContent);
+        totalSize += fileContent.length;
+      } catch (error) {
+        console.error(`Error processing file ${filePath}:`, error);
+      }
+    }
+
+    if (totalSize === 0) {
+      return res.send(null);
+    }
+
+    const zipContent = await zip.generateAsync({
+      type: 'nodebuffer',
+      compression: 'DEFLATE',
+      compressionOptions: { level: 6 },
+    });
+
+    res.send(zipContent);
+  } catch (error) {
+    console.error('Error preparing files for upload:', error);
+    res.status(500).json({
+      error: 'Failed to prepare files for upload',
+      details: error.message,
+    });
+  }
+});
+
+appDB.get(
+  '/local-user-directory',
+  (
+    req: any,
+    res: {
+      json: (arg0: { name: string; type: string; children: never[] }) => void;
+      status: (arg0: number) => {
+        (): any;
+        new (): any;
+        json: { (arg0: { error: string }): void; new (): any };
+      };
+    }
+  ) => {
+    const userDataPath = process.env.APPDATA || app.getPath('userData');
+    const bmsFolderPath = path.join(userDataPath, appname);
+
+    function directoryToJson(dir: string) {
+      const result = {
+        name: path.basename(dir),
+        type: 'directory',
+        children: [],
+      };
+      const files = fs.readdirSync(dir, { withFileTypes: true });
+
+      files.forEach((file: { name: string; isDirectory: () => any }) => {
+        const filePath = path.join(dir, file.name);
+        if (file.isDirectory()) {
+          result.children.push(directoryToJson(filePath));
+        } else {
+          result.children.push({ name: file.name, type: 'file' });
+        }
+      });
+
+      return result;
+    }
+
+    try {
+      const directoryStructure = directoryToJson(bmsFolderPath);
+      res.json(directoryStructure);
+    } catch (error) {
+      console.error('Error reading directory structure:', error);
+      res.status(500).json({ error: 'Failed to read directory structure' });
+    }
+  }
+);

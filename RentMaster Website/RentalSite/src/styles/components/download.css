@@ -56,7 +56,8 @@
 
   margin-bottom: 2rem;
   text-align: center;
-  color: rgb(53 111 173 / 74%) !important;
+  color: #adb9ca;
+
 }
 .benefits-list li {
   color: var(--Secondary-Text-Color);
@@ -80,6 +81,7 @@
 .platform-buttons {
   display: flex;
   flex-direction: row;
+  flex-wrap: nowrap;
   gap: 1rem;
 }
 
@@ -95,7 +97,7 @@
   padding: 1.5rem 2rem;
   border: none;
   border-radius: 10px;
-  background: #ffffff;
+  background: var(--Secondary-Color);
   cursor: pointer;
   transition: all 0.3s ease;
   min-width: 200px;
@@ -119,13 +121,13 @@
 }
 
 .platform-info span {
-  font-size: .8rem;
+  font-size: 1.2rem;
   font-weight: 600;
   color: var(--Text-Color);
 }
 
 .platform-info small {
-  color: var(--Secondary-Text-Color);
+  color: var(--Text-Color);
 }
 
 .coming-soon {
@@ -193,7 +195,7 @@
   margin-top: 2rem;
   margin-bottom: 6rem;
   padding: 2rem;
-  background: #ffffff;
+  background: var(--Secondary-Color40);
   border-radius: 10px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
@@ -217,14 +219,14 @@
 }
 
 .changelog-date {
-  color: #666;
+  color: #ffffff;
   font-size: 0.9rem;
 }
 
 .changelog-entry ul {
   list-style-type: disc;
   padding-left: 1.5rem;
-  color: #444;
+  color: #ffffff;
 }
 
 .changelog-entry li {

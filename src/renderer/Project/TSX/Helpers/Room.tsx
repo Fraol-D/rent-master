@@ -431,7 +431,7 @@ const Room = ({
           if (!response.ok) {
             throw new Error(`Failed to fetch file: ${fileName}`);
           }
-          console.log(roomDocs);
+        
           fileContent = await response.blob(); // Get the file content as a Blob
         }
 
@@ -582,7 +582,7 @@ const Room = ({
           Representative,
           tenant.Currency
         );
-        console.log(result);
+      
         await updateRoomProperty(
           roomType.id,
           'selectedAgreementId',
@@ -1148,7 +1148,7 @@ const Room = ({
       'AllRoomPayInfo',
       updatedAllRoomPayInfo
     );
-    console.log(updatedAllRoomPayInfo, roomType.AllRoomPayInfo);
+   
   };
   const [TypeOfRoomState, setTypeOfRoomState] = useState(true);
   const [ShowConverter, setShowConverter] = useState(false);
@@ -1523,9 +1523,10 @@ const LoadingOverlay = ({ isLoading }: { isLoading: boolean }) => (
                 setTypeOfRoomState(true);
               }}
               src={
-                storageManager.get('ThemeMode') === 'dark'
+                storageManager.get('ThemeMode') ? storageManager.get('ThemeMode')=== 'dark'
                   ? EditIconLight
                   : EditIconDark
+                  : EditIconLight
               }
               style={{
                 width: 'var(--23px-V)',
@@ -2238,7 +2239,7 @@ const LoadingOverlay = ({ isLoading }: { isLoading: boolean }) => (
                         {ShowConverter && (
                           <EthiopianCalanderConverterMenu
                             onConvert={(s) => {
-                              console.log(s);
+                             
                             }}
                             Cancel={() => {
                               setShowConverter(false);
@@ -2273,7 +2274,7 @@ const LoadingOverlay = ({ isLoading }: { isLoading: boolean }) => (
                             {ShowConverterEndDate && (
                               <EthiopianCalanderConverterMenu
                                 onConvert={(s) => {
-                                  console.log(s);
+                             
                                 }}
                                 Cancel={() => {
                                   setShowConverterEndDate(false);
@@ -2306,7 +2307,7 @@ const LoadingOverlay = ({ isLoading }: { isLoading: boolean }) => (
                             {ShowConverterSignDate && (
                               <EthiopianCalanderConverterMenu
                                 onConvert={(s) => {
-                                  console.log(s);
+                              
                                 }}
                                 Cancel={() => {
                                   setShowConverterSignDate(false);
@@ -3324,54 +3325,54 @@ const LoadingOverlay = ({ isLoading }: { isLoading: boolean }) => (
                                   >
                                     Page:{' '}
                                     <a
-                                      href={`https://rentmaster.markethubet.com/tenantPortal/${
+                                      href={`https://rentmaster.markethubet.com/tenantPortal/${encodeURIComponent(
                                         storageManager
                                           .get('Branches')
                                           .find(
                                             (branch: any) =>
                                               branch.id === SelectedBranchId
                                           ).name
-                                      }-${
+                                      )}:@@^&^@@:${encodeURIComponent(
                                         storageManager
                                           .get('users')
                                           .find(
                                             (user: any) =>
                                               user.id === SelectedUserId
                                           ).companyName
-                                      }/${
+                                      )}/${encodeURIComponent(
                                         AllTenants.find(
                                           (tenant: any) =>
                                             tenant.id === roomType.tenantId
                                         )?.name
-                                      }`}
+                                      )}`}
                                       target="_blank"
                                       rel="noopener noreferrer"
                                     >
                                       https://rentmaster.markethubet.com/tenantPortal/{' '}
                                       <br />
                                       {
-                                        storageManager
+                                        encodeURIComponent(storageManager
                                           .get('Branches')
                                           .find(
                                             (branch: any) =>
                                               branch.id === SelectedBranchId
-                                          ).name
+                                          ).name)
                                       }
-                                      -
+                                      :@@^&^@@:
                                       {
-                                        storageManager
+                                      encodeURIComponent(  storageManager
                                           .get('users')
                                           .find(
                                             (user: any) =>
                                               user.id === SelectedUserId
-                                          ).companyName
+                                          ).companyName)
                                       }
                                       /
                                       {
-                                        AllTenants.find(
+                                       encodeURIComponent( AllTenants.find(
                                           (tenant: any) =>
                                             tenant.id === roomType.tenantId
-                                        )?.name
+                                        )?.name)
                                       }
                                     </a>
                                     <br />{' '}
@@ -3379,24 +3380,24 @@ const LoadingOverlay = ({ isLoading }: { isLoading: boolean }) => (
                                   <button
                                     onClick={() => {
                                       const url = `https://rentmaster.markethubet.com/tenantPortal/${
-                                        storageManager
+                                        encodeURIComponent( storageManager
                                           .get('Branches')
                                           .find(
                                             (branch: any) =>
                                               branch.id === SelectedBranchId
-                                          ).name
-                                      }-${
-                                        storageManager
+                                          ).name)
+                                      }:@@^&^@@:${
+                                        encodeURIComponent(storageManager
                                           .get('users')
                                           .find(
                                             (user: any) =>
                                               user.id === SelectedUserId
-                                          ).companyName
+                                          ).companyName)
                                       }/${
-                                        AllTenants.find(
+                                        encodeURIComponent( AllTenants.find(
                                           (tenant: any) =>
                                             tenant.id === roomType.tenantId
-                                        )?.name
+                                        )?.name)
                                       }`;
                                       navigator.clipboard.writeText(url);
                                     }}

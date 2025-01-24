@@ -107,7 +107,12 @@ const Pricing = () => {
               </div>
             </div>
             <div className="enterprise-right">
-              <button className="select-plan">Contact Sales</button>
+              <button 
+                className="select-plan"
+                onClick={() => window.location.href = "tel:+251944509999"}
+              >
+                Contact Sales (+251944509999)
+              </button>
             </div>
           </div>
         </div>

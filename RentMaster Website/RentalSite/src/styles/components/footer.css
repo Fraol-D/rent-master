@@ -24,7 +24,7 @@
 }
 
 .footer-section h4 {
-  color: black;
+  color: rgb(255, 255, 255);
   margin-bottom: 1rem;
 }
 
@@ -65,4 +65,10 @@
   .footer {
     padding: 3rem 1rem 1.5rem;
   }
-} 
+} @media (max-width: 450px) {
+ 
+  .footer{
+    padding: 4rem 1rem;    background-position-x: -1234px;
+  }
+ 
+}

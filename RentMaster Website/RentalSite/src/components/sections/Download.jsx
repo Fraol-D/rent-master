@@ -1,4 +1,4 @@
-import { FaWindows, FaApple, FaLinux } from 'react-icons/fa';
+import { FaWindows, FaApple, FaLinux,FaGooglePlay,FaAppStoreIos } from 'react-icons/fa';
 import '../../styles/components/download.css';
 import Navbar from '../layout/Navbar';
 import Footer from '../layout/Footer';
@@ -6,11 +6,23 @@ import Footer from '../layout/Footer';
 const Download = () => {
   const currentVersion = "0.2.0";
   const changelog = [
-    {
-      version: "0.2.0",
-      date: "January 2025",
+     {
+      version: "0.2.1",
+      date: "January 23, 2025", 
       changes: [
-        "Launch"
+        "Fixed tenant portal timeline view to handle multiple agreements correctly",
+        "Added server-side validation for :@@^&^@@: format",
+        "Updated tenant portal link display logic",
+       
+        "Improved Ethiopian calendar converter text formatting and menu UI",
+        "Fixed desktop version loading and API communication issues",
+        "Fixed edit icon initial color when no saved theme is saved"
+      ]
+    },{
+      version: "0.2.0",
+      date: "January 17, 2025",
+      changes: [
+        "Initial Release"
       ]
     },
    
@@ -40,7 +52,7 @@ const Download = () => {
                   <div className="platform-info">
                     <span>Windows</span>
                     <small>Windows 10/11 (64-bit)</small>
-                    <span className="download-size">Download Size: 95MB</span>
+                    <span className="download-size" style={{fontSize: '0.8rem'}}>Download Size: 90MB</span>
                   </div>
                 </button>
                 <button className="platform-button" disabled>
@@ -57,7 +69,23 @@ const Download = () => {
                     <small>Coming Soon</small>
                   </div>
                 </button>
-              </div>
+                
+              </div><div style={{display: 'flex', justifyContent: 'center', flexWrap: 'nowrap', marginTop: '1rem', gap: '1rem'}}>
+                <button className="platform-button" disabled>
+                  <FaAppStoreIos className="platform-icon" />
+                  <div className="platform-info">
+                    <span>iOS</span>
+                    <small>Coming Soon to App Store</small>
+                  </div>
+                </button>
+                <button className="platform-button" disabled>
+                  <FaGooglePlay className="platform-icon" />
+                  <div className="platform-info">
+                    <span>Android</span>
+                    <small>Coming Soon to Play Store</small>
+                  </div>
+                </button>
+                </div>
             </div>
           </div>
 

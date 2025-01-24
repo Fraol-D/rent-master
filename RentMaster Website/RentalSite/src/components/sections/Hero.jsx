@@ -35,7 +35,7 @@ const Hero = () => {
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                <button className="hero-button primary">
+                <button className="hero-button primary" style={{color: 'black'}}>
                   Get Started
                   <svg
                     className="button-arrow"

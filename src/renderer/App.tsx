@@ -263,7 +263,6 @@ function Hello({ tryout, username, signup }: any) {
               const existingUtility = utilityPayments.find(
                 (u) => u.type === type
               );
-              console.log("existingUtility", existingUtility);
               return {
                 type,
                 useThis: existingUtility
@@ -291,7 +290,6 @@ function Hello({ tryout, username, signup }: any) {
             // Calculate days till next payment
             const DaysTillNextPayment =
               calculateDaysTillNextPayment(predictedPayments);
-            console.log("utility for ", room.id, formattedUtilityPayments, "and filtered",utilityPayments, "and unfliterd" ,AllUtilityPaymentsSettings2);
             return {
               id: room.id,
               floor: room.floor,
@@ -731,16 +729,7 @@ function Hello({ tryout, username, signup }: any) {
               const updatedPayInfo = lastList.find(
                 (item: any) => item.id === roomPaymentId
               );
-              console.log({
-                ...room,
-                AllRoomPayInfo: {
-                  RoomPayInfo: lastList.map((item: { id: string; Paid: any }) =>
-                    item.id === roomPaymentId
-                      ? { ...item, Paid: !item.Paid }
-                      : item
-                  ),
-                },
-              });
+              
               if (updatedPayInfo) {
                 return {
                   ...room,
@@ -1255,7 +1244,7 @@ function Hello({ tryout, username, signup }: any) {
     }
   };
 
-  const [ThemeMode, setThemeMode] = useState<'light' | 'dark'>('light');
+  const [ThemeMode, setThemeMode] = useState<'light' | 'dark'>('dark');
 
   useEffect(() => {
     const get = async () => {
@@ -1264,7 +1253,7 @@ function Hello({ tryout, username, signup }: any) {
         setThemeMode(storedTheme);
         applyTheme(storedTheme);
       } else {
-        applyTheme('light');
+        applyTheme('dark');
       }
     };
     get();
@@ -1481,7 +1470,6 @@ function Hello({ tryout, username, signup }: any) {
     if (navigator.onLine) {
       try {
         const branches = storageManager.get('Branches') || [];
-        console.log(branches, 'branches');
         
         if (Array.isArray(branches)) {
           const branch = branches.find((b: {id: string, name: string}) => b.id === branchId);
@@ -1564,7 +1552,6 @@ function Hello({ tryout, username, signup }: any) {
               nextYearDate.setMonth(originalMonth);
               nextYearDate.setDate(originalDay);
               currentDate = nextYearDate;
-              console.log(currentDate, 'lllllllllll');
               break;
 
             default:
@@ -1601,7 +1588,6 @@ function Hello({ tryout, username, signup }: any) {
     date: number
   ) => {
     const { rate, direction } = getRateByDate(date);
-    console.log(value, currency || GetDefaultCurrency());
     if (!rate) {
       console.warn('No rate available, using current rate as fallback');
       return 0; // Return 0 if no rate found to be consistent
@@ -1641,7 +1627,6 @@ function Hello({ tryout, username, signup }: any) {
           'branches',
           `WHERE userId = '${storageManager.get('users')[0].id}'`
         );
-        console.log(branches,'branches')
         if (branches)
           if (getBranchData) {
             const branchesWithData = await Promise.all(

@@ -1,7 +1,7 @@
 import CryptoJS from 'crypto-js';
 import { tryoutData } from './Project/TSX/Helpers/tryoutData';
 // Toggle encryption on or off
-const encryptData = false;
+const encryptData = true;
 const isTryout = window.location.href.includes('tryout');
 const secretKey = window.electron ? '' : import.meta.env.VITE_ENCRYPTION_KEY;
 const secretKeyKEY = window.electron ? '' : import.meta.env.VITE_secretKeyKEY;

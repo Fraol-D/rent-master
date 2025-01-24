@@ -293,7 +293,7 @@ const NavBar = ({
             className="Name-ofShop"
             style={{ fontSize: 'var(--14px-V)', height: 'auto' }}
           >
-            <span style={{ color: 'grey' }}>
+            <span style={{ color: 'grey',marginRight: 'var(--5px-V)' }}>
               {storageManager.get('users')?.[0]?.email || ""} {' '}
             </span>
             {storageManager.get('SelectedAppUserId') === 'admin' ? (

@@ -365,6 +365,12 @@ const TutorialManager = ({
 
   const handleClose = () => {
     onClose();
+    if(isMobileState) {
+      const sideBarContainer = document.querySelector('.SideBarContainer');
+      if(sideBarContainer) {
+        sideBarContainer.style.zIndex = 2;
+      }
+    }
     setIsOnTutorial(false);
   };
 

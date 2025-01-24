@@ -64,7 +64,7 @@ const Contact = ({sendEmail}) => {
               />
             </div>
             <button 
-              style={{marginLeft:"auto", marginTop:"0px"}} 
+              style={{marginLeft:"auto", marginTop:"0px",background: 'var(--Primary-Color)',color: 'black'}} 
               type="submit" 
               className="hero-button"
             >

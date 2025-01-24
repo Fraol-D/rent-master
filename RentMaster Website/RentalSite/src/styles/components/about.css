@@ -28,7 +28,7 @@
 .mission {
   position: relative;
   padding: 2rem;
-  background: var(--Background-Color2);
+  background: var(--Secondary-Color40);
   border-radius: 12px;
   transition: transform 0.3s ease;
   border: 1px solid var(--Secondary-Color30);
@@ -58,7 +58,7 @@
 }
 
 .value-card {
-  background: var(--Background-Color2);
+  background:var(--Secondary-Color40);
   padding: 1.5rem;
   border-radius: 8px;
   text-align: center;
@@ -149,4 +149,10 @@
   .values-grid {
     grid-template-columns: 1fr;
   }
-} 
+} @media (max-width: 450px) {
+ 
+  .about{
+    padding: 6rem 0;
+  }
+ 
+}

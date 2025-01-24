@@ -11,16 +11,15 @@
 @import url('./Project/CSS/SignUpAndLogin.css');
 @import url('./Project/CSS/tutorialManager.css');
 
-
 section {
   opacity: 1;
   transform: none;
 }
 * {
-  margin: revert; 
-    padding: revert; 
-     box-sizing:revert; 
-    font-family: inherit;
+  margin: revert;
+  padding: revert;
+  box-sizing: revert;
+  font-family: inherit;
 }
 :root {
   --Text-Color-Grey: rgba(128, 128, 128);
@@ -38,7 +37,7 @@ section {
   --Secondary-Color20: hsl(228, 13%, 31%, 20%);
   --Secondary-Color30: hsl(228, 13%, 31%, 30%);
   --Secondary-Color40: hsl(228, 13%, 31%, 40%);
-  --Secondary-Color50N: rgb(57,59,69);
+  --Secondary-Color50N: rgb(57, 59, 69);
   --Secondary-Color50: hsl(228, 13%, 31%, 50%);
   --Secondary-Color60: hsl(228, 13%, 31%, 60%);
 
@@ -210,18 +209,19 @@ section {
   --Secondary-Color30: hsl(228, 13%, 69%, 30%);
   --Secondary-Color40: hsl(228, 13%, 69%, 40%);
   --Secondary-Color50: hsl(228, 13%, 69%, 50%);
-  --Secondary-Color50N: rgb(196,198,206);
+  --Secondary-Color50N: rgb(196, 198, 206);
 
   --Secondary-Color60: hsl(228, 13%, 69%, 60%);
 
-  --Accent-Color: #db911a;--Accent-Color20: hsl(37, 79%, 52%, 20%);
+  --Accent-Color: #db911a;
+  --Accent-Color20: hsl(37, 79%, 52%, 20%);
   --Accent-Color50: hsl(37, 79%, 48%, 50%);
 }
 .GreyTheme {
   --Text-Color-Grey: rgb(128, 128, 128);
   --Text-Color: rgb(0, 0, 0);
   --Text-Color-Reverse: rgb(153, 153, 153);
-  --Background-Color: #414141;
+  --Background-Color: white;
 
   --Primary-Color: #00c6e0;
   --Primary-Color25: hsl(187, 100%, 43%, 37%);
@@ -309,7 +309,8 @@ select {
   font-size: var(--15px-V);
   padding-left: var(--5px-V);
   box-shadow: inset var(--0px-V) var(---2px-V) var(--3px-V) var(---1px-V)
-  var(--Accent-Color);}
+    var(--Accent-Color);
+}
 textarea {
   background-color: var(--Secondary-Color);
   color: var(--Text-Color);
@@ -319,7 +320,7 @@ textarea {
   font-size: var(--15px-V);
   padding-left: var(--5px-V);
   box-shadow: inset var(--0px-V) var(---2px-V) var(--3px-V) var(---1px-V)
-  var(--Accent-Color);
+    var(--Accent-Color);
 }
 input[type='checkbox'] {
   accent-color: var(--Accent-Color);
@@ -477,35 +478,39 @@ em {
 }
 
 /* Base size (1920px width) */
-input[type='checkbox'], input[type='radio'] {
+input[type='checkbox'],
+input[type='radio'] {
   transform: scale(1);
   transform-origin: left center; /* This keeps the checkbox/radio aligned properly */
 }
 
 /* 1280px screen width */
 @media screen and (max-width: 1280px) {
-  input[type='checkbox'], input[type='radio'] {
+  input[type='checkbox'],
+  input[type='radio'] {
     transform: scale(0.67); /* 1280/1920 = ~0.67 */
   }
 }
 
 /* 1366 screen width */
 @media screen and (min-width: 1281px) and (max-width: 1366px) {
-  input[type='checkbox'], input[type='radio'] {
+  input[type='checkbox'],
+  input[type='radio'] {
     transform: scale(0.71); /* 1366/1920 = ~0.71 */
   }
 }
 
 /* 4K screen width */
 @media screen and (min-width: 2560px) {
-  input[type='checkbox'], input[type='radio'] {
+  input[type='checkbox'],
+  input[type='radio'] {
     transform: scale(2); /* 3840/1920 = 2 */
   }
 }
 
 @media screen and (max-width: 1280px) {
   :root {
-    ---900px-V: -600.0px;
+    ---900px-V: -600px;
     ---845px-V: -563.3px;
     ---757px-V: -504.7px;
     ---567px-V: -378px;
@@ -958,4 +963,3 @@ input[type='checkbox'], input[type='radio'] {
     --1300px-V: 2600px;
   }
 }
-

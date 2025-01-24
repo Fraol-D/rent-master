@@ -636,7 +636,7 @@ const CornerSupport = ({
                   marginBottom: 'var(--5px-V)',
                 }}
               >
-                Contact: 0944509999
+                Contact: +251944509999
               </div>
             </div>
           </div>
@@ -646,7 +646,7 @@ const CornerSupport = ({
         return null;
     }
   };
-  const { setIsOnTutorial } = useGlobal();
+  const { setIsOnTutorial,isOnTutorial } = useGlobal();
   const handlePageNavigation = (page: string) => {
     const privileges = getUserPrivileges(SelectedAppUser);
     setTutorialShow(false);
@@ -716,7 +716,7 @@ const CornerSupport = ({
           zIndex: 600,
         }}
       >
-        {showHelpArrow && (
+        {showHelpArrow && !isOnTutorial && (
           <div
             style={{
               position: 'absolute',
@@ -734,7 +734,7 @@ const CornerSupport = ({
               textAlign: 'center',
               marginBottom: 'var(--10px-V)'
             }}>
-              Click here to view the tutorial!
+              Click here to view the tutorials!
             </div>
             <div style={{
               width: 0,
