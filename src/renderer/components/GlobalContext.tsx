@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
+import tl from '../translator';
+
 interface GlobalContextType {
   AllRoomPayInfo: RoomPayInfo[];
   setAllRoomPayInfo: React.Dispatch<React.SetStateAction<RoomPayInfo[]>>;
@@ -36,6 +38,11 @@ interface GlobalContextType {
   isOnTutorial: boolean;
   setIsOnTutorial: React.Dispatch<React.SetStateAction<boolean>>;
   isMobileState: boolean;
+
+  langCode: number;
+  setLangCode: React.Dispatch<React.SetStateAction<number>>;
+
+  text: object;
 }
 
 const GlobalContext = createContext<GlobalContextType | undefined>(undefined);
@@ -63,12 +70,24 @@ const [tutorialNewRoomId, setTutorialNewRoomId] = useState<string>("");
 function isMobile() {
   return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 }
-
-
+const [langCode, setLangCode] = useState<number>(0);
+function tl_spreader(obj:object, i:number) {
+  Object.entries(obj).forEach(([key, value]) => {
+    if (Array.isArray(value) && typeof(value) !== "string") {
+      obj[key] = value[i]
+    } else if(typeof(value) == "object" && typeof(value) !== "string") {
+      obj[key] = tl_spreader(value, i)
+    }  
+  })
+  return obj
+}
+const text = tl_spreader(structuredClone(tl), langCode);
 const [isMobileState, setIsMobileState] = useState<boolean>(false);
 useEffect(() => {
   setIsMobileState(isMobile());
 }, []);
+
+
 return (
     <GlobalContext.Provider 
       value={{
@@ -102,7 +121,9 @@ return (
         setTutorialNewExpenseId,
         tutorialNewRoomId,setTutorialNewRoomId,
         isOnTutorial,
-        setIsOnTutorial,isMobileState
+        setIsOnTutorial,isMobileState,
+        setLangCode, langCode,
+        text
       }}
     >
       {children}

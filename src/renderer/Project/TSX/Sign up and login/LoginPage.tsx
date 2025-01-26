@@ -10,7 +10,7 @@ import { addValue } from '../../../../Backend/localServerApis';
 import React, { useState } from 'react';
 import loadingGif from '../../../assets/assets/Loading/Rolling-1s-200px.gif';
 import { Input } from '../Helpers/CustomReactComponents';
-
+import { useGlobal } from 'renderer/components/GlobalContext';
 const LoginPage = ({
   setisSignUpMode,
   setisSignedIn,
@@ -27,6 +27,12 @@ const LoginPage = ({
   RefreshComponent,
   setViewBranchManagementPage,
 }: any) => {
+  const {langCode, setLangCode, text} = useGlobal()
+  const ChangeLanguage = async (lang:number) => {
+    storageManager.set('LangCode', lang);
+    setLangCode(lang);
+  };  
+  const langSwitch = () => {if(langCode == 1) {setLangCode(0)} else {setLangCode(1)};}
   const [errorMessage, setErrorMessage] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -105,14 +111,14 @@ const LoginPage = ({
         }
       }
     } catch (error) {
-      console.error('Error during login:', error);
-      setErrorMessage('An error occurred during login. Please try again.');
+      console.error('Error during ' + text.gen.login + ':', error);
+      setErrorMessage('An error occurred during ' + text.gen.login + '. Please try again.');
     } finally {
       setLoading(false);
     }
   };
   const handleLogin = async (user: any) => {
-    setErrorMessage('Login successful!');
+    setErrorMessage(text.gen.login + ' successful!');
     storageManager.set('users', [
       {
         id: user.id,
@@ -138,6 +144,7 @@ const LoginPage = ({
   const [SelectedToLoginWith, setSelectedToLoginWith] = useState('App User');
   return (
     <>
+      <div><button onClick={langSwitch}>{text.gen.changeLanguage}</button></div>
       {loading && (
         <div
           style={{
@@ -179,9 +186,9 @@ const LoginPage = ({
               fontSize: 'var(--65px-V)',
             }}
           >
-            Login
+            {text.gen.login}
           </h1>
-          <button onClick={handleOrLoginButtonClick}>Or Sign up</button>
+          <button onClick={handleOrLoginButtonClick}>Or {text.gen.signup}</button>
         </div>
         <div
           style={{
@@ -199,7 +206,7 @@ const LoginPage = ({
             }}
             onClick={() => setSelectedToLoginWith('Admin')}
           >
-            Login to ADMIN
+            {text.gen.login + " to ADMIN"}
           </button>
           <button
             style={{
@@ -210,7 +217,7 @@ const LoginPage = ({
             }}
             onClick={() => setSelectedToLoginWith('App User')}
           >
-            Login to App User
+            {text.gen.login + " to App User"}
           </button>
         </div>
         <p
@@ -220,8 +227,8 @@ const LoginPage = ({
           }}
         >
           {SelectedToLoginWith === 'Admin'
-            ? 'Login to ADMIN with account Email and Password'
-            : 'Login to App User with Username and Password'}
+            ? text.gen.login + 'to ADMIN with account Email and Password'
+            : text.gen.login + 'to App User with Username and Password'}
         </p>
 
         <input
