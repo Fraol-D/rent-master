@@ -9,7 +9,7 @@ import {
   sendEmailAPIForVerify,
   sendEmailAPIForWebsite,
 } from '../../../../Backend/OnlineServerApis';
-
+import CryptoJS from 'crypto-js';
 import {
   addValue,
   addValueWithOutOfflineChange,
@@ -567,12 +567,14 @@ Phone Number: ${phoneNumber}
 Package Type: 7 day trial`,
         'New User Signed up'
       );
+      // Hash the new password
+      const hashedPassword = CryptoJS.SHA256(password).toString();
       await AddUserOnline(
         JSON.stringify({
           id: userID,
           Allowed: 0,
           email: email,
-          password: password,
+          password: hashedPassword,
           phoneNumber: phoneNumber,
           fullName: fullName,
           companyName: companyName,

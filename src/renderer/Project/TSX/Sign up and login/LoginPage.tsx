@@ -10,7 +10,7 @@ import { addValue } from '../../../../Backend/localServerApis';
 import React, { useState } from 'react';
 import loadingGif from '../../../assets/assets/Loading/Rolling-1s-200px.gif';
 import { Input } from '../Helpers/CustomReactComponents';
-
+import CryptoJS from 'crypto-js';
 const LoginPage = ({
   setisSignUpMode,
   setisSignedIn,
@@ -25,7 +25,7 @@ const LoginPage = ({
   setAppUserManagerShow,
   fetchBranches,
   RefreshComponent,
-  setViewBranchManagementPage,
+  setViewBranchManagementPage,ForgotPassword
 }: any) => {
   const [errorMessage, setErrorMessage] = useState('');
   const [loading, setLoading] = useState(false);
@@ -52,7 +52,8 @@ const LoginPage = ({
 
     try {
       if (SelectedToLoginWith === 'Admin') {
-        const isValid = await verifyCredentials(email, password);
+        const hashedPassword = CryptoJS.SHA256(password).toString();
+        const isValid = await verifyCredentials(email, hashedPassword);
         if (isValid) {
           // Fetch user data if credentials are valid
           const usersRaw = await getAllUsers();
@@ -127,13 +128,13 @@ const LoginPage = ({
         TrailEndDate: user.TrailEndDate,
       },
     ]);
-    if(!window.electron)window.location.pathname = '/app';
+    if (!window.electron) window.location.pathname = '/app';
     setisSignedIn(true);
   };
 
   const handleOrLoginButtonClick = () => {
-    if(window.electron)    setisSignUpMode(true);
-    else     window.location.pathname = "/signup";
+    if (window.electron) setisSignUpMode(true);
+    else window.location.pathname = '/signup';
   };
   const [SelectedToLoginWith, setSelectedToLoginWith] = useState('App User');
   return (
@@ -181,7 +182,7 @@ const LoginPage = ({
           >
             Login
           </h1>
-          <button onClick={handleOrLoginButtonClick}>Or Sign up</button>
+          {/* <button onClick={handleOrLoginButtonClick}>Or Sign up</button> */}
         </div>
         <div
           style={{
@@ -250,10 +251,69 @@ const LoginPage = ({
         {errorMessage && <p className="errorMessage">{errorMessage}</p>}
 
         <br />
-        <button onClick={SubmitEmailAndPassword} className="LoginButton">
-          Submit {' ▶'}
-        </button>
+
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            width: '90%',
+            gap: 'var(--10px-V)',
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexDirection: 'row-reverse',
+            }}
+          >
+            {' '}
+            <a
+              style={{ color: 'var(--Text-Color-Grey)', textAlign: 'right' }}
+             href="#"  
+             onClick={()=> {ForgotPassword()}}
+            >
+              Forgot password?
+            </a>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 'var(--10px-V)',
+              }}
+            >
+              <input type="checkbox" id="remember-me" />
+              <label
+                htmlFor="remember-me"
+                style={{ color: 'var(--Text-Color-Grey)' }}
+              >
+                Remember me
+              </label>
+            </div>
+          </div>
+          <button
+            onClick={SubmitEmailAndPassword}
+            className="LoginButton"
+            style={{
+              background: 'var(--Primary-Color)',
+              color: 'black',
+              marginLeft: 'auto',
+              marginRight: 'auto',
+            }}
+          >
+            Login{' '}
+          </button>
+        </div>
       </div>
+      <br />
+      <a
+        href="#"
+        style={{ color: 'var(--Text-Color-Grey)', cursor: 'pointer' }}
+        onClick={handleOrLoginButtonClick}
+      >
+        Don't have an account? Sign up
+      </a>
     </>
   );
 };

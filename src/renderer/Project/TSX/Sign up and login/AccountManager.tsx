@@ -11,6 +11,7 @@ import {
   getAllUsers,
   getValuesFromOnlineDatabase,
   getValuesWithSql_Online,
+  resetPassword,
   syncOnlineToLocalBranch,
   syncOnlineToLocalBranchWithBool,
   updateValueOnline,
@@ -1647,6 +1648,21 @@ const AccountManager = (React.FC<MyComponentProps> = ({
       setPasswordCheckInputAPPUSER('');
     }
   };
+  const [ForgotPasswordScreen, setForgotPasswordScreen] = useState(false);
+  const ForgotPassword = () => {
+    
+    setForgotPasswordScreen(true);
+  }
+  const [ForgotPasswordLoading, setForgotPasswordLoading] = useState(false);
+  const [resetPasswordEmailSent, setResetPasswordEmailSent] = useState(false);
+  const handleForgotPassword = async () => {
+    console.log('submit', email);
+    setForgotPasswordLoading(true);
+    const response = await resetPassword(email);
+    console.log(response);
+    setForgotPasswordLoading(false);
+    setResetPasswordEmailSent(true);
+  }
   const handleSwitchUserFromMainAPP = async () => {
     setIsCheckingPasswordAPPUSER(true);
 
@@ -1728,61 +1744,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
     setIsCheckingPasswordAPPUSER(false);
   };
 
-  const LogIn = () => {
-    return (
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          height: '100%',
-          flexDirection: 'column',
-        }}
-      >
-        {isSignedIn && (
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              marginBottom: 'var(--10px-V)',
-              marginTop: 'var(--10px-V)',
-              background: 'var(--Secondary-Color20)',
-              padding: 'var(--7px-V)',
-              borderRadius: 'var(--5px-V)',
-              boxShadow:
-                'var(--0px-V) var(--4px-V) var(--4px-V) var(--0px-V) rgba(0, 0, 0, 0.25)',
-            }}
-          >
-            Found an account: {storageManager.get('users')[0].companyName}{' '}
-            <button
-              style={{ marginLeft: 'var(--10px-V)' }}
-              onClick={() => {
-                window.location.pathname = '/app';
-              }}
-            >
-              Open
-            </button>
-          </div>
-        )}
-        <LoginPage
-          setisSignUpMode={setisSignUpMode}
-          setisSignedIn={setisSignedIn}
-          setChangeMade={setChangeMade}
-          email={email}
-          password={password}
-          setEmail={setEmail}
-          username={username}
-          setUsername={setUsername}
-          setPassword={setPassword}
-          setSelectedAppUser={setSelectedAppUser}
-          setAppUserManagerShow={setAppUserManagerShow}
-          fetchBranches={handleShowBranches}
-          RefreshComponent={RefreshComponent}
-          setViewBranchManagementPage={setViewBranchManagementPage}
-        />
-      </div>
-    );
-  };
+  
   return (
     <>
       {(loading || initialLoading) && (
@@ -3414,22 +3376,63 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                         </button>
                       </div>
                     )}
-                    <LoginPage
-                      setisSignUpMode={setisSignUpMode}
-                      setisSignedIn={setisSignedIn}
-                      setChangeMade={setChangeMade}
-                      email={email}
-                      password={password}
-                      setEmail={setEmail}
-                      username={username}
-                      setUsername={setUsername}
-                      setPassword={setPassword}
-                      setSelectedAppUser={setSelectedAppUser}
-                      setAppUserManagerShow={setAppUserManagerShow}
-                      fetchBranches={handleShowBranches}
-                      RefreshComponent={RefreshComponent}
-                      setViewBranchManagementPage={setViewBranchManagementPage}
-                    />
+                    {ForgotPasswordScreen ? (
+                      <div
+                        style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: 'var(--10px-V)',
+                          padding: 'var(--20px-V)',
+                          background: 'var(--Secondary-Color20)',
+                          borderRadius: 'var(--8px-V)',
+                        }}
+                      >
+                        <h2>Forgot Password</h2>
+                        <input
+                          type="email"
+                          placeholder="Enter your email"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          style={{
+                            padding: 'var(--8px-V)',
+                            borderRadius: 'var(--4px-V)',
+                          }}
+                        />
+                        <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 'var(--10px-V)'}}>
+                        <button style={{width: '50%'}} onClick={() => setForgotPasswordScreen(false)}>
+                          Back 
+                        </button><button style={{width: '50%'}}onClick={handleForgotPassword}>
+                          Submit 
+                        </button>
+                        </div>{ForgotPasswordLoading && (
+                          <img src={loadingGif} style={{width: '30px', height: '30px'}} alt="Loading..." />
+                        )}
+                        {resetPasswordEmailSent && (
+                          <p>
+                            Reset password email sent. <br /> Check your email for the
+                            link to reset your password.
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <LoginPage
+                        setisSignUpMode={setisSignUpMode}
+                        setisSignedIn={setisSignedIn}
+                        setChangeMade={setChangeMade}
+                        email={email}
+                        password={password}
+                        setEmail={setEmail}
+                        username={username}
+                        setUsername={setUsername}
+                        setPassword={setPassword}
+                        setSelectedAppUser={setSelectedAppUser}
+                        setAppUserManagerShow={setAppUserManagerShow}
+                        fetchBranches={handleShowBranches}
+                        RefreshComponent={RefreshComponent}
+                        setViewBranchManagementPage={setViewBranchManagementPage}
+                        ForgotPassword={ForgotPassword}
+                      />
+                    )}
                   </div>
                 )}
                 {ForceSignUp === 'up' && (

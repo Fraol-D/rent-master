@@ -1614,6 +1614,24 @@ export const checkRoomLimit = async (SelectedUserId) => {
     return !response.valid;
   } catch (error) {}
 };
+export const resetPassword = async (email) => {
+  try {
+    const url = `${baseUrl}/reset-password`;
+    const headers = {
+      'Content-Type': 'application/json',
+    };
+    const data = {
+      email,
+    };
+    const response = await sendApiFunction('api-request', {
+      url,
+      method: 'post',
+      headers,
+      data,
+    });
+    return response;
+  } catch (error) {}
+};
 export const downloadAllUserFiles = async (userId) => {
   try {
     const response = await axios({

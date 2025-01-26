@@ -2023,6 +2023,7 @@ app.get('/tenantPortal/:BranchAndCompany/:TenantName', async (req, res) => {
         }
       );
     });
+    
     const branch = branchResults[0];
     if (!branch) {
       throw new Error(`Branch "${branchName}" not found`);
@@ -2075,7 +2076,9 @@ app.get('/tenantPortal/:BranchAndCompany/:TenantName', async (req, res) => {
     if (!room) {
       throw new Error(`No room found for tenant "${decodedTenantName}"`);
     }
-
+if (!room.useTenantPortal) {
+      throw new Error(`Portal access disabled`);
+    }
     // Get agreements
     const [agreements] = await new Promise((resolve, reject) => {
       pool.query(
@@ -2235,7 +2238,7 @@ let sortedagreements = [];
     const checkoutScript = `
   <script>
     async function viewReceipt(dateString) {
-    
+      console.log(dateString);
       try {
         const date = new Date(dateString);
         const formattedDate = \`\${date.getFullYear()}-\${String(date.getMonth() + 1).padStart(2, '0')}-\${String(date.getDate()).padStart(2, '0')}\`;
@@ -2292,6 +2295,7 @@ let sortedagreements = [];
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Tenant Portal</title>
         <link rel="stylesheet" href="/assets/index-Dap_4Qtg.css">
+          <link rel="icon" href="https://rentmaster.markethubet.com/assets/icons8-portal-100 (2).png">
         ${checkoutScript}
       </head>
       <body>
@@ -2612,18 +2616,15 @@ let sortedagreements = [];
                       } ${payment.status === 'past-due' ? 'past-due' : ''}">
                         ${payment.paid ? 'Paid' : 'Unpaid'}
                       </div>
-
-                      ${
-                        room.TenantPortalAllowOnlinePayments && !payment.paid
-                          ? `
-                        <button class="pay-now-button" onclick='handlePaymentClick(${JSON.stringify(
-                          payment
-                        )})'>
-                          Pay Now
-                        </button>
-                      `
-                          : ''
-                      }
+                    
+${room.TenantPortalAllowOnlinePayments && !payment.paid // change when you allow online payments
+  ? `
+  <button class="pay-now-button" onclick="alert('Online payments are not available yet')"> 
+    Pay Now
+  </button>
+  `
+  : ''
+}
 ${
   room.TenantPortalShowReceipts && payment.paid
     ? `
@@ -5494,6 +5495,7 @@ app.get('/api/trigger-expense-notifications', async (req, res) => {
 
 app.post('/api/replace-user-data', async (req, res) => {
   const { userId, tables } = req.body;
+  console.log('Received data:', JSON.stringify({ userId, tables }, null, 2));
 
   const connection = await pool.promise().getConnection();
 
@@ -5567,7 +5569,7 @@ app.post('/api/check-company-name', (req, res) => {
 
   pool.getConnection((err, connection) => {
     if (err) {
-   
+      logger.debug(`Database connection error: ${err.message}`);
       return res.status(500).json({
         valid: false,
         message: 'Database connection error'
@@ -5596,22 +5598,326 @@ app.post('/api/check-company-name', (req, res) => {
     );
   });
 });
+app.post('/api/reset-password', async (req, res) => {
+  const { email } = req.body;
+
+  logger.debug('Reset password request received for email:', email);
+
+  try {
+    // Validate email
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields',
+      });
+    }
+
+    // Generate reset token
+    const resetToken = CryptoJS.lib.WordArray.random(32).toString();
+
+    // Add reset password request to database
+    const resetRequest = {
+      email,
+      token: resetToken,
+      fulfilled: false,
+      createdAt: Date.now()
+    };
+
+    pool.query(
+      'INSERT INTO resetpassword_requests (email, token, fulfilled, created_at) VALUES (?, ?, ?, ?)',
+      [resetRequest.email, resetRequest.token, resetRequest.fulfilled, resetRequest.createdAt],
+      async (error, results) => {
+        if (error) {
+          logger.error('Error creating reset password request:', error);
+          return res.status(500).json({
+            success: false,
+            error: 'Failed to create reset password request'
+          });
+        }
+
+        // Send reset password email with token
+        const emailSubject = 'Password Reset Request';
+        const emailText = `A password reset has been requested for your account. 
+        \nPlease click the following link to reset your password:
+        \nrentmaster.markethubet.com/resetpass?token=${resetToken}
+        \nThis link will expire in 15 minutes.
+        \nIf you did not request this password reset, please ignore this email.`;
+
+        try {
+          const transporter = nodemailer.createTransport({
+            host: 'rentmaster.markethubet.com',
+            port: 465,
+            secure: true,
+            auth: {
+              user: 'rentmaster@rentmaster.markethubet.com',
+              pass: 'V0x&s.XZtbS;',
+            },
+            tls: {
+              rejectUnauthorized: false,
+            },
+            debug: true,
+            logger: true,
+          });
+
+          await transporter.verify();
+
+          const mailOptions = {
+            from: 'rentmaster@rentmaster.markethubet.com',
+            to: email,
+            subject: emailSubject,
+            text: emailText,
+            html: emailText.replace(/\n/g, '<br>')
+          };
+
+          const info = await transporter.sendMail(mailOptions);
+          logger.debug('Password reset email sent successfully:', info.messageId);
+
+          res.json({
+            success: true,
+            message: 'Password reset request created and email sent'
+          });
+
+        } catch (emailError) {
+          logger.error('Failed to send password reset email:', emailError);
+          res.status(500).json({
+            success: false,
+            error: 'Failed to send password reset email'
+          });
+        }
+      }
+    );
+
+  } catch (error) {
+    logger.error('Error in reset password endpoint:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error'
+    });
+  }
+});
+
+app.post('/api/update-password', async (req, res) => {
+  const { token, password } = req.body;
+
+  logger.debug('Password update request received');
+
+  if (!token || !password) {
+    return res.status(400).json({
+      success: false,
+      error: 'Missing required fields'
+    });
+  }
+
+  try {
+    // Check if token exists, is not fulfilled, and is not expired (15 minutes)
+    const fifteenMinutesAgo = Date.now() - (15 * 60 * 1000); // 15 minutes in milliseconds
+    
+    pool.query(
+      'SELECT email, created_at FROM resetpassword_requests WHERE token = ? AND fulfilled = false',
+      [token],
+      async (error, results) => {
+        if (error) {
+          logger.error('Database error:', error);
+          return res.status(500).json({
+            success: false,
+            error: 'Database error'
+          });
+        }
+
+        if (!results.length) {
+          return res.status(400).json({
+            success: false,
+            error: 'Invalid token'
+          });
+        }
+
+        const resetRequest = results[0];
+        
+        // Check if token is expired
+        if (resetRequest.created_at < fifteenMinutesAgo) {
+          return res.status(400).json({
+            success: false,
+            error: 'Token has expired. Please request a new password reset.'
+          });
+        }
+
+        const email = resetRequest.email;
+
+        // Hash the new password
+        const hashedPassword = CryptoJS.SHA256(password).toString();
+
+        // Update user's password
+        pool.query(
+          'UPDATE users SET password = ? WHERE email = ?',
+          [hashedPassword, email],
+          async (updateError) => {
+            if (updateError) {
+              logger.error('Error updating password:', updateError);
+              return res.status(500).json({
+                success: false,
+                error: 'Failed to update password'
+              });
+            }
+
+            // Mark reset request as fulfilled
+            pool.query(
+              'UPDATE resetpassword_requests SET fulfilled = true WHERE token = ?',
+              [token]
+            );
+
+            res.json({
+              success: true,
+              message: 'Password updated successfully'
+            });
+          }
+        );
+      }
+    );
+  } catch (error) {
+    logger.error('Error in update password endpoint:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error'
+    });
+  }
+});
+
+app.get('/resetpass', (req, res) => {
+  const { token } = req.query;
+  
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Reset Password</title>
+      <style>
+        body {
+          font-family: Arial, sans-serif;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          height: 100vh;
+          margin: 0;
+          background-color: #f5f5f5;
+        }
+        .container {
+          background-color: white;
+          padding: 2rem;
+          border-radius: 8px;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+          width: 100%;
+          max-width: 400px;
+        }
+        h1 {
+          text-align: center;
+          color: #333;
+          margin-bottom: 1.5rem;
+        }
+        .form-group {
+          margin-bottom: 1rem;
+        }
+        label {
+          display: block;
+          margin-bottom: 0.5rem;
+          color: #666;
+        }
+        input {
+          width: 100%;
+          padding: 0.5rem;
+          border: 1px solid #ddd;
+          border-radius: 4px;
+          box-sizing: border-box;
+        }
+        button {
+          width: 100%;
+          padding: 0.75rem;
+          background-color: #007bff;
+          color: white;
+          border: none;
+          border-radius: 4px;
+          cursor: pointer;
+          font-size: 1rem;
+        }
+        button:hover {
+          background-color: #0056b3;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <h1>Reset Your Password</h1>
+        <form id="resetForm">
+          <input type="hidden" id="token" value="${token}">
+          <div class="form-group">
+            <label for="password">New Password</label>
+            <input type="password" id="password" required>
+          </div>
+          <div class="form-group">
+            <label for="confirmPassword">Confirm Password</label>
+            <input type="password" id="confirmPassword" required>
+          </div>
+          <button type="submit">Reset Password</button>
+        </form>
+      </div>
+      <script>
+        document.getElementById('resetForm').addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const password = document.getElementById('password').value;
+          const confirmPassword = document.getElementById('confirmPassword').value;
+          const token = document.getElementById('token').value;
+          
+          if (password !== confirmPassword) {
+            alert('Passwords do not match');
+            return;
+          }
+          
+          try {
+            const response = await fetch('/api/update-password', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ token, password })
+            });
+            
+            const data = await response.json();
+            if (data.success) {
+              alert('Password updated successfully');
+              window.location.href = '/login';
+            } else {
+              alert(data.error || 'Failed to update password');
+            }
+          } catch (error) {
+            alert('An error occurred. Please try again.');
+          }
+        });
+      </script>
+    </body>
+    </html>
+  `;
+  
+  res.send(html);
+});
+
 app.post('/api/check-missing-files', async (req, res) => {
   const { userId, localDirectory } = req.body;
   const serverBasePath = path.join(baseDir, userId);
   const missingFiles = [];
 
+  logger.debug(`Received request to check missing files for user ${userId}`);
 
   async function checkDirectory(clientDir, serverPath, relativePath = '') {
     const serverFiles = await fs.promises.readdir(serverPath, {
       withFileTypes: true,
     });
+    logger.debug(`Checking server directory: ${serverPath}`);
 
     for (const serverFile of serverFiles) {
       const serverFilePath = path.join(serverPath, serverFile.name);
       const relativeFilePath = path.join(relativePath, serverFile.name);
 
       if (serverFile.isDirectory()) {
+        logger.debug(`Directory found on server: ${relativeFilePath}`);
         const clientSubDir = clientDir.children.find(
           (child) =>
             child.name === serverFile.name && child.type === 'directory'
@@ -5619,13 +5925,16 @@ app.post('/api/check-missing-files', async (req, res) => {
         if (clientSubDir) {
           await checkDirectory(clientSubDir, serverFilePath, relativeFilePath);
         } else {
+          logger.debug(`Missing directory in client: ${relativeFilePath}`);
           missingFiles.push(relativeFilePath);
         }
       } else {
+        logger.debug(`File found on server: ${relativeFilePath}`);
         const clientFile = clientDir.children.find(
           (child) => child.name === serverFile.name && child.type === 'file'
         );
         if (!clientFile) {
+          logger.debug(`Missing file in client: ${relativeFilePath}`);
           missingFiles.push(relativeFilePath);
         }
       }
@@ -5633,7 +5942,11 @@ app.post('/api/check-missing-files', async (req, res) => {
   }
 
   try {
+    logger.debug(`Initiating directory check for user ${userId}`);
     await checkDirectory(localDirectory, serverBasePath);
+    logger.debug(
+      `Missing files for user ${userId}: ${JSON.stringify(missingFiles)}`
+    );
     res.json({ missingFiles });
   } catch (error) {
     logger.error('Error checking missing files:', error);
