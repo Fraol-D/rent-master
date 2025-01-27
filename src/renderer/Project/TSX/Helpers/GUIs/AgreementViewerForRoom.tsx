@@ -43,10 +43,10 @@ const AgreementViewerForRoom = ({
   const getAgreements = async () => {
     const agreements = await agreementApi.getAgreementsByRoomIdApi(roomType.id);
 
-    // Sort agreements by signTime, oldest first
+    // Sort agreements by startTime, oldest first
     const sortedAgreements = agreements.sort(
       (a: agreements, b: agreements) =>
-        new Date(a.signTime).getTime() - new Date(b.signTime).getTime()
+        new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
     );
 
     // Find the index of the selected agreement
@@ -98,9 +98,7 @@ const AgreementViewerForRoom = ({
       prevIndex < Agreements.length - 1 ? prevIndex + 1 : prevIndex
     );
   };
-  const [paymentOption, setPaymentOption] = useState<
-    'deleteUnpaid' | 'keepUnpaid' | 'makeAllPaid'
-  >('deleteUnpaid');
+
   const [startTime, setStartTime] = useState('');
   const [endTime, setEndTime] = useState('');
   const [signDate, setSignDate] = useState('');
@@ -122,7 +120,7 @@ const AgreementViewerForRoom = ({
       setCustomDays('');
     }
   };
-  const { AllRoomPayInfo, setAllRoomPayInfo, AllTenants } = useGlobal();
+  const { AllRoomPayInfo, setAllRoomPayInfo, AllTenants,setAllRoomPayInfoHistory } = useGlobal();
   const movePaymentsToHistory = async (
     roomId: string,
     newAgreementId: string
@@ -147,6 +145,7 @@ const AgreementViewerForRoom = ({
       setAllRoomPayInfo((prev) =>
         prev.filter((payment) => payment.id !== payment.id)
       );
+      setAllRoomPayInfoHistory((prev) => [...prev, payment]);
     }
 
     // Now delete only the paid payments from room_pay_info
@@ -174,7 +173,6 @@ const AgreementViewerForRoom = ({
       }
       const startDate = new Date(startTime);
       const endDate = new Date(endTime);
-
       if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
         showAlert('Please enter valid dates for start time and end time');
         return;
@@ -185,54 +183,7 @@ const AgreementViewerForRoom = ({
         return;
       }
 
-      // Deal with deleting, keeping, and makeing true of payments
-      if (paymentOption === 'deleteUnpaid') {
-        const FutruePaymentsRaw = AllRoomPayInfo.filter(
-          (payment) =>
-            payment.roomId === roomType.id &&
-            payment.tenantId === roomType.tenantId &&
-            payment.Day >= Date.now() &&
-            payment.Paid === 0
-        );
-
-        if (FutruePaymentsRaw.length >= 1) {
-          for (let i = 0; i < FutruePaymentsRaw.length; i++) {
-            const element = FutruePaymentsRaw[i];
-            await deleteValue('room_pay_info', element.id);
-            setAllRoomPayInfo((prev) =>
-              prev.filter((payment) => payment.id !== element.id)
-            );
-          }
-        }
-      } else if (paymentOption === 'keepUnpaid') {
-      } else if (paymentOption === 'makeAllPaid') {
-        const FutruePaymentsRaw = AllRoomPayInfo.filter(
-          (payment) =>
-            payment.roomId === roomType.id &&
-            payment.tenantId === roomType.tenantId &&
-            payment.Day >= Date.now() &&
-            payment.Paid === 0
-        );
-        console.log(FutruePaymentsRaw.length, 'length');
-        if (FutruePaymentsRaw.length >= 1) {
-          for (let i = 0; i < FutruePaymentsRaw.length; i++) {
-            const element = FutruePaymentsRaw[i];
-            await updateValue(
-              'room_pay_info',
-              element.id,
-              'Paid',
-              1,
-              setChangeMade,
-              0
-            );
-            setAllRoomPayInfo((prev) =>
-              prev.map((payment) =>
-                payment.id === element.id ? { ...payment, Paid: true } : payment
-              )
-            );
-          }
-        }
-      }
+       
       const agreementId = uuidv4();
 
       // Move existing payments to history
@@ -349,7 +300,7 @@ const AgreementViewerForRoom = ({
                 roomType.selectedAgreementId
                   ? 'Current'
                   : 'Expired ' +
-                    (Agreements.length - Agreements.indexOf(Agreements[CurrentAgreementIndex]))}
+                    (Agreements.length - Agreements.indexOf(Agreements[CurrentAgreementIndex])-1)}
               </strong>{' '}
               {Agreements.length > 1 && (
                 <button
@@ -560,41 +511,7 @@ const AgreementViewerForRoom = ({
                     alignContent: 'flex-start',
                   }}
                 >
-                  <div className="radio-group">
-                    <label>
-                      <input
-                        type="radio"
-                        name="paymentOption"
-                        value="deleteUnpaid"
-                        checked={paymentOption === 'deleteUnpaid'}
-                        onChange={() => setPaymentOption('deleteUnpaid')}
-                      />
-                      Delete all unpaid future payments (If any)
-                    </label>
-                    <br />
-                    <label>
-                      <input
-                        type="radio"
-                        name="paymentOption"
-                        value="keepUnpaid"
-                        checked={paymentOption === 'keepUnpaid'}
-                        onChange={() => setPaymentOption('keepUnpaid')}
-                      />
-                      Keep all unpaid future payments (If any)
-                    </label>
-                    <br />
-                    <label>
-                      <input
-                        type="radio"
-                        name="paymentOption"
-                        value="makeAllPaid"
-                        checked={paymentOption === 'makeAllPaid'}
-                        onChange={() => setPaymentOption('makeAllPaid')}
-                      />
-                      Make all unpaid future payments paid (If any)
-                    </label>
-                    <br />
-                  </div>
+                
                   <div
                     className="AddTenantContainerinnerElement"
                     style={{

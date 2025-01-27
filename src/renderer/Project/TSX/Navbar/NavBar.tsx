@@ -16,6 +16,7 @@ import { getUserPrivileges } from '../../../App';
 import { dropAllRowsInTable } from '../../../../Backend/localServerApis';
 import { useConfirm } from '../../../components/useConfirm';
 import { useGlobal } from 'renderer/components/GlobalContext';
+import { useAlert } from 'renderer/components/useAlert';
 
 interface Props {
   Image: string;
@@ -81,7 +82,7 @@ const NavBar = ({
 }: Props) => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
-
+const {showAlert} = useAlert()
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(new Date());
@@ -535,6 +536,8 @@ const NavBar = ({
                     onClick={() => {
                       if (navigator.onLine) {
                         handleSyncOnlineToLocal();
+                      } else {
+                        showAlert("You are currently offline")
                       }
                     }}
                     style={{
@@ -552,9 +555,9 @@ const NavBar = ({
                   >
                     <p>
                       Sync{' '}
-                      {OnlineChanges === 0 &&
-                      ChangeMade == null &&
-                      ChangeMade == undefined &&
+                      {OnlineChanges === 0 ||
+                      ChangeMade == null ||
+                      ChangeMade == undefined ||
                       Number.isNaN(ChangeMade) ? (
                         <></>
                       ) : (

@@ -1114,7 +1114,7 @@ function Hello({ tryout, username, signup }: any) {
       setSelectedBranchId(branchId);
       setBranches(storageManager.get('Branches'));
 
-      //RefreshDataFromSqlite();
+     // RefreshDataFromSqlite();
     };
     init();
   }, []);

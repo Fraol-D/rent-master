@@ -89,7 +89,7 @@
 }
 .pain-point-content-Solution {
   background: var(--Secondary-Color30);
-  padding: 1.5rem;
+  padding: 1.5rem;    backdrop-filter: blur(5px);
   border-radius: 8px;
   box-shadow: 0 4px 6px var(--Secondary-Color20);
   width: 289px;

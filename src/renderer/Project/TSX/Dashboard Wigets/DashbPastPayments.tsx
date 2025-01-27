@@ -53,11 +53,11 @@ const DashbPastPayments = ({
   useEffect(() => {
     const calculatePayments = async () => {
       const allPayments: Payment[] = [];
-      const currentYear = new Date().getFullYear();
-      const yearStart = startOfYear(addYears(new Date(currentYear, 0, 1), -3));
-      const yearEnd = endOfYear(addYears(new Date(currentYear, 11, 31), 3));
+      const selectedYear = new Date().getFullYear();
+      let yearStart = startOfYear(new Date(selectedYear - 2, 0, 1));
+      let yearEnd = endOfYear(new Date(selectedYear + 2, 11, 31));
 
-      // Get all actual payments for the current year
+      // Get all actual payments for the selected year range
       const actualPayments = AllRoomPayInfo.filter(
         (payment) =>
           payment.Day >= yearStart.getTime() &&
@@ -65,77 +65,74 @@ const DashbPastPayments = ({
           payment.branchId === SelectedBranchId
       );
 
-      for (const room of RoomList) {
-        // Get tenant and agreement details
-        const tenant = AllTenants.find((t) => t.id === room.tenantId);
-        let startDate = tenant?.startTime || Date.now();
-        let endDate = null;
+      // Get historical payments
+      const historicalPayments = AllRoomPayInfoHistory.filter(
+        (payment) =>
+          payment.Day >= yearStart.getTime() &&
+          payment.Day <= yearEnd.getTime() &&
+          payment.branchId === SelectedBranchId
+      );
+      console.log(historicalPayments);
+      // Add ALL payments (both paid and unpaid) from actual and historical
+      const combinedPayments = [...actualPayments, ...historicalPayments].map(
+        (payment) => ({
+          id: payment.id,
+          Day: payment.Day,
+          Value: payment.Value,
+          Paid: payment.Paid,
+          roomId: payment.roomId,
+        })
+      );
 
-        // Handle fixed-term agreements
+      // Add all payments to allPayments
+      allPayments.push(...combinedPayments);
+
+      // Only generate predictions if we have payment history
+      for (const room of RoomList) {
+        // Skip rooms without tenants
+        if (!room.tenantId) continue;
+
+        const tenant = AllTenants.find((t) => t.id === room.tenantId);
+        if (!tenant) continue;
+
+        let startDate = new Date(tenant.startTime || Date.now()).getTime();
+        let endDate = yearEnd.getTime();
+
+        // Get agreement details if exists
         if (room.selectedAgreementId) {
           const agreements = AllAgreements.filter(
             (agreement) => agreement.id === room.selectedAgreementId
           );
           if (agreements.length > 0) {
-            startDate = agreements[0].startTime;
-            // Set endDate for fixed-term agreements
-            if (tenant?.SelectedAgreement === 'Fixed-Term') {
-              endDate = agreements[0].endTime;
+            startDate = Math.max(agreements[0].startTime, yearStart.getTime());
+            if (
+              tenant.SelectedAgreement === 'Fixed-Term' &&
+              agreements[0].endTime
+            ) {
+              endDate = Math.min(agreements[0].endTime, yearEnd.getTime());
             }
           }
         }
 
-        let currentDate = new Date(Math.max(startDate, yearStart.getTime()));
-        const finalEndDate = endDate
-          ? new Date(Math.min(endDate, yearEnd.getTime()))
-          : yearEnd;
+        let currentDate = new Date(startDate);
 
-        while (currentDate <= finalEndDate) {
+        while (currentDate.getTime() <= endDate) {
           const paymentId = `${room.id}-${currentDate.getTime()}`;
-          const actualPayment = actualPayments.find(
-            (p: any) => p.id === paymentId
-          );
 
-          allPayments.push({
-            id: paymentId,
-            Day: currentDate.getTime(),
-            Value: room.AgreedPrice,
-            Paid: actualPayment ? actualPayment.Paid === 1 : false,
-            roomId: room.id,
-          });
-
-          // Calculate next payment date using the same logic as PaymentProgressBarGUI
-          switch (room.PaymentCycleType) {
-            case '30':
-              currentDate = addDays(currentDate, 30);
-              break;
-            case '15':
-              currentDate = addDays(currentDate, 15);
-              break;
-            case '7':
-              currentDate = addDays(currentDate, 7);
-              break;
-            case 'daily':
-              currentDate = addDays(currentDate, 1);
-              break;
-            case 'monthly':
-              currentDate = addMonths(currentDate, 1);
-              break;
-            case 'weekly':
-              currentDate = addDays(currentDate, 7);
-              break;
-            case 'Annually':
-              currentDate = addYears(currentDate, 1);
-              break;
-            case 'custom':
-              currentDate = addDays(
-                currentDate,
-                room.PaymentCycleCustomeDays || 30
-              );
-              break;
-            default:
-              currentDate = addMonths(currentDate, 1);
+          // Only add if payment doesn't already exist
+          if (!allPayments.some((p) => p.id === paymentId)) {
+            // Add as unpaid prediction
+            allPayments.push({
+              id: paymentId,
+              Day: currentDate.getTime(),
+              Value: room.AgreedPrice,
+              Paid: false,
+              roomId: room.id,
+            });
           }
+
+          // Calculate next payment date
+          currentDate = calculateNextPaymentDate(currentDate, room);
         }
       }
 
@@ -144,7 +141,28 @@ const DashbPastPayments = ({
 
     calculatePayments();
   }, [RoomList, AllTenants]);
-
+  const calculateNextPaymentDate = (currentDate: Date, room: any) => {
+    switch (room.PaymentCycleType) {
+      case '30':
+        return addDays(currentDate, 30);
+      case '15':
+        return addDays(currentDate, 15);
+      case '7':
+        return addDays(currentDate, 7);
+      case 'daily':
+        return addDays(currentDate, 1);
+      case 'monthly':
+        return addMonths(currentDate, 1);
+      case 'weekly':
+        return addDays(currentDate, 7);
+      case 'Annually':
+        return addYears(currentDate, 1);
+      case 'custom':
+        return addDays(currentDate, room.PaymentCycleCustomeDays || 30);
+      default:
+        return addMonths(currentDate, 1);
+    }
+  };
   useEffect(() => {
     const currentDate = new Date();
 
@@ -160,6 +178,20 @@ const DashbPastPayments = ({
       const tenant = AllTenants.find((t) => t.id === room?.tenantId);
 
       if (tenant) {
+        // Check if tenant has any unpaid payments
+        const tenantPayments = predictedPayments.filter((p)=>p.Day < new Date(AllAgreements.find((a)=>a.id === room?.selectedAgreementId)?.endTime || Date.now()).getTime()).filter(
+          (p) => {
+            const room = RoomList.find((r) => r.id === p.roomId);
+            return room?.tenantId === tenant.id;
+          }
+        );
+        console.log(tenantPayments, AllAgreements.find((a)=>a.id === room?.selectedAgreementId)?.endTime,tenant.name);
+        const hasUnpaidPayments = tenantPayments.some(p => !p.Paid);
+        
+        if (!hasUnpaidPayments) {
+          return acc;
+        }
+
         const existingTenant = acc.find((item) => item.tenant.id === tenant.id);
         if (existingTenant) {
           // Update existing tenant's data

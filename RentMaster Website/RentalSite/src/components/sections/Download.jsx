@@ -45,7 +45,7 @@ const Download = () => {
             <div className="download-options">
            
               <div className="platform-buttons">
-                <button className="platform-button" onClick={() => {
+                <button className="platform-button" style={{backgroundColor: 'var(--Secondary-Color)'}} onClick={() => {
                   window.open('https://rentmaster.markethubet.com/downloads/windows', '_blank');
                 }}>
                   <FaWindows className="platform-icon" />

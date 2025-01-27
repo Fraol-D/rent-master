@@ -1,4 +1,4 @@
-import { FaFacebook, FaTwitter, FaLinkedin } from 'react-icons/fa';
+import { FaFacebook, FaTwitter, FaLinkedin ,FaInstagram} from 'react-icons/fa';
 const Footer = () => {
   return (
     <footer className="footer">
@@ -24,6 +24,9 @@ const Footer = () => {
             </a>
             <a href="https://www.linkedin.com/company/rent-master-et/" target="_blank" rel="noopener noreferrer">
               <FaLinkedin style={{ marginRight: '8px', width:"30px", height:"30px" }} width="30px" />
+            </a>
+            <a href="https://www.instagram.com/rentmaster_official/" target="_blank" rel="noopener noreferrer">
+              <FaInstagram style={{ marginRight: '8px', width:"30px", height:"30px" }} />
             </a>
           </div>
         </div>

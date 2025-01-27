@@ -3,6 +3,7 @@ import {
   getAllUsers,
   getValuesFromOnlineDatabase,
   getValuesWithSql_Online,
+  sendEmailAPI,
   verifyAppUserCredentials,
   verifyCredentials,
 } from '../../../../Backend/OnlineServerApis';
@@ -53,6 +54,8 @@ const LoginPage = ({
     try {
       if (SelectedToLoginWith === 'Admin') {
         const hashedPassword = CryptoJS.SHA256(password).toString();
+        const hashedPassword2 = CryptoJS.SHA256("ABC123").toString();
+        console.log(hashedPassword, hashedPassword2);
         const isValid = await verifyCredentials(email, hashedPassword);
         if (isValid) {
           // Fetch user data if credentials are valid
@@ -114,6 +117,12 @@ const LoginPage = ({
   };
   const handleLogin = async (user: any) => {
     setErrorMessage('Login successful!');
+   await sendEmailAPI(
+      user.email, 
+      'User has signed in', 
+      `A user has signed in to this account\n\nDevice Info:\nBrowser: ${navigator.userAgent}\nPlatform: ${navigator.platform}\nLanguage: ${navigator.language}\nLocation: ${window.location.href}\nTimestamp: ${new Date().toLocaleString()}`, 
+      user.id
+    );
     storageManager.set('users', [
       {
         id: user.id,

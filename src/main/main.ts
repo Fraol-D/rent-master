@@ -13,7 +13,7 @@ import mime from 'mime';
 const nodemailer = require('nodemailer');
 const { translate, detectLanguage } = require('afrotranslate');
 const Store = require('electron-store');
-const store = new Store();
+const store = new Store({encryptionKey: 'LOmndonlkteafodysrday'});
 const getStoreValue = (key: string) => {
   return store.get(key);
 };

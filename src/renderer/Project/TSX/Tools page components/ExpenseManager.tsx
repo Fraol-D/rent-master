@@ -93,7 +93,7 @@ const ExpenseManager = ({
   }, [editingExpenseId]);
 
   const getExpenses = async () => {
-    const rawExpenses = AllExpenses;
+    const rawExpenses = AllExpenses.filter((expense)=> expense.branchId === SelectedBranchId);
 
     const mappedExpenses = rawExpenses.map((expense: any) => ({
       id: expense.id,

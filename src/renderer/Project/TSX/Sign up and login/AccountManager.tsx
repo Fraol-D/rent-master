@@ -221,7 +221,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
         if (!userONLINE && allUsers[0].Allowed) {
           console.log(`[${getSeconds()}s] Falling back to local data...`);
           setisSignedIn(true);
-          setIsAllowedState(allUsers[0].Allowed);
+          setIsAllowedState(allUsers[0].Allowed); setHasNotPaid(true);
           setSelectedUserId(allUsers[0].id);
 
           if (!storageManager.get('SelectedAppUserId')) {
@@ -506,7 +506,8 @@ const AccountManager = (React.FC<MyComponentProps> = ({
   }, [isSignedIn, Refresh]);
   const syncWithOnline = async (selectedUserId: string) => {
     if (window.electron) {
-      setIsSyncing(true);
+      if(navigator.onLine){
+          setIsSyncing(true);
       syncOnlineToLocalBranchWithBool(
         selectedUserId,
         storageManager.get('SelectedBranchId'),
@@ -514,6 +515,8 @@ const AccountManager = (React.FC<MyComponentProps> = ({
         setSyncProgress,
         RefreshDataFromSqlite
       );
+      }
+    
     }
   };
   // Effect to check trial status when signed in
@@ -591,7 +594,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
             If not,
           {" "}  <a
               onClick={handleFullSignOutAndDeleteUser}
-            style={{color:"var(--Primary-Color)", cursor:"pointer"}}
+            style={{color:"var(--Text-Color)", cursor:"pointer", textDecoration: 'underline'}}
             >
               Sign out?
             </a>
@@ -639,7 +642,7 @@ const AccountManager = (React.FC<MyComponentProps> = ({
             Logged in as:{' '}
             <strong>{storageManager.get('users')[0].email || ''}</strong>{" "}<a
               onClick={handleFullSignOutAndDeleteUser}
-              style={{color:"var(--Primary-Color)", cursor:"pointer"}}
+              style={{color:"var(--Text-Color)", cursor:"pointer", textDecoration: 'underline'}}
             >
               Sign out?
             </a>
@@ -1312,8 +1315,13 @@ const AccountManager = (React.FC<MyComponentProps> = ({
       setSelectedPage('Rooms');
     }
     setViewBranchManagementPage(false);
-    if (!window.electron) RefreshDataFromSqlite();
+   if (window.electron) if(navigator.onLine) {
+        
     syncWithOnline(SelectedUserId);
+    } else {
+ RefreshDataFromSqlite();
+    }
+  
   };
   const [isEditingBranch, setIsEditingBranch] = useState(false);
   const [showEditBranchModal, setShowEditBranchModal] = useState(false);
@@ -3294,48 +3302,93 @@ const AccountManager = (React.FC<MyComponentProps> = ({
                     flexDirection: 'column',
                   }}
                 >
-                  {isSignedIn && (
+                  {ForgotPasswordScreen ? (
                     <div
                       style={{
                         display: 'flex',
-                        alignItems: 'center',
-                        marginBottom: 'var(--10px-V)',
-                        marginTop: 'var(--10px-V)',
+                        flexDirection: 'column',
+                        gap: 'var(--10px-V)',
+                        padding: 'var(--20px-V)',
                         background: 'var(--Secondary-Color20)',
-                        padding: 'var(--7px-V)',
-                        borderRadius: 'var(--5px-V)',
-                        boxShadow:
-                          'var(--0px-V) var(--4px-V) var(--4px-V) var(--0px-V) rgba(0, 0, 0, 0.25)',
+                        borderRadius: 'var(--8px-V)',
                       }}
                     >
-                      Found an account:{' '}
-                      {storageManager.get('users')[0].companyName}{' '}
-                      <button
-                        style={{ marginLeft: 'var(--10px-V)' }}
-                        onClick={() => {
-                          window.location.pathname = '/app';
+                      <h2>Forgot Password</h2>
+                      <input
+                        type="email"
+                        placeholder="Enter your email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        style={{
+                          padding: 'var(--8px-V)',
+                          borderRadius: 'var(--4px-V)',
                         }}
-                      >
-                        Open
-                      </button>
+                      />
+                      <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 'var(--10px-V)'}}>
+                        <button style={{width: '50%'}} onClick={() => setForgotPasswordScreen(false)}>
+                          Back 
+                        </button>
+                        <button style={{width: '50%'}} onClick={handleForgotPassword}>
+                          Submit 
+                        </button>
+                      </div>
+                      {ForgotPasswordLoading && (
+                        <img src={loadingGif} style={{width: '30px', height: '30px'}} alt="Loading..." />
+                      )}
+                      {resetPasswordEmailSent && (
+                        <p>
+                          Reset password email sent. <br /> Check your email for the
+                          link to reset your password.
+                        </p>
+                      )}
                     </div>
+                  ) : (
+                    <>
+                      {isSignedIn && (
+                        <div
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            marginBottom: 'var(--10px-V)',
+                            marginTop: 'var(--10px-V)',
+                            background: 'var(--Secondary-Color20)',
+                            padding: 'var(--7px-V)',
+                            borderRadius: 'var(--5px-V)',
+                            boxShadow:
+                              'var(--0px-V) var(--4px-V) var(--4px-V) var(--0px-V) rgba(0, 0, 0, 0.25)',
+                          }}
+                        >
+                          Found an account:{' '}
+                          {storageManager.get('users')[0].companyName}{' '}
+                          <button
+                            style={{ marginLeft: 'var(--10px-V)' }}
+                            onClick={() => {
+                              window.location.pathname = '/app';
+                            }}
+                          >
+                            Open
+                          </button>
+                        </div>
+                      )}
+                      <LoginPage
+                        setisSignUpMode={setisSignUpMode}
+                        setisSignedIn={setisSignedIn}
+                        setChangeMade={setChangeMade}
+                        email={email}
+                        password={password}
+                        setEmail={setEmail}
+                        username={username}
+                        setUsername={setUsername}
+                        setPassword={setPassword}
+                        setSelectedAppUser={setSelectedAppUser}
+                        setAppUserManagerShow={setAppUserManagerShow}
+                        fetchBranches={handleShowBranches}
+                        ForgotPassword={ForgotPassword}
+                        RefreshComponent={RefreshComponent}
+                        setViewBranchManagementPage={setViewBranchManagementPage}
+                      />
+                    </>
                   )}
-                  <LoginPage
-                    setisSignUpMode={setisSignUpMode}
-                    setisSignedIn={setisSignedIn}
-                    setChangeMade={setChangeMade}
-                    email={email}
-                    password={password}
-                    setEmail={setEmail}
-                    username={username}
-                    setUsername={setUsername}
-                    setPassword={setPassword}
-                    setSelectedAppUser={setSelectedAppUser}
-                    setAppUserManagerShow={setAppUserManagerShow}
-                    fetchBranches={handleShowBranches}
-                    RefreshComponent={RefreshComponent}
-                    setViewBranchManagementPage={setViewBranchManagementPage}
-                  />
                 </div>
               )
             ) : (

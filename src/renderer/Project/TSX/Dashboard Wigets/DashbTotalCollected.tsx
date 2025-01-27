@@ -112,7 +112,7 @@ const DashbTotalCollected = ({
           payment.Day <= yearEnd.getTime() &&
           payment.branchId === SelectedBranchId
       );
-
+      console.log(historicalPayments);
       // Add ALL payments (both paid and unpaid) from actual and historical
       const combinedPayments = [...actualPayments, ...historicalPayments].map(
         (payment) => ({

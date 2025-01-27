@@ -11,8 +11,8 @@
   padding: 1rem 2rem;
   z-index: 1000;
   height: 60px;
-  box-shadow: 0 2px 8px rgba(166, 170, 186, 0.15);
-  border-bottom: 1px solid rgba(166, 170, 186, 0.2);
+  /* box-shadow: 0 2px 8px rgba(166, 170, 186, 0.15);
+  border-bottom: 1px solid rgba(166, 170, 186, 0.2); */
 }
 
 .logo-highlight {
