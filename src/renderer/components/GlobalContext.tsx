@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
 import tl from '../translator';
+import { storageManager } from 'renderer/storeManager';
 
 interface GlobalContextType {
   AllRoomPayInfo: RoomPayInfo[];
@@ -41,8 +42,9 @@ interface GlobalContextType {
 
   langCode: number;
   setLangCode: React.Dispatch<React.SetStateAction<number>>;
-
   text: object;
+  langSwitch: Function;
+  ChangeLanguage: Function; 
 }
 
 const GlobalContext = createContext<GlobalContextType | undefined>(undefined);
@@ -81,7 +83,12 @@ function tl_spreader(obj:object, i:number) {
   })
   return obj
 }
-const text = tl_spreader(structuredClone(tl), langCode);
+const text:object= tl_spreader(structuredClone(tl), langCode);
+const ChangeLanguage = async (lang:number) => {
+  storageManager.set('LangCode', lang);
+  setLangCode(lang);
+};  
+const langSwitch = () => {if(langCode == 1) {ChangeLanguage(0)} else {ChangeLanguage(1)};}
 const [isMobileState, setIsMobileState] = useState<boolean>(false);
 useEffect(() => {
   setIsMobileState(isMobile());
@@ -122,8 +129,8 @@ return (
         tutorialNewRoomId,setTutorialNewRoomId,
         isOnTutorial,
         setIsOnTutorial,isMobileState,
-        setLangCode, langCode,
-        text
+        text,
+        ChangeLanguage, langSwitch 
       }}
     >
       {children}
