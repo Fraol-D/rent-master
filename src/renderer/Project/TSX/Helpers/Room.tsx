@@ -442,14 +442,14 @@ const Room = ({
 
         await uploadTenantDocumentsV2(
           [file],
-          roomType.id,
+          `Room ${roomType.roomIndex}, Floor ${roomType.floor} - ${roomType.id}`,
           tenant_name,
           tenantId,
           new Date(startTime).toDateString()
         );
       }
       } else {
-        await RenameAddTenantDocumentFolder(    roomType.id,
+        await RenameAddTenantDocumentFolder(    `Room ${roomType.roomIndex}, Floor ${roomType.floor} - ${roomType.id}`,
           tenant_name,
           tenantId,
           new Date(startTime).toDateString());

@@ -6,6 +6,23 @@ const isTryout = window.location.href.includes('tryout');
 const secretKey = window.electron ? '' : import.meta.env.VITE_ENCRYPTION_KEY;
 const secretKeyKEY = window.electron ? '' : import.meta.env.VITE_secretKeyKEY;
 
+// One month in milliseconds (30 days)
+const ONE_MONTH = 30 * 24 * 60 * 60 * 1000;
+
+const withExpiration = (value) => {
+  return {
+    value,
+    timestamp: new Date().getTime(),
+    expiresIn: ONE_MONTH
+  };
+};
+
+const isExpired = (timestamp, expiresIn) => {
+  if (!timestamp || !expiresIn) return false;
+  const now = new Date().getTime();
+  return now - timestamp > expiresIn;
+};
+
 const encrypt = (data) => {
   return CryptoJS.AES.encrypt(JSON.stringify(data), secretKey).toString();
 };
@@ -38,6 +55,13 @@ const electronStorage = {
     try {
       const encryptedKey = encryptKey(key);
       const storedData = window.electron.store.get(encryptedKey);
+      if (storedData && storedData.timestamp) {
+        if (isExpired(storedData.timestamp, storedData.expiresIn)) {
+          window.electron.store.delete(encryptedKey);
+          return null;
+        }
+        return storedData.value;
+      }
       return storedData;
     } catch (error) {
       console.error('Error reading from electron store:', error);
@@ -47,7 +71,7 @@ const electronStorage = {
   set: (key, value) => {
     try {
       const encryptedKey = encryptKey(key);
-      const dataToStore = value;
+      const dataToStore = withExpiration(value);
       window.electron.store.set(encryptedKey, dataToStore);
     } catch (error) {
       console.error('Error writing to electron store:', error);
@@ -59,27 +83,41 @@ const webStorage = {
   get: (key) => {
     try {
       const encryptedKey = encryptKey(key);
-      const storedData = localStorage.getItem(encryptedKey);
-      return encryptData ? decrypt(storedData) : JSON.parse(storedData);
+      const storage = localStorage.getItem('rememberMe') === 'false' && encryptData ? sessionStorage : localStorage;
+      const storedData = storage.getItem(encryptedKey);
+      if (!storedData) return null;
+      
+      const parsedData = encryptData ? decrypt(storedData) : JSON.parse(storedData);
+      if (parsedData && parsedData.timestamp) {
+        if (isExpired(parsedData.timestamp, parsedData.expiresIn)) {
+          storage.removeItem(encryptedKey);
+          return null;
+        }
+        return parsedData.value;
+      }
+      return parsedData;
     } catch (error) {
-      console.error('Error reading from localStorage:', error);
+      console.error('Error reading from storage:', error);
       return null;
     }
   },
   set: (key, value) => {
     try {
       const encryptedKey = encryptKey(key);
-      const dataToStore = encryptData ? encrypt(value) : JSON.stringify(value);
-      localStorage.setItem(encryptedKey, dataToStore);
+      const dataWithExpiration = withExpiration(value);
+      const dataToStore = encryptData ? encrypt(dataWithExpiration) : JSON.stringify(dataWithExpiration);
+      const storage = localStorage.getItem('rememberMe') === 'false' && encryptData ? sessionStorage : localStorage;
+      storage.setItem(encryptedKey, dataToStore);
     } catch (error) {
-      console.error('Error writing to localStorage:', error);
+      console.error('Error writing to storage:', error);
     }
   },
   clear: () => {
     try {
-      localStorage.clear();
+      const storage = localStorage.getItem('rememberMe') === 'false' && encryptData ? sessionStorage : localStorage;
+      storage.clear();
     } catch (error) {
-      console.error('Error clearing localStorage:', error);
+      console.error('Error clearing storage:', error);
     }
   },
 };

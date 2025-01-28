@@ -99,7 +99,7 @@ const DocumentInteractor: React.FC<DocumentInteractorProps> = ({
           .replace(/,/g, '');
 
         const roomDocs = await getTenantRoomDocuments(
-          room.id,
+          `Room ${room.roomIndex}, Floor ${room.floor} - ${room.id}`,
           `${formattedName}, ${formattedDate}, ${tenant.id}`
         );
         console.log(roomDocs);
@@ -169,7 +169,7 @@ const DocumentInteractor: React.FC<DocumentInteractorProps> = ({
 
             const results = await AddRoomDocuments(
               filteredFiles,
-              roomId,
+              `Room ${room?.roomIndex}, Floor ${room?.floor} - ${room?.id}`,
               tenantName,
               tenantId,
               AddedTimeReal
@@ -224,7 +224,7 @@ const DocumentInteractor: React.FC<DocumentInteractorProps> = ({
           setSelectedDocument(null);
         }
       } else {
-        const roomId = room ? room.id : 'Add a tenant documents';
+        const roomId = room ? `Room ${room.roomIndex}, Floor ${room.floor} - ${room.id}` : 'Add a tenant documents';
         const result = await deleteRoomDocument(roomId, fileName);
         if (result && result.message === 'Document deleted successfully') {
           showAlert('Document deleted successfully', 'success');
@@ -253,7 +253,7 @@ const handleOpenDocument = async () => {
        // Web version - download file
        try {
         const fileName = getFileName(selectedDocument);
-        const roomId = room?.status === "Taken" ? room.id : 'Add a tenant documents';
+        const roomId = room?.status === "Taken" ? `Room ${room.roomIndex}, Floor ${room.floor} - ${room.id}` : 'Add a tenant documents';
         
         await downloadDocument(roomId, fileName);
       } catch (error) {

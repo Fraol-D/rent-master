@@ -140,6 +140,14 @@ const LoginPage = ({
     if (!window.electron) window.location.pathname = '/app';
     setisSignedIn(true);
   };
+  const [rememberMe, setRememberMe] = useState(localStorage.getItem('rememberMe') === 'true');
+
+  const handleRememberMeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const checked = e.target.checked;
+    setRememberMe(checked);
+    localStorage.setItem('rememberMe', checked.toString());
+  };
+
 
   const handleOrLoginButtonClick = () => {
     if (window.electron) setisSignUpMode(true);
@@ -292,7 +300,12 @@ const LoginPage = ({
                 gap: 'var(--10px-V)',
               }}
             >
-              <input type="checkbox" id="remember-me" />
+              <input 
+                type="checkbox" 
+                id="remember-me" 
+                checked={rememberMe}
+                onChange={handleRememberMeChange}
+              />
               <label
                 htmlFor="remember-me"
                 style={{ color: 'var(--Text-Color-Grey)' }}

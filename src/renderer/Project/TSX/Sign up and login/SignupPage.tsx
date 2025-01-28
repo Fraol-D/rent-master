@@ -717,8 +717,7 @@ Package Type: ${!window.electron
             }}
           >
             Sign up
-          </h1>{' '}
-          <button onClick={handleOrLoginButtonClick}>Or login</button>
+          </h1>
         </div>
         <p
           style={{
@@ -737,7 +736,7 @@ Package Type: ${!window.electron
           disabled={formStage !== 'initial'}
           style={{
             color: formStage !== 'initial' ? 'var(--Text-Color-Grey)' : '',
-          }} // Disable if not in initial stage
+          }}
         />
         <input
           type="password"
@@ -745,10 +744,10 @@ Package Type: ${!window.electron
           onChange={handlePasswordChange}
           className="userName-input"
           placeholder="Password"
-          disabled={formStage !== 'initial'} // Disable if not in initial stage
+          disabled={formStage !== 'initial'}
           style={{
             color: formStage !== 'initial' ? 'var(--Text-Color-Grey)' : '',
-          }} // Disable if not in initial stage
+          }}
         />
         <input
           type="password"
@@ -758,128 +757,177 @@ Package Type: ${!window.electron
           }}
           className="userName-input"
           placeholder="Repeat password"
-          disabled={formStage !== 'initial'} // Disable if not in initial stage
+          disabled={formStage !== 'initial'}
           style={{
             color: formStage !== 'initial' ? 'var(--Text-Color-Grey)' : '',
-          }} // Disable if not in initial stage
+          }}
         />
+        {errorMessage && <p className="errorMessage">{errorMessage}</p>}
 
-        {formStage === 'initial' && (
-          <button onClick={handleSubmit} className="LoginButton">
-            Submit {' ▶'}
-          </button>
-        )}
+        <br />
 
-        {formStage === 'verification' && (
-          <>
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            width: '90%',
+            gap: 'var(--10px-V)',
+          }}
+        >
+          {formStage === 'initial' && (
             <button
-              onClick={handleBack}
+              onClick={handleSubmit}
               className="LoginButton"
-              style={{ border: 'none' }}
+              style={{
+                background: 'var(--Primary-Color)',
+                color: 'black',
+                marginLeft: 'auto',
+                marginRight: 'auto',
+              }}
             >
-              Back
+              Submit
             </button>
-            {!verificationSuccess && (
-              <>
-                <hr style={{ width: '100%', marginBottom: 'var(--10px-V)' }} />
-                <p
-                  style={{
-                    color: 'var(--Text-Color-Grey)',
-                    marginBottom: 'var(--5px-V)',
-                    marginTop: 'var(--5px-V)',
-                  }}
-                >
-                  Verification code sent to your email
-                </p>
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-around',
-                  }}
-                >
-                  <input
-                    type="text"
-                    value={userCode}
-                    onChange={(e) => setUserCode(e.target.value)}
-                    placeholder="Enter Code"
-                    className="userName-input"
+          )}
+
+          {formStage === 'verification' && (
+            <>
+              <button
+                onClick={handleBack}
+                className="LoginButton"
+                style={{
+                  background: 'var(--Primary-Color)',
+                  color: 'black',
+                  marginLeft: 'auto',
+                  marginRight: 'auto',
+                }}
+              >
+                Back
+              </button>
+              {!verificationSuccess && (
+                <>
+                  <hr style={{ width: '100%', marginBottom: 'var(--10px-V)' }} />
+                  <p
                     style={{
-                      width: 'var(--80px-V)',
-                      marginBottom: 'var(--0px-V)',
+                      color: 'var(--Text-Color-Grey)',
+                      marginBottom: 'var(--5px-V)',
+                      marginTop: 'var(--5px-V)',
                     }}
-                  />{' '}
-                  <button onClick={handleVerify} className="LoginButton">
-                    Verify
+                  >
+                    Verification code sent to your email
+                  </p>
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-around',
+                    }}
+                  >
+                    <input
+                      type="text"
+                      value={userCode}
+                      onChange={(e) => setUserCode(e.target.value)}
+                      placeholder="Enter Code"
+                      className="userName-input"
+                      style={{
+                        width: 'var(--80px-V)',
+                        marginBottom: 'var(--0px-V)',
+                      }}
+                    />
+                    <button
+                      onClick={handleVerify}
+                      className="LoginButton"
+                      style={{
+                        background: 'var(--Primary-Color)',
+                        color: 'black',
+                      }}
+                    >
+                      Verify
+                    </button>
+                  </div>
+                  <button
+                    onClick={handleSubmit}
+                    style={{
+                      width: 'auto',
+                      background: 'var(--Primary-Color)',
+                      color: 'black',
+                    }}
+                  >
+                    Resend code
                   </button>
-                </div>
-                <button onClick={handleSubmit} style={{ width: 'auto' }}>
-                  Resend code
-                </button>
-              </>
-            )}
-            {verificationSuccess && (
-              <>
-                <p
-                  style={{
-                    color: 'var(--Text-Color-Grey)',
-                    marginBottom: 'var(--5px-V)',
-                    marginTop: 'var(--5px-V)',
-                    textAlign: 'center',
-                  }}
-                >
-                  Verification successful! <br />
-                  Now enter your info
-                </p>
-                <input
-                  type="text"
-                  value={fullName}
-                  onChange={handleFullNameChange}
-                  placeholder="Full Name"
-                  className="userName-input"
-                />
-                <div
-                  style={{
-                    width: '92%',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                  }}
-                >
-                  {' '}
+                </>
+              )}
+              {verificationSuccess && (
+                <>
+                  <p
+                    style={{
+                      color: 'var(--Text-Color-Grey)',
+                      marginBottom: 'var(--5px-V)',
+                      marginTop: 'var(--5px-V)',
+                      textAlign: 'center',
+                    }}
+                  >
+                    Verification successful! <br />
+                    Now enter your info
+                  </p>
                   <input
                     type="text"
-                    value={companyName}
-                    onChange={handleCompanyNameChange}
-                    placeholder="Company Name"
-                    style={{ width: '55%', marginBottom: '0px' }}
+                    value={fullName}
+                    onChange={handleFullNameChange}
+                    placeholder="Full Name"
                     className="userName-input"
                   />
-                  <input
-                    type="text"
-                    value={phoneNumber}
-                    onChange={handlePhoneNumberChange}
-                    style={{ width: '38%', marginBottom: '0px' }}
-                    placeholder="Phone Number"
-                    className="userName-input"
-                  />
-                </div>
+                  <div
+                    style={{
+                      width: '92%',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                    }}
+                  >
+                    <input
+                      type="text"
+                      value={companyName}
+                      onChange={handleCompanyNameChange}
+                      placeholder="Company Name"
+                      style={{ width: '55%', marginBottom: '0px' }}
+                      className="userName-input"
+                    />
+                    <input
+                      type="text"
+                      value={phoneNumber}
+                      onChange={handlePhoneNumberChange}
+                      style={{ width: '38%', marginBottom: '0px' }}
+                      placeholder="Phone Number"
+                      className="userName-input"
+                    />
+                  </div>
 
-                <br />
-                <button onClick={handleSignUp} className="LoginButton">
-                  Sign Up ▶
-                </button>
-              </>
-            )}
-          </>
-        )}
-
-        {errorMessage && (
-          <>
-            <br />
-            <p className="errorMessage">{errorMessage}</p>
-          </>
-        )}
+                  <br />
+                  <button
+                    onClick={handleSignUp}
+                    className="LoginButton"
+                    style={{
+                      background: 'var(--Primary-Color)',
+                      color: 'black',
+                      marginLeft: 'auto',
+                      marginRight: 'auto',
+                    }}
+                  >
+                    Sign Up
+                  </button>
+                </>
+              )}
+            </>
+          )}
+        </div>
       </div>
+      <br />
+      <a
+        href="#"
+        style={{ color: 'var(--Text-Color-Grey)', cursor: 'pointer' }}
+        onClick={handleOrLoginButtonClick}
+      >
+        Already have an account? Login
+      </a>
     </>
   );
 };

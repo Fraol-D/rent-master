@@ -909,7 +909,7 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
               )
             : (await GetReceiptFileApi(
                 date,
-                roomType.id,
+                `Room ${roomType.roomIndex}, Floor ${roomType.floor} - ${roomType.id}`,
                 AllTenants.find((t: tenant) => t.id === roomType.tenantId)
               )) || 'COMUNDEFINED';
         }
@@ -953,7 +953,7 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
                 const results = window.electron
                   ? await uploadReceiptDocuments(
                       [file],
-                      roomType.id,
+                      `Room ${roomType.roomIndex}, Floor ${roomType.floor} - ${roomType.id}`,
                       tenant.name,
                       tenant.id,
                       formattedDate,
@@ -961,7 +961,7 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
                     )
                   : await uploadReceiptDocumentsOnline(
                       file,
-                      roomType.id,
+                      `Room ${roomType.roomIndex}, Floor ${roomType.floor} - ${roomType.id}`,
                       AllTenants,
                       tenant.id,
                       formattedDate,
@@ -1059,7 +1059,7 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
                 } else {
                   deleteReceipt2(
                     date,
-                    roomType.id,
+                    `Room ${roomType.roomIndex}, Floor ${roomType.floor} - ${roomType.id}`,
                     AllTenants.find((t: tenant) => t.id === roomType.tenantId)
                   );
                   refresh(); // Refresh the UI
@@ -1269,7 +1269,7 @@ const PaymentProgressBarGUI: React.FC<Props> = ({
             roomType.id,
             tenant
           )
-        : await GetReceiptFileApi(date, roomType.id, tenant);
+        : await GetReceiptFileApi(date, `Room ${roomType.roomIndex}, Floor ${roomType.floor} - ${roomType.id}`, tenant);
       console.log(result);
       return result || 'Add receipt';
     } catch (error) {

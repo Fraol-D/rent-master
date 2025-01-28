@@ -36,6 +36,7 @@ import { useAlert } from 'renderer/components/useAlert';
 import { useConfirm } from 'renderer/components/useConfirm';
 import { useGlobal } from 'renderer/components/GlobalContext';
 import DatabasePage from './DatabasePage';
+import FileTreeViewer from '../Helpers/FileTreeViewer';
 
 const ToolsPage = ({
   setToolsSelectedPage,
@@ -1525,18 +1526,22 @@ const ToolsPage = ({
           whereClause += ` AND id <= ${new Date(endDate).getTime() / 1000}`;
         }
 
-        // Add pagination params directly to the where clause
+        // First get total count for pagination
+        const countQuery = `SELECT COUNT(*) as total FROM Exchange_RatesUSDtoETB ${whereClause}`;
+        const totalCount = await getValuesWithSql_Online('', countQuery);
+        const total = totalCount[0]?.total || 0;
+        setTotalPages(Math.ceil(total / ratesPerPage));
+
+        // Then get paginated data
         const offset = (currentPage - 1) * ratesPerPage;
         whereClause += ` ORDER BY id DESC LIMIT ${ratesPerPage} OFFSET ${offset}`;
 
-        // Single query to get the data
         const rates = await getValuesWithSql_Online(
           'Exchange_RatesUSDtoETB',
           whereClause
         );
 
         setExchangeRates(rates);
-        setTotalPages(Math.ceil(rates.length / ratesPerPage));
       }
     } catch (error) {
       console.error('Error fetching exchange rates:', error);
@@ -2059,72 +2064,16 @@ const ToolsPage = ({
           ) : null}
           {ToolsSelectedPage === 'Database' && (
             <>
-              {/* <ExpenseManager
-                // Header controls
-                showFilters={showFilters}
-                setShowFilters={setShowFilters}
-                ShowDefaultNotificationsSettings={
-                  ShowDefaultNotificationsSettings
-                }
-                setShowDefaultNotificationsSettings={
-                  setShowDefaultNotificationsSettings
-                }
-                handleAddExpense={handleAddExpense}
-                resetFilters={resetFilters}
-                // Filter controls
-                searchTerm={searchTerm}
-                setSearchTerm={setSearchTerm}
-                maxPrice={maxPrice}
-                setMaxPrice={setMaxPrice}
-                minPrice={minPrice}
-                setMinPrice={setMinPrice}
-                fullBuildingFilter={fullBuildingFilter}
-                setFullBuildingFilter={setFullBuildingFilter}
-                floorSearch={floorSearch}
-                setFloorSearch={setFloorSearch}
-                roomSearch={roomSearch}
-                setRoomSearch={setRoomSearch}
-                doesReoccurFilter={doesReoccurFilter}
-                setDoesReoccurFilter={setDoesReoccurFilter}
-                reoccurDays={reoccurDays}
-                setReoccurDays={setReoccurDays}
-                dateFilter={dateFilter}
-                setDateFilter={setDateFilter}
-                // Notification settings
-                sendEmail={sendEmail}
-                setSendEmail={setSendEmail}
-                emailTo={emailTo}
-                setEmailTo={setEmailTo}
-                emailDaysBefore={emailDaysBefore}
-                setEmailDaysBefore={setEmailDaysBefore}
-                sendSms={sendSms}
-                setSendSms={setSendSms}
-                smsTo={smsTo}
-                setSmsTo={setSmsTo}
-                smsDaysBefore={smsDaysBefore}
-                setSmsDaysBefore={setSmsDaysBefore}
-                applyDefaultNotifications={applyDefaultNotifications}
-                // Expense data and handlers
-                filteredExpenses={filteredExpenses}
-                editingExpenseId={editingExpenseId}
-                editedExpense={editedExpense}
-                showNotifySettings={showNotifySettings}
-                handleEditExpenseClick={handleEditExpenseClick}
-                handleEditExpenseChange={handleEditExpenseChange}
-                toggleNotifySettings={toggleNotifySettings}
-                handleDeleteExpense={handleDeleteExpense}
-                calculateNextPayment={calculateNextPayment}
-                // Utility functions
-                GetCurrencyAsOptionsOnSelect={GetCurrencyAsOptionsOnSelect}
-                CurrencySign={CurrencySign}
-                formatNumberWithSuffix={formatNumberWithSuffix}
-                addDays={addDays}
-              /> */}
               <DatabasePage
                 setChangeMade={setChangeMade}
                 SelectedAppUser={SelectedAppUser}
                 SelectedBranchId={SelectedBranchId}
               />
+            </>
+          )}
+          {ToolsSelectedPage === 'Files' && (
+            <>
+              <FileTreeViewer />
             </>
           )}
           {isApplyingNotifications && (
@@ -2203,7 +2152,6 @@ const ToolsPage = ({
                   justifyContent: 'space-between',
                   flexDirection: isMobileState ? 'column' : 'row',
                 }}
-              
               >
                 <h1>Settings</h1>{' '}
                 <div
@@ -2218,7 +2166,7 @@ const ToolsPage = ({
                   <button onClick={handleSignOut}>Sign Out</button>{' '}
                 </div>
               </div>
-              <div className="settings-container"  id="tax-percentage">
+              <div className="settings-container" id="tax-percentage">
                 {' '}
                 <div
                   style={{

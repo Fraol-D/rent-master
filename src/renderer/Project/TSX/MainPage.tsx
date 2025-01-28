@@ -786,7 +786,7 @@ const MainPage = ({
     'TenantsList' | 'BrokersList' | 'TenantReviews'
   >('TenantsList');
   const [ToolsSelectedPage, setToolsSelectedPage] = useState<
-    'EmailTemplates' | 'SMSTemplates' | 'Database' | 'Settings' | 'Support'
+    'EmailTemplates' | 'SMSTemplates' | 'Database' | 'Settings' | 'Support' | 'Files'
   >(
     privileges.editEmailTemplates
       ? 'EmailTemplates'
@@ -2750,6 +2750,16 @@ const MainPage = ({
                   Database
                 </SideBarItem>
               )}
+              {/* {privileges.viewDatabase && (
+                <SideBarItem
+                  page="Files"
+                  currentPage={ToolsSelectedPage}
+                  onClick={() => setToolsSelectedPage('Files')}
+                  id="tools-files-tab"
+                >
+                  Files
+                </SideBarItem>
+              )} */}
               {(privileges.viewDatabase ||
                 privileges.editSmsTemplates ||
                 privileges.editEmailTemplates) && <br />}
