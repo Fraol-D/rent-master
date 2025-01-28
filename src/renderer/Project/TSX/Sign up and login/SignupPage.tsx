@@ -19,6 +19,7 @@ import {
 import { v4 as uuidv4 } from 'uuid';
 import React from 'react';
 import loadingGif from '../../../assets/assets/Loading/Rolling-1s-200px.gif';
+import { useGlobal } from 'renderer/components/GlobalContext';
 const SignupPage = ({
   setisSignUpMode,
   setisSignedIn,
@@ -28,6 +29,7 @@ const SignupPage = ({
   setEmail,
   setPassword,
 }: any) => {
+  const {langCode, setLangCode, text} = useGlobal()
   const [errorMessage, setErrorMessage] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -725,7 +727,7 @@ Package Type: ${!window.electron
             marginBottom: 'var(--25px-V)',
           }}
         >
-          Sign up with your Email and Password
+          {text.gen.signup} with your Email and Password
         </p>
         <input
           type="email"

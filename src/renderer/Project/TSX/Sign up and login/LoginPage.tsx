@@ -8,10 +8,11 @@ import {
   verifyCredentials,
 } from '../../../../Backend/OnlineServerApis';
 import { addValue } from '../../../../Backend/localServerApis';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import loadingGif from '../../../assets/assets/Loading/Rolling-1s-200px.gif';
 import { Input } from '../Helpers/CustomReactComponents';
 import CryptoJS from 'crypto-js';
+import { useGlobal } from 'renderer/components/GlobalContext';
 const LoginPage = ({
   setisSignUpMode,
   setisSignedIn,
@@ -28,6 +29,7 @@ const LoginPage = ({
   RefreshComponent,
   setViewBranchManagementPage,ForgotPassword
 }: any) => {
+  const {langCode, setLangCode, text, langSwitch, ChangeLanguage} = useGlobal()
   const [errorMessage, setErrorMessage] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -67,10 +69,10 @@ const LoginPage = ({
           if (user) {
             handleLogin(user);
           } else {
-            setErrorMessage('Email could not be found. Please try again.');
+            setErrorMessage(text.app.loginPage.err.unknownEmail);
           }
         } else {
-          setErrorMessage('Invalid email or password');
+          setErrorMessage(text.app.loginPage.err.invalidEmail);
         }
       } else {
         // Fetch user data if credentials are valid
@@ -97,26 +99,26 @@ const LoginPage = ({
                 RefreshComponent();
               }, 600);
             } else {
-              setErrorMessage('Email could not be found. Please try again.');
+              setErrorMessage(text.app.loginPage.err.emailNotFound);
             }
           } else {
             setErrorMessage(
-              'This AppUser is not allowed to enter with password. Please contact Administrator.'
+              text.app.loginPage.err.appUserUnauthorizedPassword
             );
           }
         } else {
-          setErrorMessage('Invalid Username or password');
+          setErrorMessage(text.app.loginPage.err.invalidUsername);
         }
       }
     } catch (error) {
-      console.error('Error during login:', error);
-      setErrorMessage('An error occurred during login. Please try again.');
+      console.error(text.app.loginPage.err.general1, error);
+      setErrorMessage(text.app.loginPage.err.general2);
     } finally {
       setLoading(false);
     }
   };
   const handleLogin = async (user: any) => {
-    setErrorMessage('Login successful!');
+    setErrorMessage(text.app.loginPage.err.success);
    await sendEmailAPI(
       user.email, 
       'User has signed in', 
@@ -155,7 +157,7 @@ const LoginPage = ({
   };
   const [SelectedToLoginWith, setSelectedToLoginWith] = useState('App User');
   return (
-    <>
+    <><button onClick={()=>langSwitch()}>{text.gen.changeLanguage}</button>
       {loading && (
         <div
           style={{
@@ -197,7 +199,7 @@ const LoginPage = ({
               fontSize: 'var(--65px-V)',
             }}
           >
-            Login
+            {text.app.login}
           </h1>
           {/* <button onClick={handleOrLoginButtonClick}>Or Sign up</button> */}
         </div>
@@ -217,7 +219,7 @@ const LoginPage = ({
             }}
             onClick={() => setSelectedToLoginWith('Admin')}
           >
-            Login to ADMIN
+            {text.app.loginPage.toAdmin}
           </button>
           <button
             style={{
@@ -228,7 +230,7 @@ const LoginPage = ({
             }}
             onClick={() => setSelectedToLoginWith('App User')}
           >
-            Login to App User
+            {text.app.loginPage.toAppUser}
           </button>
         </div>
         <p
@@ -238,13 +240,13 @@ const LoginPage = ({
           }}
         >
           {SelectedToLoginWith === 'Admin'
-            ? 'Login to ADMIN with account Email and Password'
-            : 'Login to App User with Username and Password'}
+            ? text.app.loginPage.toAdminDescription
+            : text.app.loginPage.toAppUserDescription}
         </p>
 
         <input
           type="email"
-          placeholder={'Email'}
+          placeholder={text.app.email}
           value={email}
           onChange={handleEmailChange}
           className="userName-input"
@@ -252,7 +254,7 @@ const LoginPage = ({
         {SelectedToLoginWith === 'App User' && (
           <input
             type="text"
-            placeholder="Username"
+            placeholder={text.app.username}
             value={username}
             onChange={handleUsernameChange}
             className="userName-input"
@@ -260,7 +262,7 @@ const LoginPage = ({
         )}
         <input
           type="password"
-          placeholder="Password"
+          placeholder={text.app.password}
           value={password}
           onChange={handlePasswordChange}
           className="userName-input"
