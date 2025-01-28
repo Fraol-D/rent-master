@@ -293,7 +293,7 @@ const LoginPage = ({
              href="#"  
              onClick={()=> {ForgotPassword()}}
             >
-              Forgot password?
+              {text.app.loginPage.forgotPassword}
             </a>
             <div
               style={{
@@ -312,7 +312,7 @@ const LoginPage = ({
                 htmlFor="remember-me"
                 style={{ color: 'var(--Text-Color-Grey)' }}
               >
-                Remember me
+                {text.app.loginPage.rememberMe}
               </label>
             </div>
           </div>
@@ -326,7 +326,7 @@ const LoginPage = ({
               marginRight: 'auto',
             }}
           >
-            Login{' '}
+            {text.app.login}{' '}
           </button>
         </div>
       </div>
@@ -336,7 +336,7 @@ const LoginPage = ({
         style={{ color: 'var(--Text-Color-Grey)', cursor: 'pointer' }}
         onClick={handleOrLoginButtonClick}
       >
-        Don't have an account? Sign up
+        {text.app.loginPage.orSignUp}
       </a>
     </>
   );

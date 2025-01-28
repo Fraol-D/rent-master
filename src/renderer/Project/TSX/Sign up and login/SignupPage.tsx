@@ -29,7 +29,7 @@ const SignupPage = ({
   setEmail,
   setPassword,
 }: any) => {
-  const {langCode, setLangCode, text} = useGlobal()
+  const {langCode, setLangCode, text, langSwitch, ChangeLanguage} = useGlobal()
   const [errorMessage, setErrorMessage] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -676,7 +676,7 @@ Package Type: ${!window.electron
   };
 
   return (
-    <>
+    <><button onClick={() => langSwitch()}>{text.gen.changeLanguage}</button>
       {loading && (
         <div
           style={{
@@ -718,7 +718,7 @@ Package Type: ${!window.electron
               fontSize: 'var(--65px-V)',
             }}
           >
-            Sign up
+            {text.app.signup}
           </h1>
         </div>
         <p
@@ -727,13 +727,13 @@ Package Type: ${!window.electron
             marginBottom: 'var(--25px-V)',
           }}
         >
-          {text.gen.signup} with your Email and Password
+          {text.gen.signUpDescription}
         </p>
         <input
           type="email"
           value={email}
           onChange={handleEmailChange}
-          placeholder="Email"
+          placeholder={text.app.email}
           className="userName-input"
           disabled={formStage !== 'initial'}
           style={{
@@ -745,7 +745,7 @@ Package Type: ${!window.electron
           value={password}
           onChange={handlePasswordChange}
           className="userName-input"
-          placeholder="Password"
+          placeholder={text.app.password}
           disabled={formStage !== 'initial'}
           style={{
             color: formStage !== 'initial' ? 'var(--Text-Color-Grey)' : '',
@@ -758,7 +758,7 @@ Package Type: ${!window.electron
             setRepeatPassword(e.target.value);
           }}
           className="userName-input"
-          placeholder="Repeat password"
+          placeholder={text.app.signupPage.passwordOnceMore}
           disabled={formStage !== 'initial'}
           style={{
             color: formStage !== 'initial' ? 'var(--Text-Color-Grey)' : '',
@@ -787,7 +787,7 @@ Package Type: ${!window.electron
                 marginRight: 'auto',
               }}
             >
-              Submit
+              {text.app.submit}
             </button>
           )}
 
@@ -803,7 +803,7 @@ Package Type: ${!window.electron
                   marginRight: 'auto',
                 }}
               >
-                Back
+                {text.app.back}
               </button>
               {!verificationSuccess && (
                 <>
@@ -815,7 +815,7 @@ Package Type: ${!window.electron
                       marginTop: 'var(--5px-V)',
                     }}
                   >
-                    Verification code sent to your email
+                    {text.app.signupPage.verifCodeSent}
                   </p>
                   <div
                     style={{
@@ -828,7 +828,7 @@ Package Type: ${!window.electron
                       type="text"
                       value={userCode}
                       onChange={(e) => setUserCode(e.target.value)}
-                      placeholder="Enter Code"
+                      placeholder={text.app.signupPage.enterCode}
                       className="userName-input"
                       style={{
                         width: 'var(--80px-V)',
@@ -843,7 +843,7 @@ Package Type: ${!window.electron
                         color: 'black',
                       }}
                     >
-                      Verify
+                      {text.app.verify}
                     </button>
                   </div>
                   <button
@@ -852,7 +852,7 @@ Package Type: ${!window.electron
                      
                     }}
                   >
-                    Resend code
+                    {text.app.signupPage.resendCode}
                   </button>
                 </>
               )}
@@ -866,14 +866,13 @@ Package Type: ${!window.electron
                       textAlign: 'center',
                     }}
                   >
-                    Verification successful! <br />
-                    Now enter your info
+                    {text.app.signupPage.verificationSuccess}
                   </p>
                   <input
                     type="text"
                     value={fullName}
                     onChange={handleFullNameChange}
-                    placeholder="Full Name"
+                    placeholder={text.app.fullname}
                     className="userName-input"
                   />
                   <div
@@ -887,7 +886,7 @@ Package Type: ${!window.electron
                       type="text"
                       value={companyName}
                       onChange={handleCompanyNameChange}
-                      placeholder="Company Name"
+                      placeholder={text.app.companyname}
                       style={{ width: '55%', marginBottom: '0px' }}
                       className="userName-input"
                     />
@@ -896,7 +895,7 @@ Package Type: ${!window.electron
                       value={phoneNumber}
                       onChange={handlePhoneNumberChange}
                       style={{ width: '38%', marginBottom: '0px' }}
-                      placeholder="Phone Number"
+                      placeholder={text.app.phonenumber}
                       className="userName-input"
                     />
                   </div>
@@ -912,7 +911,7 @@ Package Type: ${!window.electron
                       marginRight: 'auto',
                     }}
                   >
-                    Sign Up
+                    {text.app.signup}
                   </button>
                 </>
               )}
@@ -926,7 +925,7 @@ Package Type: ${!window.electron
         style={{ color: 'var(--Text-Color-Grey)', cursor: 'pointer' }}
         onClick={handleOrLoginButtonClick}
       >
-        Already have an account? Login
+        {text.app.signupPage.orLogIn}
       </a>
     </>
   );
