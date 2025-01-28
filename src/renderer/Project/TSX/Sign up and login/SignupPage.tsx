@@ -795,8 +795,8 @@ Package Type: ${!window.electron
                 onClick={handleBack}
                 className="LoginButton"
                 style={{
-                  background: 'var(--Primary-Color)',
-                  color: 'black',
+                
+                  border: 'none',
                   marginLeft: 'auto',
                   marginRight: 'auto',
                 }}
@@ -847,9 +847,7 @@ Package Type: ${!window.electron
                   <button
                     onClick={handleSubmit}
                     style={{
-                      width: 'auto',
-                      background: 'var(--Primary-Color)',
-                      color: 'black',
+                     
                     }}
                   >
                     Resend code

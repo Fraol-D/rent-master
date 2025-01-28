@@ -1253,7 +1253,7 @@ function Hello({ tryout, username, signup }: any) {
         setThemeMode(storedTheme);
         applyTheme(storedTheme);
       } else {
-        applyTheme('dark');
+        applyTheme('light');
       }
     };
     get();

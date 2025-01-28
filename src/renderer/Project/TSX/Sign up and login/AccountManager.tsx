@@ -583,32 +583,17 @@ const AccountManager = (React.FC<MyComponentProps> = ({
     SignOut,
   }: any) => {
     return (
-      <div className="signup-success-message">
+     <div className='signup-success-message-outer'> <div className="signup-success-message">
         <div style={{ padding: 'var(--10px-V)', margin: 'var(--0px-V)' }}>
-          <h2>Congratulations! Your account has been successfully created.</h2>{' '}
-          <p className="signOutAndIfNot">
-            Is this your email:{' '}
-            <strong>{storageManager.get('users')[0].email || ''}</strong>
-            ?
-            <br />
-            If not,
-          {" "}  <a
-              onClick={handleFullSignOutAndDeleteUser}
-            style={{color:"var(--Text-Color)", cursor:"pointer", textDecoration: 'underline'}}
-            >
-              Sign out?
-            </a>
-          </p> <br />
-         Please contact us to activate your
-          account: <br />
-          <span className="activation-number">-{'>'} Call +2519 44 50 9999</span>
-          <br /> <span className="activation-number">-{'>'} Telegram @rent_master</span>
-          <br /> <span className="activation-number">-{'>'} Email: rentmaster.et@gmail.com</span>
+          <h2>Your account has been created. Please contact us to <strong>activate</strong> your account.</h2>{' '}
+         
+         Please contact the sales team to activate your account: <br /><br />
+          <span className="activation-number">-{'>'}  Call <strong> +2519 44 50 9999</strong></span>
+          <br /> <span className="activation-number">-{'>'} Telegram <strong> @rent_master</strong></span>
+          <br /> <span className="activation-number">-{'>'} Email: <strong> rentmaster.et@gmail.com</strong></span>
           <br />
           <br />
-          If this is your first time signing in please be connected to the
-          internet. It's possible you're seeing this message due to a lack of
-          internet connection.  <button
+         Try Refreshing <button
               onClick={() => {
                 setLoading(true);
                 checkIfSignedIn().finally(() => setLoading(false));
@@ -622,7 +607,24 @@ const AccountManager = (React.FC<MyComponentProps> = ({
           
           </div>
         </div>
+        
       </div>
+      <div style={{ display: 'flex', justifyContent: 'center', marginTop: '20px',textAlign:'center'}}>
+        <p className="signOutAndIfNot">
+          Signed into:{' '}
+          <strong>{storageManager.get('users')[0].email || ''}</strong>
+          ?
+          <br />
+         
+          {" "}  <a
+            onClick={handleFullSignOutAndDeleteUser}
+            style={{color:"var(--Text-Color-Grey)", cursor:"pointer", textDecoration: 'underline'}}
+          >
+            Sign out?
+          </a>
+        </p>
+      </div>
+      <br /></div>
     );
   };
   const AccountLockedBcNotPaid = ({
@@ -650,9 +652,9 @@ const AccountManager = (React.FC<MyComponentProps> = ({
             {" "}
           </p> <br />
           Please contact us to resolve this payment issue: <br />
-          <span className="activation-number">-{'>'} Call +2519 44 50 9999</span>
-          <br /> <span className="activation-number">-{'>'} Telegram @rent_master</span>
-          <br /> <span className="activation-number">-{'>'} Email: rentmaster.et@gmail.com</span>
+          <span className="activation-number">-{'>'} Call <strong> +2519 44 50 9999</strong></span>
+          <br /> <span className="activation-number">-{'>'} Telegram <strong> @rent_master</strong></span>
+          <br /> <span className="activation-number">-{'>'} Email: <strong> rentmaster.et@gmail.com</strong></span>
           <br />
           <br />
           Once payment is confirmed, please retry signing in while connected to the
