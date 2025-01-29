@@ -1,7 +1,9 @@
 import '../../styles/components/navbar.css';
 import { useState, useEffect } from 'react';
+import { useGlobal } from '../../../../../src/renderer/components/GlobalContext'
 
 const Navbar = () => {
+  const {langSwitch, ChangeLanguage, text} = useGlobal()
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
 
@@ -43,7 +45,7 @@ const Navbar = () => {
           onClick={handleLinkClick}
         >
           <div className="nav-link-container">
-            Home
+            {text.web.navbar.home}
             {windowWidth <= 1030 && <span className="nav-link-arrow" />}
           </div>
         </a>
@@ -59,7 +61,7 @@ const Navbar = () => {
           onClick={handleLinkClick}
         >
           <div className="nav-link-container">
-            Features
+            {text.web.navbar.features}
             {windowWidth <= 1030 && <span className="nav-link-arrow" />}
           </div>
         </a>
@@ -75,7 +77,7 @@ const Navbar = () => {
           onClick={handleLinkClick}
         >
           <div className="nav-link-container">
-            Pricing
+            {text.web.navbar.pricing}
             {windowWidth <= 1030 && <span className="nav-link-arrow" />}
           </div>
         </a>
@@ -91,7 +93,7 @@ const Navbar = () => {
           onClick={handleLinkClick}
         >
           <div className="nav-link-container">
-            About
+            {text.web.navbar.about}
             {windowWidth <= 1030 && <span className="nav-link-arrow" />}
           </div>
         </a>
@@ -107,7 +109,7 @@ const Navbar = () => {
           onClick={handleLinkClick}
         >
           <div className="nav-link-container">
-            FAQ
+            {text.web.navbar.faq}
             {windowWidth <= 1030 && <span className="nav-link-arrow" />}
           </div>
         </a>
@@ -124,7 +126,7 @@ const Navbar = () => {
           onClick={handleLinkClick}
         >
           <div className="nav-link-container">
-            Contact
+            {text.web.navbar.contact}
             {windowWidth <= 1030 && <span className="nav-link-arrow" />}
           </div>
         </a>
@@ -137,26 +139,28 @@ const Navbar = () => {
         )}
         <a href="/download" onClick={handleLinkClick}>
           <div className="nav-link-container">
-            Download
+            {text.web.download}
             {windowWidth <= 1030 && <span className="nav-link-arrow" />}
           </div>
         </a>
         {windowWidth <= 450 &&  <div className="auth-buttons">
         <a href="/login">
-          <button className="tryout-btn login-btn">Login</button>
+          <button className="tryout-btn login-btn">{text.app.login}</button>
         </a>
+        <button onClick={() => langSwitch()}>{text.gen.ChangeLanguage}</button>
         <a href="/signup">
-          <button className="login-btn"style={{color: 'black'}}>Get Started</button>
+          <button className="login-btn"style={{color: 'black'}}>{text.web.getstarted}</button>
         </a>
       </div>}
         
       </div>
     {windowWidth >= 450 &&   <div className="auth-buttons">
         <a href="/login">
-          <button className="tryout-btn login-btn">Login</button>
+          <button className="tryout-btn login-btn">{text.app.login}</button>
         </a>
+        <button onClick={() => langSwitch()}>{text.gen.changeLanguage}</button>
         <a href="/signup">
-          <button className="login-btn"style={{color: 'black'}}>Get Started</button>
+          <button className="login-btn"style={{color: 'black'}}>{text.web.getstarted}</button>
         </a>
       </div>} 
       <button className="hamburger" onClick={toggleMenu} aria-label="Menu">

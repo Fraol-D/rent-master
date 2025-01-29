@@ -1,6 +1,8 @@
 import { FaEnvelope, FaPhone, FaMapMarkerAlt } from 'react-icons/fa'
 import {useState } from 'react'
+import { useGlobal } from "../../../../../src/renderer/components/GlobalContext"
 const Contact = ({sendEmail}) => {
+  const { text } = useGlobal()
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [topic, setTopic] = useState('');

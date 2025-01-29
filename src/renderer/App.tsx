@@ -79,8 +79,6 @@ function Hello({ tryout, username, signup }: any) {
     setAllRoomPayInfoHistory,
     RoomList,
     setRoomList,
-    langCode,
-    setLangCode
   } = useGlobal();
 
   const [BrokerList, setBrokerList] = useState<BrokerType[]>([]);
@@ -1256,19 +1254,6 @@ function Hello({ tryout, username, signup }: any) {
         applyTheme(storedTheme);
       } else {
         applyTheme('light');
-      }
-    };
-    get();
-  }, []);
-
-  useEffect(() => {
-    const get = async () => {
-      const language = storageManager.get('LangCode');
-      if (language) {
-        setLangCode(language);
-      } else {
-        storageManager.set('LangCode', 0);
-        setLangCode(0);
       }
     };
     get();

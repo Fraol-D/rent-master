@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-
+import { cloneDeep } from 'lodash';
 import tl from '../translator';
 import { storageManager } from 'renderer/storeManager';
 
@@ -74,16 +74,25 @@ function isMobile() {
 }
 const [langCode, setLangCode] = useState<number>(0);
 function tl_spreader(obj:object, i:number) {
-  Object.entries(obj).forEach(([key, value]) => {
-    if (Array.isArray(value) && typeof(value) !== "string") {
-      obj[key] = value[i]
-    } else if(typeof(value) == "object" && typeof(value) !== "string") {
-      obj[key] = tl_spreader(value, i)
+  Object.entries(obj).forEach(([key, val]) => {
+    if (typeof(val) == "function") {
+      obj[key] = function(...args: any[]) {
+        const paramIndex = val.length > 0 ? Object.keys(val(...Array(val.length).fill(undefined))).indexOf("LangCode") : -1;
+        if (paramIndex !== -1 && args[paramIndex] === undefined) {
+          args[paramIndex] = langCode;
+        }
+        return val(...args);
+      };
+    } else if (Array.isArray(val) && typeof(val) !== "string") {
+      obj[key] = val[i]
+    } else if(typeof(val) == "object" && typeof(val) !== "string") {
+      obj[key] = tl_spreader(val, i)
     }  
   })
   return obj
 }
-const text:object= tl_spreader(structuredClone(tl), langCode);
+useEffect(() => {const text:object= tl_spreader(cloneDeep(tl), langCode);}, [langCode])
+const text:object= tl_spreader(cloneDeep(tl), langCode);
 const ChangeLanguage = async (lang:number) => {
   storageManager.set('LangCode', lang);
   setLangCode(lang);

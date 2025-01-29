@@ -1,23 +1,25 @@
 import { FaFacebook, FaTwitter, FaLinkedin ,FaInstagram} from 'react-icons/fa';
+import { useGlobal } from "../../../../../src/renderer/components/GlobalContext"
 const Footer = () => {
+  const { text } = useGlobal()
   return (
     <footer className="footer">
       <div className="footer-content">
         <div className="footer-section">
         <a  className="logo" href="https://rentmaster.markethubet.com">Rent<span className="logo-highlight">Master</span></a>
-          <p>Simplifying property management for landlords and property managers.</p>
+          <p>{text.web.slogan}</p>
         </div>
         <div className="footer-section">
-          <h4>Quick Links</h4>
-          <a href="https://rentmaster.markethubet.com/#features">Features</a>
-          <a href="https://rentmaster.markethubet.com/#pricing">Pricing</a>
-          <a href="https://rentmaster.markethubet.com/#contact">Contact</a>
-          <a href="https://rentmaster.markethubet.com/download">Download</a>
+          <h4>{text.web.navbar.quicklinks}</h4>
+          <a href="https://rentmaster.markethubet.com/#features">{text.web.navbar.features}</a>
+          <a href="https://rentmaster.markethubet.com/#pricing">{text.web.navbar.pricing}</a>
+          <a href="https://rentmaster.markethubet.com/#contact">{text.web.navbar.contact}</a>
+          <a href="https://rentmaster.markethubet.com/download">{text.web.download}</a>
         </div>
         <div className="footer-section">
-          <h4>Contact</h4>
-          <p>Email: RentMaster.et@gmail.com</p>
-          <p>Phone: +2519-4450-9999</p>
+          <h4>{text.web.navbar.contact}</h4>
+          <p>{text.app.email}: RentMaster.et@gmail.com</p>
+          <p>{text.app.phonenumber}: +2519-4450-9999</p>
           <div style={{ display: 'flex', flexDirection: 'row' }}>
             <a href="https://web.facebook.com/profile.php?id=61571859038737" target="_blank" rel="noopener noreferrer">
               <FaFacebook style={{ marginRight: '8px', width:"30px",height:"30px" }} />
