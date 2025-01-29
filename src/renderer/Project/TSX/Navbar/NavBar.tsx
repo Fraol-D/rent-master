@@ -386,6 +386,7 @@ const {showAlert} = useAlert()
             {tabs.tools}
           </button>
         )}
+        <button onClick={() => langSwitch()}>{text.gen.changeLanguage}</button>
       </div>} 
 
       <div className="RightSide">
@@ -736,7 +737,6 @@ const {showAlert} = useAlert()
                       >
                         <p>{upload.setMainBackup}</p>
                       </button>
-                      <button onClick={() => langSwitch()}>{text.gen.changeLanguage}</button>
                     </>
                   )}
                 </div>
