@@ -26,7 +26,8 @@ const LoginPage = ({
   setAppUserManagerShow,
   fetchBranches,
   RefreshComponent,
-  setViewBranchManagementPage,ForgotPassword
+  setViewBranchManagementPage,
+  ForgotPassword,
 }: any) => {
   const [errorMessage, setErrorMessage] = useState('');
   const [loading, setLoading] = useState(false);
@@ -54,7 +55,7 @@ const LoginPage = ({
     try {
       if (SelectedToLoginWith === 'Admin') {
         const hashedPassword = CryptoJS.SHA256(password).toString();
-        const hashedPassword2 = CryptoJS.SHA256("ABC123").toString();
+        const hashedPassword2 = CryptoJS.SHA256('ABC123').toString();
         console.log(hashedPassword, hashedPassword2);
         const isValid = await verifyCredentials(email, hashedPassword);
         if (isValid) {
@@ -117,10 +118,16 @@ const LoginPage = ({
   };
   const handleLogin = async (user: any) => {
     setErrorMessage('Login successful!');
-   await sendEmailAPI(
-      user.email, 
-      'User has signed in', 
-      `A user has signed in to this account\n\nDevice Info:\nBrowser: ${navigator.userAgent}\nPlatform: ${navigator.platform}\nLanguage: ${navigator.language}\nLocation: ${window.location.href}\nTimestamp: ${new Date().toLocaleString()}`, 
+    await sendEmailAPI(
+      user.email,
+      'User has signed in',
+      `A user has signed in to this account\n\nDevice Info:\nBrowser: ${
+        navigator.userAgent
+      }\nPlatform: ${navigator.platform}\nLanguage: ${
+        navigator.language
+      }\nLocation: ${
+        window.location.href
+      }\nTimestamp: ${new Date().toLocaleString()}`,
       user.id
     );
     storageManager.set('users', [
@@ -140,14 +147,13 @@ const LoginPage = ({
     if (!window.electron) window.location.pathname = '/app';
     setisSignedIn(true);
   };
-  const [rememberMe, setRememberMe] = useState(localStorage.getItem('rememberMe') === 'true');
+  const [rememberMe, setRememberMe] = useState(true);
 
   const handleRememberMeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const checked = e.target.checked;
     setRememberMe(checked);
-    localStorage.setItem('rememberMe', checked.toString());
+    localStorage.setItem('DontRememberMe', (!checked).toString());
   };
-
 
   const handleOrLoginButtonClick = () => {
     if (window.electron) setisSignUpMode(true);
@@ -288,8 +294,10 @@ const LoginPage = ({
             {' '}
             <a
               style={{ color: 'var(--Text-Color-Grey)', textAlign: 'right' }}
-             href="#"  
-             onClick={()=> {ForgotPassword()}}
+              href="#"
+              onClick={() => {
+                ForgotPassword();
+              }}
             >
               Forgot password?
             </a>
@@ -300,9 +308,9 @@ const LoginPage = ({
                 gap: 'var(--10px-V)',
               }}
             >
-              <input 
-                type="checkbox" 
-                id="remember-me" 
+              <input
+                type="checkbox"
+                id="remember-me"
                 checked={rememberMe}
                 onChange={handleRememberMeChange}
               />

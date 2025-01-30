@@ -124,10 +124,14 @@ import ClearFiltersLight from '../assets/assets/Light mode/ClearFilters.png';
 import CalenderLight from '../assets/assets/Light mode/Calender.png';
 
 export const IconsGUI = () => {
-  const DARKtheme = storageManager.get("ThemeMode") === "light";
-  return { 
-    AdminSettingsMaleIcon: DARKtheme ? AdminSettingsMaleDark : AdminSettingsMaleLight,
-    AdministratorMaleIcon: DARKtheme ? AdministratorMaleDark : AdministratorMaleLight,
+  const DARKtheme = storageManager.get('ThemeMode') === 'light';
+  return {
+    AdminSettingsMaleIcon: DARKtheme
+      ? AdminSettingsMaleDark
+      : AdminSettingsMaleLight,
+    AdministratorMaleIcon: DARKtheme
+      ? AdministratorMaleDark
+      : AdministratorMaleLight,
     BarLinesIcon: DARKtheme ? BarLinesDark : BarLinesLight,
     BlindIcon: DARKtheme ? BlindDark : BlindLight,
     BranchIcon: DARKtheme ? BranchDark : BranchLight,
@@ -166,7 +170,9 @@ export const IconsGUI = () => {
     SettingsIcon: DARKtheme ? SettingsIconDark : SettingsIconLight,
     ShopIcon: DARKtheme ? ShopIconDark : ShopIconLight,
     ShowPasswordIcon: DARKtheme ? ShowPasswordDark : ShowPasswordLight,
-    SignInFormPasswordIcon: DARKtheme ? SignInFormPasswordDark : SignInFormPasswordLight,
+    SignInFormPasswordIcon: DARKtheme
+      ? SignInFormPasswordDark
+      : SignInFormPasswordLight,
     SigninIcon: DARKtheme ? SigninDark : SigninLight,
     SignoutIcon: DARKtheme ? SignoutDark : SignoutLight,
     SignUpIcon: DARKtheme ? SignUpDark : SignUpLight,
@@ -186,5 +192,5 @@ export const IconsGUI = () => {
     AddRoomIcon: DARKtheme ? AddRoomDark : AddRoomLight,
     ClearFiltersIcon: DARKtheme ? ClearFiltersDark : ClearFiltersLight,
     CalenderIcon: DARKtheme ? CalenderDark : CalenderLight,
-  }
+  };
 };

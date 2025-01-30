@@ -49,7 +49,7 @@ const corsOptions = {
   origin: [
     'http://localhost:1212',
     'http://localhost:5173',
-    'https://www.rentmaster.markethubet.com'
+    'https://www.rentmaster.markethubet.com',
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key', 'user-id'],
@@ -58,8 +58,6 @@ const corsOptions = {
   optionsSuccessStatus: 200,
 };
 app.use(cors(corsOptions));
-
-
 
 // API Key Middleware
 const checkApiKey = (req, res, next) => {
@@ -83,7 +81,7 @@ const pool = mysql.createPool({
   password: 'Plp5H9:Li(UO#6[y+26E',
   database: 'marketuz_SWB',
   connectTimeout: 60000, // 60 seconds
-  acquireTimeout: 60000,
+
   timeout: 60000,
   waitForConnections: true,
   queueLimit: 0,
@@ -112,11 +110,12 @@ const TIMEOUT = 30000; // 30 seconds
 app.get('/downloads/windows', (req, res) => {
   try {
     const windowsDownloadPath = path.join(__dirname, 'downloads', 'windows');
-    
+
     // Read all files in the directory
-    const files = fs.readdirSync(windowsDownloadPath)
-      .filter(file => file.toLowerCase().endsWith('.exe'))
-      .sort();  // Sort alphabetically
+    const files = fs
+      .readdirSync(windowsDownloadPath)
+      .filter((file) => file.toLowerCase().endsWith('.exe'))
+      .sort(); // Sort alphabetically
 
     if (files.length === 0) {
       logger.error('No Windows executables found in downloads directory');
@@ -129,19 +128,18 @@ app.get('/downloads/windows', (req, res) => {
 
     logger.debug(`Serving Windows installer: ${latestFile}`);
     res.download(filePath);
-
   } catch (error) {
     logger.error('Error serving Windows installer:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to serve Windows installer',
-      details: error.message 
+      details: error.message,
     });
   }
 });
 // Axios instance with timeout
 const axiosInstance = axios.create({
   timeout: TIMEOUT,
-  validateStatus: status => status < 500 // Treat 4xx as valid responses
+  validateStatus: (status) => status < 500, // Treat 4xx as valid responses
 });
 
 // Toggle encryption on or off
@@ -170,12 +168,129 @@ const decrypt = (data) => {
     throw error;
   }
 };
+app.get('/resetpass', (req, res) => {
+  const { token } = req.query;
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Reset Password</title>
+      <style>
+        body {
+          font-family: Arial, sans-serif;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          height: 100vh;
+          margin: 0;
+          background-color: #f5f5f5;
+        }
+        .container {
+          background-color: white;
+          padding: 2rem;
+          border-radius: 8px;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+          width: 100%;
+          max-width: 400px;
+        }
+        h1 {
+          text-align: center;
+          color: #333;
+          margin-bottom: 1.5rem;
+        }
+        .form-group {
+          margin-bottom: 1rem;
+        }
+        label {
+          display: block;
+          margin-bottom: 0.5rem;
+          color: #666;
+        }
+        input {
+          width: 100%;
+          padding: 0.5rem;
+          border: 1px solid #ddd;
+          border-radius: 4px;
+          box-sizing: border-box;
+        }
+        button {
+          width: 100%;
+          padding: 0.75rem;
+          background-color: #454959;
+          color: white;
+          border: none;
+          border-radius: 4px;
+          cursor: pointer;
+          font-size: 1rem;
+        }
+        button:hover {
+          background-color: #0056b3;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <h1>Reset Your Password</h1>
+        <form id="resetForm">
+          <input type="hidden" id="token" value="${token}">
+          <div class="form-group">
+            <label for="password">New Password</label>
+            <input type="password" id="password" required>
+          </div>
+          <div class="form-group">
+            <label for="confirmPassword">Confirm Password</label>
+            <input type="password" id="confirmPassword" required>
+          </div>
+          <button type="submit">Reset Password</button>
+        </form>
+      </div>
+      <script>
+        document.getElementById('resetForm').addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const password = document.getElementById('password').value;
+          const confirmPassword = document.getElementById('confirmPassword').value;
+          const token = document.getElementById('token').value;
+          
+          if (password !== confirmPassword) {
+            alert('Passwords do not match');
+            return;
+          }
+          
+          try {
+            const response = await fetch('/update-password', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ token, password })
+            });
+            
+            const data = await response.json();
+            if (data.success) {
+              alert('Password updated successfully');
+              window.location.href = '/login';
+            } else {
+              alert(data.error || 'Failed to update password');
+            }
+          } catch (error) {
+            alert('An error occurred. Please try again.');
+          }
+        });
+      </script>
+    </body>
+    </html>
+  `;
+
+  res.send(html);
+});
+
 app.all('/make-request', async (req, res) => {
   try {
     if (!req.body?.dataString) {
       return res.status(400).json({
         success: false,
-        error: 'Invalid request format'
+        error: 'Invalid request format',
       });
     }
 
@@ -183,24 +298,24 @@ app.all('/make-request', async (req, res) => {
     if (!decryptedData?.targetUrl || !decryptedData?.method) {
       return res.status(400).json({
         success: false,
-        error: 'Missing required fields'
+        error: 'Missing required fields',
       });
     }
 
     const { targetUrl, method, headers = {}, data, params } = decryptedData;
-    const baseUrl = targetUrl.includes('localhost') 
+    const baseUrl = targetUrl.includes('localhost')
       ? 'http://localhost:8100'
       : 'https://www.rentmaster.markethubet.com/api';
 
     const fullUrl = targetUrl.startsWith('http')
-      ? targetUrl 
+      ? targetUrl
       : `${baseUrl}${targetUrl.startsWith('/') ? targetUrl : `/${targetUrl}`}`;
 
     const config = {
       method: method.toLowerCase(),
       url: fullUrl,
       headers: { ...headers, 'x-api-key': apiKey },
-      timeout: TIMEOUT
+      timeout: TIMEOUT,
     };
 
     if (['post', 'put', 'patch'].includes(method.toLowerCase()) && data) {
@@ -216,21 +331,20 @@ app.all('/make-request', async (req, res) => {
     res.status(response.status).json({
       success: true,
       data: responseData ? encrypt(responseData) : null,
-      status: response.status
+      status: response.status,
     });
-
   } catch (error) {
     if (error.code === 'ECONNABORTED') {
       return res.status(504).json({
         success: false,
         error: 'Request timeout',
-        details: { timeout: TIMEOUT }
+        details: { timeout: TIMEOUT },
       });
     }
     res.status(error.response?.status || 500).json({
       success: false,
       error: error.message,
-      details: error.response?.data || error.code
+      details: error.response?.data || error.code,
     });
   }
 });
@@ -240,7 +354,7 @@ app.all('/make-request-filemanager', async (req, res) => {
     if (!req.body?.dataString) {
       return res.status(400).json({
         success: false,
-        error: 'Invalid request format'
+        error: 'Invalid request format',
       });
     }
 
@@ -248,24 +362,24 @@ app.all('/make-request-filemanager', async (req, res) => {
     if (!decryptedData?.targetUrl || !decryptedData?.method) {
       return res.status(400).json({
         success: false,
-        error: 'Missing required fields'
+        error: 'Missing required fields',
       });
     }
 
     const { targetUrl, method, headers = {}, data, params } = decryptedData;
-    const baseUrl = targetUrl.includes('localhost') 
+    const baseUrl = targetUrl.includes('localhost')
       ? 'http://localhost:8100'
       : 'https://www.rentmaster.markethubet.com/api';
 
     const fullUrl = targetUrl.startsWith('http')
-      ? targetUrl 
+      ? targetUrl
       : `${baseUrl}${targetUrl.startsWith('/') ? targetUrl : `/${targetUrl}`}`;
 
     const config = {
       method: method.toLowerCase(),
       url: fullUrl,
       headers: { ...headers, 'x-api-key': apiKey },
-      timeout: TIMEOUT
+      timeout: TIMEOUT,
     };
 
     if (['post', 'put', 'patch'].includes(method.toLowerCase()) && data) {
@@ -281,21 +395,20 @@ app.all('/make-request-filemanager', async (req, res) => {
     res.status(response.status).json({
       success: true,
       data: responseData,
-      status: response.status
+      status: response.status,
     });
-
   } catch (error) {
     if (error.code === 'ECONNABORTED') {
       return res.status(504).json({
         success: false,
         error: 'Request timeout',
-        details: { timeout: TIMEOUT }
+        details: { timeout: TIMEOUT },
       });
     }
     res.status(error.response?.status || 500).json({
       success: false,
       error: error.message,
-      details: error.response?.data || error.code
+      details: error.response?.data || error.code,
     });
   }
 });
@@ -490,7 +603,6 @@ app.get('/logs', (req, res) => {
 });
 // Add a route to clear logs
 
-
 // Define base path for user files
 const baseUserPath = '/home/marketuz/rentmaster.markethubet.com/User Files';
 
@@ -505,18 +617,18 @@ const getUserDirectory = (userId) => {
   return path.join(baseDir, userId.toString());
 };
 
-const getRoomDocumentsPath = (userId) => {
+const getRoomDocumentsPath = (userId, branchId) => {
   if (!userId) {
     throw new Error('userId is required');
   }
-  return path.join(getUserDirectory(userId), 'Room Documents');
+  return path.join(getUserDirectory(userId), branchId, 'Room Documents');
 };
 
-const getRoomPicturesPath = (userId) => {
+const getRoomPicturesPath = (userId, branchId) => {
   if (!userId) {
     throw new Error('userId is required');
   }
-  return path.join(getUserDirectory(userId), 'Room Pictures');
+  return path.join(getUserDirectory(userId), branchId, 'Room Pictures');
 };
 
 // Middleware to check for userId
@@ -529,112 +641,454 @@ const checkUserId = (req, res, next) => {
   next();
 };
 
-
 // Apply middleware to all routes
 fileManagerRouter.use(checkUserId);
 
 //Rece
-// Add receipt file endpoint
-// Delete receipt endpoint
-fileManagerRouter.delete('/delete-receipt/:userId/:roomId/:date', async (req, res) => {
+//Rece
+//Rece
+//Rece
+//Rece
+//Rece
+
+fileManagerRouter.get('/fileTree/compressFolder/:path', async (req, res) => {
   try {
-    const { userId, roomId, date } = req.params;
-    const tenantId = req.headers['tenant-id'];
-    const tenantName = req.headers['tenant-name'];
-    const addedTimeText = req.headers['tenant-start-time'];
+    const userId = req.headers['user-id'];
+    const folderPath = path.join(baseUserPath, userId, req.params.path);
 
-    if (!userId || !roomId || !date || !tenantId || !tenantName || !addedTimeText) {
-      return res.status(400).json({ error: 'Missing required parameters' });
-    }
+    const zip = new JSZip();
 
-    // Verify user authorization
-    const requestUserId = req.headers['user-id'];
-    if (userId !== requestUserId) {
-      return res.status(403).json({ error: 'Unauthorized access' });
-    }
+    // Helper function to add files recursively
+    const addFilesToZip = async (currentPath, relativePath = '') => {
+      const items = await fs.promises.readdir(currentPath);
+      for (const item of items) {
+        const fullPath = path.join(currentPath, item);
+        const stats = await fs.promises.stat(fullPath);
 
-    // Construct the path to the receipt directory
-    const receiptDir = path.join(
-      baseUserPath,
-      userId,
-      'Room Documents',
-      roomId,
-      `${tenantName}, ${addedTimeText}, ${tenantId}`,
-      'receipts'
+        if (stats.isDirectory()) {
+          await addFilesToZip(fullPath, path.join(relativePath, item));
+        } else {
+          const fileData = await fs.promises.readFile(fullPath);
+          zip.file(path.join(relativePath, item), fileData);
+        }
+      }
+    };
+
+    await addFilesToZip(folderPath);
+    const zipBuffer = await zip.generateAsync({ type: 'nodebuffer' });
+
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename=${path.basename(folderPath)}.zip`
     );
-
-    // Find receipt file matching the date
-    const files = await fs.promises.readdir(receiptDir);
-    const receiptFile = files.find(file => file.startsWith(date));
-
-    if (!receiptFile) {
-      return res.status(404).json({ error: 'Receipt not found' });
-    }
-
-    // Delete the file
-    const filePath = path.join(receiptDir, receiptFile);
-    await fs.promises.unlink(filePath);
-
-    logger.debug(`Receipt deleted successfully: ${filePath}`);
-    res.json({ success: true, message: 'Receipt deleted successfully' });
-
+    res.send(zipBuffer);
   } catch (error) {
-    logger.error('Error deleting receipt:', error);
-    res.status(500).json({ error: 'Failed to delete receipt' });
+    res.status(500).json({ error: error.message });
   }
 });
+// 1. Get single file/folder metadata
+fileManagerRouter.get('/fileTree/info/:path', async (req, res) => {
+  try {
+    const userId = req.headers['user-id'];
+    const branchId = req.headers['branch-id'];
+    const filePath = path.join(baseUserPath, userId, branchId, req.params.path);
+
+    const stats = await fs.promises.stat(filePath);
+    const isDirectory = stats.isDirectory();
+
+    const fileInfo = {
+      id: path.basename(filePath),
+      name: path.basename(filePath),
+      type: isDirectory ? 'folder' : 'file',
+      path: req.params.path,
+      extension: !isDirectory ? path.extname(filePath).slice(1) : null,
+      size: stats.size,
+      modifiedAt: stats.mtime,
+    };
+
+    res.json(fileInfo);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 2. Get directory contents
+fileManagerRouter.get('/fileTree/directory/:path', async (req, res) => {
+  try {
+    const userId = req.headers['user-id'];
+    const branchId = req.headers['branch-id'];
+    const dirPath = path.join(baseUserPath, userId, branchId, req.params.path);
+
+    const files = await fs.promises.readdir(dirPath);
+    const filePromises = files.map(async (file) => {
+      const filePath = path.join(dirPath, file);
+      const stats = await fs.promises.stat(filePath);
+      const isDirectory = stats.isDirectory();
+
+      return {
+        id: file,
+        name: file,
+        type: isDirectory ? 'folder' : 'file',
+        path: path.join(req.params.path, file),
+        extension: !isDirectory ? path.extname(file).slice(1) : null,
+        size: stats.size,
+        modifiedAt: stats.mtime,
+      };
+    });
+
+    const fileList = await Promise.all(filePromises);
+    res.json(fileList);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 3. Stream/open file
+fileManagerRouter.get('/fileTree/open/:path', async (req, res) => {
+  try {
+    const userId = req.headers['user-id'];
+    const branchId = req.headers['branch-id'];
+    const filePath = path.join(baseUserPath, userId, branchId, req.params.path);
+
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ error: 'File not found' });
+    }
+
+    res.sendFile(filePath);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 4. Rename file/folder
+fileManagerRouter.put('/fileTree/rename', async (req, res) => {
+  try {
+    const { oldPath, newName } = req.body;
+    const userId = req.headers['user-id'];
+    const branchId = req.headers['branch-id'];
+
+    const oldFullPath = path.join(baseUserPath, userId, branchId, oldPath);
+    const newFullPath = path.join(path.dirname(oldFullPath), newName);
+
+    await fs.promises.rename(oldFullPath, newFullPath);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 5. Delete file/folder
+fileManagerRouter.delete('/fileTree/delete/:path', async (req, res) => {
+  try {
+    const userId = req.headers['user-id'];
+    const branchId = req.headers['branch-id'];
+    const itemPath = path.join(baseUserPath, userId, branchId, req.params.path);
+
+    const stats = await fs.promises.stat(itemPath);
+    if (stats.isDirectory()) {
+      await fs.promises.rm(itemPath, { recursive: true });
+    } else {
+      await fs.promises.unlink(itemPath);
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 6. Move file/folder
+fileManagerRouter.put('/fileTree/move', async (req, res) => {
+  try {
+    const { sourcePath, destinationPath } = req.body;
+    const userId = req.headers['user-id'];
+    const branchId = req.headers['branch-id'];
+
+    const sourceFullPath = path.join(
+      baseUserPath,
+      userId,
+      branchId,
+      sourcePath
+    );
+    const destFullPath = path.join(
+      baseUserPath,
+      userId,
+      branchId,
+      destinationPath
+    );
+
+    await fs.promises.rename(sourceFullPath, destFullPath);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 7. Copy file/folder
+fileManagerRouter.post('/fileTree/copy', async (req, res) => {
+  try {
+    const { sourcePath, destinationPath } = req.body;
+    const userId = req.headers['user-id'];
+    const branchId = req.headers['branch-id'];
+
+    const sourceFullPath = path.join(
+      baseUserPath,
+      userId,
+      branchId,
+      sourcePath
+    );
+    const destFullPath = path.join(
+      baseUserPath,
+      userId,
+      branchId,
+      destinationPath
+    );
+
+    if ((await fs.promises.stat(sourceFullPath)).isDirectory()) {
+      await fs.promises.cp(sourceFullPath, destFullPath, { recursive: true });
+    } else {
+      await fs.promises.copyFile(sourceFullPath, destFullPath);
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 8. Create new folder
+fileManagerRouter.post('/fileTree/createFolder', async (req, res) => {
+  try {
+    const { path: folderPath, name } = req.body;
+    const userId = req.headers['user-id'];
+    const branchId = req.headers['branch-id'];
+
+    const newFolderPath = path.join(
+      baseUserPath,
+      userId,
+      branchId,
+      folderPath,
+      name
+    );
+    await fs.promises.mkdir(newFolderPath, { recursive: true });
+
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 9. Upload file(s)
+fileManagerRouter.post(
+  '/fileTree/upload',
+  upload.array('files'),
+  async (req, res) => {
+    try {
+      const { path: uploadPath } = req.body;
+      const userId = req.headers['user-id'];
+      const branchId = req.headers['branch-id'];
+      const files = req.files;
+
+      const uploadPromises = files.map(async (file) => {
+        const destPath = path.join(
+          baseUserPath,
+          userId,
+          branchId,
+          uploadPath,
+          file.originalname
+        );
+        await fs.promises.rename(file.path, destPath);
+      });
+
+      await Promise.all(uploadPromises);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+);
+
+// 10. Download single file
+fileManagerRouter.get('/fileTree/download/:path', async (req, res) => {
+  try {
+    const userId = req.headers['user-id'];
+    const branchId = req.headers['branch-id'];
+    const filePath = path.join(baseUserPath, userId, branchId, req.params.path);
+
+    res.download(filePath);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 11. Download folder as zip
+fileManagerRouter.get('/fileTree/downloadFolder/:path', async (req, res) => {
+  try {
+    const userId = req.headers['user-id'];
+    const branchId = req.headers['branch-id'];
+    const folderPath = path.join(
+      baseUserPath,
+      userId,
+      branchId,
+      req.params.path
+    );
+
+    const zip = new JSZip();
+
+    // Recursive function to add files to zip
+    const addFilesToZip = async (currentPath, zipFolder) => {
+      const files = await fs.promises.readdir(currentPath);
+
+      for (const file of files) {
+        const filePath = path.join(currentPath, file);
+        const stats = await fs.promises.stat(filePath);
+
+        if (stats.isDirectory()) {
+          await addFilesToZip(filePath, zipFolder.folder(file));
+        } else {
+          const content = await fs.promises.readFile(filePath);
+          zipFolder.file(file, content);
+        }
+      }
+    };
+
+    await addFilesToZip(folderPath, zip);
+
+    const zipBuffer = await zip.generateAsync({ type: 'nodebuffer' });
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename=${path.basename(folderPath)}.zip`
+    );
+    res.send(zipBuffer);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+//Rece
+//Rece
+//Rece
+//Rece
+//Rece
+//Rece
+//Rece
+
+// Add receipt file endpoint
+// Delete receipt endpoint
+fileManagerRouter.delete(
+  '/delete-receipt/:userId/:roomId/:date',
+  async (req, res) => {
+    try {
+      const { userId, branchId, roomId, date } = req.params;
+      const tenantId = req.headers['tenant-id'];
+      const tenantName = req.headers['tenant-name'];
+      const addedTimeText = req.headers['tenant-start-time'];
+
+      if (
+        !userId ||
+        !roomId ||
+        !date ||
+        !tenantId ||
+        !tenantName ||
+        !addedTimeText
+      ) {
+        return res.status(400).json({ error: 'Missing required parameters' });
+      }
+
+      // Verify user authorization
+      const requestUserId = req.headers['user-id'];
+      if (userId !== requestUserId) {
+        return res.status(403).json({ error: 'Unauthorized access' });
+      }
+
+      // Construct the path to the receipt directory
+      const receiptDir = path.join(
+        baseUserPath,
+        userId,
+        branchId,
+        'Room Documents',
+        roomId,
+        `${tenantName}, ${addedTimeText}, ${tenantId}`,
+        'receipts'
+      );
+
+      // Find receipt file matching the date
+      const files = await fs.promises.readdir(receiptDir);
+      const receiptFile = files.find((file) => file.startsWith(date));
+
+      if (!receiptFile) {
+        return res.status(404).json({ error: 'Receipt not found' });
+      }
+
+      // Delete the file
+      const filePath = path.join(receiptDir, receiptFile);
+      await fs.promises.unlink(filePath);
+
+      logger.debug(`Receipt deleted successfully: ${filePath}`);
+      res.json({ success: true, message: 'Receipt deleted successfully' });
+    } catch (error) {
+      logger.error('Error deleting receipt:', error);
+      res.status(500).json({ error: 'Failed to delete receipt' });
+    }
+  }
+);
 app.get('/receipt-file/:roomId/:date/:userId', async (req, res) => {
   try {
-    const { roomId, date,userId } = req.params;
-    
+    const { roomId, date, userId, branchId } = req.params;
+
     const tenantId = req.headers['tenant-id'];
     const tenantName = req.headers['tenant-name'];
     const tenantStartTime = req.headers['tenant-start-time'];
 
-    if (!userId || !roomId || !date) {
-      return res.status(400).json({ error: 'Missing required parameters!!!!!' });
+    if (!userId || !branchId || !roomId || !date) {
+      return res
+        .status(400)
+        .json({ error: 'Missing required parameters!!!!!' });
     }
-const ONE_DAY_MS = 86400000; // milliseconds in a day
+    const ONE_DAY_MS = 86400000; // milliseconds in a day
 
     // Format the tenant folder name
-    const addedTimeText = new Date(parseInt(tenantStartTime )+ ONE_DAY_MS)
-      .toDateString();
+    const addedTimeText = new Date(
+      parseInt(tenantStartTime) + ONE_DAY_MS
+    ).toDateString();
 
     // Construct the path to the receipts directory
     const receiptDir = path.join(
       baseUserPath,
       userId,
+      branchId,
       'Room Documents',
       roomId,
       `${tenantName}, ${addedTimeText}, ${tenantId}`,
       'receipts'
     );
 
-   
     // Check if directory exists
     if (!fs.existsSync(receiptDir)) {
-       
       return res.status(204).json({ error: 'Receipt directory not found' });
     }
 
     // Read directory and find matching receipt
-  
+
     // Read directory and find matching receipt
     const files = await fs.promises.readdir(receiptDir);
-    const receiptFile = files.find(file => file.startsWith(date));
-    
+    const receiptFile = files.find((file) => file.startsWith(date));
+
     if (!receiptFile || receiptFile === undefined) {
       return res.status(204).json({ message: 'Receipt not found' });
     }
-    
-    
-    const filePath = path.join(receiptDir, receiptFile);
-    
-    // For web version, return a URL that can be used to download the file
-    const receiptUrl = `/download-receipt/${encodeURIComponent(userId)}/${encodeURIComponent(roomId)}/${encodeURIComponent(receiptFile)}`;
-    
-    res.json({ receiptUrl });
 
+    const filePath = path.join(receiptDir, receiptFile);
+
+    // For web version, return a URL that can be used to download the file
+    const receiptUrl = `/download-receipt/${encodeURIComponent(
+      userId
+    )}/${encodeURIComponent(branchId)}/${encodeURIComponent(
+      roomId
+    )}/${encodeURIComponent(receiptFile)}`;
+
+    res.json({ receiptUrl });
   } catch (error) {
     logger.error('Error getting receipt file:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -644,18 +1098,22 @@ const ONE_DAY_MS = 86400000; // milliseconds in a day
 // Add download receipt endpoint
 app.get('/download-receipt/:userId/:roomId/:fileName', async (req, res) => {
   try {
-    const { userId, roomId, fileName } = req.params;
-   
- 
+    const { userId, branchId, roomId, fileName } = req.params;
 
     // Get tenant info from the file name pattern
     const [date, ...rest] = fileName.split('_');
     const tenantInfo = rest.join('_');
 
     // Find the tenant folder
-    const roomDocumentsPath = path.join(baseUserPath, userId, 'Room Documents', roomId);
+    const roomDocumentsPath = path.join(
+      baseUserPath,
+      userId,
+      branchId,
+      'Room Documents',
+      roomId
+    );
     const tenantFolders = await fs.promises.readdir(roomDocumentsPath);
-    const tenantFolder = tenantFolders.find(folder => folder.includes(','));
+    const tenantFolder = tenantFolders.find((folder) => folder.includes(','));
 
     if (!tenantFolder) {
       return res.status(404).json({ error: 'Tenant folder not found' });
@@ -676,18 +1134,18 @@ app.get('/download-receipt/:userId/:roomId/:fileName', async (req, res) => {
     // Set appropriate headers
     res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
     const ext = path.extname(fileName).toLowerCase();
-    const contentType = {
-      '.pdf': 'application/pdf',
-      '.jpg': 'image/jpeg',
-      '.jpeg': 'image/jpeg',
-      '.png': 'image/png'
-    }[ext] || 'application/octet-stream';
+    const contentType =
+      {
+        '.pdf': 'application/pdf',
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.png': 'image/png',
+      }[ext] || 'application/octet-stream';
     res.setHeader('Content-Type', contentType);
 
     // Stream the file
     const fileStream = fs.createReadStream(filePath);
     fileStream.pipe(res);
-
   } catch (error) {
     logger.error('Error downloading receipt:', error);
     res.status(500).json({ error: 'Failed to download receipt' });
@@ -696,16 +1154,34 @@ app.get('/download-receipt/:userId/:roomId/:fileName', async (req, res) => {
 // Add receipt upload endpoint
 fileManagerRouter.post('/upload-receipt-document', async (req, res) => {
   try {
-    const { base64Document, fileName, roomId, tenantName, tenantId, formattedDate, AddedTimeText } = req.body;
+    const {
+      base64Document,
+      fileName,
+      roomId,
+      tenantName,
+      tenantId,
+      formattedDate,
+      AddedTimeText,
+    } = req.body;
     const userId = req.headers['user-id'];
+    const branchId = req.headers['branch-id'];
 
-    if (!base64Document || !fileName || !roomId || !tenantName || !tenantId || !formattedDate || !AddedTimeText) {
+    if (
+      !base64Document ||
+      !fileName ||
+      !roomId ||
+      !tenantName ||
+      !tenantId ||
+      !formattedDate ||
+      !AddedTimeText
+    ) {
       return res.status(400).json({ error: 'Missing required parameters' });
     }
 
     const dirPath = path.join(
       baseUserPath,
       userId,
+      branchId,
       'Room Documents',
       roomId,
       `${tenantName}, ${AddedTimeText}, ${tenantId}`,
@@ -717,24 +1193,48 @@ fileManagerRouter.post('/upload-receipt-document', async (req, res) => {
     const base64Data = base64Document.replace(/^data:.*?;base64,/, '');
     await fs.promises.writeFile(filePath, Buffer.from(base64Data, 'base64'));
 
-    res.json({ message: 'Receipt document uploaded successfully', fileName, filePath });
+    res.json({
+      message: 'Receipt document uploaded successfully',
+      fileName,
+      filePath,
+    });
   } catch (error) {
     logger.error('Error uploading receipt document:', error);
-    res.status(500).json({ error: 'Failed to upload receipt document', details: error.message });
+    res.status(500).json({
+      error: 'Failed to upload receipt document',
+      details: error.message,
+    });
   }
 });
 // 1. Upload Receipt Document
 fileManagerRouter.post('/upload-receipt-document', async (req, res) => {
   try {
-    const { base64Document, fileName, roomId, tenantName, tenantId, formattedDate, AddedTimeText } = req.body;
+    const {
+      base64Document,
+      fileName,
+      roomId,
+      tenantName,
+      tenantId,
+      formattedDate,
+      AddedTimeText,
+    } = req.body;
     const userId = req.userId;
+    const branchId = req.headers['branch-id'];
 
-    if (!base64Document || !fileName || !roomId || !tenantName || !tenantId || !formattedDate || !AddedTimeText) {
+    if (
+      !base64Document ||
+      !fileName ||
+      !roomId ||
+      !tenantName ||
+      !tenantId ||
+      !formattedDate ||
+      !AddedTimeText
+    ) {
       return res.status(400).json({ error: 'Missing required parameters' });
     }
 
     const dirPath = path.join(
-      getRoomDocumentsPath(userId),
+      getRoomDocumentsPath(userId, branchId),
       roomId,
       `${tenantName}, ${AddedTimeText}, ${tenantId}`,
       'receipts'
@@ -745,25 +1245,47 @@ fileManagerRouter.post('/upload-receipt-document', async (req, res) => {
     const base64Data = base64Document.replace(/^data:.*?;base64,/, '');
     await fs.promises.writeFile(filePath, Buffer.from(base64Data, 'base64'));
 
-    res.json({ message: 'Receipt document uploaded successfully', fileName, filePath });
+    res.json({
+      message: 'Receipt document uploaded successfully',
+      fileName,
+      filePath,
+    });
   } catch (error) {
     logger.error('Error uploading receipt document:', error);
-    res.status(500).json({ error: 'Failed to upload receipt document', details: error.message });
+    res.status(500).json({
+      error: 'Failed to upload receipt document',
+      details: error.message,
+    });
   }
 });
 
 // 2. Upload Tenant Document V2
 fileManagerRouter.post('/upload-tenant-documentV2', async (req, res) => {
   try {
-    const { base64Document, fileName, roomId, tenantName, tenantId, AddedTimeText } = req.body;
+    const {
+      base64Document,
+      fileName,
+      roomId,
+      tenantName,
+      tenantId,
+      AddedTimeText,
+    } = req.body;
     const userId = req.userId;
+    const branchId = req.headers['branch-id'];
 
-    if (!base64Document || !fileName || !roomId || !tenantName || !tenantId || !AddedTimeText) {
+    if (
+      !base64Document ||
+      !fileName ||
+      !roomId ||
+      !tenantName ||
+      !tenantId ||
+      !AddedTimeText
+    ) {
       return res.status(400).json({ error: 'Missing required parameters' });
     }
 
     const dirPath = path.join(
-      getRoomDocumentsPath(userId),
+      getRoomDocumentsPath(userId, branchId),
       roomId,
       `${tenantName}, ${AddedTimeText}, ${tenantId}`
     );
@@ -773,7 +1295,11 @@ fileManagerRouter.post('/upload-tenant-documentV2', async (req, res) => {
     const base64Data = base64Document.replace(/^data:.*?;base64,/, '');
     await fs.promises.writeFile(filePath, Buffer.from(base64Data, 'base64'));
 
-    res.json({ message: 'Tenant document uploaded successfully', fileName, filePath });
+    res.json({
+      message: 'Tenant document uploaded successfully',
+      fileName,
+      filePath,
+    });
   } catch (error) {
     logger.error('Error uploading tenant document:', error);
     res.status(500).json({ error: 'Failed to upload tenant document' });
@@ -785,12 +1311,17 @@ fileManagerRouter.delete('/delete-tenant-document-folder', async (req, res) => {
   try {
     const userId = req.userId;
     const folderPath = path.join(
-      getRoomDocumentsPath(userId),
+      getRoomDocumentsPath(userId, branchId),
       'Add a tenant documents',
       'Add a tenant document'
     );
 
-    if (await fs.promises.access(folderPath).then(() => true).catch(() => false)) {
+    if (
+      await fs.promises
+        .access(folderPath)
+        .then(() => true)
+        .catch(() => false)
+    ) {
       await fs.promises.rm(folderPath, { recursive: true });
       res.json({ message: 'Tenant document folder deleted successfully' });
     } else {
@@ -806,15 +1337,22 @@ fileManagerRouter.get('/room-documents/:roomId', async (req, res) => {
   try {
     const { roomId } = req.params;
     const userId = req.headers['user-id'];
+    const branchId = req.headers['branch-id'];
 
-    const roomDocumentsPath = path.join(baseUserPath, userId, 'Room Documents', roomId);
+    const roomDocumentsPath = path.join(
+      baseUserPath,
+      userId,
+      branchId,
+      'Room Documents',
+      roomId
+    );
     const folders = await fs.promises.readdir(roomDocumentsPath);
 
     const documents = [];
     for (const folder of folders) {
       const folderPath = path.join(roomDocumentsPath, folder);
       const files = await fs.promises.readdir(folderPath);
-      documents.push(...files.map(file => path.join(folderPath, file)));
+      documents.push(...files.map((file) => path.join(folderPath, file)));
     }
 
     res.json({ documents });
@@ -825,48 +1363,68 @@ fileManagerRouter.get('/room-documents/:roomId', async (req, res) => {
 });
 
 // Endpoint to get tenant room documents
-fileManagerRouter.get('/room-documents/:roomId/:tenantInfo', async (req, res) => {
-  try {
-    const { roomId, tenantInfo } = req.params;
-    const userId = req.headers['user-id'];
+fileManagerRouter.get(
+  '/room-documents/:roomId/:tenantInfo',
+  async (req, res) => {
+    try {
+      const { roomId, tenantInfo } = req.params;
+      const userId = req.headers['user-id'];
+      const branchId = req.headers['branch-id'];
 
-    const tenantFolderPath = path.join(baseUserPath, userId, 'Room Documents', roomId, tenantInfo);
-    const files = await fs.promises.readdir(tenantFolderPath);
-    // Check if files array is empty
-    if (files.length === 0) {
-      return res.json({ documents: [] }); // Return an empty array if no files exist
+      const tenantFolderPath = path.join(
+        baseUserPath,
+        userId,
+        branchId,
+        'Room Documents',
+        roomId,
+        tenantInfo
+      );
+      const files = await fs.promises.readdir(tenantFolderPath);
+      // Check if files array is empty
+      if (files.length === 0) {
+        return res.json({ documents: [] }); // Return an empty array if no files exist
+      }
+      const documents = files.map((file) => path.join(tenantFolderPath, file));
+
+      res.json({ documents });
+    } catch (error) {
+      logger.error('Error fetching tenant room documents:', error);
+      res.status(500).json({ error: 'Failed to fetch tenant room documents' });
     }
-    const documents = files.map(file => path.join(tenantFolderPath, file));
-
-    res.json({ documents });
-  } catch (error) {
-    logger.error('Error fetching tenant room documents:', error);
-    res.status(500).json({ error: 'Failed to fetch tenant room documents' });
   }
-});
-fileManagerRouter.delete('/room-document/delete-tenant-document/:fileName', async (req, res) => {
-  try {
-    const { fileName } = req.params;
-    const userId = req.userId;
-    
-    const filePath = path.join(
-      getRoomDocumentsPath(userId),
-      'Add a tenant documents',
-      'Add a tenant document',
-      fileName
-    );
+);
+fileManagerRouter.delete(
+  '/room-document/delete-tenant-document/:fileName',
+  async (req, res) => {
+    try {
+      const { fileName } = req.params;
+      const userId = req.userId;
+      const branchId = req.headers['branch-id'];
 
-    if (await fs.promises.access(filePath).then(() => true).catch(() => false)) {
-      await fs.promises.unlink(filePath);
-      res.json({ message: 'Tenant document deleted successfully' });
-    } else {
-      res.status(404).json({ error: 'Tenant document not found' });
+      const filePath = path.join(
+        getRoomDocumentsPath(userId, branchId),
+        'Add a tenant documents',
+        'Add a tenant document',
+        fileName
+      );
+
+      if (
+        await fs.promises
+          .access(filePath)
+          .then(() => true)
+          .catch(() => false)
+      ) {
+        await fs.promises.unlink(filePath);
+        res.json({ message: 'Tenant document deleted successfully' });
+      } else {
+        res.status(404).json({ error: 'Tenant document not found' });
+      }
+    } catch (error) {
+      logger.error('Error deleting tenant document:', error);
+      res.status(500).json({ error: 'Failed to delete tenant document' });
     }
-  } catch (error) {
-    logger.error('Error deleting tenant document:', error);
-    res.status(500).json({ error: 'Failed to delete tenant document' });
   }
-});
+);
 
 // 5. Upload Room Image
 
@@ -875,7 +1433,7 @@ fileManagerRouter.post('/upload-room-image', async (req, res) => {
   try {
     const { base64Image, fileName, FolderText, FileId } = req.body;
     const userId = req.headers['user-id'];
-
+    const branchId = req.headers['branch-id'];
     if (!base64Image || !fileName || !FolderText || !FileId) {
       return res.status(400).json({ error: 'Missing required parameters' });
     }
@@ -887,13 +1445,21 @@ fileManagerRouter.post('/upload-room-image', async (req, res) => {
       return res.status(413).json({ error: 'File size exceeds 5MB limit' });
     }
 
-    const dirPath = path.join(getRoomPicturesPath(userId), FolderText);
+    const dirPath = path.join(
+      getRoomPicturesPath(userId, branchId),
+      FolderText
+    );
     await fs.promises.mkdir(dirPath, { recursive: true });
-    
+
     const filePath = path.join(dirPath, `${FileId}-${fileName}`);
     await fs.promises.writeFile(filePath, Buffer.from(base64Data, 'base64'));
 
-    res.json({ message: 'Image uploaded successfully', fileName, FolderText, FileId });
+    res.json({
+      message: 'Image uploaded successfully',
+      fileName,
+      FolderText,
+      FileId,
+    });
   } catch (error) {
     logger.error('Error uploading image:', error);
     res.status(500).json({ error: 'Failed to upload image' });
@@ -903,21 +1469,27 @@ fileManagerRouter.get('/room-images/:roomId', async (req, res) => {
   try {
     const { roomId } = req.params;
     const userId = req.headers['user-id'];
-    
-    logger.debug(`API called: GET /room-images/${roomId} for user ${userId}`);
+    const branchId = req.headers['branch-id'];
 
     // Base directory for user's room pictures
-    const userRoomPicturesPath = path.join(baseUserPath, userId, 'Room Pictures');
+    const userRoomPicturesPath = path.join(
+      baseUserPath,
+      userId,
+      branchId,
+      'Room Pictures'
+    );
 
     // Find the correct folder that ends with the roomId
     let actualFolderName = null;
     try {
       const directories = await fs.promises.readdir(userRoomPicturesPath);
-       actualFolderName = directories.find(dir => dir.endsWith(`- ${roomId}`));
-      if(roomId == "Add a room images") {
-           actualFolderName = directories.find(dir => dir === `Add a room images`);
+      actualFolderName = directories.find((dir) => dir.endsWith(`- ${roomId}`));
+      if (roomId == 'Add a room images') {
+        actualFolderName = directories.find(
+          (dir) => dir === `Add a room images`
+        );
       }
-     
+
       logger.debug(`Found folder: ${actualFolderName}`);
     } catch (error) {
       logger.error(`Error reading directories: ${error}`);
@@ -936,171 +1508,204 @@ fileManagerRouter.get('/room-images/:roomId', async (req, res) => {
     // Get images from the found folder
     const roomImagesPath = path.join(userRoomPicturesPath, actualFolderName);
     const files = await fs.promises.readdir(roomImagesPath);
-    
+
     // Map files to URLs with the correct path structure
-    const images = files.map(file => ({
-      url: `/room-image/${encodeURIComponent(roomId)}/${encodeURIComponent(file)}/${encodeURIComponent(userId)}`,
+    const images = files.map((file) => ({
+      url: `/room-image/${encodeURIComponent(roomId)}/${encodeURIComponent(
+        file
+      )}/${encodeURIComponent(userId)}/${encodeURIComponent(branchId)}`,
       name: file,
-      fullPath: path.join(roomImagesPath, file) // Add full path for debugging
+      fullPath: path.join(roomImagesPath, file), // Add full path for debugging
     }));
 
     logger.debug(`Found ${images.length} images in ${actualFolderName}`);
 
-    res.json({ 
+    res.json({
       images,
-      roomFolder: actualFolderName
+      roomFolder: actualFolderName,
     });
-    
   } catch (error) {
     logger.error('Error getting room images:', error);
     res.status(500).json({ error: error.message });
   }
 });
 // Upload tenant document endpoint
-fileManagerRouter.post('/room-document/upload-tenant-document', async (req, res) => {
-  try {
-    const { base64Document, fileName, roomId } = req.body;
-    const userId = req.headers['user-id'];
+fileManagerRouter.post(
+  '/room-document/upload-tenant-document',
+  async (req, res) => {
+    try {
+      const { base64Document, fileName, roomId } = req.body;
+      const userId = req.headers['user-id'];
+      const branchId = req.headers['branch-id'];
 
-    if (!base64Document || !fileName || !roomId) {
-      return res.status(400).json({ error: 'Missing required parameters' });
-    }
-
-    // Validate file size (5MB limit)
-    const base64Data = base64Document.replace(/^data:.*?;base64,/, '');
-    const fileSize = Buffer.from(base64Data, 'base64').length;
-    if (fileSize > 5 * 1024 * 1024) {
-      return res.status(413).json({ error: 'File size exceeds 5MB limit' });
-    }
-
-    // Create directory path
-    const dirPath = path.join(
-      baseUserPath,
-      userId,
-      'Room Documents',
-      roomId,
-      'Add a tenant document'
-    );
-
-    // Create directory if it doesn't exist
-    await fs.promises.mkdir(dirPath, { recursive: true });
-
-    // Write file
-    const filePath = path.join(dirPath, fileName);
-    await fs.promises.writeFile(filePath, Buffer.from(base64Data, 'base64'));
-
-    logger.debug(`Tenant document uploaded successfully: ${filePath}`);
-
-    res.json({
-      message: 'Tenant document uploaded successfully',
-      fileName,
-      roomId,
-    });
-  } catch (error) {
-    logger.error('Error uploading tenant document:', error);
-    res.status(500).json({
-      error: 'Failed to upload tenant document',
-      details: error.message,
-    });
-  }
-});
-// Delete room document endpoint
-fileManagerRouter.delete('/room-document/:roomId/:fileName', async (req, res) => {
-  try {
-    const { roomId, fileName } = req.params;
-    const userId = req.headers['user-id'];
-    
-    logger.debug(`Attempting to delete room document: ${fileName} from room: ${roomId}`);
-
-    // Find the room folder that ends with roomId
-    const roomDocumentsPath = path.join(baseUserPath, userId, 'Room Documents');
-    const directories = await fs.promises.readdir(roomDocumentsPath);
-    const roomFolder = directories.find(dir => dir.endsWith(`- ${roomId}`) || dir === roomId);
-
-    if (!roomFolder) {
-      logger.error(`Room folder not found for roomId: ${roomId}`);
-      return res.status(404).json({ error: 'Room folder not found' });
-    }
-
-    // Find the file in the room's tenant folders
-    const roomPath = path.join(roomDocumentsPath, roomFolder);
-    const tenantFolders = await fs.promises.readdir(roomPath);
-    
-    let filePath = null;
-    for (const tenantFolder of tenantFolders) {
-      const testPath = path.join(roomPath, tenantFolder, fileName);
-      if (fs.existsSync(testPath)) {
-        filePath = testPath;
-        break;
+      if (!base64Document || !fileName || !roomId) {
+        return res.status(400).json({ error: 'Missing required parameters' });
       }
-    }
 
-    if (!filePath) {
-      logger.error(`File not found: ${fileName}`);
-      return res.status(404).json({ error: 'Document not found' });
-    }
+      // Validate file size (5MB limit)
+      const base64Data = base64Document.replace(/^data:.*?;base64,/, '');
+      const fileSize = Buffer.from(base64Data, 'base64').length;
+      if (fileSize > 5 * 1024 * 1024) {
+        return res.status(413).json({ error: 'File size exceeds 5MB limit' });
+      }
 
-    // Delete the file
-    await fs.promises.unlink(filePath);
-    logger.debug(`Successfully deleted document: ${filePath}`);
+      // Create directory path
+      const dirPath = path.join(
+        baseUserPath,
+        userId,
+        branchId,
+        'Room Documents',
+        roomId,
+        'Add a tenant document'
+      );
 
-    res.json({ message: 'Document deleted successfully' });
-  } catch (error) {
-    logger.error('Error deleting room document:', error);
-    res.status(500).json({ error: 'Failed to delete document' });
-  }
-});
+      // Create directory if it doesn't exist
+      await fs.promises.mkdir(dirPath, { recursive: true });
 
-// Delete tenant document endpoint
-fileManagerRouter.delete('/room-document/delete-tenant-document/:fileName', async (req, res) => {
-  try {
-    const { fileName } = req.params;
-    const userId = req.headers['user-id'];
-    
-    logger.debug(`Attempting to delete tenant document: ${fileName} for user: ${userId}`);
+      // Write file
+      const filePath = path.join(dirPath, fileName);
+      await fs.promises.writeFile(filePath, Buffer.from(base64Data, 'base64'));
 
-    const tenantDocPath = path.join(
-      baseUserPath,
-      userId,
-      'Room Documents',
-      'Add a tenant documents',
-      'Add a tenant document',
-      decodeURIComponent(fileName)
-    );
+      logger.debug(`Tenant document uploaded successfully: ${filePath}`);
 
-    logger.debug(`Looking for file at: ${tenantDocPath}`);
-
-    // Check if file exists
-    if (!await fs.promises.access(tenantDocPath).then(() => true).catch(() => false)) {
-      logger.error(`File not found at path: ${tenantDocPath}`);
-      return res.status(404).json({ 
-        error: 'Tenant document not found',
-        path: tenantDocPath // Include path in error for debugging
+      res.json({
+        message: 'Tenant document uploaded successfully',
+        fileName,
+        roomId,
+      });
+    } catch (error) {
+      logger.error('Error uploading tenant document:', error);
+      res.status(500).json({
+        error: 'Failed to upload tenant document',
+        details: error.message,
       });
     }
-
-    // Delete the file
-    await fs.promises.unlink(tenantDocPath);
-    logger.debug(`Successfully deleted tenant document: ${tenantDocPath}`);
-
-    res.json({ 
-      message: 'Tenant document deleted successfully',
-      fileName: fileName
-    });
-  } catch (error) {
-    logger.error('Error deleting tenant document:', error);
-    res.status(500).json({ 
-      error: 'Failed to delete tenant document',
-      details: error.message
-    });
   }
-});
+);
+// Delete room document endpoint
+fileManagerRouter.delete(
+  '/room-document/:roomId/:fileName',
+  async (req, res) => {
+    try {
+      const { roomId, fileName } = req.params;
+      const userId = req.headers['user-id'];
+      const branchId = req.headers['branch-id'];
+      logger.debug(
+        `Attempting to delete room document: ${fileName} from room: ${roomId}`
+      );
+
+      // Find the room folder that ends with roomId
+      const roomDocumentsPath = path.join(
+        baseUserPath,
+        userId,
+        branchId,
+        'Room Documents'
+      );
+      const directories = await fs.promises.readdir(roomDocumentsPath);
+      const roomFolder = directories.find(
+        (dir) => dir.endsWith(`- ${roomId}`) || dir === roomId
+      );
+
+      if (!roomFolder) {
+        logger.error(`Room folder not found for roomId: ${roomId}`);
+        return res.status(404).json({ error: 'Room folder not found' });
+      }
+
+      // Find the file in the room's tenant folders
+      const roomPath = path.join(roomDocumentsPath, roomFolder);
+      const tenantFolders = await fs.promises.readdir(roomPath);
+
+      let filePath = null;
+      for (const tenantFolder of tenantFolders) {
+        const testPath = path.join(roomPath, tenantFolder, fileName);
+        if (fs.existsSync(testPath)) {
+          filePath = testPath;
+          break;
+        }
+      }
+
+      if (!filePath) {
+        logger.error(`File not found: ${fileName}`);
+        return res.status(404).json({ error: 'Document not found' });
+      }
+
+      // Delete the file
+      await fs.promises.unlink(filePath);
+      logger.debug(`Successfully deleted document: ${filePath}`);
+
+      res.json({ message: 'Document deleted successfully' });
+    } catch (error) {
+      logger.error('Error deleting room document:', error);
+      res.status(500).json({ error: 'Failed to delete document' });
+    }
+  }
+);
+
+// Delete tenant document endpoint
+fileManagerRouter.delete(
+  '/room-document/delete-tenant-document/:fileName',
+  async (req, res) => {
+    try {
+      const { fileName } = req.params;
+      const userId = req.headers['user-id'];
+      const branchId = req.headers['branch-id'];
+
+      const tenantDocPath = path.join(
+        baseUserPath,
+        userId,
+        branchId,
+        'Room Documents',
+        'Add a tenant documents',
+        'Add a tenant document',
+        decodeURIComponent(fileName)
+      );
+
+      logger.debug(`Looking for file at: ${tenantDocPath}`);
+
+      // Check if file exists
+      if (
+        !(await fs.promises
+          .access(tenantDocPath)
+          .then(() => true)
+          .catch(() => false))
+      ) {
+        logger.error(`File not found at path: ${tenantDocPath}`);
+        return res.status(404).json({
+          error: 'Tenant document not found',
+          path: tenantDocPath, // Include path in error for debugging
+        });
+      }
+
+      // Delete the file
+      await fs.promises.unlink(tenantDocPath);
+      logger.debug(`Successfully deleted tenant document: ${tenantDocPath}`);
+
+      res.json({
+        message: 'Tenant document deleted successfully',
+        fileName: fileName,
+      });
+    } catch (error) {
+      logger.error('Error deleting tenant document:', error);
+      res.status(500).json({
+        error: 'Failed to delete tenant document',
+        details: error.message,
+      });
+    }
+  }
+);
 // Upload room document endpoint
 fileManagerRouter.post('/upload-room-document', async (req, res) => {
   try {
-    const { base64Document, fileName, roomId, tenantName, tenantId, AddedTimeText } = req.body;
+    const {
+      base64Document,
+      fileName,
+      roomId,
+      tenantName,
+      tenantId,
+      AddedTimeText,
+    } = req.body;
     const userId = req.headers['user-id'];
-
+    const branchId = req.headers['branch-id'];
     if (!base64Document || !fileName || !roomId || !tenantName || !tenantId) {
       return res.status(400).json({ error: 'Missing required parameters' });
     }
@@ -1116,6 +1721,7 @@ fileManagerRouter.post('/upload-room-document', async (req, res) => {
     const dirPath = path.join(
       baseUserPath,
       userId,
+      branchId,
       'Room Documents',
       roomId,
       `${tenantName}, ${AddedTimeText}, ${tenantId}`
@@ -1144,22 +1750,32 @@ fileManagerRouter.post('/upload-room-document', async (req, res) => {
   }
 });
 // Add a new endpoint to serve the actual images
-app.get('/room-image/:roomId/:fileName/:userId', async (req, res) => {
+app.get('/room-image/:roomId/:fileName/:userId/:branchId', async (req, res) => {
   try {
-    const { roomId, fileName, userId } = req.params;
- 
+    const { roomId, fileName, userId, branchId } = req.params;
 
     // Find the correct folder
-    const userRoomPicturesPath = path.join(baseUserPath, userId, 'Room Pictures');
+    const userRoomPicturesPath = path.join(
+      baseUserPath,
+      userId,
+      branchId,
+      'Room Pictures'
+    );
     const directories = await fs.promises.readdir(userRoomPicturesPath);
-    let actualFolderName = directories.find(dir => dir.endsWith(`- ${roomId}`)) || roomId;
-     if(roomId == "Add a room images") {
-          let actualFolderName = directories.find(dir => dir === `Add a room images`);
-      }
-   
-   
+    let actualFolderName =
+      directories.find((dir) => dir.endsWith(`- ${roomId}`)) || roomId;
+    if (roomId == 'Add a room images') {
+      let actualFolderName = directories.find(
+        (dir) => dir === `Add a room images`
+      );
+    }
+
     // Construct the full path to the image
-    const imagePath = path.join(userRoomPicturesPath, actualFolderName, fileName);
+    const imagePath = path.join(
+      userRoomPicturesPath,
+      actualFolderName,
+      fileName
+    );
 
     // Check if file exists
     if (!fs.existsSync(imagePath)) {
@@ -1169,7 +1785,6 @@ app.get('/room-image/:roomId/:fileName/:userId', async (req, res) => {
 
     // Send the file
     res.sendFile(imagePath);
-    
   } catch (error) {
     logger.error('Error serving image:', error);
     res.status(500).send('Error serving image');
@@ -1178,116 +1793,116 @@ app.get('/room-image/:roomId/:fileName/:userId', async (req, res) => {
 // Delete room image endpoint
 
 // Delete room image endpoint
-fileManagerRouter.delete('/room-image/:roomId/:fileName/:userId', async (req, res) => {
-  try {
-    const { roomId, fileName, userId } = req.params;
-    const requestUserId = req.headers['user-id'];
-
-    // Decode the parameters
-    const decodedFileName = decodeURIComponent(fileName);
-    const decodedUserId = decodeURIComponent(userId);
-    const decodedRoomId = decodeURIComponent(roomId);
-
-    logger.debug('Delete room image request:', {
-      roomId: decodedRoomId,
-      fileName: decodedFileName,
-      userId: decodedUserId
-    });
-
-    // Verify user authorization
-    if (decodedUserId !== requestUserId) {
-      logger.error(`User ID mismatch. Request: ${requestUserId}, Path: ${decodedUserId}`);
-      return res.status(403).json({ error: 'Unauthorized access' });
-    }
-
-    // Construct the base path to room pictures
-    const userRoomPicturesPath = path.join(baseUserPath, decodedUserId, 'Room Pictures');
-    
+fileManagerRouter.delete(
+  '/room-image/:roomId/:fileName/:userId/:branchId',
+  async (req, res) => {
     try {
-      // Find the room folder
-      const directories = await fs.promises.readdir(userRoomPicturesPath);
-      let roomFolder = directories.find(dir => dir.endsWith(`- ${decodedRoomId}`));
-      if (decodedRoomId === "Add a room images") {
-          roomFolder =directories.find(dir => dir === (`${decodedRoomId}`));
-      }
+      const { roomId, fileName, userId, branchId } = req.params;
+      const requestUserId = req.headers['user-id'];
+      const requestBranchId = req.headers['branch-id'];
 
-      if (!roomFolder) {
-        logger.error(`Room folder not found. Available directories:`, directories);
-        return res.status(404).json({ 
-          error: 'Room folder not found',
-          searchPath: userRoomPicturesPath,
-          availableDirs: directories
-        });
-      }
+      // Decode the parameters
+      const decodedFileName = decodeURIComponent(fileName);
+      const decodedUserId = decodeURIComponent(userId);
+      const decodedBranchId = decodeURIComponent(branchId);
+      const decodedRoomId = decodeURIComponent(roomId);
 
-      const roomFolderPath = path.join(userRoomPicturesPath, roomFolder);
-      
-      // List all files in the room folder
-      const files = await fs.promises.readdir(roomFolderPath);
-      logger.debug('Files in directory:', files);
-
-      // Get the actual filename from the URL-encoded string
-      const actualFileName = decodedFileName.split('/').pop();
-      logger.debug('Looking for file:', actualFileName);
-
-      // Find the file (case-insensitive)
-      const targetFile = files.find(file => 
-        file.toLowerCase() === actualFileName.toLowerCase()
+      // Construct the base path to room pictures
+      const userRoomPicturesPath = path.join(
+        baseUserPath,
+        decodedUserId,
+        decodedBranchId,
+        'Room Pictures'
       );
 
-      if (!targetFile) {
-        logger.error(`File not found. Available files:`, files);
-        return res.status(404).json({ 
-          error: 'Image not found',
-          searchedFor: actualFileName,
-          availableFiles: files
+      try {
+        // Find the room folder
+        const directories = await fs.promises.readdir(userRoomPicturesPath);
+        let roomFolder = directories.find((dir) =>
+          dir.endsWith(`- ${decodedRoomId}`)
+        );
+        if (decodedRoomId === 'Add a room images') {
+          roomFolder = directories.find((dir) => dir === `${decodedRoomId}`);
+        }
+
+        if (!roomFolder) {
+          return res.status(404).json({
+            error: 'Room folder not found',
+            searchPath: userRoomPicturesPath,
+            availableDirs: directories,
+          });
+        }
+
+        const roomFolderPath = path.join(userRoomPicturesPath, roomFolder);
+
+        // List all files in the room folder
+        const files = await fs.promises.readdir(roomFolderPath);
+
+        // Get the actual filename from the URL-encoded string
+        const actualFileName = decodedFileName.split('/').pop();
+
+        // Find the file (case-insensitive)
+        const targetFile = files.find(
+          (file) => file.toLowerCase() === actualFileName.toLowerCase()
+        );
+
+        if (!targetFile) {
+          return res.status(404).json({
+            error: 'Image not found',
+            searchedFor: actualFileName,
+            availableFiles: files,
+          });
+        }
+
+        // Construct the full path with the actual filename found in the directory
+        const imagePath = path.join(roomFolderPath, targetFile);
+
+        // Delete the image
+        await fs.promises.unlink(imagePath);
+
+        res.json({
+          message: 'Image deleted successfully',
+          fileName: targetFile,
+          roomId: decodedRoomId,
+          path: imagePath,
         });
+      } catch (error) {
+        logger.error(
+          `Error accessing room pictures directory: ${error.message}`
+        );
+        throw error;
       }
-
-      // Construct the full path with the actual filename found in the directory
-      const imagePath = path.join(roomFolderPath, targetFile);
-      
-      logger.debug(`Attempting to delete file at: ${imagePath}`);
-
-      // Delete the image
-      await fs.promises.unlink(imagePath);
-      logger.debug(`Successfully deleted image: ${imagePath}`);
-
-      res.json({ 
-        message: 'Image deleted successfully',
-        fileName: targetFile,
-        roomId: decodedRoomId,
-        path: imagePath
-      });
-
     } catch (error) {
-      logger.error(`Error accessing room pictures directory: ${error.message}`);
-      throw error;
+      logger.error('Error deleting room image:', error.stack);
+      res.status(500).json({
+        error: 'Failed to delete image',
+        details: error.message,
+        stack: error.stack,
+      });
     }
-
-  } catch (error) {
-    logger.error('Error deleting room image:', error.stack);
-    res.status(500).json({ 
-      error: 'Failed to delete image',
-      details: error.message,
-      stack: error.stack
-    });
   }
-});
+);
 // Add endpoint to get tenant folder info
 fileManagerRouter.get('/tenant-document-info/:roomId', async (req, res) => {
   try {
     const { roomId } = req.params;
     const userId = req.headers['user-id'];
+    const branchId = req.headers['branch-id'];
 
     // Get the room documents path
-    const roomDocumentsPath = path.join(baseUserPath, userId, 'Room Documents', roomId);
-    
+    const roomDocumentsPath = path.join(
+      baseUserPath,
+      userId,
+      branchId,
+      'Room Documents',
+      roomId
+    );
+
     // Find the tenant folder (should be the only folder in this directory)
     const directories = await fs.promises.readdir(roomDocumentsPath);
-    
+
     // The folder name should be in format: "TenantName, StartDate, TenantId"
-    const tenantFolder = directories.find(dir => dir.includes(','));
+    const tenantFolder = directories.find((dir) => dir.includes(','));
 
     if (!tenantFolder) {
       return res.status(404).json({ error: 'Tenant folder not found' });
@@ -1300,83 +1915,109 @@ fileManagerRouter.get('/tenant-document-info/:roomId', async (req, res) => {
   }
 });
 // Add image download endpoint
-fileManagerRouter.get('/download-image/:roomId/:fileName/:userId', async (req, res) => {
-  try {
-    const { roomId, fileName, userId } = req.params;
-    const requestUserId = req.headers['user-id'];
+fileManagerRouter.get(
+  '/download-image/:roomId/:fileName/:userId/:branchId',
+  async (req, res) => {
+    try {
+      const { roomId, fileName, userId, branchId } = req.params;
+      const requestUserId = req.headers['user-id'];
+      const requestBranchId = req.headers['branch-id'];
 
-    // Verify user authorization
-    if (userId !== requestUserId) {
-      return res.status(403).json({ error: 'Unauthorized access' });
+      // Verify user authorization
+      if (userId !== requestUserId || branchId !== requestBranchId) {
+        return res.status(403).json({ error: 'Unauthorized access' });
+      }
+
+      // Construct the base path
+      const userRoomPicturesPath = path.join(
+        baseUserPath,
+        userId,
+        branchId,
+        'Room Pictures'
+      );
+
+      // Find the room folder
+      const directories = await fs.promises.readdir(userRoomPicturesPath);
+      const roomFolder = directories.find(
+        (dir) => dir.endsWith(`- ${roomId}`) || dir === roomId
+      );
+
+      if (!roomFolder) {
+        logger.error(
+          `Room folder not found. Available directories: ${directories.join(
+            ', '
+          )}`
+        );
+        return res.status(404).json({ error: 'Room folder not found' });
+      }
+
+      // Construct the full path to the image
+      const imagePath = path.join(userRoomPicturesPath, roomFolder, fileName);
+
+      // Check if file exists
+      if (!fs.existsSync(imagePath)) {
+        logger.error(`Image not found at path: ${imagePath}`);
+        return res.status(404).json({ error: 'Image not found' });
+      }
+
+      // Set headers for file download
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename="${fileName}"`
+      );
+
+      // Set content type based on file extension
+      const ext = path.extname(fileName).toLowerCase();
+      const contentType =
+        {
+          '.png': 'image/png',
+          '.jpg': 'image/jpeg',
+          '.jpeg': 'image/jpeg',
+          '.gif': 'image/gif',
+          '.webp': 'image/webp',
+        }[ext] || 'application/octet-stream';
+
+      res.setHeader('Content-Type', contentType);
+
+      // Stream the file
+      const fileStream = fs.createReadStream(imagePath);
+      fileStream.pipe(res);
+    } catch (error) {
+      logger.error('Error downloading image:', error);
+      res.status(500).json({ error: 'Failed to download image' });
     }
-
-    // Construct the base path
-    const userRoomPicturesPath = path.join(baseUserPath, userId, 'Room Pictures');
-    
-    // Find the room folder
-    const directories = await fs.promises.readdir(userRoomPicturesPath);
-    const roomFolder = directories.find(dir => 
-      dir.endsWith(`- ${roomId}`) || dir === roomId
-    );
-
-    if (!roomFolder) {
-      logger.error(`Room folder not found. Available directories: ${directories.join(', ')}`);
-      return res.status(404).json({ error: 'Room folder not found' });
-    }
-
-    // Construct the full path to the image
-    const imagePath = path.join(userRoomPicturesPath, roomFolder, fileName);
-    
-    // Check if file exists
-    if (!fs.existsSync(imagePath)) {
-      logger.error(`Image not found at path: ${imagePath}`);
-      return res.status(404).json({ error: 'Image not found' });
-    }
-
-    // Set headers for file download
-    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
-    
-    // Set content type based on file extension
-    const ext = path.extname(fileName).toLowerCase();
-    const contentType = {
-      '.png': 'image/png',
-      '.jpg': 'image/jpeg',
-      '.jpeg': 'image/jpeg',
-      '.gif': 'image/gif',
-      '.webp': 'image/webp'
-    }[ext] || 'application/octet-stream';
-    
-    res.setHeader('Content-Type', contentType);
-
-    // Stream the file
-    const fileStream = fs.createReadStream(imagePath);
-    fileStream.pipe(res);
-
-  } catch (error) {
-    logger.error('Error downloading image:', error);
-    res.status(500).json({ error: 'Failed to download image' });
   }
-});// Add image download endpoint
+); // Add image download endpoint
 // Add endpoint to get room folder info
 fileManagerRouter.get('/room-folder-info/:roomId', async (req, res) => {
   try {
     const { roomId } = req.params;
     const userId = req.headers['user-id'];
+    const branchId = req.headers['branch-id'];
 
     // Get the room pictures path
-    const userRoomPicturesPath = path.join(baseUserPath, userId, 'Room Pictures');
-    
+    const userRoomPicturesPath = path.join(
+      baseUserPath,
+      userId,
+      branchId,
+      'Room Pictures'
+    );
+
     // Find the folder that ends with "- roomId"
     const directories = await fs.promises.readdir(userRoomPicturesPath);
-    const roomFolder = directories.find(dir => {
-      if (roomId === "Add a room images") {
-        return dir === "Add a room images";
+    const roomFolder = directories.find((dir) => {
+      if (roomId === 'Add a room images') {
+        return dir === 'Add a room images';
       }
       return dir.endsWith(`- ${roomId}`);
     });
 
     if (!roomFolder) {
-      logger.error(`Room folder not found. Available directories: ${directories.join(', ')}`);
+      logger.error(
+        `Room folder not found. Available directories: ${directories.join(
+          ', '
+        )}`
+      );
       return res.status(404).json({ error: 'Room folder not found' });
     }
 
@@ -1388,59 +2029,66 @@ fileManagerRouter.get('/room-folder-info/:roomId', async (req, res) => {
 });
 
 // Update the image download endpoint
-fileManagerRouter.get('/download-image/:roomId/:folderName/:fileName/:userId', async (req, res) => {
-  try {
-    const { roomId, folderName, fileName, userId } = req.params;
-    const requestUserId = req.headers['user-id'];
+fileManagerRouter.get(
+  '/download-image/:roomId/:folderName/:fileName/:userId/:branchId',
+  async (req, res) => {
+    try {
+      const { roomId, folderName, fileName, userId, branchId } = req.params;
+      const requestUserId = req.headers['user-id'];
 
-    // Verify user authorization
-    if (userId !== requestUserId) {
-      return res.status(403).json({ error: 'Unauthorized access' });
+      // Verify user authorization
+      if (userId !== requestUserId || branchId !== requestBranchId) {
+        return res.status(403).json({ error: 'Unauthorized access' });
+      }
+
+      // Construct the full path to the image
+      const imagePath = path.join(
+        baseUserPath,
+        userId,
+        branchId,
+        'Room Pictures',
+        folderName,
+        fileName
+      );
+
+      logger.debug(`Attempting to download image from: ${imagePath}`);
+
+      // Check if file exists
+      if (!fs.existsSync(imagePath)) {
+        logger.error(`Image not found at path: ${imagePath}`);
+        return res.status(404).json({ error: 'Image not found' });
+      }
+
+      // Set headers for file download
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename="${fileName}"`
+      );
+
+      // Set content type based on file extension
+      const ext = path.extname(fileName).toLowerCase();
+      const contentType =
+        {
+          '.png': 'image/png',
+          '.jpg': 'image/jpeg',
+          '.jpeg': 'image/jpeg',
+          '.gif': 'image/gif',
+          '.webp': 'image/webp',
+        }[ext] || 'application/octet-stream';
+
+      res.setHeader('Content-Type', contentType);
+
+      // Stream the file
+      const fileStream = fs.createReadStream(imagePath);
+      fileStream.pipe(res);
+    } catch (error) {
+      logger.error('Error downloading image:', error);
+      res.status(500).json({ error: 'Failed to download image' });
     }
-
-    // Construct the full path to the image
-    const imagePath = path.join(
-      baseUserPath,
-      userId,
-      'Room Pictures',
-      folderName,
-      fileName
-    );
-
-    logger.debug(`Attempting to download image from: ${imagePath}`);
-    
-    // Check if file exists
-    if (!fs.existsSync(imagePath)) {
-      logger.error(`Image not found at path: ${imagePath}`);
-      return res.status(404).json({ error: 'Image not found' });
-    }
-
-    // Set headers for file download
-    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
-    
-    // Set content type based on file extension
-    const ext = path.extname(fileName).toLowerCase();
-    const contentType = {
-      '.png': 'image/png',
-      '.jpg': 'image/jpeg',
-      '.jpeg': 'image/jpeg',
-      '.gif': 'image/gif',
-      '.webp': 'image/webp'
-    }[ext] || 'application/octet-stream';
-    
-    res.setHeader('Content-Type', contentType);
-
-    // Stream the file
-    const fileStream = fs.createReadStream(imagePath);
-    fileStream.pipe(res);
-
-  } catch (error) {
-    logger.error('Error downloading image:', error);
-    res.status(500).json({ error: 'Failed to download image' });
   }
-});
+);
 // Function to get receipt path for a payment
-function getReceiptPath(date, tenant, userId) {
+function getReceiptPath(date, tenant, userId, branchId) {
   try {
     const paymentDate = new Date(date);
     const receiptFileName = `${paymentDate.getFullYear()}-${String(
@@ -1452,8 +2100,11 @@ function getReceiptPath(date, tenant, userId) {
       __dirname,
       'User Files',
       userId,
+      branchId,
       'Room Documents',
-      `${tenant.name}, ${new Date(tenant.startTime).toDateString()}, ${tenant.id}`,
+      `${tenant.name}, ${new Date(tenant.startTime).toDateString()}, ${
+        tenant.id
+      }`,
       'receipts'
     );
 
@@ -1465,14 +2116,14 @@ function getReceiptPath(date, tenant, userId) {
     // Find matching receipt file
     const files = fs.readdirSync(receiptsPath);
     const receiptFile = files.find((file) => file.startsWith(receiptFileName));
-    
+
     if (!receiptFile) {
       return null;
     }
 
     return {
       fileName: receiptFile,
-      fullPath: path.join(receiptsPath, receiptFile)
+      fullPath: path.join(receiptsPath, receiptFile),
     };
   } catch (error) {
     console.error('Error finding receipt:', error);
@@ -1480,19 +2131,19 @@ function getReceiptPath(date, tenant, userId) {
   }
 }
 
-app.get("/receipt-get", async (req, res) => {
+app.get('/receipt-get', async (req, res) => {
   try {
-    const { date, tenant, userId } = req.query; // Changed from req.body since it's a GET request
+    const { date, tenant, userId, branchId } = req.query; // Changed from req.body since it's a GET request
 
     // Validate required parameters
-    if (!date || !tenant || !userId) {
+    if (!date || !tenant || !userId || !branchId) {
       return res.status(400).json({
         error: 'Missing required parameters',
         details: {
           date: !date ? 'missing' : 'present',
           tenant: !tenant ? 'missing' : 'present',
-          userId: !userId ? 'missing' : 'present'
-        }
+          userId: !userId ? 'missing' : 'present',
+        },
       });
     }
 
@@ -1500,7 +2151,12 @@ app.get("/receipt-get", async (req, res) => {
     const tenantData = typeof tenant === 'string' ? JSON.parse(tenant) : tenant;
 
     // Get receipt file information
-    const receiptInfo = await getReceiptPath(date, tenantData, userId);
+    const receiptInfo = await getReceiptPath(
+      date,
+      tenantData,
+      userId,
+      branchId
+    );
 
     if (!receiptInfo) {
       return res.status(404).json({
@@ -1508,172 +2164,200 @@ app.get("/receipt-get", async (req, res) => {
         details: {
           date,
           tenantName: tenantData.name,
-          userId
-        }
+          userId,
+          branchId,
+        },
       });
     }
 
     // Get file extension
     const ext = path.extname(receiptInfo.fileName).toLowerCase();
-    const contentType = {
-      '.pdf': 'application/pdf',
-      '.jpg': 'image/jpeg',
-      '.jpeg': 'image/jpeg',
-      '.png': 'image/png'
-    }[ext] || 'application/octet-stream';
+    const contentType =
+      {
+        '.pdf': 'application/pdf',
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.png': 'image/png',
+      }[ext] || 'application/octet-stream';
 
     // Return receipt information
     res.json({
       success: true,
       receipt: {
         fileName: receiptInfo.fileName,
-        downloadUrl: `/download-receipt/${encodeURIComponent(userId)}/${encodeURIComponent(tenantData.id)}/${encodeURIComponent(receiptInfo.fileName)}`,
+        downloadUrl: `/download-receipt/${encodeURIComponent(
+          userId
+        )}/${encodeURIComponent(branchId)}/${encodeURIComponent(
+          tenantData.id
+        )}/${encodeURIComponent(receiptInfo.fileName)}`,
         contentType,
         date: date,
         tenant: {
           id: tenantData.id,
-          name: tenantData.name
-        }
-      }
+          name: tenantData.name,
+        },
+      },
     });
-
   } catch (error) {
     console.error('Error processing receipt request:', error);
     res.status(500).json({
       error: 'Internal server error',
       message: error.message,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
     });
   }
 });
-app.get('/download-image/:roomId/:folderName/:fileName/:userId', async (req, res) => {
-  try {
-    const { roomId, folderName, fileName, userId } = req.params;
-    const requestUserId = req.headers['user-id'];
+app.get(
+  '/download-image/:roomId/:folderName/:fileName/:userId/:branchId',
+  async (req, res) => {
+    try {
+      const { roomId, folderName, fileName, userId, branchId } = req.params;
+      const requestUserId = req.headers['user-id'];
+      const requestBranchId = req.headers['branch-id'];
 
-    // Verify user authorization
-    if (userId !== requestUserId) {
-      return res.status(403).json({ error: 'Unauthorized access' });
+      // Verify user authorization
+      if (userId !== requestUserId || branchId !== requestBranchId) {
+        return res.status(403).json({ error: 'Unauthorized access' });
+      }
+
+      // Construct the full path to the image
+      const imagePath = path.join(
+        baseUserPath,
+        userId,
+        branchId,
+        'Room Pictures',
+        folderName,
+        fileName
+      );
+
+      logger.debug(`Attempting to download image from: ${imagePath}`);
+
+      // Check if file exists
+      if (!fs.existsSync(imagePath)) {
+        logger.error(`Image not found at path: ${imagePath}`);
+        return res.status(404).json({ error: 'Image not found' });
+      }
+
+      // Set headers for file download
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename="${fileName}"`
+      );
+
+      // Set content type based on file extension
+      const ext = path.extname(fileName).toLowerCase();
+      const contentType =
+        {
+          '.png': 'image/png',
+          '.jpg': 'image/jpeg',
+          '.jpeg': 'image/jpeg',
+          '.gif': 'image/gif',
+          '.webp': 'image/webp',
+        }[ext] || 'application/octet-stream';
+
+      res.setHeader('Content-Type', contentType);
+
+      // Stream the file
+      const fileStream = fs.createReadStream(imagePath);
+      fileStream.pipe(res);
+    } catch (error) {
+      logger.error('Error downloading image:', error);
+      res.status(500).json({ error: 'Failed to download image' });
     }
-
-    // Construct the full path to the image
-    const imagePath = path.join(
-      baseUserPath,
-      userId,
-      'Room Pictures',
-      folderName,
-      fileName
-    );
-
-    logger.debug(`Attempting to download image from: ${imagePath}`);
-    
-    // Check if file exists
-    if (!fs.existsSync(imagePath)) {
-      logger.error(`Image not found at path: ${imagePath}`);
-      return res.status(404).json({ error: 'Image not found' });
-    }
-
-    // Set headers for file download
-    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
-    
-    // Set content type based on file extension
-    const ext = path.extname(fileName).toLowerCase();
-    const contentType = {
-      '.png': 'image/png',
-      '.jpg': 'image/jpeg',
-      '.jpeg': 'image/jpeg',
-      '.gif': 'image/gif',
-      '.webp': 'image/webp'
-    }[ext] || 'application/octet-stream';
-    
-    res.setHeader('Content-Type', contentType);
-
-    // Stream the file
-    const fileStream = fs.createReadStream(imagePath);
-    fileStream.pipe(res);
-
-  } catch (error) {
-    logger.error('Error downloading image:', error);
-    res.status(500).json({ error: 'Failed to download image' });
   }
-});
+);
 // Update the download document endpoint
-fileManagerRouter.get('/download-document/:roomId/:tenantFolder/:fileName', async (req, res) => {
-  try {
-    const { roomId, tenantFolder, fileName } = req.params;
-    const userId = req.headers['user-id'];
+fileManagerRouter.get(
+  '/download-document/:roomId/:tenantFolder/:fileName',
+  async (req, res) => {
+    try {
+      const { roomId, tenantFolder, fileName } = req.params;
+      const userId = req.headers['user-id'];
+      const branchId = req.headers['branch-id'];
 
-    // Construct the full path to the document using the correct structure
-    const documentPath = path.join(
-      baseUserPath,
-      userId,
-      'Room Documents',
-      roomId,
-      tenantFolder,
-      fileName
-    );
+      // Construct the full path to the document using the correct structure
+      const documentPath = path.join(
+        baseUserPath,
+        userId,
+        branchId,
+        'Room Documents',
+        roomId,
+        tenantFolder,
+        fileName
+      );
 
-    // Check if file exists
-    if (!fs.existsSync(documentPath)) {
-      logger.error(`File not found: ${documentPath}`);
-      return res.status(404).json({ error: 'Document not found' });
+      // Check if file exists
+      if (!fs.existsSync(documentPath)) {
+        logger.error(`File not found: ${documentPath}`);
+        return res.status(404).json({ error: 'Document not found' });
+      }
+
+      // Set download headers
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename="${fileName}"`
+      );
+      res.setHeader('Content-Type', 'application/octet-stream');
+
+      // Stream the file
+      const fileStream = fs.createReadStream(documentPath);
+      fileStream.pipe(res);
+    } catch (error) {
+      logger.error('Error downloading document:', error);
+      res.status(500).json({ error: 'Failed to download document' });
     }
-
-    // Set download headers
-    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
-    res.setHeader('Content-Type', 'application/octet-stream');
-
-    // Stream the file
-    const fileStream = fs.createReadStream(documentPath);
-    fileStream.pipe(res);
-
-  } catch (error) {
-    logger.error('Error downloading document:', error);
-    res.status(500).json({ error: 'Failed to download document' });
   }
-});
-app.get('/download-document/:roomId/:tenantFolder/:fileName', async (req, res) => {
-  try {
-    const { roomId, tenantFolder, fileName } = req.params;
-    const userId = req.headers['user-id'];
+);
+app.get(
+  '/download-document/:roomId/:tenantFolder/:fileName',
+  async (req, res) => {
+    try {
+      const { roomId, tenantFolder, fileName } = req.params;
+      const userId = req.headers['user-id'];
+      const branchId = req.headers['branch-id'];
+      // Construct the full path to the document using the correct structure
+      const documentPath = path.join(
+        baseUserPath,
+        userId,
+        branchId,
+        'Room Documents',
+        roomId,
+        tenantFolder,
+        fileName
+      );
 
-    // Construct the full path to the document using the correct structure
-    const documentPath = path.join(
-      baseUserPath,
-      userId,
-      'Room Documents',
-      roomId,
-      tenantFolder,
-      fileName
-    );
+      // Check if file exists
+      if (!fs.existsSync(documentPath)) {
+        logger.error(`File not found: ${documentPath}`);
+        return res.status(404).json({ error: 'Document not found' });
+      }
 
-    // Check if file exists
-    if (!fs.existsSync(documentPath)) {
-      logger.error(`File not found: ${documentPath}`);
-      return res.status(404).json({ error: 'Document not found' });
+      // Set download headers
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename="${fileName}"`
+      );
+      res.setHeader('Content-Type', 'application/octet-stream');
+
+      // Stream the file
+      const fileStream = fs.createReadStream(documentPath);
+      fileStream.pipe(res);
+    } catch (error) {
+      logger.error('Error downloading document:', error);
+      res.status(500).json({ error: 'Failed to download document' });
     }
-
-    // Set download headers
-    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
-    res.setHeader('Content-Type', 'application/octet-stream');
-
-    // Stream the file
-    const fileStream = fs.createReadStream(documentPath);
-    fileStream.pipe(res);
-
-  } catch (error) {
-    logger.error('Error downloading document:', error);
-    res.status(500).json({ error: 'Failed to download document' });
   }
-});
+);
 fileManagerRouter.delete('/room-image/:roomId/:fileName', async (req, res) => {
   try {
     const { roomId, fileName } = req.params;
     const userId = req.userId;
-    const roomPicturesPath = getRoomPicturesPath(userId);
+    const branchId = req.headers['branch-id'];
+
+    const roomPicturesPath = getRoomPicturesPath(userId, branchId);
 
     const folders = await fs.promises.readdir(roomPicturesPath);
-    const roomFolder = folders.find(folder => folder.includes(roomId));
+    const roomFolder = folders.find((folder) => folder.includes(roomId));
 
     if (!roomFolder) {
       return res.status(404).json({ error: 'Room folder not found' });
@@ -1692,14 +2376,14 @@ app.post('/download-all-user-files', async (req, res) => {
   try {
     const { userId } = req.body;
     const requestUserId = req.headers['user-id'];
-    
+
     // Verify user authorization
     if (!userId || userId !== requestUserId) {
       return res.status(403).json({ error: 'Unauthorized access' });
     }
 
     const userBasePath = path.join(baseDir, userId);
-    
+
     if (!fs.existsSync(userBasePath)) {
       return res.status(404).json({ error: 'User directory not found' });
     }
@@ -1708,7 +2392,7 @@ app.post('/download-all-user-files', async (req, res) => {
     res.set({
       'Content-Type': 'application/zip',
       'Content-Disposition': `attachment; filename=user_${userId}_files.zip`,
-      'Transfer-Encoding': 'chunked'
+      'Transfer-Encoding': 'chunked',
     });
 
     const zip = new JSZip();
@@ -1716,7 +2400,9 @@ app.post('/download-all-user-files', async (req, res) => {
 
     // Process files in chunks
     async function addDirectoryToZip(currentPath, zipPath = '') {
-      const items = await fs.promises.readdir(currentPath, { withFileTypes: true });
+      const items = await fs.promises.readdir(currentPath, {
+        withFileTypes: true,
+      });
 
       for (const item of items) {
         const fullPath = path.join(currentPath, item.name);
@@ -1740,7 +2426,9 @@ app.post('/download-all-user-files', async (req, res) => {
 
     // Only include Room Documents and Room Pictures
     const allowedFolders = ['Room Documents', 'Room Pictures'];
-    const baseFolders = await fs.promises.readdir(userBasePath, { withFileTypes: true });
+    const baseFolders = await fs.promises.readdir(userBasePath, {
+      withFileTypes: true,
+    });
 
     for (const folder of baseFolders) {
       if (folder.isDirectory() && allowedFolders.includes(folder.name)) {
@@ -1754,14 +2442,19 @@ app.post('/download-all-user-files', async (req, res) => {
       type: 'nodebuffer',
       streamFiles: true,
       compression: 'DEFLATE',
-      compressionOptions: { level: 6 }
+      compressionOptions: { level: 6 },
     });
 
-    logger.debug(`Starting zip stream for user ${userId} with ${fileCount} files`);
+    logger.debug(
+      `Starting zip stream for user ${userId} with ${fileCount} files`
+    );
 
-    zipStream.pipe(res)
+    zipStream
+      .pipe(res)
       .on('finish', () => {
-        logger.debug(`Successfully created and sent zip file for user ${userId}`);
+        logger.debug(
+          `Successfully created and sent zip file for user ${userId}`
+        );
       })
       .on('error', (error) => {
         logger.error(`Error streaming zip for user ${userId}:`, error);
@@ -1769,13 +2462,12 @@ app.post('/download-all-user-files', async (req, res) => {
           res.status(500).json({ error: 'Failed to create zip file' });
         }
       });
-
   } catch (error) {
     logger.error('Error in download endpoint:', error);
     if (!res.headersSent) {
-      res.status(500).json({ 
+      res.status(500).json({
         error: 'Server error while processing download',
-        details: error.message 
+        details: error.message,
       });
     }
   }
@@ -1784,9 +2476,9 @@ fileManagerRouter.put('/rename-folder', async (req, res) => {
   try {
     const { oldName, newName } = req.body;
     const userId = req.userId;
-
-    const oldPath = path.join(getRoomPicturesPath(userId), oldName);
-    const newPath = path.join(getRoomPicturesPath(userId), newName);
+    const branchId = req.headers['branch-id'];
+    const oldPath = path.join(getRoomPicturesPath(userId, branchId), oldName);
+    const newPath = path.join(getRoomPicturesPath(userId, branchId), newName);
 
     await fs.promises.rename(oldPath, newPath);
     res.json({ message: 'Folder renamed successfully' });
@@ -1801,17 +2493,17 @@ fileManagerRouter.put('/rename-adddocument-folder', async (req, res) => {
   try {
     const { newNameSecond, roomId } = req.body;
     const userId = req.userId;
-
+    const branchId = req.headers['branch-id'];
     // Define the paths
     const oldPath = path.join(
-      getRoomDocumentsPath(userId),
+      getRoomDocumentsPath(userId, branchId),
       'Add a tenant documents',
       'Add a tenant document'
     );
 
     // Create the destination directory structure first
     const destinationDir = path.join(
-      getRoomDocumentsPath(userId),
+      getRoomDocumentsPath(userId, branchId),
       'Add a tenant documents'
     );
 
@@ -1821,7 +2513,7 @@ fileManagerRouter.put('/rename-adddocument-folder', async (req, res) => {
     // Construct the new path
     const newPath = path.join(
       destinationDir,
-      `${newNameSecond}`  // Remove the date and UUID from the folder name
+      `${newNameSecond}` // Remove the date and UUID from the folder name
     );
 
     // Check if source exists
@@ -1835,11 +2527,19 @@ fileManagerRouter.put('/rename-adddocument-folder', async (req, res) => {
 
     // Perform the rename operation for the inner folder
     await fs.promises.rename(oldPath, newPath);
-    logger.debug(`Successfully renamed inner folder from ${oldPath} to ${newPath}`);
+    logger.debug(
+      `Successfully renamed inner folder from ${oldPath} to ${newPath}`
+    );
 
     // Now handle the main folder rename
-    const oldPathMain = path.join(getRoomDocumentsPath(userId), 'Add a tenant documents');
-    const newPathMain = path.join(getRoomDocumentsPath(userId), roomId);
+    const oldPathMain = path.join(
+      getRoomDocumentsPath(userId, branchId),
+      'Add a tenant documents'
+    );
+    const newPathMain = path.join(
+      getRoomDocumentsPath(userId, branchId),
+      roomId
+    );
 
     // Ensure the destination parent directory exists
     await fs.promises.mkdir(path.dirname(newPathMain), { recursive: true });
@@ -1848,30 +2548,31 @@ fileManagerRouter.put('/rename-adddocument-folder', async (req, res) => {
     try {
       await fs.promises.access(oldPathMain, fs.constants.F_OK);
       logger.debug(`Main folder exists: ${oldPathMain}`);
-      
+
       // Perform the rename operation for the main folder
       await fs.promises.rename(oldPathMain, newPathMain);
-      logger.debug(`Successfully renamed main folder from ${oldPathMain} to ${newPathMain}`);
+      logger.debug(
+        `Successfully renamed main folder from ${oldPathMain} to ${newPathMain}`
+      );
     } catch (error) {
       logger.error(`Main folder does not exist: ${oldPathMain}`);
       // Don't throw here, as the inner folder rename might have succeeded
     }
 
-    res.json({ 
+    res.json({
       message: 'Folders renamed successfully',
       oldPath,
       newPath,
       oldPathMain,
-      newPathMain
+      newPathMain,
     });
-
   } catch (error) {
     logger.error('Error renaming folder:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to rename folder',
       details: error.message,
       path: error.path,
-      dest: error.dest
+      dest: error.dest,
     });
   }
 });
@@ -1879,22 +2580,35 @@ fileManagerRouter.post('/duplicate-room-images-folder', async (req, res) => {
   try {
     const { sourceFolderName, newFolderName } = req.body;
     const userId = req.userId;
+    const branchId = req.headers['branch-id'];
+    const sourcePath = path.join(
+      getRoomPicturesPath(userId, branchId),
+      sourceFolderName
+    );
+    const destPath = path.join(
+      getRoomPicturesPath(userId, branchId),
+      newFolderName
+    );
 
-    const sourcePath = path.join(getRoomPicturesPath(userId), sourceFolderName);
-    const destPath = path.join(getRoomPicturesPath(userId), newFolderName);
-
-    if (!await fs.promises.access(sourcePath).then(() => true).catch(() => false)) {
+    if (
+      !(await fs.promises
+        .access(sourcePath)
+        .then(() => true)
+        .catch(() => false))
+    ) {
       return res.status(404).json({ error: 'Source folder not found' });
     }
 
     await fs.promises.mkdir(destPath, { recursive: true });
     const files = await fs.promises.readdir(sourcePath);
 
-    await Promise.all(files.map(file => {
-      const sourceFile = path.join(sourcePath, file);
-      const destFile = path.join(destPath, file);
-      return fs.promises.copyFile(sourceFile, destFile);
-    }));
+    await Promise.all(
+      files.map((file) => {
+        const sourceFile = path.join(sourcePath, file);
+        const destFile = path.join(destPath, file);
+        return fs.promises.copyFile(sourceFile, destFile);
+      })
+    );
 
     res.json({ message: 'Folder duplicated successfully' });
   } catch (error) {
@@ -1904,23 +2618,30 @@ fileManagerRouter.post('/duplicate-room-images-folder', async (req, res) => {
 });
 
 // 10. Delete Folder Images
-fileManagerRouter.delete('/delete-folder-images/:folderName', async (req, res) => {
-  try {
-    const { folderName } = req.params;
-    const userId = req.userId;
-    const folderPath = path.join(getRoomPicturesPath(userId), folderName);
+fileManagerRouter.delete(
+  '/delete-folder-images/:folderName',
+  async (req, res) => {
+    try {
+      const { folderName } = req.params;
+      const userId = req.userId;
+      const branchId = req.headers['branch-id'];
+      const folderPath = path.join(
+        getRoomPicturesPath(userId, branchId),
+        folderName
+      );
 
-    const files = await fs.promises.readdir(folderPath);
-    await Promise.all(files.map(file => 
-      fs.promises.unlink(path.join(folderPath, file))
-    ));
+      const files = await fs.promises.readdir(folderPath);
+      await Promise.all(
+        files.map((file) => fs.promises.unlink(path.join(folderPath, file)))
+      );
 
-    res.json({ message: 'All images deleted successfully' });
-  } catch (error) {
-    logger.error('Error deleting images:', error);
-    res.status(500).json({ error: 'Failed to delete images' });
+      res.json({ message: 'All images deleted successfully' });
+    } catch (error) {
+      logger.error('Error deleting images:', error);
+      res.status(500).json({ error: 'Failed to delete images' });
+    }
   }
-});
+);
 
 // Mount the router
 app.use('/api/filemanager', fileManagerRouter);
@@ -2010,7 +2731,8 @@ app.get('/tenantPortal/:BranchAndCompany/:TenantName', async (req, res) => {
     const decodedBranchAndCompany = decodeURIComponent(BranchAndCompany);
     const decodedTenantName = decodeURIComponent(TenantName);
 
-    const [branchName, companyName] = decodedBranchAndCompany.split(':@@^&^@@:');
+    const [branchName, companyName] =
+      decodedBranchAndCompany.split(':@@^&^@@:');
 
     // Get branch
     const [branchResults] = await new Promise((resolve, reject) => {
@@ -2023,7 +2745,7 @@ app.get('/tenantPortal/:BranchAndCompany/:TenantName', async (req, res) => {
         }
       );
     });
-    
+
     const branch = branchResults[0];
     if (!branch) {
       throw new Error(`Branch "${branchName}" not found`);
@@ -2076,7 +2798,7 @@ app.get('/tenantPortal/:BranchAndCompany/:TenantName', async (req, res) => {
     if (!room) {
       throw new Error(`No room found for tenant "${decodedTenantName}"`);
     }
-if (!room.useTenantPortal) {
+    if (!room.useTenantPortal) {
       throw new Error(`Portal access disabled`);
     }
     // Get agreements
@@ -2136,13 +2858,17 @@ if (!room.useTenantPortal) {
         return null;
       }
     }
-let sortedagreements = [];
+    let sortedagreements = [];
     // Function to calculate payments based on agreements and paid status
     function calculatePayments(room, tenant, agreements) {
       const payments = [];
-      const sortedAgreements = agreements.sort((a, b) => b.startTime - a.startTime);
+      const sortedAgreements = agreements.sort(
+        (a, b) => b.startTime - a.startTime
+      );
       sortedagreements = sortedAgreements;
-      const agreement = sortedAgreements.find(a => a.id === room.selectedAgreementId);
+      const agreement = sortedAgreements.find(
+        (a) => a.id === room.selectedAgreementId
+      );
       if (!agreement) return [];
 
       let startDate = agreement?.startTime || Date.now();
@@ -2172,7 +2898,7 @@ let sortedagreements = [];
           amount: agreement.agreedPrice,
           paid: paid ? paid.Paid : false,
           receiptFile: receiptFile,
-          status: getPaymentStatus(currentDate, paid)
+          status: getPaymentStatus(currentDate, paid),
         };
         payments.push(payment);
 
@@ -2617,13 +3343,14 @@ let sortedagreements = [];
                         ${payment.paid ? 'Paid' : 'Unpaid'}
                       </div>
                     
-${room.TenantPortalAllowOnlinePayments && !payment.paid // change when you allow online payments
-  ? `
+${
+  room.TenantPortalAllowOnlinePayments && !payment.paid // change when you allow online payments
+    ? `
   <button class="pay-now-button" onclick="alert('Online payments are not available yet')"> 
     Pay Now
   </button>
   `
-  : ''
+    : ''
 }
 ${
   room.TenantPortalShowReceipts && payment.paid
@@ -2832,7 +3559,10 @@ const sendSMSWithUserId = async (phoneNumber, message, userId) => {
     );
   });
 
-  const totalSMSCount = history.reduce((sum, sms) => sum + (sms.countsAs || 1), 0);
+  const totalSMSCount = history.reduce(
+    (sum, sms) => sum + (sms.countsAs || 1),
+    0
+  );
 
   if (user.SMSMonthlyLimit <= totalSMSCount) {
     logger.debug(
@@ -2952,7 +3682,10 @@ const sendSMS = async (phoneNumber, message, user) => {
     );
   });
 
-  const totalSMSCount = history.reduce((sum, sms) => sum + (sms.countsAs || 1), 0);
+  const totalSMSCount = history.reduce(
+    (sum, sms) => sum + (sms.countsAs || 1),
+    0
+  );
 
   if (user.SMSMonthlyLimit <= totalSMSCount) {
     logger.debug(
@@ -3252,10 +3985,14 @@ app.post('/api/send-email', async (req, res) => {
   const { email, subject, text, userId } = req.body;
 
   const user = await new Promise((resolve, reject) => {
-    pool.query('SELECT * FROM users WHERE id = ?', [userId], (error, results) => {
-      if (error) reject(error);
-      else resolve(results[0]);
-    });
+    pool.query(
+      'SELECT * FROM users WHERE id = ?',
+      [userId],
+      (error, results) => {
+        if (error) reject(error);
+        else resolve(results[0]);
+      }
+    );
   });
   const selectedEmailToSendWith = user.selectedEmailToSendWith;
   const selectedEmailToSendWithPassword = user.selectedEmailToSendWithPassword;
@@ -3337,7 +4074,15 @@ app.post('/api/send-email-without-user', async (req, res) => {
   const { email, subject, text } = req.body;
 
   // Fix typo in logger.debug
-  logger.debug('Send email', "____",subject,"____", email?.slice(0, 100),"____", text);
+  logger.debug(
+    'Send email',
+    '____',
+    subject,
+    '____',
+    email?.slice(0, 100),
+    '____',
+    text
+  );
 
   try {
     // Validate required fields
@@ -3357,7 +4102,7 @@ app.post('/api/send-email-without-user', async (req, res) => {
         user: 'rentmaster@rentmaster.markethubet.com',
         pass: 'V0x&s.XZtbS;',
       },
-       tls: {
+      tls: {
         rejectUnauthorized: false, // Only during development/testing
       },
       debug: true, // Enable debug logs
@@ -3472,7 +4217,6 @@ app.post('/api/send-email-for-verify', async (req, res) => {
     });
   }
 });
-
 
 app.get('/api/exchange-rates', async (req, res) => {
   const { start, end } = req.query;
@@ -3720,12 +4464,6 @@ const processNotifications = async () => {
         );
 
         if (nextUnpaidPayment) {
-          logger.debug(
-            `Room ${room.id} has unpaid payment due on: ${moment(
-              nextUnpaidPayment.Day
-            ).format('YYYY-MM-DD')}`
-          );
-
           // Fetch tenant information
           const [tenant] = await new Promise((resolve, reject) => {
             pool.query(
@@ -4186,7 +4924,7 @@ const processNotifications = async () => {
               for (const repPhone of repPhones) {
                 const repSmsMessage = `[REP] ${smsBody}`;
                 const smsInfo = calculateSMSInfo(repSmsMessage);
-                
+
                 const repSmsResult = await sendSMS(
                   repPhone,
                   repSmsMessage,
@@ -4224,9 +4962,6 @@ const processNotifications = async () => {
             }
           }
         } else {
-          logger.debug(
-            `Room ${room.id} has no unpaid payments or notifications are disabled`
-          );
         }
       }
     }
@@ -4288,14 +5023,14 @@ const calculateSMSInfo = (text) => {
 
   const messageLength = text.length;
   const isAmharic = containsAmharic(text);
-  
+
   // If there's ANY Amharic character, use 69 limit for the entire message
   const charLimit = isAmharic ? 69 : 159;
   const smsCount = Math.ceil(messageLength / charLimit);
 
   return {
     count: smsCount,
-    total: messageLength
+    total: messageLength,
   };
 };
 const processUtilityNotifications = async () => {
@@ -5146,12 +5881,12 @@ const calculatePredictedExpenses = async (expense, currentDate) => {
     logger.debug(`Expense ${expense.id} is non-recurring, using single date`);
     predictedExpenses.push({
       ...expense,
-      date: new Date(moment(expense.date).add("days", 1)).getTime(),
+      date: new Date(moment(expense.date).add('days', 1)).getTime(),
     });
     return predictedExpenses;
   }
 
-  let currentExpenseDate = moment(expense.date).add("days", 1).startOf('day');
+  let currentExpenseDate = moment(expense.date).add('days', 1).startOf('day');
   const endDate = expense.HasEndDate
     ? moment(expense.EndDate).startOf('day')
     : moment(currentDate).add(1, 'year').startOf('day'); // Predict up to 1 year ahead
@@ -5164,7 +5899,7 @@ const calculatePredictedExpenses = async (expense, currentDate) => {
   logger.debug(
     `Recurring type: ${expense.recurringType}, cycle: ${expense.recurringCycle}`
   );
-    let i = 1;
+  let i = 1;
   while (currentExpenseDate.isSameOrBefore(endDate) && i <= 10) {
     i++;
     const expenseId = `${expense.id}-${currentExpenseDate.valueOf()}`;
@@ -5561,9 +6296,9 @@ app.post('/api/check-company-name', (req, res) => {
   const { companyName } = req.body;
 
   if (!companyName) {
-    return res.status(400).json({ 
-      valid: false, 
-      message: 'Company name is required' 
+    return res.status(400).json({
+      valid: false,
+      message: 'Company name is required',
     });
   }
 
@@ -5572,7 +6307,7 @@ app.post('/api/check-company-name', (req, res) => {
       logger.debug(`Database connection error: ${err.message}`);
       return res.status(500).json({
         valid: false,
-        message: 'Database connection error'
+        message: 'Database connection error',
       });
     }
 
@@ -5586,13 +6321,16 @@ app.post('/api/check-company-name', (req, res) => {
           logger.debug(`Error checking company name: ${error.message}`);
           return res.status(500).json({
             valid: false,
-            message: 'Error checking company name'
+            message: 'Error checking company name',
           });
         }
 
         res.json({
           valid: results[0].count === 0,
-          message: results[0].count === 0 ? 'Company name is available' : 'Company name already exists'
+          message:
+            results[0].count === 0
+              ? 'Company name is available'
+              : 'Company name already exists',
         });
       }
     );
@@ -5620,18 +6358,23 @@ app.post('/api/reset-password', async (req, res) => {
       email,
       token: resetToken,
       fulfilled: false,
-      createdAt: Date.now()
+      createdAt: Date.now(),
     };
 
     pool.query(
       'INSERT INTO resetpassword_requests (email, token, fulfilled, created_at) VALUES (?, ?, ?, ?)',
-      [resetRequest.email, resetRequest.token, resetRequest.fulfilled, resetRequest.createdAt],
+      [
+        resetRequest.email,
+        resetRequest.token,
+        resetRequest.fulfilled,
+        resetRequest.createdAt,
+      ],
       async (error, results) => {
         if (error) {
           logger.error('Error creating reset password request:', error);
           return res.status(500).json({
             success: false,
-            error: 'Failed to create reset password request'
+            error: 'Failed to create reset password request',
           });
         }
 
@@ -5666,37 +6409,38 @@ app.post('/api/reset-password', async (req, res) => {
             to: email,
             subject: emailSubject,
             text: emailText,
-            html: emailText.replace(/\n/g, '<br>')
+            html: emailText.replace(/\n/g, '<br>'),
           };
 
           const info = await transporter.sendMail(mailOptions);
-          logger.debug('Password reset email sent successfully:', info.messageId);
+          logger.debug(
+            'Password reset email sent successfully:',
+            info.messageId
+          );
 
           res.json({
             success: true,
-            message: 'Password reset request created and email sent'
+            message: 'Password reset request created and email sent',
           });
-
         } catch (emailError) {
           logger.error('Failed to send password reset email:', emailError);
           res.status(500).json({
             success: false,
-            error: 'Failed to send password reset email'
+            error: 'Failed to send password reset email',
           });
         }
       }
     );
-
   } catch (error) {
     logger.error('Error in reset password endpoint:', error);
     res.status(500).json({
       success: false,
-      error: 'Internal server error'
+      error: 'Internal server error',
     });
   }
 });
 
-app.post('/api/update-password', async (req, res) => {
+app.post('/update-password', async (req, res) => {
   const { token, password } = req.body;
 
   logger.debug('Password update request received');
@@ -5704,14 +6448,14 @@ app.post('/api/update-password', async (req, res) => {
   if (!token || !password) {
     return res.status(400).json({
       success: false,
-      error: 'Missing required fields'
+      error: 'Missing required fields',
     });
   }
 
   try {
     // Check if token exists, is not fulfilled, and is not expired (15 minutes)
-    const fifteenMinutesAgo = Date.now() - (15 * 60 * 1000); // 15 minutes in milliseconds
-    
+    const fifteenMinutesAgo = Date.now() - 15 * 60 * 1000; // 15 minutes in milliseconds
+
     pool.query(
       'SELECT email, created_at FROM resetpassword_requests WHERE token = ? AND fulfilled = false',
       [token],
@@ -5720,24 +6464,24 @@ app.post('/api/update-password', async (req, res) => {
           logger.error('Database error:', error);
           return res.status(500).json({
             success: false,
-            error: 'Database error'
+            error: 'Database error',
           });
         }
 
         if (!results.length) {
           return res.status(400).json({
             success: false,
-            error: 'Invalid token'
+            error: 'Invalid token',
           });
         }
 
         const resetRequest = results[0];
-        
+
         // Check if token is expired
         if (resetRequest.created_at < fifteenMinutesAgo) {
           return res.status(400).json({
             success: false,
-            error: 'Token has expired. Please request a new password reset.'
+            error: 'Token has expired. Please request a new password reset.',
           });
         }
 
@@ -5755,7 +6499,7 @@ app.post('/api/update-password', async (req, res) => {
               logger.error('Error updating password:', updateError);
               return res.status(500).json({
                 success: false,
-                error: 'Failed to update password'
+                error: 'Failed to update password',
               });
             }
 
@@ -5767,7 +6511,7 @@ app.post('/api/update-password', async (req, res) => {
 
             res.json({
               success: true,
-              message: 'Password updated successfully'
+              message: 'Password updated successfully',
             });
           }
         );
@@ -5777,126 +6521,9 @@ app.post('/api/update-password', async (req, res) => {
     logger.error('Error in update password endpoint:', error);
     res.status(500).json({
       success: false,
-      error: 'Internal server error'
+      error: 'Internal server error',
     });
   }
-});
-
-app.get('/resetpass', (req, res) => {
-  const { token } = req.query;
-  
-  const html = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <title>Reset Password</title>
-      <style>
-        body {
-          font-family: Arial, sans-serif;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          height: 100vh;
-          margin: 0;
-          background-color: #f5f5f5;
-        }
-        .container {
-          background-color: white;
-          padding: 2rem;
-          border-radius: 8px;
-          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-          width: 100%;
-          max-width: 400px;
-        }
-        h1 {
-          text-align: center;
-          color: #333;
-          margin-bottom: 1.5rem;
-        }
-        .form-group {
-          margin-bottom: 1rem;
-        }
-        label {
-          display: block;
-          margin-bottom: 0.5rem;
-          color: #666;
-        }
-        input {
-          width: 100%;
-          padding: 0.5rem;
-          border: 1px solid #ddd;
-          border-radius: 4px;
-          box-sizing: border-box;
-        }
-        button {
-          width: 100%;
-          padding: 0.75rem;
-          background-color: #007bff;
-          color: white;
-          border: none;
-          border-radius: 4px;
-          cursor: pointer;
-          font-size: 1rem;
-        }
-        button:hover {
-          background-color: #0056b3;
-        }
-      </style>
-    </head>
-    <body>
-      <div class="container">
-        <h1>Reset Your Password</h1>
-        <form id="resetForm">
-          <input type="hidden" id="token" value="${token}">
-          <div class="form-group">
-            <label for="password">New Password</label>
-            <input type="password" id="password" required>
-          </div>
-          <div class="form-group">
-            <label for="confirmPassword">Confirm Password</label>
-            <input type="password" id="confirmPassword" required>
-          </div>
-          <button type="submit">Reset Password</button>
-        </form>
-      </div>
-      <script>
-        document.getElementById('resetForm').addEventListener('submit', async (e) => {
-          e.preventDefault();
-          const password = document.getElementById('password').value;
-          const confirmPassword = document.getElementById('confirmPassword').value;
-          const token = document.getElementById('token').value;
-          
-          if (password !== confirmPassword) {
-            alert('Passwords do not match');
-            return;
-          }
-          
-          try {
-            const response = await fetch('/api/update-password', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({ token, password })
-            });
-            
-            const data = await response.json();
-            if (data.success) {
-              alert('Password updated successfully');
-              window.location.href = '/login';
-            } else {
-              alert(data.error || 'Failed to update password');
-            }
-          } catch (error) {
-            alert('An error occurred. Please try again.');
-          }
-        });
-      </script>
-    </body>
-    </html>
-  `;
-  
-  res.send(html);
 });
 
 app.post('/api/check-missing-files', async (req, res) => {
@@ -6127,67 +6754,77 @@ app.post('/api/download-files2', async (req, res) => {
 });
 
 app.post('/api/check-room-limit', (req, res) => {
- const { userId } = req.body;
+  const { userId } = req.body;
   if (!userId) {
-   return res.status(400).json({ 
-     valid: false,
-     message: 'User ID is required' 
-   });
- }
+    return res.status(400).json({
+      valid: false,
+      message: 'User ID is required',
+    });
+  }
   pool.getConnection((err, connection) => {
-   if (err) {
-     logger.debug(`Database connection error: ${err.message}`);
-     return res.status(500).json({
-       valid: false,
-       message: 'Database connection error'
-     });
-   }
+    if (err) {
+      logger.debug(`Database connection error: ${err.message}`);
+      return res.status(500).json({
+        valid: false,
+        message: 'Database connection error',
+      });
+    }
     // First query to get user details
-   connection.query(
-     'SELECT MaxAmountOfRooms, id FROM users WHERE id = ?',
-     [userId],
-     (error, users) => {
-       if (error) {
-         connection.release();
-         logger.debug(`Error fetching user: ${error.message}`);
-         return res.status(500).json({
-           valid: false,
-           message: 'Error checking room limit'
-         });
-       }
+    connection.query(
+      'SELECT MaxAmountOfRooms, id FROM users WHERE id = ?',
+      [userId],
+      (error, users) => {
+        if (error) {
+          connection.release();
+          logger.debug(`Error fetching user: ${error.message}`);
+          return res.status(500).json({
+            valid: false,
+            message: 'Error checking room limit',
+          });
+        }
         if (users.length === 0) {
-         connection.release();
-         return res.status(404).json({
-           valid: false,
-           message: 'User not found'
-         });
-       }
+          connection.release();
+          return res.status(404).json({
+            valid: false,
+            message: 'User not found',
+          });
+        }
         // Second query to get room count
-       connection.query(
-         'SELECT COUNT(*) AS roomsUsed FROM rooms WHERE userId = ?',
-         [userId],
-         (error, rooms) => {
-           connection.release();
+        connection.query(
+          'SELECT COUNT(*) AS roomsUsed FROM rooms WHERE userId = ?',
+          [userId],
+          (error, rooms) => {
+            connection.release();
             if (error) {
-             logger.debug(`Error checking rooms: ${error.message}`);
-             return res.status(500).json({
-               valid: false,
-               message: 'Error checking room limit'
-             });
-           }
-            const isLimitReached = rooms[0].roomsUsed >= users[0].MaxAmountOfRooms;
-            logger.debug(isLimitReached, ": limit reached state for:",users[0].id, rooms[0].roomsUsed,"/", users[0].MaxAmountOfRooms )
+              logger.debug(`Error checking rooms: ${error.message}`);
+              return res.status(500).json({
+                valid: false,
+                message: 'Error checking room limit',
+              });
+            }
+            const isLimitReached =
+              rooms[0].roomsUsed >= users[0].MaxAmountOfRooms;
+            logger.debug(
+              isLimitReached,
+              ': limit reached state for:',
+              users[0].id,
+              rooms[0].roomsUsed,
+              '/',
+              users[0].MaxAmountOfRooms
+            );
             res.json({
-             valid: !isLimitReached,
-             message: isLimitReached ? 'Room limit reached. Upgrade required.' : 'Room limit not reached.',
-             roomsUsed: rooms[0].roomsUsed+1,
-             roomLimit: users[0].MaxAmountOfRooms
-           });
-         }
-       );
-     }
-   );
- });
+              valid: !isLimitReached,
+              message: isLimitReached
+                ? 'Room limit reached. Upgrade required.'
+                : 'Room limit not reached.',
+              roomsUsed: rooms[0].roomsUsed + 1,
+              roomLimit: users[0].MaxAmountOfRooms,
+            });
+          }
+        );
+      }
+    );
+  });
 });
 const validateTableName = (tableName) => {
   const validTables = [
@@ -6263,7 +6900,7 @@ app.get('/api/:tableName/:sqlCode', (req, res) => {
       connection.release();
       if (!error) {
         // Process the rows to format numbers
-        const processedRows = rows.map(row => {
+        const processedRows = rows.map((row) => {
           const processedRow = {};
           for (const [key, value] of Object.entries(row)) {
             if (typeof value === 'number') {
@@ -6272,7 +6909,8 @@ app.get('/api/:tableName/:sqlCode', (req, res) => {
               if (stringValue.includes('.')) {
                 // If decimals are .00, remove them, otherwise keep them
                 const decimals = stringValue.split('.')[1];
-                processedRow[key] = decimals === '00' ? Math.floor(value) : value;
+                processedRow[key] =
+                  decimals === '00' ? Math.floor(value) : value;
               } else {
                 processedRow[key] = value;
               }
@@ -6282,7 +6920,7 @@ app.get('/api/:tableName/:sqlCode', (req, res) => {
           }
           return processedRow;
         });
-        
+
         res.send(processedRows);
       } else {
         logger.debug(`Error executing query on ${tableName}: ${error.message}`);

@@ -786,7 +786,12 @@ const MainPage = ({
     'TenantsList' | 'BrokersList' | 'TenantReviews'
   >('TenantsList');
   const [ToolsSelectedPage, setToolsSelectedPage] = useState<
-    'EmailTemplates' | 'SMSTemplates' | 'Database' | 'Settings' | 'Support' | 'Files'
+    | 'EmailTemplates'
+    | 'SMSTemplates'
+    | 'Database'
+    | 'Settings'
+    | 'Support'
+    | 'Files'
   >(
     privileges.editEmailTemplates
       ? 'EmailTemplates'
@@ -806,7 +811,7 @@ const MainPage = ({
     | 'TenantsList'
     | 'BrokersList'
     | 'TenantReviews'
-  >('Overview');
+  >('TenantsList');
   const [AddARoomState, setAddARoomState] = useState(false);
   const [AddRoomFormFloor, setAddRoomFormFloor] = useState(1);
   const [AddRoomFormRoomIndex, setAddRoomFormRoomIndex] = useState(1);
@@ -894,9 +899,6 @@ const MainPage = ({
       );
 
       if (roomExists) {
-        console.error(
-          `Room ${AddRoomFormRoomIndex} on floor ${AddRoomFormFloor} already exists.`
-        );
         setRoomExistsWarning(true);
         return;
       }
@@ -951,12 +953,12 @@ const MainPage = ({
           );
           await handleRenameFolder(
             'New Room Images Folder',
-            `Room ${AddRoomFormFloor}, Floor ${AddRoomFormRoomIndex} - ${newRoom.id}`
+            `Floor ${AddRoomFormFloor}, Room ${AddRoomFormRoomIndex} - ${newRoom.id}`
           );
         } else {
           await handleRenameFolder(
             'Add a room images',
-            `Room ${AddRoomFormFloor}, Floor ${AddRoomFormRoomIndex} - ${newRoom.id}`
+            `Floor ${AddRoomFormFloor}, Room ${AddRoomFormRoomIndex} - ${newRoom.id}`
           );
         }
       }
@@ -1673,7 +1675,11 @@ const MainPage = ({
       >
         <button
           className="SideBarShowButton"
-          onClick={() => {handleCloseSideBar(); if(SideBarShowState) {} }}
+          onClick={() => {
+            handleCloseSideBar();
+            if (SideBarShowState) {
+            }
+          }}
           style={
             isMobileState
               ? {

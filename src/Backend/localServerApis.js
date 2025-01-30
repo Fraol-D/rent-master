@@ -24,7 +24,7 @@ const makeRequest = async (input, init = {}) => {
   } = init;
 
   try {
-    const users = await storageManager.get('users') || [];
+    const users = (await storageManager.get('users')) || [];
     const userId = users[0]?.id || '';
 
     // If in tryout mode, handle data locally using storageManager
@@ -37,24 +37,24 @@ const makeRequest = async (input, init = {}) => {
         // For SQL queries
         if (pathParts.length > 2) {
           const sqlQuery = decodeURIComponent(pathParts[pathParts.length - 1]);
-          const tableData = await storageManager.get(tableName) || [];
-        
+          const tableData = (await storageManager.get(tableName)) || [];
+
           // Basic SQL WHERE clause parsing
           if (sqlQuery.includes('WHERE')) {
             const conditions = sqlQuery.split('WHERE')[1].trim();
-            return tableData.filter(item => {
+            return tableData.filter((item) => {
               // Very basic condition evaluation
-           
+
               return eval(conditions.replace(/'/g, '"'));
             });
           }
           return tableData;
         }
-        return await storageManager.get(tableName) || [];
+        return (await storageManager.get(tableName)) || [];
       }
 
       if (method === 'POST') {
-        const tableData = await storageManager.get(tableName) || [];
+        const tableData = (await storageManager.get(tableName)) || [];
         const newData = JSON.parse(body);
         tableData.push(newData);
         await storageManager.set(tableName, tableData);
@@ -62,28 +62,28 @@ const makeRequest = async (input, init = {}) => {
       }
 
       if (method === 'PUT') {
-        const tableData = await storageManager.get(tableName) || [];
+        const tableData = (await storageManager.get(tableName)) || [];
         const id = pathParts[pathParts.length - 2];
         const columnName = pathParts[pathParts.length - 1];
         const newValue = JSON.parse(body)[columnName];
-        
-        const updatedData = tableData.map(item => {
+
+        const updatedData = tableData.map((item) => {
           if (item.id === id) {
-            return {...item, [columnName]: newValue};
+            return { ...item, [columnName]: newValue };
           }
           return item;
         });
-        
+
         await storageManager.set(tableName, updatedData);
-        return {success: true};
+        return { success: true };
       }
 
       if (method === 'DELETE') {
-        const tableData = await storageManager.get(tableName) || [];
+        const tableData = (await storageManager.get(tableName)) || [];
         const id = pathParts[pathParts.length - 1];
-        const filteredData = tableData.filter(item => item.id !== id);
+        const filteredData = tableData.filter((item) => item.id !== id);
         await storageManager.set(tableName, filteredData);
-        return {success: true};
+        return { success: true };
       }
       return;
     }
@@ -125,7 +125,7 @@ export const dropAllRowsInTable = async (tableName) => {
     );
 
     const data = response;
-   
+
     return data;
   } catch (error) {
     console.error(`Error dropping all rows from ${tableName}:`, error);
@@ -135,7 +135,6 @@ export const dropAllRowsInTable = async (tableName) => {
 
 export const getValuesWithSql = async (tableName, sqlCode) => {
   try {
-
     const response = await makeRequest(
       `${baseUrl}/${tableName}/${encodeURIComponent(sqlCode)}`,
       {
@@ -571,10 +570,12 @@ export const updateValue = async (
     // get original value false new value is true so add but if it exist in offline changes and when it went from true back to false it needs to know what the value was when first changing it
     // So add a column to offline changes that says original value then wehn adding a new row to offline changes
     // set orignal value to original value then when editing a offline changes check if the new value is equal to the orignal value and if it is remove it
-    if(window.location.href.includes('tryout')){
-      
-      storageManager.set(tableName, [...storageManager.get(tableName), {id: id, [columnName]: columnValue}]);
-      
+    if (window.location.href.includes('tryout')) {
+      storageManager.set(tableName, [
+        ...storageManager.get(tableName),
+        { id: id, [columnName]: columnValue },
+      ]);
+
       return;
     }
     const response = await makeRequest(
@@ -608,10 +609,12 @@ export const updateValue = async (
 };
 export const deleteValue = async (tableName, id, setChangeMade) => {
   try {
-    if(window.location.href.includes('tryout')){
-      
-      storageManager.set(tableName, storageManager.get(tableName).filter(item => item.id !== id));
-      
+    if (window.location.href.includes('tryout')) {
+      storageManager.set(
+        tableName,
+        storageManager.get(tableName).filter((item) => item.id !== id)
+      );
+
       return;
     }
     const response = await makeRequest(`${baseUrl}/${tableName}/${id}`, {
@@ -639,7 +642,6 @@ export const deleteValue = async (tableName, id, setChangeMade) => {
 
 export const deleteValueALL = async () => {
   try {
-    
     const response = await makeRequest(`${baseUrl}/delete-all-data`, {
       method: 'DELETE',
     });
@@ -653,14 +655,69 @@ export const deleteValueALL = async () => {
 };
 //////////////////////////////////////////////
 // Fix the SendFileManagerApi function first
-const SendFileManagerApi = async (url, method, headers = {}, data = null) => {
+export const SendFileTreeManagerApi = async (
+  url,
+  method,
+  headers = {},
+  data = null
+) => {
   try {
     const users = await storageManager.get('users');
     if (!users?.[0]?.id) {
       throw new Error('User ID not found');
     }
-    const userId = users[0].id;
+    const userId = users[0].email + ' - ' + users[0].id;
+    const branchId =
+      storageManager.get('BranchName') +
+      ' - ' +
+      storageManager.get('SelectedBranchId');
 
+    const normalizedUrl = url.startsWith('/') ? url : `/${url}`;
+    const urlReal = window.electron
+      ? `${baseUrl}${normalizedUrl}`.replace(/([^:]\/)\/+/g, '$1')
+      : `${baseUrl}/filemanager${normalizedUrl}`.replace(/([^:]\/)\/+/g, '$1');
+
+    let options = {
+      method,
+      headers: {
+        ...headers,
+        'user-id': userId,
+        'branch-id': branchId,
+      },
+    };
+
+    // Handle FormData differently than JSON data
+    if (data instanceof FormData) {
+      // Don't set Content-Type for FormData, browser will set it with boundary
+      delete options.headers['Content-Type'];
+      options.body = data;
+    } else if (data) {
+      options.headers['Content-Type'] = 'application/json';
+      options.body = JSON.stringify({ ...data, userId });
+    }
+
+    return makeRequest(urlReal, options);
+  } catch (error) {
+    console.error('Error in SendFileManagerApi:', error);
+    throw error;
+  }
+};
+export const SendFileManagerApi = async (
+  url,
+  method,
+  headers = {},
+  data = null
+) => {
+  try {
+    const users = await storageManager.get('users');
+    if (!users?.[0]?.id) {
+      throw new Error('User ID not found');
+    }
+    const userId = users[0].email + ' - ' + users[0].id;
+    const branchId =
+      storageManager.get('BranchName') +
+      ' - ' +
+      storageManager.get('SelectedBranchId');
     // Ensure url starts with a slash
     const normalizedUrl = url.startsWith('/') ? url : `/${url}`;
 
@@ -675,6 +732,7 @@ const SendFileManagerApi = async (url, method, headers = {}, data = null) => {
         ...headers,
 
         'user-id': userId,
+        'branch-id': branchId,
       },
     };
 
@@ -700,60 +758,18 @@ const SendFileManagerApi = async (url, method, headers = {}, data = null) => {
     throw error;
   }
 };
-const SendNormalApi = async (url, method, headers = {}, data = null) => {
-  try {
-    const users = await storageManager.get('users');
-    if (!users?.[0]?.id) {
-      throw new Error('User ID not found');
-    }
-    const userId = users[0].id;
 
-    // Ensure url starts with a slash
-    const normalizedUrl = url.startsWith('/') ? url : `/${url}`;
-
-    // Fix URL construction
-    const urlReal = window.electron
-      ? `${baseUrl}${normalizedUrl}`.replace(/([^:]\/)\/+/g, '$1')
-      : `${baseUrl}${normalizedUrl}`.replace(/([^:]\/)\/+/g, '$1');
-
-    let options = {
-      method,
-      headers: {
-        ...headers,
-
-        'user-id': userId,
-      },
-    };
-
-    // For GET requests, append userId as query parameter
-    if (method === 'GET') {
-      const separator = urlReal.includes('?') ? '&' : '?';
-      const finalUrl = `${urlReal}${separator}userId=${encodeURIComponent(
-        userId
-      )}`;
-      console.log('Making GET request to:', finalUrl);
-      return makeRequest(finalUrl, options);
-    }
-
-    // For other methods, include data in body
-    if (data) {
-      options.headers['Content-Type'] = 'application/json';
-      options.body = JSON.stringify({ ...data, userId });
-    }
-
-    return makeRequest(urlReal, options);
-  } catch (error) {
-    console.error('Error in SendFileManagerApi:', error);
-    throw error;
-  }
-};
 export const deleteReceipt2 = async (date, roomId, tenant) => {
   try {
     const users = await storageManager.get('users');
     if (!users?.[0]?.id) {
       throw new Error('User ID not found');
     }
-    const userId = users[0].id;
+    const userId = users[0].email + ' - ' + users[0].id;
+    const branchId =
+      storageManager.get('BranchName') +
+      ' - ' +
+      storageManager.get('SelectedBranchId');
 
     // Format the date consistently
     const formattedDate = new Date(date).toISOString().split('T')[0];
@@ -761,8 +777,8 @@ export const deleteReceipt2 = async (date, roomId, tenant) => {
 
     const response = await SendFileManagerApi(
       `/delete-receipt/${encodeURIComponent(userId)}/${encodeURIComponent(
-        roomId
-      )}/${encodeURIComponent(formattedDate)}`,
+        branchId
+      )}/${encodeURIComponent(roomId)}/${encodeURIComponent(formattedDate)}`,
       'DELETE',
       {
         'Content-Type': 'application/json',
@@ -784,18 +800,23 @@ export const GetReceiptFileApi = async (date, roomId, tenant) => {
   try {
     // Get user ID from storage
     const users = await storageManager.get('users');
-    const userId = users?.[0]?.id;
+    const userId = users?.[0]?.email + ' - ' + users?.[0]?.id;
     if (!userId) {
       throw new Error('User ID not found');
     }
-
+    const branchId =
+      storageManager.get('BranchName') +
+      ' - ' +
+      storageManager.get('SelectedBranchId');
     // Format the date consistently with server expectations
     const formattedDate = new Date(date).toISOString().split('T')[0];
 
     const response = await fetch(
       `${baseUrl2}/receipt-file/${encodeURIComponent(
         roomId
-      )}/${encodeURIComponent(formattedDate)}/${encodeURIComponent(userId)}`,
+      )}/${encodeURIComponent(formattedDate)}/${encodeURIComponent(
+        userId
+      )}/${encodeURIComponent(branchId)}`,
       {
         method: 'GET',
         headers: {
@@ -842,8 +863,11 @@ export const uploadReceiptDocumentsOnline = async (
     if (!users?.[0]?.id) {
       throw new Error('User ID not found');
     }
-    const userId = users[0].id;
-
+    const userId = users[0].email + ' - ' + users[0].id;
+    const branchId =
+      storageManager.get('BranchName') +
+      ' - ' +
+      storageManager.get('SelectedBranchId');
     // Get tenant info
     const tenant = tenantList.find((t) => t.id === tenantId);
     if (!tenant) {
@@ -864,6 +888,7 @@ export const uploadReceiptDocumentsOnline = async (
             {
               'Content-Type': 'application/json',
               'user-id': userId,
+              'branch-id': branchId,
             },
             {
               base64Document,
@@ -922,11 +947,16 @@ export const getRealFile = async (fullurl) => {
   if (!users?.[0]?.id) {
     throw new Error('User ID not found');
   }
-  const userId = users[0].id;
+  const userId = users[0].email + ' - ' + users[0].id;
+  const branchId =
+    storageManager.get('BranchName') +
+    ' - ' +
+    storageManager.get('SelectedBranchId');
 
   const response = await makeRequest(fullurl, {
     headers: {
       'user-id': userId,
+      'branch-id': branchId,
     },
   });
   const blob = await response.blob();
@@ -978,8 +1008,11 @@ export const downloadDocument = async (roomId, fileName) => {
     if (!users?.[0]?.id) {
       throw new Error('User ID not found');
     }
-    const userId = users[0].id;
-
+    const userId = users[0].email + ' - ' + users[0].id;
+    const branchId =
+      storageManager.get('BranchName') +
+      ' - ' +
+      storageManager.get('SelectedBranchId');
     // First, get the tenant information if it's a room document
     let tenantFolderName = '';
     if (roomId !== 'Add a tenant documents') {
@@ -1006,6 +1039,7 @@ export const downloadDocument = async (roomId, fileName) => {
         headers: {
           'Content-Type': 'application/json',
           'user-id': userId,
+          'branch-id': branchId,
         },
       }
     );
@@ -1045,19 +1079,19 @@ export const deleteRoomImage = async (roomId, fullPath) => {
     try {
       // Extract just the filename from the full path
       const fileName = fullPath.split(/[/\\]/).pop();
-      const userId = storageManager.get('users')[0].id;
-
-      console.log('Deleting room image:', {
-        roomId,
-        fileName,
-        userId,
-        fullPath,
-      }); // Debug log
+      const userId =
+        storageManager.get('users')[0].email +
+        ' - ' +
+        storageManager.get('users')[0].id;
+      const branchId =
+        storageManager.get('BranchName') +
+        ' - ' +
+        storageManager.get('SelectedBranchId');
 
       const response = await SendFileManagerApi(
         `/room-image/${encodeURIComponent(roomId)}/${encodeURIComponent(
           fileName
-        )}/${encodeURIComponent(userId)}`,
+        )}/${encodeURIComponent(userId)}/${encodeURIComponent(branchId)}`,
         'DELETE'
       );
       const data = response;
@@ -1130,8 +1164,11 @@ export const downloadImage = async (roomId, imageName) => {
     if (!users?.[0]?.id) {
       throw new Error('User ID not found');
     }
-    const userId = users[0].id;
-
+    const userId = users[0].email + ' - ' + users[0].id;
+    const branchId =
+      storageManager.get('BranchName') +
+      ' - ' +
+      storageManager.get('SelectedBranchId');
     // First get the room folder info
     const folderResponse = await SendFileManagerApi(
       `/room-folder-info/${encodeURIComponent(roomId)}`,
@@ -1152,6 +1189,7 @@ export const downloadImage = async (roomId, imageName) => {
         headers: {
           'Content-Type': 'application/json',
           'user-id': userId,
+          'branch-id': branchId,
           'x-api-key': import.meta.env.VITE_AppCodeElectronString,
         },
       }

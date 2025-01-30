@@ -82,7 +82,7 @@ const NavBar = ({
 }: Props) => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
-const {showAlert} = useAlert()
+  const { showAlert } = useAlert();
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(new Date());
@@ -150,7 +150,7 @@ const {showAlert} = useAlert()
     setShowSignOutConfirm(false);
   };
   const [DownloadAssetsProgress, setDownloadAssetsProgress] = useState(0);
-  const {isMobileState} = useGlobal()
+  const { isMobileState } = useGlobal();
   useEffect(() => {
     if (uploadProgress >= 50) {
       setIsSyncing(true);
@@ -294,103 +294,138 @@ const {showAlert} = useAlert()
             className="Name-ofShop"
             style={{ fontSize: 'var(--14px-V)', height: 'auto' }}
           >
-            <span style={{ color: 'grey',marginRight: 'var(--5px-V)' }}>
-              {storageManager.get('users')?.[0]?.email || ""} {' '}
+            <span style={{ color: 'grey', marginRight: 'var(--5px-V)' }}>
+              {storageManager.get('users')?.[0]?.email || ''}{' '}
             </span>
             {storageManager.get('SelectedAppUserId') === 'admin' ? (
-              <>{window.location.href.includes('tryout')?"  " :" - "} Admin user</>
+              <>
+                {window.location.href.includes('tryout') ? '  ' : ' - '} Admin
+                user
+              </>
             ) : (
               storageManager
                 ?.get('app_users')
                 ?.find(
                   (appUser: appUser) =>
                     appUser.id === storageManager.get('SelectedAppUserId')
-                )?.roleName||""
+                )?.roleName || ''
             )}{' '}
-           {!window.location.href.includes('tryout')&& <span
-              style={{
-                marginLeft: 'var(--10px-V)',
-                cursor: 'pointer',
-                borderBottom: 'var(--1px-V) solid var(--Accent-Color)',
-                color: 'var(--Accent-Color)',
-              }}
-              onClick={() => {
-                if (navigator.onLine) {
-                  if (storageManager.get('SelectedAppUserId') === 'admin') {
+            {!window.location.href.includes('tryout') && (
+              <span
+                style={{
+                  marginLeft: 'var(--10px-V)',
+                  cursor: 'pointer',
+                  borderBottom: 'var(--1px-V) solid var(--Accent-Color)',
+                  color: 'var(--Accent-Color)',
+                }}
+                onClick={() => {
+                  if (navigator.onLine) {
+                    if (storageManager.get('SelectedAppUserId') === 'admin') {
+                      setAppUserManagerShow(true);
+                      setAppUserManagerPromptPassword(false);
+                      return;
+                    }
                     setAppUserManagerShow(true);
-                    setAppUserManagerPromptPassword(false);
-                    return;
+                    setAppUserManagerPromptPassword(true);
                   }
-                  setAppUserManagerShow(true);
-                  setAppUserManagerPromptPassword(true);
-                }
-              }}
-            >
-              {storageManager.get('SelectedAppUserId') === 'admin'
-                ? 'Go to App Users'
-                : 'Switch User'}
-            </span>}
+                }}
+              >
+                {storageManager.get('SelectedAppUserId') === 'admin'
+                  ? 'Go to App Users'
+                  : 'Switch User'}
+              </span>
+            )}
           </p>
         </div>
       </div>
-    {!isMobileState &&  <div className="TopPageNavigatorContainer">
-        {privileges.viewDashboard && (
-          <button
-            className={
-              SelectedPage === 'Dashboard'
-                ? 'PageNavigatorButtonSelected'
-                : 'PageNavigatorButton'
-            }
-            onClick={() => setSelectedPage('Dashboard')}   id="top-nav-button-dashboard"
-          >
-            Dashboard
-          </button>
-        )}
+      {!isMobileState && (
+        <div className="TopPageNavigatorContainer">
+          {privileges.viewDashboard && (
+            <button
+              className={
+                SelectedPage === 'Dashboard'
+                  ? 'PageNavigatorButtonSelected'
+                  : 'PageNavigatorButton'
+              }
+              onClick={() => setSelectedPage('Dashboard')}
+              id="top-nav-button-dashboard"
+            >
+              Dashboard
+            </button>
+          )}
 
-        {privileges.viewRoomsPage && (
-          <button
-            className={
-              SelectedPage === 'Rooms'
-                ? 'PageNavigatorButtonSelected'
-                : 'PageNavigatorButton'
-            }
-            onClick={() => setSelectedPage('Rooms')}   id="top-nav-button-rooms"
-          >
-            Rooms
-          </button>
-        )}
+          {privileges.viewRoomsPage && (
+            <button
+              className={
+                SelectedPage === 'Rooms'
+                  ? 'PageNavigatorButtonSelected'
+                  : 'PageNavigatorButton'
+              }
+              onClick={() => setSelectedPage('Rooms')}
+              id="top-nav-button-rooms"
+            >
+              Rooms
+            </button>
+          )}
 
-        {privileges.editExpenses && (
-          <button
-            className={
-              SelectedPage === 'Expense'
-                ? 'PageNavigatorButtonSelected'
-                : 'PageNavigatorButton'
-            }
-            onClick={() => setSelectedPage('Expense')}   id="top-nav-button-expenses"
-          >
-            Expenses
-          </button>
-        )}
-        {privileges.viewToolsPage && (
-          <button
-            className={
-              SelectedPage === 'Tools'
-                ? 'PageNavigatorButtonSelected'
-                : 'PageNavigatorButton'
-            }
-            onClick={() => setSelectedPage('Tools')}   id="top-nav-button-tools"
-          >
-            Tools
-          </button>
-        )}
-      </div>} 
+          {privileges.editExpenses && (
+            <button
+              className={
+                SelectedPage === 'Expense'
+                  ? 'PageNavigatorButtonSelected'
+                  : 'PageNavigatorButton'
+              }
+              onClick={() => setSelectedPage('Expense')}
+              id="top-nav-button-expenses"
+            >
+              Expenses
+            </button>
+          )}
+          {privileges.viewToolsPage && (
+            <button
+              className={
+                SelectedPage === 'Tools'
+                  ? 'PageNavigatorButtonSelected'
+                  : 'PageNavigatorButton'
+              }
+              onClick={() => setSelectedPage('Tools')}
+              id="top-nav-button-tools"
+            >
+              Tools
+            </button>
+          )}
+        </div>
+      )}
 
-      <div className="RightSide">
+      <div
+        className="RightSide"
+        style={
+          !navigator.onLine
+            ? {
+                paddingLeft: 'var(--10px-V)',
+                borderRadius: 'var(--10px-V)',
+                background: 'var(--Primary-Color)',
+              }
+            : {}
+        }
+      >
         <div></div>
         {window.electron && (
           <>
             {' '}
+            {!navigator.onLine && (
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  marginRight: 'var(--5px-V)',
+                }}
+              >
+                {' '}
+                <strong>Offline</strong>{' '}
+              </div>
+            )}
             <div style={{ display: 'flex', alignItems: 'center' }}>
               {' '}
               <button
@@ -537,7 +572,7 @@ const {showAlert} = useAlert()
                       if (navigator.onLine) {
                         handleSyncOnlineToLocal();
                       } else {
-                        showAlert("You are currently offline")
+                        showAlert('You are currently offline');
                       }
                     }}
                     style={{
@@ -756,16 +791,18 @@ const {showAlert} = useAlert()
         ) : (
           <>
             {' '}
-           {!isMobileState && <button
-              style={{
-                marginLeft: 'var(--10px-V)',
-              }}
-              onClick={() => {
-                RefreshDataFromSqlite();
-              }}
-            >
-              Refresh Data
-              </button>}
+            {!isMobileState && (
+              <button
+                style={{
+                  marginLeft: 'var(--10px-V)',
+                }}
+                onClick={() => {
+                  RefreshDataFromSqlite();
+                }}
+              >
+                Refresh Data
+              </button>
+            )}
           </>
         )}
         <button
@@ -778,14 +815,24 @@ const {showAlert} = useAlert()
           {ThemeMode === 'light' ? 'light' : ThemeMode === 'dark' ? 'dark' : ''}
         </button>
 
-        {!isMobileState && <><div className="CurrentTimeContainer">
-          <p className="CurrentTime">
-            {currentHour}:{currentMinute}
-          </p>
-          <p className="CurrentTimeSmall">
-            {currentMonth}/{new Date(currentTime).getDate()}/{currentYear}
-          </p>
-        </div></>}
+        {!isMobileState && (
+          <>
+            <div className="CurrentTimeContainer">
+              <p
+                className="CurrentTime"
+                style={navigator.onLine ? {} : { color: 'black' }}
+              >
+                {currentHour}:{currentMinute}
+              </p>
+              <p
+                className="CurrentTimeSmall"
+                style={navigator.onLine ? {} : { color: 'black' }}
+              >
+                {currentMonth}/{new Date(currentTime).getDate()}/{currentYear}
+              </p>
+            </div>
+          </>
+        )}
       </div>
       {showSignOutConfirm && (
         <div className="signOutConfirmation">
