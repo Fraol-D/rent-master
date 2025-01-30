@@ -23,9 +23,7 @@ interface Expense {
   isUtility: boolean;
 }
 
-interface UpcomingExpensesWidgetProps {
-
-}
+interface UpcomingExpensesWidgetProps {}
 
 const generateRecurringExpenses = (
   expenses: expenses[],
@@ -33,95 +31,96 @@ const generateRecurringExpenses = (
   endDate: Date
 ): expenses[] => {
   let allExpenses: expenses[] = [];
-if(expenses)
-  expenses.forEach((expense) => {
-    if (expense.doesReoccur) {
-      const StartExpenseDate = new Date(expense.date);
-      StartExpenseDate.setHours(0, 0, 0, 0);
+  if (expenses)
+    expenses.forEach((expense) => {
+      if (expense.doesReoccur) {
+        const StartExpenseDate = new Date(expense.date);
+        StartExpenseDate.setHours(0, 0, 0, 0);
 
-      // Get the actual start date (either expense start date or period start date)
-      const effectiveStartDate = new Date(StartExpenseDate.getTime());
+        // Get the actual start date (either expense start date or period start date)
+        const effectiveStartDate = new Date(StartExpenseDate.getTime());
 
-      let currentDate = effectiveStartDate;
-      let expenseCount = 0;
+        let currentDate = effectiveStartDate;
+        let expenseCount = 0;
 
-      // Calculate end date based on expense settings
-      const finalEndDate = expense.HasEndDate
-        ? new Date(Math.min(expense.EndDate, endDate.getTime()))
-        : endDate;
+        // Calculate end date based on expense settings
+        const finalEndDate = expense.HasEndDate
+          ? new Date(Math.min(expense.EndDate, endDate.getTime()))
+          : endDate;
 
-      while (currentDate <= finalEndDate && expenseCount < 100) {
-        const expenseId = `${expense.id}-${currentDate.getTime()}`;
+        while (currentDate <= finalEndDate && expenseCount < 100) {
+          const expenseId = `${expense.id}-${currentDate.getTime()}`;
 
-        // Only add if the expense date falls within our range
-        if (
-          currentDate >= startDate &&
-          (currentDate <= endDate || expense.HasEndDate)
-        ) {
+          // Only add if the expense date falls within our range
+          if (
+            currentDate >= startDate &&
+            (currentDate <= endDate || expense.HasEndDate)
+          ) {
+            allExpenses.push({
+              ...expense,
+              id: expenseId,
+              date: currentDate.getTime(),
+            });
+          }
+
+          // Calculate next expense date based on recurring type
+          switch (expense.recurringType) {
+            case 'Day':
+              // Add days based on recurringCycle
+              currentDate = addDays(currentDate, expense.recurringCycle);
+              break;
+            case 'Monthly':
+              // Add one month to current date
+              const nextMonthDate = new Date(currentDate);
+              nextMonthDate.setMonth(nextMonthDate.getMonth() + 1);
+              currentDate = nextMonthDate;
+              break;
+
+            case 'Yearly':
+              // Preserve month and day when adding years
+              const nextYearDate = new Date(currentDate);
+              const originalMonth = nextYearDate.getMonth();
+              const originalDay = nextYearDate.getDate();
+              nextYearDate.setFullYear(nextYearDate.getFullYear() + 1);
+              // Ensure we keep the same month and day
+              nextYearDate.setMonth(originalMonth);
+              nextYearDate.setDate(originalDay);
+              currentDate = nextYearDate;
+              console.log(currentDate, 'lllllllllll');
+              break;
+
+            default:
+              console.warn(
+                `Unknown recurring type: ${expense.recurringType}, defaulting to monthly`
+              );
+              const defaultNextDate = new Date(currentDate);
+              defaultNextDate.setMonth(defaultNextDate.getMonth() + 1);
+          }
+
+          expenseCount++;
+        }
+      } else {
+        // For non-recurring expenses, only include if within date range
+        const expenseDate = new Date(expense.date);
+        expenseDate.setHours(0, 0, 0, 0);
+
+        if (expenseDate >= startDate && expenseDate <= endDate) {
           allExpenses.push({
             ...expense,
-            id: expenseId,
-            date: currentDate.getTime(),
+            date: expenseDate.getTime(),
           });
         }
-
-        // Calculate next expense date based on recurring type
-        switch (expense.recurringType) {
-          case 'Day':
-            // Add days based on recurringCycle
-            currentDate = addDays(currentDate, expense.recurringCycle);
-            break;
-          case 'Monthly':
-            // Add one month to current date
-            const nextMonthDate = new Date(currentDate);
-            nextMonthDate.setMonth(nextMonthDate.getMonth() + 1);
-            currentDate = nextMonthDate;
-            break;
-
-          case 'Yearly':
-            // Preserve month and day when adding years
-            const nextYearDate = new Date(currentDate);
-            const originalMonth = nextYearDate.getMonth();
-            const originalDay = nextYearDate.getDate();
-            nextYearDate.setFullYear(nextYearDate.getFullYear() + 1);
-            // Ensure we keep the same month and day
-            nextYearDate.setMonth(originalMonth);
-            nextYearDate.setDate(originalDay);
-            currentDate = nextYearDate;
-            console.log(currentDate, 'lllllllllll');
-            break;
-
-          default:
-            console.warn(
-              `Unknown recurring type: ${expense.recurringType}, defaulting to monthly`
-            );
-            const defaultNextDate = new Date(currentDate);
-            defaultNextDate.setMonth(defaultNextDate.getMonth() + 1);
-        }
-
-        expenseCount++;
       }
-    } else {
-      // For non-recurring expenses, only include if within date range
-      const expenseDate = new Date(expense.date);
-      expenseDate.setHours(0, 0, 0, 0);
-
-      if (expenseDate >= startDate && expenseDate <= endDate) {
-        allExpenses.push({
-          ...expense,
-          date: expenseDate.getTime(),
-        });
-      }
-    }
-  });
+    });
 
   // Sort expenses by date
   return allExpenses.sort((a, b) => a.date - b.date);
 };
 
-const DashbUpcomingExpensesWidget: React.FC<UpcomingExpensesWidgetProps> = ({
-
-}) => {const {AllExpenses} = useGlobal();
+const DashbUpcomingExpensesWidget: React.FC<
+  UpcomingExpensesWidgetProps
+> = ({}) => {
+  const { AllExpenses } = useGlobal();
   const [expandedMonths, setExpandedMonths] = useState<string[]>([]);
   const [filterFullBuilding, setFilterFullBuilding] = useState<boolean | null>(
     null
@@ -419,7 +418,15 @@ const DashbUpcomingExpensesWidget: React.FC<UpcomingExpensesWidgetProps> = ({
                             color: 'var(--Text-Color)',
                           }}
                         >
-                          {expense.name} <br /> <span style={{fontSize: 'var(--12px-V)', color: 'var(--Text-Color-Grey)'}}>{expense.category}</span>
+                          {expense.name} <br />{' '}
+                          <span
+                            style={{
+                              fontSize: 'var(--12px-V)',
+                              color: 'var(--Text-Color-Grey)',
+                            }}
+                          >
+                            {expense.category}
+                          </span>
                         </div>
                         <div
                           style={{
@@ -466,7 +473,7 @@ const DashbUpcomingExpensesWidget: React.FC<UpcomingExpensesWidgetProps> = ({
                           {expense.fullBuilding ? (
                             <strong>Full Building</strong>
                           ) : (
-                            <em>{`Room ${expense.room}, Floor ${expense.floor}`}</em>
+                            <em>{`Floor ${expense.floor}, Room ${expense.room}`}</em>
                           )}
                         </div>
                         <div

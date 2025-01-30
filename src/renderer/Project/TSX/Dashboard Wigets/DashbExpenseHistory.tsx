@@ -22,14 +22,10 @@ interface Expense {
   userId: string;
 }
 
-interface DashbExpenseHistoryProps {
+interface DashbExpenseHistoryProps {}
 
-}
-
-const DashbExpenseHistory: React.FC<DashbExpenseHistoryProps> = ({
-
-}) => {
-  const {AllExpenses} = useGlobal()
+const DashbExpenseHistory: React.FC<DashbExpenseHistoryProps> = ({}) => {
+  const { AllExpenses } = useGlobal();
   const [sortBy, setSortBy] = useState<'date' | 'price'>('date');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [showRecurring, setShowRecurring] = useState<
@@ -168,7 +164,8 @@ const DashbExpenseHistory: React.FC<DashbExpenseHistoryProps> = ({
     pastDate.setHours(0, 0, 0, 0);
 
     let expandedExpenses =
-      generateRecurringExpenses(AllExpenses as expenses[], pastDate, today) || [];
+      generateRecurringExpenses(AllExpenses as expenses[], pastDate, today) ||
+      [];
     if (
       AllExpenses &&
       AllExpenses.length > 0 &&
@@ -415,7 +412,15 @@ const DashbExpenseHistory: React.FC<DashbExpenseHistoryProps> = ({
                     color: 'var(--Text-Color)',
                   }}
                 >
-                  {expense.name} <br /> <span style={{fontSize: 'var(--12px-V)', color: 'var(--Text-Color-Grey)'}}>{expense.category}</span>
+                  {expense.name} <br />{' '}
+                  <span
+                    style={{
+                      fontSize: 'var(--12px-V)',
+                      color: 'var(--Text-Color-Grey)',
+                    }}
+                  >
+                    {expense.category}
+                  </span>
                 </div>
                 <div
                   style={{
@@ -462,7 +467,7 @@ const DashbExpenseHistory: React.FC<DashbExpenseHistoryProps> = ({
                   {expense.fullBuilding ? (
                     <strong>Full Building</strong>
                   ) : (
-                    <em>{`Room ${expense.room}, Floor ${expense.floor}`}</em>
+                    <em>{`Floor ${expense.floor}, Room ${expense.room}`}</em>
                   )}
                 </div>
                 <div

@@ -110,7 +110,6 @@ const Room = ({
     [SelectedAppUser]
   );
   const {
-    
     setAllRoomPayInfo,
     AllAgreements,
     setAllAgreements,
@@ -120,7 +119,10 @@ const Room = ({
 
     setAllTenants,
     AllRoomPayInfoHistory,
-    setAllRoomPayInfoHistory,isOnTutorial,AllRoomPayInfo,isMobileState
+    setAllRoomPayInfoHistory,
+    isOnTutorial,
+    AllRoomPayInfo,
+    isMobileState,
   } = useGlobal();
   const [isLoading, setIsLoading] = useState(false);
   const [name, setName] = useState('');
@@ -177,7 +179,7 @@ const Room = ({
       if (
         addTenantRef.current &&
         !(addTenantRef.current as HTMLElement).contains(event.target as Node) &&
-        roomType.AddTenantState&&
+        roomType.AddTenantState &&
         !isOnTutorial
       ) {
         updateRoomPropertyLocal(roomType.id, 'AddTenantState', 0);
@@ -189,7 +191,7 @@ const Room = ({
         ) &&
         roomType.ViewAgreement &&
         !document.activeElement?.closest('.ViewAgreementContainer') &&
-        !(event.target as HTMLElement).closest('#confirm-overlay')&&
+        !(event.target as HTMLElement).closest('#confirm-overlay') &&
         !isOnTutorial
       ) {
         updateRoomPropertyLocal(roomType.id, 'ViewAgreement', 0);
@@ -204,7 +206,7 @@ const Room = ({
           event.target as Node
         ) &&
         roomType.ShowPayTimeLine &&
-        !(event.target as HTMLElement).closest('#confirm-overlay')&&
+        !(event.target as HTMLElement).closest('#confirm-overlay') &&
         !isOnTutorial
       ) {
         updateRoomPropertyLocal(roomType.id, 'ShowPayTimeLine', 0);
@@ -219,7 +221,7 @@ const Room = ({
           event.target as Node
         ) &&
         roomType.ShowUtilityLine &&
-        !(event.target as HTMLElement).closest('#confirm-overlay')&&
+        !(event.target as HTMLElement).closest('#confirm-overlay') &&
         !isOnTutorial
       ) {
         updateRoomPropertyLocal(roomType.id, 'ShowUtilityLine', 0);
@@ -412,50 +414,51 @@ const Room = ({
     console.log('tenant_name', tenant_name);
     const roomDocs = await getRoomDocuments('Add a tenant documents');
     if (roomDocs?.documents && roomDocs.documents.length > 0) {
-      if(window.electron) {
-         for (const element of roomDocs.documents) {
-        
-        const fileName = element.split('\\').pop().split('/').pop();
-        let fileContent;
+      if (window.electron) {
+        for (const element of roomDocs.documents) {
+          const fileName = element.split('\\').pop().split('/').pop();
+          let fileContent;
 
-        // Check if running in Electron environment
-        if (window.electron) {
-          // Use Electron's IPC to read the file
-          fileContent = await window.electron.ipcRenderer.invoke(
-            'read-file',
-            element
-          );
-        } else {
-          // Fallback to fetch the file content
-          const response = await fetch(element);
-          if (!response.ok) {
-            throw new Error(`Failed to fetch file: ${fileName}`);
+          // Check if running in Electron environment
+          if (window.electron) {
+            // Use Electron's IPC to read the file
+            fileContent = await window.electron.ipcRenderer.invoke(
+              'read-file',
+              element
+            );
+          } else {
+            // Fallback to fetch the file content
+            const response = await fetch(element);
+            if (!response.ok) {
+              throw new Error(`Failed to fetch file: ${fileName}`);
+            }
+
+            fileContent = await response.blob(); // Get the file content as a Blob
           }
-        
-          fileContent = await response.blob(); // Get the file content as a Blob
+
+          const blob = new Blob([fileContent]);
+          const file = new File([blob], fileName, {
+            type: 'application/octet-stream',
+          });
+
+          await uploadTenantDocumentsV2(
+            [file],
+            `Floor ${roomType.floor}, Room ${roomType.roomIndex} - ${roomType.id}`,
+            tenant_name,
+            tenantId,
+            new Date(startTime).toDateString()
+          );
         }
-
-        const blob = new Blob([fileContent]);
-        const file = new File([blob], fileName, {
-          type: 'application/octet-stream',
-        });
-
-        await uploadTenantDocumentsV2(
-          [file],
-          `Room ${roomType.roomIndex}, Floor ${roomType.floor} - ${roomType.id}`,
+      } else {
+        await RenameAddTenantDocumentFolder(
+          `Floor ${roomType.floor}, Room ${roomType.roomIndex} - ${roomType.id}`,
           tenant_name,
           tenantId,
           new Date(startTime).toDateString()
         );
       }
-      } else {
-        await RenameAddTenantDocumentFolder(    `Room ${roomType.roomIndex}, Floor ${roomType.floor} - ${roomType.id}`,
-          tenant_name,
-          tenantId,
-          new Date(startTime).toDateString());
-      }
-     
-     if(window.electron) await deleteTenantDocumentFolder();
+
+      if (window.electron) await deleteTenantDocumentFolder();
     }
   };
   const getCorrectPaymentStatment = (text: string, custom: string) => {
@@ -478,7 +481,7 @@ const Room = ({
         return custom + ' days';
     }
   };
-  const { showAlert }  = useAlert();
+  const { showAlert } = useAlert();
   const handleAddTenantButton = async () => {
     if (AddTenantUseBrokerState && AddTenantSelectedBrokerId == '') return;
     if (isNaN(new Date(startTime).getTime())) return;
@@ -486,11 +489,14 @@ const Room = ({
       handleTenantSelectWhenNew();
       return;
     }
-    if(AllTenants.some((t:any) => t.name === name)) {showAlert('Tenant already exists');return;} 
+    if (AllTenants.some((t: any) => t.name === name)) {
+      showAlert('Tenant already exists');
+      return;
+    }
     if (name.length >= 3 && tel1.length >= 6 && startTime.length >= 1) {
       const fixedName = name.trim();
       setIsUpdatingTenantList(true);
-      setIsLoading(true)
+      setIsLoading(true);
       const tenantId = uuidv4();
       const tenant = {
         id: tenantId,
@@ -582,7 +588,7 @@ const Room = ({
           Representative,
           tenant.Currency
         );
-      
+
         await updateRoomProperty(
           roomType.id,
           'selectedAgreementId',
@@ -602,10 +608,9 @@ const Room = ({
             : commissionValue
         );
       }
-     await  handleDocuments(tenant.id, tenant.name);
+      await handleDocuments(tenant.id, tenant.name);
       SetRefreshState(true);
-      setIsLoading(false)
-
+      setIsLoading(false);
     }
     updateRoomPropertyLocal(
       roomType.id,
@@ -1148,7 +1153,6 @@ const Room = ({
       'AllRoomPayInfo',
       updatedAllRoomPayInfo
     );
-   
   };
   const [TypeOfRoomState, setTypeOfRoomState] = useState(true);
   const [ShowConverter, setShowConverter] = useState(false);
@@ -1220,7 +1224,6 @@ const Room = ({
           fontSize: 'var(--16px-V)',
           color: 'var(--Text-Color-Grey)',
         }}
-
       >
         {isEditing ? (
           <>
@@ -1362,7 +1365,7 @@ const Room = ({
           marginBottom: 'var(--10px-V)',
           borderRadius: 'var(--5px-V)',
         }}
-        id={"room-view-agreement-tenant-information" + roomType.id}
+        id={'room-view-agreement-tenant-information' + roomType.id}
       >
         <div
           style={{
@@ -1471,33 +1474,33 @@ const Room = ({
     const bitPosition = bitOffsets[timing] + typeBits[settingType];
     return (roomType.UtilityNotificationSettings & (1 << bitPosition)) !== 0;
   };
-// Add LoadingOverlay component
-const LoadingOverlay = ({ isLoading }: { isLoading: boolean }) => (
-  <div
-    style={{
-      display: isLoading ? 'flex' : 'none',
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: 'rgba(0, 0, 0, 0.3)',
-      justifyContent: 'center',
-      alignItems: 'center',
-      zIndex: 1000,
-      borderRadius: 'var(--10px-V)',
-    }}
-  >
-    <img
-      src={loadingGif}
+  // Add LoadingOverlay component
+  const LoadingOverlay = ({ isLoading }: { isLoading: boolean }) => (
+    <div
       style={{
-        width: '40px',
-        height: '40px',
+        display: isLoading ? 'flex' : 'none',
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.3)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 1000,
+        borderRadius: 'var(--10px-V)',
       }}
-      alt="Loading..."
-    />
-  </div>
-);
+    >
+      <img
+        src={loadingGif}
+        style={{
+          width: '40px',
+          height: '40px',
+        }}
+        alt="Loading..."
+      />
+    </div>
+  );
 
   return (
     <>
@@ -1513,29 +1516,33 @@ const LoadingOverlay = ({ isLoading }: { isLoading: boolean }) => (
             : 'var(--Secondary-Color30)',
           border: roomType.AddTenantState ? 'var(--1px-V) solid #00e1f1' : '',
         }}
-      >  <LoadingOverlay isLoading={isLoading} />
+      >
+        {' '}
+        <LoadingOverlay isLoading={isLoading} />
         <div className="FirstLine">
-          <div id={'room-floorRoom-text-' + roomType.id}><div style={{ display: 'flex' }}>
-            <p className="FloorText">Floor {roomType.floor}</p>{' '}
-            <img
-              onClick={() => {
-                setSelectedEditRoomId(roomType.id);
-                setTypeOfRoomState(true);
-              }}
-              src={
-                storageManager.get('ThemeMode') ? storageManager.get('ThemeMode')=== 'dark'
-                  ? EditIconLight
-                  : EditIconDark
-                  : EditIconLight
-              }
-              style={{
-                width: 'var(--23px-V)',
-                height: 'var(--23px-V)',
-                marginLeft: 'var(--10px-V)',
-              }}
-              alt=""
-            />
-            {/* {roomType.status === 'Empty' && (
+          <div id={'room-floorRoom-text-' + roomType.id}>
+            <div style={{ display: 'flex' }}>
+              <p className="FloorText">Floor {roomType.floor}</p>{' '}
+              <img
+                onClick={() => {
+                  setSelectedEditRoomId(roomType.id);
+                  setTypeOfRoomState(true);
+                }}
+                src={
+                  storageManager.get('ThemeMode')
+                    ? storageManager.get('ThemeMode') === 'dark'
+                      ? EditIconLight
+                      : EditIconDark
+                    : EditIconDark
+                }
+                style={{
+                  width: 'var(--23px-V)',
+                  height: 'var(--23px-V)',
+                  marginLeft: 'var(--10px-V)',
+                }}
+                alt=""
+              />
+              {/* {roomType.status === 'Empty' && (
               <button
                 style={{ padding: '0' }}
                 onClick={() => {
@@ -1549,10 +1556,13 @@ const LoadingOverlay = ({ isLoading }: { isLoading: boolean }) => (
                 {roomType.Archived ? 'Unarchive' : 'Archive'}
               </button>
             )} */}
+            </div>
+            <p className="RoomText">Room {roomType.roomIndex}</p>
           </div>
-          <p className="RoomText">Room {roomType.roomIndex}</p>
-</div>
-          <div id={'room-status-Main-container' + roomType.id} className="StatusContainer">
+          <div
+            id={'room-status-Main-container' + roomType.id}
+            className="StatusContainer"
+          >
             <div className="StatusText">
               <p>
                 Current Status:{' '}
@@ -1572,7 +1582,7 @@ const LoadingOverlay = ({ isLoading }: { isLoading: boolean }) => (
                       marginTop: 'var(--5px-V)',
                       fontWeight: '400',
                     }}
-                 >
+                  >
                     {AllTenants.find(
                       (tenant: any) => tenant.id === roomType.tenantId
                     ) ? (
@@ -1582,7 +1592,6 @@ const LoadingOverlay = ({ isLoading }: { isLoading: boolean }) => (
                     ) : (
                       <>
                         <span>Tenant not found, </span>
-                       
                       </>
                     )}
                   </p>
@@ -1620,7 +1629,8 @@ const LoadingOverlay = ({ isLoading }: { isLoading: boolean }) => (
                             }}
                             onClick={() => {
                               handleAddTenant();
-                            }}        id={'room-status-add-tenant-button' + roomType.id}
+                            }}
+                            id={'room-status-add-tenant-button' + roomType.id}
                           >
                             Add a tenant
                           </button>
@@ -1649,7 +1659,7 @@ const LoadingOverlay = ({ isLoading }: { isLoading: boolean }) => (
                           !roomType.ViewAgreement
                         );
                       }}
-                      id={"room-view-agreement-button" + roomType.id}
+                      id={'room-view-agreement-button' + roomType.id}
                     >
                       <p
                         style={{
@@ -1687,7 +1697,8 @@ const LoadingOverlay = ({ isLoading }: { isLoading: boolean }) => (
                           height: 'var(--22px-V)',
                           marginTop: 'var(--0px-V)',
                           paddingTop: 'var(--0px-V)',
-                        }}  id={"room-view-agreement-button" + roomType.id}
+                        }}
+                        id={'room-view-agreement-button' + roomType.id}
                       >
                         View Agreement
                       </button>
@@ -1701,9 +1712,12 @@ const LoadingOverlay = ({ isLoading }: { isLoading: boolean }) => (
           </div>
         </div>
         <div className="SecondLine">
-          <div className="PriceMainContainer"id={'room-price-payment-cycle' + roomType.id}>
+          <div
+            className="PriceMainContainer"
+            id={'room-price-payment-cycle' + roomType.id}
+          >
             <div className="PriceContainer">
-              <div 
+              <div
                 style={{
                   display: 'flex',
                   flexDirection: 'column',
@@ -1810,7 +1824,7 @@ const LoadingOverlay = ({ isLoading }: { isLoading: boolean }) => (
                       color: 'var(--Text-Color-Reverse)',
                       border: 'none',
                     }}
-                    id={"room-payment-timeline-button" + roomType.id}
+                    id={'room-payment-timeline-button' + roomType.id}
                     onClick={() => {
                       turnOffViewStateForAll();
                       updateRoomPropertyLocal(
@@ -1846,7 +1860,10 @@ const LoadingOverlay = ({ isLoading }: { isLoading: boolean }) => (
             </div>
           )}
         </div>
-        <div className="ThirdLine" id={'room-typeOfRoomMainContainer' + roomType.id}>
+        <div
+          className="ThirdLine"
+          id={'room-typeOfRoomMainContainer' + roomType.id}
+        >
           {TypeOfRoomState ? (
             <>
               {' '}
@@ -1928,7 +1945,6 @@ const LoadingOverlay = ({ isLoading }: { isLoading: boolean }) => (
             </>
           )}
         </div>
-
         {roomType.AddTenantState ? (
           <div
             className="PopOutContainerNoZindex"
@@ -1991,7 +2007,9 @@ const LoadingOverlay = ({ isLoading }: { isLoading: boolean }) => (
                 </div>
 
                 {TenantPageSelected === 'New' ? (
-                  <div id={'room-add-tenant-container-tenantInfo' + roomType.id}>
+                  <div
+                    id={'room-add-tenant-container-tenantInfo' + roomType.id}
+                  >
                     <h3
                       style={{
                         marginTop: 'var(--5px-V)',
@@ -2194,7 +2212,11 @@ const LoadingOverlay = ({ isLoading }: { isLoading: boolean }) => (
                 <hr />
 
                 {TenantPageSelected === 'New' ? (
-                  <div id={'room-add-tenant-container-agreementDetails' + roomType.id}>
+                  <div
+                    id={
+                      'room-add-tenant-container-agreementDetails' + roomType.id
+                    }
+                  >
                     <h3
                       style={{
                         marginTop: 'var(--5px-V)',
@@ -2238,9 +2260,7 @@ const LoadingOverlay = ({ isLoading }: { isLoading: boolean }) => (
                         </button>
                         {ShowConverter && (
                           <EthiopianCalanderConverterMenu
-                            onConvert={(s) => {
-                             
-                            }}
+                            onConvert={(s) => {}}
                             Cancel={() => {
                               setShowConverter(false);
                             }}
@@ -2273,9 +2293,7 @@ const LoadingOverlay = ({ isLoading }: { isLoading: boolean }) => (
                             </button>
                             {ShowConverterEndDate && (
                               <EthiopianCalanderConverterMenu
-                                onConvert={(s) => {
-                             
-                                }}
+                                onConvert={(s) => {}}
                                 Cancel={() => {
                                   setShowConverterEndDate(false);
                                 }}
@@ -2306,9 +2324,7 @@ const LoadingOverlay = ({ isLoading }: { isLoading: boolean }) => (
                             </button>
                             {ShowConverterSignDate && (
                               <EthiopianCalanderConverterMenu
-                                onConvert={(s) => {
-                              
-                                }}
+                                onConvert={(s) => {}}
                                 Cancel={() => {
                                   setShowConverterSignDate(false);
                                 }}
@@ -3026,7 +3042,6 @@ const LoadingOverlay = ({ isLoading }: { isLoading: boolean }) => (
             ref={viewAgreementRef}
             style={{
               top: 'var(--310px-V)',
-             
             }}
           >
             <div
@@ -3039,7 +3054,8 @@ const LoadingOverlay = ({ isLoading }: { isLoading: boolean }) => (
                   ? 'var(--470px-V)'
                   : 'var(--0px-V)',
                 opacity: roomType.ViewAgreement ? '1' : '0',
-              }}     id={'room-view-agreement-container' + roomType.id}
+              }}
+              id={'room-view-agreement-container' + roomType.id}
             >
               <div style={{ display: 'flex', flexDirection: 'column' }}>
                 <div
@@ -3145,7 +3161,7 @@ const LoadingOverlay = ({ isLoading }: { isLoading: boolean }) => (
                   {/* Agreement Information Section f*/}
                   {privileges.editTenantRoomAgreementInfo && (
                     <div
-                    id={'room-view-agreement-information' + roomType.id}
+                      id={'room-view-agreement-information' + roomType.id}
                       style={{
                         width: '93%',
                         background: 'var(--Secondary-Color30)',
@@ -3244,7 +3260,7 @@ const LoadingOverlay = ({ isLoading }: { isLoading: boolean }) => (
                   )}
                   {privileges.editTenantRoomTenantPortal && (
                     <div
-                    id={'room-view-agreement-tenant-portal' + roomType.id}
+                      id={'room-view-agreement-tenant-portal' + roomType.id}
                       style={{
                         width: '93%',
                         background: 'var(--Secondary-Color30)',
@@ -3350,55 +3366,55 @@ const LoadingOverlay = ({ isLoading }: { isLoading: boolean }) => (
                                     >
                                       https://rentmaster.markethubet.com/tenantPortal/{' '}
                                       <br />
-                                      {
-                                        encodeURIComponent(storageManager
+                                      {encodeURIComponent(
+                                        storageManager
                                           .get('Branches')
                                           .find(
                                             (branch: any) =>
                                               branch.id === SelectedBranchId
-                                          ).name)
-                                      }
+                                          ).name
+                                      )}
                                       :@@^&^@@:
-                                      {
-                                      encodeURIComponent(  storageManager
+                                      {encodeURIComponent(
+                                        storageManager
                                           .get('users')
                                           .find(
                                             (user: any) =>
                                               user.id === SelectedUserId
-                                          ).companyName)
-                                      }
+                                          ).companyName
+                                      )}
                                       /
-                                      {
-                                       encodeURIComponent( AllTenants.find(
+                                      {encodeURIComponent(
+                                        AllTenants.find(
                                           (tenant: any) =>
                                             tenant.id === roomType.tenantId
-                                        )?.name)
-                                      }
+                                        )?.name
+                                      )}
                                     </a>
                                     <br />{' '}
                                   </div>
                                   <button
                                     onClick={() => {
-                                      const url = `https://rentmaster.markethubet.com/tenantPortal/${
-                                        encodeURIComponent( storageManager
+                                      const url = `https://rentmaster.markethubet.com/tenantPortal/${encodeURIComponent(
+                                        storageManager
                                           .get('Branches')
                                           .find(
                                             (branch: any) =>
                                               branch.id === SelectedBranchId
-                                          ).name)
-                                      }:@@^&^@@:${
-                                        encodeURIComponent(storageManager
+                                          ).name
+                                      )}:@@^&^@@:${encodeURIComponent(
+                                        storageManager
                                           .get('users')
                                           .find(
                                             (user: any) =>
                                               user.id === SelectedUserId
-                                          ).companyName)
-                                      }/${
-                                        encodeURIComponent( AllTenants.find(
+                                          ).companyName
+                                      )}/${encodeURIComponent(
+                                        AllTenants.find(
                                           (tenant: any) =>
                                             tenant.id === roomType.tenantId
-                                        )?.name)
-                                      }`;
+                                        )?.name
+                                      )}`;
                                       navigator.clipboard.writeText(url);
                                     }}
                                   >
@@ -3811,7 +3827,10 @@ const LoadingOverlay = ({ isLoading }: { isLoading: boolean }) => (
                   {/* Reminders and Notifications Section */}
                   {privileges.editTenantRoomNotificationSettings && (
                     <div
-                      id={'room-view-agreement-reminders-and-notifications' + roomType.id}
+                      id={
+                        'room-view-agreement-reminders-and-notifications' +
+                        roomType.id
+                      }
                       style={{
                         width: '93%',
                         background: 'var(--Secondary-Color30)',
@@ -3908,7 +3927,6 @@ const LoadingOverlay = ({ isLoading }: { isLoading: boolean }) => (
             style={{
               top: 'var(--200px-V)',
               left: 'var(---567px-V)',
-            
             }}
           >
             <PaymentProgressBarGUI
@@ -3954,7 +3972,6 @@ const LoadingOverlay = ({ isLoading }: { isLoading: boolean }) => (
         ) : (
           <></>
         )}
-
         {TenantLeavePannelState && (
           <>
             <div
@@ -3963,7 +3980,10 @@ const LoadingOverlay = ({ isLoading }: { isLoading: boolean }) => (
                 setTenantLeavePannelState(false);
               }}
             ></div>
-            <div className="TenantLeavePannelScreen" style={{width: isMobileState ? '95%' : ''}}>
+            <div
+              className="TenantLeavePannelScreen"
+              style={{ width: isMobileState ? '95%' : '' }}
+            >
               <LeavePanel
                 tenant={
                   AllTenants.find(

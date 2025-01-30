@@ -99,7 +99,7 @@ const DocumentInteractor: React.FC<DocumentInteractorProps> = ({
           .replace(/,/g, '');
 
         const roomDocs = await getTenantRoomDocuments(
-          `Room ${room.roomIndex}, Floor ${room.floor} - ${room.id}`,
+          `Floor ${room.floor}, Room ${room.roomIndex} - ${room.id}`,
           `${formattedName}, ${formattedDate}, ${tenant.id}`
         );
         console.log(roomDocs);
@@ -118,7 +118,7 @@ const DocumentInteractor: React.FC<DocumentInteractorProps> = ({
       setDocuments([]);
     }
   };
-  const { showAlert } = useAlert(); 
+  const { showAlert } = useAlert();
   const handleOnAddDocument = () => {
     const input = document.createElement('input');
     input.type = 'file';
@@ -131,22 +131,27 @@ const DocumentInteractor: React.FC<DocumentInteractorProps> = ({
           setIsUploading(true);
           setTotalFiles(files.length);
           setUploadedFiles(0);
-          const filteredFiles = Array.from(files).filter(file => file.size <= 5 * 1024 * 1024); // 5MB limit
-          console.log(filteredFiles.length,files.length)
-          if(filteredFiles.length === 0){
+          const filteredFiles = Array.from(files).filter(
+            (file) => file.size <= 5 * 1024 * 1024
+          ); // 5MB limit
+          console.log(filteredFiles.length, files.length);
+          if (filteredFiles.length === 0) {
             showAlert('All files are above the 5MB limit.', 'error');
             setIsUploading(false);
             return;
           } else if (filteredFiles.length < files.length) {
-            showAlert('Some files exceeded the 5MB limit and were not uploaded.', 'error');
+            showAlert(
+              'Some files exceeded the 5MB limit and were not uploaded.',
+              'error'
+            );
           }
-          
+
           if (isAddRoomDocument) {
             const roomId = 'Add a tenant documents';
             for (let i = 0; i < filteredFiles.length; i++) {
               const file = filteredFiles[i];
               await uploadTenantDocument(file, roomId);
-              setUploadedFiles(prev => prev + 1);
+              setUploadedFiles((prev) => prev + 1);
               setUploadProgress(((i + 1) / filteredFiles.length) * 100);
             }
             showAlert('Documents uploaded successfully', 'success');
@@ -169,7 +174,7 @@ const DocumentInteractor: React.FC<DocumentInteractorProps> = ({
 
             const results = await AddRoomDocuments(
               filteredFiles,
-              `Room ${room?.roomIndex}, Floor ${room?.floor} - ${room?.id}`,
+              `Floor ${room?.floor}, Room ${room?.roomIndex} - ${room?.id}`,
               tenantName,
               tenantId,
               AddedTimeReal
@@ -181,7 +186,10 @@ const DocumentInteractor: React.FC<DocumentInteractorProps> = ({
               showAlert('Documents uploaded successfully', 'success');
             } else {
               console.error('Failed to upload documents');
-              showAlert('Failed to upload documents. Please try again.', 'error');
+              showAlert(
+                'Failed to upload documents. Please try again.',
+                'error'
+              );
             }
           }
         } catch (error) {
@@ -200,41 +208,46 @@ const DocumentInteractor: React.FC<DocumentInteractorProps> = ({
   };
   const { confirm } = useConfirm();
   const handleDeleteDocument = async () => {
-    const choice = await confirm('Are you sure you want to delete this document?', {
-      type: 'danger',
-      title: 'Delete Document',
-      confirmText: 'Delete',
-      cancelText: 'Cancel',
-    });
-    if(choice)
-    if (selectedDocument) {
-      const fileName = selectedDocument.split('/').pop();
+    const choice = await confirm(
+      'Are you sure you want to delete this document?',
+      {
+        type: 'danger',
+        title: 'Delete Document',
+        confirmText: 'Delete',
+        cancelText: 'Cancel',
+      }
+    );
+    if (choice)
+      if (selectedDocument) {
+        const fileName = selectedDocument.split('/').pop();
 
-      if (isAddRoomDocument) {
-        const fileName2 = selectedDocument.split('\\').pop();
-        const result = await deleteTenantDocument(fileName2);
-        if (
-          result &&
-          result.message === 'Tenant document deleted successfully'
-        ) {
-          showAlert('Document deleted successfully', 'success');
-          setDocuments((prevDocs) =>
-            prevDocs.filter((doc) => doc !== selectedDocument)
-          );
-          setSelectedDocument(null);
-        }
-      } else {
-        const roomId = room ? `Room ${room.roomIndex}, Floor ${room.floor} - ${room.id}` : 'Add a tenant documents';
-        const result = await deleteRoomDocument(roomId, fileName);
-        if (result && result.message === 'Document deleted successfully') {
-          showAlert('Document deleted successfully', 'success');
-          setDocuments((prevDocs) =>
-            prevDocs.filter((doc) => doc !== selectedDocument)
-          );
-          setSelectedDocument(null);
+        if (isAddRoomDocument) {
+          const fileName2 = selectedDocument.split('\\').pop();
+          const result = await deleteTenantDocument(fileName2);
+          if (
+            result &&
+            result.message === 'Tenant document deleted successfully'
+          ) {
+            showAlert('Document deleted successfully', 'success');
+            setDocuments((prevDocs) =>
+              prevDocs.filter((doc) => doc !== selectedDocument)
+            );
+            setSelectedDocument(null);
+          }
+        } else {
+          const roomId = room
+            ? `Floor ${room.floor}, Room ${room.roomIndex} - ${room.id}`
+            : 'Add a tenant documents';
+          const result = await deleteRoomDocument(roomId, fileName);
+          if (result && result.message === 'Document deleted successfully') {
+            showAlert('Document deleted successfully', 'success');
+            setDocuments((prevDocs) =>
+              prevDocs.filter((doc) => doc !== selectedDocument)
+            );
+            setSelectedDocument(null);
+          }
         }
       }
-    }
   };
 
   const handleShowInExplorer = () => {
@@ -244,36 +257,39 @@ const DocumentInteractor: React.FC<DocumentInteractorProps> = ({
   };
 
   // Update the handleOpenDocument function
-const handleOpenDocument = async () => {
-  if (selectedDocument) {
-    if (window.electron) {
-      // Electron version - open file
-      window.electron.ipcRenderer.send('open-document', selectedDocument);
-    } else {
-       // Web version - download file
-       try {
-        const fileName = getFileName(selectedDocument);
-        const roomId = room?.status === "Taken" ? `Room ${room.roomIndex}, Floor ${room.floor} - ${room.id}` : 'Add a tenant documents';
-        
-        await downloadDocument(roomId, fileName);
-      } catch (error) {
-        console.error('Error downloading document:', error);
-        alert('Failed to download document. Please try again.');
+  const handleOpenDocument = async () => {
+    if (selectedDocument) {
+      if (window.electron) {
+        // Electron version - open file
+        window.electron.ipcRenderer.send('open-document', selectedDocument);
+      } else {
+        // Web version - download file
+        try {
+          const fileName = getFileName(selectedDocument);
+          const roomId =
+            room?.status === 'Taken'
+              ? `Floor ${room.floor}, Room ${room.roomIndex} - ${room.id}`
+              : 'Add a tenant documents';
+
+          await downloadDocument(roomId, fileName);
+        } catch (error) {
+          console.error('Error downloading document:', error);
+          alert('Failed to download document. Please try again.');
+        }
       }
     }
-  }
-};
+  };
 
   const getFileName = (filePath: string) => {
     if (!filePath) return '';
-    
+
     // Handle both Windows and Unix-style paths
     const parts = filePath.split(/[/\\]/);
     const fileName = parts[parts.length - 1];
-    
+
     // Skip the receipts folder
     if (fileName === 'receipts') return '';
-    
+
     // Handle WIN_ prefix files
     const match = fileName.match(/^(WIN_\d{8}_\d{2}_\d{2}_\d{2})/);
     return match ? match[1] + fileName.substring(match[1].length) : fileName;
@@ -305,77 +321,108 @@ const handleOpenDocument = async () => {
       }
     >
       {isUploading && (
-        <div style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.5)',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-          alignItems: 'center',
-          zIndex: 1000,
-          borderRadius: 'inherit'
-        }}>
-          <div style={{
-            color: 'white',
-            padding: '20px',
-            borderRadius: '5px',
-            textAlign: 'center'
-          }}>
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 1000,
+            borderRadius: 'inherit',
+          }}
+        >
+          <div
+            style={{
+              color: 'white',
+              padding: '20px',
+              borderRadius: '5px',
+              textAlign: 'center',
+            }}
+          >
             <div>Uploading Documents...</div>
-            <div style={{marginTop: '10px'}}>
+            <div style={{ marginTop: '10px' }}>
               {uploadedFiles} of {totalFiles} files uploaded
             </div>
-            <div style={{
-              width: '200px',
-              height: '20px',
-              backgroundColor: 'rgba(255, 255, 255, 0.2)',
-              borderRadius: '10px',
-              marginTop: '10px',
-              overflow: 'hidden'
-            }}>
-              <div style={{
-                width: `${uploadProgress}%`,
-                height: '100%',
-                backgroundColor: 'white',
-                transition: 'width 0.3s ease-in-out'
-              }} />
+            <div
+              style={{
+                width: '200px',
+                height: '20px',
+                backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                borderRadius: '10px',
+                marginTop: '10px',
+                overflow: 'hidden',
+              }}
+            >
+              <div
+                style={{
+                  width: `${uploadProgress}%`,
+                  height: '100%',
+                  backgroundColor: 'white',
+                  transition: 'width 0.3s ease-in-out',
+                }}
+              />
             </div>
-            <div style={{marginTop: '5px'}}>{Math.round(uploadProgress)}%</div>
+            <div style={{ marginTop: '5px' }}>
+              {Math.round(uploadProgress)}%
+            </div>
           </div>
         </div>
       )}
       <div
         className="document-list"
-        style={{ flex: 1, overflowY: 'auto', overflowX: 'auto', minHeight: 'var(--120px-V)', maxHeight: 'var(--183px-V)'}}
+        style={{
+          flex: 1,
+          overflowY: 'auto',
+          overflowX: 'auto',
+          minHeight: 'var(--120px-V)',
+          maxHeight: 'var(--183px-V)',
+        }}
       >
-        <div style={{height: '100%', minHeight: 'var(--120px-V)',display: 'flex', flexDirection: 'column', overflowX: 'auto'}}>
-        {documents.length > 0 ? (
-          documents
-            .filter(doc => {
-              const fileName = getFileName(doc);
-              return fileName && fileName !== 'receipts'; // Filter out empty names and receipts folder
-            })
-            .map((doc) => (
-              <div
-                key={uuidv4()}
-                className={`${
-                  doc === selectedDocument
-                    ? 'document-itemSelected'
-                    : 'document-item'
-                }`}
-                onClick={() => setSelectedDocument(doc)}
-                style={{ cursor: 'pointer', whiteSpace: 'nowrap',display: 'flex', justifyContent: 'flex-start', alignItems: 'center', minWidth: 'fit-content'}}
-              >
-                {getFileName(doc)}
-              </div>
-            ))
-        ) : (
-          <div>No documents added</div>
-        )}
+        <div
+          style={{
+            height: '100%',
+            minHeight: 'var(--120px-V)',
+            display: 'flex',
+            flexDirection: 'column',
+            overflowX: 'auto',
+          }}
+        >
+          {documents.length > 0 ? (
+            documents
+              .filter((doc) => {
+                const fileName = getFileName(doc);
+                return fileName && fileName !== 'receipts'; // Filter out empty names and receipts folder
+              })
+              .map((doc) => (
+                <div
+                  key={uuidv4()}
+                  className={`${
+                    doc === selectedDocument
+                      ? 'document-itemSelected'
+                      : 'document-item'
+                  }`}
+                  onClick={() => setSelectedDocument(doc)}
+                  style={{
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                    display: 'flex',
+                    justifyContent: 'flex-start',
+                    alignItems: 'center',
+                    minWidth: 'fit-content',
+                  }}
+                >
+                  {getFileName(doc)}
+                </div>
+              ))
+          ) : (
+            <div>No documents added</div>
+          )}
         </div>
       </div>
       <div
@@ -385,19 +432,32 @@ const handleOpenDocument = async () => {
           justifyContent: 'space-around',
           padding: 'var(--10px-V)',
           borderRadius: 'var(--5px-V)',
-          background: 'var(--Secondary-Color30)'
+          background: 'var(--Secondary-Color30)',
         }}
       >
-        <button onClick={handleOnAddDocument} disabled={isUploading}>Add Document</button>
+        <button onClick={handleOnAddDocument} disabled={isUploading}>
+          Add Document
+        </button>
         {selectedDocument && (
           <>
-            <button onClick={handleOpenDocument} disabled={!selectedDocument || isUploading}>
+            <button
+              onClick={handleOpenDocument}
+              disabled={!selectedDocument || isUploading}
+            >
               {window.electron ? 'Open' : 'Download'}
             </button>
-           {window.electron && <button onClick={handleShowInExplorer} disabled={!selectedDocument || isUploading}>
-              Open in Files
-            </button>}
-            <button onClick={handleDeleteDocument} disabled={!selectedDocument || isUploading}>
+            {window.electron && (
+              <button
+                onClick={handleShowInExplorer}
+                disabled={!selectedDocument || isUploading}
+              >
+                Open in Files
+              </button>
+            )}
+            <button
+              onClick={handleDeleteDocument}
+              disabled={!selectedDocument || isUploading}
+            >
               Delete
             </button>
           </>
