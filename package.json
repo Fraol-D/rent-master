@@ -19,8 +19,8 @@
     "dev-35": "cd ./page-35-year-china-batch-website && vite",
     "build-35": "cd ./page-35-year-china-batch-website && vite build",
     "dev-page": "vite ./RentMaster\\ Website/RentalSite/",
-    "react-build": "vite build",   
-     "build": "concurrently \"npm run build:main\" \"npm run build:renderer\"",
+    "react-build": "vite build",
+    "build": "concurrently \"npm run build:main\" \"npm run build:renderer\"",
     "build:main": "cross-env NODE_ENV=production TS_NODE_TRANSPILE_ONLY=true webpack --config ./.erb/configs/webpack.config.main.prod.ts",
     "build:renderer": "cross-env NODE_ENV=production TS_NODE_TRANSPILE_ONLY=true webpack --config ./.erb/configs/webpack.config.renderer.prod.ts",
     "postinstall": "ts-node .erb/scripts/check-native-dep.js && electron-builder install-app-deps && cross-env NODE_ENV=development TS_NODE_TRANSPILE_ONLY=true webpack --config ./.erb/configs/webpack.config.renderer.dev.dll.ts",
@@ -137,6 +137,7 @@
     "@testing-library/react": "^14.0.0",
     "@types/d3": "^7.4.3",
     "@types/jest": "^29.5.2",
+    "@types/lodash": "^4.17.15",
     "@types/node": "20.2.5",
     "@types/react": "^18.2.8",
     "@types/react-dom": "^18.3.1",
@@ -287,10 +288,6 @@
       "releaseType": "release",
       "vPrefixedTagName": true
     }
-  },
-  "devEngines": {
-    "node": ">=14.x",
-    "npm": ">=7.x"
   },
   "electronmon": {
     "patterns": [

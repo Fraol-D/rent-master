@@ -150,7 +150,10 @@ const NavBar = ({
     setShowSignOutConfirm(false);
   };
   const [DownloadAssetsProgress, setDownloadAssetsProgress] = useState(0);
-  const { isMobileState } = useGlobal();
+
+  const { isMobileState, langSwitch, ChangeLanguage, text } = useGlobal();
+  const tabsText = text.app.navbar.tabs;
+  const uploadText = text.app.navbar.upload;
   useEffect(() => {
     if (uploadProgress >= 50) {
       setIsSyncing(true);
@@ -338,21 +341,19 @@ const NavBar = ({
           </p>
         </div>
       </div>
-      {!isMobileState && (
-        <div className="TopPageNavigatorContainer">
-          {privileges.viewDashboard && (
-            <button
-              className={
-                SelectedPage === 'Dashboard'
-                  ? 'PageNavigatorButtonSelected'
-                  : 'PageNavigatorButton'
-              }
-              onClick={() => setSelectedPage('Dashboard')}
-              id="top-nav-button-dashboard"
-            >
-              Dashboard
-            </button>
-          )}
+    {!isMobileState &&  <div className="TopPageNavigatorContainer">
+        {privileges.viewDashboard && (
+          <button
+            className={
+              SelectedPage === 'Dashboard'
+                ? 'PageNavigatorButtonSelected'
+                : 'PageNavigatorButton'
+            }
+            onClick={() => setSelectedPage('Dashboard')}   id="top-nav-button-dashboard"
+          >
+            {tabsText.dashboard}
+          </button>
+        )}
 
           {privileges.viewRoomsPage && (
             <button
@@ -367,35 +368,45 @@ const NavBar = ({
               Rooms
             </button>
           )}
+        {privileges.viewRoomsPage && (
+          <button
+            className={
+              SelectedPage === 'Rooms'
+                ? 'PageNavigatorButtonSelected'
+                : 'PageNavigatorButton'
+            }
+            onClick={() => setSelectedPage('Rooms')}   id="top-nav-button-rooms"
+          >
+            {tabsText.rooms}
+          </button>
+        )}
 
-          {privileges.editExpenses && (
-            <button
-              className={
-                SelectedPage === 'Expense'
-                  ? 'PageNavigatorButtonSelected'
-                  : 'PageNavigatorButton'
-              }
-              onClick={() => setSelectedPage('Expense')}
-              id="top-nav-button-expenses"
-            >
-              Expenses
-            </button>
-          )}
-          {privileges.viewToolsPage && (
-            <button
-              className={
-                SelectedPage === 'Tools'
-                  ? 'PageNavigatorButtonSelected'
-                  : 'PageNavigatorButton'
-              }
-              onClick={() => setSelectedPage('Tools')}
-              id="top-nav-button-tools"
-            >
-              Tools
-            </button>
-          )}
-        </div>
-      )}
+        {privileges.editExpenses && (
+          <button
+            className={
+              SelectedPage === 'Expense'
+                ? 'PageNavigatorButtonSelected'
+                : 'PageNavigatorButton'
+            }
+            onClick={() => setSelectedPage('Expense')}   id="top-nav-button-expenses"
+          >
+            {tabsText.expenses}
+          </button>
+        )}
+        {privileges.viewToolsPage && (
+          <button
+            className={
+              SelectedPage === 'Tools'
+                ? 'PageNavigatorButtonSelected'
+                : 'PageNavigatorButton'
+            }
+            onClick={() => setSelectedPage('Tools')}   id="top-nav-button-tools"
+          >
+            {tabsText.tools}
+          </button>
+        )}
+        <button onClick={() => langSwitch()}>{text.gen.changeLanguage}</button>
+      </div>} 
 
       <div
         className="RightSide"
@@ -441,7 +452,8 @@ const NavBar = ({
                 title="Upload Local Changes to Server"
               >
                 <p>
-                  {ChangeMade >= 1 ? (
+                  {
+                    /*ChangeMade >= 1 ? (
                     uploadProgress === 100 || uploadProgress === 0 ? (
                       <>
                         Upload <br />
@@ -456,7 +468,8 @@ const NavBar = ({
                     )
                   ) : (
                     'No Change'
-                  )}
+                  )*/ uploadText.uploadButton(ChangeMade, uploadProgress)
+                  }
                 </p>
                 {UploadingLoadingEffect && (
                   <p
@@ -530,7 +543,7 @@ const NavBar = ({
                           alignItems: 'center',
                         }}
                       >
-                        Upload{' '}
+                        {uploadText.upload}{' '}
                       </h3>
                       <div
                         style={{
@@ -552,7 +565,7 @@ const NavBar = ({
                           title="Discard All Local Changes"
                           aria-label="Discard All Local Changes"
                         >
-                          <p>Reset {ChangeMade} Offline Changes</p>
+                          <p>{uploadText.resetOfflineChanges}</p>
                         </button>
                       </div>
                       <hr style={{ margin: 'var(--10px-V)', width: '100%' }} />
@@ -565,14 +578,15 @@ const NavBar = ({
                       alignItems: 'center',
                     }}
                   >
-                    Complete Sync{' '}
+                    {uploadText.completeSync}{' '}
                   </h3>
                   <button
                     onClick={() => {
                       if (navigator.onLine) {
                         handleSyncOnlineToLocal();
                       } else {
-                        showAlert('You are currently offline');
+                        
+                        showAlert(uploadText.alerts.offline)
                       }
                     }}
                     style={{
@@ -588,17 +602,7 @@ const NavBar = ({
                     title="Download and Apply Server Updates"
                     aria-label="Download and Apply Server Updates"
                   >
-                    <p>
-                      Sync{' '}
-                      {OnlineChanges === 0 ||
-                      ChangeMade == null ||
-                      ChangeMade == undefined ||
-                      Number.isNaN(ChangeMade) ? (
-                        <></>
-                      ) : (
-                        <>{OnlineChanges} incoming changes</>
-                      )}
-                    </p>
+                    <p>{uploadText.syncIncomingChanges}</p>
                   </button>
                   {ChangeMade >= 1 && (
                     <button
@@ -611,9 +615,9 @@ const NavBar = ({
                         width: '100%',
                         marginTop: 'var(--10px-V)',
                       }}
-                      title="Synchronizes the local database with the online server, overwriting the server data with the current local data, including any offline changes."
+                      title={uploadText.setAsMainTitle}
                     >
-                      <p>Set as main</p>
+                      <p>{uploadText.setAsMain}</p>
                     </button>
                   )}
                   <hr style={{ margin: 'var(--10px-V)', width: '100%' }} />
@@ -624,9 +628,9 @@ const NavBar = ({
                       alignItems: 'center',
                     }}
                   >
-                    Assets{' '}
+                    {uploadText.assets}{' '}
                     <span style={{ fontSize: 'var(--12px-V)' }}>
-                      (Room Pictures,Documents)
+                      {uploadText.roomAssets}
                     </span>
                   </h3>
                   <div className="AdvancedUploadButtons">
@@ -643,10 +647,10 @@ const NavBar = ({
                         position: 'relative',
                         overflow: 'hidden',
                       }}
-                      title="Synchronize Local Room Assets to Server"
+                      title={uploadText.uploadRoomAssetsTitle}
                     >
                       <span className="AdvancedUploadButtonsButtonText">
-                        Upload Room Assets
+                        {uploadText.uploadRoomAssets}
                       </span>
                       <span className="AdvancedUploadButtonsProgressText">
                         {UploadAssetsProgress === 100 ||
@@ -679,10 +683,10 @@ const NavBar = ({
                         position: 'relative',
                         overflow: 'hidden',
                       }}
-                      title="Retrieve Room Assets from Server"
+                      title={uploadText.downloadRoomAssetsTitle}
                     >
                       <span className="AdvancedUploadButtonsButtonText">
-                        Download Room Assets
+                        {uploadText.downloadRoomAssets}
                       </span>
                       <span className="AdvancedUploadButtonsProgressText">
                         {DownloadAssetsProgress === 100 ||
@@ -711,7 +715,7 @@ const NavBar = ({
                       alignItems: 'center',
                     }}
                   >
-                    Backup{' '}
+                    {uploadText.backup}{' '}
                   </h3>
                   <div style={{ display: 'flex', width: '100%' }}>
                     <button
@@ -726,18 +730,18 @@ const NavBar = ({
                         marginTop: 'var(--10px-V)',
                         marginRight: 'var(--10px-V)',
                       }}
-                      title="Create Local Data Backup"
+                      title={uploadText.createBackupTitle}
                     >
-                      <p>Create Backup</p>
+                      <p>{uploadText.createBackup}</p>
                     </button>
                     <button
                       onClick={() => {
                         window.electron.ipcRenderer.send('load-backup');
                       }}
                       style={{ width: '100%', marginTop: 'var(--10px-V)' }}
-                      title="Restore from Local Backup"
+                      title={uploadText.loadBackupTitle}
                     >
-                      <p>Load Backup</p>
+                      <p>{uploadText.loadBackup}</p>
                     </button>
                   </div>{' '}
                   {storageManager.get('IsOnBackup') && (
@@ -754,9 +758,9 @@ const NavBar = ({
                           marginTop: 'var(--10px-V)',
                           marginRight: 'var(--10px-V)',
                         }}
-                        title="Return to Current Main Data"
+                        title={uploadText.revertDataTitle}
                       >
-                        <p>Revert to old</p>
+                        <p>{uploadText.revertData}</p>
                       </button>
                       <button
                         onClick={async () => {
@@ -773,9 +777,9 @@ const NavBar = ({
                           }
                         }}
                         style={{ width: '100%', marginTop: 'var(--10px-V)' }}
-                        title="Make This Backup the Main Data"
+                        title={uploadText.setMainBackupTitle}
                       >
-                        <p>Set as main</p>
+                        <p>{uploadText.setMainBackup}</p>
                       </button>
                     </>
                   )}
@@ -791,18 +795,16 @@ const NavBar = ({
         ) : (
           <>
             {' '}
-            {!isMobileState && (
-              <button
-                style={{
-                  marginLeft: 'var(--10px-V)',
-                }}
-                onClick={() => {
-                  RefreshDataFromSqlite();
-                }}
-              >
-                Refresh Data
-              </button>
-            )}
+           {!isMobileState && <button
+              style={{
+                marginLeft: 'var(--10px-V)',
+              }}
+              onClick={() => {
+                RefreshDataFromSqlite();
+              }}
+            >
+               {uploadText.refreshData}
+              </button>}
           </>
         )}
         <button
@@ -836,9 +838,9 @@ const NavBar = ({
       </div>
       {showSignOutConfirm && (
         <div className="signOutConfirmation">
-          <p>Are you sure you want to sign out?</p>
-          <button onClick={confirmSignOut}>Yes</button>
-          <button onClick={cancelSignOut}>No</button>
+          <p>{uploadText.signOutConfirmation}</p>
+          <button onClick={confirmSignOut}>{text.app.yes}</button>
+          <button onClick={cancelSignOut}>{text.app.no}</button>
         </div>
       )}
     </div>

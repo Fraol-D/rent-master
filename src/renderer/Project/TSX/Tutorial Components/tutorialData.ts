@@ -36,7 +36,7 @@ export type TutorialSystem = {
   title: string;
   pages: TutorialPage[];
 };
-
+// page title/desctipon
 // Tutorial data
 export const tutorialData: TutorialSystem = {
   title: 'BMS Tutorial',

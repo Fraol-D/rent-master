@@ -1,4 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { cloneDeep } from 'lodash';
+import tl from '../translator';
+import { storageManager } from 'renderer/storeManager';
 
 interface GlobalContextType {
   AllRoomPayInfo: RoomPayInfo[];
@@ -36,6 +39,12 @@ interface GlobalContextType {
   isOnTutorial: boolean;
   setIsOnTutorial: React.Dispatch<React.SetStateAction<boolean>>;
   isMobileState: boolean;
+
+  langCode: number;
+  setLangCode: React.Dispatch<React.SetStateAction<number>>;
+  text: object;
+  langSwitch: Function;
+  ChangeLanguage: Function; 
 }
 
 const GlobalContext = createContext<GlobalContextType | undefined>(undefined);
@@ -63,12 +72,38 @@ const [tutorialNewRoomId, setTutorialNewRoomId] = useState<string>("");
 function isMobile() {
   return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 }
-
-
+const [langCode, setLangCode] = useState<number>(0);
+function tl_spreader(obj:object, i:number) {
+  Object.entries(obj).forEach(([key, val]) => {
+    if (typeof(val) == "function") {
+      obj[key] = function(...args: any[]) {
+        const paramIndex = val.length > 0 ? Object.keys(val(...Array(val.length).fill(undefined))).indexOf("LangCode") : -1;
+        if (paramIndex !== -1 && args[paramIndex] === undefined) {
+          args[paramIndex] = langCode;
+        }
+        return val(...args);
+      };
+    } else if (Array.isArray(val) && typeof(val) !== "string") {
+      obj[key] = val[i]
+    } else if(typeof(val) == "object" && typeof(val) !== "string") {
+      obj[key] = tl_spreader(val, i)
+    }  
+  })
+  return obj
+}
+useEffect(() => {const text:object= tl_spreader(cloneDeep(tl), langCode);}, [langCode])
+const text:object= tl_spreader(cloneDeep(tl), langCode);
+const ChangeLanguage = async (lang:number) => {
+  storageManager.set('LangCode', lang);
+  setLangCode(lang);
+};  
+const langSwitch = () => {if(langCode == 1) {ChangeLanguage(0)} else {ChangeLanguage(1)};}
 const [isMobileState, setIsMobileState] = useState<boolean>(false);
 useEffect(() => {
   setIsMobileState(isMobile());
 }, []);
+
+
 return (
     <GlobalContext.Provider 
       value={{
@@ -102,7 +137,9 @@ return (
         setTutorialNewExpenseId,
         tutorialNewRoomId,setTutorialNewRoomId,
         isOnTutorial,
-        setIsOnTutorial,isMobileState
+        setIsOnTutorial,isMobileState,
+        text,
+        ChangeLanguage, langSwitch 
       }}
     >
       {children}
