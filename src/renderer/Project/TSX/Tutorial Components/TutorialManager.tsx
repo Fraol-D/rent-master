@@ -315,12 +315,12 @@ const TutorialManager = ({
     );
   }
 
-  const { isOnTutorial, setIsOnTutorial } = useGlobal();
+  const { isOnTutorial, setIsOnTutorial, langCode } = useGlobal();
 
   // Initialize currentPage first
   const [currentPage, setCurrentPage] = useState(() => {
     const pageIndex = tutorialData.pages.findIndex(
-      (p) => p.pageTitle === currentPageName
+      (p) => p.pageTitle[langCode] === currentPageName
     );
     return pageIndex >= 0 ? pageIndex : 0;
   });
@@ -332,7 +332,7 @@ const TutorialManager = ({
   const [currentSection, setCurrentSection] = useState(() => {
     if (currentSectionName === 'overview') return 0;
     const sectionIndex = currentPageData.sections.findIndex(
-      (s) => s.mainTitle === currentSectionName
+      (s) => s.mainTitle[langCode] === currentSectionName
     );
     return sectionIndex >= 0 ? sectionIndex + 1 : 0;
   });
@@ -1245,15 +1245,15 @@ const TutorialManager = ({
           <>
             <div className="tutorial-header">
               <span className="tutorial-small-title">
-                {currentPageData.pageTitle}
+                {currentPageData.pageTitle[langCode]}
               </span>
               <h2 className="tutorial-main-title">
-                {currentSectionData.mainTitle}
+                {currentSectionData.mainTitle[langCode]}
               </h2>
             </div>
 
             <p className="tutorial-description">
-              {currentStepData.description}
+              {currentStepData.description[langCode]}
             </p>
 
             {errorMessage && (
