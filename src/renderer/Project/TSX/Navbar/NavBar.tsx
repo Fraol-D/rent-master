@@ -151,8 +151,8 @@ const {showAlert} = useAlert()
   };
   const [DownloadAssetsProgress, setDownloadAssetsProgress] = useState(0);
   const {isMobileState, langSwitch, ChangeLanguage, text} = useGlobal();
-  const tabs = text.app.navbar.tabs;
-  const upload = text.app.navbar.upload;
+  const tabsText = text.app.navbar.tabs;
+  const uploadText = text.app.navbar.upload;
   useEffect(() => {
     if (uploadProgress >= 50) {
       setIsSyncing(true);
@@ -345,7 +345,7 @@ const {showAlert} = useAlert()
             }
             onClick={() => setSelectedPage('Dashboard')}   id="top-nav-button-dashboard"
           >
-            {tabs.dashboard}
+            {tabsText.dashboard}
           </button>
         )}
 
@@ -358,7 +358,7 @@ const {showAlert} = useAlert()
             }
             onClick={() => setSelectedPage('Rooms')}   id="top-nav-button-rooms"
           >
-            {tabs.rooms}
+            {tabsText.rooms}
           </button>
         )}
 
@@ -371,7 +371,7 @@ const {showAlert} = useAlert()
             }
             onClick={() => setSelectedPage('Expense')}   id="top-nav-button-expenses"
           >
-            {tabs.expenses}
+            {tabsText.expenses}
           </button>
         )}
         {privileges.viewToolsPage && (
@@ -383,7 +383,7 @@ const {showAlert} = useAlert()
             }
             onClick={() => setSelectedPage('Tools')}   id="top-nav-button-tools"
           >
-            {tabs.tools}
+            {tabsText.tools}
           </button>
         )}
         <button onClick={() => langSwitch()}>{text.gen.changeLanguage}</button>
@@ -424,7 +424,7 @@ const {showAlert} = useAlert()
                     )
                   ) : (
                     'No Change'
-                  )*/upload.uploadButton(ChangeMade, uploadProgress)}
+                  )*/uploadText.uploadButton(ChangeMade, uploadProgress)}
                 </p>
                 {UploadingLoadingEffect && (
                   <p
@@ -498,7 +498,7 @@ const {showAlert} = useAlert()
                           alignItems: 'center',
                         }}
                       >
-                        {upload.upload}{' '}
+                        {uploadText.upload}{' '}
                       </h3>
                       <div
                         style={{
@@ -520,7 +520,7 @@ const {showAlert} = useAlert()
                           title="Discard All Local Changes"
                           aria-label="Discard All Local Changes"
                         >
-                          <p>{upload.resetOfflineChanges}</p>
+                          <p>{uploadText.resetOfflineChanges}</p>
                         </button>
                       </div>
                       <hr style={{ margin: 'var(--10px-V)', width: '100%' }} />
@@ -533,14 +533,14 @@ const {showAlert} = useAlert()
                       alignItems: 'center',
                     }}
                   >
-                    {upload.completeSync}{' '}
+                    {uploadText.completeSync}{' '}
                   </h3>
                   <button
                     onClick={() => {
                       if (navigator.onLine) {
                         handleSyncOnlineToLocal();
                       } else {
-                        showAlert(upload.alerts.offline)
+                        showAlert(uploadText.alerts.offline)
                       }
                     }}
                     style={{
@@ -557,7 +557,7 @@ const {showAlert} = useAlert()
                     aria-label="Download and Apply Server Updates"
                   >
                     <p>
-                      {upload.syncIncomingChanges}
+                      {uploadText.syncIncomingChanges}
                     </p>
                   </button>
                   {ChangeMade >= 1 && (
@@ -571,9 +571,9 @@ const {showAlert} = useAlert()
                         width: '100%',
                         marginTop: 'var(--10px-V)',
                       }}
-                      title={upload.setAsMainTitle}
+                      title={uploadText.setAsMainTitle}
                     >
-                      <p>{upload.setAsMain}</p>
+                      <p>{uploadText.setAsMain}</p>
                     </button>
                   )}
                   <hr style={{ margin: 'var(--10px-V)', width: '100%' }} />
@@ -584,9 +584,9 @@ const {showAlert} = useAlert()
                       alignItems: 'center',
                     }}
                   >
-                    {upload.assets}{' '}
+                    {uploadText.assets}{' '}
                     <span style={{ fontSize: 'var(--12px-V)' }}>
-                      {upload.roomAssets}
+                      {uploadText.roomAssets}
                     </span>
                   </h3>
                   <div className="AdvancedUploadButtons">
@@ -603,10 +603,10 @@ const {showAlert} = useAlert()
                         position: 'relative',
                         overflow: 'hidden',
                       }}
-                      title={upload.uploadRoomAssetsTitle}
+                      title={uploadText.uploadRoomAssetsTitle}
                     >
                       <span className="AdvancedUploadButtonsButtonText">
-                        {upload.uploadRoomAssets}
+                        {uploadText.uploadRoomAssets}
                       </span>
                       <span className="AdvancedUploadButtonsProgressText">
                         {UploadAssetsProgress === 100 ||
@@ -639,10 +639,10 @@ const {showAlert} = useAlert()
                         position: 'relative',
                         overflow: 'hidden',
                       }}
-                      title={upload.downloadRoomAssetsTitle}
+                      title={uploadText.downloadRoomAssetsTitle}
                     >
                       <span className="AdvancedUploadButtonsButtonText">
-                        {upload.downloadRoomAssets}
+                        {uploadText.downloadRoomAssets}
                       </span>
                       <span className="AdvancedUploadButtonsProgressText">
                         {DownloadAssetsProgress === 100 ||
@@ -671,7 +671,7 @@ const {showAlert} = useAlert()
                       alignItems: 'center',
                     }}
                   >
-                    {upload.backup}{' '}
+                    {uploadText.backup}{' '}
                   </h3>
                   <div style={{ display: 'flex', width: '100%' }}>
                     <button
@@ -686,18 +686,18 @@ const {showAlert} = useAlert()
                         marginTop: 'var(--10px-V)',
                         marginRight: 'var(--10px-V)',
                       }}
-                      title={upload.createBackupTitle}
+                      title={uploadText.createBackupTitle}
                     >
-                      <p>{upload.createBackup}</p>
+                      <p>{uploadText.createBackup}</p>
                     </button>
                     <button
                       onClick={() => {
                         window.electron.ipcRenderer.send('load-backup');
                       }}
                       style={{ width: '100%', marginTop: 'var(--10px-V)' }}
-                      title={upload.loadBackupTitle}
+                      title={uploadText.loadBackupTitle}
                     >
-                      <p>{upload.loadBackup}</p>
+                      <p>{uploadText.loadBackup}</p>
                     </button>
                   </div>{' '}
                   {storageManager.get('IsOnBackup') && (
@@ -714,9 +714,9 @@ const {showAlert} = useAlert()
                           marginTop: 'var(--10px-V)',
                           marginRight: 'var(--10px-V)',
                         }}
-                        title={upload.revertDataTitle}
+                        title={uploadText.revertDataTitle}
                       >
-                        <p>{upload.revertData}</p>
+                        <p>{uploadText.revertData}</p>
                       </button>
                       <button
                         onClick={async () => {
@@ -733,9 +733,9 @@ const {showAlert} = useAlert()
                           }
                         }}
                         style={{ width: '100%', marginTop: 'var(--10px-V)' }}
-                        title={upload.setMainBackupTitle}
+                        title={uploadText.setMainBackupTitle}
                       >
-                        <p>{upload.setMainBackup}</p>
+                        <p>{uploadText.setMainBackup}</p>
                       </button>
                     </>
                   )}
@@ -759,7 +759,7 @@ const {showAlert} = useAlert()
                 RefreshDataFromSqlite();
               }}
             >
-              {upload.refreshData}
+              {uploadText.refreshData}
               </button>}
           </>
         )}
@@ -784,7 +784,7 @@ const {showAlert} = useAlert()
       </div>
       {showSignOutConfirm && (
         <div className="signOutConfirmation">
-          <p>{upload.signOutConfirmation}</p>
+          <p>{uploadText.signOutConfirmation}</p>
           <button onClick={confirmSignOut}>{text.app.yes}</button>
           <button onClick={cancelSignOut}>{text.app.no}</button>
         </div>

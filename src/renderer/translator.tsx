@@ -129,7 +129,7 @@ const tl = {
                 refreshData: ["Refresh Data", "@Refresh Data"],
                 signOutConfirmation: ["Are you sure you want to sign out?", "@Are you sure you want to sign out?"]
             }
-        }
+        },        
     },
     web: {
         download: ["Download", "@Download"],
