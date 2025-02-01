@@ -10,6 +10,7 @@ import {
 } from 'Backend/localServerApis';
 import { useAlert } from 'renderer/components/useAlert';
 import { useConfirm } from 'renderer/components/useConfirm';
+import { useGlobal } from 'renderer/components/GlobalContext';
 
 interface ImageInteractorProps {
   room?: RoomType;
@@ -54,7 +55,7 @@ const ImageInteractor2: React.FC<ImageInteractorProps> = ({
   }, [room?.id, isAddRoomImage]);
   useEffect(() => {
     if (isAddRoomImage) {
-      if(sidebarState){
+      if (sidebarState) {
         fetchRoomImages2();
       }
     }
@@ -99,33 +100,34 @@ const ImageInteractor2: React.FC<ImageInteractorProps> = ({
     }
   };
   useEffect(() => {
-    if(AddRoomState){
-      if(sidebarState){
+    if (AddRoomState) {
+      if (sidebarState) {
         fetchRoomImages2();
       }
     }
   }, [sidebarState]);
   const fetchRoomImages2 = async () => {
     if (AddRoomState) {
-      if(sidebarState){
-      const roomImages = await getRoomImages('Add a room images');
-      console.log(roomImages);
-      if (roomImages && roomImages.images) {
-        console.log(roomImages.images);
-        if (window.electron) {
-          setImages(
-            roomImages.images.map((image: any) => {
-              delete image.fullUrl;
-              delete image.url;
-              return Object.values(image).join('');
-            })
-          );
+      if (sidebarState) {
+        const roomImages = await getRoomImages('Add a room images');
+        console.log(roomImages);
+        if (roomImages && roomImages.images) {
+          console.log(roomImages.images);
+          if (window.electron) {
+            setImages(
+              roomImages.images.map((image: any) => {
+                delete image.fullUrl;
+                delete image.url;
+                return Object.values(image).join('');
+              })
+            );
+          } else {
+            setImages(roomImages.images);
+          }
         } else {
-          setImages(roomImages.images);
+          setImages([]);
         }
-      } else {
-        setImages([]);
-      }}
+      }
     }
   };
   const nextImage = () => {
@@ -151,13 +153,23 @@ const ImageInteractor2: React.FC<ImageInteractorProps> = ({
           setIsUploading(true);
           setTotalFiles(files.length);
           setUploadedFiles(0);
-          const filteredFiles = Array.from(files).filter(file => file.size <= 5 * 1024 * 1024); // 5MB limit
-          if(filteredFiles.length === 0){
-            showAlert('All files are above the 5MB limit.', 'error');
+          const filteredFiles = Array.from(files).filter(
+            (file) => file.size <= 5 * 1024 * 1024
+          ); // 5MB limit
+          if (filteredFiles.length === 0) {
+            showAlert(
+              text.app.roomPage.sidebar.ImageInteractor.alert
+                .AllFilesAreAboveThe5MBLimit,
+              'error'
+            );
             setIsUploading(false);
             return;
           } else if (filteredFiles.length < files.length) {
-            showAlert('Some files exceeded the 5MB limit and were not uploaded.', 'error');
+            showAlert(
+              text.app.roomPage.sidebar.ImageInteractor.alert
+                .SomeFilesExceededThe5MBLimitAndWereNotUploaded,
+              'error'
+            );
           }
 
           const folderText = isAddRoomImage
@@ -167,9 +179,12 @@ const ImageInteractor2: React.FC<ImageInteractorProps> = ({
             : '';
 
           for (let i = 0; i < filteredFiles.length; i++) {
-            const results = await AddRoomImageToFiles([filteredFiles[i]], folderText);
+            const results = await AddRoomImageToFiles(
+              [filteredFiles[i]],
+              folderText
+            );
             if (results) {
-              setUploadedFiles(prev => prev + 1);
+              setUploadedFiles((prev) => prev + 1);
               setUploadProgress(((i + 1) / filteredFiles.length) * 100);
             }
           }
@@ -179,11 +194,16 @@ const ImageInteractor2: React.FC<ImageInteractorProps> = ({
           } else {
             fetchRoomImages2();
           }
-          showAlert('Images uploaded successfully!', 'success');
+          showAlert(
+            text.app.roomPage.sidebar.ImageInteractor.alert
+              .ImagesUploadedSuccessfully,
+            'success'
+          );
         } catch (error) {
           console.error('Error uploading files:', error);
           showAlert(
-            'An error occurred while uploading files. Please try again.'
+            text.app.roomPage.sidebar.ImageInteractor.alert
+              .AnErrorOccurredWhileUploadingFilesPleaseTryAgain
           );
         } finally {
           setIsUploading(false);
@@ -198,40 +218,65 @@ const ImageInteractor2: React.FC<ImageInteractorProps> = ({
   };
   const { confirm } = useConfirm();
   const handleDeleteImage = async () => {
-    const choice = await confirm('Are you sure you want to delete this image?', {
-      type: 'danger',
-      title: 'Delete Image',
-      confirmText: 'Delete',
-      cancelText: 'Cancel',
-    });
-    if(choice)if (room) {
-      const currentImage = window.electron ? images[currentIndex] : images[currentIndex].fullPath;
-      const fileName = currentImage.split('/').pop();
-      const result = await deleteRoomImage(room.id, fileName);
-      if (result && result.message === 'Image deleted successfully') {
-        showAlert('Image deleted successfully', 'success');
-        setImages((prevImages) =>
-          prevImages.filter((img) => window.electron ? img !== currentImage : img.fullPath !== currentImage)
-        );
-        if (currentIndex >= images.length - 1) {
-          setCurrentIndex((prevIndex) => Math.max(0, prevIndex - 1));
+    const choice = await confirm(
+      text.app.roomPage.sidebar.ImageInteractor.alert
+        .AreYouSureYouWantToDeleteThisImage,
+      {
+        type: 'danger',
+        title: 'Delete Image',
+        confirmText: 'Delete',
+        cancelText: 'Cancel',
+      }
+    );
+    if (choice)
+      if (room) {
+        const currentImage = window.electron
+          ? images[currentIndex]
+          : images[currentIndex].fullPath;
+        const fileName = currentImage.split('/').pop();
+        const result = await deleteRoomImage(room.id, fileName);
+        if (result && result.message === 'Image deleted successfully') {
+          showAlert(
+            text.app.roomPage.sidebar.ImageInteractor.alert
+              .ImageDeletedSuccessfully,
+            'success'
+          );
+          setImages((prevImages) =>
+            prevImages.filter((img) =>
+              window.electron
+                ? img !== currentImage
+                : img.fullPath !== currentImage
+            )
+          );
+          if (currentIndex >= images.length - 1) {
+            setCurrentIndex((prevIndex) => Math.max(0, prevIndex - 1));
+          }
+        }
+      } else {
+        console.log(images[currentIndex]);
+        const currentImage = window.electron
+          ? images[currentIndex]
+          : images[currentIndex].fullPath;
+        const fileName = currentImage.split('/').pop();
+        const result = await deleteRoomImage('Add a room images', fileName);
+        if (result && result.message === 'Image deleted successfully') {
+          showAlert(
+            text.app.roomPage.sidebar.ImageInteractor.alert
+              .ImageDeletedSuccessfully,
+            'success'
+          );
+          setImages((prevImages) =>
+            prevImages.filter((img) =>
+              window.electron
+                ? img !== currentImage
+                : img.fullPath !== currentImage
+            )
+          );
+          if (currentIndex >= images.length - 1) {
+            setCurrentIndex((prevIndex) => Math.max(0, prevIndex - 1));
+          }
         }
       }
-    } else {
-      console.log(images[currentIndex]);
-      const currentImage = window.electron ? images[currentIndex] : images[currentIndex].fullPath;
-      const fileName = currentImage.split('/').pop();
-      const result = await deleteRoomImage('Add a room images', fileName);
-      if (result && result.message === 'Image deleted successfully') {
-        showAlert('Image deleted successfully', 'success');
-        setImages((prevImages) =>
-          prevImages.filter((img) => window.electron ? img !== currentImage : img.fullPath !== currentImage)
-        );
-        if (currentIndex >= images.length - 1) {
-          setCurrentIndex((prevIndex) => Math.max(0, prevIndex - 1));
-        }
-      }
-    }
   };
 
   const handleShowInExplorer = (imagePath: string) => {
@@ -240,24 +285,24 @@ const ImageInteractor2: React.FC<ImageInteractorProps> = ({
     } else {
       // Web version - download the image
       // Web version - download the image
-    try {
-      const pathParts = imagePath.fullPath.split(/[/\\]/);
-      const fileName = pathParts[pathParts.length - 1];
-      const roomId = room?.id || 'Add a room images';
-      
-      if (fileName) {
-        downloadImage(roomId, fileName)
-          .catch(error => {
-            console.error('Error downloading image:', error);
-            alert('Failed to download image. Please try again.');
-          });
-      }
-    } catch (error) {
-      console.error('Error processing image path:', error);
-      alert('Failed to process image path. Please try again.');
-    }
-  }}
+      try {
+        const pathParts = imagePath.fullPath.split(/[/\\]/);
+        const fileName = pathParts[pathParts.length - 1];
+        const roomId = room?.id || 'Add a room images';
 
+        if (fileName) {
+          downloadImage(roomId, fileName).catch((error) => {
+            console.error('Error downloading image:', error);
+            showAlert('Failed to download image. Please try again.');
+          });
+        }
+      } catch (error) {
+        console.error('Error processing image path:', error);
+        showAlert('Failed to process image path. Please try again.');
+      }
+    }
+  };
+  const { text } = useGlobal();
   return (
     <div
       ref={containerRef}
@@ -267,46 +312,61 @@ const ImageInteractor2: React.FC<ImageInteractorProps> = ({
       onMouseLeave={() => setIsHovering(false)}
     >
       {isUploading && (
-        <div style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.5)',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-          alignItems: 'center',
-          zIndex: 1000,
-          borderRadius: 'inherit'
-        }}>
-          <div style={{
-            color: 'white',
-            padding: '20px',
-            borderRadius: '5px',
-            textAlign: 'center'
-          }}>
-            <div>Uploading Images...</div>
-            <div style={{marginTop: '10px'}}>
-              {uploadedFiles} of {totalFiles} files uploaded
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 1000,
+            borderRadius: 'inherit',
+          }}
+        >
+          <div
+            style={{
+              color: 'white',
+              padding: '20px',
+              borderRadius: '5px',
+              textAlign: 'center',
+            }}
+          >
+            <div>
+              {text.app.roomPage.sidebar.ImageInteractor.UploadingImages}
             </div>
-            <div style={{
-              width: '200px',
-              height: '20px',
-              backgroundColor: 'rgba(255, 255, 255, 0.2)',
-              borderRadius: '10px',
-              marginTop: '10px',
-              overflow: 'hidden'
-            }}>
-              <div style={{
-                width: `${uploadProgress}%`,
-                height: '100%',
-                backgroundColor: 'white',
-                transition: 'width 0.3s ease-in-out'
-              }} />
+            <div style={{ marginTop: '10px' }}>
+              {text.app.roomPage.sidebar.ImageInteractor.UploadedFiles(
+                uploadedFiles,
+                totalFiles
+              )}
             </div>
-            <div style={{marginTop: '5px'}}>{Math.round(uploadProgress)}%</div>
+            <div
+              style={{
+                width: '200px',
+                height: '20px',
+                backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                borderRadius: '10px',
+                marginTop: '10px',
+                overflow: 'hidden',
+              }}
+            >
+              <div
+                style={{
+                  width: `${uploadProgress}%`,
+                  height: '100%',
+                  backgroundColor: 'white',
+                  transition: 'width 0.3s ease-in-out',
+                }}
+              />
+            </div>
+            <div style={{ marginTop: '5px' }}>
+              {Math.round(uploadProgress)}%
+            </div>
           </div>
         </div>
       )}
@@ -337,7 +397,7 @@ const ImageInteractor2: React.FC<ImageInteractorProps> = ({
               onClick={nextImage}
               style={{ position: 'absolute', right: 0, top: '25%' }}
             >
-            ▶
+              ▶
             </button>
             <div
               className="controls"
@@ -350,12 +410,16 @@ const ImageInteractor2: React.FC<ImageInteractorProps> = ({
                 justifyContent: 'space-between',
               }}
             >
-              <button onClick={handleDeleteImage} disabled={isUploading}>Del</button>
+              <button onClick={handleDeleteImage} disabled={isUploading}>
+                {text.app.roomPage.sidebar.ImageInteractor.Del}
+              </button>
               <button
                 onClick={() => handleShowInExplorer(images[currentIndex])}
                 disabled={isUploading}
               >
-               {window.electron ? 'Files' : 'Download'}
+                {window.electron
+                  ? text.app.roomPage.sidebar.ImageInteractor.Files
+                  : text.app.roomPage.sidebar.ImageInteractor.Download}
               </button>
               <div
                 style={{
@@ -374,15 +438,17 @@ const ImageInteractor2: React.FC<ImageInteractorProps> = ({
                   />
                 ))}
               </div>
-              <button onClick={handleOnAddImage} disabled={isUploading}>Add</button>
+              <button onClick={handleOnAddImage} disabled={isUploading}>
+                {text.app.roomPage.sidebar.ImageInteractor.Add}
+              </button>
             </div>
           </div>
         </>
       ) : (
         <div className="no-images">
-          <p>No images available</p>
+          <p>{text.app.roomPage.sidebar.ImageInteractor.noImagesAvailable}</p>
           <button onClick={handleOnAddImage} disabled={isUploading} style={{}}>
-            Add Image
+            {text.app.roomPage.sidebar.ImageInteractor.addImage}
           </button>
         </div>
       )}

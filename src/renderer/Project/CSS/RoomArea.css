@@ -273,7 +273,7 @@
 }
 .AddaNewRoomRowObject {
   margin-bottom: var(--10px-V);
-  display: flex;
+  display: flex;    gap: var(--5px-V);align-items:center;
 }
 
 /**/

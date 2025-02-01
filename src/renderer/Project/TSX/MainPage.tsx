@@ -381,6 +381,7 @@ const MainPage = ({
     tutorialNewRoomId,
     setTutorialNewRoomId,
     isMobileState,
+    text,
   } = useGlobal();
 
   const [floorFilter, setFloorFilter] = useState<string>('');
@@ -1748,7 +1749,7 @@ const MainPage = ({
                 }}
                 id="room-manager-title"
               >
-                Room Manager
+                {text.app.roomPage.sidebar.pageTitle}
               </h3>
               <div
                 className="SideBarTopContainer"
@@ -1763,11 +1764,11 @@ const MainPage = ({
                   <button
                     className="SideBarTopButton"
                     onClick={handleCloseSideBar}
-                    title="Close Sidebar"
+                    title={text.app.roomPage.sidebar.closeSidebar}
                     style={{ display: SideBarShowState ? '' : 'none' }}
                   >
                     {/* <img src={IconsGUI().Left2ArrowIcon} alt="" /> */}
-                    Close sidebar
+                    {text.app.roomPage.sidebar.closeSidebar}
                   </button>
                 )}
                 {privileges.addRoom ? (
@@ -1776,11 +1777,11 @@ const MainPage = ({
                     onClick={() => {
                       handleAddRoomButtonInitial(!AddARoomState);
                     }}
-                    title="Add room"
+                    title={text.app.roomPage.sidebar.addRoom}
                     id="add-room-button"
                     style={{ display: SideBarShowState ? '' : 'none' }}
                   >
-                    Add Room
+                    {text.app.roomPage.sidebar.addRoom}
                   </button>
                 ) : (
                   <></>
@@ -1791,10 +1792,16 @@ const MainPage = ({
                   style={{
                     visibility: SideBarShowState ? 'visible' : 'hidden',
                   }}
-                  title="Show room calendar"
+                  title={
+                    !showRoomCalendar
+                      ? text.app.roomPage.sidebar.showRoomCalendarTitle
+                      : text.app.roomPage.sidebar.hideRoomCalendarTitle
+                  }
                   id="room-calendar-toggle"
                 >
-                  {!showRoomCalendar ? 'Show Calendar' : 'Hide Calendar'}
+                  {!showRoomCalendar
+                    ? text.app.roomPage.sidebar.showRoomCalendar
+                    : text.app.roomPage.sidebar.hideRoomCalendar}
                 </button>
 
                 {/* <button
@@ -1823,7 +1830,7 @@ const MainPage = ({
                     display: SideBarShowState ? '' : 'none',
                   }}
                 >
-                  Clear all filters
+                  {text.app.roomPage.sidebar.clearAllFilters}
                 </button>
               )}
               <div
@@ -1855,7 +1862,7 @@ const MainPage = ({
                         fontSize: 'var(--22px-V)',
                       }}
                     >
-                      Search rooms
+                      {text.app.roomPage.sidebar.searchRooms}
                     </div>
                     {isSearchOpen && (
                       <div
@@ -1870,11 +1877,13 @@ const MainPage = ({
                       >
                         {' '}
                         <div className="TenantSearchBarContainer">
-                          Tenant:
+                          {text.app.roomPage.sidebar.tenant}:
                           <input
                             type="text"
                             className="TenantSearchBar"
-                            placeholder="Search tenant name"
+                            placeholder={
+                              text.app.roomPage.sidebar.tenantSearchBar
+                            }
                             value={TenantNameFilter}
                             style={{ width: 'var(--145px-V)' }}
                             onChange={(e) => {
@@ -1885,7 +1894,7 @@ const MainPage = ({
                         </div>
                         <div className="RoomAndFloorContainer">
                           <div>
-                            Floor:
+                            {text.app.roomPage.sidebar.floor}:
                             <input
                               type="number"
                               placeholder="0"
@@ -1898,10 +1907,11 @@ const MainPage = ({
                             />
                           </div>
                           <div>
-                            Room:
+                            {text.app.roomPage.sidebar.room}:
                             <input
                               placeholder="0"
                               type="number"
+                              style={{ width: 'var(--50px-V)' }}
                               className="RoomSearchBar"
                               value={roomFilter}
                               onChange={(e) => {
@@ -1933,7 +1943,7 @@ const MainPage = ({
                         fontSize: 'var(--22px-V)',
                       }}
                     >
-                      Filter rooms
+                      {text.app.roomPage.sidebar.filterRooms}
                     </div>
                     {isFilterOpen && (
                       <div
@@ -1947,7 +1957,7 @@ const MainPage = ({
                         }}
                       >
                         <div id="room-search-container-status">
-                          Room status:
+                          {text.app.roomPage.sidebar.roomStatus}:
                           <select
                             value={filterStatus}
                             onChange={(e) => {
@@ -1966,9 +1976,15 @@ const MainPage = ({
                               marginLeft: 'var(--10px-V)',
                             }}
                           >
-                            <option value="all">All</option>
-                            <option value="Taken">Taken</option>
-                            <option value="Empty">Empty</option>
+                            <option value="all">
+                              {text.app.roomPage.sidebar.all}
+                            </option>
+                            <option value="Taken">
+                              {text.app.roomPage.sidebar.taken}
+                            </option>
+                            <option value="Empty">
+                              {text.app.roomPage.sidebar.empty}
+                            </option>
                           </select>
                         </div>
 
@@ -1976,7 +1992,7 @@ const MainPage = ({
                           id="room-search-container-price"
                           style={{ marginTop: 'var(--10px-V)' }}
                         >
-                          Price:
+                          {text.app.roomPage.sidebar.price}:
                           <select
                             value={filterPriceOperator}
                             onChange={(e) => {
@@ -2019,7 +2035,7 @@ const MainPage = ({
                           id="room-search-container-due-date"
                           style={{ marginTop: 'var(--10px-V)' }}
                         >
-                          Due dates:
+                          {text.app.roomPage.sidebar.dueDate}:
                           <select
                             value={FilterDueDateOperator}
                             onChange={(e) => {
@@ -2046,7 +2062,9 @@ const MainPage = ({
                           <input
                             type="number"
                             className="RoomSearchBar"
-                            placeholder="5 days"
+                            placeholder={
+                              text.app.roomPage.sidebar.dueDatePlaceholder
+                            }
                             value={FilterDueDateValue}
                             onChange={(e) => {
                               setFilterDueDateValue(e.target.value);
@@ -2064,7 +2082,7 @@ const MainPage = ({
                           id="room-search-container-square-meters"
                           style={{ marginTop: 'var(--10px-V)' }}
                         >
-                          SMeters:
+                          {text.app.roomPage.sidebar.squareMeters}:
                           <select
                             value={filterSquareFeetOperator}
                             onChange={(e) => {
@@ -2091,7 +2109,9 @@ const MainPage = ({
                           <input
                             type="number"
                             className="RoomSearchBar"
-                            placeholder="35m²"
+                            placeholder={
+                              text.app.roomPage.sidebar.squareMetersPlaceholder
+                            }
                             value={filterSquareFeetValue}
                             onChange={(e) => {
                               setFilterSquareFeetValue(e.target.value);
@@ -2107,7 +2127,7 @@ const MainPage = ({
                           id="room-search-container-currency"
                           style={{ marginTop: 'var(--10px-V)' }}
                         >
-                          Filter Currency:
+                          {text.app.roomPage.sidebar.filterCurrency}:
                           <select
                             key={uuidv4()}
                             value={selectedCurrency}
@@ -2125,7 +2145,9 @@ const MainPage = ({
                               marginLeft: 'var(--10px-V)',
                             }}
                           >
-                            <option value="all">All Currencies</option>
+                            <option value="all">
+                              {text.app.roomPage.sidebar.allCurrencies}
+                            </option>
                             {GetCurrencyAsOptionsOnSelect()}
                           </select>
                         </div>
@@ -2182,7 +2204,7 @@ const MainPage = ({
               >
                 <div>
                   <h1 style={{ display: 'flex', justifyContent: 'center' }}>
-                    Add a room
+                    {text.app.roomPage.sidebar.addARoom}
                     {/** <button onClick={() => setAddMultipleRoomsState(true)}>
                       Add Multiple Rooms
                     </button> */}
@@ -2206,7 +2228,7 @@ const MainPage = ({
                             setAddRoomFormFloor(parseInt(e.target.value))
                           }
                         />
-                        :Floor number
+                        :{text.app.roomPage.sidebar.floorNumber}
                       </div>
                       <div className="AddaNewRoomRowObject">
                         <input
@@ -2223,22 +2245,41 @@ const MainPage = ({
                             setAddRoomFormRoomIndex(parseInt(e.target.value))
                           }
                         />
-                        :Room number{' '}
+                        :{text.app.roomPage.sidebar.roomNumber}
                         {RoomExistsWarning && (
-                          <em style={{ color: 'red' }}>Already exist</em>
+                          <em style={{ color: 'red' }}>
+                            {text.app.roomPage.sidebar.alreadyExist}
+                          </em>
                         )}{' '}
                       </div>
 
                       <div
                         id="add-room-price-container"
                         className="AddaNewRoomRowObject"
+                     
                       >
-                        Price (inc. VAT):
+                        <div
+                          style={{ display: 'flex', flexDirection: 'column' }}
+                        >
+                          <div>{text.app.roomPage.sidebar.price}:</div>
+                          <div
+                            style={{
+                              fontSize: 'var(--12px-V)',
+                              color: 'var(--Text-Color-Grey)',
+                              textAlign: 'center',
+                            }}
+                          >
+                            Inc VAT
+                          </div>
+                        </div>
                         <input
-                          style={{ width: 'var(--100px-V)' }}
+                          style={{
+                            width: 'var(--100px-V)',
+                            height: 'var(--20px-V)',
+                          }}
                           className="AddANewRoomInputsSmall"
                           type="number"
-                          placeholder="Price"
+                          placeholder={text.app.roomPage.sidebar.price}
                           value={AddRoomFormPrice}
                           onChange={(e) =>
                             setAddRoomFormPrice(parseInt(e.target.value))
@@ -2258,7 +2299,7 @@ const MainPage = ({
                         id="add-room-payment-cycle"
                         className="AddaNewRoomRowObject"
                       >
-                        Payment cycle:{' '}
+                        {text.app.roomPage.sidebar.paymentCycle}:{' '}
                         <select
                           value={AddRoomFormPaymentCycleType}
                           onChange={(e) =>
@@ -2266,21 +2307,35 @@ const MainPage = ({
                           }
                           className="AddANewRoomSelectMid"
                         >
-                          <option value="30">30 days</option>
-                          <option value="15">15 days</option>
-                          <option value="7">7 days</option>
-                          <option value="daily">daily</option>
-                          <option value="monthly">monthly</option>
-                          <option value="custom">custom days</option>
+                          <option value="30">
+                            {text.app.roomPage.sidebar.paymentCycle30Days}
+                          </option>
+                          <option value="15">
+                            {text.app.roomPage.sidebar.paymentCycle15Days}
+                          </option>
+                          <option value="7">
+                            {text.app.roomPage.sidebar.paymentCycle7Days}
+                          </option>
+                          <option value="daily">
+                            {text.app.roomPage.sidebar.paymentCycleDaily}
+                          </option>
+                          <option value="monthly">
+                            {text.app.roomPage.sidebar.paymentCycleMonthly}
+                          </option>
+                          <option value="custom">
+                            {text.app.roomPage.sidebar.paymentCycleCustomDays}
+                          </option>
                         </select>
                       </div>
                       {AddRoomFormPaymentCycleType === 'custom' && (
                         <div style={{ marginLeft: 'var(--10px-V)' }}>
-                          Custom Days:
+                          {text.app.roomPage.sidebar.customDays}:
                           <input
                             className="AddANewRoomInputsSmall"
                             type="number"
-                            placeholder="Custom Days"
+                            placeholder={
+                              text.app.roomPage.sidebar.customDaysPlaceholder
+                            }
                             value={AddRoomFormPaymentCycleCustomDays}
                             onChange={(e) =>
                               setAddRoomFormPaymentCycleCustomDays(
@@ -2294,11 +2349,14 @@ const MainPage = ({
                         id="add-room-square-meters"
                         className="AddaNewRoomRowObject"
                       >
-                        Square Meters:
+                        {text.app.roomPage.sidebar.squareMetersFull}:
                         <input
                           className="AddANewRoomInputsSmall"
                           type="number"
-                          placeholder="Square Meters"
+                          placeholder={
+                            text.app.roomPage.sidebar
+                              .squareMetersFullPlaceholder
+                          }
                           value={AddRoomFormSquareMeters}
                           onChange={(e) =>
                             setAddRoomFormSquareMeters(parseInt(e.target.value))
@@ -2308,15 +2366,16 @@ const MainPage = ({
 
                       <div
                         className="RoomSpecficationsMainContainer"
-                        id="room-specs-section"
+                        id="room-specs-section"  
                       >
                         <h3 style={{ marginTop: '0px' }}>
-                          Room Specifications{' - '}
+                          {text.app.roomPage.sidebar.roomSpecifications}
+                          {' - '}
                           <button
                             onClick={addAddRoomFormSpecification}
                             id="add-room-spec-button"
                           >
-                            Add
+                            {text.app.roomPage.sidebar.addRoomSpecification}
                           </button>
                         </h3>
                         {AddRoomFormRoomSpecifications.length === 0 ? (
@@ -2327,10 +2386,15 @@ const MainPage = ({
                                 fontStyle: 'italic',
                               }}
                             >
-                              <div>Click "Add" above to add specifications</div>
-                              Example specifications:
-                              <div>• Bedrooms: 3</div>
-                              <div>• Balcony: Yes</div>
+                              <div>
+                                {
+                                  text.app.roomPage.sidebar
+                                    .clickAddAboveToAddSpecifications
+                                }
+                              </div>
+                              {text.app.roomPage.sidebar.exampleSpecifications}:
+                              <div>{text.app.roomPage.sidebar.bedrooms}</div>
+                              <div>{text.app.roomPage.sidebar.balcony}</div>
                             </div>
                           </div>
                         ) : (
@@ -2338,13 +2402,14 @@ const MainPage = ({
                             <div
                               key={index}
                               className="AddANewRoomSpecObjectMainContainer"
+                              style={{maxWidth:'var(--260px-V)'}}
                             >
                               <div>
-                                Name:
+                                {text.app.roomPage.sidebar.Specfication.name}:
                                 <input
                                   className="AddANewRoomInputsMid"
                                   value={spec.Detail}
-                                  placeholder="Enter name"
+                                  placeholder={text.app.roomPage.sidebar.Specfication.enterName}
                                   onChange={(e) =>
                                     handleAddRoomFormSpecificationChange(
                                       index,
@@ -2355,10 +2420,11 @@ const MainPage = ({
                                   id={`room-spec-name-input`}
                                 />
                                 {spec.type === 'bool' ? (
-                                  <>
+                                  <div style={{display:'flex', flexDirection:'row', alignItems:'center',}}>
                                     <input
                                       type="checkbox"
                                       id={`room-spec-input`}
+                                      style={{fontSize: 'var(--14px-V)'}}
                                       checked={spec.Boolean}
                                       onChange={(e) =>
                                         handleAddRoomFormSpecificationChange(
@@ -2368,8 +2434,8 @@ const MainPage = ({
                                         )
                                       }
                                     />{' '}
-                                    {spec.Boolean ? 'Yes' : 'No'}
-                                  </>
+                                    {spec.Boolean ? text.app.roomPage.sidebar.Specfication.yes : text.app.roomPage.sidebar.Specfication.no}
+                                  </div>
                                 ) : (
                                   <input
                                     type="number"
@@ -2407,7 +2473,7 @@ const MainPage = ({
                                     style={{
                                       display: 'flex',
                                       flexDirection: 'row',
-                                      alignItems: 'center',
+                                      alignItems: 'center',fontSize: 'var(--13px-V)',
                                     }}
                                   >
                                     <input
@@ -2423,13 +2489,13 @@ const MainPage = ({
                                         )
                                       }
                                     />{' '}
-                                    Yes/No
+                                    {text.app.roomPage.sidebar.Specfication.yes}/{text.app.roomPage.sidebar.Specfication.no}
                                   </div>
                                   <div
                                     style={{
                                       display: 'flex',
                                       flexDirection: 'row',
-                                      alignItems: 'center',
+                                      alignItems: 'center',fontSize: 'var(--13px-V)',
                                     }}
                                   >
                                     <input
@@ -2445,7 +2511,7 @@ const MainPage = ({
                                         )
                                       }
                                     />{' '}
-                                    Number
+                                    {text.app.roomPage.sidebar.Specfication.number}
                                   </div>
                                 </div>
                                 <button
@@ -2453,7 +2519,7 @@ const MainPage = ({
                                     removeAddRoomFormSpecification(index)
                                   }
                                 >
-                                  Delete
+                                  {text.app.roomPage.sidebar.Specfication.delete}
                                 </button>
                               </div>
                             </div>
@@ -2483,7 +2549,7 @@ const MainPage = ({
                       handleCancelAddRoom();
                     }}
                   >
-                    Cancel
+                   {text.app.roomPage.sidebar.cancel}
                   </button>{' '}
                   {showContinueAddingSettings && (
                     <div
@@ -2503,8 +2569,7 @@ const MainPage = ({
                             color: 'var(--Text-Color-Grey)',
                           }}
                         >
-                          After this room is add the below options will be
-                          applied to the next room
+                          {text.app.roomPage.sidebar.afterThisRoomIsAdded}
                         </span>
                         <br />
                         <input
@@ -2514,7 +2579,7 @@ const MainPage = ({
                           checked={incrementRoomNumber}
                           onChange={() => setIncrementRoomNumber(true)}
                         />{' '}
-                        Increment Room Number <br />
+                        {text.app.roomPage.sidebar.continueAddingSettings.incrementRoomNumber} <br />
                         <input
                           type="radio"
                           name="roomNumberAction"
@@ -2522,7 +2587,7 @@ const MainPage = ({
                           checked={!incrementRoomNumber}
                           onChange={() => setIncrementRoomNumber(false)}
                         />{' '}
-                        Reset Room Number
+                        {text.app.roomPage.sidebar.continueAddingSettings.resetRoomNumber}
                         <br />
                       </div>
                       <div>
@@ -2533,7 +2598,7 @@ const MainPage = ({
                           checked={incrementFloor}
                           onChange={() => setIncrementFloor(true)}
                         />{' '}
-                        Increment Floor Number
+                        {text.app.roomPage.sidebar.continueAddingSettings.incrementFloor}
                         <br />
                         <input
                           type="radio"
@@ -2542,7 +2607,7 @@ const MainPage = ({
                           checked={!incrementFloor}
                           onChange={() => setIncrementFloor(false)}
                         />{' '}
-                        Keep Floor Number same
+                        {text.app.roomPage.sidebar.continueAddingSettings.keepFloorSame}
                         <br />
                         <hr />
                       </div>
@@ -2553,7 +2618,7 @@ const MainPage = ({
                           checked={resetCurrency}
                           onChange={() => setResetCurrency(!resetCurrency)}
                         />{' '}
-                        Reset Currency
+                        {text.app.roomPage.sidebar.continueAddingSettings.resetCurrency}
                         <br />
                         <input
                           type="checkbox"
@@ -2561,7 +2626,7 @@ const MainPage = ({
                           checked={resetPrice}
                           onChange={() => setResetPrice(!resetPrice)}
                         />{' '}
-                        Reset Price
+                        {text.app.roomPage.sidebar.continueAddingSettings.resetPrice}
                         <br />
                         <input
                           type="checkbox"
@@ -2571,7 +2636,7 @@ const MainPage = ({
                             setResetPaymentCycle(!resetPaymentCycle)
                           }
                         />{' '}
-                        Reset Payment Cycle
+                        {text.app.roomPage.sidebar.continueAddingSettings.resetPaymentCycle}
                         <br />
                         <input
                           type="checkbox"
@@ -2581,7 +2646,7 @@ const MainPage = ({
                             setResetSquareMeters(!resetSquareMeters)
                           }
                         />{' '}
-                        Reset Square Meters
+                        {text.app.roomPage.sidebar.continueAddingSettings.resetSquareMeters}
                         <br />
                         <input
                           type="checkbox"
@@ -2591,7 +2656,7 @@ const MainPage = ({
                             setResetRoomSpecifications(!resetRoomSpecifications)
                           }
                         />{' '}
-                        Reset Room Specifications
+                        {text.app.roomPage.sidebar.continueAddingSettings.resetRoomSpecifications}
                         <br />
                         <input
                           type="checkbox"
@@ -2599,7 +2664,7 @@ const MainPage = ({
                           checked={resetRoomImages}
                           onChange={() => setResetRoomImages(!resetRoomImages)}
                         />{' '}
-                        Reset Room Images
+                        {text.app.roomPage.sidebar.continueAddingSettings.resetRoomImages}
                         <br />
                       </div>
                       <div
@@ -2617,18 +2682,17 @@ const MainPage = ({
                             resetAllValuesContinueAddingVariables();
                           }}
                         >
-                          Close
+                          {text.app.roomPage.sidebar.close}
                         </button>
                         <button
                           className="HorizontalButton"
                           disabled={isAddingRoom}
                           onClick={() => {
                             handleAddRoom(true);
-
                             setAddARoomState(true);
                           }}
                         >
-                          {isAddingRoom ? 'Adding...' : 'Add'}
+                          {isAddingRoom ? text.app.roomPage.sidebar.adding : text.app.roomPage.sidebar.addRoom}
                         </button>
                       </div>
                     </div>
@@ -2646,8 +2710,8 @@ const MainPage = ({
                       style={{ width: '100%' }}
                     >
                       {showContinueAddingSettings
-                        ? 'Close'
-                        : 'Add Another Room'}
+                        ? text.app.roomPage.sidebar.close
+                        : text.app.roomPage.sidebar.addAnotherRoom}
                     </button>
                   </div>
                   {!showContinueAddingSettings && (
@@ -2657,7 +2721,7 @@ const MainPage = ({
                       disabled={isAddingRoom}
                       id="add-room-submit"
                     >
-                      {isAddingRoom ? 'Adding...' : 'Add Room'}
+                      {isAddingRoom ? text.app.roomPage.sidebar.adding : text.app.roomPage.sidebar.addRoom}
                     </button>
                   )}
                 </div>

@@ -341,19 +341,21 @@ const NavBar = ({
           </p>
         </div>
       </div>
-    {!isMobileState &&  <div className="TopPageNavigatorContainer">
-        {privileges.viewDashboard && (
-          <button
-            className={
-              SelectedPage === 'Dashboard'
-                ? 'PageNavigatorButtonSelected'
-                : 'PageNavigatorButton'
-            }
-            onClick={() => setSelectedPage('Dashboard')}   id="top-nav-button-dashboard"
-          >
-            {tabsText.dashboard}
-          </button>
-        )}
+      {!isMobileState && (
+        <div className="TopPageNavigatorContainer">
+          {privileges.viewDashboard && (
+            <button
+              className={
+                SelectedPage === 'Dashboard'
+                  ? 'PageNavigatorButtonSelected'
+                  : 'PageNavigatorButton'
+              }
+              onClick={() => setSelectedPage('Dashboard')}
+              id="top-nav-button-dashboard"
+            >
+              {tabsText.dashboard}
+            </button>
+          )}
 
           {privileges.viewRoomsPage && (
             <button
@@ -365,48 +367,41 @@ const NavBar = ({
               onClick={() => setSelectedPage('Rooms')}
               id="top-nav-button-rooms"
             >
-              Rooms
+              {tabsText.rooms}
             </button>
           )}
-        {privileges.viewRoomsPage && (
-          <button
-            className={
-              SelectedPage === 'Rooms'
-                ? 'PageNavigatorButtonSelected'
-                : 'PageNavigatorButton'
-            }
-            onClick={() => setSelectedPage('Rooms')}   id="top-nav-button-rooms"
-          >
-            {tabsText.rooms}
-          </button>
-        )}
 
-        {privileges.editExpenses && (
-          <button
-            className={
-              SelectedPage === 'Expense'
-                ? 'PageNavigatorButtonSelected'
-                : 'PageNavigatorButton'
-            }
-            onClick={() => setSelectedPage('Expense')}   id="top-nav-button-expenses"
-          >
-            {tabsText.expenses}
+          {privileges.editExpenses && (
+            <button
+              className={
+                SelectedPage === 'Expense'
+                  ? 'PageNavigatorButtonSelected'
+                  : 'PageNavigatorButton'
+              }
+              onClick={() => setSelectedPage('Expense')}
+              id="top-nav-button-expenses"
+            >
+              {tabsText.expenses}
+            </button>
+          )}
+          {privileges.viewToolsPage && (
+            <button
+              className={
+                SelectedPage === 'Tools'
+                  ? 'PageNavigatorButtonSelected'
+                  : 'PageNavigatorButton'
+              }
+              onClick={() => setSelectedPage('Tools')}
+              id="top-nav-button-tools"
+            >
+              {tabsText.tools}
+            </button>
+          )}
+          <button onClick={() => langSwitch()}>
+            {text.gen.changeLanguage}
           </button>
-        )}
-        {privileges.viewToolsPage && (
-          <button
-            className={
-              SelectedPage === 'Tools'
-                ? 'PageNavigatorButtonSelected'
-                : 'PageNavigatorButton'
-            }
-            onClick={() => setSelectedPage('Tools')}   id="top-nav-button-tools"
-          >
-            {tabsText.tools}
-          </button>
-        )}
-        <button onClick={() => langSwitch()}>{text.gen.changeLanguage}</button>
-      </div>} 
+        </div>
+      )}
 
       <div
         className="RightSide"
@@ -585,8 +580,7 @@ const NavBar = ({
                       if (navigator.onLine) {
                         handleSyncOnlineToLocal();
                       } else {
-                        
-                        showAlert(uploadText.alerts.offline)
+                        showAlert(uploadText.alerts.offline);
                       }
                     }}
                     style={{
@@ -795,16 +789,18 @@ const NavBar = ({
         ) : (
           <>
             {' '}
-           {!isMobileState && <button
-              style={{
-                marginLeft: 'var(--10px-V)',
-              }}
-              onClick={() => {
-                RefreshDataFromSqlite();
-              }}
-            >
-               {uploadText.refreshData}
-              </button>}
+            {!isMobileState && (
+              <button
+                style={{
+                  marginLeft: 'var(--10px-V)',
+                }}
+                onClick={() => {
+                  RefreshDataFromSqlite();
+                }}
+              >
+                {uploadText.refreshData}
+              </button>
+            )}
           </>
         )}
         <button

@@ -98,10 +98,10 @@ const Pricing = () => {
               </p>
               <div className="enterprise-features">
                 <p>
-                  <FaCheck /> Custom room capacity based on your needs
+                  <FaCheck color='white'/> Custom room capacity based on your needs
                 </p>
                 <p>
-                  <FaCheck /> Custom SMS package
+                  <FaCheck color='white'/> Custom SMS package
                 </p>
                 
               </div>

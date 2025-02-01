@@ -42,7 +42,7 @@ interface GlobalContextType {
 
   langCode: number;
   setLangCode: React.Dispatch<React.SetStateAction<number>>;
-  text: object;
+  text: any;
   langSwitch: Function;
   ChangeLanguage: Function; 
 }
@@ -72,32 +72,62 @@ const [tutorialNewRoomId, setTutorialNewRoomId] = useState<string>("");
 function isMobile() {
   return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 }
-const [langCode, setLangCode] = useState<number>(0);
-function tl_spreader(obj:object, i:number) {
-  Object.entries(obj).forEach(([key, val]) => {
-    if (typeof(val) == "function") {
-      obj[key] = function(...args: any[]) {
-        const paramIndex = val.length > 0 ? Object.keys(val(...Array(val.length).fill(undefined))).indexOf("LangCode") : -1;
-        if (paramIndex !== -1 && args[paramIndex] === undefined) {
-          args[paramIndex] = langCode;
+const [langCode, setLangCode] = useState<number>(storageManager.get('LangCode') || 0);
+
+function tl_spreader(obj: Record<string, any>, i: number): any {
+  if (!obj) return {};
+
+  return Object.entries(obj).reduce((acc, [key, val]) => {
+    if (typeof val === "function") {
+      acc[key] = function(...args: any[]) {
+        try {
+          const testResult = val(...Array(val.length).fill(undefined));
+          const paramIndex = val.length > 0 && testResult ? 
+            Object.keys(testResult).indexOf("LangCode") : -1;
+          
+          if (paramIndex !== -1 && args[paramIndex] === undefined) {
+            args[paramIndex] = langCode;
+          }
+          return val(...args);
+        } catch (error) {
+          console.error('Error in tl_spreader function:', error);
+          return val(...args);
         }
-        return val(...args);
       };
-    } else if (Array.isArray(val) && typeof(val) !== "string") {
-      obj[key] = val[i]
-    } else if(typeof(val) == "object" && typeof(val) !== "string") {
-      obj[key] = tl_spreader(val, i)
-    }  
-  })
-  return obj
+    } else if (Array.isArray(val) && typeof val !== "string") {
+      acc[key] = val[i] ?? val[0];
+    } else if (typeof val === "object" && val !== null && typeof val !== "string") {
+      acc[key] = tl_spreader(val, i);
+    } else {
+      acc[key] = val;
+    }
+    return acc;
+  }, {} as Record<string, any>);
 }
-useEffect(() => {const text:object= tl_spreader(cloneDeep(tl), langCode);}, [langCode])
-const text:object= tl_spreader(cloneDeep(tl), langCode);
-const ChangeLanguage = async (lang:number) => {
-  storageManager.set('LangCode', lang);
-  setLangCode(lang);
-};  
-const langSwitch = () => {if(langCode == 1) {ChangeLanguage(0)} else {ChangeLanguage(1)};}
+
+useEffect(() => {
+  try {
+    const text = tl_spreader(cloneDeep(tl(langCode)), langCode);
+  } catch (error) {
+    console.error('Error in language effect:', error);
+  }
+}, [langCode]);
+
+const text = tl_spreader(cloneDeep(tl(langCode)), langCode);
+
+const ChangeLanguage = async (lang: number) => {
+  try {
+    storageManager.set('LangCode', lang);
+    setLangCode(lang);
+  } catch (error) {
+    console.error('Error changing language:', error);
+  }
+};
+
+const langSwitch = () => {
+  ChangeLanguage(langCode === 1 ? 0 : 1);
+};
+
 const [isMobileState, setIsMobileState] = useState<boolean>(false);
 useEffect(() => {
   setIsMobileState(isMobile());
