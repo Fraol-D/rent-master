@@ -872,7 +872,7 @@ const MainPage = ({
         const limit = 5;
         const reachedLimit = RoomList.length >= limit;
         if (reachedLimit) {
-          showAlert('Room limit reached. Please sign up to add more rooms.');
+          showAlert(text.app.mainPage.roomLimitReachedSignUp);
           return;
         }
       } else {
@@ -880,7 +880,7 @@ const MainPage = ({
 
         console.log(reachedLimit);
         if (reachedLimit) {
-          showAlert('Room limit reached. Please upgrade to add more rooms.');
+            showAlert(text.app.mainPage.roomLimitReachedUpgrade);
 
           return;
         }
@@ -949,17 +949,17 @@ const MainPage = ({
       if (isMoreThanOneImage) {
         if (!resetRoomImages) {
           await duplicateRoomImagesFolder(
-            'Add a room images',
-            'New Room Images Folder'
+            text.app.mainPage.addARoomImages,
+            text.app.mainPage.newRoomImagesFolder
           );
           await handleRenameFolder(
-            'New Room Images Folder',
-            `Floor ${AddRoomFormFloor}, Room ${AddRoomFormRoomIndex} - ${newRoom.id}`
+            text.app.mainPage.newRoomImagesFolder,
+            text.app.mainPage.floorAndRoom(AddRoomFormFloor, AddRoomFormRoomIndex) + ' - ' + newRoom.id
           );
         } else {
           await handleRenameFolder(
-            'Add a room images',
-            `Floor ${AddRoomFormFloor}, Room ${AddRoomFormRoomIndex} - ${newRoom.id}`
+            text.app.mainPage.addARoomImages,
+            text.app.mainPage.floorAndRoom(AddRoomFormFloor, AddRoomFormRoomIndex) + ' - ' + newRoom.id
           );
         }
       }
@@ -970,7 +970,7 @@ const MainPage = ({
       // Update states in correct order
       if (!continueAdding) {
         setAddARoomState(false);
-        handleDeleteFolderImages('Add a room images');
+        handleDeleteFolderImages(text.app.mainPage.addARoomImages);
       }
 
       setRoomExistsWarning(false);
@@ -1015,7 +1015,7 @@ const MainPage = ({
   const handleCancelAddRoom = () => {
     ResetAddRoomForumVariables2();
     setAddARoomState(false);
-    handleDeleteFolderImages('Add a room images');
+    handleDeleteFolderImages(text.app.mainPage.addARoomImages);
   };
 
   const [showContinueAddingSettings, setShowContinueAddingSettings] =
@@ -1126,7 +1126,7 @@ const MainPage = ({
         RoomList.find((r: RoomType) => r.id === SelectedEditRoomId).status ===
         'Taken'
       ) {
-        showAlert('You can not delete a room that is taken', 'error');
+        showAlert(text.app.mainPage.takenRoomDeleteError, 'error');
         return;
       }
       const listOfPayments = await getValuesWithSql(
@@ -1415,21 +1415,21 @@ const MainPage = ({
       <div>
         <input
           type="number"
-          placeholder="Number of floors"
+          placeholder={text.app.mainPage.numberOfFloors}
           value={floorCount}
           onChange={(e) => setFloorCount(parseInt(e.target.value))}
         />
         <input
           type="number"
-          placeholder="Rooms per floor"
+          placeholder={text.app.mainPage.roomsPerFloor}
           value={roomsPerFloor}
           onChange={(e) => setRoomsPerFloor(parseInt(e.target.value))}
         />
-        <button onClick={handleContinue}>Continue</button>
+        <button onClick={handleContinue}>{text.app.mainPage.continue}</button>
 
         {floorRoomData.map((floor, floorIndex) => (
           <div key={floorIndex}>
-            <h3>Floor {floor.floor}</h3>
+            <h3>{text.app.roomsPage.floor} {floor.floor}</h3>
             <input
               type="number"
               value={floor.rooms.length}
@@ -1504,14 +1504,14 @@ const MainPage = ({
                         )
                       }
                     >
-                      <option value="30">30 days</option>
-                      <option value="15">15 days</option>
-                      <option value="7">7 days</option>
-                      <option value="monthly">Monthly</option>
+                      <option value="30">{text.app.paymentCycles.thirtyDays}</option>
+                      <option value="15">{text.app.paymentCycles.fifteenDays}</option>
+                      <option value="7">{text.app.paymentCycles.sevenDays}</option>
+                      <option value="monthly">{text.app.paymentCycles.Monthly}</option>
                     </select>
                     <input
                       type="number"
-                      placeholder="Price"
+                      placeholder={text.app.roomPage.sideBar.price}
                       value={room.price}
                       onChange={(e) =>
                         updateRoomData(
@@ -1524,7 +1524,7 @@ const MainPage = ({
                     />
                     <input
                       type="number"
-                      placeholder="Square Meters"
+                      placeholder={text.app.roomPage.sideBar.squareMetersFull}
                       value={room.squareMeters}
                       onChange={(e) =>
                         updateRoomData(
@@ -1540,7 +1540,7 @@ const MainPage = ({
               )}
           </div>
         ))}
-        <button onClick={handleAddRooms}>Add Rooms</button>
+        <button onClick={handleAddRooms}>{text.app.roomsPage.addRooms}</button>
       </div>
     );
   };
@@ -2221,7 +2221,7 @@ const MainPage = ({
                               : ''
                           }`}
                           type="number"
-                          placeholder="Floor"
+                          placeholder={text.app.roomPage.sidebar.floor}
                           id="add-room-floor-input"
                           value={AddRoomFormFloor}
                           onChange={(e) =>
@@ -2238,7 +2238,7 @@ const MainPage = ({
                               : ''
                           }`}
                           type="number"
-                          placeholder="Room Index"
+                          placeholder={text.app.roomPage.sidebar.roomIndex}
                           id="add-room-index-input"
                           value={AddRoomFormRoomIndex}
                           onChange={(e) =>
@@ -2269,7 +2269,7 @@ const MainPage = ({
                               textAlign: 'center',
                             }}
                           >
-                            Inc VAT
+                            {text.app.roomPage.sidebar.incVAT}
                           </div>
                         </div>
                         <input
@@ -2299,7 +2299,7 @@ const MainPage = ({
                         id="add-room-payment-cycle"
                         className="AddaNewRoomRowObject"
                       >
-                        {text.app.roomPage.sidebar.paymentCycle}:{' '}
+                        {text.app.paymentCycles.}:{' '}
                         <select
                           value={AddRoomFormPaymentCycleType}
                           onChange={(e) =>
@@ -2308,22 +2308,22 @@ const MainPage = ({
                           className="AddANewRoomSelectMid"
                         >
                           <option value="30">
-                            {text.app.roomPage.sidebar.paymentCycle30Days}
+                            {text.app.paymentCycles.thirtyDays}
                           </option>
                           <option value="15">
-                            {text.app.roomPage.sidebar.paymentCycle15Days}
+                            {text.app.paymentCycles.fifteenDays}
                           </option>
                           <option value="7">
-                            {text.app.roomPage.sidebar.paymentCycle7Days}
+                            {text.app.paymentCycles.sevenDays}
                           </option>
                           <option value="daily">
-                            {text.app.roomPage.sidebar.paymentCycleDaily}
+                            {text.app.paymentCycles.Daily}
                           </option>
                           <option value="monthly">
-                            {text.app.roomPage.sidebar.paymentCycleMonthly}
+                            {text.app.paymentCycles.Monthly}
                           </option>
                           <option value="custom">
-                            {text.app.roomPage.sidebar.paymentCycleCustomDays}
+                            {text.app.paymentCycles.CustomDays}
                           </option>
                         </select>
                       </div>
@@ -2519,7 +2519,7 @@ const MainPage = ({
                                     removeAddRoomFormSpecification(index)
                                   }
                                 >
-                                  {text.app.roomPage.sidebar.Specfication.delete}
+                                  {text.app.toolsPage.delete}
                                 </button>
                               </div>
                             </div>
@@ -2549,7 +2549,7 @@ const MainPage = ({
                       handleCancelAddRoom();
                     }}
                   >
-                   {text.app.roomPage.sidebar.cancel}
+                   {text.app.cancel}
                   </button>{' '}
                   {showContinueAddingSettings && (
                     <div
@@ -2636,7 +2636,7 @@ const MainPage = ({
                             setResetPaymentCycle(!resetPaymentCycle)
                           }
                         />{' '}
-                        {text.app.roomPage.sidebar.continueAddingSettings.resetPaymentCycle}
+                        {text.app.paymentCycles.}
                         <br />
                         <input
                           type="checkbox"
@@ -2682,7 +2682,7 @@ const MainPage = ({
                             resetAllValuesContinueAddingVariables();
                           }}
                         >
-                          {text.app.roomPage.sidebar.close}
+                          {text.app.mainPage.close}
                         </button>
                         <button
                           className="HorizontalButton"
@@ -2710,7 +2710,7 @@ const MainPage = ({
                       style={{ width: '100%' }}
                     >
                       {showContinueAddingSettings
-                        ? text.app.roomPage.sidebar.close
+                        ? text.app.mainPage.close
                         : text.app.roomPage.sidebar.addAnotherRoom}
                     </button>
                   </div>
@@ -2736,7 +2736,7 @@ const MainPage = ({
                   margin: 'var(--15px-V) 0px var(--15px-V) 0px',
                 }}
               >
-                People Lists
+                {text.app.peoplePage.peopleLists}
               </h3>
               <h3
                 style={{
@@ -2751,7 +2751,7 @@ const MainPage = ({
                 onClick={() => setPeopleSelectedPage('TenantsList')}
                 id="dashboard-tenants-list-tab"
               >
-                Tenant list
+                {text.app.peoplePage.tenantList}
               </SideBarItem>
               <SideBarItem
                 page="BrokersList"
@@ -2759,7 +2759,7 @@ const MainPage = ({
                 onClick={() => setPeopleSelectedPage('BrokersList')}
                 id="dashboard-broker-list-tab"
               >
-                Broker list
+                {text.app.peoplePage.brokerList}
               </SideBarItem>
               <SideBarItem
                 page="TenantReviews"
@@ -2767,7 +2767,7 @@ const MainPage = ({
                 onClick={() => setPeopleSelectedPage('TenantReviews')}
                 id="dashboard-tenant-reviews-tab"
               >
-                Tenant Reviews
+                {text.app.peoplePage.tenantReviews}
               </SideBarItem>
             </>
           ) : SelectedPage === 'Tools' ? (
@@ -2781,7 +2781,7 @@ const MainPage = ({
                 }}
                 id="tools-title"
               >
-                Tools and Settings
+                {text.app.toolsPage.toolsAndSettings}
               </h3>
               <h3
                 style={{
@@ -2797,7 +2797,7 @@ const MainPage = ({
                   onClick={() => setToolsSelectedPage('EmailTemplates')}
                   id="tools-email-templates-tab"
                 >
-                  Email Templates
+                  {text.app.toolsPage.emailTemplates}
                 </SideBarItem>
               )}
               {privileges.editSmsTemplates && (
@@ -2807,7 +2807,7 @@ const MainPage = ({
                   onClick={() => setToolsSelectedPage('SMSTemplates')}
                   id="tools-sms-templates-tab"
                 >
-                  SMS Templates
+                  {text.app.toolsPage.smsTemplates}
                 </SideBarItem>
               )}
               {privileges.viewDatabase && (
@@ -2817,7 +2817,7 @@ const MainPage = ({
                   onClick={() => setToolsSelectedPage('Database')}
                   id="tools-database-tab"
                 >
-                  Database
+                  {text.app.toolsPage.database}
                 </SideBarItem>
               )}
               {/* {privileges.viewDatabase && (
@@ -2839,7 +2839,7 @@ const MainPage = ({
                 onClick={() => setToolsSelectedPage('Settings')}
                 id="tools-settings-tab"
               >
-                Settings
+                {text.app.toolsPage.settings}
               </SideBarItem>
             </>
           ) : SelectedPage === 'Dashboard' ? (
@@ -2852,7 +2852,7 @@ const MainPage = ({
                 }}
                 id="dashboard-title"
               >
-                Dashboard
+                {text.app.mainPage.dashboard}
               </h3>
               <h3
                 style={{
@@ -2861,7 +2861,7 @@ const MainPage = ({
                   display: SideBarShowState ? '' : 'none',
                 }}
               >
-                Overview
+                {text.app.mainPage.overview}
               </h3>
               <SideBarItem
                 page="Overview"
@@ -2869,7 +2869,7 @@ const MainPage = ({
                 onClick={() => setDashboardSelectedPage('Overview')}
                 id="dashboard-overview-tab"
               >
-                Overview
+                {text.app.mainPage.overview}
               </SideBarItem>
 
               <SideBarItem
@@ -2878,7 +2878,7 @@ const MainPage = ({
                 onClick={() => setDashboardSelectedPage('Expenses')}
                 id="dashboard-expenses-tab"
               >
-                Expenses
+                {text.app.mainPage.expenses}
               </SideBarItem>
               <h3
                 style={{
@@ -2887,7 +2887,7 @@ const MainPage = ({
                   display: SideBarShowState ? '' : 'none',
                 }}
               >
-                Lists
+                {text.app.mainPage.lists}
               </h3>
               <SideBarItem
                 page="TenantsList"
@@ -2895,7 +2895,7 @@ const MainPage = ({
                 onClick={() => setDashboardSelectedPage('TenantsList')}
                 id="dashboard-tenants-list-tab"
               >
-                Tenant list
+                {text.app.peoplePage.tenantList}
               </SideBarItem>
               <SideBarItem
                 page="BrokersList"
@@ -2903,7 +2903,7 @@ const MainPage = ({
                 onClick={() => setDashboardSelectedPage('BrokersList')}
                 id="dashboard-broker-list-tab"
               >
-                Broker list
+                {text.app.peoplePage.brokerList}
               </SideBarItem>
               <SideBarItem
                 page="TenantReviews"
@@ -2911,7 +2911,7 @@ const MainPage = ({
                 onClick={() => setDashboardSelectedPage('TenantReviews')}
                 id="dashboard-tenant-reviews-tab"
               >
-                Tenant Reviews
+                {text.app.peoplePage.tenantReviews}
               </SideBarItem>
               <h3
                 style={{
@@ -2920,7 +2920,7 @@ const MainPage = ({
                   display: SideBarShowState ? '' : 'none',
                 }}
               >
-                Communication
+                {text.app.mainPage.communication}
               </h3>
               <SideBarItem
                 page="Email History"
@@ -2928,7 +2928,7 @@ const MainPage = ({
                 onClick={() => setDashboardSelectedPage('Email History')}
                 id="dashboard-email-history-tab"
               >
-                Email History
+                {text.app.mainPage.emailHistory}
               </SideBarItem>
               <SideBarItem
                 page="SMS Details"
@@ -2936,7 +2936,7 @@ const MainPage = ({
                 onClick={() => setDashboardSelectedPage('SMS Details')}
                 id="dashboard-sms-history-tab"
               >
-                SMS Details
+                {text.app.mainPage.smsDetails}
               </SideBarItem>
               <h3
                 style={{
@@ -2945,7 +2945,7 @@ const MainPage = ({
                   display: SideBarShowState ? '' : 'none',
                 }}
               >
-                History
+                {text.app.mainPage.history}
               </h3>
               <SideBarItem
                 page="Action History"
@@ -2953,7 +2953,7 @@ const MainPage = ({
                 onClick={() => setDashboardSelectedPage('Action History')}
                 id="dashboard-action-history-tab"
               >
-                Action History
+                {text.app.mainPage.actionHistory}
               </SideBarItem>
               <h3
                 style={{
@@ -2962,7 +2962,7 @@ const MainPage = ({
                   display: SideBarShowState ? '' : 'none',
                 }}
               >
-                Reports
+                {text.app.mainPage.reports}
               </h3>
               <SideBarItem
                 page="Basic Rental income report"
@@ -2972,7 +2972,7 @@ const MainPage = ({
                 }
                 id="dashboard-basic-rental-income-report-tab"
               >
-                Basic Rental income report
+                {text.app.mainPage.basicRentalIncomeReport}
               </SideBarItem>
               <p
                 style={{
@@ -2981,7 +2981,7 @@ const MainPage = ({
                   display: SideBarShowState ? '' : 'none',
                 }}
               >
-                More reports coming soon
+                {text.app.mainPage.moreReportsComingSoon}
               </p>
             </>
           ) : SelectedPage === 'Expense' ? (
@@ -2994,7 +2994,7 @@ const MainPage = ({
                 }}
                 id="expense-manager-title"
               >
-                Expense Manager
+                {text.app.expensePage.expenseManager}
               </h3>
               <div
                 className="SideBarTopContainer"
@@ -3014,7 +3014,7 @@ const MainPage = ({
                     style={{ display: SideBarShowState ? '' : 'none' }}
                   >
                     {/* <img src={IconsGUI().Left2ArrowIcon} alt="" /> */}
-                    Close sidebar
+                    {text.app.mainPage.closeSidebar}
                   </button>
                 )}
                 <button
@@ -3024,7 +3024,7 @@ const MainPage = ({
                   id="add-expense-button"
                   style={{ display: SideBarShowState ? '' : 'none' }}
                 >
-                  Add Expense
+                  {text.app.expensePage.addExpense}
                 </button>
                 <button
                   className="SideBarTopButton"
@@ -3036,7 +3036,7 @@ const MainPage = ({
                   title="Show Calendar"
                   id="expense-calendar-toggle"
                 >
-                  {showExpenseCalendar ? 'Hide Calendar' : 'Show Calendar'}
+                  {showExpenseCalendar ? text.app.expensePage.hideCalendar : text.app.expensePage.showCalendar}
                 </button>
               </div>{' '}
               {(searchTerm ||
@@ -3076,7 +3076,7 @@ const MainPage = ({
                     setStartDateFilter('');
                   }}
                 >
-                  Reset Filters
+                  {text.app.expensePage.resetFilters}
                 </button>
               )}
               <div
@@ -3110,7 +3110,7 @@ const MainPage = ({
                     }}
                     id="expense-filters-toggle"
                   >
-                    Search & Filter
+                    {text.app.expensePage.searchAndFilter}
                   </div>
                   {showExpenseFilters && (
                     <div
@@ -3129,7 +3129,7 @@ const MainPage = ({
                       >
                         <input
                           type="text"
-                          placeholder="Search expenses"
+                          placeholder={text.app.expensePage.searchExpenses}
                           id="expense-search-input"
                           style={{ padding: 'var(--5px-V)' }}
                           onChange={(e) => setSearchTerm(e.target.value)}
@@ -3149,7 +3149,7 @@ const MainPage = ({
                             }
                             style={{ padding: 'var(--5px-V)' }}
                           >
-                            <option value="all">All Currencies</option>
+                            <option value="all">{text.app.expensePage.allCurrencies}</option>
                             {GetCurrencyAsOptionsOnSelect()}
                           </select>
                         </div>
@@ -3160,7 +3160,7 @@ const MainPage = ({
                             marginBottom: 'var(--10px-V)',
                           }}
                         >
-                          Price Range:
+                          {text.app.expensePage.priceRange}:
                           <div style={{ display: 'flex', gap: 'var(--5px-V)' }}>
                             <input
                               type="number"
@@ -3204,9 +3204,9 @@ const MainPage = ({
                           }
                           style={{ padding: 'var(--5px-V)' }}
                         >
-                          <option value="all">All Buildings</option>
-                          <option value="yes">Full Building Only</option>
-                          <option value="no">Specific Rooms Only</option>
+                          <option value="all">{text.app.expensePage.allBuildings}</option>
+                          <option value="yes">{text.app.expensePage.fullBuildingOnly}</option>
+                          <option value="no">{text.app.expensePage.specificRoomsOnly}</option>
                         </select>
 
                         {fullBuildingFilter === 'no' && (
@@ -3248,9 +3248,9 @@ const MainPage = ({
                           }
                           style={{ padding: 'var(--5px-V)' }}
                         >
-                          <option value="all">All Tax Types</option>
-                          <option value="yes">Before Tax Only</option>
-                          <option value="no">After Tax Only</option>
+                          <option value="all">{text.app.expensePage.allTaxTypes}</option>
+                          <option value="yes">{text.app.expensePage.beforeTaxOnly}</option>
+                          <option value="no">{text.app.expensePage.afterTaxOnly}</option>
                         </select>
                       </div>
 
@@ -3267,9 +3267,9 @@ const MainPage = ({
                           }
                           style={{ padding: 'var(--5px-V)' }}
                         >
-                          <option value="all">All Recurrence Types</option>
-                          <option value="yes">Recurring Only</option>
-                          <option value="no">One-time Only</option>
+                          <option value="all">{text.app.expensePage.allRecurrenceTypes}</option>
+                          <option value="yes">{text.app.expensePage.recurringOnly}</option>
+                          <option value="no">{text.app.expensePage.oneTimeOnly}</option>
                         </select>
 
                         {reoccurringFilter === 'yes' && (
@@ -3290,16 +3290,16 @@ const MainPage = ({
                                 padding: 'var(--5px-V)',
                               }}
                             >
-                              <option value="all">All Periods</option>
-                              <option value="Day">By Day Count</option>
-                              <option value="Monthly">Monthly</option>
-                              <option value="Yearly">Yearly</option>
+                              <option value="all">{text.app.expensePage.allPeriods}</option>
+                              <option value="Day">{text.app.expensePage.byDayCount}</option>
+                              <option value="Monthly">{text.app.expensePage.monthly}</option>
+                              <option value="Yearly">{text.app.expensePage.yearly}</option>
                             </select>{' '}
                             {reoccurringTypeFilter === 'Day' && (
                               <>
                                 <input
                                   type="number"
-                                  placeholder="Day Count"
+                                  placeholder={text.app.expensePage.dayCount}
                                   value={reoccurringDayCount}
                                   onChange={(e) =>
                                     setReoccurringDayCount(e.target.value)
@@ -3319,7 +3319,7 @@ const MainPage = ({
                         style={{ width: '100%', marginBottom: 'var(--10px-V)' }}
                         id="expense-date-filter"
                       >
-                        <div>Date:</div>
+                        <div>{text.app.expensePage.date}:</div>
                         <input
                           type="date"
                           value={startDateFilter}
@@ -3352,7 +3352,7 @@ const MainPage = ({
                     }}
                     id="expense-categories-container"
                   >
-                    Categories
+                    {text.app.expensePage.categories}
                   </div>
                   {showExpenseFilters2 && (
                     <div style={{ marginTop: 'var(--10px-V)', width: '95%' }}>
@@ -3415,15 +3415,15 @@ const MainPage = ({
                     setDeleteConfimation(false);
                   }}
                 >
-                  {'<'} Close
+                  {'<'} {text.app.mainPage.close}
                 </button>
                 <p className="DashboardWigetPieChartTextHeader">
-                  Editing Floor:{' '}
+                  {text.app.mainPage.editingFloor}:{' '}
                   {
                     RoomList.find((r: RoomType) => r.id === SelectedEditRoomId)
                       .floor
                   }{' '}
-                  Room:{' '}
+                  {text.app.roomPage.room}:{' '}
                   {
                     RoomList.find((r: RoomType) => r.id === SelectedEditRoomId)
                       .roomIndex
@@ -3441,7 +3441,7 @@ const MainPage = ({
                     handleDeleteFirst();
                   }}
                 >
-                  {DeleteConfimation ? 'Confirm Delete' : 'Delete this room'}
+                  {DeleteConfimation ? text.app.mainPage.confirmDelete : text.app.mainPage.deleteThisRoom}
                 </button>
               </div>{' '}
               {RoomList.find((r: RoomType) => r.id === SelectedEditRoomId)
@@ -3458,20 +3458,20 @@ const MainPage = ({
                     }}
                   >
                     <div className="AddaNewRoomRowObject">
-                      Payment Cycle :{' '}
+                      {text.app.paymentCycles.}:{' '}
                       <select
                         value={tempPaymentCycle}
                         onChange={(e) => setTempPaymentCycle(e.target.value)}
                         onBlur={handleBlurPaymentCycle}
                       >
-                        <option value="monthly">Monthly</option>
-                        <option value="weekly">Weekly</option>
-                        <option value="daily">Daily</option>
-                        <option value="30">30</option>
-                        <option value="15">15</option>
-                        <option value="7">7</option>
-                        <option value="Annually">Annually</option>
-                        <option value="custom">Custom</option>
+                        <option value="monthly">{text.app.paymentCycles.Monthly}</option>
+                        <option value="weekly">{text.app.paymentCycles.Weekly}</option>
+                        <option value="daily">{text.app.paymentCycles.Daily}</option>
+                        <option value="30">{text.app.paymentCycles.thirtyDays}</option>
+                        <option value="15">{text.app.paymentCycles.fifteenDays}</option>
+                        <option value="7">{text.app.paymentCycles.sevenDays}</option>
+                        <option value="Annually">{text.app.paymentCycles.Annually}</option>
+                        <option value="custom">{text.app.paymentCycles.CustomDays}</option>
                       </select>
                       {tempPaymentCycle === 'custom' && (
                         <input
@@ -3486,11 +3486,11 @@ const MainPage = ({
                       )}
                     </div>
                     <div className="AddaNewRoomRowObject">
-                      Price :{' '}
+                      {text.app.roomPage.sideBar.price} :{' '}
                       <input
                         className="AddANewRoomInputsSmall"
                         type="number"
-                        placeholder="Price"
+                        placeholder={text.app.roomPage.sideBar.pricePlaceholder}
                         value={tempPrice}
                         onChange={(e) => setTempPrice(e.target.value)}
                         onBlur={handleBlurPrice}
@@ -3498,11 +3498,11 @@ const MainPage = ({
                       />
                     </div>
                     <div className="AddaNewRoomRowObject">
-                      Square Meters :{' '}
+                      {text.app.roomPage.sideBar.squareMeters} :{' '}
                       <input
                         className="AddANewRoomInputsSmall"
                         type="number"
-                        placeholder="Square Meters"
+                        placeholder={text.app.roomPage.sideBar.squareMetersPlaceholder}
                         value={tempSquareMeters}
                         onChange={(e) => setTempSquareMeters(e.target.value)}
                         onBlur={handleBlur}
@@ -3530,7 +3530,7 @@ const MainPage = ({
                   }`}
                 >
                   <h3 style={{ marginTop: '0px' }}>
-                    Room Specifications{' - '}
+                    {text.app.roomPage.sideBar.roomSpecifications}
                     <button
                       onClick={() => {
                         const ids = uuidv4();
@@ -3561,7 +3561,7 @@ const MainPage = ({
                         );
                       }}
                     >
-                      Add
+                      {text.app.roomPage.sidebar.add}
                     </button>
                   </h3>
                   {RoomList.find(
@@ -3582,11 +3582,11 @@ const MainPage = ({
                         className="AddANewRoomSpecObjectMainContainer"
                       >
                         <div>
-                          Name:
+                          {text.app.roomPage.sideBar.name}:
                           <input
                             className="AddANewRoomInputsMid"
                             value={spec.Detail}
-                            placeholder="Enter name"
+                            placeholder={text.app.roomPage.sideBar.namePlaceholder}
                             onChange={(e) => {
                               roomSpecificationAPI.editRoomSpecificationApi(
                                 spec.id,
@@ -3634,7 +3634,7 @@ const MainPage = ({
                                   );
                                 }}
                               />{' '}
-                              {spec.Boolean ? 'Yes' : 'No'}
+                              {spec.Boolean ? text.app.yes : text.app.no}
                               {}
                             </>
                           ) : (
@@ -3691,7 +3691,7 @@ const MainPage = ({
                               );
                             }}
                           />{' '}
-                          Yes/No
+                          {text.app.toolsPage.yesNo}
                           <input
                             type="radio"
                             name={`spec-${index}`}
@@ -3717,7 +3717,7 @@ const MainPage = ({
                               );
                             }}
                           />{' '}
-                          Number
+                          {text.app.toolsPage.number}
                           <button
                             onClick={() => {
                               roomSpecificationAPI.deleteRoomSpecificationApi(
@@ -3735,7 +3735,7 @@ const MainPage = ({
                               );
                             }}
                           >
-                            Delete
+                            {text.app.toolsPage.delete}
                           </button>
                         </div>
                       </div>

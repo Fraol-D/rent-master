@@ -834,7 +834,7 @@ const NavBar = ({
       </div>
       {showSignOutConfirm && (
         <div className="signOutConfirmation">
-          <p>{uploadText.signOutConfirmation}</p>
+          <p>{text.app.signOutConfirmation}</p>
           <button onClick={confirmSignOut}>{text.app.yes}</button>
           <button onClick={cancelSignOut}>{text.app.no}</button>
         </div>

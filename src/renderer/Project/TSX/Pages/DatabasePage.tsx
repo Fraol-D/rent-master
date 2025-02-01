@@ -8,6 +8,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { getUserPrivileges } from 'renderer/App';
 import loadingGif from '../../../assets/assets/Loading/Rolling-1s-200px.gif';
 import { useGlobal } from 'renderer/components/GlobalContext';
+import { text } from 'node:stream/consumers';
 const DatabasePage = ({
   setChangeMade,
   SelectedAppUser,
@@ -252,7 +253,7 @@ const DatabasePage = ({
             }}
           >
            
-              <div> <label htmlFor="monthsFutureInput">Select a table: </label>
+              <div> <label htmlFor="monthsFutureInput">{text.app.databasePage.selectTable}: </label>
          
               <select
                 value={SelectedTable}
@@ -268,7 +269,7 @@ const DatabasePage = ({
             </div>
             <div>
               {' '}
-              <label htmlFor="monthsFutureInput">Search all fields: </label>
+              <label htmlFor="monthsFutureInput">{text.app.databasePage.searchAllFields}: </label>
               <input
                 type="text"
                 style={{
@@ -278,7 +279,7 @@ const DatabasePage = ({
                 }}
                 value={mainSearch}
                 onChange={(e) => setMainSearch(e.target.value)}
-                placeholder="Main search"
+                placeholder={text.app.databasePage.mainSearch}
                 id="mainSearch"
               />{' '}
             </div>{' '}
@@ -288,7 +289,7 @@ const DatabasePage = ({
             onClick={handleRefresh}
             style={{ marginLeft: 'var(--5px-V)' }}
           >
-            Refresh
+            {text.app.databasePage.refresh}
           </button>
         </div>
         <div
@@ -314,7 +315,7 @@ const DatabasePage = ({
                 alt="Loading..."
                 style={{ width: 'var(--30px-V)', height: 'var(--30px-V)' }}
               />
-              Loading...
+              {text.app.databasePage.loading}
             </div>
           ) : Data.length === 0 ? (
             <div
@@ -327,7 +328,7 @@ const DatabasePage = ({
                 color: 'var(--Text-Color)',
               }}
             >
-              No data available
+              {text.app.databasePage.noDataAvailable}
             </div>
           ) : (
             <table className="InfoTable">
@@ -353,7 +354,7 @@ const DatabasePage = ({
                     </th>
                   ))}
                   {privileges.editDatabaseData ? (
-                    <th className="InfoTableHeadTh">Actions</th>
+                    <th className="InfoTableHeadTh">{text.app.databasePage.actions}</th>
                   ) : (
                     <></>
                   )}
@@ -410,7 +411,7 @@ const DatabasePage = ({
                                     }
                                     style={{ marginLeft: 'var(--5px-V)' }}
                                   >
-                                    Go to
+                                    {text.app.databasePage.goTo}
                                   </button>
                                 )}
                             </>
@@ -423,7 +424,7 @@ const DatabasePage = ({
                             className="delete-button"
                             onClick={() => handleDelete(row.id)}
                           >
-                            Delete
+                            {text.app.toolsPage.delete}
                           </button>
                         </td>
                       ) : (

@@ -37,6 +37,7 @@ import { useConfirm } from 'renderer/components/useConfirm';
 import { useGlobal } from 'renderer/components/GlobalContext';
 import DatabasePage from './DatabasePage';
 import FileTreeViewer from '../Helpers/FileTreeViewer';
+import { text } from 'stream/consumers';
 
 const ToolsPage = ({
   setToolsSelectedPage,
@@ -136,18 +137,18 @@ const ToolsPage = ({
   const applyDefaultNotifications = async () => {
     if (sendEmail) {
       if (!emailDaysBefore || emailDaysBefore === '') {
-        showAlert('Please enter days before for email notification');
+        showAlert(text.app.toolsPage.pleaseEnterDaysBeforeForEmailNotification);
         return;
       }
     }
     if (sendSms) {
       if (!validatePhoneNumber(smsTo)) {
-        showAlert('Please enter a valid 10-digit phone number');
+        showAlert(text.app.toolsPage.pleaseEnterAValid10DigitPhoneNumber);
         return;
       }
 
       if (!smsDaysBefore || smsDaysBefore === '') {
-        showAlert('Please enter days before for SMS notification');
+        showAlert(text.app.toolsPage.pleaseEnterDaysBeforeForSMSNotification);
         return;
       }
     }
@@ -183,10 +184,10 @@ const ToolsPage = ({
       // Refresh the expenses list
       await getExpenses();
       setShowDefaultNotificationsSettings(false);
-      showAlert('Default notifications applied to all expenses successfully!');
+      showAlert(text.app.toolsPage.defaultNotificationsAppliedToAllExpensesSuccessfully);
     } catch (error) {
       console.error('Error applying default notifications:', error);
-      showAlert('Failed to apply default notifications. Please try again.');
+      showAlert(text.app.toolsPage.failedToApplyDefaultNotificationsPleaseTryAgain);
     } finally {
       setIsApplyingNotifications(false);
     }
@@ -485,23 +486,23 @@ const ToolsPage = ({
             try {
               await sendEmailAPI(recipientEmail, subject, body, SelectedUserId);
 
-              setEmailSentSuccessstring('Email sent successfully');
-              setEmailSentSuccessstring('Sent');
+              setEmailSentSuccessstring(text.app.toolsPage.emailSentSuccessfully);
+              setEmailSentSuccessstring(text.app.toolsPage.sent);
               setIsSending(false);
               setEmailSentSuccess(true);
             } catch (error) {
               console.error('Error sending email:', error);
               setEmailSentSuccessstring(
-                error.message || 'Failed to send email'
+                  error.message || text.app.toolsPage.failedToSendEmail
               );
-              setEmailSentSuccessstring('Failed');
+              setEmailSentSuccessstring(text.app.toolsPage.failed);
               setIsSending(false);
               setEmailSentSuccess(false);
             }
           }
         }
       } else {
-        setEmailSentSuccessstring('Invalid email address');
+        setEmailSentSuccessstring(text.app.toolsPage.invalidEmailAddress);
         setEmailSentSuccess(false);
         setIsSending(false);
       }
@@ -527,12 +528,12 @@ const ToolsPage = ({
           if (response.success) {
             console.log('SMS sent successfully');
           } else {
-            showAlert('Failed to send SMS: ' + response.error, 'error');
+            showAlert(text.app.toolsPage.failedToSendSMS + response.error, 'error');
             console.error('Failed to send SMS:', response.error);
           }
         } else {
           showAlert(
-            'Invalid phone number format. Please enter a 10-digit number starting with 0.'
+            text.app.toolsPage.invalidPhoneNumberFormatPleaseEnterA10DigitNumberStartingWith0
           );
         }
       }
@@ -586,11 +587,11 @@ const ToolsPage = ({
   const handleReplaceWithDefault = async () => {
     try {
       const choice = await confirm(
-        'Are you sure you want to delete all existing email templates and replace with defaults? This action cannot be undone.',
+        text.app.toolsPage.defaultEmailTemplatesConfirmation,
         {
-          title: 'Replace Email Templates',
-          confirmText: 'Replace',
-          cancelText: 'Keep',
+          title: text.app.toolsPage.replaceEmailTemplates,
+          confirmText: text.app.toolsPage.replace,
+          cancelText: text.app.toolsPage.keep,
           type: 'danger',
         }
       );
@@ -624,11 +625,11 @@ const ToolsPage = ({
   const handleReplaceWithDefaultSms = async () => {
     try {
       const choice = await confirm(
-        'Are you sure you want to delete all existing sms templates and replace with defaults? This action cannot be undone.',
+        text.app.toolsPage.defaultSMSConfirmation,
         {
-          title: 'Replace SMS Templates',
-          confirmText: 'Replace',
-          cancelText: 'Keep',
+          title: text.app.toolsPage.replaceSMSTemplates,
+          confirmText: text.app.toolsPage.replace,
+          cancelText: text.app.toolsPage.keep,
           type: 'danger',
         }
       );
@@ -1053,8 +1054,8 @@ const ToolsPage = ({
   const handleAddSMSTemplate = async () => {
     const newTemplate: sms_templates = {
       id: uuidv4(),
-      name: 'New Template',
-      body: 'New Template',
+      name: text.app.toolsPage.newTemplate,
+      body: text.app.toolsPage.newTemplate,
       created_at: Date.now(),
       updated_at: Date.now(),
       userId: SelectedUserId,
@@ -1177,10 +1178,10 @@ const ToolsPage = ({
     }
   };
   const handleSignOut = async () => {
-    const choice = await confirm('Are you sure you want to sign out?', {
-      title: 'Sign Out',
-      confirmText: 'Sign Out',
-      cancelText: 'Cancel',
+    const choice = await confirm(text.app.signOutConfirmation, {
+      title: text.app.signOut,
+      confirmText: text.app.yes,
+      cancelText: text.app.no,
       type: 'warning',
     });
 
@@ -1269,15 +1270,12 @@ const ToolsPage = ({
   };
 
   const handleDeleteExpense = async (id: string) => {
-    const choice = await confirm(
-      'Are you sure you want to delete this expense?',
-      {
-        title: 'Delete Expense',
-        confirmText: 'Delete',
-        cancelText: 'Keep',
-        type: 'danger',
-      }
-    );
+    const choice = await confirm(text.app.toolsPage.deleteExpenseConfirmation, {
+      title: text.app.toolsPage.deleteExpense,
+      confirmText: text.app.toolsPage.delete,
+      cancelText: text.app.toolsPage.keep,
+      type: 'danger',
+    });
     if (choice) {
       await deleteValue('expenses', id, setChangeMade);
       setEditingExpenseId(null);
@@ -1978,7 +1976,7 @@ const ToolsPage = ({
                   color: 'grey',
                 }}
               >
-                Email templates are not available in tryout mode
+                {text.app.toolsPage.emailTemplatesNotAvailable}
               </p>
             ) : (
               <EmailTemplates
@@ -2028,7 +2026,7 @@ const ToolsPage = ({
                   color: 'grey',
                 }}
               >
-                SMS templates are not available in tryout mode
+                {text.app.toolsPage.smsTemplatesNotAvailable}
               </p>
             ) : (
               <SMSTemplates
@@ -2105,7 +2103,7 @@ const ToolsPage = ({
                   fontWeight: '500',
                 }}
               >
-                Applying notification settings to all expenses...
+                {text.app.toolsPage.applyingNotifications}
               </p>
             </div>
           )}
@@ -2138,7 +2136,7 @@ const ToolsPage = ({
                   fontWeight: '500',
                 }}
               >
-                Reseting Templates...
+                {text.app.toolsPage.resetingTemplates}
               </p>
             </div>
           )}
@@ -2153,7 +2151,7 @@ const ToolsPage = ({
                   flexDirection: isMobileState ? 'column' : 'row',
                 }}
               >
-                <h1>Settings</h1>{' '}
+                <h1>{text.app.toolsPage.settings}</h1>{' '}
                 <div
                   style={{
                     display: 'flex',
@@ -2175,7 +2173,7 @@ const ToolsPage = ({
                     gap: 'var(--10px-V)',
                   }}
                 >
-                  <h2>Tax percentages</h2>
+                  <h2>{text.app.toolsPage.taxPercentages}</h2>
                   {hasChangedTaxPercentage ? (
                     <>
                       {isApplyingTaxPercentage ? (
@@ -2193,7 +2191,7 @@ const ToolsPage = ({
                             id="tax-percentage-save"
                             onClick={saveTaxPercentage}
                           >
-                            Save
+                            {text.app.toolsPage.save}
                           </button>
                           <button onClick={CancelTaxPercentage}>Cancel</button>
                         </>
@@ -2205,7 +2203,7 @@ const ToolsPage = ({
                 </div>
                 {isOnline ? (
                   <div className="settings-inner-container">
-                    Tax percentage:{' '}
+                    {text.app.toolsPage.taxPercentage}:{' '}
                     <input
                       type="number"
                       min="0"
@@ -2222,7 +2220,7 @@ const ToolsPage = ({
                   </div>
                 ) : (
                   <div className="settings-inner-container">
-                    Please connect to the internet to change tax percentage
+                    {text.app.toolsPage.offlineTaxPercentageChangeError}
                   </div>
                 )}
               </div>
@@ -2236,10 +2234,10 @@ const ToolsPage = ({
                   }}
                 >
                   <h2 style={{ fontSize: 'var(--25px-V)' }}>
-                    Default Room Specifications
+                    {text.app.toolsPage.defaultRoomSpecifications}
                   </h2>
                   <button id="add-room-spec-button" onClick={addSpecification}>
-                    Add
+                    {text.app.roomPage.sidebar.add}
                   </button>
                   {hasChangedSpecs ? (
                     <>
@@ -2258,9 +2256,9 @@ const ToolsPage = ({
                             id="room-spec-save-button"
                             onClick={saveSpecs}
                           >
-                            Save
+                            {text.app.toolsPage.save}
                           </button>
-                          <button onClick={cancelSpecs}>Cancel</button>
+                          <button onClick={cancelSpecs}>{text.app.cancel}</button>
                         </>
                       )}
                     </>
@@ -2276,8 +2274,7 @@ const ToolsPage = ({
                       fontStyle: 'italic',
                     }}
                   >
-                    These specifications will be shown when adding a new room,
-                    so you don't have to enter them repeatedly.
+                      {text.app.toolsPage.defaultRoomSpecificationsDescription}
                   </span>
 
                   {specifications.length === 0 ? (
@@ -2287,10 +2284,7 @@ const ToolsPage = ({
                         fontStyle: 'italic',
                       }}
                     >
-                      <div>Click "Add" above to add specifications</div>
-                      Example specifications:
-                      <div>• Bedrooms: 3</div>
-                      <div>• Balcony: Yes</div>
+                      <div>{text.app.toolsPage.clickAddAboveToAddSpecifications}</div>
                     </div>
                   ) : (
                     <div
@@ -2313,7 +2307,7 @@ const ToolsPage = ({
                               gap: 'var(--5px-V)',
                             }}
                           >
-                            Name:
+                            {text.app.toolsPage.name}:
                             <input
                               id="room-spec-name-input"
                               className="AddANewRoomInputsMid"
@@ -2401,7 +2395,7 @@ const ToolsPage = ({
                                     );
                                   }}
                                 />{' '}
-                                Yes/No
+                                {text.app.toolsPage.yesNo}
                               </div>
                               <div
                                 style={{
@@ -2424,7 +2418,7 @@ const ToolsPage = ({
                                     );
                                   }}
                                 />{' '}
-                                Number
+                                {text.app.toolsPage.number}
                               </div>
                             </div>
                             <button
@@ -2433,7 +2427,7 @@ const ToolsPage = ({
                                 removeSpecification(index);
                               }}
                             >
-                              Delete
+                              {text.app.toolsPage.delete}
                             </button>
                           </div>
                         </div>
@@ -2443,7 +2437,7 @@ const ToolsPage = ({
                 </div>
               </div>
               <div className="settings-container">
-                <h2>Currency Settings</h2>
+                <h2>{text.app.toolsPage.currencySettings}</h2>
 
                 {/* Default Currency Selection */}
 
@@ -2451,7 +2445,7 @@ const ToolsPage = ({
                 <div className="settings-inner-container">
                   <div>
                     <label style={{ fontWeight: 500 }}>
-                      Default Currency:{' '}
+                      {text.app.toolsPage.defaultCurrency}:{' '}
                     </label>
                     <select
                       id="default-currency-select"
@@ -2474,22 +2468,22 @@ const ToolsPage = ({
                           gap: 'var(--10px-V)',
                         }}
                       >
-                        <span>Current Exchange Rate:</span>
+                        <span>{text.app.toolsPage.currentExchangeRate}:</span>
                         <button
                           id="update-exchange-rate-button"
                           onClick={updateExchangeRates}
                         >
-                          Update Now
+                          {text.app.toolsPage.updateNow}
                         </button>
                         <p style={{ fontSize: 'var(--13px-V)' }}>
-                          Last Updated:{' '}
+                          {text.app.toolsPage.lastUpdated}:{' '}
                           {storageManager.get('lastExchangeRateUpdate')
                             ? new Date(
                                 storageManager.get('lastExchangeRateUpdate')
                               ).toDateString()
                             : 'Not updated yet'}
                           <br />
-                          Rate:{' '}
+                          {text.app.toolsPage.rate}:{' '}
                           {GetDefaultCurrency() === 'USD'
                             ? (
                                 1 /
@@ -2515,7 +2509,7 @@ const ToolsPage = ({
                             gap: 'var(--10px-V)',
                           }}
                         >
-                          <span>Check Historical Rate: </span>
+                          <span>{text.app.toolsPage.checkHistoricalRate}: </span>
                           <input
                             id="historical-rate-date-input"
                             type="date"
@@ -2533,7 +2527,7 @@ const ToolsPage = ({
                             }}
                           />
                           <button onClick={() => fetchExchangeRateOfThatDate()}>
-                            Get Rate
+                            {text.app.toolsPage.getRate}
                           </button>
                         </div>
                         {GetExchangeRate !== 0 && (
@@ -2557,12 +2551,12 @@ const ToolsPage = ({
                             marginBottom: 'var(--10px-V)',
                           }}
                         >
-                          <h3 style={{ margin: 0 }}>Recent Exchange Rates</h3>
+                          <h3 style={{ margin: 0 }}>{text.app.toolsPage.recentExchangeRates}</h3>
                           <button
                             id="show-recent-rates-button"
                             onClick={() => setShowRecentRates(!showRecentRates)}
                           >
-                            {showRecentRates ? 'Hide' : 'Show'}
+                            {showRecentRates ? text.app.toolsPage.hide : text.app.toolsPage.show}
                           </button>
                         </div>
 
@@ -2584,7 +2578,7 @@ const ToolsPage = ({
                                 }}
                               >
                                 <div>
-                                  <span>From: </span>
+                                  <span>{text.app.toolsPage.from}: </span>
                                   <input
                                     type="date"
                                     value={startDate}
@@ -2594,7 +2588,7 @@ const ToolsPage = ({
                                   />
                                 </div>
                                 <div>
-                                  <span>To: </span>
+                                  <span>{text.app.toolsPage.to}: </span>
                                   <input
                                     type="date"
                                     value={endDate}
@@ -2607,7 +2601,7 @@ const ToolsPage = ({
                                     setEndDate('');
                                   }}
                                 >
-                                  Clear
+                                  {text.app.toolsPage.clear}
                                 </button>
                               </div>
                             </div>
@@ -2674,7 +2668,7 @@ const ToolsPage = ({
                                 onClick={() => setCurrentPage(1)}
                                 disabled={currentPage === 1}
                               >
-                                First
+                                {text.app.toolsPage.first}
                               </button>
                               <button
                                 onClick={() =>
@@ -2682,10 +2676,10 @@ const ToolsPage = ({
                                 }
                                 disabled={currentPage === 1}
                               >
-                                Previous
+                                {text.app.toolsPage.previous}
                               </button>
                               <span>
-                                Page {currentPage} of {totalPages || 1}
+                                {text.app.toolsPage.pageOf(currentPage, totalPages || 1)}
                               </span>
                               <button
                                 onClick={() =>
@@ -2695,13 +2689,13 @@ const ToolsPage = ({
                                 }
                                 disabled={currentPage >= totalPages}
                               >
-                                Next
+                                {text.app.toolsPage.next}
                               </button>
                               <button
                                 onClick={() => setCurrentPage(totalPages)}
                                 disabled={currentPage >= totalPages}
                               >
-                                Last
+                                {text.app.toolsPage.last}
                               </button>
                             </div>
                           </div>
@@ -2709,16 +2703,15 @@ const ToolsPage = ({
                       </div>
                     </div>
                   ) : (
-                    <div>Please connect to internet to see exchange rates</div>
+                    <div>{text.app.toolsPage.offlineExchangeRatesError}</div>
                   )}
                 </div>
               </div>
               <div className="settings-container" id="formating-numbers">
                 {' '}
-                <h2 style={{ fontSize: 'var(--25px-V)' }}>Formating numbers</h2>
+                <h2 style={{ fontSize: 'var(--25px-V)' }}>{text.app.toolsPage.formatingNumbers}</h2>
                 <div style={{ marginLeft: 'var(--20px-V)' }}>
-                  Make long numbers like 100,000, 1,000,000 or 10,000,000 to
-                  100k, 1M or 10M:{' '}
+                  {text.app.toolsPage.makeLongNumbers}:{' '}
                   <input
                     id="abbreviate-numbers-checkbox"
                     type="checkbox"
@@ -2736,7 +2729,7 @@ const ToolsPage = ({
                     }}
                   />
                   <br />
-                  Number of decimal places to show:{' '}
+                  {text.app.toolsPage.numberOfDecimalPlacesToShow}:{' '}
                   <input
                     id="decimal-places-input"
                     type="number"
@@ -2763,7 +2756,7 @@ const ToolsPage = ({
                     gap: 'var(--10px-V)',
                   }}
                 >
-                  Email Settings{' '}
+                  {text.app.toolsPage.emailSettings}{' '}
                   {hasChanges && (
                     <div
                       style={{
@@ -2778,9 +2771,9 @@ const ToolsPage = ({
                         }}
                         onClick={handleSaveEmailSettings}
                       >
-                        Save
+                        {text.app.toolsPage.save}
                       </button>
-                      <button onClick={handleCancel}>Cancel</button>
+                      <button onClick={handleCancel}>{text.app.cancel}</button>
                     </div>
                   )}
                 </h2>
@@ -2807,7 +2800,7 @@ const ToolsPage = ({
                               marginTop: 'var(--15px-V)',
                             }}
                           >
-                            Representative Emails:{' '}
+                            {text.app.toolsPage.representativeEmails}:{' '}
                             <div
                               style={{
                                 width: 'var(--150px-V)',
@@ -2860,7 +2853,7 @@ const ToolsPage = ({
                               )}
                               <input
                                 type="text"
-                                placeholder="Enter email and press Space, Enter or Comma"
+                                placeholder={text.app.toolsPage.enterEmailAndPressSpaceEnterOrComma}
                                 style={{
                                   border: 'none',
                                   outline: 'none',
@@ -2891,7 +2884,7 @@ const ToolsPage = ({
                               marginTop: 'var(--15px-V)',
                             }}
                           >
-                            Representative Phone Numbers:{' '}
+                            {text.app.toolsPage.representativePhoneNumbers}:{' '}
                             <div
                               style={{
                                 width: 'var(--150px-V)',
@@ -2980,7 +2973,7 @@ const ToolsPage = ({
                                       marginBottom: 'var(--10px-V)',
                                     }}
                                   >
-                                    Phone numbers must be at least 10 digits
+                                    {text.app.toolsPage.phoneNumbersMustBeAtLeast10Digits}
                                   </p>
                                 )}
                             </div>
@@ -3002,21 +2995,20 @@ const ToolsPage = ({
                                 gap: 'var(--10px-V)',
                               }}
                             >
-                              <label>Landlord Display Name:</label>
+                              <label>{text.app.toolsPage.landlordDisplayName}:</label>
                               <input
                                 type="text"
                                 value={landlordDisplayName}
                                 onChange={(e) =>
                                   setLandlordDisplayName(e.target.value)
                                 }
-                                placeholder="Name shown in emails"
+                                placeholder={text.app.toolsPage.nameShownInEmails}
                                 style={{ width: 'var(--300px-V)' }}
                                 id="landlordDisplayName"
                               />
                               :{' '}
                               <span style={{ color: 'var(--Text-Color-Grey)' }}>
-                                The name that is visible in emails and sms sent
-                                to the tenant
+                                {text.app.toolsPage.landlordDisplayNameDescription}
                               </span>
                             </div>
                             <div
@@ -3027,7 +3019,7 @@ const ToolsPage = ({
                                 gap: 'var(--10px-V)',
                               }}
                             >
-                              <label>Landlord Email:</label>
+                              <label>{text.app.toolsPage.landlordEmail}:</label>
                               <input
                                 type="email"
                                 value={landlordEmail}
@@ -3040,8 +3032,7 @@ const ToolsPage = ({
                               />
                               :{' '}
                               <span style={{ color: 'var(--Text-Color-Grey)' }}>
-                                The email address that is visible in emails and
-                                sms sent to the tenant
+                                {text.app.toolsPage.landlordEmailDescription}
                               </span>
                             </div>
                             <div
@@ -3052,7 +3043,7 @@ const ToolsPage = ({
                                 gap: 'var(--10px-V)',
                               }}
                             >
-                              <label>Landlord Telephone:</label>
+                              <label>{text.app.toolsPage.landlordPhoneNumber}:</label>
                               <input
                                 type="tel"
                                 value={landlordTelephone}
@@ -3065,8 +3056,7 @@ const ToolsPage = ({
                               />
                               :{' '}
                               <span style={{ color: 'var(--Text-Color-Grey)' }}>
-                                The phone number that is visible in emails and
-                                sms sent to the tenant
+                                {text.app.toolsPage.landlordPhoneNumberDescription}
                               </span>
                             </div>
                           </div>
@@ -3076,13 +3066,13 @@ const ToolsPage = ({
                   </>
                 ) : (
                   <div style={{ marginLeft: 'var(--20px-V)' }}>
-                    Please connect to internet to change these settings
+                    {text.app.toolsPage.offlineSettingsChangeError}
                   </div>
                 )}
               </div>
               <div className="settings-container">
                 <h2 style={{ fontSize: 'var(--25px-V)' }}>
-                  Download All Files
+                  {text.app.toolsPage.downloadAllFiles}
                 </h2>
                 <div style={{ marginLeft: 'var(--20px-V)' }}>
                   <button
@@ -3101,7 +3091,7 @@ const ToolsPage = ({
                       cursor: 'pointer',
                     }}
                   >
-                    Download All Files
+                    {text.app.toolsPage.downloadAllFiles}
                   </button>
                 </div>
               </div>
@@ -3109,10 +3099,10 @@ const ToolsPage = ({
           )}
           {ToolsSelectedPage === 'Support' && (
             <div className="settings-main-container">
-              <h1>Support</h1>
+              <h1>{text.app.toolsPage.support}</h1>
               <div className="settings-container">
-                <h2 style={{ fontSize: 'var(--25px-V)' }}>Contact</h2>
-                <div style={{ marginLeft: 'var(--20px-V)' }}>
+                  <h2 style={{ fontSize: 'var(--25px-V)' }}>Contact</h2>
+                  <div style={{ marginLeft: 'var(--20px-V)' }}>
                   <div
                     style={{
                       display: 'flex',
@@ -3120,7 +3110,7 @@ const ToolsPage = ({
                       alignItems: 'center',
                     }}
                   >
-                    <span>Phone Number:</span>
+                    <span>{text.app.toolsPage.phoneNumber}:</span>
                     <span>094450-9999</span>
                   </div>
                   <div
@@ -3130,7 +3120,7 @@ const ToolsPage = ({
                       alignItems: 'center',
                     }}
                   >
-                    <span>Email:</span>
+                    <span>{text.app.toolsPage.email}:</span>
                     <span>rentmaster.et@gmail.com</span>
                   </div>
                   <div
@@ -3146,7 +3136,7 @@ const ToolsPage = ({
                 </div>
               </div>
               <div className="settings-container">
-                <h2 style={{ fontSize: 'var(--25px-V)' }}>Feedback</h2>
+                <h2 style={{ fontSize: 'var(--25px-V)' }}>{text.app.toolsPage.feedback}</h2>
                 <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
                   <div
                     style={{
@@ -3157,13 +3147,13 @@ const ToolsPage = ({
                       display: 'flex',
                     }}
                   >
-                    <label>Leave a review</label>
+                    <label>{text.app.toolsPage.leaveAReview}:</label>
                     <textarea
                       value={reviewForm}
                       onChange={(e) => setReviewForm(e.target.value)}
                       id="review"
                       name="review"
-                      placeholder="Tell us what you think about RentMaster..."
+                      placeholder={text.app.toolsPage.reviewPlaceholder}
                       style={{ height: 'var(--100px-V)', resize: 'vertical' }}
                     ></textarea>
                     <button onClick={handleSubmit}>
@@ -3177,10 +3167,10 @@ const ToolsPage = ({
                               height: 'var(--20px-V)',
                             }}
                           />
-                          Sending...
+                          {text.app.toolsPage.sending}
                         </>
                       ) : (
-                        'Submit'
+                        {text.app.submit}
                       )}
                     </button>
                   </div>
@@ -3193,13 +3183,13 @@ const ToolsPage = ({
                       display: 'flex',
                     }}
                   >
-                    <label>Suggest a feature</label>
+                    <label>{text.app.toolsPage.suggestAFeature}:</label>
                     <textarea
                       value={featureSuggestion}
                       onChange={(e) => setFeatureSuggestion(e.target.value)}
                       id="featureSuggestion"
                       name="featureSuggestion"
-                      placeholder="Tell us what features you would like to see in RentMaster..."
+                      placeholder={text.app.toolsPage.featureSuggestionPlaceholder}
                       style={{ height: 'var(--100px-V)', resize: 'vertical' }}
                     ></textarea>
                     <button onClick={handleSubmitFeatureSuggestion}>
@@ -3213,10 +3203,10 @@ const ToolsPage = ({
                               height: 'var(--20px-V)',
                             }}
                           />
-                          Sending...
+                          {text.app.toolsPage.sending}
                         </>
                       ) : (
-                        'Submit'
+                        {text.app.submit}
                       )}
                     </button>
                   </div>
@@ -3239,7 +3229,7 @@ const ToolsPage = ({
                   flexDirection: isMobileState ? 'column' : 'row',
                 }}
               >
-                <h1>Settings</h1>{' '}
+                <h1>{text.app.toolsPage.settings}</h1>{' '}
                 <div
                   style={{
                     display: 'flex',
@@ -3249,12 +3239,12 @@ const ToolsPage = ({
                 >
                   {storageManager.get('users')?.[0]?.email || ''} -{' '}
                   {storageManager.get('users')?.[0]?.companyName || ''}
-                  <button onClick={handleSignOut}>Sign Out</button>{' '}
+                  <button onClick={handleSignOut}>{text.app.signOut}</button>{' '}
                 </div>
               </div>
 
               <div className="settings-container">
-                <h2>Currency Settings</h2>
+                <h2>{text.app.toolsPage.currencySettings}</h2>
 
                 {/* Default Currency Selection */}
 
@@ -3262,7 +3252,7 @@ const ToolsPage = ({
                 <div className="settings-inner-container">
                   <div>
                     <label style={{ fontWeight: 500 }}>
-                      Default Currency:{' '}
+                      {text.app.toolsPage.defaultCurrency}:{' '}
                     </label>
                     <select
                       id="default-currency-select"
@@ -3285,22 +3275,22 @@ const ToolsPage = ({
                           gap: 'var(--10px-V)',
                         }}
                       >
-                        <span>Current Exchange Rate:</span>
+                        <span>{text.app.toolsPage.currentExchangeRate}:</span>
                         <button
                           id="update-exchange-rate-button"
                           onClick={updateExchangeRates}
                         >
-                          Update Now
+                          {text.app.toolsPage.updateNow}
                         </button>
                         <p style={{ fontSize: 'var(--13px-V)' }}>
-                          Last Updated:{' '}
+                          {text.app.toolsPage.lastUpdated}:{' '}
                           {storageManager.get('lastExchangeRateUpdate')
                             ? new Date(
                                 storageManager.get('lastExchangeRateUpdate')
                               ).toDateString()
                             : 'Not updated yet'}
                           <br />
-                          Rate:{' '}
+                          {text.app.toolsPage.rate}:{' '}
                           {GetDefaultCurrency() === 'USD'
                             ? (
                                 1 /
@@ -3326,7 +3316,7 @@ const ToolsPage = ({
                             gap: 'var(--10px-V)',
                           }}
                         >
-                          <span>Check Historical Rate: </span>
+                          <span>{text.app.toolsPage.checkHistoricalRate}: </span>
                           <input
                             id="historical-rate-date-input"
                             type="date"
@@ -3344,12 +3334,12 @@ const ToolsPage = ({
                             }}
                           />
                           <button onClick={() => fetchExchangeRateOfThatDate()}>
-                            Get Rate
+                            {text.app.toolsPage.getRate}
                           </button>
                         </div>
                         {GetExchangeRate !== 0 && (
                           <div style={{ marginTop: 'var(--5px-V)' }}>
-                            Rate on{' '}
+                            {text.app.toolsPage.rateOn}{' '}
                             {new Date(
                               GetExchangeRateDate * 1000
                             ).toDateString()}
@@ -3368,12 +3358,12 @@ const ToolsPage = ({
                             marginBottom: 'var(--10px-V)',
                           }}
                         >
-                          <h3 style={{ margin: 0 }}>Recent Exchange Rates</h3>
+                          <h3 style={{ margin: 0 }}>{text.app.toolsPage.recentExchangeRates}</h3>
                           <button
                             id="show-recent-rates-button"
                             onClick={() => setShowRecentRates(!showRecentRates)}
                           >
-                            {showRecentRates ? 'Hide' : 'Show'}
+                            {showRecentRates ? text.app.toolsPage.hide : text.app.toolsPage.show}
                           </button>
                         </div>
 
@@ -3395,7 +3385,7 @@ const ToolsPage = ({
                                 }}
                               >
                                 <div>
-                                  <span>From: </span>
+                                  <span>{text.app.toolsPage.from}: </span>
                                   <input
                                     type="date"
                                     value={startDate}
@@ -3405,7 +3395,7 @@ const ToolsPage = ({
                                   />
                                 </div>
                                 <div>
-                                  <span>To: </span>
+                                  <span>{text.app.toolsPage.to}: </span>
                                   <input
                                     type="date"
                                     value={endDate}
@@ -3418,7 +3408,7 @@ const ToolsPage = ({
                                     setEndDate('');
                                   }}
                                 >
-                                  Clear
+                                  {text.app.toolsPage.clear}
                                 </button>
                               </div>
                             </div>
@@ -3485,7 +3475,7 @@ const ToolsPage = ({
                                 onClick={() => setCurrentPage(1)}
                                 disabled={currentPage === 1}
                               >
-                                First
+                                {text.app.toolsPage.first}
                               </button>
                               <button
                                 onClick={() =>
@@ -3493,10 +3483,10 @@ const ToolsPage = ({
                                 }
                                 disabled={currentPage === 1}
                               >
-                                Previous
+                                {text.app.toolsPage.previous}
                               </button>
                               <span>
-                                Page {currentPage} of {totalPages || 1}
+                                {text.app.toolsPage.pageOf(currentPage, totalPages || 1)}
                               </span>
                               <button
                                 onClick={() =>
@@ -3506,13 +3496,13 @@ const ToolsPage = ({
                                 }
                                 disabled={currentPage >= totalPages}
                               >
-                                Next
+                                {text.app.toolsPage.next}
                               </button>
                               <button
                                 onClick={() => setCurrentPage(totalPages)}
                                 disabled={currentPage >= totalPages}
                               >
-                                Last
+                                {text.app.toolsPage.last}
                               </button>
                             </div>
                           </div>
@@ -3520,16 +3510,15 @@ const ToolsPage = ({
                       </div>
                     </div>
                   ) : (
-                    <div>Please connect to internet to see exchange rates</div>
+                    <div>{text.app.toolsPage.offlineExchangeRatesError}</div>
                   )}
                 </div>
               </div>
               <div className="settings-container">
                 {' '}
-                <h2 style={{ fontSize: 'var(--25px-V)' }}>Formating numbers</h2>
+                <h2 style={{ fontSize: 'var(--25px-V)' }}>{text.app.toolsPage.formatingNumbers}</h2>
                 <div style={{ marginLeft: 'var(--20px-V)' }}>
-                  Make long numbers like 100,000, 1,000,000 or 10,000,000 to
-                  100k, 1M or 10M:{' '}
+                  {text.app.toolsPage.makeLongNumbers}:{' '}
                   <input
                     id="abbreviate-numbers-checkbox"
                     type="checkbox"
@@ -3547,7 +3536,7 @@ const ToolsPage = ({
                     }}
                   />
                   <br />
-                  Number of decimal places to show:{' '}
+                  {text.app.toolsPage.numberOfDecimalPlacesToShow}:{' '}
                   <input
                     id="decimal-places-input"
                     type="number"
@@ -3570,9 +3559,9 @@ const ToolsPage = ({
           )}
           {ToolsSelectedPage === 'Support' && (
             <div className="settings-main-container">
-              <h1>Support</h1>
+              <h1>{text.app.toolsPage.support}</h1>
               <div className="settings-container">
-                <h2 style={{ fontSize: 'var(--25px-V)' }}>Contact</h2>
+                <h2 style={{ fontSize: 'var(--25px-V)' }}>{text.app.toolsPage.contact}</h2>
                 <div style={{ marginLeft: 'var(--20px-V)' }}>
                   <div
                     style={{
@@ -3581,7 +3570,7 @@ const ToolsPage = ({
                       alignItems: 'center',
                     }}
                   >
-                    <span>Phone Number:</span>
+                    <span>{text.app.toolsPage.phoneNumber}:</span>
                     <span>094450-9999</span>
                   </div>
                   <div
@@ -3591,7 +3580,7 @@ const ToolsPage = ({
                       alignItems: 'center',
                     }}
                   >
-                    <span>Email:</span>
+                    <span>{text.app.toolsPage.email}:</span>
                     <span>rentmaster.et@gmail.com</span>
                   </div>
                   <div
@@ -3607,7 +3596,7 @@ const ToolsPage = ({
                 </div>
               </div>
               <div className="settings-container">
-                <h2 style={{ fontSize: 'var(--25px-V)' }}>Feedback</h2>
+                <h2 style={{ fontSize: 'var(--25px-V)' }}>{text.app.toolsPage.feedback}</h2>
                 <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
                   <div
                     style={{
@@ -3618,13 +3607,13 @@ const ToolsPage = ({
                       display: 'flex',
                     }}
                   >
-                    <label>Leave a review</label>
+                    <label>{text.app.toolsPage.leaveAReview}</label>
                     <textarea
                       value={reviewForm}
                       onChange={(e) => setReviewForm(e.target.value)}
                       id="review"
                       name="review"
-                      placeholder="Tell us what you think about RentMaster..."
+                      placeholder={text.app.toolsPage.reviewPlaceholder}
                       style={{ height: 'var(--100px-V)', resize: 'vertical' }}
                     ></textarea>
                     <button onClick={handleSubmit}>
@@ -3654,13 +3643,13 @@ const ToolsPage = ({
                       display: 'flex',
                     }}
                   >
-                    <label>Suggest a feature</label>
+                    <label>{text.app.toolsPage.suggestAFeature}</label>
                     <textarea
                       value={featureSuggestion}
                       onChange={(e) => setFeatureSuggestion(e.target.value)}
                       id="featureSuggestion"
                       name="featureSuggestion"
-                      placeholder="Tell us what features you would like to see in RentMaster..."
+                      placeholder={text.app.toolsPage.featureSuggestionPlaceholder}
                       style={{ height: 'var(--100px-V)', resize: 'vertical' }}
                     ></textarea>
                     <button onClick={handleSubmitFeatureSuggestion}>
@@ -3674,10 +3663,10 @@ const ToolsPage = ({
                               height: 'var(--20px-V)',
                             }}
                           />
-                          Sending...
+                          {text.app.toolsPage.sending}
                         </>
                       ) : (
-                        'Submit'
+                        {text.app.submit}
                       )}
                     </button>
                   </div>

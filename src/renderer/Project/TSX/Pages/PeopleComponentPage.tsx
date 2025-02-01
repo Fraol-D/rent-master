@@ -299,7 +299,7 @@ export function PeopleComponentPage({
                                                    {' '}
                           {tenant.RentingOrOut ? (
                             <>
-                                                            Rm.                
+                                                            {text.app.dashboardPage.roomAbbreviation}                
                                            {' '}
                               {highlightText(
                                 RoomList.find(
@@ -307,7 +307,7 @@ export function PeopleComponentPage({
                                 )?.roomIndex || 'D',
                                 mainSearch
                               )}{' '}
-                                                            Flr.                
+                                                            {text.app.dashboardPage.floorAbbreviation}                
                                            {' '}
                               {highlightText(
                                 RoomList.find(
@@ -357,7 +357,7 @@ export function PeopleComponentPage({
                       <td className="InfoTableBodyTD">
                                                {' '}
                         <div>
-                          In{' '}
+                          {text.app.peopleComponentPage.in}{' '}
                           {highlightText(
                             new Date(tenant.startTime).toLocaleDateString(
                               'en-US',
@@ -374,7 +374,7 @@ export function PeopleComponentPage({
                                                {' '}
                         {!tenant.RentingOrOut && (
                           <div>
-                            Out{' '}
+                            {text.app.peopleComponentPage.out}{' '}
                             {highlightText(
                               new Date(tenant.endTime).toLocaleDateString(
                                 'en-US',
@@ -433,19 +433,19 @@ export function PeopleComponentPage({
                   className="InfoTableContainer"
                   style={{ marginTop: 'var(--40px-V)' }}
                 >
-                  Tenant Name:{' '}
+                  {text.app.peopleComponentPage.tenantName}:{' '}
                   {AllTenants.find(
                     (t: tenant) =>
                       t.id === Agreements[Agreements.length - 1].tenantId
                   )?.name || 'Deleted'}
-                  {' --- '}Occupancy: Floor:{' '}
+                  {' --- '}{text.app.peopleComponentPage.occupancy}: {text.app.peopleComponentPage.floor}:{' '}
                   {
                     RoomList.find(
                       (r: RoomType) =>
                         r.id === Agreements[Agreements.length - 1].roomId
                     ).floor
                   }
-                  {' - '}Room:    {' '}
+                  {' - '}{text.app.peopleComponentPage.room}:    {' '}
                   {
                     RoomList.find(
                       (r: RoomType) =>
@@ -464,15 +464,15 @@ export function PeopleComponentPage({
                                                {' '}
                         {[
                           '#',
-                          'Start Time',
-                          'End Time',
-                          'Sign Time',
-                          'Agreed Price',
-                          'Payment Cycle',
-                          'Memo',
-                          'Rent Reserved',
-                          'Representative',
-                          'Status',
+                          {text.app.peopleComponentPage.startTime},
+                          {text.app.peopleComponentPage.endTime},
+                          {text.app.peopleComponentPage.signTime},
+                          {text.app.peopleComponentPage.agreedPrice},
+                          {text.app.peopleComponentPage.paymentCycle},
+                          {text.app.peopleComponentPage.memo},
+                          {text.app.peopleComponentPage.rentReserved},
+                          {text.app.peopleComponentPage.representative},
+                          {text.app.peopleComponentPage.status},
                         ].map((col, index) => (
                           <th key={index} className="InfoTableHeadTh">
                                                         {col}                   
@@ -779,7 +779,7 @@ export function PeopleComponentPage({
                               </span>
                               <br />
                               <span style={{ color: 'var(--Accent-Color)' }}>
-                                Commission: $
+                                {text.app.peopleComponentPage.commission}: $
                                 {highlightText(
                                   formatNumberWithSuffix(
                                     recommendation.AgreedCommission.toLocaleString()
@@ -793,7 +793,7 @@ export function PeopleComponentPage({
                                   color: 'var(--Accent-Color)',
                                 }}
                               >
-                                Floor:{' '}
+                                {text.app.peopleComponentPage.floor}:{' '}
                                 {highlightText(
                                   RoomList.find(
                                     (r: RoomType) =>
@@ -801,7 +801,7 @@ export function PeopleComponentPage({
                                   )?.floor || '',
                                   mainSearch
                                 )}
-                                , Room:{' '}
+                                 {text.app.peopleComponentPage.room}:{' '}
                                 {highlightText(
                                   RoomList.find(
                                     (r: RoomType) =>
@@ -837,15 +837,15 @@ export function PeopleComponentPage({
                 <tr className="InfoTableHeadTR">
                   {[
                     '#',
-                    'Tenant',
-                    'Room',
-                    'Broker',
-                    'Payment',
-                    'Total earnings',
-                    'Stars',
-                    'Tenant description',
-                    'End Reason',
-                    'Dates',
+                    {text.app.peopleComponentPage.tenant},
+                    {text.app.peopleComponentPage.room},
+                    {text.app.peopleComponentPage.broker},
+                    {text.app.peopleComponentPage.payment},
+                    {text.app.peopleComponentPage.totalEarnings},
+                    {text.app.peopleComponentPage.stars},
+                    {text.app.peopleComponentPage.tenantDescription},
+                    {text.app.peopleComponentPage.endReason},
+                    {text.app.peopleComponentPage.dates},
                   ].map((col, index) => (
                     <th
                       key={index}
@@ -915,7 +915,7 @@ export function PeopleComponentPage({
                         mainSearch
                       )}{' '}
                       <br />
-                      Rm.{' '}
+                      {text.app.dashboardPage.roomAbbreviation}{' '}
                       {highlightText(
                         RoomList.find((r: RoomType) => r.id == review.roomId)
                           ?.roomIndex || 'D',
@@ -950,7 +950,7 @@ export function PeopleComponentPage({
                         ),
                         mainSearch
                       )}
-                      {CurrencySign(review.Currency)} per{' '}
+                      {CurrencySign(review.Currency)} {text.app.per}{' '}
                       {highlightText(
                         getCorrectPaymentStatment(review.paymentCycleType),
                         mainSearch
@@ -985,7 +985,7 @@ export function PeopleComponentPage({
                     </td>
                     <td className="InfoTableBodyTD">
                       <div>
-                        In{' '}
+                        {text.app.peopleComponentPage.in}{' '}
                         {highlightText(
                           new Date(review.enterDate).toLocaleDateString(
                             'en-US',
@@ -995,7 +995,7 @@ export function PeopleComponentPage({
                         )}
                       </div>
                       <div>
-                        Out{' '}
+                        {text.app.peopleComponentPage.out}{' '}
                         {highlightText(
                           new Date(review.exitDate).toLocaleDateString(
                             'en-US',

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import Room from '../Helpers/Room';
 import ExpenseCalendar from '../Tools page components/ExpenseCalendar';
+import { useGlobal } from 'renderer/components/GlobalContext';
 
 export function RoomListComponent({
   updateRoomProperty,
@@ -35,7 +36,7 @@ export function RoomListComponent({
   SelectedBranchId,
 }: any) {
   const [showExpenseCalendar, setShowExpenseCalendar] = useState(false);
-
+  const { text } = useGlobal();
   // Sort the rooms based on floor and room number
   const sortedRooms = sortedAndFilteredRooms.sort((a, b) => {
     if (a.floor === b.floor) {
@@ -96,8 +97,7 @@ export function RoomListComponent({
               }}
             >
               <p>
-                There are no rooms. Add a room by clicking the "Add room" button
-                on the left.
+                {text.app.roomPage.noRoomsFound}
               </p>
             </div>
           ) : (

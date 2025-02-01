@@ -439,7 +439,7 @@ const ImageInteractor2: React.FC<ImageInteractorProps> = ({
                 ))}
               </div>
               <button onClick={handleOnAddImage} disabled={isUploading}>
-                {text.app.roomPage.sidebar.ImageInteractor.Add}
+                {text.app.roomPage.sidebar.add}
               </button>
             </div>
           </div>

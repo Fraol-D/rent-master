@@ -62,7 +62,7 @@ const DashboardPage: React.FC<props> = ({
 
   const [searchConfig, setSearchConfig] = useState({ key: '', query: '' });
   const [mainSearch, setMainSearch] = useState('');
-  const { AllTenants } = useGlobal();
+  const { AllTenants, text } = useGlobal();
   const filteredData = (data: any[], key: string, query: string) => {
     if (mainSearch) {
       return data.filter((item) =>
@@ -270,16 +270,16 @@ const DashboardPage: React.FC<props> = ({
                 <tr className="InfoTableHeadTR">
                   {[
                     '#',
-                    'Name',
-                    'Tel',
-                    'Description',
-                    'TIN',
-                    'Occupancy',
-                    'Rent Reason',
-                    'Agreement',
-                    'Times',
-                    'Price',
-                    'AddedTime',
+                    {text.app.peopleComponentPage.tenantName},
+                    {text.app.peopleComponentPage.phoneNumber},
+                    {text.app.peopleComponentPage.description},
+                    {text.app.peopleComponentPage.tin},
+                    {text.app.peopleComponentPage.occupancy},
+                    {text.app.peopleComponentPage.rentReason},
+                    {text.app.peopleComponentPage.agreement},
+                    {text.app.peopleComponentPage.times},
+                    {text.app.roomPage.sidebar.price},
+                    {text.app.peopleComponentPage.addedTime},
                   ].map((col, index) => (
                     <th
                       key={index}
@@ -309,7 +309,7 @@ const DashboardPage: React.FC<props> = ({
                 ).length === 0 ? (
                   <tr>
                     <td colSpan={11} style={{textAlign: 'center', padding: '20px'}}>
-                      No tenants found
+                      {text.app.peopleComponentPage.noTenantsFound}
                     </td>
                   </tr>
                 ) : (
@@ -366,14 +366,14 @@ const DashboardPage: React.FC<props> = ({
                         <p>
                           {tenant.RentingOrOut ? (
                             <>
-                              Rm.
+                              {text.app.roomPage.roomAbbreviation}
                               {highlightText(
                                 RoomList.find(
                                   (room: any) => room.tenantId === tenant.id
                                 )?.roomIndex || 'D',
                                 mainSearch
                               )}{' '}
-                              Flr.
+                              {text.app.roomPage.floorAbbreviation}
                               {highlightText(
                                 RoomList.find(
                                   (room: any) => room.tenantId === tenant.id
@@ -409,7 +409,7 @@ const DashboardPage: React.FC<props> = ({
                       </td>
                       <td className="InfoTableBodyTD">
                         <div>
-                          In{' '}
+                          {text.app.peopleComponentPage.in}{' '}
                           {highlightText(
                             new Date(tenant.startTime).toLocaleDateString(
                               'en-US',
@@ -424,7 +424,7 @@ const DashboardPage: React.FC<props> = ({
                         </div>
                         {!tenant.RentingOrOut && (
                           <div>
-                            Out{' '}
+                            {text.app.peopleComponentPage.out}{' '}
                             {highlightText(
                               new Date(tenant.endTime).toLocaleDateString(
                                 'en-US',
@@ -468,19 +468,19 @@ const DashboardPage: React.FC<props> = ({
                 className="InfoTableContainer"
                 style={{ marginTop: 'var(--40px-V)' }}
               >
-                Tenant Name:{' '}
+                {text.app.peopleComponentPage.tenantName}:{' '}
                 {AllTenants.find(
                   (t: tenant) =>
                     t.id === Agreements[Agreements.length - 1].tenantId
                 )?.name || 'Deleted'}
-                {' --- '}Occupancy: Floor:{' '}
+                {' --- '}{text.app.peopleComponentPage.occupancy}: {text.app.roomPage.floor}:{' '}
                 {
                   RoomList.find(
                     (r: RoomType) =>
                       r.id === Agreements[Agreements.length - 1].roomId
                   ).floor
                 }
-                {' - '}Room:{' '}
+                {' - '}{text.app.roomPage.room}:{' '}
                 {
                   RoomList.find(
                     (r: RoomType) =>
@@ -495,15 +495,15 @@ const DashboardPage: React.FC<props> = ({
                     <tr className="InfoTableHeadTR">
                       {[
                         '#',
-                        'Start Time',
-                        'End Time',
-                        'Sign Time',
-                        'Agreed Price',
-                        'Payment Cycle',
-                        'Memo',
-                        'Rent Reserved',
-                        'Representative',
-                        'Status',
+                        {text.app.peopleComponentPage.startTime},
+                        {text.app.peopleComponentPage.endTime},
+                        {text.app.peopleComponentPage.signTime},
+                        {text.app.peopleComponentPage.agreedPrice},
+                        {text.app.peopleComponentPage.paymentCycle},
+                        {text.app.peopleComponentPage.memo},
+                        {text.app.peopleComponentPage.rentReserved},
+                        {text.app.peopleComponentPage.representative},
+                        {text.app.peopleComponentPage.status},
                       ].map((col, index) => (
                         <th key={index} className="InfoTableHeadTh">
                           {col}
@@ -517,7 +517,7 @@ const DashboardPage: React.FC<props> = ({
                     ).length === 0 ? (
                       <tr>
                         <td colSpan={10} style={{textAlign: 'center', padding: '20px'}}>
-                          No agreements found
+                          {text.app.dashboardPage.noAgreementsFound}
                         </td>
                       </tr>
                     ) : (
@@ -673,7 +673,7 @@ const DashboardPage: React.FC<props> = ({
               ).length === 0 ? (
                 <tr>
                   <td colSpan={5} style={{textAlign: 'center', padding: '20px'}}>
-                    No brokers found
+                    {text.app.dashboardPage.noBrokersFound}
                   </td>
                 </tr>
               ) : (
@@ -746,7 +746,7 @@ const DashboardPage: React.FC<props> = ({
                             recommendation.brokerId === broker.id
                         ).length === 0 ? (
                           <div style={{textAlign: 'center', padding: '10px'}}>
-                            No recommendations
+                            {text.app.dashboardPage.noRecommendations}
                           </div>
                         ) : (
                           BrokerRecommendationList.filter(
@@ -787,7 +787,7 @@ const DashboardPage: React.FC<props> = ({
                                 </span>
                                 <br />
                                 <span style={{ color: 'var(--Accent-Color)' }}>
-                                  Commission: $
+                                  {text.app.peopleComponentPage.commission}: $
                                   {highlightText(
                                     formatNumberWithSuffix(
                                       recommendation.AgreedCommission.toLocaleString()
@@ -801,7 +801,7 @@ const DashboardPage: React.FC<props> = ({
                                     color: 'var(--Accent-Color)',
                                   }}
                                 >
-                                  Floor:{' '}
+                                  {text.app.roomPage.floor}:{' '}
                                   {highlightText(
                                     RoomList.find(
                                       (r: RoomType) =>
@@ -809,7 +809,7 @@ const DashboardPage: React.FC<props> = ({
                                     )?.floor || '',
                                     mainSearch
                                   )}
-                                  , Room:{' '}
+                                  , {text.app.roomPage.room}:{' '}
                                   {highlightText(
                                     RoomList.find(
                                       (r: RoomType) =>
@@ -887,7 +887,7 @@ const DashboardPage: React.FC<props> = ({
               ).length === 0 ? (
                 <tr>
                   <td colSpan={10} style={{textAlign: 'center', padding: '20px'}}>
-                    No reviews found
+                    {text.app.dashboardPage.noReviewsFound}
                   </td>
                 </tr>
               ) : (
@@ -928,14 +928,14 @@ const DashboardPage: React.FC<props> = ({
                       </div>
                     </td>
                     <td className="InfoTableBodyTD">
-                      Flr.{' '}
+                      {text.app.roomPage.floorAbbreviation}{' '}
                       {highlightText(
                         RoomList.find((r: RoomType) => r.id == review.roomId)
                           ?.floor || 'D',
                         mainSearch
                       )}{' '}
                       <br />
-                      Rm.{' '}
+                      {text.app.roomPage.roomAbbreviation}{' '}
                       {highlightText(
                         RoomList.find((r: RoomType) => r.id == review.roomId)
                           ?.roomIndex || 'D',
@@ -1005,7 +1005,7 @@ const DashboardPage: React.FC<props> = ({
                     </td>
                     <td className="InfoTableBodyTD">
                       <div>
-                        In{' '}
+                        {text.app.peopleComponentPage.in}{' '}
                         {highlightText(
                           new Date(review.enterDate).toLocaleDateString('en-US', {
                             month: 'short',
@@ -1016,7 +1016,7 @@ const DashboardPage: React.FC<props> = ({
                         )}
                       </div>
                       <div>
-                        Out{' '}
+                        {text.app.peopleComponentPage.out}{' '}
                         {highlightText(
                           new Date(review.exitDate).toLocaleDateString('en-US', {
                             month: 'short',
