@@ -3164,7 +3164,7 @@ const MainPage = ({
                           <div style={{ display: 'flex', gap: 'var(--5px-V)' }}>
                             <input
                               type="number"
-                              placeholder="Min"
+                              placeholder={text.app.mainPage.min}
                               style={{ width: '40%', padding: 'var(--5px-V)' }}
                               value={minPrice}
                               onChange={(e) =>
@@ -3177,7 +3177,7 @@ const MainPage = ({
                             />
                             <input
                               type="number"
-                              placeholder="Max"
+                              placeholder={text.app.mainPage.max}
                               style={{ width: '40%', padding: 'var(--5px-V)' }}
                               value={maxPrice}
                               onChange={(e) =>
@@ -3219,14 +3219,14 @@ const MainPage = ({
                           >
                             <input
                               type="number"
-                              placeholder="Floor"
+                              placeholder={text.app.roomPage.sidebar.floor}
                               value={floorFilter}
                               onChange={(e) => setFloorFilter(e.target.value)}
                               style={{ width: '40%', padding: 'var(--5px-V)' }}
                             />
                             <input
                               type="number"
-                              placeholder="Room"
+                              placeholder={text.app.roomPage.sidebar.room}
                               value={roomFilter}
                               onChange={(e) => setRoomFilter(e.target.value)}
                               style={{ width: '40%', padding: 'var(--5px-V)' }}
