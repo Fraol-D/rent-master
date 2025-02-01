@@ -528,6 +528,8 @@ const tl = (LangCode: number) => {
             featureSuggestionPlaceholder: ['Tell us what features you would like to see in RentMaster...', '@Tell us what features you would like to see in RentMaster...'],
             reviewPlaceholder: ['Tell us what you think about RentMaster...', '@Tell us what you think about RentMaster...'],
         }, mainPage: {
+            min: ['Min', '@Min'],
+            max: ['Max', '@Max'],
             numberOfFloors: ['Number of floors', '@Number of floors'],
             roomsPerFloor: ['Rooms per floor', '@Rooms per floor'],
             continue: ['Continue', '@Continue'],
