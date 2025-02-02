@@ -560,9 +560,6 @@ const tl = (LangCode: number) => {
             customDaysPlaceholder: ['10', '@10'],
             price: ['Price', '@Price'],
             close: ['Close', '@Close'],
-            numberOfFloors: ['Number of floors', '@Number of floors'],
-            roomsPerFloor: ['Rooms per floor', '@Rooms per floor'],
-
 
         }, expensePage: {
             resetfilters: ['Reset filters', '@Reset filters'],

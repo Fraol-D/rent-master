@@ -8,7 +8,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { getUserPrivileges } from 'renderer/App';
 import loadingGif from '../../../assets/assets/Loading/Rolling-1s-200px.gif';
 import { useGlobal } from 'renderer/components/GlobalContext';
-import { text } from 'node:stream/consumers';
 const DatabasePage = ({
   setChangeMade,
   SelectedAppUser,
@@ -235,7 +234,7 @@ const DatabasePage = ({
   const handleRefresh = () => {
     GetDataBaseData(SelectedTable);
   };
-  const { isMobileState } = useGlobal();
+  const { isMobileState, text } = useGlobal();
   return (
     <div className="CalenderContainer">
       <div

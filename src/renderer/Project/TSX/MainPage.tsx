@@ -2299,7 +2299,7 @@ const MainPage = ({
                         id="add-room-payment-cycle"
                         className="AddaNewRoomRowObject"
                       >
-                        {text.app.paymentCycles.}:{' '}
+                        {text.app.expensePage.expensePaymentCycle}:{' '}
                         <select
                           value={AddRoomFormPaymentCycleType}
                           onChange={(e) =>
@@ -2636,7 +2636,7 @@ const MainPage = ({
                             setResetPaymentCycle(!resetPaymentCycle)
                           }
                         />{' '}
-                        {text.app.paymentCycles.}
+                        {text.app.expensePage.expensePaymentCycle}
                         <br />
                         <input
                           type="checkbox"
@@ -3458,7 +3458,7 @@ const MainPage = ({
                     }}
                   >
                     <div className="AddaNewRoomRowObject">
-                      {text.app.paymentCycles.}:{' '}
+                      {text.app.expensePage.expensePaymentCycle}:{' '}
                       <select
                         value={tempPaymentCycle}
                         onChange={(e) => setTempPaymentCycle(e.target.value)}

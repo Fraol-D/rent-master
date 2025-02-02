@@ -464,15 +464,15 @@ export function PeopleComponentPage({
                                                {' '}
                         {[
                           '#',
-                          {text.app.peopleComponentPage.startTime},
-                          {text.app.peopleComponentPage.endTime},
-                          {text.app.peopleComponentPage.signTime},
-                          {text.app.peopleComponentPage.agreedPrice},
-                          {text.app.peopleComponentPage.paymentCycle},
-                          {text.app.peopleComponentPage.memo},
-                          {text.app.peopleComponentPage.rentReserved},
-                          {text.app.peopleComponentPage.representative},
-                          {text.app.peopleComponentPage.status},
+                          text.app.peopleComponentPage.startTime,
+                          text.app.peopleComponentPage.endTime,
+                          text.app.peopleComponentPage.signTime,
+                          text.app.peopleComponentPage.agreedPrice,
+                          text.app.peopleComponentPage.paymentCycle,
+                          text.app.peopleComponentPage.memo,
+                          text.app.peopleComponentPage.rentReserved,
+                          text.app.peopleComponentPage.representative,
+                          text.app.peopleComponentPage.status,
                         ].map((col, index) => (
                           <th key={index} className="InfoTableHeadTh">
                                                         {col}                   
@@ -837,15 +837,15 @@ export function PeopleComponentPage({
                 <tr className="InfoTableHeadTR">
                   {[
                     '#',
-                    {text.app.peopleComponentPage.tenant},
-                    {text.app.peopleComponentPage.room},
-                    {text.app.peopleComponentPage.broker},
-                    {text.app.peopleComponentPage.payment},
-                    {text.app.peopleComponentPage.totalEarnings},
-                    {text.app.peopleComponentPage.stars},
-                    {text.app.peopleComponentPage.tenantDescription},
-                    {text.app.peopleComponentPage.endReason},
-                    {text.app.peopleComponentPage.dates},
+                    text.app.peopleComponentPage.tenant,
+                    text.app.peopleComponentPage.room,
+                    text.app.peopleComponentPage.broker,
+                    text.app.peopleComponentPage.payment,
+                    text.app.peopleComponentPage.totalEarnings,
+                    text.app.peopleComponentPage.stars,
+                    text.app.peopleComponentPage.tenantDescription,
+                    text.app.peopleComponentPage.endReason,
+                    text.app.peopleComponentPage.dates,
                   ].map((col, index) => (
                     <th
                       key={index}

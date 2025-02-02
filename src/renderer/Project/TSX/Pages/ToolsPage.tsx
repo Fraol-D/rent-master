@@ -37,7 +37,6 @@ import { useConfirm } from 'renderer/components/useConfirm';
 import { useGlobal } from 'renderer/components/GlobalContext';
 import DatabasePage from './DatabasePage';
 import FileTreeViewer from '../Helpers/FileTreeViewer';
-import { text } from 'stream/consumers';
 
 const ToolsPage = ({
   setToolsSelectedPage,
@@ -621,7 +620,7 @@ const ToolsPage = ({
       console.error('Error replacing templates:', error);
     }
   };
-  const { isMobileState } = useGlobal();
+  const { isMobileState, text } = useGlobal();
   const handleReplaceWithDefaultSms = async () => {
     try {
       const choice = await confirm(
@@ -3170,7 +3169,7 @@ const ToolsPage = ({
                           {text.app.toolsPage.sending}
                         </>
                       ) : (
-                        {text.app.submit}
+                        text.app.submit
                       )}
                     </button>
                   </div>
@@ -3206,7 +3205,7 @@ const ToolsPage = ({
                           {text.app.toolsPage.sending}
                         </>
                       ) : (
-                        {text.app.submit}
+                        text.app.submit
                       )}
                     </button>
                   </div>
@@ -3666,7 +3665,7 @@ const ToolsPage = ({
                           {text.app.toolsPage.sending}
                         </>
                       ) : (
-                        {text.app.submit}
+                        text.app.submit
                       )}
                     </button>
                   </div>

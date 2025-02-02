@@ -270,16 +270,16 @@ const DashboardPage: React.FC<props> = ({
                 <tr className="InfoTableHeadTR">
                   {[
                     '#',
-                    {text.app.peopleComponentPage.tenantName},
-                    {text.app.peopleComponentPage.phoneNumber},
-                    {text.app.peopleComponentPage.description},
-                    {text.app.peopleComponentPage.tin},
-                    {text.app.peopleComponentPage.occupancy},
-                    {text.app.peopleComponentPage.rentReason},
-                    {text.app.peopleComponentPage.agreement},
-                    {text.app.peopleComponentPage.times},
-                    {text.app.roomPage.sidebar.price},
-                    {text.app.peopleComponentPage.addedTime},
+                    text.app.peopleComponentPage.tenantName,
+                    text.app.peopleComponentPage.phoneNumber,
+                    text.app.peopleComponentPage.description,
+                    text.app.peopleComponentPage.tin,
+                    text.app.peopleComponentPage.occupancy,
+                    text.app.peopleComponentPage.rentReason,
+                    text.app.peopleComponentPage.agreement,
+                    text.app.peopleComponentPage.times,
+                    text.app.roomPage.sidebar.price,
+                    text.app.peopleComponentPage.addedTime,
                   ].map((col, index) => (
                     <th
                       key={index}
@@ -495,15 +495,15 @@ const DashboardPage: React.FC<props> = ({
                     <tr className="InfoTableHeadTR">
                       {[
                         '#',
-                        {text.app.peopleComponentPage.startTime},
-                        {text.app.peopleComponentPage.endTime},
-                        {text.app.peopleComponentPage.signTime},
-                        {text.app.peopleComponentPage.agreedPrice},
-                        {text.app.peopleComponentPage.paymentCycle},
-                        {text.app.peopleComponentPage.memo},
-                        {text.app.peopleComponentPage.rentReserved},
-                        {text.app.peopleComponentPage.representative},
-                        {text.app.peopleComponentPage.status},
+                        text.app.peopleComponentPage.startTime,
+                        text.app.peopleComponentPage.endTime,
+                        text.app.peopleComponentPage.signTime,
+                        text.app.peopleComponentPage.agreedPrice,
+                        text.app.peopleComponentPage.paymentCycle,
+                        text.app.peopleComponentPage.memo,
+                        text.app.peopleComponentPage.rentReserved,
+                        text.app.peopleComponentPage.representative,
+                        text.app.peopleComponentPage.status,
                       ].map((col, index) => (
                         <th key={index} className="InfoTableHeadTh">
                           {col}
