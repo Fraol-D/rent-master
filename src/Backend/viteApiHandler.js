@@ -1,7 +1,11 @@
 import CryptoJS from 'crypto-js';
 
-const encryptData = true;
-const secretKey = window.electron ? '' : import.meta.env.VITE_ENCRYPTION_KEY;
+const isTryout = window.location.href.includes('tryout');
+const encryptData =
+  !isTryout &&
+  !window.electron &&
+  Boolean(import.meta.env.VITE_ENCRYPTION_KEY);
+const secretKey = window.electron ? '' : import.meta.env.VITE_ENCRYPTION_KEY || 'tryout-demo-key';
 
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 100; // 1 second

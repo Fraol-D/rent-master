@@ -1,10 +1,13 @@
 import CryptoJS from 'crypto-js';
 import { tryoutData } from './Project/TSX/Helpers/tryoutData';
-// Toggle encryption on or off
-const encryptData = true;
 const isTryout = window.location.href.includes('tryout');
-const secretKey = window.electron ? '' : import.meta.env.VITE_ENCRYPTION_KEY;
-const secretKeyKEY = window.electron ? '' : import.meta.env.VITE_secretKeyKEY;
+// Disable encryption in tryout/demo mode and when keys are missing
+const encryptData =
+  !isTryout &&
+  !window.electron &&
+  Boolean(import.meta.env.VITE_ENCRYPTION_KEY);
+const secretKey = window.electron ? '' : import.meta.env.VITE_ENCRYPTION_KEY || 'tryout-demo-key';
+const secretKeyKEY = window.electron ? '' : import.meta.env.VITE_secretKeyKEY || 'tryout-demo-salt';
 
 // One month in milliseconds (30 days)
 const ONE_MONTH = 30 * 24 * 60 * 60 * 1000;

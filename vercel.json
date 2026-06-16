@@ -5,6 +5,9 @@
   "rewrites": [
     { "source": "/make-request", "destination": "/api/make-request" },
     { "source": "/make-request-filemanager", "destination": "/api/make-request-filemanager" },
-    { "source": "/((?!api/).*)", "destination": "/index.html" }
+    { "source": "/app/:path*", "destination": "/index.html" },
+    { "source": "/login", "destination": "/index.html" },
+    { "source": "/signup/:path*", "destination": "/index.html" },
+    { "source": "/download", "destination": "/index.html" }
   ]
 }
