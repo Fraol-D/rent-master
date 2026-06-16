@@ -22,7 +22,6 @@ import CurrencySign, {
   GetDefaultCurrency,
   getRateByDate,
 } from '../Helpers/CurrencySign';
-import { Payment } from 'electron';
 import { useGlobal } from 'renderer/components/GlobalContext';
 
 interface Payment {

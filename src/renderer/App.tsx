@@ -35,7 +35,10 @@ import {
   isAfter,
   isBefore,
 } from 'date-fns';
-import { Payment } from 'electron';
+type Payment = {
+  Day: number;
+  Paid: boolean;
+};
 import {
   GetDefaultCurrency,
   getRateByDate,

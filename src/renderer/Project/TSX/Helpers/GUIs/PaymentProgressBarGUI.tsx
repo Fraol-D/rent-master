@@ -23,7 +23,13 @@ import {
   uploadReceiptDocumentsOnline,
 } from 'Backend/localServerApis';
 import UtilityPanel from './UtilityPanel';
-import { Payment } from 'electron';
+type Payment = {
+  id?: string;
+  Day: number;
+  Value?: number;
+  Paid: boolean;
+  roomId?: string;
+};
 import CurrencySign, { formatNumberWithSuffix } from '../CurrencySign';
 import loadingGif from 'renderer/assets/assets/Loading/Rolling-1s-200px.gif';
 import { useAlert } from 'renderer/components/useAlert';

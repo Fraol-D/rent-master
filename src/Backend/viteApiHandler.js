@@ -87,7 +87,7 @@ export const makeProxyRequest = async (
     const TIMEOUT = targetUrl.includes('filemanager') ? 30000 : 10000;
 
         const timeoutId = setTimeout(() => controller.abort(), TIMEOUT);
-        let proxyUrl = 'https://rentmaster.markethubet.com/make-request';
+        let proxyUrl = '/make-request';
 
         if (window.electron) {
           proxyUrl = 'http://localhost:3000/make-request';
@@ -178,7 +178,7 @@ export const makeProxyRequestFileManager = async (
         const controller = new AbortController();
         const TIMEOUT = targetUrl.includes('filemanager') ? 30000 : 10000;
         const timeoutId = setTimeout(() => controller.abort(), TIMEOUT);
-        let proxyUrl = 'https://rentmaster.markethubet.com/make-request-filemanager';
+        let proxyUrl = '/make-request-filemanager';
 
         if (window.electron) {
           proxyUrl = 'http://localhost:3000/make-request';

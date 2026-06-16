@@ -1,0 +1,10 @@
+{
+  "buildCommand": "npm run react-build",
+  "installCommand": "npm install --ignore-scripts",
+  "outputDirectory": "dist",
+  "rewrites": [
+    { "source": "/make-request", "destination": "/api/make-request" },
+    { "source": "/make-request-filemanager", "destination": "/api/make-request-filemanager" },
+    { "source": "/((?!api/).*)", "destination": "/index.html" }
+  ]
+}
